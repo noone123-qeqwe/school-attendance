@@ -21,7 +21,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'parent'        => \App\Http\Middleware\ParentMiddleware::class,
             'device.bound'  => \App\Http\Middleware\EnsureStudentDeviceIsBound::class,
         ]);
-        $middleware->prepend(\App\Http\Middleware\NgrokBypass::class);
 
         $middleware->validateCsrfTokens(except: [
             'login',
