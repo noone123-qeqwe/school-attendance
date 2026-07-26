@@ -32,7 +32,6 @@ Thumbs.db
 
 # Build artifacts
 /vendor/
-composer.lock
 
 # Logs
 /storage/logs/*
@@ -57,7 +56,6 @@ deploy.sh
 deploy.bat
 backup.sh
 
-# Docker files (not needed for Render)
-Dockerfile
+# Docker files (keep Dockerfile for Render deployment)
 docker-compose.yml
 docker/
