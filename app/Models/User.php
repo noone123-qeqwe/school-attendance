@@ -1,0 +1,140 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable, SoftDeletes, LogsActivity;
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email', 'role', 'course', 'year_level'])
+            ->logOnlyDirty();
+    }
+
+    /**
+     * The attributes that are mass assignable.
+     * Including the fields required for the Smart Classroom Attendance System.
+     */
+ protected $fillable = [
+    'name',
+    'student_number',
+    'employee_id',
+    'course',
+    'department',
+    'position',
+    'specialization',
+    'year_level',
+    'semester',
+    'section',
+    'guardian_email',
+    'email',
+    'password',
+    'role',
+    'profile_image',
+    'phone',
+];
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->role === 'teacher';
+    }
+
+    public function isStudent(): bool
+    {
+        return $this->role === 'student';
+    }
+
+    public function isParent(): bool
+    {
+        return $this->role === 'parent';
+    }
+
+    public function children()
+    {
+        return $this->belongsToMany(User::class, 'parent_student', 'parent_id', 'student_id');
+    }
+
+    public function parents()
+    {
+        return $this->belongsToMany(User::class, 'parent_student', 'student_id', 'parent_id');
+    }
+
+    /**
+     * The attributes that should be hidden for serialization.
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+
+    /**
+     * RELATIONSHIP: Attendance
+     * This allows us to call $user->attendances in the dashboard.
+     */
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    /**
+     * RELATIONSHIP: Subjects (for teachers)
+     * Get subjects taught by this teacher
+     */
+    public function subjects()
+    {
+        return $this->hasMany(Subject::class, 'instructor', 'name');
+    }
+
+    /**
+     * RELATIONSHIP: Subjects (alternative method using instructor name/employee_id)
+     * Get subjects taught by this teacher using name or employee_id matching.
+     */
+    public function teachingSubjects()
+    {
+        return Subject::where('instructor', $this->name)
+            ->orWhere('instructor', $this->employee_id);
+    }
+
+    public function excuseSubmissions()
+    {
+        return $this->hasMany(ExcuseSubmission::class);
+    }
+
+    public function webauthnCredentials()
+    {
+        return $this->hasMany(WebauthnCredential::class);
+    }
+
+    public function deviceBinding()
+    {
+        return $this->hasOne(DeviceBinding::class);
+    }
+}

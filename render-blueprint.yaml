@@ -1,0 +1,137 @@
+# Smart Classroom Attendance System - Render Blueprint
+# Deploy entire stack with one click
+
+services:
+  # Main Web Application
+  - type: web
+    name: attendance-web
+    runtime: php
+    plan: starter
+    buildCommand: |
+      composer install --optimize-autoloader --no-dev --no-interaction
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+      php artisan storage:link
+    startCommand: |
+      php artisan migrate --force
+      php artisan optimize  
+      php artisan serve --host=0.0.0.0 --port=$PORT
+    healthCheckPath: /login
+    envVars:
+      - key: APP_NAME
+        value: "Smart Classroom Attendance System"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE_COOKIE
+        value: true
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      # Database connection (auto-filled by Render)
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: attendance-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: attendance-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: attendance-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: attendance-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: attendance-db
+          property: password
+
+  # WebSocket Server for Real-time Features
+  - type: worker
+    name: attendance-websocket
+    runtime: php
+    plan: starter
+    buildCommand: composer install --optimize-autoloader --no-dev --no-interaction
+    startCommand: php artisan reverb:start --host=0.0.0.0 --port=8080
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: attendance-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: attendance-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: attendance-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: attendance-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: attendance-db
+          property: password
+
+  # Scheduled Tasks (Attendance marking, cleanup)
+  - type: cron
+    name: attendance-cron
+    runtime: php
+    schedule: "0 * * * *"  # Every hour
+    buildCommand: composer install --optimize-autoloader --no-dev --no-interaction
+    startCommand: php artisan schedule:run
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: attendance-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: attendance-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: attendance-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: attendance-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: attendance-db
+          property: password
+
+databases:
+  # MySQL Database
+  - name: attendance-db
+    databaseName: attendance_production
+    user: attendance_user
+    plan: starter

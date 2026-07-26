@@ -1,0 +1,63 @@
+# Render Ignore File - Don't deploy these files/folders
+
+# Development files
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Testing
+tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Development tools
+.git/
+.gitignore
+.editorconfig
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env.local
+.env.development
+.env.example
+
+# Build artifacts
+/vendor/
+composer.lock
+
+# Logs
+/storage/logs/*
+!/storage/logs/.gitignore
+
+# Cache files (will be regenerated)
+/storage/framework/cache/*
+/storage/framework/sessions/*  
+/storage/framework/views/*
+/bootstrap/cache/*
+
+# Development database
+*.sqlite
+*.db
+
+# Documentation (deploy selectively)
+README.md
+DEPLOYMENT.md
+DEPLOYMENT_CHECKLIST.md
+status_check.php
+deploy.sh
+deploy.bat
+backup.sh
+
+# Docker files (not needed for Render)
+Dockerfile
+docker-compose.yml
+docker/
