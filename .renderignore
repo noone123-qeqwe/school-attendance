@@ -56,6 +56,7 @@ deploy.sh
 deploy.bat
 backup.sh
 
-# Docker files (keep Dockerfile for Render deployment)
+# Docker files (not needed for Render native PHP)
+Dockerfile
 docker-compose.yml
 docker/
