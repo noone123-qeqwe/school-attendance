@@ -11,10 +11,10 @@ class SubjectSeeder extends Seeder
     public function run(): void
     {
         // Clear existing data (disable foreign key checks temporarily)
-        \DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        \Schema::disableForeignKeyConstraints();
         Schedule::truncate();
         Subject::truncate();
-        \DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        \Schema::enableForeignKeyConstraints();
 
         $subjects = [
             // 🔵 1ST YEAR - 1ST SEM

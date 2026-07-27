@@ -17,25 +17,36 @@ class DemoSeeder extends Seeder
     {
         // Create Admin User
         $admin = User::firstOrCreate(
-            ['email' => 'admin@school.edu'],
+            ['email' => 'admin@gmail.com'],
             [
                 'name' => 'System Administrator',
-                'password' => Hash::make('admin123'),
+                'password' => Hash::make('password'),
                 'role' => 'admin',
             ]
         );
 
         // Create Teacher User
         $teacher = User::firstOrCreate(
-            ['email' => 'sandy.rosa@school.edu'],
+            ['email' => 'jovelyn.patalinghug@teacher.com'],
             [
-                'name' => 'Ma. Sandy Mae Santa Rosa',
-                'password' => Hash::make('password123'),
+                'name' => 'Jovelyn Patalinghug',
+                'password' => Hash::make('password'),
                 'role' => 'teacher',
-                'employee_id' => 'T-2024-003',
+                'employee_id' => 'T-2024-001',
                 'department' => 'Computer Science',
                 'position' => 'Instructor',
                 'specialization' => 'Software Development'
+            ]
+        );
+
+        // Create Parent User
+        $parent = User::firstOrCreate(
+            ['email' => 'parent@example.com'],
+            [
+                'name' => 'Demo Parent',
+                'password' => Hash::make('password'),
+                'role' => 'parent',
+                'phone' => '09123456789'
             ]
         );
 
@@ -55,12 +66,13 @@ class DemoSeeder extends Seeder
         // Create Demo Students
         $students = [
             [
-                'name' => 'John Michael Santos',
-                'email' => 'john.santos@student.edu',
-                'student_number' => '2024001',
+                'name' => 'Requested Student',
+                'email' => 'student@example.com',
+                'student_number' => '2310843',
                 'course' => 'BSCS',
                 'year_level' => 3,
-                'semester' => 1
+                'semester' => 1,
+                'password' => 'password'
             ],
             [
                 'name' => 'Maria Isabel Garcia',
@@ -105,7 +117,7 @@ class DemoSeeder extends Seeder
                     'course' => $studentData['course'],
                     'year_level' => $studentData['year_level'],
                     'semester' => $studentData['semester'],
-                    'password' => Hash::make('student123'),
+                    'password' => Hash::make($studentData['password'] ?? 'student123'),
                     'role' => 'student'
                 ]
             );
@@ -239,9 +251,10 @@ class DemoSeeder extends Seeder
         }
 
         $this->command->info('Demo data seeded successfully!');
-        $this->command->info('Admin: admin@school.edu / admin123');
-        $this->command->info('Teacher: sandy.rosa@school.edu / password123');
-        $this->command->info('Students: john.santos@student.edu / student123 (and others)');
+        $this->command->info('Admin: admin@gmail.com / password');
+        $this->command->info('Teacher: jovelyn.patalinghug@teacher.com / password');
+        $this->command->info('Parent: parent@example.com / password');
+        $this->command->info('Student ID: 2310843 / password');
 
         // Create Demo Excuse Submissions
         $this->createDemoExcuses();
