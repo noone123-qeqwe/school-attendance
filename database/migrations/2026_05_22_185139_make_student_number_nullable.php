@@ -12,7 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            $table->dropUnique('users_student_number_unique');
+        });
+
+        Schema::table('users', function (Blueprint $table) {
             $table->string('student_number')->nullable()->change();
+        });
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->unique('student_number');
         });
     }
 
