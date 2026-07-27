@@ -16,6 +16,9 @@ php artisan storage:link 2>/dev/null || true
 echo "Running migrations..."
 php artisan migrate --force 2>&1 || echo "Migration warning (may be OK if tables exist)"
 
+echo "Running seeders to create demo accounts..."
+php artisan db:seed --class=DemoSeeder --force 2>&1 || echo "Seeder warning"
+
 # Cache configuration
 echo "Caching configuration..."
 php artisan config:cache

@@ -65,8 +65,8 @@ class PTController extends Controller
     $identifier = trim($request->identifier);
     $password   = $request->password;
 
-    // Auto-detect: 7-digit number = student, otherwise try email
-    if (preg_match('/^\d{7}$/', $identifier)) {
+    // Auto-detect: if no '@' symbol, treat as student number
+    if (!str_contains($identifier, '@')) {
         // Student login via student_number
         $credentials = ['student_number' => $identifier, 'password' => $password];
         if (Auth::attempt($credentials)) {
