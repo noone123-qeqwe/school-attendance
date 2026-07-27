@@ -109,18 +109,27 @@ class DemoSeeder extends Seeder
         ];
 
         foreach ($students as $studentData) {
-            User::firstOrCreate(
-                ['email' => $studentData['email']],
-                [
+            $student = User::where('student_number', $studentData['student_number'])->first();
+            
+            if ($student) {
+                // If student exists, just ensure they have the demo password so you can log in,
+                // but preserve their real name and other details from the database!
+                $student->update([
+                    'password' => Hash::make($studentData['password'] ?? 'student123')
+                ]);
+            } else {
+                // If student doesn't exist, create them
+                User::create([
                     'name' => $studentData['name'],
+                    'email' => $studentData['email'],
                     'student_number' => $studentData['student_number'],
                     'course' => $studentData['course'],
                     'year_level' => $studentData['year_level'],
                     'semester' => $studentData['semester'],
                     'password' => Hash::make($studentData['password'] ?? 'student123'),
                     'role' => 'student'
-                ]
-            );
+                ]);
+            }
         }
 
         // Create Demo Subjects
