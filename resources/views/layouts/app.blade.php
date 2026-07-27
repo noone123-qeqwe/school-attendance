@@ -260,7 +260,7 @@
         </main>
     </div>
 
-    <!-- Toast Container -->
+    <!-- System Toast Container (for websocket notifications) -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -462,11 +462,11 @@
     </script>
     @endauth
     
-    <!-- Premium Toast Container -->
-    <div class="premium-toast-container" id="toastContainer"></div>
+    <!-- Premium Toast Container (for session messages) -->
+    <div class="premium-toast-container" id="premiumToastContainer"></div>
     <script>
-    function showToast(message, type = 'success') {
-        const container = document.getElementById('toastContainer');
+    function showPremiumToast(message, type = 'success') {
+        const container = document.getElementById('premiumToastContainer');
         if (!container) return;
         const toast = document.createElement('div');
         toast.className = 'premium-toast';
@@ -505,14 +505,14 @@
     @if(session('success'))
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            showToast("{{ session('success') }}", 'success');
+            showPremiumToast("{{ session('success') }}", 'success');
         });
     </script>
     @endif
     @if(session('error'))
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            showToast("{{ session('error') }}", 'error');
+            showPremiumToast("{{ session('error') }}", 'error');
         });
     </script>
     @endif

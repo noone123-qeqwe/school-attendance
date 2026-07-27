@@ -179,23 +179,50 @@
         <div class="auth-box">
             <div class="school-logo-placeholder">OC MOBO</div>
             <h2>Register</h2>
-            <form method="POST" action="{{ route('register') }}">
+            <form method="POST" action="{{ route('register.submit') }}">
                 @csrf
+                <input type="hidden" name="role" value="student">
                 <div class="mb-3">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" name="name" class="form-control" placeholder="Enter Full Name" required>
+                    <label class="form-label" for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" name="name" class="form-control" placeholder="Enter Full Name" autocomplete="name" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Student ID Number</label>
-                    <input type="text" name="student_id" class="form-control" placeholder="XX-XXXXX" required>
+                    <label class="form-label" for="reg-student-number">Student ID Number</label>
+                    <input type="text" id="reg-student-number" name="student_number" class="form-control" placeholder="e.g. 1234567" autocomplete="off" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-control" placeholder="name@example.com" required>
+                    <label class="form-label" for="reg-course">Course</label>
+                    <input type="text" id="reg-course" name="course" class="form-control" placeholder="e.g. BSCS" autocomplete="off" required>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label class="form-label" for="reg-year-level">Year Level</label>
+                        <select id="reg-year-level" name="year_level" class="form-control" required>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="reg-semester">Semester</label>
+                        <select id="reg-semester" name="semester" class="form-control" required>
+                            <option value="1">1st Semester</option>
+                            <option value="2">2nd Semester</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
+                    <label class="form-label" for="reg-email">Email Address</label>
+                    <input type="email" id="reg-email" name="email" class="form-control" placeholder="name@example.com" autocomplete="email" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="reg-password">Password</label>
+                    <input type="password" id="reg-password" name="password" class="form-control" autocomplete="new-password" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="reg-password-confirm">Confirm Password</label>
+                    <input type="password" id="reg-password-confirm" name="password_confirmation" class="form-control" autocomplete="new-password" required>
                 </div>
                 <button type="submit" class="btn btn-oc w-100">CREATE ACCOUNT</button>
             </form>
@@ -204,18 +231,18 @@
         <div class="auth-box">
             <div class="school-logo-placeholder">OC MOBO</div>
             <h2>Student Login</h2>
-            <form method="POST" action="{{ route('login') }}">
+            <form method="POST" action="{{ route('login.submit') }}">
                 @csrf
                 <div class="mb-3">
-                    <label class="form-label">Student ID Number</label>
-                    <input type="text" name="student_id" class="form-control" placeholder="XX-XXXXX" required>
+                    <label class="form-label" for="login-identifier">Student ID / Email</label>
+                    <input type="text" id="login-identifier" name="identifier" class="form-control" placeholder="Enter ID or Email" autocomplete="username" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
+                    <label class="form-label" for="login-password">Password</label>
+                    <input type="password" id="login-password" name="password" class="form-control" autocomplete="current-password" required>
                 </div>
                 <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" id="remember">
+                    <input type="checkbox" class="form-check-input" id="remember" name="remember" value="1">
                     <label class="form-check-label" for="remember">Remember me</label>
                 </div>
                 <button type="submit" class="btn btn-oc w-100">SIGN IN</button>

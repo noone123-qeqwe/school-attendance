@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Attendance;
 use App\Models\Subject;
+use App\Models\Setting;
 use App\Events\AttendanceClockedIn;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
 
@@ -18,7 +20,7 @@ class AttendanceController extends Controller
         $user = Auth::user();
 
         // Debug: Log user info and query
-        \Log::info('AttendanceController@index - User ID: ' . $user->id . ', Role: ' . $user->role);
+        Log::info('AttendanceController@index - User ID: ' . $user->id . ', Role: ' . $user->role);
         
         // Get all records with subject and excuse submission relationships, newest first
         $records = Attendance::with(['subject', 'excuseSubmission'])
@@ -28,7 +30,7 @@ class AttendanceController extends Controller
             ->get();
 
         // Debug: Log records count
-        \Log::info('AttendanceController@index - Records found: ' . $records->count());
+        Log::info('AttendanceController@index - Records found: ' . $records->count());
 
         return view('attendance.records', compact('records'));
     }
@@ -44,7 +46,6 @@ class AttendanceController extends Controller
 ]);
     $user = auth()->user();
     $now = now(); 
-    $todayName = strtoupper($now->format('D')); 
     $todayDate = $now->toDateString();
 
     $subject = Subject::with('schedules')->where('code', $request->subject_code)->first();
@@ -53,13 +54,13 @@ class AttendanceController extends Controller
         return redirect()->back()->with('error', 'Subject not found.');
     }
 
-    // SCHOOL LOCATION - Use consistent coordinates
-    $schoolLat = 12.316;  // Adjusted for phone GPS variation
-    $schoolLng = 123.673; // Adjusted for phone GPS variation
-    $radiusMeters = 100; // Increased radius to account for GPS accuracy
+    // SCHOOL LOCATION — Read dynamically from admin settings
+    $schoolLat    = (float) (Setting::where('key', 'gps_lat')->value('value') ?? 12.316);
+    $schoolLng    = (float) (Setting::where('key', 'gps_lng')->value('value') ?? 123.673);
+    $radiusMeters = (int)   (Setting::where('key', 'gps_radius')->value('value') ?? 100);
 
-    // GPS VALIDATION
-    if (!$request->latitude || !$request->longitude) {
+    // GPS VALIDATION — use is_null() so 0.0 is accepted
+    if (is_null($request->latitude) || is_null($request->longitude)) {
         return redirect()->back()->with('error', 'GPS location is required for clock-in.');
     }
 
@@ -102,14 +103,14 @@ if (!$scheduledDays->contains($todayFull)) {
         return redirect()->back()->with('error', 'Too early! You can only clock in 5 minutes before class.');
     }
 
+    // Guard Clause: Class Ended (check BEFORE lockout — more specific message)
+    if ($now->gt($endTime)) {
+        return redirect()->back()->with('error', 'This class session has already ended.');
+    }
+
     // Guard Clause: 20-Minute Lockout
     if ($now->gt($lockoutTime)) {
         return redirect()->back()->with('error', 'Attendance Closed. You cannot clock in after the 20-minute grace period.');
-    }
-
-    // Guard Clause: Class Ended
-    if ($now->gt($endTime)) {
-        return redirect()->back()->with('error', 'This class session has already ended.');
     }
 
     // 3. DETERMINE STATUS (Present vs Late)
