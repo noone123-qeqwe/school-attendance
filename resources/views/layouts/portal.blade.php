@@ -842,7 +842,7 @@
 
                     <div class="dropdown">
                         <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2">
-                            <img src="{{ Auth::user()->profile_image ? asset('storage/'.Auth::user()->profile_image) : asset('images/default-avatar.png') }}" class="header-profile-img">
+                            <img src="{{ Auth::user()->profile_image ? (str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=800000&color=fff&size=200' }}" class="header-profile-img">
                             <div class="d-none d-md-block text-start" style="line-height:1.2;">
                                 <div style="font-size:0.8rem;font-weight:600;color:#ffffff;">{{ Auth::user()->name }}</div>
                             </div>
@@ -851,7 +851,7 @@
                         <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2">
                             <!-- Profile summary (non-clickable, just info) -->
                             <div class="fb-profile-header" style="cursor:default;">
-                                <img src="{{ Auth::user()->profile_image ? asset('storage/'.Auth::user()->profile_image) : asset('images/default-avatar.png') }}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,225,170,0.9);">
+                                <img src="{{ Auth::user()->profile_image ? (str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=800000&color=fff&size=200' }}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,225,170,0.9);">
                                 <div>
                                     <div class="fw-bold" style="font-size:0.9rem;">{{ Auth::user()->name }}</div>
                                     <div style="font-size:0.75rem;color:#b39b82;">

@@ -44,3 +44,8 @@ revert_*.php
 send_*.php
 status_check.php
 students_debug.pdf
+migrate_*.php
+upload_to_cloudinary.php
+cloudinary_mapping.json
+isrg-root-x1.pem
+export_database.bat

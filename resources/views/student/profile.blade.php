@@ -171,7 +171,7 @@
             <input type="file" name="profile_image" id="profile_image_input" class="d-none" accept="image/*" onchange="this.form.submit()">
             <div class="avatar-wrap" onclick="document.getElementById('profile_image_input').click()">
                 @if(Auth::user()->profile_image)
-                    <img src="/storage/{{ Auth::user()->profile_image }}"
+                    <img src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}"
                          onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
                 @else
                     <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200">

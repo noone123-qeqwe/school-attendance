@@ -200,7 +200,7 @@
                              style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #fef3c7;box-shadow:0 4px 16px rgba(128,0,0,.12);cursor:pointer;position:relative;flex-shrink:0;transition:transform .3s;"
                              onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''">
                             @if(Auth::user()->profile_image)
-                                <img src="/storage/{{ Auth::user()->profile_image }}" style="width:100%;height:100%;object-fit:cover;"
+                                <img src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}" style="width:100%;height:100%;object-fit:cover;"
                                      onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
                             @else
                                 <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200" style="width:100%;height:100%;object-fit:cover;">
