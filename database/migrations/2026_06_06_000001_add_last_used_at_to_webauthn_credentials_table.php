@@ -10,7 +10,7 @@ return new class extends Migration
     {
         if (Schema::hasTable('webauthn_credentials') && !Schema::hasColumn('webauthn_credentials', 'last_used_at')) {
             Schema::table('webauthn_credentials', function (Blueprint $table) {
-                $table->timestamp('last_used_at')->nullable()->after('name');
+                $table->timestamp('last_used_at')->nullable();
             });
         }
     }
