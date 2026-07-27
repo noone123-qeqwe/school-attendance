@@ -509,7 +509,7 @@ class QrAttendanceController extends Controller
             'status'         => $r->status,
             'time'           => $r->time_in ? Carbon::parse($r->time_in)->format('h:i A') : '—',
             'avatar'         => $r->user && $r->user->profile_image
-                ? asset('storage/' . $r->user->profile_image)
+                ? (str_starts_with($r->user->profile_image, 'http') ? $r->user->profile_image : asset('storage/' . $r->user->profile_image))
                 : 'https://ui-avatars.com/api/?name=' . urlencode($r->user->name ?? 'S') . '&background=7c2d12&color=fff&size=80',
         ]);
 
@@ -1058,7 +1058,7 @@ class QrAttendanceController extends Controller
             'status'         => $r->status,
             'time'           => Carbon::parse($r->time_in)->format('h:i A'),
             'avatar'         => $r->user && $r->user->profile_image
-                ? asset('storage/' . $r->user->profile_image)
+                ? (str_starts_with($r->user->profile_image, 'http') ? $r->user->profile_image : asset('storage/' . $r->user->profile_image))
                 : 'https://ui-avatars.com/api/?name=' . urlencode($r->user->name ?? 'S'),
         ]);
 
