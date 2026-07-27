@@ -66,7 +66,7 @@ class DemoSeeder extends Seeder
         // Create Demo Students
         $students = [
             [
-                'name' => 'Requested Student',
+                'name' => 'Mark Angelo Santos',
                 'email' => 'student@example.com',
                 'student_number' => '2310843',
                 'course' => 'BSCS',

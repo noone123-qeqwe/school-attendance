@@ -218,7 +218,7 @@
                     <tr>
                         <td data-label="Student">
                             <div class="student-name" style="display: flex; align-items: center; gap: 10px;">
-                                <img src="{{ $student->profile_image ? asset('storage/'.$student->profile_image) : asset('images/default-avatar.png') }}" 
+                                <img src="{{ $student->profile_image ? asset('storage/'.$student->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}" 
                                      style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(207,164,111,0.24);">
                                 <div class="student-meta">
                                     <div style="font-weight: 600; color: #f3e7cd;">{{ $student->name }}</div>

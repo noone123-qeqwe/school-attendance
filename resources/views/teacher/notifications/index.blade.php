@@ -165,7 +165,7 @@
                     <tr style="{{ $notification->archived_at ? 'opacity: 0.6;' : '' }}">
                         <td data-label="Student">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <img src="{{ $notification->user->profile_image ? asset('storage/'.$notification->user->profile_image) : asset('images/default-avatar.png') }}" 
+                                <img src="{{ $notification->user->profile_image ? asset('storage/'.$notification->user->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($notification->user->name).'&background=800000&color=fff' }}" 
                                      style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #f1f5f9;">
                                 <div>
                                     <div style="font-weight: 600; color: #1e293b;">{{ $notification->user->name }}</div>
