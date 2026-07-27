@@ -116,10 +116,10 @@
             padding: 56px 20px 48px;
         }
 
-        /* â”€â”€ GLASS CARD â”€â”€ */
+        /* ── GLASS CARD ── */
         .glass-card {
             width: 100%; 
-            max-width: 400px;
+            max-width: 500px;
             min-width: 320px; /* Minimum width for mobile */
             background: rgba(30, 21, 21, 0.75);
             backdrop-filter: blur(24px) saturate(180%);
