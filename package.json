@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "start": "node server.js",
-    "build": "echo 'Build completed'"
+    "build": "vite build"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

@@ -4,6 +4,8 @@ services:
     name: attendance-system
     env: php
     buildCommand: |
+      npm install
+      npm run build
       composer install --optimize-autoloader --no-dev
       php artisan config:cache
       php artisan route:cache  

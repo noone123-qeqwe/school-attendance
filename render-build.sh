@@ -2,6 +2,11 @@
 
 echo "🏗️ Building Smart Classroom Attendance System for Render..."
 
+# Install Node dependencies and build assets
+echo "📦 Installing Node dependencies and building assets..."
+npm install
+npm run build
+
 # Install Composer dependencies
 echo "📦 Installing PHP dependencies..."
 composer install --optimize-autoloader --no-dev --no-interaction
