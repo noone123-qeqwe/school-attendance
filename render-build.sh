@@ -26,4 +26,8 @@ php artisan storage:link
 echo "🔒 Setting permissions..."
 chmod -R 755 storage bootstrap/cache
 
+# Run database migrations
+echo "🗄️ Running database migrations..."
+php artisan migrate --force
+
 echo "✅ Build completed successfully!"
