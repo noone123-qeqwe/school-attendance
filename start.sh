@@ -1,27 +1,26 @@
 #!/bin/sh
 
-# Default PORT to 10000 if not set (Render default)
+echo "Starting Smart Classroom Attendance System..."
+
+# Default PORT (Render assigns this)
 export PORT=${PORT:-10000}
 
-echo "Starting application on port $PORT..."
+# Create storage directories if missing
+mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views
+chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
-# Create storage link if it doesn't exist
+# Create storage link
 php artisan storage:link 2>/dev/null || true
 
+# Run database migrations
+echo "Running migrations..."
+php artisan migrate --force 2>&1 || echo "Migration warning (may be OK if tables exist)"
+
 # Cache configuration
+echo "Caching configuration..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Run database migrations
-php artisan migrate --force
-
-# Replace PORT variable in nginx config
-envsubst '${PORT}' < /etc/nginx/http.d/default.conf > /etc/nginx/http.d/default.conf.tmp
-mv /etc/nginx/http.d/default.conf.tmp /etc/nginx/http.d/default.conf
-
-# Start PHP-FPM
-php-fpm -D
-
-# Start Nginx in foreground so Docker container doesn't exit
-nginx -g "daemon off;"
+echo "Starting web server on port $PORT..."
+php artisan serve --host=0.0.0.0 --port=$PORT
