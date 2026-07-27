@@ -88,7 +88,7 @@
                     <tr>
                         <td data-label="Student">
                             <div style="display: flex; align-items: center; gap: 10px;">
-                                <img src="{{ $record->user->profile_image ? asset('storage/'.$record->user->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name).'&background=800000&color=fff' }}" 
+                                <img src="{{ $record->user->profile_image ? (str_starts_with($record->user->profile_image, 'http') ? $record->user->profile_image : asset('storage/'.$record->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name).'&background=800000&color=fff' }}" 
                                      style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid #f1f5f9;">
                                 <div>
                                     <div style="font-weight: 600; color: #1e293b;">{{ $record->user->name }}</div>

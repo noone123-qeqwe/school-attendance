@@ -169,7 +169,7 @@
         <input type="file" name="profile_image" id="adminProfileImg" class="d-none" accept="image/*" onchange="this.form.submit()">
         <div class="adm-profile-avatar" onclick="document.getElementById('adminProfileImg').click()">
             @if($user->profile_image)
-                <img src="/storage/{{ $user->profile_image }}"
+                <img src="{{ str_starts_with($user->profile_image, 'http') ? $user->profile_image : '/storage/'.$user->profile_image }}"
                      onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=800000&color=fff&size=200'">
             @else
                 <img src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=800000&color=fff&size=200">

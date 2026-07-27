@@ -79,7 +79,7 @@
                     @if($excuseSubmission->comments->count() > 0)
                         @foreach($excuseSubmission->comments as $comment)
                             <div style="display: flex; gap: 12px; {{ $comment->user_id === Auth::id() ? 'flex-direction: row-reverse;' : '' }}">
-                                <img src="{{ $comment->user->profile_image ? asset('storage/' . $comment->user->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($comment->user->name).'&background=800000&color=fff' }}"
+                                <img src="{{ $comment->user->profile_image ? (str_starts_with($comment->user->profile_image, 'http') ? $comment->user->profile_image : asset('storage/'.$comment->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($comment->user->name).'&background=800000&color=fff' }}"
                                      class="rounded-circle" style="width: 36px; height: 36px;">
                                 <div style="max-width: 75%; background: {{ $comment->user_id === Auth::id() ? 'rgba(207,164,111,0.15)' : 'rgba(255,255,255,0.05)' }}; padding: 12px 16px; border-radius: 12px; border: 1px solid {{ $comment->user_id === Auth::id() ? 'rgba(207,164,111,0.3)' : 'rgba(255,255,255,0.1)' }};">
                                     <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; gap: 12px;">

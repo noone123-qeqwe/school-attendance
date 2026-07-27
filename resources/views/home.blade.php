@@ -76,39 +76,45 @@
 <div class="container-fluid" style="max-width: 1200px;">
 
     @if(session('error'))
-    <div class="fade-up" style="background: rgba(220,38,38,0.16); border: 1px solid rgba(220,38,38,0.3); color: #fee2e2; border-radius: 16px; padding: 14px 18px; font-size: 0.88rem; margin-bottom: 20px; display:flex;align-items:center;gap:10px;">
-        <i class="bi bi-exclamation-circle-fill fs-5"></i>
-        <span>{{ session('error') }}</span>
+    <div class="premium-alert danger anim-slide-up">
+        <div class="alert-icon-wrap" style="width: 36px; height: 36px; font-size: 1rem;">
+            <i class="bi bi-exclamation-circle-fill text-white"></i>
+        </div>
+        <div style="flex:1;">
+            <span style="font-size: 0.95rem; font-weight: 600; color: #fee2e2;">{{ session('error') }}</span>
+        </div>
     </div>
     @endif
 
     <!-- ACTIVE WARNINGS BANNER -->
     @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-    <div class="fade-up" style="background: linear-gradient(135deg, rgba(220,38,38,0.95) 0%, rgba(153,27,27,0.98) 100%); border-radius: 20px; padding: 22px 26px; color: white; margin-bottom: 24px; position: relative; overflow: hidden; box-shadow: 0 16px 48px rgba(220,38,38,0.28); border: 1px solid rgba(255,255,255,0.15);">
-        <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 5rem; opacity: 0.08; pointer-events: none;">⚠️</div>
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px; position: relative; z-index: 1;">
-            <div style="width: 46px; height: 46px; background: rgba(255,255,255,0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">🚨</div>
+    <div class="glass-panel anim-slide-up" style="background: linear-gradient(135deg, rgba(220,38,38,0.15) 0%, rgba(153,27,27,0.05) 100%); border-color: rgba(239,68,68,0.3); padding: 24px; margin-bottom: 24px; position: relative;">
+        <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 5rem; opacity: 0.05; pointer-events: none;">⚠️</div>
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <div class="alert-icon-wrap" style="background: rgba(239,68,68,0.25);">
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
+            </div>
             <div>
-                <div style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.3px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">Action Required: Attendance Warning</div>
-                <div style="font-size: 0.88rem; opacity: 0.95; margin-top: 2px;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #fca5a5;">Action Required: Attendance Warning</div>
+                <div style="font-size: 0.88rem; color: #e7dcc8;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
             </div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 10px; position: relative; z-index: 1;">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
             @foreach($activeWarnings as $warning)
-            <div style="background: rgba(0,0,0,0.25); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <div style="background: rgba(0,0,0,0.2); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(239,68,68,0.15);">
                 <div style="font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: #fca5a5;"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $warning->subject_code }}</span>
                     <span style="opacity: 0.6; font-size: 0.75rem; font-weight: 600;">{{ $warning->created_at->diffForHumans() }}</span>
                 </div>
-                <div style="font-size: 0.85rem; opacity: 0.9; line-height: 1.4;">{{ $warning->message }}</div>
+                <div style="font-size: 0.85rem; color: #e7dcc8; line-height: 1.4;">{{ $warning->message }}</div>
             </div>
             @endforeach
         </div>
-        <div style="margin-top: 18px; display: flex; gap: 12px; position: relative; z-index: 1;">
-            <a href="{{ route('excuses') }}" style="background: white; color: #991b1b; padding: 10px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.2)'" onmouseout="this.style.transform=''; this.style.boxShadow=''">
+        <div style="margin-top: 18px; display: flex; gap: 12px;">
+            <a href="{{ route('excuses') }}" class="premium-btn" style="background: linear-gradient(135deg, #dc2626, #991b1b); border-color: rgba(220,38,38,0.5);">
                 <i class="bi bi-file-text-fill"></i> Submit Excuse
             </a>
-            <a href="{{ route('attendance.records') }}" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+            <a href="{{ route('attendance.records') }}" class="premium-btn" style="background: rgba(255,255,255,0.05);">
                 View Records
             </a>
         </div>
@@ -132,39 +138,43 @@
 
     <!-- HOLIDAY NOTIFICATION -->
     @if($todayHoliday)
-    <div class="fade-up fade-up-2" style="background: linear-gradient(135deg, rgba(220,38,38,0.95) 0%, rgba(190,18,60,0.95) 100%); border-radius: 18px; padding: 20px 24px; color: white; margin-bottom: 20px; position: relative; overflow: hidden; box-shadow: 0 14px 44px rgba(190,18,60,0.3);">
+    <div class="glass-panel anim-slide-up" style="background: linear-gradient(135deg, rgba(220,38,38,0.15) 0%, rgba(190,18,60,0.05) 100%); border-color: rgba(220,38,38,0.2); padding: 24px; margin-bottom: 24px; position: relative;">
         <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 3.5rem; opacity: 0.1;">🎉</div>
-        <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 8px;">
-            <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.16); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">🏖️</div>
+        <div class="d-flex align-items-center gap-3 mb-2">
+            <div class="alert-icon-wrap" style="background: rgba(239,68,68,0.15);">
+                <span class="fs-4">🏖️</span>
+            </div>
             <div>
-                <div style="font-size: 1.05rem; font-weight: 700;">{{ $todayHoliday->name }}</div>
-                <div style="font-size: 0.82rem; opacity: 0.9;">{{ $todayHoliday->type_label }} • {{ $todayHoliday->date->format('F j, Y') }}</div>
+                <div style="font-size: 1.15rem; font-weight: 800; color: #fca5a5;">{{ $todayHoliday->name }}</div>
+                <div style="font-size: 0.82rem; color: #e7dcc8;">{{ $todayHoliday->type_label }} &bull; {{ $todayHoliday->date->format('F j, Y') }}</div>
             </div>
         </div>
         @if($todayHoliday->description)
-        <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 4px;">{{ $todayHoliday->description }}</div>
+        <div style="font-size: 0.85rem; color: #e7dcc8; margin-top: 8px;">{{ $todayHoliday->description }}</div>
         @endif
-        <div style="background: rgba(255,255,255,0.12); padding: 8px 14px; border-radius: 10px; margin-top: 12px; font-size: 0.82rem; font-weight: 600;">
-            <i class="bi bi-info-circle me-2"></i>No classes today — Enjoy your holiday! 🎊
+        <div style="background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: 12px; margin-top: 16px; font-size: 0.85rem; font-weight: 600; color: #f3e7cd;">
+            <i class="bi bi-info-circle me-2" style="color: #4ade80;"></i>No classes today — Enjoy your holiday! 🎊
         </div>
     </div>
     @endif
 
     <!-- UPCOMING HOLIDAYS -->
     @if($upcomingHolidays->count() > 0)
-    <div class="fade-up fade-up-2" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px 20px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-            <div style="width: 30px; height: 30px; background: rgba(248,113,113,0.16); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">📅</div>
-            <div style="font-size: 0.88rem; font-weight: 700; color: #f8e7d3;">Upcoming Holidays</div>
+    <div class="glass-panel anim-slide-up" style="padding: 20px 24px; margin-bottom: 24px;">
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <div class="tch-card-icon" style="background: rgba(248,113,113,0.15); color: #f87171; width: 36px; height: 36px; font-size: 1rem;">
+                <i class="bi bi-calendar-event-fill"></i>
+            </div>
+            <div style="font-size: 1rem; font-weight: 700; color: #f3e7cd;">Upcoming Holidays</div>
         </div>
         <div style="display: flex; flex-direction: column; gap: 8px;">
             @foreach($upcomingHolidays as $holiday)
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: rgba(255,255,255,0.04); border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
+            <div class="class-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 12px; background: rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);">
                 <div>
-                    <div style="font-size: 0.85rem; font-weight: 600; color: #f8e7d3;">{{ $holiday->name }}</div>
-                    <div style="font-size: 0.72rem; color: rgba(245,234,215,0.55);">{{ $holiday->type_label }}</div>
+                    <div style="font-size: 0.9rem; font-weight: 700; color: #f3e7cd;">{{ $holiday->name }}</div>
+                    <div style="font-size: 0.75rem; color: #b39b82;">{{ $holiday->type_label }}</div>
                 </div>
-                <div style="font-size: 0.78rem; font-weight: 700; color: {{ $holiday->type_color }};">
+                <div style="font-size: 0.85rem; font-weight: 800; color: {{ $holiday->type_color }}; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 8px;">
                     {{ $holiday->date->format('M j') }}
                 </div>
             </div>
@@ -174,56 +184,76 @@
     @endif
 
     <!-- STATS ROW -->
-    <div class="stats-row">
-        <div class="stat-card fade-up fade-up-2">
-            <div class="stat-icon-wrap" style="background: rgba(34,197,94,0.14); color: #4ade80;">
-                <i class="bi bi-check-circle-fill"></i>
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="glass-panel stat-card-premium anim-slide-up delay-1">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #4ade80; opacity: 0.8;"></div>
+                <i class="bi bi-check-circle-fill stat-icon-floating" style="color: #4ade80;"></i>
+                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,74,0.05)); color: #4ade80; border: 1px solid rgba(34,197,94,0.2);">
+                    <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val-premium" data-count="{{ $totalPresent }}">0</div>
+                    <div class="tch-stat-lbl">Present (All-time)</div>
+                </div>
             </div>
-            <div class="stat-label">Present</div>
-            <div class="stat-value" data-count="{{ $totalPresent }}">0</div>
-            <div class="stat-sub">All-time records</div>
         </div>
-        <div class="stat-card fade-up fade-up-3">
-            <div class="stat-icon-wrap" style="background: rgba(245,158,11,0.14); color: #fbbf24;">
-                <i class="bi bi-clock-fill"></i>
+        <div class="col-6 col-xl-3">
+            <div class="glass-panel stat-card-premium anim-slide-up delay-2">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #fbbf24; opacity: 0.8;"></div>
+                <i class="bi bi-clock-fill stat-icon-floating" style="color: #fbbf24;"></i>
+                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.05)); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2);">
+                    <i class="bi bi-clock-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val-premium" data-count="{{ $totalLate }}">0</div>
+                    <div class="tch-stat-lbl">Late (All-time)</div>
+                </div>
             </div>
-            <div class="stat-label">Late</div>
-            <div class="stat-value" data-count="{{ $totalLate }}">0</div>
-            <div class="stat-sub">All-time records</div>
         </div>
-        <div class="stat-card fade-up fade-up-4">
-            <div class="stat-icon-wrap" style="background: rgba(239,68,68,0.14); color: #f87171;">
-                <i class="bi bi-x-circle-fill"></i>
+        <div class="col-6 col-xl-3">
+            <div class="glass-panel stat-card-premium anim-slide-up delay-3">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #f87171; opacity: 0.8;"></div>
+                <i class="bi bi-x-circle-fill stat-icon-floating" style="color: #f87171;"></i>
+                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.05)); color: #f87171; border: 1px solid rgba(239,68,68,0.2);">
+                    <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val-premium" data-count="{{ $totalAbsent }}">0</div>
+                    <div class="tch-stat-lbl">Absent (All-time)</div>
+                </div>
             </div>
-            <div class="stat-label">Absent</div>
-            <div class="stat-value" data-count="{{ $totalAbsent }}">0</div>
-            <div class="stat-sub">All-time records</div>
         </div>
-        <div class="stat-card fade-up fade-up-5">
-            <div class="stat-icon-wrap" style="background: rgba(216,179,92,0.14); color: var(--gold);">
-                <i class="bi bi-book-fill"></i>
+        <div class="col-6 col-xl-3">
+            <div class="glass-panel stat-card-premium anim-slide-up delay-3">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #cfa46f; opacity: 0.8;"></div>
+                <i class="bi bi-book-fill stat-icon-floating" style="color: #cfa46f;"></i>
+                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(207,164,111,0.15), rgba(143,110,74,0.05)); color: #cfa46f; border: 1px solid rgba(207,164,111,0.2);">
+                    <i class="bi bi-book-fill"></i>
+                </div>
+                <div>
+                    <div class="stat-val-premium" data-count="{{ isset($subjects) ? count($subjects) : 0 }}">0</div>
+                    <div class="tch-stat-lbl">Subjects Enrolled</div>
+                </div>
             </div>
-            <div class="stat-label">Subjects</div>
-            <div class="stat-value" data-count="{{ isset($subjects) ? count($subjects) : 0 }}">0</div>
-            <div class="stat-sub">Enrolled this semester</div>
         </div>
     </div>
 
     <!-- STREAK + QUICK ACTIONS ROW -->
-    <div class="fade-up fade-up-5" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+    <div class="anim-slide-up delay-3" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
         <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-            <div style="font-size: 0.82rem; font-weight: 600; color: rgba(245,234,215,0.55);">
-                <span style="color: {{ $attendanceRate >= 75 ? '#4ade80' : '#f87171' }}; font-weight: 800;">{{ $attendanceRate }}%</span> attendance rate
+            <div style="font-size: 0.95rem; font-weight: 600; color: rgba(245,234,215,0.75);">
+                Overall Rate: <span style="color: {{ $attendanceRate >= 75 ? '#4ade80' : '#f87171' }}; font-weight: 800; font-size: 1.1rem;">{{ $attendanceRate }}%</span>
             </div>
         </div>
-        <div class="quick-actions" style="margin-bottom: 0;">
-            <a href="{{ route('student.classes') }}" class="qa-btn">
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <a href="{{ route('student.classes') }}" class="premium-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; font-size: 0.85rem;">
                 <i class="bi bi-calendar-week"></i> My Schedule
             </a>
-            <a href="{{ route('excuses') }}" class="qa-btn">
+            <a href="{{ route('excuses') }}" class="premium-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; font-size: 0.85rem;">
                 <i class="bi bi-file-text"></i> Excuses
             </a>
-            <a href="{{ route('attendance.records') }}" class="qa-btn">
+            <a href="{{ route('attendance.records') }}" class="premium-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; font-size: 0.85rem;">
                 <i class="bi bi-list-check"></i> All Records
             </a>
         </div>
@@ -233,7 +263,7 @@
     <div class="bento-grid">
 
         <!-- TODAY'S SCHEDULE -->
-        <div class="bento-item bento-item--schedule fade-up fade-up-5">
+        <div class="bento-item bento-item--schedule glass-panel anim-slide-up delay-2">
             <div class="section-header">
                 <div class="section-icon" style="background: rgba(216,179,92,0.14); color: var(--gold);">
                     <i class="bi bi-clock-history"></i>
@@ -274,7 +304,7 @@
         </div>
 
         <!-- ATTENDANCE CALENDAR -->
-        <div class="bento-item bento-item--calendar fade-up fade-up-5">
+        <div class="bento-item bento-item--calendar glass-panel anim-slide-up delay-3">
             <div class="section-header">
                 <div class="section-icon" style="background: rgba(37,99,235,0.14); color: #60a5fa;">
                     <i class="bi bi-calendar3"></i>
@@ -368,7 +398,7 @@
         </div>
 
         <!-- RECENT ATTENDANCE + DONUT -->
-        <div class="bento-item bento-item--recent fade-up fade-up-6">
+        <div class="bento-item bento-item--recent glass-panel anim-slide-up delay-3">
             <!-- Donut Chart -->
             @if($totalRecords > 0)
             <div style="margin-bottom: 22px;">

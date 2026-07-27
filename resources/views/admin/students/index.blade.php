@@ -78,7 +78,7 @@
                     <td><input type="checkbox" style="accent-color:var(--saas-primary);"></td>
                     <td>
                         <div style="display:flex;align-items:center;gap:12px;">
-                            <img src="{{ $student->profile_image ? asset('storage/'.$student->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=900000&color=fff' }}"
+                            <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=900000&color=fff' }}"
                                  style="width:36px;height:36px;border-radius:var(--saas-radius-sm);object-fit:cover;border:1px solid var(--saas-border);">
                             <div>
                                 <div style="font-weight:600;font-size:0.875rem;">{{ $student->name }}</div>

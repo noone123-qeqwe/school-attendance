@@ -112,7 +112,7 @@
                     <td data-label="#" style="color:#d4b5a0;font-size:.78rem;">{{ $i + 1 }}</td>
                     <td data-label="Student">
                         <div style="display:flex;align-items:center;gap:10px;">
-                            <img src="{{ $record->user && $record->user->profile_image ? asset('storage/'.$record->user->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'N').'&background=800000&color=fff&size=80' }}"
+                            <img src="{{ $record->user && $record->user->profile_image ? (str_starts_with($record->user->profile_image, 'http') ? $record->user->profile_image : asset('storage/'.$record->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'N').'&background=800000&color=fff&size=80' }}"
                                  style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #f1f5f9;">
                             <div style="font-weight:600;color:#f5e6d3;font-size:.875rem;">{{ $record->user->name ?? '—' }}</div>
                         </div>

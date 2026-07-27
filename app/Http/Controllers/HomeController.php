@@ -367,8 +367,8 @@ class HomeController extends Controller
         // Handle file uploads
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('excuse_attachments', 'public');
-                $attachmentPaths[] = $path;
+                $uploadedFileUrl = cloudinary()->upload($file->getRealPath())->getSecurePath();
+                $attachmentPaths[] = $uploadedFileUrl;
             }
         }
 

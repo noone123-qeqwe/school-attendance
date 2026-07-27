@@ -11,7 +11,7 @@
 <!-- Profile header -->
 <div class="adm-card" style="margin-bottom:20px;">
     <div style="padding:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-        <img src="{{ $student->profile_image ? asset('storage/'.$student->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=200' }}"
+        <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=200' }}"
              style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid #fef3c7;box-shadow:0 4px 16px rgba(128,0,0,.12);">
         <div style="flex:1;">
             <div class="student-name">{{ $student->name }}</div>

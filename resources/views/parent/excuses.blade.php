@@ -67,7 +67,7 @@
                             </td>
                             <td>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <img src="{{ $excuse->user->profile_image ? asset('storage/' . $excuse->user->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}"
+                                    <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : asset('storage/'.$excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}"
                                          class="rounded-circle" style="width: 24px; height: 24px;">
                                     <span style="color: #e7dcc8; font-weight: 600; font-size: 0.85rem;">{{ $excuse->user->name }}</span>
                                 </div>

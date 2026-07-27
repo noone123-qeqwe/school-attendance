@@ -959,8 +959,8 @@ class AdminController extends Controller
     {
         $request->validate(['profile_image'=>'required|image|mimes:jpeg,png,jpg|max:2048']);
         if ($request->hasFile('profile_image')) {
-            $path = $request->file('profile_image')->store('profile_images','public');
-            Auth::user()->update(['profile_image' => $path]);
+            $uploadedFileUrl = cloudinary()->upload($request->file('profile_image')->getRealPath())->getSecurePath();
+            Auth::user()->update(['profile_image' => $uploadedFileUrl]);
         }
         return back()->with('success', 'Profile photo updated!');
     }

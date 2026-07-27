@@ -10,7 +10,7 @@
 
     {{-- Header --}}
     <div class="d-flex align-items-center gap-3 mb-4">
-        <img src="{{ $child->profile_image ? asset('storage/' . $child->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($child->name).'&background=800000&color=fff' }}"
+        <img src="{{ $child->profile_image ? (str_starts_with($child->profile_image, 'http') ? $child->profile_image : asset('storage/'.$child->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($child->name).'&background=800000&color=fff' }}"
              alt="{{ $child->name }}" class="rounded-circle"
              style="width: 52px; height: 52px; object-fit: cover; border: 2px solid rgba(207,164,111,0.4);">
         <div>

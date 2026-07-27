@@ -26,7 +26,7 @@
     <div style="padding: 20px 22px;">
         <div class="row">
             <div class="col-md-2">
-                <img src="{{ $student->profile_image ? asset('storage/'.$student->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}" 
+                <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}" 
                      style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f1f5f9;">
             </div>
             <div class="col-md-5">

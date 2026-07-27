@@ -3,7 +3,7 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px;">
+<div class="anim-slide-up" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px;">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Command Center</h1>
         <p class="saas-text-muted" style="margin:0;">Overview of academic and attendance operations.</p>
@@ -20,7 +20,7 @@
 </div>
 
 <!-- Primary KPIs -->
-<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:24px;">
+<div class="anim-slide-up delay-1" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:24px;">
     
     <div class="saas-card">
         <div class="saas-card-body" style="display:flex; align-items:center; gap:16px;">
@@ -73,7 +73,7 @@
 </div>
 
 <!-- Secondary Stats Row (Attendance Focus) -->
-<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:24px;">
+<div class="anim-slide-up delay-2" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:24px;">
     
     <div class="saas-card">
         <div class="saas-card-body">
@@ -145,7 +145,7 @@
 </div>
 
 <!-- Charts & Tables Row -->
-<div style="display:grid; grid-template-columns:1fr; gap:24px; margin-bottom:24px;">
+<div class="anim-slide-up delay-3" style="display:grid; grid-template-columns:1fr; gap:24px; margin-bottom:24px;">
     
     <!-- Weekly Attendance Chart -->
     <div class="saas-card">
@@ -159,7 +159,7 @@
     
 </div>
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
+<div class="anim-slide-up delay-3" style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
     
     <!-- Live Sessions -->
     <div class="saas-card">
@@ -223,7 +223,7 @@
                     <tr>
                         <td>
                             <div style="display:flex;align-items:center;gap:10px;">
-                                <img src="{{ $student->profile_image ? asset('storage/'.$student->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}"
+                                <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}"
                                      style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
                                 <div style="font-weight:500;font-size:0.8rem;">{{ $student->name }}</div>
                             </div>

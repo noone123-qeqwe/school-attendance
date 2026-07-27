@@ -157,11 +157,11 @@ public function updateImage(Request $request)
 
         if ($request->hasFile('profile_image')) {
 
-            $path = $request->file('profile_image')->store('profile_images', 'public');
+            $uploadedFileUrl = cloudinary()->upload($request->file('profile_image')->getRealPath())->getSecurePath();
 
             /** @var \App\Models\User $user */
             $user = auth()->user();
-            $user->profile_image = $path;
+            $user->profile_image = $uploadedFileUrl;
             $user->save();
         }
 

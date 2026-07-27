@@ -118,7 +118,7 @@
         <div class="adm-card-head child-card-header">
             <div class="d-flex align-items-center gap-3">
                 <div class="profile-img-container">
-                    <img src="{{ $data->child->profile_image ? asset('storage/' . $data->child->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($data->child->name).'&background=800000&color=fff' }}"
+                    <img src="{{ $data->child->profile_image ? (str_starts_with($data->child->profile_image, 'http') ? $data->child->profile_image : asset('storage/'.$data->child->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($data->child->name).'&background=800000&color=fff' }}"
                          alt="{{ $data->child->name }}" class="rounded-circle child-avatar">
                 </div>
                 <div>

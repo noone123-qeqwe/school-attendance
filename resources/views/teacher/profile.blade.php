@@ -133,7 +133,7 @@
         <input type="file" name="profile_image" id="teacherProfileImg" class="d-none" accept="image/*" onchange="this.form.submit()">
         <div class="tch-profile-avatar" onclick="document.getElementById('teacherProfileImg').click()">
                 @if($teacher->profile_image)
-                    <img src="/storage/{{ $teacher->profile_image }}"
+                    <img src="{{ str_starts_with($teacher->profile_image, 'http') ? $teacher->profile_image : '/storage/'.$teacher->profile_image }}"
                          onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}&background=7c2d12&color=fff&size=200'">
                 @else
                     <img src="https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}&background=7c2d12&color=fff&size=200">

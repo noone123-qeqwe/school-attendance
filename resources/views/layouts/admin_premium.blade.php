@@ -188,7 +188,7 @@
                 
                 <div class="dropdown">
                     <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2" style="padding-left:16px;border-left:1px solid var(--saas-border);">
-                        <img src="{{ auth()->user()->profile_image ? asset('storage/'.auth()->user()->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->name).'&background=900000&color=fff' }}" 
+                        <img src="{{ auth()->user()->profile_image ? (str_starts_with(auth()->user()->profile_image, 'http') ? auth()->user()->profile_image : asset('storage/'.auth()->user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->name).'&background=900000&color=fff' }}" 
                              alt="Profile" style="width:36px;height:36px;border-radius:var(--saas-radius-sm);object-fit:cover;border:1px solid var(--saas-border);">
                         <div class="d-none d-md-block text-start" style="line-height:1.2;">
                             <div style="font-size:0.8rem;font-weight:600;color:var(--saas-text-primary);">{{ auth()->user()->name }}</div>
@@ -198,7 +198,7 @@
                     
                     <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2" style="position: absolute;">
                         <div class="fb-profile-header" style="cursor:default;">
-                            <img src="{{ auth()->user()->profile_image ? asset('storage/'.auth()->user()->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->name).'&background=900000&color=fff' }}" 
+                            <img src="{{ auth()->user()->profile_image ? (str_starts_with(auth()->user()->profile_image, 'http') ? auth()->user()->profile_image : asset('storage/'.auth()->user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->name).'&background=900000&color=fff' }}" 
                                  style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,225,170,0.9);">
                             <div>
                                 <div class="fw-bold" style="font-size:0.9rem;">{{ auth()->user()->name }}</div>

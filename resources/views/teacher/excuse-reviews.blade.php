@@ -393,7 +393,7 @@
                     <tr data-excuse-id="{{ $excuse->id }}">
                         <td data-label="Student">
                             <div class="student-info">
-                                <img src="{{ $excuse->user->profile_image ? asset('storage/'.$excuse->user->profile_image) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}" 
+                                <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : asset('storage/'.$excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}" 
                                      class="student-avatar" alt="Student avatar">
                                 <div class="student-meta">
                                     <div class="name">{{ $excuse->user->name }}</div>
@@ -611,7 +611,7 @@ function viewExcuse(excuseId) {
                             <div>
                                 <h6 style="font-weight: 600; color: #f8fafc; margin-bottom: 8px;">Student</h6>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <img src="${excuse.user.profile_image ? '/storage/' + excuse.user.profile_image : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(excuse.user.name) + '&background=800000&color=fff'}" 
+                                    <img src="${excuse.user.profile_image ? (excuse.user.profile_image.startsWith('http') ? excuse.user.profile_image : '/storage/' + excuse.user.profile_image) : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(excuse.user.name) + '&background=800000&color=fff'}" 
                                          style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                                     <div>
                                         <div style="font-weight: 600;">${excuse.user.name}</div>
