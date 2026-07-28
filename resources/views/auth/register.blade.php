@@ -711,9 +711,21 @@
 
             fetch('{{ route("otp.register.send") }}', {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                headers: { 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ email: email })
-            }).then(r => r.json()).then(data => {
+            }).then(async r => {
+                const isJson = r.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await r.json() : null;
+                if (!r.ok) {
+                    const errorMsg = data && data.message ? data.message : 'Server error ' + r.status;
+                    throw new Error(errorMsg);
+                }
+                return data;
+            }).then(data => {
                 btn.disabled = false; btn.innerHTML = originalBtnHtml;
                 if (data.success) {
                     document.getElementById('display-email').textContent = email;
@@ -723,9 +735,10 @@
                 } else {
                     showAlert(data.message || 'Failed to send OTP.');
                 }
-            }).catch(() => {
+            }).catch((err) => {
                 btn.disabled = false; btn.innerHTML = originalBtnHtml;
-                showAlert("Network error. Please try again.");
+                console.error('OTP send error:', err);
+                showAlert(err.message || "Network error. Please try again.");
             });
         }
 
@@ -741,9 +754,21 @@
 
             fetch('{{ route("otp.register.verify") }}', {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+                headers: { 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
                 body: JSON.stringify({ email: email, otp: otp })
-            }).then(r => r.json()).then(data => {
+            }).then(async r => {
+                const isJson = r.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await r.json() : null;
+                if (!r.ok) {
+                    const errorMsg = data && data.message ? data.message : 'Server error ' + r.status;
+                    throw new Error(errorMsg);
+                }
+                return data;
+            }).then(data => {
                 if (data.success) {
                     document.getElementById('hidden_otp').value = otp;
                     clearInterval(timerInterval);
@@ -758,9 +783,10 @@
                     btn.disabled = false; btn.innerHTML = originalBtnHtml;
                     showAlert(data.message || 'Invalid OTP.');
                 }
-            }).catch(() => {
+            }).catch((err) => {
                 btn.disabled = false; btn.innerHTML = originalBtnHtml;
-                showAlert("Network error. Please try again.");
+                console.error('OTP verify error:', err);
+                showAlert(err.message || "Network error. Please try again.");
             });
         }
 
