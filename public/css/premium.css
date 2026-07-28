@@ -716,6 +716,8 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
 .cal-day.has-records { cursor: pointer; }
 .cal-day.has-records:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.12); }
 .cal-day.empty { background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.02); }
+.cal-day.no-class { background: repeating-linear-gradient(45deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01) 5px, rgba(255,255,255,0.03) 5px, rgba(255,255,255,0.03) 10px); cursor: not-allowed; }
+.cal-day.future { opacity: 0.5; cursor: default; }
 .cal-day.today .cal-day-num { background: var(--gold); color: #2d0708; }
 .cal-day-num {
     color: #f8e7d3; font-weight: 700; font-size: 0.78rem;
@@ -724,7 +726,7 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
     border-radius: 8px; background: rgba(255,255,255,0.04);
 }
 .cal-dots { display: flex; align-items: center; gap: 3px; justify-content: center; margin-bottom: 2px; }
-.cal-dot { width: 6px; height: 6px; border-radius: 50%; }
+.cal-dot { width: 8px; height: 8px; border-radius: 50%; }
 .cal-dot.present { background: #16a34a; }
 .cal-dot.late { background: #d97706; }
 .cal-dot.absent { background: #dc2626; }

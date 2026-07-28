@@ -312,6 +312,19 @@
             color: #fca5a5; border-radius: 10px; padding: 9px 13px;
             font-size: 0.8rem; margin-bottom: 12px;
         }
+        
+        /* Inline Validation */
+        .is-invalid {
+            border: 1px solid rgba(220,38,38,0.5) !important;
+            background: rgba(220,38,38,0.05) !important;
+        }
+        .invalid-feedback-custom {
+            color: #fca5a5;
+            font-size: 0.75rem;
+            margin-top: 4px;
+            padding-left: 12px;
+            animation: fadeIn 0.3s ease;
+        }
 
         /* Hidden fingerprint section by default */
         #fingerprintSection { display: none; }
@@ -427,11 +440,14 @@
             <div class="glass-input-wrap anim-fade-up anim-d4">
                 <i class="bi bi-person-fill g-icon"></i>
                 <input type="text" name="identifier" id="idInput"
-                       class="glass-input"
-                       placeholder="Student ID (7 digits) or Email"
+                       class="glass-input @error('identifier') is-invalid @enderror"
+                       placeholder="Student ID (7 characters) or Email"
                        required autocomplete="username"
                        value="{{ old('identifier') }}">
             </div>
+            @error('identifier')
+                <div class="invalid-feedback-custom anim-fade-up anim-d4">{{ $message }}</div>
+            @enderror
 
             <!-- Fingerprint (student only, WebAuthn supported) -->
             <div id="fingerprintSection">
@@ -452,12 +468,15 @@
             <div class="glass-input-wrap mb-3 anim-fade-up anim-d5">
                 <i class="bi bi-lock-fill g-icon"></i>
                 <input type="password" name="password" id="loginPassword"
-                       class="glass-input has-eye"
+                       class="glass-input has-eye @error('password') is-invalid @enderror"
                        placeholder="Password" required autocomplete="current-password">
                 <button type="button" class="eye-toggle" onclick="toggleEye('loginPassword',this)" tabindex="-1">
                     <i class="bi bi-eye-slash"></i>
                 </button>
             </div>
+            @error('password')
+                <div class="invalid-feedback-custom anim-fade-up anim-d5" style="margin-top:-10px;margin-bottom:12px;">{{ $message }}</div>
+            @enderror
 
             <button type="submit" class="glass-btn glass-btn-primary anim-fade-up anim-d6" id="loginSubmitBtn">
                 <i class="bi bi-box-arrow-in-right me-2"></i>SIGN IN
@@ -468,7 +487,7 @@
             @csrf
             <div class="glass-input-wrap anim-fade-up anim-d4">
                 <i class="bi bi-person-fill g-icon"></i>
-                <input type="text" name="student_number" class="glass-input" placeholder="Student ID (7 digits)" required autocomplete="username">
+                <input type="text" name="student_number" class="glass-input" placeholder="Student ID (7 characters)" required autocomplete="username">
             </div>
             <div class="glass-input-wrap mb-3 anim-fade-up anim-d5">
                 <i class="bi bi-key-fill g-icon"></i>

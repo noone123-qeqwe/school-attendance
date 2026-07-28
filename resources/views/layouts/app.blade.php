@@ -121,9 +121,9 @@
                             </span>
                             @endif
                         </div>
-                        <div class="dropdown-menu dropdown-menu-end mt-2" style="width:340px;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 20px 60px rgba(0,0,0,0.12);padding:0;overflow:hidden;">
-                            <div style="padding:14px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
-                                <span style="font-size:.9rem;font-weight:700;color:#1e293b;">Notifications</span>
+                        <div class="dropdown-menu dropdown-menu-end mt-2" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
+                            <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+                                <span style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
                                 <div style="display:flex;align-items:center;gap:10px;">
                                     @if($unreadCount > 0)
                                     <span style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">{{ $unreadCount }} new</span>
@@ -143,15 +143,15 @@
                                     @if($todayNotifs->count() > 0)
                                     <div class="notif-group-label">Today</div>
                                     @foreach($todayNotifs as $notif)
-                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid #f8fafc;background:{{ $notif->is_read ? 'white' : '#fffbeb' }};transition:all .2s;">
+                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : 'rgba(212, 175, 55, 0.08)' }};transition:all .2s;">
                                         <div style="display:flex;gap:10px;align-items:flex-start;">
                                             <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-                                                {{ $notif->type === 'warning_3' ? 'background:#fef2f2;color:#dc2626;' : ($notif->type === 'custom' ? 'background:#eff6ff;color:#2563eb;' : 'background:#fffbeb;color:#d97706;') }}">
+                                                {{ $notif->type === 'warning_3' ? 'background:rgba(239, 68, 68, 0.15);color:#f87171;' : ($notif->type === 'custom' ? 'background:rgba(59, 130, 246, 0.15);color:#60a5fa;' : 'background:rgba(245, 158, 11, 0.15);color:#fbbf24;') }}">
                                                 <i class="bi {{ $notif->type === 'warning_3' ? 'bi-exclamation-octagon-fill' : ($notif->type === 'custom' ? 'bi-info-circle-fill' : 'bi-exclamation-triangle-fill') }}"></i>
                                             </div>
                                             <div style="flex:1;min-width:0;">
-                                                <div style="font-size:.82rem;color:#1e293b;line-height:1.4;">{{ $notif->message }}</div>
-                                                <div style="font-size:.72rem;color:#94a3b8;margin-top:4px;">{{ $notif->created_at->diffForHumans() }}</div>
+                                                <div style="font-size:.82rem;color:#f3e7cd;line-height:1.4;">{{ $notif->message }}</div>
+                                                <div style="font-size:.72rem;color:rgba(255,255,255,0.5);margin-top:4px;">{{ $notif->created_at->diffForHumans() }}</div>
                                             </div>
                                             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
                                                 @if(!$notif->is_read)
@@ -169,15 +169,15 @@
                                     @if($olderNotifs->count() > 0)
                                     <div class="notif-group-label">Earlier</div>
                                     @foreach($olderNotifs as $notif)
-                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid #f8fafc;background:{{ $notif->is_read ? 'white' : '#fffbeb' }};transition:all .2s;">
+                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : 'rgba(212, 175, 55, 0.08)' }};transition:all .2s;">
                                         <div style="display:flex;gap:10px;align-items:flex-start;">
                                             <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-                                                {{ $notif->type === 'warning_3' ? 'background:#fef2f2;color:#dc2626;' : ($notif->type === 'custom' ? 'background:#eff6ff;color:#2563eb;' : 'background:#fffbeb;color:#d97706;') }}">
+                                                {{ $notif->type === 'warning_3' ? 'background:rgba(239, 68, 68, 0.15);color:#f87171;' : ($notif->type === 'custom' ? 'background:rgba(59, 130, 246, 0.15);color:#60a5fa;' : 'background:rgba(245, 158, 11, 0.15);color:#fbbf24;') }}">
                                                 <i class="bi {{ $notif->type === 'warning_3' ? 'bi-exclamation-octagon-fill' : ($notif->type === 'custom' ? 'bi-info-circle-fill' : 'bi-exclamation-triangle-fill') }}"></i>
                                             </div>
                                             <div style="flex:1;min-width:0;">
-                                                <div style="font-size:.82rem;color:#1e293b;line-height:1.4;">{{ $notif->message }}</div>
-                                                <div style="font-size:.72rem;color:#94a3b8;margin-top:4px;">{{ $notif->created_at->diffForHumans() }}</div>
+                                                <div style="font-size:.82rem;color:#f3e7cd;line-height:1.4;">{{ $notif->message }}</div>
+                                                <div style="font-size:.72rem;color:rgba(255,255,255,0.5);margin-top:4px;">{{ $notif->created_at->diffForHumans() }}</div>
                                             </div>
                                             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
                                                 @if(!$notif->is_read)
@@ -213,8 +213,11 @@
                     </a>
                     @endif
                     <div class="dropdown">
+                        @php
+                            $profileImageUrl = Auth::user()->profile_image ? (str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=800000&color=fff&size=200';
+                        @endphp
                         <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2">
-                            <img src="{{ Auth::user()->profile_image ? (str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=800000&color=fff&size=200' }}" class="header-profile-img">
+                            <img src="{{ $profileImageUrl }}" class="header-profile-img">
                             <div class="d-none d-md-block text-start" style="line-height:1.2;">
                                 <div style="font-size:0.8rem;font-weight:600;color:#ffffff;">{{ Auth::user()->name }}</div>
                             </div>
@@ -223,7 +226,7 @@
                         <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2">
                             <!-- Profile summary (non-clickable, just info) -->
                             <div class="fb-profile-header" style="cursor:default;">
-                                <img src="{{ Auth::user()->profile_image ? (str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=800000&color=fff&size=200' }}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
+                                <img src="{{ $profileImageUrl }}" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
                                 <div>
                                     <div class="fw-bold" style="font-size:0.9rem;">{{ Auth::user()->name }}</div>
                                     <div style="font-size:0.75rem;color:#94a3b8;">{{ Auth::user()->student_number }}</div>
@@ -278,7 +281,7 @@
             const container = document.getElementById('toastContainer');
             if (!container) return;
             const iconMap = { warning_3: 'bi-exclamation-octagon-fill', warning_2: 'bi-exclamation-triangle-fill', custom: 'bi-info-circle-fill', success: 'bi-check-circle-fill' };
-            const colorMap = { warning_3: 'background:#fef2f2;color:#dc2626;', warning_2: 'background:#fffbeb;color:#d97706;', custom: 'background:#eff6ff;color:#2563eb;', success: 'background:rgba(34,197,94,0.16);color:#4ade80;' };
+            const colorMap = { warning_3: 'background:rgba(239,68,68,0.15);color:#f87171;', warning_2: 'background:rgba(245,158,11,0.15);color:#fbbf24;', custom: 'background:rgba(59,130,246,0.15);color:#60a5fa;', success: 'background:rgba(34,197,94,0.16);color:#4ade80;' };
             const toast = document.createElement('div');
             toast.className = 'toast-item';
             toast.innerHTML = '<div class="toast-icon" style="' + (colorMap[type] || colorMap.custom) + '"><i class="bi ' + (iconMap[type] || 'bi-bell-fill') + '"></i></div><div style="flex:1;min-width:0;">' + message + '</div>';

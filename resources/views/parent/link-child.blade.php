@@ -10,7 +10,7 @@
     <div class="adm-card" style="padding: 32px;">
         <div id="step1">
             <h4 style="color: #f3e7cd; margin-bottom: 16px;">Step 1: Enter Student ID</h4>
-            <p style="color: #8f826f; margin-bottom: 24px;">Please enter your child's 7-digit Student ID. We will send a one-time password (OTP) to their registered school email address for verification.</p>
+            <p style="color: #8f826f; margin-bottom: 24px;">Please enter your child's 7-character Student ID. We will send a one-time password (OTP) to their registered school email address for verification.</p>
             
             <div class="mb-3">
                 <label style="color: #cfa46f; font-weight: 600; font-size: 0.85rem; text-transform: uppercase;">Student ID</label>
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
     btnSendOtp.addEventListener('click', async () => {
         const studentNumber = document.getElementById('student_number').value;
         if(studentNumber.length !== 7) {
-            showStatus('Please enter a valid 7-digit student ID.', true);
+            showStatus('Please enter a valid 7-character student ID.', true);
             return;
         }
 

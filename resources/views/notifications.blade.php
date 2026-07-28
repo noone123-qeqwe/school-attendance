@@ -45,16 +45,19 @@
         margin-bottom: 8px;
     }
     .type-warning_2 {
-        background: #fffbeb;
-        color: #d97706;
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
     }
     .type-warning_3 {
-        background: #fef2f2;
-        color: #dc2626;
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
     }
     .type-custom {
-        background: #f0f9ff;
-        color: #0369a1;
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.3);
     }
     .notification-message {
         font-size: 0.9rem;

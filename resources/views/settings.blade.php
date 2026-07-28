@@ -283,7 +283,7 @@
                             <input type="email" name="new_email" class="si" placeholder="newemail@example.com" style="margin-bottom:14px;" required>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="cancelEmailOtp()" class="cancel-btn">Cancel</button>
-                                <button type="submit" class="sbtn" style="flex:1;" onclick="collectEmailOtp()"><i class="bi bi-check2 me-2"></i>Change Email</button>
+                                <button type="button" class="sbtn" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2 me-2"></i>Change Email</button>
                             </div>
                         </form>
                     </div>
@@ -327,7 +327,7 @@
                             </div>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="cancelOtp()" class="cancel-btn">Cancel</button>
-                                <button type="submit" class="sbtn" style="flex:1;" onclick="collectOtp()"><i class="bi bi-check2 me-2"></i>Change Password</button>
+                                <button type="button" class="sbtn" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2 me-2"></i>Change Password</button>
                             </div>
                         </form>
                     </div>
@@ -690,8 +690,13 @@ sDigits.forEach((input, idx) => {
     });
 });
 
-function collectOtp() {
+function collectOtp(btn) {
     document.getElementById('settingsOtpHidden').value = Array.from(sDigits).map(d => d.value).join('');
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        btn.closest('form').submit();
+    }
 }
 
 function requestOtp() {
@@ -747,8 +752,13 @@ eDigits.forEach((input, idx) => {
     });
 });
 
-function collectEmailOtp() {
+function collectEmailOtp(btn) {
     document.getElementById('emailOtpHidden').value = Array.from(eDigits).map(d => d.value).join('');
+    if(btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        btn.closest('form').submit();
+    }
 }
 
 function requestEmailOtp() {

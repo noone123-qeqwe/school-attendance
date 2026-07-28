@@ -26,9 +26,9 @@
         --highlight: #cfa46f;
         --shadow: rgba(0,0,0,0.5);
         --bg: #0f0b08;
-        --sidebar-width: 220px;
-        --sidebar-mini: 64px;
-        --header-height: 64px;
+        --sidebar-width: 260px;
+        --sidebar-mini: 76px;
+        --header-height: 72px;
     }
 
     * { box-sizing: border-box; }
@@ -560,9 +560,12 @@
         /* Header adjustments */
         .header-page-title { font-size: .82rem; }
         .header-page-sub { display: none; }
+        .top-header { height: 56px; }
+        --header-height: 56px;
 
-        /* Content padding */
-        .main-content > .p-4 { padding: 12px !important; }
+        /* Content padding — extra bottom for bottom nav */
+        .main-content > .p-4 { padding: 12px 12px 88px !important; }
+        .container-fluid { padding-left: 12px !important; padding-right: 12px !important; }
 
         /* Cards stack properly */
         .row.g-3 > [class*="col-md"] { margin-bottom: 0; }
@@ -635,9 +638,8 @@
         }
         .sidebar-overlay.show { opacity: 1; visibility: visible; }
 
-        /* Content pages */
-        .main-content > .p-4 { padding: 14px !important; }
-        .container-fluid { padding-left: 14px !important; padding-right: 14px !important; }
+        /* Content pages — leave space for bottom nav */
+        .main-content > .p-4 { padding: 14px 14px 88px !important; }
 
         /* Attendance records table → cards on mobile */
         .att-table { display: none !important; }
@@ -671,7 +673,7 @@
     }
 
     @media (max-width: 480px) {
-        .main-content > .p-4 { padding: 10px !important; }
+        .main-content > .p-4 { padding: 10px 10px 88px !important; }
         .hero-title { font-size: 1rem !important; }
         .stat-value { font-size: 1.3rem !important; }
         .stat-card { padding: 12px !important; }
@@ -746,6 +748,204 @@
 
         form[style*="flex-wrap"] > div[style*="flex-direction"] > label {
             margin-bottom: 6px !important;
+        }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       MOBILE BOTTOM NAVIGATION BAR
+       Native app-style tab bar — hidden on desktop, shown on mobile
+    ═══════════════════════════════════════════════════════════ */
+    .mobile-bottom-nav {
+        display: none; /* hidden on desktop */
+    }
+    @media (max-width: 768px) {
+        .mobile-bottom-nav {
+            display: flex;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            height: 68px;
+            background: rgba(15, 8, 5, 0.96);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 225, 145, 0.12);
+            z-index: 1300;
+            padding: 0;
+            align-items: stretch;
+            box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+        }
+        .mobile-bottom-nav .mbn-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: rgba(255,255,255,0.45);
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            padding: 8px 4px;
+            position: relative;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+        .mobile-bottom-nav .mbn-item:active {
+            transform: scale(0.92);
+        }
+        .mobile-bottom-nav .mbn-item i {
+            font-size: 1.25rem;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s;
+        }
+        .mobile-bottom-nav .mbn-item.active {
+            color: #cfa46f;
+        }
+        .mobile-bottom-nav .mbn-item.active i {
+            transform: scale(1.12);
+            color: #cfa46f;
+        }
+        .mobile-bottom-nav .mbn-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 20%; right: 20%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #cfa46f, transparent);
+            border-radius: 0 0 4px 4px;
+        }
+        .mobile-bottom-nav .mbn-badge {
+            position: absolute;
+            top: 6px;
+            right: calc(50% - 18px);
+            width: 16px; height: 16px;
+            background: #dc2626;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.55rem;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            border: 2px solid rgba(15,8,5,0.96);
+        }
+
+        /* Mobile-specific dashboard grid utility */
+        .mobile-stat-grid {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+        }
+        .mobile-stat-card {
+            background: rgba(255,235,190,0.05);
+            border: 1px solid rgba(255,215,145,0.12);
+            border-radius: 16px;
+            padding: 14px;
+        }
+        .mobile-stat-icon {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            background: rgba(207,164,111,0.15);
+            color: #cfa46f;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .mobile-stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #8f826f;
+            margin-bottom: 4px;
+        }
+        .mobile-stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            line-height: 1;
+            color: #f3e7cd;
+        }
+        .mobile-stat-diff {
+            font-size: 0.72rem;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        /* Mobile dashboard header strip */
+        .mobile-dash-header {
+            background: linear-gradient(135deg, rgba(207,164,111,0.1) 0%, rgba(128,0,0,0.05) 100%);
+            border: 1px solid rgba(207,164,111,0.15);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .mobile-dash-title {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #f3e7cd;
+            line-height: 1.2;
+        }
+        .mobile-dash-subtitle {
+            font-size: 0.72rem;
+            color: #8f826f;
+            margin-top: 3px;
+        }
+        .mobile-dash-date {
+            text-align: right;
+            font-size: 0.7rem;
+            color: #b39b82;
+            font-weight: 600;
+        }
+
+        /* Hide the heavy desktop-only dashboard headers */
+        .desktop-dash-header { display: none !important; }
+
+        /* Make all 2-col desktop grids stack properly */
+        [style*="grid-template-columns:1fr 1fr"],
+        [style*="grid-template-columns: 1fr 1fr"] {
+            grid-template-columns: 1fr !important;
+        }
+
+        /* Fix auto-fit grids on mobile */
+        [style*="minmax(200px"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+
+        /* Quick action bars on mobile */
+        .mobile-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .mobile-quick-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 14px 10px;
+            border-radius: 14px;
+            background: rgba(255,235,190,0.05);
+            border: 1px solid rgba(255,215,145,0.12);
+            color: #f3e7cd;
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .mobile-quick-action-btn i { font-size: 1.3rem; color: #cfa46f; }
+        .mobile-quick-action-btn:active { transform: scale(0.96); }
+
+        /* Table card mobile */
+        .mobile-table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
         }
     }
     </style>
@@ -896,6 +1096,13 @@
             </div>
         </main>
     </div>
+
+    @auth
+    {{-- ═══ MOBILE BOTTOM NAVIGATION BAR ═══ --}}
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        @yield('mobile-bottom-nav')
+    </nav>
+    @endauth
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 

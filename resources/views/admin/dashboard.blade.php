@@ -3,12 +3,26 @@
 @section('title', 'Admin Dashboard')
 
 @section('content')
-<div class="anim-slide-up" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px;">
+
+{{-- ─── MOBILE DASHBOARD HEADER (visible only on mobile) ─── --}}
+<div class="mobile-dash-header d-md-none anim-slide-up">
+    <div>
+        <div class="mobile-dash-title">Command Center</div>
+        <div class="mobile-dash-subtitle">Attendance & Academic Overview</div>
+    </div>
+    <div class="mobile-dash-date">
+        <div style="font-size:1.1rem;font-weight:800;color:#cfa46f;">{{ now()->format('d') }}</div>
+        <div>{{ now()->format('M Y') }}</div>
+        <div>{{ now()->format('D') }}</div>
+    </div>
+</div>
+
+{{-- ─── DESKTOP HEADER (hidden on mobile) ─── --}}
+<div class="desktop-dash-header anim-slide-up" style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:24px;">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Command Center</h1>
         <p class="saas-text-muted" style="margin:0;">Overview of academic and attendance operations.</p>
     </div>
-    
     <div style="display:flex; gap:12px;">
         <button class="saas-btn saas-btn-secondary">
             <i class="bi bi-calendar"></i> Today: {{ now()->format('M d, Y') }}
@@ -19,156 +33,153 @@
     </div>
 </div>
 
-<!-- Primary KPIs -->
-<div class="anim-slide-up delay-1" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:24px;">
-    
+{{-- ─── PRIMARY KPIs ─── --}}
+<div class="anim-slide-up delay-1" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:16px;">
+
     <div class="saas-card">
-        <div class="saas-card-body" style="display:flex; align-items:center; gap:16px;">
-            <div style="width:48px;height:48px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+        <div class="saas-card-body" style="display:flex; align-items:center; gap:14px; padding:16px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
                 <i class="bi bi-people-fill"></i>
             </div>
             <div>
-                <div class="saas-text-muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Total Students</div>
-                <div class="saas-heading" style="font-size:1.75rem;line-height:1;">{{ number_format($totalStudents) }}</div>
+                <div class="saas-text-muted" style="font-size:0.7rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Total Students</div>
+                <div class="saas-heading" style="font-size:1.6rem;line-height:1;">{{ number_format($totalStudents) }}</div>
             </div>
         </div>
     </div>
-    
+
     <div class="saas-card">
-        <div class="saas-card-body" style="display:flex; align-items:center; gap:16px;">
-            <div style="width:48px;height:48px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+        <div class="saas-card-body" style="display:flex; align-items:center; gap:14px; padding:16px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
                 <i class="bi bi-person-workspace"></i>
             </div>
             <div>
-                <div class="saas-text-muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Instructors</div>
-                <div class="saas-heading" style="font-size:1.75rem;line-height:1;">{{ number_format($totalTeachers) }}</div>
+                <div class="saas-text-muted" style="font-size:0.7rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Instructors</div>
+                <div class="saas-heading" style="font-size:1.6rem;line-height:1;">{{ number_format($totalTeachers) }}</div>
             </div>
         </div>
     </div>
 
     <div class="saas-card">
-        <div class="saas-card-body" style="display:flex; align-items:center; gap:16px;">
-            <div style="width:48px;height:48px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+        <div class="saas-card-body" style="display:flex; align-items:center; gap:14px; padding:16px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
                 <i class="bi bi-building"></i>
             </div>
             <div>
-                <div class="saas-text-muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Departments</div>
-                <div class="saas-heading" style="font-size:1.75rem;line-height:1;">{{ number_format($totalDepartments) }}</div>
+                <div class="saas-text-muted" style="font-size:0.7rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Departments</div>
+                <div class="saas-heading" style="font-size:1.6rem;line-height:1;">{{ number_format($totalDepartments) }}</div>
             </div>
         </div>
     </div>
 
     <div class="saas-card">
-        <div class="saas-card-body" style="display:flex; align-items:center; gap:16px;">
-            <div style="width:48px;height:48px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.5rem;">
+        <div class="saas-card-body" style="display:flex; align-items:center; gap:14px; padding:16px;">
+            <div style="width:44px;height:44px;border-radius:12px;background:rgba(207,164,111,0.15);color:var(--saas-gold);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">
                 <i class="bi bi-diagram-3"></i>
             </div>
             <div>
-                <div class="saas-text-muted" style="font-size:0.75rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Sections</div>
-                <div class="saas-heading" style="font-size:1.75rem;line-height:1;">{{ number_format($totalSections) }}</div>
+                <div class="saas-text-muted" style="font-size:0.7rem;text-transform:uppercase;font-weight:600;letter-spacing:0.05em;">Sections</div>
+                <div class="saas-heading" style="font-size:1.6rem;line-height:1;">{{ number_format($totalSections) }}</div>
             </div>
         </div>
     </div>
 
 </div>
 
-<!-- Secondary Stats Row (Attendance Focus) -->
-<div class="anim-slide-up delay-2" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:20px; margin-bottom:24px;">
-    
+{{-- ─── ATTENDANCE STATS ROW ─── --}}
+<div class="anim-slide-up delay-2" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:16px;">
+
     <div class="saas-card">
-        <div class="saas-card-body">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <div class="saas-text-muted" style="font-weight:500;">Present Today</div>
-                <span class="saas-badge saas-badge-success"><i class="bi bi-check2-circle" style="margin-right:4px;"></i> Good</span>
+        <div class="saas-card-body" style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div class="saas-text-muted" style="font-weight:600;font-size:0.82rem;">Present Today</div>
+                <span class="saas-badge saas-badge-success"><i class="bi bi-check2-circle" style="margin-right:3px;"></i>Good</span>
             </div>
-            <div style="display:flex;align-items:baseline;gap:12px;">
-                <div class="saas-heading" style="font-size:2rem;line-height:1;color:var(--saas-success);">{{ number_format($totalPresent) }}</div>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+                <div class="saas-heading" style="font-size:1.8rem;line-height:1;color:var(--saas-success);">{{ number_format($totalPresent) }}</div>
                 @php $presentDiff = $totalPresent - $yesterdayPresent; @endphp
-                <div style="font-size:0.8rem;color:{{ $presentDiff >= 0 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">
-                    {{ $presentDiff > 0 ? '↑' : ($presentDiff < 0 ? '↓' : '→') }} {{ abs($presentDiff) }} vs yesterday
+                <div style="font-size:0.78rem;color:{{ $presentDiff >= 0 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">
+                    {{ $presentDiff > 0 ? '↑' : ($presentDiff < 0 ? '↓' : '→') }} {{ abs($presentDiff) }} vs yday
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="saas-card">
-        <div class="saas-card-body">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <div class="saas-text-muted" style="font-weight:500;">Late Today</div>
-                <span class="saas-badge saas-badge-warning"><i class="bi bi-exclamation-triangle" style="margin-right:4px;"></i> Notice</span>
+        <div class="saas-card-body" style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div class="saas-text-muted" style="font-weight:600;font-size:0.82rem;">Late Today</div>
+                <span class="saas-badge saas-badge-warning"><i class="bi bi-exclamation-triangle" style="margin-right:3px;"></i>Notice</span>
             </div>
-            <div style="display:flex;align-items:baseline;gap:12px;">
-                <div class="saas-heading" style="font-size:2rem;line-height:1;color:var(--saas-warning);">{{ number_format($totalLate) }}</div>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+                <div class="saas-heading" style="font-size:1.8rem;line-height:1;color:var(--saas-warning);">{{ number_format($totalLate) }}</div>
                 @php $lateDiff = $totalLate - $yesterdayLate; @endphp
-                <div style="font-size:0.8rem;color:{{ $lateDiff <= 0 ? 'var(--saas-success)' : 'var(--saas-warning)' }};">
-                    {{ $lateDiff > 0 ? '↑' : ($lateDiff < 0 ? '↓' : '→') }} {{ abs($lateDiff) }} vs yesterday
+                <div style="font-size:0.78rem;color:{{ $lateDiff <= 0 ? 'var(--saas-success)' : 'var(--saas-warning)' }};">
+                    {{ $lateDiff > 0 ? '↑' : ($lateDiff < 0 ? '↓' : '→') }} {{ abs($lateDiff) }} vs yday
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="saas-card">
-        <div class="saas-card-body">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <div class="saas-text-muted" style="font-weight:500;">Absent Today</div>
-                <span class="saas-badge saas-badge-danger"><i class="bi bi-x-circle" style="margin-right:4px;"></i> Critical</span>
+        <div class="saas-card-body" style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div class="saas-text-muted" style="font-weight:600;font-size:0.82rem;">Absent Today</div>
+                <span class="saas-badge saas-badge-danger"><i class="bi bi-x-circle" style="margin-right:3px;"></i>Critical</span>
             </div>
-            <div style="display:flex;align-items:baseline;gap:12px;">
-                <div class="saas-heading" style="font-size:2rem;line-height:1;color:var(--saas-danger);">{{ number_format($totalAbsent) }}</div>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+                <div class="saas-heading" style="font-size:1.8rem;line-height:1;color:var(--saas-danger);">{{ number_format($totalAbsent) }}</div>
                 @php $absentDiff = $totalAbsent - $yesterdayAbsent; @endphp
-                <div style="font-size:0.8rem;color:{{ $absentDiff <= 0 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">
-                    {{ $absentDiff > 0 ? '↑' : ($absentDiff < 0 ? '↓' : '→') }} {{ abs($absentDiff) }} vs yesterday
+                <div style="font-size:0.78rem;color:{{ $absentDiff <= 0 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">
+                    {{ $absentDiff > 0 ? '↑' : ($absentDiff < 0 ? '↓' : '→') }} {{ abs($absentDiff) }} vs yday
                 </div>
             </div>
         </div>
     </div>
-    
+
     <div class="saas-card" style="border-color:{{ $attendanceRate >= 80 ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)' }};">
-        <div class="saas-card-body">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <div class="saas-text-muted" style="font-weight:500;">Overall Attendance Rate</div>
+        <div class="saas-card-body" style="padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div class="saas-text-muted" style="font-weight:600;font-size:0.82rem;">Overall Rate</div>
             </div>
-            <div style="display:flex;align-items:baseline;gap:12px;">
-                <div class="saas-heading" style="font-size:2rem;line-height:1;color:{{ $attendanceRate >= 80 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">{{ $attendanceRate }}%</div>
+            <div style="display:flex;align-items:baseline;gap:10px;">
+                <div class="saas-heading" style="font-size:1.8rem;line-height:1;color:{{ $attendanceRate >= 80 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">{{ $attendanceRate }}%</div>
                 @php $rateDiff = $attendanceRate - $yesterdayRate; @endphp
-                <div style="font-size:0.8rem;color:{{ $rateDiff >= 0 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">
-                    {{ $rateDiff > 0 ? '↑' : ($rateDiff < 0 ? '↓' : '→') }} {{ abs($rateDiff) }}% vs yesterday
+                <div style="font-size:0.78rem;color:{{ $rateDiff >= 0 ? 'var(--saas-success)' : 'var(--saas-danger)' }};">
+                    {{ $rateDiff > 0 ? '↑' : ($rateDiff < 0 ? '↓' : '→') }} {{ abs($rateDiff) }}% vs yday
                 </div>
             </div>
-            <!-- mini progress bar -->
-            <div style="height:4px;width:100%;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:12px;overflow:hidden;">
-                <div style="height:100%;width:{{ $attendanceRate }}%;background:{{ $attendanceRate >= 80 ? 'var(--saas-success)' : 'var(--saas-danger)' }};border-radius:2px;"></div>
+            <div style="height:4px;width:100%;background:rgba(255,255,255,0.1);border-radius:2px;margin-top:10px;overflow:hidden;">
+                <div style="height:100%;width:{{ $attendanceRate }}%;background:{{ $attendanceRate >= 80 ? 'var(--saas-success)' : 'var(--saas-danger)' }};border-radius:2px;transition:width 1s ease;"></div>
             </div>
         </div>
     </div>
 
 </div>
 
-<!-- Charts & Tables Row -->
-<div class="anim-slide-up delay-3" style="display:grid; grid-template-columns:1fr; gap:24px; margin-bottom:24px;">
-    
-    <!-- Weekly Attendance Chart -->
+{{-- ─── WEEKLY CHART ─── --}}
+<div class="anim-slide-up delay-3" style="margin-bottom:16px;">
     <div class="saas-card">
         <div class="saas-card-header">
             <div class="saas-heading saas-heading-sm">Weekly Attendance Trend</div>
         </div>
         <div class="saas-card-body">
-            <div id="weeklyChart" style="min-height:300px;"></div>
+            <div id="weeklyChart" style="min-height:260px;"></div>
         </div>
     </div>
-    
 </div>
 
-<div class="anim-slide-up delay-3" style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px;">
-    
-    <!-- Live Sessions -->
-    <div class="saas-card">
+{{-- ─── LIVE SESSIONS + AT-RISK (side by side on desktop, stacked on mobile) ─── --}}
+<div class="anim-slide-up delay-3" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+
+    {{-- Live Sessions --}}
+    <div class="saas-card" style="min-width:0;">
         <div class="saas-card-header">
             <div class="saas-heading saas-heading-sm">Live QR Sessions ({{ $activeSessionCount }})</div>
             <a href="#" class="saas-btn saas-btn-secondary" style="padding:4px 10px;font-size:0.75rem;">View All</a>
         </div>
-        <div class="saas-table-container" style="border:none;border-radius:0;">
-            <table class="saas-table">
+        <div class="mobile-table-scroll">
+            <table class="saas-table" style="min-width:320px;">
                 <thead>
                     <tr>
                         <th>Subject & Teacher</th>
@@ -180,10 +191,10 @@
                     @forelse($activeSessions->take(5) as $session)
                     <tr>
                         <td>
-                            <div style="font-weight:500;">{{ $session->subject?->name ?? $session->subject_code }}</div>
-                            <div class="saas-text-muted" style="font-size:0.75rem;">{{ $session->creator?->name ?? 'Unknown' }}</div>
+                            <div style="font-weight:500;font-size:0.82rem;">{{ $session->subject?->name ?? $session->subject_code }}</div>
+                            <div class="saas-text-muted" style="font-size:0.72rem;">{{ $session->creator?->name ?? 'Unknown' }}</div>
                         </td>
-                        <td><span class="saas-badge saas-badge-default">{{ $session->checked_in_count }} students</span></td>
+                        <td><span class="saas-badge saas-badge-default">{{ $session->checked_in_count }}</span></td>
                         <td>
                             <span class="saas-badge {{ strtolower($session->qr_status) == 'active' ? 'saas-badge-success' : 'saas-badge-warning' }}">
                                 {{ $session->qr_status }}
@@ -192,8 +203,8 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="3" style="text-align:center;padding:30px;">
-                            <div class="saas-text-muted">No active sessions at the moment.</div>
+                        <td colspan="3" style="text-align:center;padding:24px;">
+                            <div class="saas-text-muted" style="font-size:0.82rem;">No active sessions.</div>
                         </td>
                     </tr>
                     @endforelse
@@ -201,47 +212,47 @@
             </table>
         </div>
     </div>
-    
-    <!-- At Risk Students -->
-    <div class="saas-card">
+
+    {{-- At-Risk Students --}}
+    <div class="saas-card" style="min-width:0;">
         <div class="saas-card-header">
             <div class="saas-heading saas-heading-sm">At-Risk Students</div>
             <a href="{{ route('admin.students') }}" class="saas-btn saas-btn-secondary" style="padding:4px 10px;font-size:0.75rem;">View All</a>
         </div>
-        <div class="saas-table-container" style="border:none;border-radius:0;">
-            <table class="saas-table">
+        <div class="mobile-table-scroll">
+            <table class="saas-table" style="min-width:300px;">
                 <thead>
                     <tr>
                         <th>Student</th>
                         <th>Course</th>
                         <th>Rate</th>
-                        <th>Action</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($atRiskStudents->take(5) as $student)
                     <tr>
                         <td>
-                            <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="display:flex;align-items:center;gap:8px;">
                                 <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}"
-                                     style="width:28px;height:28px;border-radius:50%;object-fit:cover;">
-                                <div style="font-weight:500;font-size:0.8rem;">{{ $student->name }}</div>
+                                     style="width:26px;height:26px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                                <div style="font-weight:500;font-size:0.78rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $student->name }}</div>
                             </div>
                         </td>
-                        <td><span style="font-size:0.8rem;">{{ $student->course }}</span></td>
+                        <td><span style="font-size:0.75rem;">{{ $student->course }}</span></td>
                         <td>
                             <span class="saas-badge {{ $student->attendance_rate >= 70 ? 'saas-badge-warning' : 'saas-badge-danger' }}">
                                 {{ $student->attendance_rate }}%
                             </span>
                         </td>
                         <td>
-                            <a href="{{ route('admin.student', $student->id) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px;font-size:0.7rem;">Review</a>
+                            <a href="{{ route('admin.student', $student->id) }}" class="saas-btn saas-btn-secondary" style="padding:3px 8px;font-size:0.68rem;">View</a>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4" style="text-align:center;padding:30px;">
-                            <div class="saas-text-muted">No students currently at risk.</div>
+                        <td colspan="4" style="text-align:center;padding:24px;">
+                            <div class="saas-text-muted" style="font-size:0.82rem;">No students at risk.</div>
                         </td>
                     </tr>
                     @endforelse
@@ -249,6 +260,22 @@
             </table>
         </div>
     </div>
+</div>
+
+{{-- Mobile quick actions (only visible on mobile) --}}
+<div class="d-md-none mobile-quick-actions anim-slide-up delay-3">
+    <a href="{{ route('admin.students') }}" class="mobile-quick-action-btn">
+        <i class="bi bi-people-fill"></i>Manage Students
+    </a>
+    <a href="{{ route('admin.attendance') }}" class="mobile-quick-action-btn">
+        <i class="bi bi-calendar-check-fill"></i>Attendance Logs
+    </a>
+    <a href="{{ route('admin.subjects') }}" class="mobile-quick-action-btn">
+        <i class="bi bi-book-fill"></i>Subjects
+    </a>
+    <a href="{{ route('admin.calendar') }}" class="mobile-quick-action-btn">
+        <i class="bi bi-calendar3-fill"></i>Calendar
+    </a>
 </div>
 
 @endsection
@@ -265,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ],
         chart: {
             type: 'bar',
-            height: 300,
+            height: 260,
             stacked: true,
             toolbar: { show: false },
             fontFamily: 'Inter, sans-serif'
@@ -275,17 +302,17 @@ document.addEventListener('DOMContentLoaded', function() {
             bar: {
                 borderRadius: 4,
                 horizontal: false,
-                columnWidth: '40%',
+                columnWidth: '45%',
             },
         },
         xaxis: {
             categories: {!! json_encode($weeklyLabels) !!},
             axisBorder: { show: false },
             axisTicks: { show: false },
-            labels: { style: { colors: '#8f826f', fontSize: '12px' } }
+            labels: { style: { colors: '#8f826f', fontSize: '11px' } }
         },
         yaxis: {
-            labels: { style: { colors: '#8f826f', fontSize: '12px' } }
+            labels: { style: { colors: '#8f826f', fontSize: '11px' } }
         },
         grid: {
             borderColor: 'rgba(255,255,255,0.05)',

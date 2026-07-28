@@ -1,9 +1,50 @@
 @extends('teacher.layout')
 @section('portal-title', 'Dashboard')
 
-@endpush
-
 @section('content')
+<style>
+    /* ── TEACHER DASHBOARD MOBILE ── */
+    @media (max-width: 768px) {
+        /* Compact quick action bar */
+        .teacher-quick-bar { display: none !important; }
+        .teacher-mobile-header { display: flex !important; }
+        .teacher-mobile-actions { display: grid !important; }
+
+        /* Stats row: 2x2 grid */
+        .row.g-4.mb-4 .col-6 { flex: 0 0 50%; max-width: 50%; }
+
+        /* Make today's classes + recent logs stack */
+        .col-lg-8, .col-lg-4 { width: 100% !important; flex: none !important; max-width: 100% !important; }
+
+        /* Reduce stat card padding */
+        .stat-card-premium { padding: 14px !important; min-height: 90px !important; }
+        .stat-val-premium { font-size: 1.5rem !important; }
+
+        /* Class schedule items compact */
+        .class-item { padding: 12px 14px !important; }
+
+        /* At-risk cards full width scroll */
+        .d-flex.gap-3.flex-wrap { overflow-x: auto !important; flex-wrap: nowrap !important; padding-bottom: 8px; }
+        .d-flex.gap-3.flex-wrap > div { min-width: 170px !important; flex-shrink: 0; }
+
+        /* Clock compact */
+        .clock-text { font-size: 1.6rem !important; }
+    }
+    .teacher-mobile-header { display: none; }
+    .teacher-mobile-actions { display: none; }
+</style>
+
+{{-- ─── MOBILE HEADER (hidden on desktop) ─── --}}
+<div class="teacher-mobile-header mobile-dash-header anim-slide-up">
+    <div>
+        <div class="mobile-dash-title">My Dashboard</div>
+        <div class="mobile-dash-subtitle">{{ now()->format('l, F j') }}</div>
+    </div>
+    <div style="text-align:right;">
+        <div id="teacherClockMobile" style="font-size:1rem;font-weight:800;color:#cfa46f;">{{ now()->format('h:i A') }}</div>
+        <div class="mobile-dash-date">Teacher Portal</div>
+    </div>
+</div>
 
 @if(isset($pendingExcuses) && $pendingExcuses > 0)
 <div class="premium-alert anim-slide-up">
@@ -24,8 +65,8 @@
 </div>
 @endif
 
-<!-- Quick Actions Bar -->
-<div class="glass-panel anim-slide-up delay-1" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; margin-bottom:28px; padding:28px 32px; background: linear-gradient(135deg, rgba(255, 245, 225, 0.05) 0%, rgba(207, 164, 111, 0.02) 100%);">
+{{-- ─── DESKTOP Quick Actions Bar (hidden on mobile) ─── --}}
+<div class="teacher-quick-bar glass-panel anim-slide-up delay-1" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px; margin-bottom:28px; padding:28px 32px; background: linear-gradient(135deg, rgba(255, 245, 225, 0.05) 0%, rgba(207, 164, 111, 0.02) 100%);">
     <div style="display: flex; align-items: center; gap: 24px;">
         <div style="width: 64px; height: 64px; border-radius: 18px; background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); display: flex; align-items: center; justify-content: center; color: #cfa46f; font-size: 2rem; box-shadow: 0 8px 24px rgba(0,0,0,0.2);">
             <i class="bi bi-clock-fill"></i>
@@ -78,6 +119,23 @@
         @endif
     </div>
 </div>
+
+{{-- ─── MOBILE Quick Actions Grid (hidden on desktop) ─── --}}
+<div class="teacher-mobile-actions mobile-quick-actions anim-slide-up delay-1">
+    <a href="{{ route('teacher.reports.pdf') }}" target="_blank" class="mobile-quick-action-btn">
+        <i class="bi bi-file-earmark-arrow-down-fill"></i>Export Report
+    </a>
+    <button type="button" class="mobile-quick-action-btn" onclick="openLeaveDrawer()">
+        <i class="bi bi-calendar-x-fill"></i>Request Leave
+    </button>
+    <a href="{{ route('teacher.classroom.index') }}" class="mobile-quick-action-btn">
+        <i class="bi bi-journal-album"></i>My Classes
+    </a>
+    <a href="{{ route('teacher.absent') }}" class="mobile-quick-action-btn">
+        <i class="bi bi-person-x-fill"></i>Absent Report
+    </a>
+</div>
+
 
 <!-- Stats -->
 <div class="row g-4 mb-4 anim-slide-up delay-2">
@@ -437,15 +495,19 @@ new Chart(ctx, {
 // Real-time clock for teacher dashboard
 (function() {
     const clockEl = document.getElementById('teacherClock');
-    if (!clockEl) return;
+    const clockMobileEl = document.getElementById('teacherClockMobile');
     function tick() {
         const now = new Date();
         let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
         const ampm = h >= 12 ? 'PM' : 'AM';
         h = h % 12 || 12;
-        clockEl.textContent = h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
+        const full = h + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s + ' ' + ampm;
+        const short = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+        if (clockEl) clockEl.textContent = full;
+        if (clockMobileEl) clockMobileEl.textContent = short;
     }
     setInterval(tick, 1000);
+    tick();
 })();
 
 function filterRecentLogs() {

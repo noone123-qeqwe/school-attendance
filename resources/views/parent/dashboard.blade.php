@@ -100,9 +100,41 @@
         transform: scale(0.98);
         background: rgba(26, 17, 13, 0.6) !important;
     }
+
+    /* ── PARENT DASHBOARD MOBILE EXTRAS ── */
+    @media (max-width: 768px) {
+        /* Header strip */
+        .dashboard-header-glow { padding: 14px 16px; }
+        .dashboard-header-glow h2 { font-size: 1.1rem !important; }
+        /* Child card header — stack on mobile */
+        .child-card-header { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+        .action-buttons { width: 100%; display: flex !important; gap: 8px !important; flex-wrap: wrap !important; }
+        .action-buttons .adm-btn { flex: 1; justify-content: center !important; font-size: 0.78rem; padding: 8px 10px; }
+        /* Stats grid 2 cols */
+        .stat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+        .stat-grid-5 { grid-template-columns: repeat(2, 1fr) !important; }
+        /* Make circular progress smaller */
+        .circular-progress svg { width: 60px !important; height: 60px !important; }
+        /* Recent attendance table card view */
+        .custom-table { font-size: 0.78rem !important; }
+        .adm-card-body.p-4 { padding: 14px !important; }
+        /* Child avatar */
+        .child-avatar { width: 44px !important; height: 44px !important; }
+    }
 </style>
 
-<div class="p-4">
+{{-- Mobile header for parent dashboard --}}
+<div class="mobile-dash-header d-md-none anim-slide-up" style="margin:0 0 16px;">
+    <div>
+        <div class="mobile-dash-title">Parent Portal</div>
+        <div class="mobile-dash-subtitle">Monitor your children's attendance</div>
+    </div>
+    <div class="mobile-dash-date">
+        <div style="font-size:1rem;font-weight:800;color:#cfa46f;">{{ now()->format('d') }}</div>
+        <div>{{ now()->format('M Y') }}</div>
+    </div>
+</div>
+
     <div class="dashboard-header-glow d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
         <h2 style="color: #f3e7cd; font-weight: 800; margin: 0; letter-spacing: -0.5px; font-size: clamp(1.5rem, 4vw, 2rem);">
             <i class="bi bi-house-door-fill" style="color: #cfa46f; margin-right: 12px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"></i>My Children

@@ -51,16 +51,16 @@
                 
                 <div class="col-md-6">
                     <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
-                        Student Number (7 digits) *
+                        Student Number (7 characters) *
                     </label>
                     <input type="text" 
                            name="student_number" 
                            class="adm-input" 
                            value="{{ old('student_number') }}" 
                            maxlength="7" 
-                           pattern="\d{7}" 
+                           pattern="[a-zA-Z0-9]{7}" 
                            required 
-                           placeholder="1234567"
+                           placeholder="e.g. A123456"
                            style="width: 100%;">
                 </div>
 

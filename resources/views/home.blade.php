@@ -366,7 +366,11 @@
                     <div class="cal-day {{ $cls }}"
                          @if($isClickable)
                              onclick="openAttModal('{{ $dateKey }}', '{{ $dateLabel }}')"
+                             onkeypress="if(event.key === 'Enter') openAttModal('{{ $dateKey }}', '{{ $dateLabel }}')"
                              title="Click to view details"
+                             tabindex="0"
+                             role="button"
+                             aria-label="View attendance for {{ $dateLabel }}"
                          @endif>
                         <div class="cal-day-num">{{ $d }}</div>
                         @if($hasRecs && !$isNoClass && !$isFuture && !$isHoliday)
@@ -400,7 +404,6 @@
         <!-- RECENT ATTENDANCE + DONUT -->
         <div class="bento-item bento-item--recent glass-panel anim-slide-up delay-3">
             <!-- Donut Chart -->
-            @if($totalRecords > 0)
             <div style="margin-bottom: 22px;">
                 <div class="section-header" style="margin-bottom: 12px;">
                     <div class="section-icon" style="background: rgba(168,85,247,0.14); color: #c084fc;">
@@ -413,7 +416,7 @@
                 <div style="position: relative; max-width: 180px; margin: 0 auto;">
                     <canvas id="attendanceDonut" width="180" height="180" style="padding: 10px;"></canvas>
                     <div class="rate-center">
-                        <div class="rate-value">{{ $attendanceRate }}%</div>
+                        <div class="rate-value">{{ $totalRecords > 0 ? $attendanceRate.'%' : 'N/A' }}</div>
                         <div class="rate-label">Rate</div>
                     </div>
                 </div>
@@ -424,7 +427,6 @@
                 </div>
             </div>
             <div style="height: 1px; background: rgba(255,255,255,0.06); margin: 0 -22px 18px;"></div>
-            @endif
 
             <!-- Recent Attendance -->
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
@@ -463,11 +465,10 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="4">
-                            <div class="empty-state-card">
-                                <i class="bi bi-inbox"></i>
-                                <p>No attendance records yet</p>
-                            </div>
+                        <td colspan="4" class="text-center py-4" style="color:rgba(245,234,215,0.4);">
+                            <div style="font-size:2rem; margin-bottom:8px;">🏜️</div>
+                            <div style="font-size:0.9rem; font-weight:600;">It's awfully quiet here...</div>
+                            <div style="font-size:0.75rem;">No recent attendance records found.</div>
                         </td>
                     </tr>
                     @endforelse
@@ -552,23 +553,35 @@ const statsRow = document.querySelector('.stats-row');
 if (statsRow) observer.observe(statsRow);
 
 // ── DONUT CHART ──
-@if($totalRecords > 0)
 @php
     $activeSegments = ($totalPresent > 0 ? 1 : 0) + ($totalLate > 0 ? 1 : 0) + ($totalAbsent > 0 ? 1 : 0);
     $donutBorder = $activeSegments > 1 ? 4 : 0;
+    
+    // Fallback data
+    if ($totalRecords == 0) {
+        $chartData = '[1]';
+        $chartColors = "['rgba(255,255,255,0.05)']";
+        $chartBorder = 0;
+        $chartLabels = "['No Data']";
+    } else {
+        $chartData = "[$totalPresent, $totalLate, $totalAbsent]";
+        $chartColors = "['#16a34a', '#eab308', '#dc2626']";
+        $chartBorder = $donutBorder;
+        $chartLabels = "['Present', 'Late', 'Absent']";
+    }
 @endphp
 const donutCtx = document.getElementById('attendanceDonut');
 if (donutCtx) {
     new Chart(donutCtx, {
         type: 'doughnut',
         data: {
-            labels: ['Present', 'Late', 'Absent'],
+            labels: {!! $chartLabels !!},
             datasets: [{
-                data: [{{ $totalPresent }}, {{ $totalLate }}, {{ $totalAbsent }}],
-                backgroundColor: ['#16a34a', '#eab308', '#dc2626'],
-                borderWidth: {{ $donutBorder }},
+                data: {!! $chartData !!},
+                backgroundColor: {!! $chartColors !!},
+                borderWidth: {{ $chartBorder }},
                 borderColor: 'rgba(35,21,27,0.94)',
-                hoverOffset: 4,
+                hoverOffset: {{ $totalRecords > 0 ? 4 : 0 }},
             }]
         },
         options: {

@@ -417,15 +417,16 @@ class AdminController extends Controller
         try {
             $request->validate([
                 'name'           => 'required|string|max:255',
-                'student_number' => 'required|digits:7|unique:users,student_number',
+                'student_number' => 'required|alpha_num|size:7|unique:users,student_number',
                 'course'         => 'required|in:BSCS,BSIT,BSIS',
                 'year_level'     => 'required|integer|between:1,4',
                 'semester'       => 'required|in:1,2',
                 'email'          => 'required|email|max:255|unique:users,email',
                 'password'       => 'required|string|min:8|max:255',
             ], [
-                'student_number.digits' => 'Student number must be exactly 7 digits.',
-                'student_number.unique' => 'This student number is already registered.',
+                'student_number.alpha_num' => 'Student ID must only contain letters and numbers.',
+                'student_number.size' => 'Student ID must be exactly 7 characters.',
+                'student_number.unique' => 'This student ID is already registered.',
                 'email.unique' => 'This email address is already registered.',
                 'course.in' => 'Please select a valid course.',
                 'year_level.between' => 'Year level must be between 1 and 4.',

@@ -68,6 +68,31 @@
     </div>
 @endsection
 
+@section('mobile-bottom-nav')
+    <a href="{{ route('admin.dashboard') }}" class="mbn-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+        <i class="bi bi-grid-fill"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="{{ route('admin.students') }}" class="mbn-item {{ request()->routeIs('admin.students') || request()->routeIs('admin.student*') ? 'active' : '' }}">
+        <i class="bi bi-people-fill"></i>
+        <span>Students</span>
+    </a>
+    <a href="{{ route('admin.attendance') }}" class="mbn-item {{ request()->routeIs('admin.attendance*') ? 'active' : '' }}">
+        <i class="bi bi-calendar-check-fill"></i>
+        <span>Attendance</span>
+    </a>
+    <a href="{{ route('admin.notifications') }}" class="mbn-item {{ request()->routeIs('admin.notifications*') ? 'active' : '' }}">
+        @php $adminUnread = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count(); @endphp
+        @if($adminUnread > 0)<span class="mbn-badge">{{ $adminUnread > 9 ? '9+' : $adminUnread }}</span>@endif
+        <i class="bi bi-bell-fill"></i>
+        <span>Alerts</span>
+    </a>
+    <a href="{{ route('admin.profile') }}" class="mbn-item {{ request()->routeIs('admin.profile') ? 'active' : '' }}">
+        <i class="bi bi-person-fill"></i>
+        <span>Profile</span>
+    </a>
+@endsection
+
 @section('scripts')
     @include('partials.scripts.admin')
 @endsection
