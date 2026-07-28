@@ -35,6 +35,7 @@ class PTController extends Controller
             $userData['course'] = $request->course;
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
+            $userData['section'] = $request->section;
         } elseif ($request->role === 'teacher') {
             $userData['employee_id'] = $request->employee_id;
             // Use custom department if "Other" was selected, otherwise use the selected department
