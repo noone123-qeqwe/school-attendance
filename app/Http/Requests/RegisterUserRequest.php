@@ -21,7 +21,7 @@ class RegisterUserRequest extends FormRequest
         ];
 
         if ($this->role === 'student') {
-            $rules['student_number'] = 'required|digits:7|unique:users';
+            $rules['student_number'] = 'required|alpha_num|size:7|unique:users';
             $rules['course']         = 'required|string';
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|integer|between:1,2';
