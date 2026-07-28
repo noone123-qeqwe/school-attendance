@@ -430,6 +430,7 @@
                                         <option value="" disabled selected></option>
                                         <option value="1" {{ old('semester')=='1'?'selected':'' }}>1st Semester</option>
                                         <option value="2" {{ old('semester')=='2'?'selected':'' }}>2nd Semester</option>
+                                        <option value="Summer" {{ old('semester')=='Summer'?'selected':'' }}>Summer</option>
                                     </select>
                                     <label for="semester">Semester</label>
                                     <i class="bi bi-chevron-down select-arrow"></i>
