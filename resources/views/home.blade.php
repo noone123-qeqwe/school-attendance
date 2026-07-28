@@ -608,7 +608,6 @@ if (donutCtx) {
         }
     });
 }
-@endif
 
 // ── CALENDAR MODAL ──
 const calendarData = @json($calendarJson);
