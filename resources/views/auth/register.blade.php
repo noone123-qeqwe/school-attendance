@@ -408,14 +408,8 @@
                                 <div class="row g-3 mb-3">
                                     <div class="col-7">
                                         <div class="form-floating-custom mb-0">
-                                            <select name="course" id="course" required>
-                                                <option value="" disabled selected></option>
-                                                <option value="BSCS" {{ old('course')=='BSCS'?'selected':'' }}>BSCS</option>
-                                                <option value="BSIT" {{ old('course')=='BSIT'?'selected':'' }}>BSIT</option>
-                                                <option value="BSIS" {{ old('course')=='BSIS'?'selected':'' }}>BSIS</option>
-                                            </select>
+                                            <input type="text" name="course" id="course" value="BSCS" readonly style="background:rgba(255,255,255,0.05);color:#fcfcfc;cursor:default;">
                                             <label for="course">Course</label>
-                                            <i class="bi bi-chevron-down select-arrow"></i>
                                         </div>
                                     </div>
                                     <div class="col-5">
@@ -426,7 +420,7 @@
                                                 <option value="{{ $y }}" {{ old('year_level')==$y?'selected':'' }}>{{ $y }}{{ $y==1?'st':($y==2?'nd':($y==3?'rd':'th')) }}</option>
                                                 @endforeach
                                             </select>
-                                            <label for="year_level">Year</label>
+                                            <label for="year_level">Year Level</label>
                                             <i class="bi bi-chevron-down select-arrow"></i>
                                         </div>
                                     </div>
