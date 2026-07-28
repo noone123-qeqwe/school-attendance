@@ -402,8 +402,8 @@
                             <!-- Student Specific -->
                             <div id="student-fields" style="display:none;">
                                 <div class="form-floating-custom">
-                                    <input type="text" name="student_number" id="student_number" placeholder=" " maxlength="7" inputmode="numeric" value="{{ old('student_number') }}">
-                                    <label for="student_number">Student Number (7 digits)</label>
+                                    <input type="text" name="student_number" id="student_number" placeholder=" " maxlength="7" value="{{ old('student_number') }}">
+                                    <label for="student_number">Student Number (7 characters)</label>
                                 </div>
                                 <div class="row g-3 mb-3">
                                     <div class="col-7">
@@ -616,7 +616,7 @@
 
             if (role.value === 'student') {
                 const sn = document.getElementById('student_number').value.trim();
-                if (!/^\d{7}$/.test(sn)) return "Student number must be exactly 7 digits.";
+                if (!/^[a-zA-Z0-9]{7}$/.test(sn)) return "Student number must be exactly 7 characters and contain only letters and numbers.";
                 if (!document.getElementById('course').value || !document.getElementById('year_level').value || !document.getElementById('semester').value) {
                     return "Please fill in all student details.";
                 }
