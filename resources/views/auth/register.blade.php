@@ -403,7 +403,7 @@
                             <div id="student-fields" style="display:none;">
                                 <div class="form-floating-custom">
                                     <input type="text" name="student_number" id="student_number" placeholder=" " maxlength="7" value="{{ old('student_number') }}">
-                                    <label for="student_number">Student Number (7 characters)</label>
+                                    <label for="student_number">Student ID (7 characters)</label>
                                 </div>
                                 <div class="row g-3 mb-3">
                                     <div class="col-7">
