@@ -451,24 +451,38 @@
                         <option>English</option><option>Filipino</option><option>Bikolano</option>
                     </select>
                 </div>
-                <div style="margin:16px 0 10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Notifications</div>
-                <div class="trow">
-                    <div><div class="tlabel">Attendance Alerts</div><div class="tsub">Notify me when marked Late or Absent</div></div>
-                    <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" checked></div>
-                </div>
-                <div class="trow">
-                    <div><div class="tlabel">Weekly Summary</div><div class="tsub">Receive a weekly attendance report</div></div>
-                    <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox"></div>
-                </div>
-                <div class="trow">
-                    <div><div class="tlabel">Clock-in Reminders</div><div class="tsub">Get reminded 5 minutes before class starts</div></div>
-                    <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" checked></div>
-                </div>
-                <div style="margin:16px 0 10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Display</div>
-                <div class="trow">
-                    <div><div class="tlabel">Compact Sidebar</div><div class="tsub">Start with the sidebar collapsed</div></div>
-                    <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="compactToggle"></div>
-                </div>
+                <form action="{{ route('settings.preferences.update') }}" method="POST">
+                    @csrf
+                    <div style="margin:16px 0 10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Notifications</div>
+                    
+                    @php
+                        $prefs = Auth::user()->notification_preferences ?? ['in_app' => true, 'email' => true];
+                    @endphp
+
+                    <div class="trow">
+                        <div><div class="tlabel">In-App Notifications</div><div class="tsub">Receive alerts within the portal</div></div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" name="prefs[in_app]" value="1" {{ !empty($prefs['in_app']) ? 'checked' : '' }}>
+                        </div>
+                    </div>
+                    
+                    <div class="trow">
+                        <div><div class="tlabel">Email Notifications</div><div class="tsub">Receive important alerts via email</div></div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" name="prefs[email]" value="1" {{ !empty($prefs['email']) ? 'checked' : '' }}>
+                        </div>
+                    </div>
+
+                    <div style="margin:16px 0 10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Display</div>
+                    <div class="trow">
+                        <div><div class="tlabel">Compact Sidebar</div><div class="tsub">Start with the sidebar collapsed</div></div>
+                        <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="compactToggle"></div>
+                    </div>
+
+                    <div style="margin-top: 20px; text-align: right;">
+                        <button type="submit" class="sbtn"><i class="bi bi-save me-2"></i>Save Preferences</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

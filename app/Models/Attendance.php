@@ -43,7 +43,19 @@ class Attendance extends Model
                 $parents = $attendance->user->parents;
                 if ($parents) {
                     foreach ($parents as $parent) {
-                        $parent->notify(new \App\Notifications\AbsenceAlert($attendance));
+                        $prefs = collect($parent->notification_preferences ?? ['in_app' => true, 'email' => true]);
+                        
+                        if ($prefs->get('in_app')) {
+                            \App\Models\Notification::create([
+                                'user_id' => $parent->id,
+                                'type' => 'absence_alert',
+                                'subject_code' => $attendance->subject_code,
+                                'message' => "{$attendance->user->name} was marked Absent in {$attendance->subject_code} on {$attendance->date->format('M d, Y')}.",
+                                'is_read' => false
+                            ]);
+                        }
+                        
+                        // We would trigger Email/SMS here based on $prefs->get('email')
                     }
                 }
             }
@@ -62,7 +74,17 @@ class Attendance extends Model
                 $parents = $attendance->user->parents;
                 if ($parents) {
                     foreach ($parents as $parent) {
-                        $parent->notify(new \App\Notifications\AbsenceAlert($attendance));
+                        $prefs = collect($parent->notification_preferences ?? ['in_app' => true, 'email' => true]);
+                        
+                        if ($prefs->get('in_app')) {
+                            \App\Models\Notification::create([
+                                'user_id' => $parent->id,
+                                'type' => 'absence_alert',
+                                'subject_code' => $attendance->subject_code,
+                                'message' => "{$attendance->user->name} was marked Absent in {$attendance->subject_code} on {$attendance->date->format('M d, Y')}.",
+                                'is_read' => false
+                            ]);
+                        }
                     }
                 }
             }

@@ -107,12 +107,16 @@ class AdminController extends Controller
 
         // ── Teacher activity monitor ──
         $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $teacherActivity = $teachers->map(function ($teacher) {
-            $session = \App\Models\AttendanceSession::where('created_by', $teacher->id)
-                ->whereDate('created_at', today())
-                ->with('subject')
-                ->latest()
-                ->first();
+        $teacherIds = $teachers->pluck('id');
+        $todaySessions = \App\Models\AttendanceSession::whereIn('created_by', $teacherIds)
+            ->whereDate('created_at', today())
+            ->with('subject')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('created_by');
+
+        $teacherActivity = $teachers->map(function ($teacher) use ($todaySessions) {
+            $session = $todaySessions->get($teacher->id)?->first();
 
             $teacher->current_subject = $session?->subject?->name ?? '—';
             $teacher->current_subject_code = $session?->subject_code ?? null;
@@ -129,27 +133,30 @@ class AdminController extends Controller
         });
 
         // ── At-risk students ──
-        $allStudents = User::where('role', 'student')->with('attendances')->get();
-        $atRiskStudents = collect();
-        foreach ($allStudents as $student) {
-            $attRecords = $student->attendances;
-            $attTotal = $attRecords->count();
-            if ($attTotal > 0) {
-                $attPresent = $attRecords->whereIn('status', ['Present', 'Late'])->count();
-                $rate = round(($attPresent / $attTotal) * 100);
-                if ($rate < 80) {
-                    $student->attendance_rate = $rate;
-                    $student->last_attendance = $attRecords->sortByDesc('date')->first()?->date?->format('M d, Y') ?? '—';
-                    $student->risk_level = match(true) {
-                        $rate >= 70 => 'Watch',
-                        $rate >= 50 => 'Warning',
-                        default => 'Critical',
-                    };
-                    $atRiskStudents->push($student);
-                }
+        $studentStats = Attendance::select('user_id',
+            \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
+            \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_sessions'),
+            \Illuminate\Support\Facades\DB::raw('max(date) as last_attendance')
+        )
+        ->groupBy('user_id')
+        ->with('user')
+        ->get();
+
+        $atRiskStudents = $studentStats->map(function ($stat) {
+            $rate = $stat->total_sessions > 0 ? round(($stat->present_sessions / $stat->total_sessions) * 100) : 100;
+            if ($rate < 80 && $stat->user && $stat->user->role === 'student') {
+                $student = $stat->user;
+                $student->attendance_rate = $rate;
+                $student->last_attendance = $stat->last_attendance ? \Carbon\Carbon::parse($stat->last_attendance)->format('M d, Y') : '—';
+                $student->risk_level = match(true) {
+                    $rate >= 70 => 'Watch',
+                    $rate >= 50 => 'Warning',
+                    default => 'Critical',
+                };
+                return $student;
             }
-        }
-        $atRiskStudents = $atRiskStudents->sortBy('attendance_rate')->take(15);
+            return null;
+        })->filter()->sortBy('attendance_rate')->take(15);
 
         // ── Class performance ──
         $classPerformance = Attendance::selectRaw("subject_code, status, COUNT(*) as total")
@@ -693,21 +700,8 @@ class AdminController extends Controller
         return view('admin.subjects.create');
     }
 
-    public function storeSubject(Request $request)
+    public function storeSubject(\App\Http\Requests\StoreSubjectRequest $request)
     {
-        $request->validate([
-            'code'       => 'required|string|unique:subjects,code',
-            'name'       => 'required|string',
-            'year_level' => 'required',
-            'semester'   => 'required',
-            'course'     => 'required|in:BSCS,BSIT,BSIS',
-            'days'       => 'nullable|string|max:30',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after_or_equal:start_time',
-            'units'      => 'nullable|integer',
-            'instructor' => 'nullable|string',
-            'section'    => 'nullable|string',
-        ]);
 
         $subject = Subject::create($request->only([
             'code',
@@ -743,21 +737,8 @@ class AdminController extends Controller
 
 
     
-  public function updateSubject(Request $request, Subject $subject)
+  public function updateSubject(\App\Http\Requests\UpdateSubjectRequest $request, Subject $subject)
 {
-    $request->validate([
-        'code'       => 'required|string|unique:subjects,code,'.$subject->id,
-        'name'       => 'required|string',
-        'year_level' => 'required',
-        'semester'   => 'required',
-        'course'     => 'required|in:BSCS,BSIT,BSIS',
-        'days'       => 'nullable|string|max:30',
-        'start_time' => 'nullable|date_format:H:i',
-        'end_time'   => 'nullable|date_format:H:i|after_or_equal:start_time',
-        'units'      => 'nullable|integer',
-        'instructor' => 'nullable|string',
-        'section'    => 'nullable|string',
-    ]);
 
     $subject->update($request->only([
         'code', 'name', 'year_level', 'semester', 'course', 'units', 'instructor', 'section',

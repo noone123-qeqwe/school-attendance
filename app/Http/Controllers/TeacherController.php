@@ -36,6 +36,18 @@ class TeacherController extends Controller
             ->with('schedules')
             ->get();
 
+        // Include subjects where teacher is a substitute for the target date
+        $substituteSubjectIds = \App\Models\SubstituteTeacher::where('substitute_id', $teacher->id)
+            ->whereDate('date', $targetDate)
+            ->pluck('subject_id');
+            
+        if ($substituteSubjectIds->isNotEmpty()) {
+            $substituteSubjects = Subject::whereIn('id', $substituteSubjectIds)
+                ->with('schedules')
+                ->get();
+            $teacherSubjects = $teacherSubjects->concat($substituteSubjects)->unique('id');
+        }
+
         // Get today's classes for this teacher
         $targetDayName = $targetDate->format('l'); // Day name (Monday, Tuesday, etc.)
         $todayClasses = $teacherSubjects->filter(function($subject) use ($targetDayName) {
@@ -218,6 +230,46 @@ class TeacherController extends Controller
             'atRiskStudents',
             'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
         ));
+    }
+
+    // ─────────────────────────────────────────
+    // SUBSTITUTE / COVER CLASS
+    // ─────────────────────────────────────────
+    public function coverClassForm()
+    {
+        $teacher = Auth::user();
+        $otherTeachers = User::where('role', 'teacher')
+            ->where('id', '!=', $teacher->id)
+            ->get();
+        return view('teacher.cover-class', compact('otherTeachers'));
+    }
+
+    public function getTeacherSubjects($teacherId)
+    {
+        $targetTeacher = User::findOrFail($teacherId);
+        $subjects = Subject::where('instructor', $targetTeacher->name)
+            ->orWhere('instructor', $targetTeacher->employee_id)
+            ->get();
+        return response()->json($subjects);
+    }
+
+    public function storeCoverClass(Request $request)
+    {
+        $request->validate([
+            'subject_id' => 'required|exists:subjects,id',
+            'date' => 'required|date'
+        ]);
+
+        $teacher = Auth::user();
+        $subject = Subject::findOrFail($request->subject_id);
+
+        \App\Models\SubstituteTeacher::firstOrCreate([
+            'substitute_id' => $teacher->id,
+            'subject_id' => $subject->id,
+            'date' => $request->date,
+        ]);
+
+        return redirect()->route('teacher.dashboard')->with('success', 'Successfully registered as a substitute for ' . $subject->code . ' on ' . Carbon::parse($request->date)->format('M d, Y'));
     }
 
     // ─────────────────────────────────────────

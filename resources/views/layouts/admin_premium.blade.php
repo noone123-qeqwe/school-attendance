@@ -12,6 +12,7 @@
     
     <!-- Custom SaaS CSS -->
     <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}?v={{ filemtime(public_path('css/admin-saas.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
     

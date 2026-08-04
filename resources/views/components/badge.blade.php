@@ -1,18 +1,21 @@
-@props(['type' => 'pending', 'dashboard' => false])
+@props(['type' => 'info'])
 
 @php
     $classes = [
-        'present' => 'badge-present',
-        'late' => 'badge-late',
-        'absent' => 'badge-absent',
-        'excused' => 'badge-excused',
-        'pending' => 'badge-pending'
+        'present' => 'badge-success',
+        'success' => 'badge-success',
+        'late' => 'badge-warning',
+        'warning' => 'badge-warning',
+        'absent' => 'badge-danger',
+        'danger' => 'badge-danger',
+        'excused' => 'badge-info',
+        'info' => 'badge-info',
+        'pending' => 'badge-warning'
     ];
     
-    $badgeClass = $classes[$type] ?? 'badge-pending';
-    $dashboardClass = $dashboard ? 'dashboard-badge' : '';
+    $badgeClass = $classes[$type] ?? 'badge-info';
 @endphp
 
-<span class="status-badge {{ $badgeClass }} {{ $dashboardClass }} {{ $attributes->get('class') }}">
+<span class="badge {{ $badgeClass }} {{ $attributes->get('class') }}">
     {{ $slot }}
 </span>

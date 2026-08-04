@@ -80,6 +80,12 @@
                     <i class="bi bi-folder-fill"></i>
                     <span class="nav-link-text">My Classes</span>
                 </a>
+                <a href="{{ route('student.schedule') }}"
+                   class="nav-link {{ request()->routeIs('student.schedule') ? 'active' : '' }}"
+                   data-title="My Schedule">
+                    <i class="bi bi-calendar-week-fill"></i>
+                    <span class="nav-link-text">My Schedule</span>
+                </a>
                 <a href="{{ route('notifications') }}"
                    class="nav-link {{ request()->routeIs('notifications') ? 'active' : '' }}"
                    data-title="Notifications">

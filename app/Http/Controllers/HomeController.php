@@ -369,6 +369,24 @@ class HomeController extends Controller
         return redirect()->route('settings')->with('success', 'Phone number updated successfully!');
     }
 
+    public function updatePreferences(Request $request)
+    {
+        $user = Auth::user();
+        
+        $prefs = $request->input('prefs', []);
+        
+        // Ensure values are boolean
+        $formattedPrefs = [
+            'in_app' => !empty($prefs['in_app']),
+            'email'  => !empty($prefs['email']),
+        ];
+
+        $user->notification_preferences = $formattedPrefs;
+        $user->save();
+
+        return redirect()->route('settings')->with('success', 'Notification preferences saved successfully!');
+    }
+
     // ─────────────────────────────────────────
     // EXCUSE SUBMISSIONS
     // ─────────────────────────────────────────

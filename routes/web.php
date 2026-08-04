@@ -50,11 +50,13 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/my-classes', [PTController::class, 'myClasses'])->name('student.classes');
+    Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('student.schedule');
 
     Route::get('/classes', [ClassController::class, 'index'])->name('classes.index');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::get('/settings', [App\Http\Controllers\HomeController::class, 'settings'])->name('settings');
     Route::post('/settings/update', [App\Http\Controllers\HomeController::class, 'update'])->name('settings.update');
+    Route::post('/settings/preferences/update', [App\Http\Controllers\HomeController::class, 'updatePreferences'])->name('settings.preferences.update');
     Route::get('/notifications', [App\Http\Controllers\HomeController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/read', [App\Http\Controllers\HomeController::class, 'markNotificationsRead'])->name('notifications.read');
     Route::delete('/notifications/{notification}', [App\Http\Controllers\HomeController::class, 'deleteNotification'])->name('notifications.delete');
@@ -140,6 +142,11 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/classroom', [App\Http\Controllers\TeacherController::class, 'classroomIndex'])->name('classroom.index');
     Route::get('/classroom/{subjectCode}', [App\Http\Controllers\TeacherController::class, 'classroomShow'])->name('classroom.show');
     Route::post('/classroom/{subjectCode}/attendance', [App\Http\Controllers\TeacherController::class, 'classroomStoreAttendance'])->name('classroom.attendance.store');
+
+    // Cover Class (Substitute Access)
+    Route::get('/cover-class', [App\Http\Controllers\TeacherController::class, 'coverClassForm'])->name('cover.form');
+    Route::get('/cover-class/subjects/{teacherId}', [App\Http\Controllers\TeacherController::class, 'getTeacherSubjects'])->name('cover.subjects');
+    Route::post('/cover-class', [App\Http\Controllers\TeacherController::class, 'storeCoverClass'])->name('cover.store');
 
     // My Subjects - Full CRUD
     Route::get('/subjects', [App\Http\Controllers\TeacherController::class, 'mySubjects'])->name('subjects');

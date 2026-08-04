@@ -42,6 +42,7 @@ class User extends Authenticatable
     'role',
     'profile_image',
     'phone',
+    'notification_preferences',
 ];
 
     public function isAdmin(): bool
@@ -92,6 +93,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'notification_preferences' => 'array',
         ];
     }
 
