@@ -30,6 +30,7 @@
                 <option value="teacher" {{ request('role')=='teacher'?'selected':'' }}>Instructor</option>
                 <option value="student" {{ request('role')=='student'?'selected':'' }}>Student</option>
                 <option value="parent" {{ request('role')=='parent'?'selected':'' }}>Parent</option>
+                <option value="department_head" {{ request('role')=='department_head'?'selected':'' }}>Department Head</option>
             </select>
             
             <button type="submit" class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
@@ -82,10 +83,15 @@
                     <td>
                         @if($user->role === 'admin')
                             <span class="saas-badge saas-badge-danger"><i class="bi bi-shield-lock" style="margin-right:4px;"></i> Administrator</span>
+                            @if($user->admin_sub_role)
+                                <span class="saas-badge" style="background:var(--saas-border); color:var(--saas-text);">{{ ucwords(str_replace('_', ' ', $user->admin_sub_role)) }}</span>
+                            @endif
                         @elseif($user->role === 'teacher')
                             <span class="saas-badge saas-badge-info"><i class="bi bi-person-workspace" style="margin-right:4px;"></i> Instructor</span>
                         @elseif($user->role === 'student')
                             <span class="saas-badge saas-badge-success"><i class="bi bi-mortarboard" style="margin-right:4px;"></i> Student</span>
+                        @elseif($user->role === 'department_head')
+                            <span class="saas-badge saas-badge-primary" style="background:var(--saas-primary);color:#fff;"><i class="bi bi-briefcase" style="margin-right:4px;"></i> Department Head</span>
                         @else
                             <span class="saas-badge saas-badge-warning"><i class="bi bi-people" style="margin-right:4px;"></i> Parent</span>
                         @endif
@@ -96,7 +102,7 @@
                         </span>
                     </td>
                     <td style="text-align:right;">
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit Roles">
+                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit Roles" onclick="openEditRoleModal({{ $user->id }}, '{{ $user->role }}', '{{ $user->admin_sub_role }}', '{{ $user->name }}')">
                             <i class="bi bi-shield-check"></i>
                         </button>
                         <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit Details">
@@ -146,6 +152,48 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Role Modal -->
+<div id="editRoleModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
+    <div class="saas-card" style="width:100%; max-width:500px; transform:scale(0.95); transition:transform 0.2s;">
+        <div class="saas-card-header">
+            <div class="saas-heading saas-heading-sm">Edit Role for <span id="editRoleUserName"></span></div>
+            <button onclick="closeModal('editRoleModal')" style="background:none; border:none; color:var(--saas-text-muted); cursor:pointer;"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form id="editRoleForm" method="POST" action="">
+            @csrf
+            @method('PUT')
+            <div class="saas-card-body" style="padding:24px;">
+                
+                <div class="saas-form-group" style="margin-bottom:16px;">
+                    <label class="saas-label">System Role</label>
+                    <select name="role" id="editRoleSelect" class="saas-input saas-select" onchange="toggleSubRole(this.value)">
+                        <option value="admin">Administrator</option>
+                        <option value="teacher">Instructor</option>
+                        <option value="student">Student</option>
+                        <option value="parent">Parent</option>
+                        <option value="department_head">Department Head</option>
+                    </select>
+                </div>
+                
+                <div class="saas-form-group" id="adminSubRoleGroup" style="display:none; margin-bottom:16px;">
+                    <label class="saas-label">Admin Sub-Role</label>
+                    <select name="admin_sub_role" id="editSubRoleSelect" class="saas-input saas-select">
+                        <option value="">Standard Admin (Full Access)</option>
+                        <option value="super_admin">Super Admin (IT/System)</option>
+                        <option value="data_entry">Data Entry</option>
+                        <option value="auditor">Auditor (Read Only)</option>
+                    </select>
+                </div>
+
+            </div>
+            <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:flex-end; gap:12px; background:rgba(0,0,0,0.02);">
+                <button type="button" class="saas-btn saas-btn-secondary" onclick="closeModal('editRoleModal')">Cancel</button>
+                <button type="submit" class="saas-btn saas-btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
@@ -167,6 +215,33 @@
         setTimeout(() => {
             modal.style.display = 'none';
         }, 200);
+    }
+    
+    function openEditRoleModal(userId, role, subRole, name) {
+        document.getElementById('editRoleUserName').textContent = name;
+        
+        let form = document.getElementById('editRoleForm');
+        form.action = `/admin/roles/${userId}`;
+        
+        document.getElementById('editRoleSelect').value = role;
+        
+        toggleSubRole(role);
+        
+        if (role === 'admin' && subRole) {
+            document.getElementById('editSubRoleSelect').value = subRole;
+        } else {
+            document.getElementById('editSubRoleSelect').value = '';
+        }
+        
+        openModal('editRoleModal');
+    }
+    
+    function toggleSubRole(role) {
+        if (role === 'admin') {
+            document.getElementById('adminSubRoleGroup').style.display = 'block';
+        } else {
+            document.getElementById('adminSubRoleGroup').style.display = 'none';
+        }
     }
 </script>
 @endpush

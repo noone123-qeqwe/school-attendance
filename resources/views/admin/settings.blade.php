@@ -53,16 +53,16 @@
                 <div class="saas-form-group">
                     <label class="saas-label">Current Academic Year</label>
                     <select name="academic_year" class="saas-input saas-select">
-                        <option value="2025-2026" selected>2025-2026</option>
-                        <option value="2026-2027">2026-2027</option>
+                        <option value="2025-2026" {{ \App\Models\Setting::get('academic_year', '2025-2026') == '2025-2026' ? 'selected' : '' }}>2025-2026</option>
+                        <option value="2026-2027" {{ \App\Models\Setting::get('academic_year') == '2026-2027' ? 'selected' : '' }}>2026-2027</option>
                     </select>
                 </div>
                 <div class="saas-form-group">
                     <label class="saas-label">Current Semester</label>
                     <select name="current_semester" class="saas-input saas-select">
-                        <option value="1">1st Semester</option>
-                        <option value="2" selected>2nd Semester</option>
-                        <option value="summer">Summer</option>
+                        <option value="1" {{ \App\Models\Setting::get('current_semester') == '1' ? 'selected' : '' }}>1st Semester</option>
+                        <option value="2" {{ \App\Models\Setting::get('current_semester', '2') == '2' ? 'selected' : '' }}>2nd Semester</option>
+                        <option value="summer" {{ \App\Models\Setting::get('current_semester') == 'summer' ? 'selected' : '' }}>Summer</option>
                     </select>
                 </div>
             </div>
@@ -70,12 +70,12 @@
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">Late Threshold (Minutes)</label>
-                    <input type="number" name="late_threshold" class="saas-input" value="15">
+                    <input type="number" name="late_threshold" class="saas-input" value="{{ \App\Models\Setting::get('late_threshold', 15) }}">
                     <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Students arriving after this time are marked Late.</p>
                 </div>
                 <div class="saas-form-group">
                     <label class="saas-label">Absent Threshold (Minutes)</label>
-                    <input type="number" name="absent_threshold" class="saas-input" value="45">
+                    <input type="number" name="absent_threshold" class="saas-input" value="{{ \App\Models\Setting::get('absent_threshold', 45) }}">
                     <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Students arriving after this time are marked Absent.</p>
                 </div>
             </div>
@@ -101,6 +101,18 @@
                     <div class="saas-text-muted" style="font-size:0.75rem;">Requires active Twilio/Vonage integration.</div>
                 </div>
             </label>
+
+            <hr style="border:0; border-top:1px solid var(--saas-border); margin:32px 0;">
+            
+            <h3 class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                <i class="bi bi-shield-lock saas-text-muted"></i> Security & Access
+            </h3>
+            
+            <div class="saas-form-group" style="margin-bottom:32px;">
+                <label class="saas-label">Admin IP Whitelist</label>
+                <input type="text" name="admin_ip_whitelist" class="saas-input" value="{{ \App\Models\Setting::get('admin_ip_whitelist', '') }}" placeholder="e.g. 192.168.1.1, 10.0.0.5">
+                <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Comma-separated list of IP addresses allowed to access the Admin panel. Leave blank to disable whitelisting.</p>
+            </div>
             
         </form>
     </div>

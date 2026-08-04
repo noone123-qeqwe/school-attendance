@@ -578,7 +578,7 @@
     @auth
     @if(!Auth::user()->isAdmin())
     {{-- ═══ MOBILE BOTTOM NAVIGATION BAR (STUDENT) ═══ --}}
-    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
         <a href="{{ route('home') }}" class="mbn-item {{ request()->routeIs('home') ? 'active' : '' }}">
             <i class="bi bi-grid-fill"></i>
             <span>Home</span>

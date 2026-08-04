@@ -20,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'student'       => \App\Http\Middleware\StudentMiddleware::class,
             'parent'        => \App\Http\Middleware\ParentMiddleware::class,
             'device.bound'  => \App\Http\Middleware\EnsureStudentDeviceIsBound::class,
+            'admin.ip'      => \App\Http\Middleware\EnsureAdminIpWhitelisted::class,
+            'admin.super'   => \App\Http\Middleware\SuperAdminMiddleware::class,
+            'dept_head'     => \App\Http\Middleware\DepartmentHeadMiddleware::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [

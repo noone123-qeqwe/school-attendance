@@ -43,6 +43,8 @@ class User extends Authenticatable
     'profile_image',
     'phone',
     'notification_preferences',
+    'rfid_tag',
+    'kiosk_pin',
 ];
 
     public function isAdmin(): bool
@@ -65,6 +67,11 @@ class User extends Authenticatable
         return $this->role === 'parent';
     }
 
+    public function isDepartmentHead(): bool
+    {
+        return $this->role === 'department_head';
+    }
+
     public function children()
     {
         return $this->belongsToMany(User::class, 'parent_student', 'parent_id', 'student_id');
@@ -81,6 +88,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'kiosk_pin',
     ];
 
     /**
@@ -138,5 +146,10 @@ class User extends Authenticatable
     public function deviceBinding()
     {
         return $this->hasOne(DeviceBinding::class);
+    }
+
+    public function leaves()
+    {
+        return $this->hasMany(Leave::class, 'student_id');
     }
 }

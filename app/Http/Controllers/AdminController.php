@@ -1017,24 +1017,31 @@ class AdminController extends Controller
     public function updateSettings(Request $request)
     {
         $request->validate([
-            'warning_threshold'          => 'required|integer|min:1|max:10',
-            'attendance_rate_threshold'  => 'required|integer|min:1|max:100',
-            'gps_lat'                    => 'nullable|numeric|between:-90,90',
-            'gps_lng'                    => 'nullable|numeric|between:-180,180',
-            'gps_radius'                 => 'nullable|integer|min:10|max:1000',
+            'school_name'               => 'nullable|string|max:255',
+            'school_short_name'         => 'nullable|string|max:50',
+            'school_subtitle'           => 'nullable|string|max:255',
+            'academic_year'             => 'nullable|string|max:20',
+            'current_semester'          => 'nullable|string|max:20',
+            'late_threshold'            => 'nullable|integer|min:1',
+            'absent_threshold'          => 'nullable|integer|min:1',
+            'warning_threshold'         => 'nullable|integer|min:1|max:10',
+            'attendance_rate_threshold' => 'nullable|integer|min:1|max:100',
+            'gps_lat'                   => 'nullable|numeric|between:-90,90',
+            'gps_lng'                   => 'nullable|numeric|between:-180,180',
+            'gps_radius'                => 'nullable|integer|min:10|max:1000',
+            'admin_ip_whitelist'        => 'nullable|string',
         ]);
 
-        \App\Models\Setting::updateOrCreate(['key' => 'warning_threshold'], ['value' => $request->warning_threshold]);
-        \App\Models\Setting::updateOrCreate(['key' => 'attendance_rate_threshold'], ['value' => $request->attendance_rate_threshold]);
-        
-        if ($request->filled('gps_lat')) {
-            \App\Models\Setting::updateOrCreate(['key' => 'gps_lat'], ['value' => $request->gps_lat]);
-        }
-        if ($request->filled('gps_lng')) {
-            \App\Models\Setting::updateOrCreate(['key' => 'gps_lng'], ['value' => $request->gps_lng]);
-        }
-        if ($request->filled('gps_radius')) {
-            \App\Models\Setting::updateOrCreate(['key' => 'gps_radius'], ['value' => $request->gps_radius]);
+        $settingsToUpdate = [
+            'school_name', 'school_short_name', 'school_subtitle', 'academic_year', 
+            'current_semester', 'late_threshold', 'absent_threshold', 'warning_threshold', 
+            'attendance_rate_threshold', 'gps_lat', 'gps_lng', 'gps_radius', 'admin_ip_whitelist'
+        ];
+
+        foreach ($settingsToUpdate as $key) {
+            if ($request->has($key)) {
+                \App\Models\Setting::updateOrCreate(['key' => $key], ['value' => $request->$key]);
+            }
         }
 
         return back()->with('success', 'System settings updated successfully!');

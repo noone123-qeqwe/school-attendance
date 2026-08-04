@@ -21,6 +21,7 @@ class Attendance extends Model
         'date',
         'latitude',
         'longitude',
+        'academic_year_id',
     ];
 
     protected $casts = [
@@ -122,5 +123,10 @@ class Attendance extends Model
     public function excuseSubmission()
     {
         return $this->hasOne(ExcuseSubmission::class);
+    }
+
+    public function academicYear()
+    {
+        return $this->belongsTo(AcademicYear::class);
     }
 }

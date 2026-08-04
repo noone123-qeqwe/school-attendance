@@ -1,230 +1,139 @@
-@extends('layouts.app')
+@extends('layouts.portal')
+@section('page-title', 'Excuse Submissions')
 
 @section('content')
-<style>
-    .excuse-card {
-        background: white;
-        border-radius: 16px;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        padding: 20px;
-        margin-bottom: 16px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .excuse-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-    .excuse-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 12px;
-        gap: 20px;
-    }
-    .excuse-title {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1e293b;
-        margin: 0;
-    }
-    .excuse-date {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin: 4px 0 0 0;
-    }
-    .excuse-status {
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .status-pending {
-        background: #fef3c7;
-        color: #d97706;
-    }
-    .status-approved {
-        background: #f0fdf4;
-        color: #16a34a;
-    }
-    .status-rejected {
-        background: #fef2f2;
-        color: #dc2626;
-    }
-    .excuse-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 20px;
-        background: #800000 !important;
-        color: white !important;
-        border: none;
-        border-radius: 10px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        text-decoration: none;
-        cursor: pointer;
-        transition: all 0.2s;
-        margin-top: 8px;
-    }
-    .excuse-btn:hover {
-        background: #600000 !important;
-        color: white !important;
-        transform: translateY(-1px);
-        text-decoration: none;
-    }
-    .excuse-btn:focus {
-        background: #800000 !important;
-        color: white !important;
-        box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.2);
-        text-decoration: none;
-    }
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #9ca3af;
-    }
-    .empty-state i {
-        font-size: 3rem;
-        margin-bottom: 16px;
-        opacity: 0.3;
-    }
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 800;
-        color:  #fff5f5;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .section-icon {
-        width: 32px;
-        height: 32px;
-        background: #fff5f5;
-        color: #800000;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-</style>
+<div class="saas-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+        <div>
+            <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Excuse Submissions</h1>
+            <p class="saas-text-muted" style="margin:0;">Manage and track your absence excuses</p>
+        </div>
+    </div>
 
-<div class="container-fluid px-4 py-4">
+    @if(session('success'))
+    <div style="background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); color:#4ade80; border-radius:var(--saas-radius-md); padding:16px; margin-bottom:24px; display:flex; align-items:center; gap:12px;">
+        <i class="bi bi-check-circle-fill" style="font-size:1.25rem;"></i>
+        <span style="font-size:0.875rem; font-weight:500;">{{ session('success') }}</span>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2); color:#f87171; border-radius:var(--saas-radius-md); padding:16px; margin-bottom:24px; display:flex; align-items:center; gap:12px;">
+        <i class="bi bi-exclamation-triangle-fill" style="font-size:1.25rem;"></i>
+        <span style="font-size:0.875rem; font-weight:500;">{{ session('error') }}</span>
+    </div>
+    @endif
+
     <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 style="font-size: 1.5rem; font-weight: 800; color: #fff5f5; margin: 0;">Excuse Submissions</h1>
-                    <p style="color:  #fff5f5; margin: 4px 0 0 0;">Submit excuses for your absences</p>
+        <!-- Absent Records Requiring Excuses -->
+        <div class="col-12 col-xl-6" style="margin-bottom:24px;">
+            <div class="saas-card" style="height:100%;">
+                <div class="saas-card-header" style="border-bottom:1px solid var(--saas-border);">
+                    <h2 class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
+                        <i class="bi bi-person-x" style="color:var(--saas-danger);"></i> Action Required: Absences
+                    </h2>
                 </div>
-            </div>
-
-            @if(session('success'))
-                <div style="background: #f0fdf4; color: #16a34a; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bbf7d0;">
-                    <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div style="background: #fef2f2; color: #dc2626; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca;">
-                    <i class="bi bi-exclamation-circle me-2"></i>{{ session('error') }}
-                </div>
-            @endif
-
-            <!-- Absent Records That Can Be Excused -->
-            <div class="section-title">
-                <div class="section-icon">
-                    <i class="bi bi-person-x"></i>
-                </div>
-                Absent Records
-            </div>
-
-            @forelse($absentRecords as $record)
-                <div class="excuse-card">
-                    <div class="excuse-header">
-                        <div>
-                            <h3 class="excuse-title">{{ $record->subject->name ?? $record->subject_code }}</h3>
-                            <p class="excuse-date">{{ \Carbon\Carbon::parse($record->date)->format('F j, Y') }}</p>
-                        </div>
-                        <div>
-                            @if($record->excuseSubmission)
-                                <span class="excuse-status status-{{ $record->excuseSubmission->status }}">
-                                    {{ ucfirst($record->excuseSubmission->status) }}
-                                </span>
-                            @else
-                                <a href="{{ route('excuses.create', $record) }}" class="excuse-btn">
-                                    <i class="bi bi-plus-circle"></i> Submit Excuse
-                                </a>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <div class="empty-state">
-                    <i class="bi bi-check-circle"></i>
-                    <h4>No Absent Records</h4>
-                    <p>You don't have any absent records that need excuses.</p>
-                </div>
-            @endforelse
-
-            <!-- Submitted Excuses -->
-            @if($excuseSubmissions->count() > 0)
-                <div class="section-title" style="margin-top: 40px;">
-                    <div class="section-icon">
-                        <i class="bi bi-file-text"></i>
-                    </div>
-                    Submitted Excuses
-                </div>
-
-                @foreach($excuseSubmissions as $excuse)
-                    <div class="excuse-card">
-                        <div class="excuse-header">
+                
+                <div class="saas-card-body" style="padding:0;">
+                    @forelse($absentRecords as $record)
+                        <div style="padding:16px 20px; border-bottom:1px solid var(--saas-border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
                             <div>
-                                <h3 class="excuse-title">{{ $excuse->attendance->subject->name ?? $excuse->attendance->subject_code }}</h3>
-                                <p class="excuse-date">
-                                    Absent on {{ \Carbon\Carbon::parse($excuse->attendance->date)->format('F j, Y') }} • 
-                                    Submitted {{ $excuse->created_at->diffForHumans() }}
-                                </p>
+                                <h3 class="saas-heading" style="font-size:0.95rem; margin-bottom:4px;">{{ $record->subject->name ?? $record->subject_code }}</h3>
+                                <div style="font-size:0.8rem; color:var(--saas-text-muted);">
+                                    <i class="bi bi-calendar3 me-1"></i> {{ \Carbon\Carbon::parse($record->date)->format('F j, Y') }}
+                                </div>
                             </div>
-                            <span class="excuse-status status-{{ $excuse->status }}">
-                                {{ ucfirst($excuse->status) }}
-                            </span>
+                            <div>
+                                @if($record->excuseSubmission)
+                                    @if($record->excuseSubmission->status === 'pending')
+                                        <span class="saas-badge saas-badge-warning">Pending Review</span>
+                                    @elseif($record->excuseSubmission->status === 'approved')
+                                        <span class="saas-badge saas-badge-success">Approved</span>
+                                    @else
+                                        <span class="saas-badge saas-badge-danger">Rejected</span>
+                                    @endif
+                                @else
+                                    <a href="{{ route('excuses.create', $record) }}" class="saas-btn saas-btn-primary" style="padding:6px 14px; font-size:0.8rem;">
+                                        <i class="bi bi-plus-circle"></i> Submit Excuse
+                                    </a>
+                                @endif
+                            </div>
                         </div>
-                        
-                        <div style="margin-top: 12px;">
-                            <strong style="color: #374151;">Reason:</strong> {{ $excuse->reason }}
+                    @empty
+                        <div style="padding:48px 20px; text-align:center;">
+                            <i class="bi bi-check2-circle" style="font-size:3rem; color:var(--saas-success); opacity:0.6; margin-bottom:12px; display:block;"></i>
+                            <h4 class="saas-heading" style="font-size:1.1rem; margin-bottom:8px;">All caught up!</h4>
+                            <p class="saas-text-muted" style="margin:0; font-size:0.875rem;">You don't have any unexcused absences.</p>
                         </div>
-                        
-                        <div style="margin-top: 8px;">
-                            <strong style="color: #374151;">Description:</strong>
-                            <p style="margin: 4px 0 0 0; color: #64748b;">{{ $excuse->description }}</p>
-                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
 
-                        @if($excuse->attachments && count($excuse->attachments) > 0)
-                            <div style="margin-top: 12px;">
-                                <strong style="color: #374151;">Attachments:</strong>
-                                <div style="margin-top: 4px;">
+        <!-- Submitted Excuses History -->
+        <div class="col-12 col-xl-6" style="margin-bottom:24px;">
+            <div class="saas-card" style="height:100%;">
+                <div class="saas-card-header" style="border-bottom:1px solid var(--saas-border);">
+                    <h2 class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
+                        <i class="bi bi-file-text text-primary"></i> Submission History
+                    </h2>
+                </div>
+                
+                <div class="saas-card-body" style="padding:0; max-height: 600px; overflow-y: auto;">
+                    @forelse($excuseSubmissions as $excuse)
+                        <div style="padding:20px; border-bottom:1px solid var(--saas-border);">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                                <div>
+                                    <h3 class="saas-heading" style="font-size:0.95rem; margin-bottom:4px;">{{ $excuse->attendance->subject->name ?? $excuse->attendance->subject_code }}</h3>
+                                    <div style="font-size:0.75rem; color:var(--saas-text-muted);">
+                                        <span style="color:var(--saas-text);">Absent:</span> {{ \Carbon\Carbon::parse($excuse->attendance->date)->format('M d, Y') }} 
+                                        <span style="margin:0 4px;">•</span> 
+                                        Submitted {{ $excuse->created_at->diffForHumans() }}
+                                    </div>
+                                </div>
+                                
+                                @if($excuse->status === 'pending')
+                                    <span class="saas-badge saas-badge-warning" style="font-size:0.7rem;">Pending</span>
+                                @elseif($excuse->status === 'approved')
+                                    <span class="saas-badge saas-badge-success" style="font-size:0.7rem;">Approved</span>
+                                @else
+                                    <span class="saas-badge saas-badge-danger" style="font-size:0.7rem;">Rejected</span>
+                                @endif
+                            </div>
+                            
+                            <div style="background:rgba(255,255,255,0.02); border-radius:var(--saas-radius-md); padding:12px; margin-bottom:12px;">
+                                <div style="font-size:0.8rem; font-weight:600; color:var(--saas-text); margin-bottom:4px;">Reason: {{ $excuse->reason }}</div>
+                                <p style="font-size:0.8rem; color:var(--saas-text-muted); margin:0; line-height:1.5;">{{ $excuse->description }}</p>
+                            </div>
+
+                            @if($excuse->attachments && count($excuse->attachments) > 0)
+                                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
                                     @foreach($excuse->attachments as $attachment)
                                         <a href="{{ asset('storage/' . $attachment) }}" target="_blank" 
-                                           style="display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.75rem; color: #475569; text-decoration: none; margin-right: 8px; margin-bottom: 4px;">
-                                            <i class="bi bi-paperclip"></i>
-                                            {{ basename($attachment) }}
+                                           style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(255,255,255,0.05); border:1px solid var(--saas-border); border-radius:999px; font-size:0.75rem; color:var(--saas-text); text-decoration:none; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                            <i class="bi bi-paperclip text-primary"></i>
+                                            {{ Str::limit(basename($attachment), 20) }}
                                         </a>
                                     @endforeach
                                 </div>
-                            </div>
-                        @endif
+                            @endif
 
-                        @if($excuse->status === 'rejected' && $excuse->admin_notes)
-                            <div style="margin-top: 12px; padding: 12px; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
-                                <strong style="color: #dc2626;">Admin Notes:</strong>
-                                <p style="margin: 4px 0 0 0; color: #dc2626;">{{ $excuse->admin_notes }}</p>
-                            </div>
-                        @endif
-                    </div>
-                @endforeach
-            @endif
+                            @if($excuse->status === 'rejected' && $excuse->admin_notes)
+                                <div style="padding:10px 12px; background:rgba(239,68,68,0.05); border-left:3px solid var(--saas-danger); border-radius:0 var(--saas-radius-sm) var(--saas-radius-sm) 0;">
+                                    <div style="font-size:0.75rem; font-weight:700; color:var(--saas-danger); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Reviewer Note</div>
+                                    <p style="font-size:0.8rem; color:rgba(248,231,211,0.9); margin:0;">{{ $excuse->admin_notes }}</p>
+                                </div>
+                            @endif
+                        </div>
+                    @empty
+                        <div style="padding:48px 20px; text-align:center;">
+                            <i class="bi bi-inbox" style="font-size:3rem; color:var(--saas-text-muted); opacity:0.3; margin-bottom:12px; display:block;"></i>
+                            <h4 class="saas-heading" style="font-size:1.1rem; margin-bottom:8px;">No Submissions Yet</h4>
+                            <p class="saas-text-muted" style="margin:0; font-size:0.875rem;">You haven't submitted any excuses.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
         </div>
     </div>
 </div>

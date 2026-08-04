@@ -252,7 +252,7 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
 });
 
 // Admin Routes (Admins only)
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.')->group(function () {
     // 2FA Routes
     Route::get('/2fa', [App\Http\Controllers\AdminController::class, 'twoFactorForm'])->name('2fa.form');
     Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify');
@@ -313,9 +313,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/profile', [App\Http\Controllers\AdminController::class, 'profile'])->name('profile');
     Route::post('/profile/image', [App\Http\Controllers\AdminController::class, 'updateImage'])->name('profile.image');
     
-    // Settings
-    Route::get('/settings', [App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
-    Route::post('/settings/update', [App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
+    // Settings (Super Admin Only)
+    Route::middleware('admin.super')->group(function () {
+        Route::get('/settings', [App\Http\Controllers\AdminController::class, 'settings'])->name('settings');
+        Route::post('/settings/update', [App\Http\Controllers\AdminController::class, 'updateSettings'])->name('settings.update');
+    });
+    
     Route::post('/password', [App\Http\Controllers\AdminController::class, 'updatePassword'])->name('password.update');
 
     // Activity Log
@@ -353,13 +356,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // System & Communication Modules
     Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class);
-    Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
-    Route::get('/backups', [App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
-    Route::post('/backups/create', [App\Http\Controllers\Admin\BackupController::class, 'create'])->name('backups.create');
-    Route::delete('/backups/{backup}', [App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backups.destroy');
-    
-    // RBAC
-    Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
+    // Super Admin Routes (Health, Backups, RBAC)
+    Route::middleware('admin.super')->group(function () {
+        Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
+        Route::get('/backups', [App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
+        Route::post('/backups/create', [App\Http\Controllers\Admin\BackupController::class, 'create'])->name('backups.create');
+        Route::delete('/backups/{backup}', [App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backups.destroy');
+        
+        Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
+    });
     
     // Omni-Search
     Route::get('/search', [App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search');
