@@ -777,7 +777,10 @@
                     document.getElementById('step-success').classList.add('active');
                     document.getElementById('step-desc').textContent = "Almost there...";
                     
-                    setTimeout(() => { document.getElementById('regForm').submit(); }, 1200);
+                    setTimeout(() => {
+                        updateFullName(); // Ensure name is up-to-date before submit
+                        document.getElementById('regForm').submit();
+                    }, 1200);
                 } else {
                     btn.disabled = false; btn.innerHTML = originalBtnHtml;
                     showAlert(data.message || 'Invalid OTP.');

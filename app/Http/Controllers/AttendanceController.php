@@ -125,7 +125,10 @@ if (!$scheduledDays->contains($todayFull)) {
         'date' => $todayDate
     ],
     [
+        // If attendance is marked Present/Late, it cannot also be "excused" (excused applies only to Absent).
         'status' => $status,
+        'excused' => false,
+        'excuse_note' => null,
         'time_in' => $now->format('H:i:s'),
         'latitude' => $request->latitude,
         'longitude' => $request->longitude,

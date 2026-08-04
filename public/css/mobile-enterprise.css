@@ -1,0 +1,432 @@
+/* ═══════════════════════════════════════════════════════════
+   MOBILE ENTERPRISE REDESIGN (Applies only on screens <= 768px)
+   A unified, premium mobile overlay for all application layouts
+   (Student, Teacher, Parent, Admin). Zero changes to desktop.
+   ═══════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    /* ── BASE & SHELL ── */
+    :root {
+        --mobile-header-height: 56px;
+        --mobile-nav-height: 68px;
+        --mobile-pad: 16px;
+    }
+
+    body {
+        padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 16px)) !important;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: none;
+    }
+
+    .main-wrapper, .saas-layout, .saas-main {
+        min-height: auto !important;
+        height: auto !important;
+        overflow-x: hidden;
+    }
+
+    .main-content, .saas-content {
+        padding-top: calc(var(--mobile-header-height) + 12px) !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .content-pad, .container-fluid, .p-4 {
+        padding-left: var(--mobile-pad) !important;
+        padding-right: var(--mobile-pad) !important;
+        padding-top: 0 !important;
+        padding-bottom: 24px !important;
+    }
+
+    /* ── HEADERS ── */
+    .top-header, .saas-topbar {
+        height: var(--mobile-header-height) !important;
+        padding: 0 var(--mobile-pad) !important;
+        left: 0 !important;
+        background: rgba(18, 11, 11, 0.85) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important;
+        border-bottom: 1px solid rgba(255,225,145,0.06) !important;
+    }
+
+    .header-page-title {
+        font-size: 1rem !important;
+    }
+    .header-page-sub {
+        display: none !important;
+    }
+
+    /* ── SIDEBAR OVERLAY FIXES ── */
+    .sidebar, .saas-sidebar {
+        width: 280px !important;
+        max-width: 85vw !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        z-index: 9999 !important;
+        box-shadow: 4px 0 40px rgba(0,0,0,0.5) !important;
+        will-change: transform;
+    }
+
+    .sidebar.open, .saas-sidebar.show {
+        transform: translateX(0) !important;
+    }
+
+    .sidebar-overlay, .saas-sidebar-overlay {
+        display: block !important;
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(0,0,0,0.6) !important;
+        backdrop-filter: blur(4px) !important;
+        -webkit-backdrop-filter: blur(4px) !important;
+        z-index: 9998 !important;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease !important;
+        will-change: opacity;
+    }
+
+    .sidebar.open ~ .sidebar-overlay,
+    .saas-sidebar.show ~ .saas-sidebar-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* ── BOTTOM NAVIGATION (Standardized) ── */
+    .mobile-bottom-nav {
+        display: flex !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+        background: rgba(15, 8, 5, 0.96) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        border-top: 1px solid rgba(255, 225, 145, 0.12) !important;
+        z-index: 9990 !important;
+        align-items: stretch !important;
+        box-shadow: 0 -8px 32px rgba(0,0,0,0.4) !important;
+        justify-content: space-around !important;
+    }
+
+    .mobile-bottom-nav .mbn-item {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        text-decoration: none !important;
+        color: rgba(255,255,255,0.45) !important;
+        font-size: 0.6rem !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.02em !important;
+        text-transform: uppercase !important;
+        transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+        position: relative !important;
+        padding: 6px 2px !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    .mobile-bottom-nav .mbn-item:active {
+        transform: scale(0.92) !important;
+    }
+
+    .mobile-bottom-nav .mbn-item i {
+        font-size: 1.35rem !important;
+        margin-bottom: 2px !important;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s !important;
+    }
+
+    .mobile-bottom-nav .mbn-item.active {
+        color: #cfa46f !important;
+    }
+
+    .mobile-bottom-nav .mbn-item.active i {
+        transform: translateY(-2px) scale(1.15) !important;
+        color: #cfa46f !important;
+        text-shadow: 0 4px 12px rgba(207,164,111,0.4) !important;
+    }
+
+    .mobile-bottom-nav .mbn-item.active::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 30% !important;
+        height: 3px !important;
+        background: #cfa46f !important;
+        border-radius: 4px 4px 0 0 !important;
+        box-shadow: 0 -2px 8px rgba(207,164,111,0.5) !important;
+    }
+
+    .mobile-bottom-nav .mbn-badge {
+        position: absolute !important;
+        top: 4px !important;
+        right: calc(50% - 20px) !important;
+        min-width: 18px !important;
+        height: 18px !important;
+        padding: 0 4px !important;
+        background: #dc2626 !important;
+        color: white !important;
+        border-radius: 99px !important;
+        font-size: 0.6rem !important;
+        font-weight: 800 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border: 2px solid rgba(15,8,5,1) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+    }
+
+    /* ── DASHBOARD HEADERS ── */
+    .ent-dash-header, .mobile-dash-header {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 12px 0 20px !important;
+        margin-bottom: 0 !important;
+        border-bottom: none !important;
+    }
+
+    .ent-mobile-header {
+        padding: 8px 0 16px !important;
+    }
+
+    .ent-dash-title, .mobile-dash-title, .hero-title, .ent-mobile-header-title {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.5px !important;
+        line-height: 1.2 !important;
+    }
+
+    .ent-dash-subtitle, .mobile-dash-subtitle, .hero-sub, .ent-mobile-header-sub {
+        font-size: 0.82rem !important;
+        margin-top: 2px !important;
+        opacity: 0.8 !important;
+    }
+
+    .hero-banner {
+        padding: 24px 20px !important;
+        border-radius: 20px !important;
+        margin-bottom: 20px !important;
+    }
+
+    .hero-icon {
+        display: none !important;
+    }
+
+    /* ── GRIDS & KPIs (Always 2 Column minimum for phones) ── */
+    .stat-grid, .ent-grid, .stats-row {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        margin-bottom: 24px !important;
+    }
+
+    .stat-grid-5, .ent-grid-4, .ent-grid-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .mobile-span-2 {
+        grid-column: span 2 !important;
+    }
+
+    .stat-card, .ent-kpi-card, .adm-stat, .stat-box {
+        padding: 16px 14px !important;
+        border-radius: 16px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        min-height: 100px !important;
+    }
+
+    .stat-icon-wrap, .ent-kpi-icon, .stat-icon {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 12px !important;
+    }
+
+    .stat-value, .ent-kpi-value, .adm-stat-val, .stat-val-premium {
+        font-size: 1.45rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 2px !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    .stat-label, .ent-kpi-label, .adm-stat-lbl, .tch-stat-lbl {
+        font-size: 0.68rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+    }
+
+    .stat-trend, .ent-kpi-trend {
+        font-size: 0.65rem !important;
+        padding: 2px 6px !important;
+        margin-top: 6px !important;
+    }
+
+    /* ── SECTIONS & CARDS ── */
+    .ent-section, .saas-card, .panel-section, .glass-panel, .child-card, .child-card-ent {
+        border-radius: 16px !important;
+        margin-bottom: 16px !important;
+        padding: 16px !important;
+    }
+
+    .ent-section-header, .saas-card-header, .child-card-header, .child-card-header-ent {
+        padding: 0 0 12px 0 !important;
+        background: transparent !important;
+        border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+        margin-bottom: 12px !important;
+    }
+
+    .ent-section-body, .saas-card-body {
+        padding: 0 !important;
+    }
+
+    /* ── TABLES TO CARDS (Enterprise Mobile Pattern) ── */
+    .ent-table thead, .saas-table thead, .adm-table thead, .att-table thead, .custom-table thead {
+        display: none !important;
+    }
+
+    .ent-table, .saas-table, .adm-table, .att-table, .custom-table {
+        display: block !important;
+        width: 100% !important;
+        background: transparent !important;
+        border: none !important;
+    }
+
+    .ent-table tbody, .saas-table tbody, .adm-table tbody, .att-table tbody, .custom-table tbody {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+    }
+
+    .ent-table tr, .saas-table tr, .adm-table tr, .att-table tr, .custom-table tr {
+        display: flex !important;
+        flex-direction: column !important;
+        background: rgba(255,255,255,0.03) !important;
+        border: 1px solid rgba(255,255,255,0.06) !important;
+        border-radius: 12px !important;
+        padding: 12px !important;
+        transition: transform 0.2s, box-shadow 0.2s !important;
+    }
+
+    .ent-table tr:active, .saas-table tr:active {
+        transform: scale(0.98) !important;
+        background: rgba(255,255,255,0.05) !important;
+    }
+
+    .ent-table td, .saas-table td, .adm-table td, .att-table td, .custom-table td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 6px 0 !important;
+        border: none !important;
+        font-size: 0.85rem !important;
+        text-align: right !important;
+    }
+
+    .ent-table td:not(:last-child), .saas-table td:not(:last-child), .adm-table td:not(:last-child) {
+        border-bottom: 1px dashed rgba(255,255,255,0.05) !important;
+    }
+
+    .ent-table td::before, .saas-table td::before, .adm-table td::before {
+        content: attr(data-label);
+        font-size: 0.72rem !important;
+        font-weight: 600 !important;
+        color: var(--ent-text-muted, #8f826f) !important;
+        text-transform: uppercase !important;
+        margin-right: 12px !important;
+        text-align: left !important;
+    }
+
+    /* ── ACTION BUTTONS ── */
+    .ent-btn, .saas-btn, .btn, .action-btn {
+        min-height: 44px !important;
+        padding: 10px 16px !important;
+        border-radius: 12px !important;
+        font-size: 0.85rem !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .ent-btn-sm, .saas-btn-sm, .btn-sm {
+        min-height: 36px !important;
+        padding: 6px 12px !important;
+        width: auto !important;
+        margin-bottom: 0 !important;
+    }
+
+    .action-buttons, .ent-dash-actions, .ent-quick-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+
+    .action-buttons > *, .ent-dash-actions > *, .ent-quick-actions > * {
+        flex: 1 1 calc(50% - 8px) !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* ── BADGES & ALERTS ── */
+    .ent-badge, .saas-badge, .badge, .status-badge {
+        padding: 4px 10px !important;
+        font-size: 0.7rem !important;
+        border-radius: 99px !important;
+    }
+
+    .ent-alert, .premium-alert, .saas-animate-up {
+        padding: 14px 16px !important;
+        border-radius: 12px !important;
+        margin-bottom: 16px !important;
+        align-items: flex-start !important;
+    }
+
+    .ent-alert-icon, .alert-icon-wrap {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1rem !important;
+    }
+
+    .ent-alert-title {
+        font-size: 0.85rem !important;
+    }
+
+    .ent-alert-text {
+        font-size: 0.78rem !important;
+    }
+
+    /* ── CHARTS ── */
+    .ent-chart-container, .donut-card canvas {
+        min-height: 200px !important;
+        max-height: 250px !important;
+        width: 100% !important;
+    }
+
+    /* ── FORMS ── */
+    .form-control, .form-select, .ent-input, .saas-input, .adm-input, .tch-input {
+        min-height: 48px !important;
+        font-size: 16px !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+    }
+
+    /* ── UTILITIES ── */
+    .d-mobile-none { display: none !important; }
+    .d-mobile-block { display: block !important; }
+    .d-mobile-flex { display: flex !important; }
+}

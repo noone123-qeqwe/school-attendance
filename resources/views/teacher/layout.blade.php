@@ -48,6 +48,10 @@
         </a>
 
         <div class="sidebar-section-label">Communication & Insight</div>
+        <a href="{{ route('teacher.calendar') }}" class="nav-link {{ request()->routeIs('teacher.calendar*') ? 'active' : '' }}">
+            <i class="bi bi-calendar-event"></i>
+            <span class="nav-link-text">Holiday Calendar</span>
+        </a>
         <a href="{{ route('teacher.notifications') }}" class="nav-link {{ request()->routeIs('teacher.notifications*') ? 'active' : '' }}">
             <i class="bi bi-bell-fill"></i>
             <span class="nav-link-text">Notifications</span>

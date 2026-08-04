@@ -10,7 +10,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 
-    <link rel="stylesheet" href="{{ asset('css/premium.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
 </head>
 
 <body>
@@ -20,6 +22,11 @@
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <aside class="sidebar" id="sidebar">
+        <div class="d-md-none" style="padding: 16px 16px 0 16px; display: flex; align-items: center;">
+            <button onclick="closeSidebar()" class="btn btn-sm" style="color: #cfa46f; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2); border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="bi bi-chevron-left"></i> Back
+            </button>
+        </div>
         @section('role-sidebar')
         <!-- Default (Student) sidebar -->
         <!-- Logo area -->
@@ -54,6 +61,12 @@
                     <i class="bi bi-file-earmark-check"></i>
                     <span class="nav-link-text">Excuse Reviews</span>
                 </a>
+                <a href="{{ route('admin.calendar') }}"
+                   class="nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}"
+                   data-title="Holiday Calendar">
+                    <i class="bi bi-calendar-event"></i>
+                    <span class="nav-link-text">Holiday Calendar</span>
+                </a>
             @else
                 <a href="{{ route('home') }}"
                    class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}"
@@ -82,8 +95,10 @@
             @endif
         </div>
 
+
+
         <div class="sidebar-footer text-center">
-            <small>© {{ date('Y') }} {{ config('app.name') }}</small>
+            <small>&copy; {{ date('Y') }} {{ config('app.name') }}</small>
         </div>
         @show
     </aside>
@@ -553,6 +568,36 @@
         document.getElementById('globalDrawer').classList.remove('open');
     }
     </script>
+
+    @auth
+    @if(!Auth::user()->isAdmin())
+    {{-- ═══ MOBILE BOTTOM NAVIGATION BAR (STUDENT) ═══ --}}
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <a href="{{ route('home') }}" class="mbn-item {{ request()->routeIs('home') ? 'active' : '' }}">
+            <i class="bi bi-grid-fill"></i>
+            <span>Home</span>
+        </a>
+        <a href="{{ route('student.classes') }}" class="mbn-item {{ request()->routeIs('student.classes') ? 'active' : '' }}">
+            <i class="bi bi-folder-fill"></i>
+            <span>Classes</span>
+        </a>
+        <a href="{{ route('notifications') }}" class="mbn-item {{ request()->routeIs('notifications') ? 'active' : '' }}">
+            @php $mbnUnread = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count(); @endphp
+            @if($mbnUnread > 0)<span class="mbn-badge">{{ $mbnUnread > 9 ? '9+' : $mbnUnread }}</span>@endif
+            <i class="bi bi-bell-fill"></i>
+            <span>Alerts</span>
+        </a>
+        <a href="{{ route('excuses') }}" class="mbn-item {{ request()->routeIs('excuses*') ? 'active' : '' }}">
+            <i class="bi bi-file-text-fill"></i>
+            <span>Excuses</span>
+        </a>
+        <a href="{{ route('settings') }}" class="mbn-item {{ request()->routeIs('settings') ? 'active' : '' }}">
+            <i class="bi bi-person-fill"></i>
+            <span>Profile</span>
+        </a>
+    </nav>
+    @endif
+    @endauth
 
     @yield('scripts')
 </body>

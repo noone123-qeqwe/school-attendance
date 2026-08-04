@@ -22,6 +22,15 @@ class PTController extends Controller
     {
         // Validation is now handled by RegisterUserRequest
 
+        // Verify OTP email
+        $verifiedEmail = session('reg_email_verified');
+        if (!$verifiedEmail || strtolower($verifiedEmail) !== strtolower($request->email)) {
+            return back()->withInput()->withErrors(['email' => 'Please verify your email address using the OTP sent to your email.']);
+        }
+        
+        // Clear the session so it cannot be reused
+        session()->forget('reg_email_verified');
+
         // 3. Create user based on role
         $userData = [
             'name' => $request->name,
@@ -157,12 +166,16 @@ public function updateImage(Request $request)
     ]);
 
         if ($request->hasFile('profile_image')) {
-
-            $uploadedFileUrl = cloudinary()->upload($request->file('profile_image')->getRealPath())->getSecurePath();
-
             /** @var \App\Models\User $user */
             $user = auth()->user();
-            $user->profile_image = $uploadedFileUrl;
+
+            // Delete old image if it exists in local storage
+            if ($user->profile_image && !str_starts_with($user->profile_image, 'http')) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_image);
+            }
+
+            $path = $request->file('profile_image')->store('profile_images', 'public');
+            $user->profile_image = $path;
             $user->save();
         }
 

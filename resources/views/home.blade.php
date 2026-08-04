@@ -2,7 +2,6 @@
 
 @section('content')
 
-
 @php
     $calYear   = request('cal_year',  now()->year);
     $calMonth  = request('cal_month', now()->month);
@@ -76,60 +75,78 @@
 <div class="container-fluid" style="max-width: 1200px;">
 
     @if(session('error'))
-    <div class="premium-alert danger anim-slide-up">
-        <div class="alert-icon-wrap" style="width: 36px; height: 36px; font-size: 1rem;">
-            <i class="bi bi-exclamation-circle-fill text-white"></i>
-        </div>
-        <div style="flex:1;">
-            <span style="font-size: 0.95rem; font-weight: 600; color: #fee2e2;">{{ session('error') }}</span>
+    <div class="ent-alert danger ent-fade-up">
+        <div class="ent-alert-icon"><i class="bi bi-exclamation-circle-fill"></i></div>
+        <div class="ent-alert-body">
+            <div class="ent-alert-text" style="color:#fee2e2;font-weight:600;">{{ session('error') }}</div>
         </div>
     </div>
     @endif
 
     <!-- ACTIVE WARNINGS BANNER -->
     @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-    <div class="glass-panel anim-slide-up" style="background: linear-gradient(135deg, rgba(220,38,38,0.15) 0%, rgba(153,27,27,0.05) 100%); border-color: rgba(239,68,68,0.3); padding: 24px; margin-bottom: 24px; position: relative;">
-        <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 5rem; opacity: 0.05; pointer-events: none;">⚠️</div>
-        <div class="d-flex align-items-center gap-3 mb-3">
-            <div class="alert-icon-wrap" style="background: rgba(239,68,68,0.25);">
-                <i class="bi bi-exclamation-triangle-fill text-danger fs-4"></i>
-            </div>
-            <div>
-                <div style="font-size: 1.15rem; font-weight: 800; color: #fca5a5;">Action Required: Attendance Warning</div>
-                <div style="font-size: 0.88rem; color: #e7dcc8;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
-            </div>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-            @foreach($activeWarnings as $warning)
-            <div style="background: rgba(0,0,0,0.2); padding: 14px 18px; border-radius: 14px; border: 1px solid rgba(239,68,68,0.15);">
-                <div style="font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #fca5a5;"><i class="bi bi-exclamation-triangle-fill me-2"></i>{{ $warning->subject_code }}</span>
-                    <span style="opacity: 0.6; font-size: 0.75rem; font-weight: 600;">{{ $warning->created_at->diffForHumans() }}</span>
+    <div class="ent-section ent-fade-up ent-mb-lg" style="border-color:rgba(239,68,68,0.25);background:linear-gradient(135deg,rgba(220,38,38,0.08) 0%,rgba(153,27,27,0.03) 100%);">
+        <div class="ent-section-body" style="position:relative;">
+            <div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:4rem;opacity:0.04;pointer-events:none;">⚠️</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                <div class="ent-kpi-icon" style="background:rgba(239,68,68,0.15);color:var(--ent-danger);width:44px;height:44px;">
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size:1.2rem;"></i>
                 </div>
-                <div style="font-size: 0.85rem; color: #e7dcc8; line-height: 1.4;">{{ $warning->message }}</div>
+                <div>
+                    <div style="font-size:1.05rem;font-weight:800;color:#fca5a5;">Action Required: Attendance Warning</div>
+                    <div style="font-size:0.82rem;color:var(--ent-text-secondary);">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
+                </div>
             </div>
-            @endforeach
-        </div>
-        <div style="margin-top: 18px; display: flex; gap: 12px;">
-            <a href="{{ route('excuses') }}" class="premium-btn" style="background: linear-gradient(135deg, #dc2626, #991b1b); border-color: rgba(220,38,38,0.5);">
-                <i class="bi bi-file-text-fill"></i> Submit Excuse
-            </a>
-            <a href="{{ route('attendance.records') }}" class="premium-btn" style="background: rgba(255,255,255,0.05);">
-                View Records
-            </a>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                @foreach($activeWarnings as $warning)
+                <div style="background:rgba(0,0,0,0.2);padding:12px 16px;border-radius:var(--ent-radius-md);border:1px solid rgba(239,68,68,0.1);">
+                    <div class="ent-flex-between" style="margin-bottom:4px;">
+                        <span style="color:#fca5a5;font-weight:700;font-size:0.85rem;"><i class="bi bi-exclamation-triangle-fill" style="margin-right:4px;"></i>{{ $warning->subject_code }}</span>
+                        <span class="ent-text-muted" style="font-size:0.7rem;">{{ $warning->created_at->diffForHumans() }}</span>
+                    </div>
+                    <div style="font-size:0.82rem;color:var(--ent-text-secondary);line-height:1.5;">{{ $warning->message }}</div>
+                </div>
+                @endforeach
+            </div>
+            <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+                <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary" style="background:linear-gradient(135deg,#dc2626,#991b1b);border-color:rgba(220,38,38,0.3);">
+                    <i class="bi bi-file-text-fill"></i> Submit Excuse
+                </a>
+                <a href="{{ route('attendance.records') }}" class="ent-btn ent-btn-secondary">
+                    View Records
+                </a>
+            </div>
         </div>
     </div>
     @endif
 
-    <!-- HERO BANNER -->
-    <div class="hero-banner fade-up fade-up-1" style="margin-bottom: 24px;">
-        <div class="hero-icon">🎓</div>
-        <div class="hero-greeting">{{ $greeting }}</div>
-        <div class="hero-title">{{ Auth::user()->name }}</div>
-        <div class="hero-sub">
-            {{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}
+    <!-- MOBILE COMPACT HEADER (Only on mobile) -->
+    <div class="mobile-dash-header d-md-none" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div>
+            <div class="mobile-dash-title" style="font-size:1.45rem; font-weight:800; line-height:1.2; letter-spacing:-0.5px;">
+                {{ $greeting }},<br>{{ explode(' ', Auth::user()->name)[0] }}!
+            </div>
+            <div class="mobile-dash-subtitle" style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px;">
+                {{ now()->format('l, M j') }}
+            </div>
         </div>
-        <div class="hero-time">
+        <div style="background: rgba(207,164,111,0.15); color: var(--gold); padding: 10px 16px; border-radius: 14px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.2);">
+            <div style="font-size:0.65rem; text-transform:uppercase; font-weight:700; letter-spacing:0.5px; opacity:0.9;">Present</div>
+            <div style="font-size:1.3rem; font-weight:800; line-height:1.1; margin-top:2px;">{{ $totalPresent }}</div>
+        </div>
+    </div>
+
+    <!-- HERO BANNER (Desktop only) -->
+    <div class="hero-banner fade-up fade-up-1 d-none d-md-flex" style="margin-bottom: 24px;">
+        <div class="hero-icon">🎓</div>
+        <div>
+            <div class="hero-greeting">{{ $greeting }}</div>
+            <div class="hero-title">{{ Auth::user()->name }}</div>
+            <div class="hero-sub">
+                {{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}
+            </div>
+        </div>
+        <div class="hero-time" style="margin-left: auto;">
             <i class="bi bi-clock"></i>
             <span id="liveTime">{{ now()->format('h:i A') }}</span>
             &nbsp;·&nbsp; {{ now()->format('l, F j, Y') }}
@@ -138,132 +155,248 @@
 
     <!-- HOLIDAY NOTIFICATION -->
     @if($todayHoliday)
-    <div class="glass-panel anim-slide-up" style="background: linear-gradient(135deg, rgba(220,38,38,0.15) 0%, rgba(190,18,60,0.05) 100%); border-color: rgba(220,38,38,0.2); padding: 24px; margin-bottom: 24px; position: relative;">
-        <div style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 3.5rem; opacity: 0.1;">🎉</div>
-        <div class="d-flex align-items-center gap-3 mb-2">
-            <div class="alert-icon-wrap" style="background: rgba(239,68,68,0.15);">
-                <span class="fs-4">🏖️</span>
+    <div class="ent-section ent-fade-up ent-mb-lg" style="border-color:rgba(220,38,38,0.15);background:linear-gradient(135deg,rgba(220,38,38,0.08),rgba(190,18,60,0.03));">
+        <div class="ent-section-body" style="position:relative;">
+            <div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:3rem;opacity:0.08;">🎉</div>
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+                <div class="ent-kpi-icon" style="background:rgba(239,68,68,0.12);color:#fca5a5;width:40px;height:40px;">
+                    <span style="font-size:1.2rem;">🏖️</span>
+                </div>
+                <div>
+                    <div style="font-size:1.05rem;font-weight:800;color:#fca5a5;">{{ $todayHoliday->name }}</div>
+                    <div style="font-size:0.78rem;color:var(--ent-text-secondary);">{{ $todayHoliday->type_label }} &bull; {{ $todayHoliday->date->format('F j, Y') }}</div>
+                </div>
             </div>
-            <div>
-                <div style="font-size: 1.15rem; font-weight: 800; color: #fca5a5;">{{ $todayHoliday->name }}</div>
-                <div style="font-size: 0.82rem; color: #e7dcc8;">{{ $todayHoliday->type_label }} &bull; {{ $todayHoliday->date->format('F j, Y') }}</div>
+            @if($todayHoliday->description)
+            <div style="font-size:0.82rem;color:var(--ent-text-secondary);margin-top:6px;">{{ $todayHoliday->description }}</div>
+            @endif
+            <div style="background:rgba(0,0,0,0.15);padding:10px 14px;border-radius:var(--ent-radius-sm);margin-top:12px;font-size:0.82rem;font-weight:600;color:#f3e7cd;">
+                <i class="bi bi-info-circle" style="color:#4ade80;margin-right:6px;"></i>No classes today — Enjoy your holiday! 🎊
             </div>
-        </div>
-        @if($todayHoliday->description)
-        <div style="font-size: 0.85rem; color: #e7dcc8; margin-top: 8px;">{{ $todayHoliday->description }}</div>
-        @endif
-        <div style="background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: 12px; margin-top: 16px; font-size: 0.85rem; font-weight: 600; color: #f3e7cd;">
-            <i class="bi bi-info-circle me-2" style="color: #4ade80;"></i>No classes today — Enjoy your holiday! 🎊
         </div>
     </div>
     @endif
 
-    <!-- UPCOMING HOLIDAYS -->
-    @if($upcomingHolidays->count() > 0)
-    <div class="glass-panel anim-slide-up" style="padding: 20px 24px; margin-bottom: 24px;">
-        <div class="d-flex align-items-center gap-2 mb-3">
-            <div class="tch-card-icon" style="background: rgba(248,113,113,0.15); color: #f87171; width: 36px; height: 36px; font-size: 1rem;">
-                <i class="bi bi-calendar-event-fill"></i>
+    <!-- HOLIDAY & EVENTS CALENDAR (Read-Only) -->
+    @php
+        $stuCalYear   = request('hcal_year', now()->year);
+        $stuCalMonth  = request('hcal_month', now()->month);
+        $stuCalStart  = \Carbon\Carbon::create($stuCalYear, $stuCalMonth, 1);
+        $stuCalEnd    = $stuCalStart->copy()->endOfMonth();
+        $stuCalPrev   = $stuCalStart->copy()->subMonth();
+        $stuCalNext   = $stuCalStart->copy()->addMonth();
+        $stuStartDow  = $stuCalStart->dayOfWeek;
+        $stuIsCurrent = (now()->year == $stuCalYear && now()->month == $stuCalMonth);
+        $stuToday     = now()->day;
+
+        // Build holiday map for this month
+        $stuHolidayMap = [];
+        $allMonthHolidays = \App\Models\Holiday::active()
+            ->forMonth($stuCalYear, $stuCalMonth)
+            ->orderBy('date')
+            ->get();
+        foreach ($allMonthHolidays as $hol) {
+            $dk = $hol->date->format('Y-m-d');
+            $stuHolidayMap[$dk][] = [
+                'type' => $hol->type, 'name' => $hol->name,
+                'description' => $hol->description,
+                'type_label' => $hol->type_label, 'source' => 'holiday',
+                'date_formatted' => $hol->date->format('M j, Y'),
+            ];
+        }
+        // Merge announcements
+        if (isset($calendarEvents)) {
+            foreach ($calendarEvents as $evt) {
+                if ($evt->type === 'announcement') {
+                    $stuHolidayMap[$evt->date][] = [
+                        'type' => 'announcement', 'name' => $evt->title,
+                        'description' => $evt->content,
+                        'type_label' => 'Announcement', 'source' => 'announcement',
+                        'date_formatted' => \Carbon\Carbon::parse($evt->date)->format('M j, Y'),
+                        'author' => $evt->author ?? null,
+                    ];
+                }
+            }
+        }
+
+        // Build upcoming list
+        $stuUpcoming = collect();
+        foreach ($allMonthHolidays->where('date', '>=', now()->toDateString())->take(5) as $hol) {
+            $stuUpcoming->push((object)[
+                'type' => $hol->type, 'name' => $hol->name,
+                'description' => $hol->description, 'date' => $hol->date,
+                'date_formatted' => $hol->date->format('M j, Y'),
+                'type_label' => $hol->type_label, 'source' => 'holiday',
+            ]);
+        }
+        if (isset($upcomingHolidays)) {
+            foreach ($upcomingHolidays as $hol) {
+                if (!$stuUpcoming->contains('name', $hol->name)) {
+                    $stuUpcoming->push((object)[
+                        'type' => $hol->type, 'name' => $hol->name,
+                        'description' => $hol->description, 'date' => $hol->date,
+                        'date_formatted' => $hol->date->format('M j, Y'),
+                        'type_label' => $hol->type_label, 'source' => 'holiday',
+                    ]);
+                }
+            }
+        }
+        if (isset($announcements)) {
+            foreach ($announcements->take(3) as $ann) {
+                $annDate = $ann->scheduled_for ?? $ann->created_at;
+                $stuUpcoming->push((object)[
+                    'type' => 'announcement', 'name' => $ann->title,
+                    'description' => \Illuminate\Support\Str::limit($ann->content, 100),
+                    'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
+                    'type_label' => 'Announcement', 'source' => 'announcement',
+                    'author' => $ann->author->name ?? 'Admin',
+                ]);
+            }
+        }
+        $stuUpcoming = $stuUpcoming->sortBy('date')->values()->take(8);
+    @endphp
+
+    <div class="ent-section ent-fade-up ent-mb-lg">
+        <div class="ent-section-header">
+            <div class="ent-section-title">
+                <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:#f87171;">
+                    <i class="bi bi-calendar-heart-fill"></i>
+                </div>
+                Holiday & Events Calendar
             </div>
-            <div style="font-size: 1rem; font-weight: 700; color: #f3e7cd;">Upcoming Holidays</div>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            @foreach($upcomingHolidays as $holiday)
-            <div class="class-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-radius: 12px; background: rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.05);">
-                <div>
-                    <div style="font-size: 0.9rem; font-weight: 700; color: #f3e7cd;">{{ $holiday->name }}</div>
-                    <div style="font-size: 0.75rem; color: #b39b82;">{{ $holiday->type_label }}</div>
+        <div class="ent-section-body" style="padding:16px 20px;">
+            <div class="hcal-container">
+                {{-- Calendar Pane --}}
+                <div class="hcal-calendar-pane">
+                    <div class="hcal-nav">
+                        <a href="?hcal_year={{ $stuCalPrev->year }}&hcal_month={{ $stuCalPrev->month }}" class="hcal-nav-btn">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                        <div class="hcal-month-label">{{ $stuCalStart->format('F Y') }}</div>
+                        <a href="?hcal_year={{ $stuCalNext->year }}&hcal_month={{ $stuCalNext->month }}" class="hcal-nav-btn">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="hcal-day-labels">
+                        @foreach(['S','M','T','W','T','F','S'] as $lbl)
+                            <div class="hcal-day-label">{{ $lbl }}</div>
+                        @endforeach
+                    </div>
+
+                    <div class="hcal-grid">
+                        @for($i = 0; $i < $stuStartDow; $i++)
+                            <div class="hcal-day empty"></div>
+                        @endfor
+
+                        @for($d = 1; $d <= $stuCalEnd->day; $d++)
+                            @php
+                                $dateKey = \Carbon\Carbon::create($stuCalYear, $stuCalMonth, $d)->format('Y-m-d');
+                                $isToday = $stuIsCurrent && $d === $stuToday;
+                                $isSunday = \Carbon\Carbon::create($stuCalYear, $stuCalMonth, $d)->dayOfWeek === 0;
+                                $dayEvents = $stuHolidayMap[$dateKey] ?? [];
+                                $hasEvents = count($dayEvents) > 0;
+                                $isHoliday = collect($dayEvents)->where('source', 'holiday')->isNotEmpty();
+                                $cls = '';
+                                if ($isToday) $cls .= ' today';
+                                if ($isSunday) $cls .= ' sunday';
+                                if ($hasEvents) $cls .= ' has-event';
+                                if ($isHoliday) $cls .= ' holiday-day';
+                            @endphp
+                            <div class="hcal-day{{ $cls }}" @if($hasEvents) onclick="scrollToStudentEvent('{{ $dateKey }}')" title="{{ collect($dayEvents)->pluck('name')->join(', ') }}" @endif>
+                                <div class="hcal-day-num">{{ $d }}</div>
+                                @if($hasEvents)
+                                    <div class="hcal-dots">
+                                        @foreach(collect($dayEvents)->unique('type')->take(3) as $evt)
+                                            <div class="hcal-dot {{ $evt['type'] }}"></div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                        @endfor
+                    </div>
+
+                    <div class="hcal-legend">
+                        <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#dc2626;"></div> National</div>
+                        <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#d97706;"></div> Local</div>
+                        <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#7c2d12;"></div> School</div>
+                        <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#6366f1;"></div> No Class</div>
+                        <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#60a5fa;"></div> Announcement</div>
+                    </div>
                 </div>
-                <div style="font-size: 0.85rem; font-weight: 800; color: {{ $holiday->type_color }}; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 8px;">
-                    {{ $holiday->date->format('M j') }}
+
+                {{-- Events Sidebar (Read Only) --}}
+                <div class="hcal-events-pane">
+                    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ent-text-muted);margin-bottom:12px;">
+                        <i class="bi bi-calendar-event"></i> Upcoming Events
+                    </div>
+                    @forelse($stuUpcoming as $evt)
+                        <div class="hcal-event-card" data-type="{{ $evt->type }}" id="stu-evt-{{ is_object($evt->date) ? $evt->date->format('Y-m-d') : $evt->date }}">
+                            <div class="hcal-event-type {{ $evt->type }}">
+                                <i class="bi {{ $evt->source === 'holiday' ? 'bi-calendar-heart' : 'bi-megaphone' }}"></i>
+                                {{ $evt->type_label }}
+                            </div>
+                            <div class="hcal-event-name">{{ $evt->name }}</div>
+                            <div class="hcal-event-date">
+                                <i class="bi bi-calendar3"></i> {{ $evt->date_formatted }}
+                                @if(isset($evt->author))
+                                    · <i class="bi bi-person"></i> {{ $evt->author }}
+                                @endif
+                            </div>
+                            @if($evt->description)
+                                <div class="hcal-event-desc">{{ $evt->description }}</div>
+                            @endif
+                        </div>
+                    @empty
+                        <div class="hcal-empty">
+                            <div class="hcal-empty-icon"><i class="bi bi-calendar-x"></i></div>
+                            <div class="hcal-empty-text">No upcoming events</div>
+                        </div>
+                    @endforelse
                 </div>
             </div>
-            @endforeach
         </div>
     </div>
-    @endif
 
     <!-- STATS ROW -->
-    <div class="row g-4 mb-4">
-        <div class="col-6 col-xl-3">
-            <div class="glass-panel stat-card-premium anim-slide-up delay-1">
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #4ade80; opacity: 0.8;"></div>
-                <i class="bi bi-check-circle-fill stat-icon-floating" style="color: #4ade80;"></i>
-                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(22,163,74,0.05)); color: #4ade80; border: 1px solid rgba(34,197,94,0.2);">
-                    <i class="bi bi-check-circle-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-val-premium" data-count="{{ $totalPresent }}">0</div>
-                    <div class="tch-stat-lbl">Present (All-time)</div>
-                </div>
+    <div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-1">
+        <div class="ent-kpi-card" data-accent="success">
+            <div class="ent-kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="ent-kpi-body">
+                <div class="ent-kpi-label">Present (All-time)</div>
+                <div class="ent-kpi-value" data-count="{{ $totalPresent }}">0</div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
-            <div class="glass-panel stat-card-premium anim-slide-up delay-2">
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #fbbf24; opacity: 0.8;"></div>
-                <i class="bi bi-clock-fill stat-icon-floating" style="color: #fbbf24;"></i>
-                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.05)); color: #fbbf24; border: 1px solid rgba(245,158,11,0.2);">
-                    <i class="bi bi-clock-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-val-premium" data-count="{{ $totalLate }}">0</div>
-                    <div class="tch-stat-lbl">Late (All-time)</div>
-                </div>
+        <div class="ent-kpi-card" data-accent="warning">
+            <div class="ent-kpi-icon"><i class="bi bi-clock-fill"></i></div>
+            <div class="ent-kpi-body">
+                <div class="ent-kpi-label">Late (All-time)</div>
+                <div class="ent-kpi-value" data-count="{{ $totalLate }}">0</div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
-            <div class="glass-panel stat-card-premium anim-slide-up delay-3">
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #f87171; opacity: 0.8;"></div>
-                <i class="bi bi-x-circle-fill stat-icon-floating" style="color: #f87171;"></i>
-                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(185,28,28,0.05)); color: #f87171; border: 1px solid rgba(239,68,68,0.2);">
-                    <i class="bi bi-x-circle-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-val-premium" data-count="{{ $totalAbsent }}">0</div>
-                    <div class="tch-stat-lbl">Absent (All-time)</div>
-                </div>
+        <div class="ent-kpi-card" data-accent="danger">
+            <div class="ent-kpi-icon"><i class="bi bi-x-circle-fill"></i></div>
+            <div class="ent-kpi-body">
+                <div class="ent-kpi-label">Absent (All-time)</div>
+                <div class="ent-kpi-value" data-count="{{ $totalAbsent }}">0</div>
             </div>
         </div>
-        <div class="col-6 col-xl-3">
-            <div class="glass-panel stat-card-premium anim-slide-up delay-3">
-                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: #cfa46f; opacity: 0.8;"></div>
-                <i class="bi bi-book-fill stat-icon-floating" style="color: #cfa46f;"></i>
-                <div class="stat-icon-solid" style="background: linear-gradient(135deg, rgba(207,164,111,0.15), rgba(143,110,74,0.05)); color: #cfa46f; border: 1px solid rgba(207,164,111,0.2);">
-                    <i class="bi bi-book-fill"></i>
-                </div>
-                <div>
-                    <div class="stat-val-premium" data-count="{{ isset($subjects) ? count($subjects) : 0 }}">0</div>
-                    <div class="tch-stat-lbl">Subjects Enrolled</div>
-                </div>
+        <div class="ent-kpi-card" data-accent="gold">
+            <div class="ent-kpi-icon"><i class="bi bi-book-fill"></i></div>
+            <div class="ent-kpi-body">
+                <div class="ent-kpi-label">Subjects Enrolled</div>
+                <div class="ent-kpi-value" data-count="{{ isset($subjects) ? count($subjects) : 0 }}">0</div>
             </div>
         </div>
     </div>
 
-    <!-- STREAK + QUICK ACTIONS ROW -->
-    <div class="anim-slide-up delay-3" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
-        <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-            <div style="font-size: 0.95rem; font-weight: 600; color: rgba(245,234,215,0.75);">
-                Overall Rate: <span style="color: {{ $attendanceRate >= 75 ? '#4ade80' : '#f87171' }}; font-weight: 800; font-size: 1.1rem;">{{ $attendanceRate }}%</span>
-            </div>
-        </div>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-            <a href="{{ route('student.classes') }}" class="premium-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; font-size: 0.85rem;">
-                <i class="bi bi-calendar-week"></i> My Schedule
-            </a>
-            <a href="{{ route('excuses') }}" class="premium-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; font-size: 0.85rem;">
-                <i class="bi bi-file-text"></i> Excuses
-            </a>
-            <a href="{{ route('attendance.records') }}" class="premium-btn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 8px 16px; font-size: 0.85rem;">
-                <i class="bi bi-list-check"></i> All Records
-            </a>
-        </div>
-    </div>
 
     <!-- MAIN BENTO GRID -->
     <div class="bento-grid">
 
         <!-- TODAY'S SCHEDULE -->
-        <div class="bento-item bento-item--schedule glass-panel anim-slide-up delay-2">
+        <div class="bento-item bento-item--schedule glass-panel ent-fade-up ent-delay-2">
             <div class="section-header">
                 <div class="section-icon" style="background: rgba(216,179,92,0.14); color: var(--gold);">
                     <i class="bi bi-clock-history"></i>
@@ -296,15 +429,17 @@
                 </div>
                 @endforeach
             @else
-                <div class="empty-state-card">
-                    <i class="bi bi-calendar-x"></i>
-                    <p>No classes scheduled today</p>
+                <div class="ent-empty" style="padding:32px 16px;">
+                    <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;">
+                        <i class="bi bi-calendar-x"></i>
+                    </div>
+                    <div class="ent-empty-text">No classes scheduled today</div>
                 </div>
             @endif
         </div>
 
         <!-- ATTENDANCE CALENDAR -->
-        <div class="bento-item bento-item--calendar glass-panel anim-slide-up delay-3">
+        <div class="bento-item bento-item--calendar glass-panel ent-fade-up ent-delay-3">
             <div class="section-header">
                 <div class="section-icon" style="background: rgba(37,99,235,0.14); color: #60a5fa;">
                     <i class="bi bi-calendar3"></i>
@@ -347,6 +482,7 @@
                         $hasRecs   = !empty($dots);
                         $dateKey   = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
                         $dateLabel = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('F j, Y');
+                        $hasEvents = isset($eventsMap[$dateKey]);
 
                         $isHoliday = false;
                         if ($isToday) {
@@ -359,9 +495,11 @@
                         elseif ($isFuture) $cls = 'future';
                         elseif ($isToday) $cls = 'today';
                         if ($hasRecs && !$isNoClass && !$isFuture && !$isHoliday) $cls .= ' has-records';
+                        if ($hasEvents) $cls .= ' has-events';
 
                         $isClickable = ($hasRecs && !$isNoClass && !$isFuture && !$isHoliday) ||
-                                      ($isToday && !$isNoClass && !$isHoliday);
+                                      ($isToday && !$isNoClass && !$isHoliday) ||
+                                      $hasEvents;
                     @endphp
                     <div class="cal-day {{ $cls }}"
                          @if($isClickable)
@@ -378,6 +516,13 @@
                                 @foreach($dots as $dot)
                                     <div class="cal-dot {{ $dot }}"></div>
                                 @endforeach
+                                @if($hasEvents)
+                                    <div class="cal-dot" style="background:#a78bfa;"></div>
+                                @endif
+                            </div>
+                        @elseif($hasEvents)
+                            <div class="cal-dots">
+                                <div class="cal-dot" style="background:#a78bfa;"></div>
                             </div>
                         @elseif($isToday && !$isNoClass && !$isHoliday)
                             <div class="cal-dots">
@@ -398,117 +543,17 @@
                 <div class="cal-legend-item">
                     <div class="cal-legend-dot" style="background:#dc2626;"></div> Absent
                 </div>
+                <div class="cal-legend-item">
+                    <div class="cal-legend-dot" style="background:#a78bfa;"></div> Event
+                </div>
             </div>
         </div>
 
-        <!-- RECENT ATTENDANCE + DONUT -->
-        <div class="bento-item bento-item--recent glass-panel anim-slide-up delay-3">
-            <!-- Donut Chart -->
-            <div style="margin-bottom: 22px;">
-                <div class="section-header" style="margin-bottom: 12px;">
-                    <div class="section-icon" style="background: rgba(168,85,247,0.14); color: #c084fc;">
-                        <i class="bi bi-pie-chart-fill"></i>
-                    </div>
-                    <div>
-                        <div class="section-title">Attendance Rate</div>
-                    </div>
-                </div>
-                <div style="position: relative; max-width: 180px; margin: 0 auto;">
-                    <canvas id="attendanceDonut" width="180" height="180" style="padding: 10px;"></canvas>
-                    <div class="rate-center">
-                        <div class="rate-value">{{ $totalRecords > 0 ? $attendanceRate.'%' : 'N/A' }}</div>
-                        <div class="rate-label">Rate</div>
-                    </div>
-                </div>
-                <div class="donut-legend">
-                    <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#16a34a;"></div> {{ $totalPresent }}</div>
-                    <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#eab308;"></div> {{ $totalLate }}</div>
-                    <div class="donut-legend-item"><div class="donut-legend-dot" style="background:#dc2626;"></div> {{ $totalAbsent }}</div>
-                </div>
-            </div>
-            <div style="height: 1px; background: rgba(255,255,255,0.06); margin: 0 -22px 18px;"></div>
 
-            <!-- Recent Attendance -->
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-                <div class="section-header" style="margin-bottom: 0;">
-                    <div class="section-icon" style="background: rgba(34,197,94,0.14); color: #4ade80;">
-                        <i class="bi bi-shield-check"></i>
-                    </div>
-                    <div>
-                        <div class="section-title">Recent</div>
-                    </div>
-                </div>
-                <a href="{{ route('attendance.records') }}" class="view-all-btn">View all</a>
-            </div>
-
-            <table class="att-table">
-                <thead>
-                    <tr><th>Date</th><th>Subject</th><th>Status</th><th>Time</th></tr>
-                </thead>
-                <tbody>
-                    @forelse($records->take(5) as $record)
-                    <tr>
-                        <td>{{ \Carbon\Carbon::parse($record->date)->format('M d') }}</td>
-                        <td class="subject-name">{{ $record->subject->name ?? $record->subject_code }}</td>
-                        <td>
-                            @if($record->excused)
-                                <span class="status-badge" style="background:rgba(34,197,94,0.14);color:#86efac;">Excused</span>
-                            @elseif($record->status == 'Present')
-                                <span class="status-badge badge-present">Present</span>
-                            @elseif($record->status == 'Late')
-                                <span class="status-badge badge-late">Late</span>
-                            @else
-                                <span class="status-badge badge-absent">Absent</span>
-                            @endif
-                        </td>
-                        <td>{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '—' }}</td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4" class="text-center py-4" style="color:rgba(245,234,215,0.4);">
-                            <div style="font-size:2rem; margin-bottom:8px;">🏜️</div>
-                            <div style="font-size:0.9rem; font-weight:600;">It's awfully quiet here...</div>
-                            <div style="font-size:0.75rem;">No recent attendance records found.</div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-
-            <div class="attendance-cards">
-                @forelse($records->take(5) as $record)
-                <div class="attendance-card">
-                    <div class="attendance-card-header">
-                        <div class="attendance-date">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</div>
-                        @if($record->excused)
-                            <span class="attendance-status" style="background:rgba(34,197,94,0.16);color:#86efac;">Excused</span>
-                        @elseif($record->status == 'Present')
-                            <span class="attendance-status status-present">Present</span>
-                        @elseif($record->status == 'Late')
-                            <span class="attendance-status status-late">Late</span>
-                        @else
-                            <span class="attendance-status status-absent">Absent</span>
-                        @endif
-                    </div>
-                    <div class="attendance-subject">{{ $record->subject->name ?? $record->subject_code }}</div>
-                    <div class="attendance-time">
-                        <i class="bi bi-clock"></i>
-                        {{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : 'No time recorded' }}
-                    </div>
-                </div>
-                @empty
-                <div class="empty-state-card">
-                    <i class="bi bi-inbox"></i>
-                    <p>No attendance records yet</p>
-                </div>
-                @endforelse
-            </div>
-        </div>
 
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // ── LIVE CLOCK ──
 function updateClock() {
@@ -532,7 +577,7 @@ function animateCounters() {
         function tick(now) {
             const elapsed = now - start;
             const progress = Math.min(elapsed / duration, 1);
-            const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
             el.textContent = Math.round(eased * target);
             if (progress < 1) requestAnimationFrame(tick);
         }
@@ -549,99 +594,74 @@ const observer = new IntersectionObserver((entries) => {
         }
     });
 }, { threshold: 0.2 });
-const statsRow = document.querySelector('.stats-row');
+const statsRow = document.querySelector('.ent-grid-4');
 if (statsRow) observer.observe(statsRow);
-
-// ── DONUT CHART ──
-@php
-    $activeSegments = ($totalPresent > 0 ? 1 : 0) + ($totalLate > 0 ? 1 : 0) + ($totalAbsent > 0 ? 1 : 0);
-    $donutBorder = $activeSegments > 1 ? 4 : 0;
-    
-    // Fallback data
-    if ($totalRecords == 0) {
-        $chartData = '[1]';
-        $chartColors = "['rgba(255,255,255,0.05)']";
-        $chartBorder = 0;
-        $chartLabels = "['No Data']";
-    } else {
-        $chartData = "[$totalPresent, $totalLate, $totalAbsent]";
-        $chartColors = "['#16a34a', '#eab308', '#dc2626']";
-        $chartBorder = $donutBorder;
-        $chartLabels = "['Present', 'Late', 'Absent']";
-    }
-@endphp
-const donutCtx = document.getElementById('attendanceDonut');
-if (donutCtx) {
-    new Chart(donutCtx, {
-        type: 'doughnut',
-        data: {
-            labels: {!! $chartLabels !!},
-            datasets: [{
-                data: {!! $chartData !!},
-                backgroundColor: {!! $chartColors !!},
-                borderWidth: {{ $chartBorder }},
-                borderColor: 'rgba(35,21,27,0.94)',
-                hoverOffset: {{ $totalRecords > 0 ? 4 : 0 }},
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            layout: { padding: 15 },
-            cutout: '72%',
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    backgroundColor: 'rgba(18,11,14,0.95)',
-                    titleColor: '#f8e7d3',
-                    bodyColor: '#f8e7d3',
-                    borderColor: 'rgba(255,255,255,0.1)',
-                    borderWidth: 1,
-                    cornerRadius: 10,
-                    padding: 10,
-                }
-            },
-            animation: {
-                animateRotate: true,
-                duration: 1400,
-            }
-        }
-    });
-}
 
 // ── CALENDAR MODAL ──
 const calendarData = @json($calendarJson);
+const eventsData = @json($eventsMap);
 
 function openAttModal(dateKey, dateLabel) {
-    const records = calendarData[dateKey];
+    const records = calendarData[dateKey] || [];
+    const events = eventsData[dateKey] || [];
 
     document.getElementById('modalDate').textContent = dateLabel;
 
-    if (!records || records.length === 0) {
+    if (records.length === 0 && events.length === 0) {
         document.getElementById('modalSummary').innerHTML =
             '<span class="att-summary-pill" style="background:rgba(255,255,255,0.06);color:rgba(245,234,215,0.6);border:1px solid rgba(255,255,255,0.1);"><i class="bi bi-info-circle"></i> No records yet</span>';
 
         document.getElementById('modalList').innerHTML =
-            '<div class="empty-state-card">' +
-            '<i class="bi bi-calendar-x"></i>' +
-            '<p>No attendance has been recorded for this date.</p>' +
+            '<div class="ent-empty" style="padding:24px;">' +
+            '<div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;"><i class="bi bi-calendar-x"></i></div>' +
+            '<div class="ent-empty-text">No attendance or events for this date.</div>' +
             '</div>';
 
         document.getElementById('attModal').classList.add('active');
         return;
     }
 
-    const present = records.filter(r => r.status === 'Present').length;
-    const late    = records.filter(r => r.status === 'Late').length;
-    const absent  = records.filter(r => r.status === 'Absent').length;
-
     let summaryHtml = '';
-    if (present > 0) summaryHtml += `<span class="att-summary-pill present"><i class="bi bi-check-circle-fill"></i> Present: ${present}</span>`;
-    if (late > 0)    summaryHtml += `<span class="att-summary-pill late"><i class="bi bi-clock-fill"></i> Late: ${late}</span>`;
-    if (absent > 0)  summaryHtml += `<span class="att-summary-pill absent"><i class="bi bi-x-circle-fill"></i> Absent: ${absent}</span>`;
+
+    // Attendance summary
+    if (records.length > 0) {
+        const present = records.filter(r => r.status === 'Present').length;
+        const late    = records.filter(r => r.status === 'Late').length;
+        const absent  = records.filter(r => r.status === 'Absent').length;
+
+        if (present > 0) summaryHtml += `<span class="att-summary-pill present"><i class="bi bi-check-circle-fill"></i> Present: ${present}</span>`;
+        if (late > 0)    summaryHtml += `<span class="att-summary-pill late"><i class="bi bi-clock-fill"></i> Late: ${late}</span>`;
+        if (absent > 0)  summaryHtml += `<span class="att-summary-pill absent"><i class="bi bi-x-circle-fill"></i> Absent: ${absent}</span>`;
+    }
+
+    // Events summary
+    if (events.length > 0) {
+        summaryHtml += `<span class="att-summary-pill" style="background:rgba(139,92,246,0.15);color:#c4b5fd;border:1px solid rgba(139,92,246,0.2);"><i class="bi bi-megaphone-fill"></i> ${events.length} Event${events.length > 1 ? 's' : ''}</span>`;
+    }
+
     document.getElementById('modalSummary').innerHTML = summaryHtml;
 
     let listHtml = '';
+
+    // Render events first
+    events.forEach(evt => {
+        const icon = evt.type === 'holiday' ? 'bi-calendar-heart' : 'bi-megaphone';
+        const bgColor = evt.type === 'holiday' ? 'rgba(139,92,246,0.12)' : 'rgba(59,130,246,0.1)';
+        const iconColor = evt.type === 'holiday' ? '#a78bfa' : '#60a5fa';
+        const label = evt.type === 'holiday' ? 'Holiday' : 'Announcement';
+        listHtml += `
+            <div style="background:${bgColor};border:1px solid rgba(139,92,246,0.1);border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                    <i class="bi ${icon}" style="color:${iconColor};font-size:0.85rem;"></i>
+                    <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:${iconColor};letter-spacing:0.5px;">${label}</span>
+                </div>
+                <div style="font-size:0.88rem;font-weight:700;color:#f8e7d3;margin-bottom:2px;">${evt.title}</div>
+                <div style="font-size:0.75rem;color:rgba(245,234,215,0.55);line-height:1.4;">${evt.content}</div>
+                ${evt.author ? `<div style="font-size:0.68rem;color:rgba(245,234,215,0.35);margin-top:4px;"><i class="bi bi-person" style="margin-right:3px;"></i>${evt.author}</div>` : ''}
+            </div>`;
+    });
+
+    // Render attendance records
     records.forEach(r => {
         const badgeCls = r.status === 'Present' ? 'present' : r.status === 'Late' ? 'late' : 'absent';
         const timeHtml = r.time_in
@@ -668,5 +688,15 @@ document.getElementById('attModal').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeAttModal();
 });
+
+// ── HOLIDAY CALENDAR SCROLL ──
+function scrollToStudentEvent(dateKey) {
+    const el = document.getElementById('stu-evt-' + dateKey);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.style.boxShadow = '0 0 0 2px rgba(207,164,111,0.5)';
+        setTimeout(() => { el.style.boxShadow = ''; }, 2000);
+    }
+}
 </script>
 @endsection

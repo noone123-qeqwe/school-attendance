@@ -11,6 +11,31 @@ class RegisterUserRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Construct the full name server-side from individual name parts
+     * so we don't rely on JavaScript to populate the hidden 'name' field.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Inject role for admin routes if not provided
+        if (!$this->has('role')) {
+            if ($this->routeIs('admin.student.store')) {
+                $this->merge(['role' => 'student']);
+            } elseif ($this->routeIs('admin.teacher.store')) {
+                $this->merge(['role' => 'teacher']);
+            }
+        }
+
+        if ($this->has('first_name') && $this->has('surname')) {
+            $name = trim($this->first_name);
+            if ($this->filled('middle_name')) {
+                $name .= ' ' . trim($this->middle_name);
+            }
+            $name .= ' ' . trim($this->surname);
+            $this->merge(['name' => $name]);
+        }
+    }
+
     public function rules(): array
     {
         $rules = [

@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Holiday;
 use App\Events\NotificationSent;
 use App\Models\Warning;
+use App\Http\Requests\RegisterUserRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -211,6 +212,77 @@ class AdminController extends Controller
             ->take(5)
             ->get();
 
+        // ── Holiday Calendar Data ──
+        $calYear = (int) $request->get('hcal_year', now()->year);
+        $calMonth = (int) $request->get('hcal_month', now()->month);
+        $calStart = Carbon::create($calYear, $calMonth, 1);
+
+        $calendarHolidays = Holiday::active()
+            ->whereBetween('date', [
+                $calStart->copy()->subMonth()->startOfMonth()->toDateString(),
+                $calStart->copy()->addMonth()->endOfMonth()->toDateString()
+            ])
+            ->orderBy('date')
+            ->get();
+
+        $calendarAnnouncements = \App\Models\Announcement::with('author')
+            ->published()
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->get();
+
+        // Build events map keyed by date
+        $hcalEventsMap = [];
+        foreach ($calendarHolidays as $hol) {
+            $dateKey = $hol->date->format('Y-m-d');
+            $hcalEventsMap[$dateKey][] = [
+                'id'    => $hol->id,
+                'type'  => $hol->type,
+                'name'  => $hol->name,
+                'description' => $hol->description,
+                'date'  => $dateKey,
+                'date_formatted' => $hol->date->format('M j, Y'),
+                'type_label' => $hol->type_label,
+                'source' => 'holiday',
+            ];
+        }
+        foreach ($calendarAnnouncements as $ann) {
+            $dateKey = $ann->scheduled_for ? $ann->scheduled_for->format('Y-m-d') : $ann->created_at->format('Y-m-d');
+            $hcalEventsMap[$dateKey][] = [
+                'id'    => $ann->id,
+                'type'  => 'announcement',
+                'name'  => $ann->title,
+                'description' => \Illuminate\Support\Str::limit($ann->content, 150),
+                'date'  => $dateKey,
+                'date_formatted' => Carbon::parse($dateKey)->format('M j, Y'),
+                'type_label' => 'Announcement',
+                'source' => 'announcement',
+                'author' => $ann->author->name ?? 'Admin',
+            ];
+        }
+
+        // Build flat list for sidebar sorted by date
+        $hcalUpcoming = collect();
+        foreach ($calendarHolidays->where('date', '>=', now()->toDateString())->take(10) as $hol) {
+            $hcalUpcoming->push((object)[
+                'id' => $hol->id, 'type' => $hol->type, 'name' => $hol->name,
+                'description' => $hol->description, 'date' => $hol->date,
+                'date_formatted' => $hol->date->format('M j, Y'),
+                'type_label' => $hol->type_label, 'source' => 'holiday',
+            ]);
+        }
+        foreach ($calendarAnnouncements->take(5) as $ann) {
+            $annDate = $ann->scheduled_for ?? $ann->created_at;
+            $hcalUpcoming->push((object)[
+                'id' => $ann->id, 'type' => 'announcement', 'name' => $ann->title,
+                'description' => \Illuminate\Support\Str::limit($ann->content, 100),
+                'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
+                'type_label' => 'Announcement', 'source' => 'announcement',
+                'author' => $ann->author->name ?? 'Admin',
+            ]);
+        }
+        $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();
+
         return view('admin.dashboard', compact(
             'totalStudents', 'totalTeachers', 'totalSubjects', 'totalParents',
             'totalDepartments', 'totalCourses', 'totalSections',
@@ -221,7 +293,8 @@ class AdminController extends Controller
             'teacherActivity', 'atRiskStudents',
             'topClasses', 'bottomClasses',
             'recentActivity', 'systemAlerts', 'pendingExcuses',
-            'recentStudents'
+            'recentStudents',
+            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
         ));
     }
 
@@ -411,27 +484,9 @@ class AdminController extends Controller
     {
         return view('admin.students.create');
     }
-
-    public function storeStudent(Request $request)
+    public function storeStudent(RegisterUserRequest $request)
     {
         try {
-            $request->validate([
-                'name'           => 'required|string|max:255',
-                'student_number' => 'required|alpha_num|size:7|unique:users,student_number',
-                'course'         => 'required|in:BSCS,BSIT,BSIS',
-                'year_level'     => 'required|integer|between:1,4',
-                'semester'       => 'required|in:1,2',
-                'email'          => 'required|email|max:255|unique:users,email',
-                'password'       => 'required|string|min:8|max:255',
-            ], [
-                'student_number.alpha_num' => 'Student ID must only contain letters and numbers.',
-                'student_number.size' => 'Student ID must be exactly 7 characters.',
-                'student_number.unique' => 'This student ID is already registered.',
-                'email.unique' => 'This email address is already registered.',
-                'course.in' => 'Please select a valid course.',
-                'year_level.between' => 'Year level must be between 1 and 4.',
-                'semester.in' => 'Please select a valid semester.',
-            ]);
 
             // Check email verification
             $verifiedEmail = session('admin_reg_email_verified');
@@ -960,8 +1015,15 @@ class AdminController extends Controller
     {
         $request->validate(['profile_image'=>'required|image|mimes:jpeg,png,jpg|max:2048']);
         if ($request->hasFile('profile_image')) {
-            $uploadedFileUrl = cloudinary()->upload($request->file('profile_image')->getRealPath())->getSecurePath();
-            Auth::user()->update(['profile_image' => $uploadedFileUrl]);
+            $user = Auth::user();
+
+            // Delete old image if it exists in local storage
+            if ($user->profile_image && !str_starts_with($user->profile_image, 'http')) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_image);
+            }
+
+            $path = $request->file('profile_image')->store('profile_images', 'public');
+            Auth::user()->update(['profile_image' => $path]);
         }
         return back()->with('success', 'Profile photo updated!');
     }
@@ -1184,16 +1246,8 @@ class AdminController extends Controller
         return view('admin.teachers.create');
     }
 
-    public function storeTeacher(Request $request)
+    public function storeTeacher(RegisterUserRequest $request)
     {
-        $request->validate([
-            'name'        => 'required|string|max:255',
-            'employee_id' => 'required|string|max:50|unique:users,employee_id',
-            'email'       => 'required|email|max:255|unique:users,email',
-            'department'  => 'nullable|string|max:100',
-            'position'    => 'nullable|string|max:100',
-            'password'    => 'required|string|min:8|confirmed',
-        ]);
 
         $teacher = User::create([
             'name'        => trim($request->name),

@@ -12,6 +12,7 @@ class Attendance extends Model
 
     protected $fillable = [
         'user_id',
+        'subject_id',
         'subject_code',
         'status',
         'excused',
@@ -77,7 +78,18 @@ class Attendance extends Model
 
     public function subject()
     {
-        return $this->belongsTo(Subject::class, 'subject_code', 'code');
+        return $this->belongsTo(Subject::class, 'subject_id');
+    }
+
+    public function setSubjectCodeAttribute($value)
+    {
+        $this->attributes['subject_code'] = $value;
+        if ($value) {
+            $subject = \App\Models\Subject::where('code', $value)->first();
+            if ($subject) {
+                $this->attributes['subject_id'] = $subject->id;
+            }
+        }
     }
 
     public function user()

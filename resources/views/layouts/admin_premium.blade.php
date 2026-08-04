@@ -6,11 +6,14 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Panel') | {{ config('app.name', 'School Attendance') }}</title>
     
-    <!-- Bootstrap Icons -->
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
     <!-- Custom SaaS CSS -->
-    <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}?v={{ filemtime(public_path('css/admin-saas.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
     
     <style>
         .saas-sidebar { transition: width 0.3s ease; overflow-x: hidden; }
@@ -71,6 +74,9 @@
 
 <div class="saas-layout">
     
+    <!-- Mobile overlay -->
+    <div class="saas-sidebar-overlay" id="sidebarOverlay" onclick="document.getElementById('sidebar').classList.remove('show');"></div>
+
     <!-- Sidebar -->
     <aside class="saas-sidebar" id="sidebar">
         <div class="saas-sidebar-header">
@@ -133,8 +139,11 @@
                 <i class="bi bi-file-earmark-bar-graph"></i> Reports
             </a>
             
-            <!-- Communication -->
-            <div class="saas-nav-group">Communication</div>
+            <!-- Communication & Insight -->
+            <div class="saas-nav-group">Communication & Insight</div>
+            <a href="{{ route('admin.calendar') }}" class="saas-nav-item {{ request()->routeIs('admin.calendar*') ? 'active' : '' }}">
+                <i class="bi bi-calendar-event"></i> Holiday Calendar
+            </a>
             <a href="{{ route('admin.announcements.index') }}" class="saas-nav-item {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
                 <i class="bi bi-megaphone"></i> Announcements
             </a>
@@ -167,6 +176,9 @@
         <!-- Topbar -->
         <header class="saas-topbar">
             <div style="display:flex;align-items:center;gap:16px;">
+                <button class="d-lg-none" id="toggleSidebar" style="background:none;border:none;color:var(--saas-text-primary);font-size:1.3rem;cursor:pointer;" title="Menu">
+                    <i class="bi bi-list"></i>
+                </button>
                 <button class="d-none d-lg-block" id="toggleDesktopSidebar" style="background:none;border:none;color:var(--saas-text-primary);font-size:1.2rem;cursor:pointer;transition:color 0.2s;" title="Toggle Sidebar">
                     <i class="bi bi-layout-sidebar"></i>
                 </button>
@@ -190,13 +202,13 @@
                     <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2" style="padding-left:16px;border-left:1px solid var(--saas-border);">
                         <img src="{{ auth()->user()->profile_image ? (str_starts_with(auth()->user()->profile_image, 'http') ? auth()->user()->profile_image : asset('storage/'.auth()->user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->name).'&background=900000&color=fff' }}" 
                              alt="Profile" style="width:36px;height:36px;border-radius:var(--saas-radius-sm);object-fit:cover;border:1px solid var(--saas-border);">
-                        <div class="d-none d-md-block text-start" style="line-height:1.2;">
-                            <div style="font-size:0.8rem;font-weight:600;color:var(--saas-text-primary);">{{ auth()->user()->name }}</div>
+                        <div class="d-none d-md-block text-start" style="line-height:1.2; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <div style="font-size:0.8rem;font-weight:600;color:var(--saas-text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ auth()->user()->name }}</div>
                         </div>
                         <i class="bi bi-chevron-down d-none d-md-block" style="font-size:0.7rem;color:var(--saas-text-muted);"></i>
                     </a>
                     
-                    <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2" style="position: absolute;">
+                    <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2" style="right:0;">
                         <div class="fb-profile-header" style="cursor:default;">
                             <img src="{{ auth()->user()->profile_image ? (str_starts_with(auth()->user()->profile_image, 'http') ? auth()->user()->profile_image : asset('storage/'.auth()->user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(auth()->user()->name).'&background=900000&color=fff' }}" 
                                  style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,225,170,0.9);">
@@ -244,6 +256,32 @@
     </main>
 </div>
 
+{{-- ═══ MOBILE BOTTOM NAVIGATION BAR (ADMIN) ═══ --}}
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+    <a href="{{ route('admin.dashboard') }}" class="mbn-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+        <i class="bi bi-grid-1x2"></i>
+        <span>Home</span>
+    </a>
+    <a href="{{ route('admin.students') }}" class="mbn-item {{ request()->routeIs('admin.student*') || request()->routeIs('admin.teacher*') ? 'active' : '' }}">
+        <i class="bi bi-people"></i>
+        <span>People</span>
+    </a>
+    <a href="{{ route('admin.qr') }}" class="mbn-item {{ request()->routeIs('admin.qr*') ? 'active' : '' }}">
+        <i class="bi bi-qr-code"></i>
+        <span>Scanner</span>
+    </a>
+    <a href="{{ route('admin.notifications') }}" class="mbn-item {{ request()->routeIs('admin.notifications*') ? 'active' : '' }}">
+        @php $mbnAdminUnread = \App\Models\Notification::where('user_id', auth()->id())->where('is_read', false)->count(); @endphp
+        @if($mbnAdminUnread > 0)<span class="mbn-badge">{{ $mbnAdminUnread > 9 ? '9+' : $mbnAdminUnread }}</span>@endif
+        <i class="bi bi-bell"></i>
+        <span>Alerts</span>
+    </a>
+    <a href="{{ route('admin.settings') }}" class="mbn-item {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
+        <i class="bi bi-sliders"></i>
+        <span>Settings</span>
+    </a>
+</nav>
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const toggleBtn = document.getElementById('toggleSidebar');
@@ -273,6 +311,7 @@
     });
 </script>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')
 </body>
 </html>

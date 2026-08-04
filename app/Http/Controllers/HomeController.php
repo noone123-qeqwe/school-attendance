@@ -8,6 +8,7 @@ use App\Models\Attendance;
 use App\Models\Notification;
 use App\Models\ExcuseSubmission;
 use App\Models\Holiday;
+use App\Models\Announcement;
 use Carbon\Carbon;
 
 use Illuminate\Http\Request;
@@ -125,19 +126,25 @@ class HomeController extends Controller
             Carbon::now()->endOfWeek()->toDateString()
         ])->count();
 
-    $totalRecords = Attendance::where('user_id', $user->id)->count();
-    $presentRecords = Attendance::where('user_id', $user->id)
-        ->whereIn('status', ['Present', 'Late'])
-        ->count();
+    $stats = Attendance::where('user_id', $user->id)
+        ->selectRaw('status, count(*) as count')
+        ->groupBy('status')
+        ->pluck('count', 'status')
+        ->toArray();
+
+    $totalPresent = $stats['Present'] ?? 0;
+    $totalLate    = $stats['Late'] ?? 0;
+    $totalAbsent  = $stats['Absent'] ?? 0;
+
+    $totalRecords = array_sum($stats);
+    $presentRecords = $totalPresent + $totalLate;
 
     $attendanceRate = $totalRecords > 0
         ? round(($presentRecords / $totalRecords) * 100)
         : 0;
 
     // 8b. Detailed stats for dashboard donut chart
-    $totalPresent = Attendance::where('user_id', $user->id)->where('status', 'Present')->count();
-    $totalLate    = Attendance::where('user_id', $user->id)->where('status', 'Late')->count();
-    $totalAbsent  = Attendance::where('user_id', $user->id)->where('status', 'Absent')->count();
+    // (Already captured above)
 
     // 8c. Attendance streak (consecutive days present/late, not absent)
     $streakCount = 0;
@@ -207,6 +214,62 @@ class HomeController extends Controller
         ->orderBy('created_at', 'desc')
         ->get();
 
+    // 11. Fetch Announcements for Events Calendar
+    $announcements = Announcement::with('author')
+        ->published()
+        ->orderBy('created_at', 'desc')
+        ->take(10)
+        ->get();
+
+    // 12. Build events calendar data (announcements + holidays)
+    $calendarEvents = collect();
+
+    // Add announcements as events
+    foreach ($announcements as $ann) {
+        $eventDate = $ann->scheduled_for ? $ann->scheduled_for->toDateString() : $ann->created_at->toDateString();
+        $calendarEvents->push((object) [
+            'type'  => 'announcement',
+            'title' => $ann->title,
+            'content' => \Illuminate\Support\Str::limit($ann->content, 120),
+            'date'  => $eventDate,
+            'author' => $ann->author->name ?? 'Admin',
+            'audience' => $ann->target_audience,
+            'created_at' => $ann->created_at,
+        ]);
+    }
+
+    // Add holidays as events
+    $allHolidays = Holiday::active()
+        ->where('date', '>=', $now->copy()->subDays(30)->toDateString())
+        ->where('date', '<=', $now->copy()->addDays(60)->toDateString())
+        ->orderBy('date')
+        ->get();
+
+    foreach ($allHolidays as $hol) {
+        $calendarEvents->push((object) [
+            'type'  => 'holiday',
+            'title' => $hol->name,
+            'content' => $hol->description ?? 'No classes',
+            'date'  => $hol->date->toDateString(),
+            'author' => null,
+            'audience' => 'All',
+            'created_at' => $hol->created_at,
+        ]);
+    }
+
+    $calendarEvents = $calendarEvents->sortByDesc('date')->values();
+
+    // Build events map for calendar dots
+    $eventsMap = [];
+    foreach ($calendarEvents as $evt) {
+        $eventsMap[$evt->date][] = [
+            'type'    => $evt->type,
+            'title'   => $evt->title,
+            'content' => $evt->content,
+            'author'  => $evt->author,
+        ];
+    }
+
     return view('home', compact(
         'currentClass',
         'attendanceStatus',
@@ -223,7 +286,10 @@ class HomeController extends Controller
         'totalLate',
         'totalAbsent',
         'streakCount',
-        'todaySchedule'
+        'todaySchedule',
+        'announcements',
+        'calendarEvents',
+        'eventsMap'
     ));
 }
 
@@ -367,8 +433,8 @@ class HomeController extends Controller
         // Handle file uploads
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $uploadedFileUrl = cloudinary()->upload($file->getRealPath())->getSecurePath();
-                $attachmentPaths[] = $uploadedFileUrl;
+                $path = $file->store('excuse_attachments', 'public');
+                $attachmentPaths[] = $path;
             }
         }
 

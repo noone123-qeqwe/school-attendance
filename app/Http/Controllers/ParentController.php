@@ -297,8 +297,8 @@ class ParentController extends Controller
         ];
 
         if ($request->hasFile('document')) {
-            $uploadedFileUrl = cloudinary()->upload($request->file('document')->getRealPath())->getSecurePath();
-            $data['attachments'] = [$uploadedFileUrl];
+            $path = $request->file('document')->store('excuse_documents', 'public');
+            $data['attachments'] = [$path];
         }
 
         ExcuseSubmission::create($data);

@@ -136,6 +136,69 @@ class TeacherController extends Controller
             })->sortBy('rate')->take(5);
         }
 
+        // ── Holiday Calendar Data ──
+        $calYear = (int) $request->input('hcal_year', now()->year);
+        $calMonth = (int) $request->input('hcal_month', now()->month);
+        $calStart = Carbon::create($calYear, $calMonth, 1);
+
+        $calendarHolidays = \App\Models\Holiday::active()
+            ->whereBetween('date', [
+                $calStart->copy()->subMonth()->startOfMonth()->toDateString(),
+                $calStart->copy()->addMonth()->endOfMonth()->toDateString()
+            ])
+            ->orderBy('date')
+            ->get();
+
+        $calendarAnnouncements = \App\Models\Announcement::with('author')
+            ->published()
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->get();
+
+        // Build events map keyed by date
+        $hcalEventsMap = [];
+        foreach ($calendarHolidays as $hol) {
+            $dateKey = $hol->date->format('Y-m-d');
+            $hcalEventsMap[$dateKey][] = [
+                'id' => $hol->id, 'type' => $hol->type, 'name' => $hol->name,
+                'description' => $hol->description, 'date' => $dateKey,
+                'date_formatted' => $hol->date->format('M j, Y'),
+                'type_label' => $hol->type_label, 'source' => 'holiday',
+            ];
+        }
+        foreach ($calendarAnnouncements as $ann) {
+            $dateKey = $ann->scheduled_for ? $ann->scheduled_for->format('Y-m-d') : $ann->created_at->format('Y-m-d');
+            $hcalEventsMap[$dateKey][] = [
+                'id' => $ann->id, 'type' => 'announcement', 'name' => $ann->title,
+                'description' => \Illuminate\Support\Str::limit($ann->content, 150),
+                'date' => $dateKey, 'date_formatted' => Carbon::parse($dateKey)->format('M j, Y'),
+                'type_label' => 'Announcement', 'source' => 'announcement',
+                'author' => $ann->author->name ?? 'Admin',
+            ];
+        }
+
+        // Build flat list for sidebar
+        $hcalUpcoming = collect();
+        foreach ($calendarHolidays->where('date', '>=', now()->toDateString())->take(10) as $hol) {
+            $hcalUpcoming->push((object)[
+                'id' => $hol->id, 'type' => $hol->type, 'name' => $hol->name,
+                'description' => $hol->description, 'date' => $hol->date,
+                'date_formatted' => $hol->date->format('M j, Y'),
+                'type_label' => $hol->type_label, 'source' => 'holiday',
+            ]);
+        }
+        foreach ($calendarAnnouncements->take(5) as $ann) {
+            $annDate = $ann->scheduled_for ?? $ann->created_at;
+            $hcalUpcoming->push((object)[
+                'id' => $ann->id, 'type' => 'announcement', 'name' => $ann->title,
+                'description' => \Illuminate\Support\Str::limit($ann->content, 100),
+                'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
+                'type_label' => 'Announcement', 'source' => 'announcement',
+                'author' => $ann->author->name ?? 'Admin',
+            ]);
+        }
+        $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();
+
         \Log::info("TeacherController@index END");
         return view('teacher.dashboard', compact(
             'teacher',
@@ -152,7 +215,8 @@ class TeacherController extends Controller
             'recentAttendance',
             'pendingExcuses',
             'targetDate',
-            'atRiskStudents'
+            'atRiskStudents',
+            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
         ));
     }
 
@@ -1423,8 +1487,15 @@ class TeacherController extends Controller
         ]);
 
         if ($request->hasFile('profile_image')) {
-            $uploadedFileUrl = cloudinary()->upload($request->file('profile_image')->getRealPath())->getSecurePath();
-            Auth::user()->update(['profile_image' => $uploadedFileUrl]);
+            $user = Auth::user();
+
+            // Delete old image if it exists in local storage
+            if ($user->profile_image && !str_starts_with($user->profile_image, 'http')) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_image);
+            }
+
+            $path = $request->file('profile_image')->store('profile_images', 'public');
+            Auth::user()->update(['profile_image' => $path]);
         }
 
         return back()->with('success', 'Profile photo updated!');
@@ -1662,6 +1733,18 @@ class TeacherController extends Controller
 
         $count = 0;
         foreach ($request->attendance as $userId => $status) {
+            $statusNormalized = is_string($status) ? ucfirst(strtolower($status)) : $status;
+
+            // When teacher marks a student as Present/Late, the record should not remain excused.
+            $updateData = [
+                'status' => $statusNormalized,
+            ];
+
+            if ($statusNormalized !== 'Absent') {
+                $updateData['excused'] = false;
+                $updateData['excuse_note'] = null;
+            }
+
             Attendance::updateOrCreate(
                 [
                     'user_id' => $userId,
@@ -1669,7 +1752,9 @@ class TeacherController extends Controller
                     'date' => $request->date,
                 ],
                 [
-                    'status' => $status,
+                    // Note: we intentionally avoid clearing excused when status is Absent
+                    // (teacher can approve an excuse later).
+                    ...$updateData,
                 ]
             );
             $count++;
