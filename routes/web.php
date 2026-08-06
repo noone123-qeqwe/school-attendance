@@ -70,6 +70,8 @@ Route::middleware('auth')->group(function () {
 
     // Excuse Submissions
     Route::get('/excuses', [App\Http\Controllers\HomeController::class, 'excuses'])->name('excuses');
+    Route::get('/excuses/general/new', [App\Http\Controllers\HomeController::class, 'createGeneralExcuse'])->name('excuses.create_general');
+    Route::post('/excuses/general/store', [App\Http\Controllers\HomeController::class, 'storeGeneralExcuse'])->name('excuses.store_general');
     Route::get('/excuses/create/{attendance}', [App\Http\Controllers\HomeController::class, 'createExcuse'])->name('excuses.create');
     Route::post('/excuses', [App\Http\Controllers\HomeController::class, 'storeExcuse'])->name('excuses.store');
 

@@ -454,6 +454,81 @@ class HomeController extends Controller
         return view('excuses.create', compact('attendance'));
     }
 
+    public function createGeneralExcuse()
+    {
+        $user = Auth::user();
+        $subjects = $user->enrolledSubjects()->get();
+        return view('excuses.create_general', compact('subjects'));
+    }
+
+    public function storeGeneralExcuse(Request $request)
+    {
+        $request->validate([
+            'subject_code' => 'required|exists:subjects,code',
+            'date' => 'required|date',
+            'reason' => 'required|string|max:255',
+            'description' => 'required|string|max:1000',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
+        ]);
+
+        $user = Auth::user();
+
+        // Ensure student is enrolled in the subject
+        if (!$user->enrolledSubjects()->where('code', $request->subject_code)->exists()) {
+            abort(403, 'You are not enrolled in this subject.');
+        }
+
+        // Get or create the attendance record
+        $attendance = Attendance::firstOrCreate([
+            'user_id' => $user->id,
+            'subject_code' => $request->subject_code,
+            'date' => $request->date,
+        ], [
+            'status' => 'Absent', // Mark as absent since they are submitting an excuse
+            'time_in' => null,
+            'time_out' => null,
+            'device_id' => null,
+            'excused' => false
+        ]);
+
+        // If it already has an excuse, reject
+        if ($attendance->excuseSubmission) {
+            return redirect()->route('excuses')->with('error', 'Excuse already submitted for this class and date.');
+        }
+
+        $attachmentPaths = [];
+        
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('excuse_attachments', 'public');
+                $attachmentPaths[] = $path;
+            }
+        }
+
+        $excuseSubmission = ExcuseSubmission::create([
+            'user_id' => $user->id,
+            'attendance_id' => $attendance->id,
+            'reason' => $request->reason,
+            'description' => $request->description,
+            'attachments' => $attachmentPaths,
+            'status' => 'pending'
+        ]);
+
+        // Notify Teacher
+        $subject = \App\Models\Subject::where('code', $attendance->subject_code)->first();
+        if ($subject && $subject->instructor_id) {
+            \App\Models\Notification::create([
+                'user_id' => $subject->instructor_id,
+                'title' => 'New Leave Request',
+                'message' => "{$user->name} submitted a leave request for {$subject->name} on " . \Carbon\Carbon::parse($request->date)->format('M d, Y'),
+                'type' => 'custom',
+                'link' => route('admin.excuses')
+            ]);
+        }
+
+        return redirect()->route('excuses')->with('success', 'Excuse/Leave request submitted successfully.');
+    }
+
     public function storeExcuse(Request $request)
     {
         $request->validate([
