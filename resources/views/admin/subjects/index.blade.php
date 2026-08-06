@@ -90,6 +90,9 @@
                         @endif
                     </td>
                     <td style="text-align:right;">
+                        <a href="{{ route('admin.enrollments.index', $subject) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-primary);" title="Manage Roster">
+                            <i class="bi bi-people"></i>
+                        </a>
                         <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>

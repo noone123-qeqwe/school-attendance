@@ -291,6 +291,11 @@ Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.'
     Route::get('/subjects/create', [App\Http\Controllers\AdminController::class, 'createSubject'])->name('subjects.create');
     Route::post('/subjects', [App\Http\Controllers\AdminController::class, 'storeSubject'])->name('subjects.store');
 
+    // Enrollments
+    Route::get('/subjects/{subject}/enrollments', [App\Http\Controllers\Admin\EnrollmentController::class, 'index'])->name('enrollments.index');
+    Route::post('/subjects/{subject}/enrollments', [App\Http\Controllers\Admin\EnrollmentController::class, 'store'])->name('enrollments.store');
+    Route::delete('/subjects/{subject}/enrollments/{student}', [App\Http\Controllers\Admin\EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+
     // QR Management
     Route::get('/qr-management', [App\Http\Controllers\Admin\QrManagementController::class, 'index'])->name('qr');
 

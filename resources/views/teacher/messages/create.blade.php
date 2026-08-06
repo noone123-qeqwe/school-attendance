@@ -22,10 +22,11 @@
                     <input type="hidden" name="receiver_id" value="{{ $replyTo->id }}">
                     <input type="text" class="form-control" value="{{ $replyTo->name }}" readonly style="background: rgba(0,0,0,0.2); color: #b39b82; border: 1px solid rgba(255,215,145,0.2);">
                 @else
-                    <!-- For teacher composing new, they would need a list of parents. For now, we mainly support reply. -->
                     <select name="receiver_id" id="receiver_id" class="form-control" required style="background: rgba(0,0,0,0.2); color: #e7dcc8; border: 1px solid rgba(255,215,145,0.2);">
                         <option value="">Select a Parent</option>
-                        <!-- Dynamic list could be added here later -->
+                        @foreach($parents as $parent)
+                            <option value="{{ $parent->id }}">{{ $parent->name }}</option>
+                        @endforeach
                     </select>
                 @endif
                 @error('receiver_id') <span class="text-danger" style="font-size:0.8rem;">{{ $message }}</span> @enderror
