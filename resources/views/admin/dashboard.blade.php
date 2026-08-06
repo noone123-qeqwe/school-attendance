@@ -1,10 +1,10 @@
-@extends('layouts.admin_premium')
+@extends('layouts.app')
 
 @section('title', 'Admin Dashboard')
 
 @section('content')
 
-{{-- ─── MOBILE DASHBOARD HEADER ─── --}}
+{{-- â”€â”€â”€ MOBILE DASHBOARD HEADER â”€â”€â”€ --}}
 <div class="ent-mobile-header ent-fade-up">
     <div>
         <div class="ent-mobile-header-title">Command Center</div>
@@ -17,11 +17,11 @@
     </div>
 </div>
 
-{{-- ─── DESKTOP HEADER ─── --}}
+{{-- â”€â”€â”€ DESKTOP HEADER â”€â”€â”€ --}}
 <div class="ent-dash-header ent-fade-up ent-desktop-only">
     <div>
         <h1 class="ent-dash-title">Command Center</h1>
-        <p class="ent-dash-subtitle">Overview of academic and attendance operations — {{ now()->format('l, F j, Y') }}</p>
+        <p class="ent-dash-subtitle">Overview of academic and attendance operations â€” {{ now()->format('l, F j, Y') }}</p>
     </div>
     <div class="ent-dash-actions">
         <span class="ent-btn ent-btn-secondary">
@@ -33,7 +33,7 @@
     </div>
 </div>
 
-{{-- ─── SYSTEM ALERTS ─── --}}
+{{-- â”€â”€â”€ SYSTEM ALERTS â”€â”€â”€ --}}
 @if($systemAlerts->count() > 0)
 <div class="ent-fade-up ent-delay-1 ent-mb-md">
     @foreach($systemAlerts as $alert)
@@ -52,246 +52,171 @@
 </div>
 @endif
 
-{{-- ─── SKELETON KPIs (shown briefly while page paints) ─── --}}
+{{-- â”€â”€â”€ SKELETON KPIs (shown briefly while page paints) â”€â”€â”€ --}}
 <div class="ent-grid ent-grid-4 ent-mb-md skel-kpi-placeholder" id="skelKpis">
     <x-skeleton type="kpi" :count="4" />
 </div>
 
-{{-- ─── PRIMARY KPIs: Entity Counts ─── --}}
+{{-- â”€â”€â”€ PRIMARY KPIs: Entity Counts â”€â”€â”€ --}}
 <div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-1" id="realKpis" style="display:none;">
-    <div class="ent-kpi-card" data-accent="gold">
-        <div class="ent-kpi-icon"><i class="bi bi-people-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Total Students</div>
-            <div class="ent-kpi-value">{{ number_format($totalStudents) }}</div>
-        </div>
-    </div>
-
-    <div class="ent-kpi-card" data-accent="gold">
-        <div class="ent-kpi-icon"><i class="bi bi-person-workspace"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Instructors</div>
-            <div class="ent-kpi-value">{{ number_format($totalTeachers) }}</div>
-        </div>
-    </div>
-
-    <div class="ent-kpi-card" data-accent="gold">
-        <div class="ent-kpi-icon"><i class="bi bi-building"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Departments</div>
-            <div class="ent-kpi-value">{{ number_format($totalDepartments) }}</div>
-        </div>
-    </div>
-
-    <div class="ent-kpi-card" data-accent="gold">
-        <div class="ent-kpi-icon"><i class="bi bi-diagram-3"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Sections</div>
-            <div class="ent-kpi-value">{{ number_format($totalSections) }}</div>
-        </div>
-    </div>
+    <x-card type="kpi" icon="bi bi-people-fill" label="Total Students" value="{{ number_format($totalStudents) }}" />
+    <x-card type="kpi" icon="bi bi-person-workspace" label="Instructors" value="{{ number_format($totalTeachers) }}" />
+    <x-card type="kpi" icon="bi bi-building" label="Departments" value="{{ number_format($totalDepartments) }}" />
+    <x-card type="kpi" icon="bi bi-diagram-3" label="Sections" value="{{ number_format($totalSections) }}" />
 </div>
 
-{{-- ─── ATTENDANCE KPIs ─── --}}
+{{-- â”€â”€â”€ ATTENDANCE KPIs â”€â”€â”€ --}}
 <div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-2">
-    <div class="ent-kpi-card" data-accent="success">
-        <div class="ent-kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Present Today</div>
-            <div class="ent-kpi-value">{{ number_format($totalPresent) }}</div>
-            @php $presentDiff = $totalPresent - $yesterdayPresent; @endphp
-            <div class="ent-kpi-trend {{ $presentDiff >= 0 ? 'up' : 'down' }}">
-                <i class="bi bi-{{ $presentDiff >= 0 ? 'arrow-up-short' : 'arrow-down-short' }}"></i>
-                {{ abs($presentDiff) }} vs yesterday
-            </div>
+    @php
+        $presentDiff = $totalPresent - $yesterdayPresent;
+        $lateDiff = $totalLate - $yesterdayLate;
+        $absentDiff = $totalAbsent - $yesterdayAbsent;
+        $rateDiff = $attendanceRate - $yesterdayRate;
+    @endphp
+    <x-card type="kpi" accent="success" icon="bi bi-check-circle-fill" label="Present Today" value="{{ number_format($totalPresent) }}" trend="{{ abs($presentDiff) }} vs yesterday" trendDir="{{ $presentDiff >= 0 ? 'up' : 'down' }}" />
+    <x-card type="kpi" accent="warning" icon="bi bi-clock-fill" label="Late Today" value="{{ number_format($totalLate) }}" trend="{{ abs($lateDiff) }} vs yesterday" trendDir="{{ $lateDiff <= 0 ? 'up' : 'down' }}" />
+    <x-card type="kpi" accent="danger" icon="bi bi-x-circle-fill" label="Absent Today" value="{{ number_format($totalAbsent) }}" trend="{{ abs($absentDiff) }} vs yesterday" trendDir="{{ $absentDiff <= 0 ? 'up' : 'down' }}" />
+    
+    <x-card type="kpi" accent="{{ $attendanceRate >= 80 ? 'success' : 'danger' }}" icon="bi bi-speedometer2" label="Overall Rate" value="{{ $attendanceRate }}%" trend="{{ abs($rateDiff) }}% vs yesterday" trendDir="{{ $rateDiff >= 0 ? 'up' : 'down' }}">
+        <div class="ent-progress" style="margin-top:8px;">
+            <div class="ent-progress-fill {{ $attendanceRate >= 80 ? 'success' : 'danger' }}" style="width:{{ $attendanceRate }}%"></div>
         </div>
-    </div>
-
-    <div class="ent-kpi-card" data-accent="warning">
-        <div class="ent-kpi-icon"><i class="bi bi-clock-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Late Today</div>
-            <div class="ent-kpi-value">{{ number_format($totalLate) }}</div>
-            @php $lateDiff = $totalLate - $yesterdayLate; @endphp
-            <div class="ent-kpi-trend {{ $lateDiff <= 0 ? 'up' : 'down' }}">
-                <i class="bi bi-{{ $lateDiff <= 0 ? 'arrow-down-short' : 'arrow-up-short' }}"></i>
-                {{ abs($lateDiff) }} vs yesterday
-            </div>
-        </div>
-    </div>
-
-    <div class="ent-kpi-card" data-accent="danger">
-        <div class="ent-kpi-icon"><i class="bi bi-x-circle-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Absent Today</div>
-            <div class="ent-kpi-value">{{ number_format($totalAbsent) }}</div>
-            @php $absentDiff = $totalAbsent - $yesterdayAbsent; @endphp
-            <div class="ent-kpi-trend {{ $absentDiff <= 0 ? 'up' : 'down' }}">
-                <i class="bi bi-{{ $absentDiff <= 0 ? 'arrow-down-short' : 'arrow-up-short' }}"></i>
-                {{ abs($absentDiff) }} vs yesterday
-            </div>
-        </div>
-    </div>
-
-    <div class="ent-kpi-card" data-accent="{{ $attendanceRate >= 80 ? 'success' : 'danger' }}">
-        <div class="ent-kpi-icon"><i class="bi bi-speedometer2"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Overall Rate</div>
-            <div class="ent-kpi-value">{{ $attendanceRate }}%</div>
-            @php $rateDiff = $attendanceRate - $yesterdayRate; @endphp
-            <div class="ent-kpi-trend {{ $rateDiff >= 0 ? 'up' : 'down' }}">
-                <i class="bi bi-{{ $rateDiff >= 0 ? 'arrow-up-short' : 'arrow-down-short' }}"></i>
-                {{ abs($rateDiff) }}% vs yesterday
-            </div>
-            <div class="ent-progress" style="margin-top:8px;">
-                <div class="ent-progress-fill {{ $attendanceRate >= 80 ? 'success' : 'danger' }}" style="width:{{ $attendanceRate }}%"></div>
-            </div>
-        </div>
-    </div>
+    </x-card>
 </div>
 
-{{-- ─── WEEKLY CHART ─── --}}
-<div class="ent-section ent-mb-md ent-fade-up ent-delay-3">
-    <div class="ent-section-header">
-        <div class="ent-section-title">
-            <div class="ent-section-title-icon"><i class="bi bi-bar-chart-line-fill"></i></div>
-            Weekly Attendance Trend
-        </div>
+{{-- â”€â”€â”€ WEEKLY CHART â”€â”€â”€ --}}
+<x-card type="section" class="ent-mb-md ent-fade-up ent-delay-3" icon="bi bi-bar-chart-line-fill" title="Weekly Attendance Trend">
+    <x-slot:headerActions>
         <div style="display:flex;gap:6px;">
             <span class="ent-badge ent-badge-success"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Present</span>
             <span class="ent-badge ent-badge-warning"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Late</span>
             <span class="ent-badge ent-badge-danger"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Absent</span>
         </div>
-    </div>
-    <div class="ent-section-body">
-        <div id="weeklyChart" class="ent-chart-container" style="min-height:260px;"></div>
-    </div>
-</div>
+    </x-slot:headerActions>
+    
+    <div id="weeklyChart" class="ent-chart-container" style="min-height:260px;"></div>
+</x-card>
 
-{{-- ─── LIVE SESSIONS + AT-RISK (Two Column) ─── --}}
+{{-- â”€â”€â”€ LIVE SESSIONS + AT-RISK (Two Column) â”€â”€â”€ --}}
 <div class="ent-grid ent-grid-7-5 ent-mb-md ent-fade-up ent-delay-3">
 
     {{-- Live QR Sessions --}}
-    <div class="ent-section" style="min-width:0;">
-        <div class="ent-section-header">
-            <div class="ent-section-title">
-                <div class="ent-section-title-icon" style="background:rgba(74,222,128,0.12);color:var(--ent-success);">
-                    <i class="bi bi-broadcast"></i>
-                </div>
-                Live QR Sessions
-                @if($activeSessionCount > 0)
-                    <span class="ent-badge ent-badge-success">{{ $activeSessionCount }} active</span>
-                @endif
+    <x-card type="section" style="min-width:0;">
+        <x-slot:title>
+            <div class="ent-section-title-icon" style="background:rgba(74,222,128,0.12);color:var(--ent-success);">
+                <i class="bi bi-broadcast"></i>
             </div>
-        </div>
-        <div class="ent-section-body no-pad">
-            <div class="ent-scroll-x">
-                <table class="ent-table" style="min-width:400px;">
-                    <thead>
-                        <tr>
-                            <th>Subject & Teacher</th>
-                            <th>Checked In</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($activeSessions->take(5) as $session)
-                        <tr>
-                            <td data-label="Subject">
-                                <div style="font-weight:600;font-size:0.82rem;">{{ $session->subject?->name ?? $session->subject_code }}</div>
-                                <div class="ent-text-muted" style="font-size:0.72rem;">{{ $session->creator?->name ?? 'Unknown' }}</div>
-                            </td>
-                            <td data-label="Checked In">
-                                <span class="ent-badge ent-badge-neutral">{{ $session->checked_in_count }}</span>
-                            </td>
-                            <td data-label="Status">
-                                <span class="ent-badge {{ strtolower($session->qr_status) == 'active' ? 'ent-badge-success' : 'ent-badge-warning' }}">
-                                    <span class="ent-status-dot {{ strtolower($session->qr_status) == 'active' ? 'active' : 'warning' }}" style="width:6px;height:6px;"></span>
-                                    {{ $session->qr_status }}
-                                </span>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="3">
-                                <div class="ent-empty" style="padding:32px 16px;">
-                                    <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;">
-                                        <i class="bi bi-qr-code"></i>
-                                    </div>
-                                    <div class="ent-empty-text">No active QR sessions right now.</div>
+            Live QR Sessions
+            @if($activeSessionCount > 0)
+                <span class="ent-badge ent-badge-success">{{ $activeSessionCount }} active</span>
+            @endif
+        </x-slot:title>
+
+        <div class="ent-scroll-x" style="margin: -20px;">
+            <table class="ent-table" style="min-width:400px; margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th>Subject & Teacher</th>
+                        <th>Checked In</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($activeSessions->take(5) as $session)
+                    <tr>
+                        <td data-label="Subject">
+                            <div style="font-weight:600;font-size:0.82rem;">{{ $session->subject?->name ?? $session->subject_code }}</div>
+                            <div class="ent-text-muted" style="font-size:0.72rem;">{{ $session->creator?->name ?? 'Unknown' }}</div>
+                        </td>
+                        <td data-label="Checked In">
+                            <span class="ent-badge ent-badge-neutral">{{ $session->checked_in_count }}</span>
+                        </td>
+                        <td data-label="Status">
+                            <span class="ent-badge {{ strtolower($session->qr_status) == 'active' ? 'ent-badge-success' : 'ent-badge-warning' }}">
+                                <span class="ent-status-dot {{ strtolower($session->qr_status) == 'active' ? 'active' : 'warning' }}" style="width:6px;height:6px;"></span>
+                                {{ $session->qr_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="3">
+                            <div class="ent-empty" style="padding:32px 16px; border: none;">
+                                <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;">
+                                    <i class="bi bi-qr-code"></i>
                                 </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                <div class="ent-empty-text">No active QR sessions right now.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    </div>
+    </x-card>
 
     {{-- At-Risk Students --}}
-    <div class="ent-section" style="min-width:0;">
-        <div class="ent-section-header">
-            <div class="ent-section-title">
-                <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                </div>
-                At-Risk Students
+    <x-card type="section" style="min-width:0;">
+        <x-slot:title>
+            <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
+                <i class="bi bi-exclamation-triangle-fill"></i>
             </div>
+            At-Risk Students
+        </x-slot:title>
+        <x-slot:headerActions>
             <a href="{{ route('admin.students') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View All <i class="bi bi-arrow-right"></i></a>
-        </div>
-        <div class="ent-section-body no-pad">
-            <div class="ent-scroll-x">
-                <table class="ent-table" style="min-width:320px;">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Course</th>
-                            <th>Rate</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($atRiskStudents->take(5) as $student)
-                        <tr>
-                            <td data-label="Student">
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <div class="ent-avatar ent-avatar-round" style="width:28px;height:28px;font-size:0.65rem;">
-                                        <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=28' }}" alt="">
-                                    </div>
-                                    <span class="ent-truncate" style="font-weight:600;font-size:0.8rem;max-width:120px;">{{ $student->name }}</span>
+        </x-slot:headerActions>
+        
+        <div class="ent-scroll-x" style="margin: -20px;">
+            <table class="ent-table" style="min-width:320px; margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>Rate</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($atRiskStudents->take(5) as $student)
+                    <tr>
+                        <td data-label="Student">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <div class="ent-avatar ent-avatar-round" style="width:28px;height:28px;font-size:0.65rem;">
+                                    <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=28' }}" alt="">
                                 </div>
-                            </td>
-                            <td data-label="Course"><span style="font-size:0.75rem;" class="ent-text-muted">{{ $student->course }}</span></td>
-                            <td data-label="Rate">
-                                <span class="ent-badge {{ $student->attendance_rate >= 70 ? 'ent-badge-warning' : 'ent-badge-danger' }}">
-                                    {{ $student->attendance_rate }}%
-                                </span>
-                            </td>
-                            <td data-label="Action">
-                                <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4">
-                                <div class="ent-empty" style="padding:32px 16px;">
-                                    <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
-                                        <i class="bi bi-shield-check"></i>
-                                    </div>
-                                    <div class="ent-empty-text">All students are performing well.</div>
+                                <span class="ent-truncate" style="font-weight:600;font-size:0.8rem;max-width:120px;">{{ $student->name }}</span>
+                            </div>
+                        </td>
+                        <td data-label="Course"><span style="font-size:0.75rem;" class="ent-text-muted">{{ $student->course }}</span></td>
+                        <td data-label="Rate">
+                            <span class="ent-badge {{ $student->attendance_rate >= 70 ? 'ent-badge-warning' : 'ent-badge-danger' }}">
+                                {{ $student->attendance_rate }}%
+                            </span>
+                        </td>
+                        <td data-label="Action">
+                            <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4">
+                            <div class="ent-empty" style="padding:32px 16px; border: none;">
+                                <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
+                                    <i class="bi bi-shield-check"></i>
                                 </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                <div class="ent-empty-text">All students are performing well.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
-    </div>
+    </x-card>
 </div>
 
-{{-- ─── HOLIDAY CALENDAR ─── --}}
+{{-- â”€â”€â”€ HOLIDAY CALENDAR â”€â”€â”€ --}}
 @php
     $hcalStart = \Carbon\Carbon::create($calYear, $calMonth, 1);
     $hcalEnd = $hcalStart->copy()->endOfMonth();
@@ -302,19 +227,19 @@
     $hcalToday = now()->day;
 @endphp
 
-<div class="ent-section ent-mb-md ent-fade-up ent-delay-4">
-    <div class="ent-section-header">
-        <div class="ent-section-title">
-            <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:#f87171;">
-                <i class="bi bi-calendar-heart-fill"></i>
-            </div>
-            Holiday & Events Calendar
+<x-card type="section" class="ent-mb-md ent-fade-up ent-delay-4" title="Holiday & Events Calendar">
+    <x-slot:icon>
+        <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:#f87171;">
+            <i class="bi bi-calendar-heart-fill"></i>
         </div>
+    </x-slot:icon>
+    <x-slot:headerActions>
         <button type="button" class="ent-btn ent-btn-sm ent-btn-primary" onclick="openHcalModal()">
             <i class="bi bi-plus-lg"></i> Add Event
         </button>
-    </div>
-    <div class="ent-section-body" style="padding:16px 20px;">
+    </x-slot:headerActions>
+    
+    <div style="padding:16px 20px;">
         <div class="hcal-container">
             {{-- Calendar Pane --}}
             <div class="hcal-calendar-pane">
@@ -392,7 +317,7 @@
                         <div class="hcal-event-date">
                             <i class="bi bi-calendar3"></i> {{ $evt->date_formatted }}
                             @if(isset($evt->author))
-                                · <i class="bi bi-person"></i> {{ $evt->author }}
+                                Â· <i class="bi bi-person"></i> {{ $evt->author }}
                             @endif
                         </div>
                         @if($evt->description)
@@ -424,14 +349,14 @@
             </div>
         </div>
     </div>
-</div>
+</x-card>
 
-{{-- ─── ADD/EDIT HOLIDAY MODAL ─── --}}
+{{-- â”€â”€â”€ ADD/EDIT HOLIDAY MODAL â”€â”€â”€ --}}
 <div class="hcal-modal-overlay" id="hcalModalOverlay">
     <div class="hcal-modal">
         <div class="hcal-modal-header">
             <div class="hcal-modal-title" id="hcalModalTitle">Add Holiday / Event</div>
-            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">✕</button>
+            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">âœ•</button>
         </div>
         <form id="hcalForm" method="POST" action="{{ route('admin.holidays.store') }}">
             @csrf
@@ -469,7 +394,7 @@
     </div>
 </div>
 
-{{-- ─── MOBILE QUICK ACTIONS ─── --}}
+{{-- â”€â”€â”€ MOBILE QUICK ACTIONS â”€â”€â”€ --}}
 <div class="ent-mobile-actions ent-fade-up ent-delay-3">
     <a href="{{ route('admin.attendance.pdf') }}" class="ent-mobile-action-btn" style="background:rgba(207,164,111,0.1); border-color:var(--ent-gold); grid-column: span 2;">
         <i class="bi bi-cloud-arrow-down-fill"></i> Generate Report
@@ -494,7 +419,7 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // ── Skeleton → Content Reveal ──
+    // â”€â”€ Skeleton â†’ Content Reveal â”€â”€
     var skelKpis = document.getElementById('skelKpis');
     var realKpis = document.getElementById('realKpis');
     if (skelKpis && realKpis) {
@@ -564,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function() {
     chart.render();
 });
 
-// ── HOLIDAY CALENDAR MODAL ──
+// â”€â”€ HOLIDAY CALENDAR MODAL â”€â”€
 function openHcalModal() {
     document.getElementById('hcalModalTitle').textContent = 'Add Holiday / Event';
     document.getElementById('hcalForm').action = '{{ route("admin.holidays.store") }}';

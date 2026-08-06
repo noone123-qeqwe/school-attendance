@@ -1,9 +1,9 @@
-@extends('teacher.layout')
+@extends('layouts.app')
 @section('portal-title', 'Dashboard')
 
 @section('content')
 <style>
-    /* ── TEACHER DASHBOARD MOBILE ── */
+    /* â”€â”€ TEACHER DASHBOARD MOBILE â”€â”€ */
     @media (max-width: 768px) {
         .col-lg-8, .col-lg-4 { width: 100% !important; flex: none !important; max-width: 100% !important; }
         .stat-card-premium { padding: 14px !important; min-height: 90px !important; }
@@ -15,7 +15,7 @@
     }
 </style>
 
-{{-- ─── MOBILE HEADER ─── --}}
+{{-- â”€â”€â”€ MOBILE HEADER â”€â”€â”€ --}}
 <div class="teacher-mobile-header mobile-dash-header d-md-none ent-fade-up" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
     <div>
         <div class="mobile-dash-title" style="font-size:1.45rem; font-weight:800; line-height:1.2;">
@@ -31,7 +31,7 @@
     </div>
 </div>
 
-{{-- ─── PENDING EXCUSES ALERT ─── --}}
+{{-- â”€â”€â”€ PENDING EXCUSES ALERT â”€â”€â”€ --}}
 @if(isset($pendingExcuses) && $pendingExcuses > 0)
 <div class="ent-alert gold ent-fade-up ent-delay-1" style="margin-bottom:20px;">
     <div class="ent-alert-icon">
@@ -47,7 +47,7 @@
 </div>
 @endif
 
-{{-- ─── DESKTOP QUICK ACTIONS BAR ─── --}}
+{{-- â”€â”€â”€ DESKTOP QUICK ACTIONS BAR â”€â”€â”€ --}}
 <div class="teacher-quick-bar ent-section ent-fade-up ent-delay-1 d-none d-md-flex" style="align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-bottom:24px;padding:24px 28px;">
     <div style="display:flex;align-items:center;gap:20px;">
         <div style="width:56px;height:56px;border-radius:var(--ent-radius-md);background:rgba(207,164,111,0.12);border:1px solid rgba(207,164,111,0.2);display:flex;align-items:center;justify-content:center;color:#cfa46f;font-size:1.6rem;">
@@ -99,7 +99,7 @@
     </div>
 </div>
 
-{{-- ─── MOBILE QUICK ACTIONS ─── --}}
+{{-- â”€â”€â”€ MOBILE QUICK ACTIONS â”€â”€â”€ --}}
 <div class="teacher-mobile-actions ent-mobile-actions d-md-none ent-fade-up ent-delay-1">
     <a href="{{ route('teacher.reports.pdf') }}" target="_blank" class="ent-mobile-action-btn">
         <i class="bi bi-file-earmark-arrow-down-fill"></i> Export
@@ -118,44 +118,20 @@
     </a>
 </div>
 
-{{-- ─── SKELETON KPIs ─── --}}
+{{-- â”€â”€â”€ SKELETON KPIs â”€â”€â”€ --}}
 <div class="ent-grid ent-grid-4 ent-mb-lg skel-kpi-placeholder" id="skelKpis">
     <x-skeleton type="kpi" :count="4" />
 </div>
 
-{{-- ─── KPI STATS ─── --}}
+{{-- â”€â”€â”€ KPI STATS â”€â”€â”€ --}}
 <div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realKpis" style="display:none;">
-    <div class="ent-kpi-card" data-accent="success">
-        <div class="ent-kpi-icon"><i class="bi bi-person-check-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Present Today</div>
-            <div class="ent-kpi-value" data-stat="present">{{ $totalPresent }}</div>
-        </div>
-    </div>
-    <div class="ent-kpi-card" data-accent="warning">
-        <div class="ent-kpi-icon"><i class="bi bi-hourglass-split"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Late Today</div>
-            <div class="ent-kpi-value" data-stat="late">{{ $totalLate }}</div>
-        </div>
-    </div>
-    <div class="ent-kpi-card" data-accent="danger">
-        <div class="ent-kpi-icon"><i class="bi bi-person-x-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">Absent Today</div>
-            <div class="ent-kpi-value" data-stat="absent">{{ $totalAbsent }}</div>
-        </div>
-    </div>
-    <div class="ent-kpi-card" data-accent="gold">
-        <div class="ent-kpi-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label">My Subjects</div>
-            <div class="ent-kpi-value">{{ $teacherSubjects->count() }}</div>
-        </div>
-    </div>
+    <x-card type="kpi" accent="success" icon="bi bi-person-check-fill" label="Present Today" value="{{ $totalPresent }}" />
+    <x-card type="kpi" accent="warning" icon="bi bi-hourglass-split" label="Late Today" value="{{ $totalLate }}" />
+    <x-card type="kpi" accent="danger" icon="bi bi-person-x-fill" label="Absent Today" value="{{ $totalAbsent }}" />
+    <x-card type="kpi" accent="gold" icon="bi bi-journal-bookmark-fill" label="Classes Today" value="{{ $todayClasses->count() }}" />
 </div>
 
-{{-- ─── AT-RISK STUDENTS ─── --}}
+{{-- â”€â”€â”€ AT-RISK STUDENTS â”€â”€â”€ --}}
 @if(isset($atRiskStudents) && $atRiskStudents->count() > 0)
 <div class="ent-section ent-mb-lg ent-fade-up ent-delay-2">
     <div class="ent-section-header">
@@ -185,37 +161,32 @@
 </div>
 @endif
 
-{{-- ─── TODAY'S CLASSES + RECENT LOGS ─── --}}
+{{-- â”€â”€â”€ TODAY'S CLASSES + RECENT LOGS â”€â”€â”€ --}}
 <div class="row g-4 ent-fade-up ent-delay-3">
     {{-- Today's Classes --}}
     <div class="col-lg-8">
-        <div class="ent-section h-100 d-flex flex-column">
-            <div class="ent-section-header">
-                <div class="ent-section-title">
-                    <div class="ent-section-title-icon">
-                        <i class="bi bi-calendar-event-fill"></i>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <a href="?date={{ $targetDate->copy()->subDay()->toDateString() }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="padding:2px 6px;">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                        <span>{{ $targetDate->isToday() ? "Today's Schedule" : $targetDate->format('M d, Y') }}</span>
-                        <a href="?date={{ $targetDate->copy()->addDay()->toDateString() }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="padding:2px 6px;">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </div>
-                    @if($todayClasses->count() > 0)
-                        @php
-                            $completedCount = $todayClasses->where('has_attendance_today', true)->count();
-                            $totalCount = $todayClasses->count();
-                            $allDone = $completedCount === $totalCount;
-                        @endphp
-                        <span class="ent-badge {{ $allDone ? 'ent-badge-success' : ($completedCount > 0 ? 'ent-badge-warning' : 'ent-badge-neutral') }}">
-                            {{ $completedCount }}/{{ $totalCount }} Done
-                        </span>
-                    @endif
+        <x-card type="section" class="h-100 d-flex flex-column" icon="bi bi-calendar-event-fill">
+            <x-slot:title>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <a href="?date={{ $targetDate->copy()->subDay()->toDateString() }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="padding:2px 6px;">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    <span>{{ $targetDate->isToday() ? "Today's Schedule" : $targetDate->format('M d, Y') }}</span>
+                    <a href="?date={{ $targetDate->copy()->addDay()->toDateString() }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="padding:2px 6px;">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
                 </div>
-            </div>
+                @if($todayClasses->count() > 0)
+                    @php
+                        $completedCount = $todayClasses->where('has_attendance_today', true)->count();
+                        $totalCount = $todayClasses->count();
+                        $allDone = $completedCount === $totalCount;
+                    @endphp
+                    <span class="ent-badge {{ $allDone ? 'ent-badge-success' : ($completedCount > 0 ? 'ent-badge-warning' : 'ent-badge-neutral') }}">
+                        {{ $completedCount }}/{{ $totalCount }} Done
+                    </span>
+                @endif
+            </x-slot:title>
             <div style="flex:1;overflow-y:auto;">
                 @forelse($todayClasses as $class)
                     @php
@@ -266,10 +237,10 @@
                                     </span>
                                 </div>
                                 <div style="font-size:0.8rem;color:var(--ent-text-muted);">
-                                    <i class="bi bi-tag-fill" style="font-size:0.65rem;margin-right:2px;"></i> {{ $class->code }} · Year {{ $class->year_level }} Sem {{ $class->semester }}
+                                    <i class="bi bi-tag-fill" style="font-size:0.65rem;margin-right:2px;"></i> {{ $class->code }} Â· Year {{ $class->year_level }} Sem {{ $class->semester }}
                                     @if($isCompleted)
                                         <span style="color:#cfa46f;font-weight:600;margin-left:8px;">
-                                            · <i class="bi bi-people-fill"></i> {{ $attendanceCount }} present
+                                            Â· <i class="bi bi-people-fill"></i> {{ $attendanceCount }} present
                                         </span>
                                         @php
                                             $health = $class->class_health ?? 0;
@@ -317,18 +288,17 @@
 
     {{-- Recent Attendance Logs --}}
     <div class="col-lg-4">
-        <div class="ent-section h-100 d-flex flex-column">
-            <div class="ent-section-header">
-                <div class="ent-section-title">
-                    <div class="ent-section-title-icon" style="background:rgba(166,92,59,0.15);color:#e89f7d;">
-                        <i class="bi bi-clock-history"></i>
-                    </div>
-                    Recent Logs
+        <x-card type="section" class="h-100 d-flex flex-column" title="Recent Logs">
+            <x-slot:icon>
+                <div class="ent-section-title-icon" style="background:rgba(166,92,59,0.15);color:#e89f7d;">
+                    <i class="bi bi-clock-history"></i>
                 </div>
+            </x-slot:icon>
+            <x-slot:headerActions>
                 <input type="text" id="recentLogsSearch" placeholder="Search..." 
                     style="background:rgba(255,255,255,0.06);border:1px solid var(--ent-border);border-radius:var(--ent-radius-xs);color:var(--ent-text);padding:4px 10px;font-size:0.75rem;width:110px;outline:none;font-family:'Inter',sans-serif;" 
                     onkeyup="filterRecentLogs()">
-            </div>
+            </x-slot:headerActions>
             <div style="flex:1;overflow-y:auto;">
                 @forelse($recentAttendance->take(6) as $record)
                     <div class="attendance-row ent-activity-row">
@@ -353,30 +323,20 @@
                     </div>
                 @endforelse
             </div>
-        </div>
+        </x-card>
     </div>
 </div>
 
-{{-- ─── WEEKLY CHART ─── --}}
+{{-- â”€â”€â”€ WEEKLY CHART â”€â”€â”€ --}}
 @if(count($weeklyLabels) > 0)
-<div class="ent-section ent-fade-up ent-delay-4" style="margin-top:24px;">
-    <div class="ent-section-header">
-        <div class="ent-section-title">
-            <div class="ent-section-title-icon">
-                <i class="bi bi-bar-chart-fill"></i>
-            </div>
-            Weekly Attendance Overview
-        </div>
+<x-card type="section" class="ent-fade-up ent-delay-4" style="margin-top:24px;" icon="bi bi-bar-chart-fill" title="Weekly Attendance Overview">
+    <div class="ent-chart-container" style="height:250px;">
+        <canvas id="weeklyChart"></canvas>
     </div>
-    <div class="ent-section-body">
-        <div class="ent-chart-container" style="height:250px;">
-            <canvas id="weeklyChart"></canvas>
-        </div>
-    </div>
-</div>
+</x-card>
 @endif
 
-{{-- ─── HOLIDAY CALENDAR ─── --}}
+{{-- â”€â”€â”€ HOLIDAY CALENDAR â”€â”€â”€ --}}
 @php
     $hcalStart = \Carbon\Carbon::create($calYear, $calMonth, 1);
     $hcalEnd = $hcalStart->copy()->endOfMonth();
@@ -387,19 +347,19 @@
     $hcalToday = now()->day;
 @endphp
 
-<div class="ent-section ent-fade-up ent-delay-4" style="margin-top:24px;">
-    <div class="ent-section-header">
-        <div class="ent-section-title">
-            <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:#f87171;">
-                <i class="bi bi-calendar-heart-fill"></i>
-            </div>
-            Holiday & Events Calendar
+<x-card type="section" class="ent-fade-up ent-delay-4" style="margin-top:24px;" title="Holiday & Events Calendar">
+    <x-slot:icon>
+        <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:#f87171;">
+            <i class="bi bi-calendar-heart-fill"></i>
         </div>
+    </x-slot:icon>
+    <x-slot:headerActions>
         <button type="button" class="ent-btn ent-btn-sm ent-btn-primary" onclick="openHcalModal()">
             <i class="bi bi-plus-lg"></i> Add Event
         </button>
-    </div>
-    <div class="ent-section-body" style="padding:16px 20px;">
+    </x-slot:headerActions>
+    
+    <div style="padding:16px 20px;">
         <div class="hcal-container">
             {{-- Calendar Pane --}}
             <div class="hcal-calendar-pane">
@@ -475,7 +435,7 @@
                         <div class="hcal-event-date">
                             <i class="bi bi-calendar3"></i> {{ $evt->date_formatted }}
                             @if(isset($evt->author))
-                                · <i class="bi bi-person"></i> {{ $evt->author }}
+                                Â· <i class="bi bi-person"></i> {{ $evt->author }}
                             @endif
                         </div>
                         @if($evt->description)
@@ -509,12 +469,12 @@
     </div>
 </div>
 
-{{-- ─── ADD/EDIT HOLIDAY MODAL ─── --}}
+{{-- â”€â”€â”€ ADD/EDIT HOLIDAY MODAL â”€â”€â”€ --}}
 <div class="hcal-modal-overlay" id="hcalModalOverlay">
     <div class="hcal-modal">
         <div class="hcal-modal-header">
             <div class="hcal-modal-title" id="hcalModalTitle">Add Holiday / Event</div>
-            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">✕</button>
+            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">âœ•</button>
         </div>
         <form id="hcalForm" method="POST" action="{{ route('teacher.holidays.store') }}">
             @csrf
@@ -629,7 +589,7 @@ new Chart(ctx, {
 @endif
 
 <script>
-// ── Skeleton → Content Reveal ──
+// â”€â”€ Skeleton â†’ Content Reveal â”€â”€
 (function() {
     var skelKpis = document.getElementById('skelKpis');
     var realKpis = document.getElementById('realKpis');
@@ -696,7 +656,7 @@ function openLeaveDrawer() {
     }
 }
 
-// ── HOLIDAY CALENDAR MODAL ──
+// â”€â”€ HOLIDAY CALENDAR MODAL â”€â”€
 function openHcalModal() {
     document.getElementById('hcalModalTitle').textContent = 'Add Holiday / Event';
     document.getElementById('hcalForm').action = '{{ route("teacher.holidays.store") }}';
