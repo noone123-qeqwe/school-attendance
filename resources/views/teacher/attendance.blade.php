@@ -77,15 +77,25 @@
                 <div class="text-muted" style="font-size:.75rem;">{{ \Carbon\Carbon::parse($record->date)->format('l') }}</div>
             </td>
             <td data-label="Status">
-                @if($record->excused)
-                    <x-badge type="excused">Excused</x-badge>
-                @else
-                    @php $recordStatus = strtolower($record->status ?? ''); @endphp
-                    @if($recordStatus === 'present') <x-badge type="present">Present</x-badge>
-                    @elseif($recordStatus === 'late')  <x-badge type="late">Late</x-badge>
-                    @else <x-badge type="absent">Absent</x-badge>
-                    @endif
-                @endif
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="padding: 2px 10px; font-size: 0.75rem; border-color: rgba(207,164,111,0.2); color: #f3e7cd;" id="statusBtn_{{ $record->id }}">
+                        @if($record->excused)
+                            <x-badge type="excused">Excused</x-badge>
+                        @else
+                            @php $recordStatus = strtolower($record->status ?? ''); @endphp
+                            @if($recordStatus === 'present') <x-badge type="present">Present</x-badge>
+                            @elseif($recordStatus === 'late')  <x-badge type="late">Late</x-badge>
+                            @else <x-badge type="absent">Absent</x-badge>
+                            @endif
+                        @endif
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark" style="font-size: 0.85rem;">
+                        <li><a class="dropdown-item status-override" href="#" data-id="{{ $record->id }}" data-status="Present"><span class="text-success"><i class="bi bi-circle-fill me-2"></i>Present</span></a></li>
+                        <li><a class="dropdown-item status-override" href="#" data-id="{{ $record->id }}" data-status="Late"><span class="text-warning"><i class="bi bi-circle-fill me-2"></i>Late</span></a></li>
+                        <li><a class="dropdown-item status-override" href="#" data-id="{{ $record->id }}" data-status="Absent"><span class="text-danger"><i class="bi bi-circle-fill me-2"></i>Absent</span></a></li>
+                        <li><a class="dropdown-item status-override" href="#" data-id="{{ $record->id }}" data-status="Excused"><span class="text-info"><i class="bi bi-circle-fill me-2"></i>Excused</span></a></li>
+                    </ul>
+                </div>
             </td>
             <td data-label="Time In">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '—' }}</td>
             <td data-label="Excused">
@@ -123,4 +133,68 @@
         </div>
     @endif
 </x-card>
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const overrides = document.querySelectorAll('.status-override');
+    
+    overrides.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const id = this.getAttribute('data-id');
+            const status = this.getAttribute('data-status');
+            const btnEl = document.getElementById('statusBtn_' + id);
+            
+            // Show loading
+            const originalContent = btnEl.innerHTML;
+            btnEl.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...';
+            
+            fetch(`/teacher/attendance/${id}/override`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ status: status })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    // Update badge visually
+                    let badgeHtml = '';
+                    if (data.status === 'Excused' || data.excused) {
+                        badgeHtml = '<x-badge type="excused">Excused</x-badge>';
+                    } else if (data.status === 'Present') {
+                        badgeHtml = '<x-badge type="present">Present</x-badge>';
+                    } else if (data.status === 'Late') {
+                        badgeHtml = '<x-badge type="late">Late</x-badge>';
+                    } else {
+                        badgeHtml = '<x-badge type="absent">Absent</x-badge>';
+                    }
+                    btnEl.innerHTML = badgeHtml;
+                    
+                    if (typeof Toastify !== 'undefined') {
+                        Toastify({
+                            text: data.message,
+                            duration: 3000,
+                            gravity: "top",
+                            position: "right",
+                            style: { background: "#4ade80", color: "#111827" }
+                        }).showToast();
+                    }
+                } else {
+                    btnEl.innerHTML = originalContent;
+                    alert(data.message || 'Error updating status');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                btnEl.innerHTML = originalContent;
+                alert('A network error occurred.');
+            });
+        });
+    });
+});
+</script>
 @endsection

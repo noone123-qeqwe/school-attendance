@@ -174,10 +174,13 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/attendance/preview-pdf', [App\Http\Controllers\TeacherController::class, 'previewAttendancePdf'])->name('attendance.preview');
     Route::get('/attendance/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportAttendancePdf'])->name('attendance.pdf');
     Route::post('/attendance/{attendance}/excuse', [App\Http\Controllers\TeacherController::class, 'excuseAttendance'])->name('attendance.excuse');
+    Route::post('/attendance/{attendance}/override', [App\Http\Controllers\TeacherController::class, 'overrideAttendance'])->name('attendance.override');
     
     // Student Management - Full CRUD
     Route::get('/students', [App\Http\Controllers\TeacherController::class, 'students'])->name('students');
     Route::get('/students/preview-pdf', [App\Http\Controllers\TeacherController::class, 'previewStudentsPdf'])->name('students.preview');
+    Route::post('/student-notes', [App\Http\Controllers\TeacherController::class, 'storeStudentNote'])->name('notes.store');
+    Route::delete('/student-notes/{note}', [App\Http\Controllers\TeacherController::class, 'destroyStudentNote'])->name('notes.destroy');
     Route::get('/students/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportStudentsPdf'])->name('students.pdf');
     Route::get('/student/{student}', [App\Http\Controllers\TeacherController::class, 'studentDetail'])->name('student');
     
@@ -268,6 +271,7 @@ Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.'
     Route::get('/students/export-pdf', [App\Http\Controllers\AdminController::class, 'exportStudentsPdf'])->name('students.pdf');
     Route::get('/student/create', [App\Http\Controllers\AdminController::class, 'createStudent'])->name('student.create');
     Route::post('/student', [App\Http\Controllers\AdminController::class, 'storeStudent'])->name('student.store');
+    Route::post('/students/import', [App\Http\Controllers\AdminController::class, 'importStudents'])->name('students.import');
     Route::post('/otp/send-register', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->middleware('throttle:3,1')->name('otp.register.send');
     Route::post('/otp/verify-register', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->name('otp.register.verify');
     Route::get('/student/{student}', [App\Http\Controllers\AdminController::class, 'studentDetail'])->name('student');

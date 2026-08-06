@@ -462,6 +462,48 @@ class TeacherController extends Controller
         return view('teacher.attendance.preview', compact('attendanceRecords', 'filters', 'teacher', 'teacherSubjects'));
     }
 
+    public function overrideAttendance(Request $request, Attendance $attendance)
+    {
+        $teacher = Auth::user();
+        
+        $request->validate([
+            'status' => 'required|in:Present,Late,Absent,Excused',
+        ]);
+
+        // Verify the teacher owns the subject for this attendance record
+        $teacherSubjects = Subject::where('instructor', $teacher->name)
+            ->orWhere('instructor', $teacher->employee_id)
+            ->pluck('code')
+            ->toArray();
+
+        if (!in_array($attendance->subject_code, $teacherSubjects)) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
+        }
+
+        $oldStatus = $attendance->status;
+        $newStatus = $request->status;
+
+        $attendance->status = $newStatus;
+        if ($newStatus === 'Excused') {
+            $attendance->excused = true;
+        } else {
+            $attendance->excused = false;
+        }
+        $attendance->save();
+
+        activity()
+            ->performedOn($attendance)
+            ->causedBy($teacher)
+            ->log("Attendance status overridden from {$oldStatus} to {$newStatus}");
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Attendance status updated successfully.',
+            'status' => $newStatus,
+            'excused' => $attendance->excused
+        ]);
+    }
+
     // ─────────────────────────────────────────
     // STUDENT MANAGEMENT (Teacher-scoped)
     // ─────────────────────────────────────────
@@ -516,12 +558,35 @@ class TeacherController extends Controller
             $query->where(function($q) use ($request) {
                 $q->where('name', 'like', '%'.$request->search.'%')
                   ->orWhere('student_number', 'like', '%'.$request->search.'%');
-            });
-        }
-
         $students = $query->orderBy('year_level')->orderBy('name')->get();
 
         return view('teacher.students.index', compact('students', 'teacherSubjects'));
+    }
+
+    public function storeStudentNote(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|exists:users,id',
+            'note' => 'required|string|max:1000',
+        ]);
+
+        \App\Models\StudentNote::create([
+            'teacher_id' => Auth::id(),
+            'student_id' => $request->student_id,
+            'note' => $request->note,
+        ]);
+
+        return back()->with('success', 'Note added successfully.');
+    }
+
+    public function destroyStudentNote(\App\Models\StudentNote $note)
+    {
+        if ($note->teacher_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $note->delete();
+        return back()->with('success', 'Note deleted successfully.');
     }
 
     public function studentDetail(User $student)
@@ -556,7 +621,12 @@ class TeacherController extends Controller
         $total        = $records->count();
         $rate         = $total > 0 ? round((($totalPresent + $totalLate) / $total) * 100) : 0;
 
-        return view('teacher.student-detail', compact('student','records','totalPresent','totalLate','totalAbsent','total','rate','teacherSubjects'));
+        $notes = \App\Models\StudentNote::where('student_id', $student->id)
+            ->where('teacher_id', $teacher->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('teacher.student-detail', compact('student','records','totalPresent','totalLate','totalAbsent','total','rate','teacherSubjects', 'notes'));
     }
 
     public function exportStudentsPdf(Request $request)

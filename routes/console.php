@@ -16,6 +16,9 @@ Schedule::command('attendance:check-warnings')->dailyAt('19:00'); // Evening che
 // Check students with low attendance rate
 Schedule::command('attendance:check-rate')->dailyAt('20:00'); // Evening rate check
 
+// Send daily attendance digest to parents
+Schedule::command('app:send-parent-digests')->dailyAt('18:00'); // Evening digest
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

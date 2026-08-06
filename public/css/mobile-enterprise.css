@@ -431,8 +431,68 @@
     .d-mobile-flex { display: flex !important; }
 
     /* ══════════════════════════════════════════
+       MOBILE CARD-BASED TABLES
+       ══════════════════════════════════════════ */
+    .adm-table thead, .ent-table thead, .saas-table thead, .tch-table thead, .table thead {
+        display: none !important;
+    }
+    
+    .adm-table tbody tr, .ent-table tbody tr, .saas-table tbody tr, .tch-table tbody tr, .table tbody tr {
+        display: block !important;
+        margin-bottom: 16px;
+        background: rgba(255, 255, 255, 0.03) !important;
+        border: 1px solid rgba(255, 215, 145, 0.05) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        padding: 8px 0;
+    }
+    
+    .adm-table tbody td, .ent-table tbody td, .saas-table tbody td, .tch-table tbody td, .table tbody td {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 12px 16px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        text-align: right;
+    }
+    
+    .adm-table tbody td:last-child, .ent-table tbody td:last-child, .saas-table tbody td:last-child, .tch-table tbody td:last-child, .table tbody td:last-child {
+        border-bottom: none !important;
+    }
+    
+    .adm-table tbody td::before, .ent-table tbody td::before, .saas-table tbody td::before, .tch-table tbody td::before, .table tbody td::before {
+        content: attr(data-label);
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-right: 16px;
+        flex-shrink: 0;
+        text-align: left;
+    }
+    
+    .adm-table tbody td[data-label="Action"], .adm-table tbody td[data-label="Actions"],
+    .ent-table tbody td[data-label="Action"], .ent-table tbody td[data-label="Actions"],
+    .saas-table tbody td[data-label="Action"], .saas-table tbody td[data-label="Actions"],
+    .tch-table tbody td[data-label="Action"], .tch-table tbody td[data-label="Actions"],
+    .table tbody td[data-label="Action"], .table tbody td[data-label="Actions"] {
+        justify-content: flex-end !important;
+        gap: 10px;
+        padding-top: 16px !important;
+    }
+    
+    .adm-table tbody td[data-label="Action"]::before, .adm-table tbody td[data-label="Actions"]::before,
+    .ent-table tbody td[data-label="Action"]::before, .ent-table tbody td[data-label="Actions"]::before,
+    .saas-table tbody td[data-label="Action"]::before, .saas-table tbody td[data-label="Actions"]::before,
+    .tch-table tbody td[data-label="Action"]::before, .tch-table tbody td[data-label="Actions"]::before,
+    .table tbody td[data-label="Action"]::before, .table tbody td[data-label="Actions"]::before {
+        display: none;
+    }
+
+    /* ══════════════════════════════════════════
        TOUCH TARGET AUDIT
-       Minimum 44×44px for all interactive elements
+       Minimum 44x44px for all interactive elements
        ══════════════════════════════════════════ */
 
     /* Small buttons: enforce minimum touch area */

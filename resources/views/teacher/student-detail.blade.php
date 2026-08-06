@@ -62,6 +62,50 @@
     </div>
 </div>
 
+<!-- Teacher Notes -->
+<div class="tch-card" style="margin-bottom: 24px;">
+    <div class="tch-card-head">
+        <div class="tch-card-title">
+            <div class="tch-card-icon" style="background: #fef7f7; color: var(--tch-primary);">
+                <i class="bi bi-journal-text"></i>
+            </div>
+            My Notes on {{ $student->name }}
+        </div>
+    </div>
+    <div style="padding: 20px 22px;">
+        <form action="{{ route('teacher.notes.store') }}" method="POST" style="margin-bottom: 20px;">
+            @csrf
+            <input type="hidden" name="student_id" value="{{ $student->id }}">
+            <div class="form-group mb-2">
+                <textarea name="note" class="form-control" rows="3" placeholder="Add a private note about this student..." style="border-radius: 8px; font-size: 0.9rem;" required></textarea>
+            </div>
+            <button type="submit" class="tch-btn" style="background: var(--tch-primary); color: white;">Save Note</button>
+        </form>
+
+        @if(isset($notes) && $notes->count() > 0)
+            <div class="notes-list">
+                @foreach($notes as $note)
+                    <div class="note-item" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 12px; position: relative;">
+                        <p style="margin: 0 0 10px 0; font-size: 0.95rem; color: #334155; white-space: pre-wrap;">{{ $note->note }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small style="color: #94a3b8;">{{ $note->created_at->format('M j, Y h:i A') }}</small>
+                            <form action="{{ route('teacher.notes.destroy', $note->id) }}" method="POST" onsubmit="return confirm('Delete this note?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0" style="font-size: 0.8rem; text-decoration: none;">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div style="text-align: center; color: #94a3b8; font-size: 0.9rem; padding: 20px 0;">
+                No notes yet. Add one above.
+            </div>
+        @endif
+    </div>
+</div>
+
 <!-- Attendance Records -->
 <div class="tch-card">
     <div class="tch-card-head">

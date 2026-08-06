@@ -13,6 +13,9 @@
         <a href="{{ route('admin.students.preview', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
         </a>
+        <button type="button" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-upload"></i> Import CSV
+        </button>
         <a href="{{ route('admin.student.create') }}" class="btn btn-primary" style="background: var(--gold); border: none;">
             <i class="bi bi-plus-lg"></i> Add Student
         </a>
@@ -124,4 +127,34 @@
     </div>
     @endif
 </x-card>
+
+<!-- Import CSV Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: #1a100c; border: 1px solid rgba(207,164,111,0.2);">
+            <form action="{{ route('admin.students.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header" style="border-bottom: 1px solid rgba(207,164,111,0.1);">
+                    <h5 class="modal-title" style="color: #f3e7cd;"><i class="bi bi-upload me-2 text-warning"></i> Import Students</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" style="background: rgba(14,165,233,0.1); border-color: rgba(14,165,233,0.2); color: #bae6fd; font-size: 0.85rem;">
+                        <strong>Format:</strong> CSV file with headers: <br>
+                        <code>name, email, student_number, year_level, section</code>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #b39b82;">CSV File</label>
+                        <input type="file" name="csv_file" class="form-control" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd;" accept=".csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(207,164,111,0.1);">
+                    <button type="button" class="btn btn-outline" data-bs-dismiss="modal" style="color: #b39b82;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="background: var(--gold); border: none;">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection

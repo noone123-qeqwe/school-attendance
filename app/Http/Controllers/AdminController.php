@@ -131,6 +131,56 @@ class AdminController extends Controller
         return view('admin.students.index', compact('students'));
     }
 
+    public function importStudents(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('csv_file');
+        
+        $handle = fopen($file->getRealPath(), 'r');
+        $header = fgetcsv($handle); // Assuming first row is header
+        
+        if (!$header || count($header) < 5) {
+            fclose($handle);
+            return back()->with('error', 'Invalid CSV format. Please ensure headers are correct (name, email, student_number, year_level, section).');
+        }
+
+        $imported = 0;
+        while (($row = fgetcsv($handle)) !== false) {
+            if (count($row) < 5) continue;
+            
+            // Expected columns: Name, Email, Student Number, Year Level, Section
+            $name = trim($row[0]);
+            $email = trim($row[1]);
+            $studentNumber = trim($row[2]);
+            $yearLevel = trim($row[3]);
+            $section = trim($row[4]);
+            
+            if (empty($name) || empty($email)) continue;
+            
+            // Skip if user already exists
+            if (User::where('email', $email)->orWhere('student_number', $studentNumber)->exists()) {
+                continue;
+            }
+
+            User::create([
+                'name' => $name,
+                'email' => $email,
+                'student_number' => $studentNumber,
+                'year_level' => $yearLevel,
+                'section' => $section,
+                'role' => 'student',
+                'password' => Hash::make('password'), // Default password
+            ]);
+            $imported++;
+        }
+        fclose($handle);
+
+        return back()->with('success', "Successfully imported {$imported} students.");
+    }
+
     public function studentDetail(User $student)
     {
         $records = Attendance::with('subject')
