@@ -30,66 +30,7 @@
             </button>
         </div>
         @section('role-sidebar')
-        <!-- Default (Student) sidebar -->
-        <!-- Logo area -->
-        <div class="sidebar-head">
-            <img src="{{ asset('images/logo.png') }}" class="sidebar-logo">
-            <div class="sidebar-text">
-                <div class="sidebar-brand">{{ config('app.name') }}</div>
-                <div class="sidebar-subtitle">{{ config('app.subtitle') }}</div>
-            </div>
-        </div>
 
-        <div class="sidebar-divider"></div>
-
-        <!-- Nav -->
-        <div class="sidebar-nav">
-            @if(Auth::check() && Auth::user()->isAdmin())
-                <a href="{{ route('admin.dashboard') }}"
-                   class="nav-link"
-                   data-title="Admin Dashboard">
-                    <i class="bi bi-speedometer2"></i>
-                    <span class="nav-link-text">Admin Dashboard</span>
-                </a>
-                <a href="{{ route('admin.teachers') }}"
-                   class="nav-link"
-                   data-title="Teachers">
-                    <i class="bi bi-person-workspace"></i>
-                    <span class="nav-link-text">Teachers</span>
-                </a>
-                <a href="{{ route('admin.excuses') }}"
-                   class="nav-link"
-                   data-title="Excuse Reviews">
-                    <i class="bi bi-file-earmark-check"></i>
-                    <span class="nav-link-text">Excuse Reviews</span>
-                </a>
-                <a href="{{ route('admin.calendar') }}"
-                   class="nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}"
-                   data-title="Holiday Calendar">
-                    <i class="bi bi-calendar-event"></i>
-                    <span class="nav-link-text">Holiday Calendar</span>
-                </a>
-            @else
-                <a href="{{ route('home') }}"
-                   class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}"
-                   data-title="Dashboard">
-                    <i class="bi bi-grid-fill"></i>
-                    <span class="nav-link-text">Dashboard</span>
-                </a>
-                <a href="{{ route('student.classes') }}"
-                   class="nav-link {{ request()->routeIs('student.classes') ? 'active' : '' }}"
-                   data-title="My Classes">
-                    <i class="bi bi-folder-fill"></i>
-                    <span class="nav-link-text">My Classes</span>
-                </a>
-                <a href="{{ route('student.schedule') }}"
-                   class="nav-link {{ request()->routeIs('student.schedule') ? 'active' : '' }}"
-                   data-title="My Schedule">
-                    <i class="bi bi-calendar-week-fill"></i>
-                    <span class="nav-link-text">My Schedule</span>
-                </a>
-            @endif
-        </div>
 
         @auth
             @if(Auth::user()->isAdmin())

@@ -189,6 +189,12 @@ public function updateImage(Request $request)
 
     $subjects = $user->enrolledSubjects()->with('schedules')->get();
 
+    if ($subjects->isEmpty()) {
+        $subjects = Subject::where('year_level', $user->year_level)
+                           ->where('semester', $user->semester)
+                           ->with('schedules')->get();
+    }
+
     return view('student.classes', compact('subjects'));
 }
 
@@ -198,6 +204,12 @@ public function updateImage(Request $request)
         $user = auth()->user();
 
     $subjects = $user->enrolledSubjects()->with('schedules')->orderBy('code')->get();
+
+    if ($subjects->isEmpty()) {
+        $subjects = Subject::where('year_level', $user->year_level)
+                           ->where('semester', $user->semester)
+                           ->with('schedules')->orderBy('code')->get();
+    }
 
     $pdf = Pdf::loadView('student.classes-pdf', compact('user', 'subjects'))
         ->setPaper('a4', 'landscape');
