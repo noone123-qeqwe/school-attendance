@@ -119,10 +119,6 @@ class WebauthnService
         if (!$credential) {
             Log::error('WebAuthn credential not found', [
                 'user_id' => $user->id,
-                'provided_credential_id' => $credentialId,
-                'normalized_credential_id' => $normalizedCredentialId,
-                'user_credentials_count' => $user->webauthnCredentials()->count(),
-                'user_credentials' => $user->webauthnCredentials()->pluck('credential_id')->toArray(),
             ]);
             throw new RuntimeException('Unknown biometric credential.');
         }

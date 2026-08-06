@@ -174,7 +174,7 @@ class TeacherController extends Controller
             'code', 'name', 'year_level', 'semester', 'units', 'days', 
             'start_time', 'end_time', 'section'
         ]), [
-            'instructor' => $teacher->name
+            'instructor_id' => $teacher->id
         ]));
 
         $this->saveSubjectSchedules($subject, $request);
@@ -225,7 +225,7 @@ class TeacherController extends Controller
             'code', 'name', 'year_level', 'semester', 'units', 'days', 
             'start_time', 'end_time', 'section'
         ]), [
-            'instructor' => $teacher->name
+            'instructor_id' => $teacher->id
         ]));
 
         $this->saveSubjectSchedules($subject, $request);
@@ -289,14 +289,11 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
         $subject = Subject::where('code', $subjectCode)
-            ->where(function($q) use ($teacher) {
-                $q->where('instructor', $teacher->name)
-                  ->orWhere('instructor', $teacher->employee_id);
-            })
+            ->where('instructor_id', $teacher->id)
             ->firstOrFail();
 
         // Get students enrolled in this subject
-        $students = User::where('role', 'student')
+        $students = $subject->enrolledStudents()
             ->with(['attendances' => function($q) use ($subjectCode) {
                 $q->where('subject_code', $subjectCode);
             }])
@@ -1638,10 +1635,7 @@ class TeacherController extends Controller
     public function classroomIndex(Request $request)
     {
         $teacher = Auth::user();
-        $query = Subject::where(function($q) use ($teacher) {
-                $q->where('instructor', $teacher->name)
-                  ->orWhere('instructor', $teacher->employee_id);
-            })
+        $query = Subject::where('instructor_id', $teacher->id)
             ->with('schedules');
 
         if ($request->filled('search')) {
@@ -1660,10 +1654,7 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
         $subject = Subject::where('code', $subjectCode)
-            ->where(function($q) use ($teacher) {
-                $q->where('instructor', $teacher->name)
-                  ->orWhere('instructor', $teacher->employee_id);
-            })
+            ->where('instructor_id', $teacher->id)
             ->with('schedules')
             ->firstOrFail();
 
@@ -1693,10 +1684,7 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
         $subject = Subject::where('code', $subjectCode)
-            ->where(function($q) use ($teacher) {
-                $q->where('instructor', $teacher->name)
-                  ->orWhere('instructor', $teacher->employee_id);
-            })
+            ->where('instructor_id', $teacher->id)
             ->firstOrFail();
 
         $request->validate([

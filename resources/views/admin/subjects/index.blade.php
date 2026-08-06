@@ -80,10 +80,10 @@
                         <span class="saas-badge saas-badge-default">Y{{ $subject->year }} - S{{ $subject->semester }}</span>
                     </td>
                     <td>
-                        @if($subject->instructor)
+                        @if($subject->instructorUser)
                             <div style="display:flex;align-items:center;gap:6px;">
                                 <i class="bi bi-person-workspace saas-text-muted"></i>
-                                <span style="font-size:0.85rem;">{{ $subject->instructor }}</span>
+                                <span style="font-size:0.85rem;">{{ $subject->instructorUser->name }}</span>
                             </div>
                         @else
                             <span class="saas-text-muted" style="font-style:italic;">Unassigned</span>

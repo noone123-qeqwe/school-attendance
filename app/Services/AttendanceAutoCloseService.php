@@ -59,53 +59,44 @@ class AttendanceAutoCloseService
         $today = $session->session_ends_at->toDateString();
         
         // Get all students who should attend this class
-        $enrolledStudents = User::where('role', 'student')
-            ->where('year_level', $subject->year_level)
-            ->where('semester', $subject->semester);
-            
-        if (!empty($subject->course)) {
-            $enrolledStudents->where('course', $subject->course);
-        }
-        
-        if (!empty($subject->section)) {
-            $enrolledStudents->where('section', $subject->section);
-        }
-        
-        $enrolledStudents = $enrolledStudents->get();
+        $enrolledStudents = $subject->enrolledStudents()->get();
         
         $absentCount = 0;
         
         foreach ($enrolledStudents as $student) {
-            // Check if student already has attendance record for this session
-            $existingAttendance = Attendance::where('user_id', $student->id)
-                ->where('subject_code', $session->subject_code)
-                ->where('date', $today)
-                ->first();
-            
-            if (!$existingAttendance) {
-                // Mark as absent
-                Attendance::create([
-                    'user_id' => $student->id,
-                    'subject_code' => $session->subject_code,
-                    'date' => $today,
-                    'status' => 'Absent',
-                    'time_in' => null,
-                    'latitude' => null,
-                    'longitude' => null,
-                ]);
+            \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $today, &$absentCount) {
+                // Check if student already has attendance record for this session
+                $existingAttendance = Attendance::where('user_id', $student->id)
+                    ->where('subject_code', $session->subject_code)
+                    ->whereDate('date', $today)
+                    ->exists();
                 
-                $absentCount++;
-                
-                Log::info('Auto-marked student absent', [
-                    'student_id' => $student->id,
-                    'student_name' => $student->name,
-                    'subject_code' => $session->subject_code,
-                    'date' => $today,
-                ]);
-                
-                // Check for consecutive absences and send OSAS warning if needed
-                $this->checkConsecutiveAbsences($student->id, $session->subject_code);
-            }
+                if (!$existingAttendance) {
+                    // Mark as absent
+                    Attendance::create([
+                        'user_id' => $student->id,
+                        'subject_code' => $session->subject_code,
+                        'date' => $today,
+                        'status' => 'Absent',
+                        'time_in' => null,
+                        'latitude' => null,
+                        'longitude' => null,
+                        'session_id' => $session->id, // link to the closed session
+                    ]);
+                    
+                    $absentCount++;
+                    
+                    Log::info('Auto-marked student absent', [
+                        'student_id' => $student->id,
+                        'student_name' => $student->name,
+                        'subject_code' => $session->subject_code,
+                        'date' => $today,
+                    ]);
+                    
+                    // Check for consecutive absences and send OSAS warning if needed
+                    $this->checkConsecutiveAbsences($student->id, $session->subject_code);
+                }
+            });
         }
         
         Log::info('Auto-absent marking completed', [

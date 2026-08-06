@@ -32,7 +32,7 @@
         $totalSubjects = $subjects->count();
         $totalUnits = $subjects->sum('units');
         $subjectsWithSchedule = $subjects->where('start_time')->where('end_time')->count();
-        $subjectsWithInstructor = $subjects->whereNotNull('instructor')->where('instructor', '!=', '')->count();
+        $subjectsWithInstructor = $subjects->filter(function($s) { return $s->instructorUser !== null; })->count();
     @endphp
     
     <div class="stats-grid">
@@ -100,8 +100,8 @@
                     @endif
                 </td>
                 <td>
-                    @if($subject->instructor && $subject->instructor !== '')
-                        <div style="font-size: 10px;">{{ $subject->instructor }}</div>
+                    @if($subject->instructorUser)
+                        <div style="font-size: 10px;">{{ $subject->instructorUser->name }}</div>
                     @else
                         <span class="text-muted">TBA</span>
                     @endif
