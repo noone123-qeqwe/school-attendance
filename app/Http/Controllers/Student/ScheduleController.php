@@ -25,9 +25,9 @@ class ScheduleController extends Controller
 
         foreach ($subjects as $subject) {
             foreach ($subject->schedules as $schedule) {
-                if (in_array($schedule->day_of_week, $days)) {
+                if (in_array($schedule->day, $days)) {
                     $schedule->subject = $subject; // Attach subject to schedule for easy access
-                    $weeklySchedule[$schedule->day_of_week]->push($schedule);
+                    $weeklySchedule[$schedule->day]->push($schedule);
                 }
             }
         }
