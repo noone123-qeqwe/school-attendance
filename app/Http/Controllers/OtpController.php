@@ -77,22 +77,24 @@ class OtpController extends Controller
 
     public function sendForgotOtp(Request $request)
     {
-        $request->validate(['email' => 'required|email|exists:users,email']);
+        $request->validate(['email' => 'required|email']);
 
         $user = User::where('email', $request->email)->first();
-        $otp  = Otp::generate($user->id, 'forgot_password');
+        
+        if ($user) {
+            $otp  = Otp::generate($user->id, 'forgot_password');
+            \Illuminate\Support\Facades\Log::info("Forgot Password OTP for {$user->email}: {$otp->code}");
 
-        \Illuminate\Support\Facades\Log::info("Forgot Password OTP for {$user->email}: {$otp->code}");
-
-        try {
-            Mail::to($user->email)->send(new OtpMail($otp->code, 'forgot_password', $user->name));
-        } catch (\Exception $e) {
-            return back()->withErrors(['email' => 'Failed to send OTP. Please check your mail configuration.']);
+            try {
+                Mail::to($user->email)->send(new OtpMail($otp->code, 'forgot_password', $user->name));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Mail failed: " . $e->getMessage());
+            }
         }
 
         return redirect()->route('otp.verify.form', ['purpose' => 'forgot_password'])
-                         ->with('otp_email', $user->email)
-                         ->with('info', 'OTP sent to ' . $user->email);
+                         ->with('otp_email', $request->email)
+                         ->with('info', 'If your email is registered, an OTP has been sent.');
     }
 
     // ─────────────────────────────────────────

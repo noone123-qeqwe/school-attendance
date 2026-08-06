@@ -35,7 +35,7 @@
         <button type="button" 
                 class="btn child-tab-btn {{ $index === 0 ? 'active' : '' }}" 
                 data-child-id="{{ $data->child->id }}"
-                style="white-space: nowrap; border-radius: 99px; border: 1px solid rgba(207,164,111,{{ $index === 0 ? '0.4' : '0.15' }}); background: rgba(207,164,111,{{ $index === 0 ? '0.1' : '0.02' }}); color: {{ $index === 0 ? '#f3e7cd' : '#b39b82' }}; padding: 8px 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+                style="white-space: nowrap; border-radius: 99px; border: 1px solid rgba(255,255,255,{{ $index === 0 ? '0.15' : '0.06' }}); background: rgba(255,255,255,{{ $index === 0 ? '0.05' : '0.02' }}); color: {{ $index === 0 ? '#f3e7cd' : '#b39b82' }}; padding: 8px 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); transition: all 0.2s ease;">
             <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff;">
                 {{ substr($data->child->name, 0, 2) }}
             </div>
@@ -93,33 +93,33 @@
     <!-- Quick Stats -->
     <div class="row g-3 mb-4" id="realChildStats_{{ $data->child->id }}" style="display:none;">
         <div class="col-md-2 col-4">
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; padding: 16px; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 800; color: {{ $data->rate >= 90 ? '#4ade80' : ($data->rate >= 75 ? '#fbbf24' : '#f87171') }};">{{ $data->rate }}%</div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; color: #b39b82; margin-top: 4px;">Rate</div>
+            <div class="ent-kpi-card" style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);">
+                <div class="ent-kpi-value" style="font-size: 1.5rem; color: {{ $data->rate >= 90 ? '#4ade80' : ($data->rate >= 75 ? '#fbbf24' : '#f87171') }}; text-align: center;">{{ $data->rate }}%</div>
+                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px;">Rate</div>
             </div>
         </div>
         <div class="col-md-2 col-4">
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; padding: 16px; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 800; color: #4ade80;">{{ $data->present }}</div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; color: #b39b82; margin-top: 4px;">Present</div>
+            <div class="ent-kpi-card" style="padding: 16px; background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15);">
+                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #4ade80; text-align: center;">{{ $data->present }}</div>
+                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #4ade80;">Present</div>
             </div>
         </div>
         <div class="col-md-2 col-4">
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; padding: 16px; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24;">{{ $data->late }}</div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; color: #b39b82; margin-top: 4px;">Late</div>
+            <div class="ent-kpi-card" style="padding: 16px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15);">
+                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #fbbf24; text-align: center;">{{ $data->late }}</div>
+                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #fbbf24;">Late</div>
             </div>
         </div>
         <div class="col-md-2 col-4">
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; padding: 16px; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 800; color: #f87171;">{{ $data->absent }}</div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; color: #b39b82; margin-top: 4px;">Absent</div>
+            <div class="ent-kpi-card" style="padding: 16px; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);">
+                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #f87171; text-align: center;">{{ $data->absent }}</div>
+                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #f87171;">Absent</div>
             </div>
         </div>
         <div class="col-md-2 col-4">
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; padding: 16px; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 800; color: #60a5fa;">{{ $data->streak }}</div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; color: #b39b82; margin-top: 4px;">Streak</div>
+            <div class="ent-kpi-card" style="padding: 16px; background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.15);">
+                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #60a5fa; text-align: center;">{{ $data->excused }}</div>
+                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #60a5fa;">Excused</div>
             </div>
         </div>
     </div>

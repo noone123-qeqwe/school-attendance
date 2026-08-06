@@ -40,7 +40,7 @@
                                         <x-badge type="info">{{ $sched->room ?? 'TBA' }}</x-badge>
                                     </td>
                                     <td style="padding: 16px;">
-                                        <div style="font-size: 0.9rem;">{{ $sched->teacher->name ?? 'TBA' }}</div>
+                                        <div style="font-size: 0.9rem;">{{ $sched->subject->instructorUser->name ?? $sched->subject->instructor ?? 'TBA' }}</div>
                                     </td>
                                 </tr>
                             @endforeach

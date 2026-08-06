@@ -313,8 +313,7 @@ class AnalyticsService
         $targetDate = Carbon::parse($targetDateStr);
 
         // Get subjects taught by this teacher
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->with('schedules')
             ->get();
 

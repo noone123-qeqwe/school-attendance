@@ -473,6 +473,13 @@
                         </div>
                     </div>
 
+                    <div class="trow">
+                        <div><div class="tlabel">SMS Notifications</div><div class="tsub">Receive important alerts via SMS (charges may apply)</div></div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" name="prefs[sms]" value="1" {{ !empty($prefs['sms']) ? 'checked' : '' }}>
+                        </div>
+                    </div>
+
                     <div style="margin:16px 0 10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Display</div>
                     <div class="trow">
                         <div><div class="tlabel">Compact Sidebar</div><div class="tsub">Start with the sidebar collapsed</div></div>

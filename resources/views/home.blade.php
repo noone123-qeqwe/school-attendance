@@ -69,33 +69,34 @@
 
 <!-- Active Warnings -->
 @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-<div class="mb-4" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 16px; padding: 24px; position: relative; overflow: hidden;">
-    <div style="position: absolute; right: -20px; top: 50%; transform: translateY(-50%); font-size: 6rem; opacity: 0.05; pointer-events: none;">⚠️</div>
+<div class="ent-alert ent-fade-up" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); margin-bottom: 24px; padding: 24px; border-radius: 16px;">
     <div class="d-flex align-items-center gap-3 mb-3">
-        <div style="background: rgba(239,68,68,0.2); color: #f87171; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        <div class="ent-alert-icon" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.1);">
             <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
-        <div>
-            <div style="font-size: 1.1rem; font-weight: 800; color: #fca5a5;">Action Required: Attendance Warning</div>
-            <div style="font-size: 0.85rem; color: #b39b82;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
+        <div class="ent-alert-body" style="flex: 1;">
+            <div class="ent-alert-title" style="color: #fca5a5; font-weight: 700; font-size: 1.1rem; letter-spacing: -0.01em;">Action Required: Attendance Warning</div>
+            <div class="ent-alert-text" style="color: #b39b82; font-size: 0.875rem;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
         </div>
     </div>
-    <div class="d-flex flex-column gap-2 mb-3">
+    
+    <div class="d-flex flex-column gap-3 mb-4">
         @foreach($activeWarnings as $warning)
-        <div style="background: rgba(0,0,0,0.2); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(239,68,68,0.1);">
-            <div class="d-flex justify-content-between mb-1">
-                <span style="color: #fca5a5; font-weight: 700; font-size: 0.85rem;"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ $warning->subject_code }}</span>
-                <span style="color: #b39b82; font-size: 0.7rem;">{{ $warning->created_at->diffForHumans() }}</span>
+        <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s ease;">
+            <div class="d-flex justify-content-between mb-2">
+                <span style="color: #fca5a5; font-weight: 700; font-size: 0.875rem;"><i class="bi bi-exclamation-triangle-fill me-2" style="opacity: 0.8;"></i>{{ $warning->subject_code }}</span>
+                <span style="color: #b39b82; font-size: 0.75rem;">{{ $warning->created_at->diffForHumans() }}</span>
             </div>
-            <div style="font-size: 0.85rem; color: #d6b67b; line-height: 1.5;">{{ $warning->message }}</div>
+            <div style="font-size: 0.875rem; color: #d6b67b; line-height: 1.6;">{{ $warning->message }}</div>
         </div>
         @endforeach
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-        <a href="{{ route('excuses') }}" class="btn btn-primary" style="background: #dc2626; border: none;">
+    
+    <div class="d-flex gap-3 flex-wrap">
+        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, #dc2626, #b91c1c); border: 1px solid rgba(239,68,68,0.4); border-radius: 10px;">
             <i class="bi bi-file-text-fill"></i> Submit Excuse
         </a>
-        <a href="{{ route('attendance.records') }}" class="btn btn-outline" style="border-color: rgba(239,68,68,0.4); color: #fca5a5;">
+        <a href="{{ route('attendance.records') }}" class="ent-btn ent-btn-secondary" style="color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px;">
             View Records
         </a>
     </div>
@@ -134,33 +135,33 @@
 </div>
 
 <!-- Quick Stats -->
-<div class="row g-3 mb-4" id="realStats" style="display:none;">
-    <div class="col-md-3 col-6">
-        <div class="adm-stat" style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);">
-            <div class="adm-stat-icon" style="color: #4ade80;"><i class="bi bi-check-circle-fill"></i></div>
-            <div class="adm-stat-lbl" style="color: #4ade80;">Present</div>
-            <div class="adm-stat-val" style="color: #4ade80;">{{ $totalPresent ?? 0 }}</div>
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:24px; margin-bottom:24px;">
+    <div class="ent-kpi-card" data-accent="success" style="background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15);">
+        <div class="ent-kpi-icon" style="color: #4ade80;"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="ent-kpi-body">
+            <div class="ent-kpi-label" style="color: #4ade80;">Present</div>
+            <div class="ent-kpi-value" style="color: #4ade80;">{{ $totalPresent ?? 0 }}</div>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="adm-stat" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2);">
-            <div class="adm-stat-icon" style="color: #fbbf24;"><i class="bi bi-clock-fill"></i></div>
-            <div class="adm-stat-lbl" style="color: #fbbf24;">Late</div>
-            <div class="adm-stat-val" style="color: #fbbf24;">{{ $totalLate ?? 0 }}</div>
+    <div class="ent-kpi-card" data-accent="warning" style="background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15);">
+        <div class="ent-kpi-icon" style="color: #fbbf24;"><i class="bi bi-clock-fill"></i></div>
+        <div class="ent-kpi-body">
+            <div class="ent-kpi-label" style="color: #fbbf24;">Late</div>
+            <div class="ent-kpi-value" style="color: #fbbf24;">{{ $totalLate ?? 0 }}</div>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="adm-stat" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2);">
-            <div class="adm-stat-icon" style="color: #f87171;"><i class="bi bi-x-circle-fill"></i></div>
-            <div class="adm-stat-lbl" style="color: #f87171;">Absent</div>
-            <div class="adm-stat-val" style="color: #f87171;">{{ $totalAbsent ?? 0 }}</div>
+    <div class="ent-kpi-card" data-accent="danger" style="background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);">
+        <div class="ent-kpi-icon" style="color: #f87171;"><i class="bi bi-x-circle-fill"></i></div>
+        <div class="ent-kpi-body">
+            <div class="ent-kpi-label" style="color: #f87171;">Absent</div>
+            <div class="ent-kpi-value" style="color: #f87171;">{{ $totalAbsent ?? 0 }}</div>
         </div>
     </div>
-    <div class="col-md-3 col-6">
-        <div class="adm-stat" style="background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2);">
-            <div class="adm-stat-icon" style="color: var(--gold);"><i class="bi bi-book-fill"></i></div>
-            <div class="adm-stat-lbl" style="color: var(--gold);">Subjects</div>
-            <div class="adm-stat-val" style="color: var(--gold);">{{ isset($subjects) ? count($subjects) : 0 }}</div>
+    <div class="ent-kpi-card" data-accent="gold" style="background: rgba(207,164,111,0.05); border: 1px solid rgba(207,164,111,0.15);">
+        <div class="ent-kpi-icon" style="color: var(--gold);"><i class="bi bi-book-fill"></i></div>
+        <div class="ent-kpi-body">
+            <div class="ent-kpi-label" style="color: var(--gold);">Subjects</div>
+            <div class="ent-kpi-value" style="color: var(--gold);">{{ isset($subjects) ? count($subjects) : 0 }}</div>
         </div>
     </div>
 </div>

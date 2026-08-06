@@ -43,6 +43,7 @@ class AttendanceController extends Controller
     'subject_code' => 'required|string',
     'latitude' => 'required|numeric',
     'longitude' => 'required|numeric',
+    'accuracy' => 'nullable|numeric',
 ]);
     $user = auth()->user();
     $now = now(); 
@@ -52,6 +53,14 @@ class AttendanceController extends Controller
 
     if (!$subject) {
         return redirect()->back()->with('error', 'Subject not found.');
+    }
+
+    $isEnrolled = \App\Models\Enrollment::where('user_id', $user->id)
+        ->where('subject_id', $subject->id)
+        ->exists();
+
+    if (!$isEnrolled) {
+        return redirect()->back()->with('error', 'You are not enrolled in this subject.');
     }
 
     // SCHOOL LOCATION — Read dynamically from admin settings
@@ -74,6 +83,10 @@ class AttendanceController extends Controller
 
     if ($distance > $radiusMeters) {
         return redirect()->back()->with('error', "You are {$distance}m away from the classroom. You must be within {$radiusMeters}m to clock in.");
+    }
+
+    if ($request->filled('accuracy') && $request->accuracy > 100) {
+        return redirect()->back()->with('error', "GPS signal too weak (Accuracy: {$request->accuracy}m). Please ensure high-trust connection or try WebAuthn flow.");
     }
 
     // 1. DAY VALIDATION
@@ -132,6 +145,8 @@ if (!$scheduledDays->contains($todayFull)) {
         'time_in' => $now->format('H:i:s'),
         'latitude' => $request->latitude,
         'longitude' => $request->longitude,
+        'gps_accuracy' => $request->accuracy,
+        'method' => 'manual_gps',
     ]
 );
 

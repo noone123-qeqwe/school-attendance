@@ -69,7 +69,7 @@ class WebauthnService
                 'user_id' => $user->id,
                 'public_key' => $publicKey,
                 'sign_count' => $parsed['sign_count'],
-                'name' => 'Phone fingerprint',
+                'device_name' => 'Phone fingerprint',
             ]
         );
     }

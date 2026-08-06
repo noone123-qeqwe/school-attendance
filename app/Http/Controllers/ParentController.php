@@ -150,10 +150,10 @@ class ParentController extends Controller
 
         try {
             $this->parentService->initiateLink(Auth::user(), $request->student_number);
-            return response()->json(['success' => true, 'message' => 'OTP sent to the student\'s email.']);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            \Illuminate\Support\Facades\Log::error("Parent link failed: " . $e->getMessage());
         }
+        return response()->json(['success' => true, 'message' => 'If the student ID is valid, an OTP has been sent to their email.']);
     }
 
     /**
@@ -170,7 +170,7 @@ class ParentController extends Controller
             $this->parentService->verifyAndLink(Auth::user(), $request->student_number, $request->otp);
             return response()->json(['success' => true, 'message' => 'Successfully linked to student!']);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            return response()->json(['success' => false, 'message' => 'Invalid student ID or OTP.'], 400);
         }
     }
 

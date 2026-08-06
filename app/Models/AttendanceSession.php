@@ -3,10 +3,16 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceSession extends Model
 {
+    use HasFactory, LogsActivity;
+
     protected $fillable = [
         'subject_code', 'created_by', 'token', 'expires_at', 'session_ends_at', 'active',
         'classroom_lat', 'classroom_lng', 'webauthn_challenge',
@@ -21,6 +27,14 @@ class AttendanceSession extends Model
     public function subject()
     {
         return $this->belongsTo(Subject::class, 'subject_code', 'code');
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['subject_code', 'active', 'session_ends_at'])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     public function creator()

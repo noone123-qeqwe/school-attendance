@@ -4,12 +4,11 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\User;
-use App\Models\Attendance;
+use App\Models\Subject;
 use App\Models\Warning;
 use App\Models\Notification;
-use App\Notifications\AttendanceWarningNotification;
-use Carbon\Carbon;
-use Spatie\Activitylog\Facades\Activity;
+use App\Models\Attendance;
+use Illuminate\Support\Facades\DB;
 
 class CheckAttendanceWarnings extends Command
 {
@@ -18,86 +17,91 @@ class CheckAttendanceWarnings extends Command
      *
      * @var string
      */
-    protected $signature = 'attendance:check-warnings';
+    protected $signature = 'attendance:check-warnings {--threshold=85 : The attendance rate threshold to trigger a warning}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Check for students with excessive absences and generate warnings';
+    protected $description = 'Detects students dropping below a threshold and notifies parents/teachers.';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Starting attendance warning check...');
+        $threshold = (int) $this->option('threshold');
+        $this->info("Checking attendance warnings (Threshold: {$threshold}%)...");
 
-        // Get all students
-        $students = User::where('role', 'student')->get();
-        $threshold = (int) \App\Models\Setting::get('warning_threshold', 3);
-        $warningsCreated = 0;
+        $students = User::where('role', 'student')->with('enrollments.subject')->get();
 
         foreach ($students as $student) {
-            // Get the last N attendances for this student ordered by date desc
-            $recentAttendances = Attendance::where('user_id', $student->id)
-                ->orderBy('date', 'desc')
-                ->take($threshold)
-                ->get();
+            foreach ($student->enrollments as $enrollment) {
+                $subject = $enrollment->subject;
+                if (!$subject) continue;
 
-            if ($recentAttendances->count() >= $threshold) {
-                $consecutiveAbsences = true;
-                foreach ($recentAttendances as $attendance) {
-                    // Fix: use capital 'Absent' to match the stored status value
-                    if ($attendance->status !== 'Absent' || $attendance->excused) {
-                        $consecutiveAbsences = false;
-                        break;
-                    }
+                $totalClasses = Attendance::where('user_id', $student->id)
+                    ->where('subject_code', $subject->code)
+                    ->count();
+
+                if ($totalClasses < 5) {
+                    continue; // Not enough data
                 }
 
-                if ($consecutiveAbsences) {
-                    // Check if a warning was already created recently to prevent spamming
-                    $recentWarning = Warning::where('user_id', $student->id)
-                        ->where('type', 'Consecutive Absences')
-                        ->where('created_at', '>=', Carbon::now()->subDays(3))
+                $presentLateCount = Attendance::where('user_id', $student->id)
+                    ->where('subject_code', $subject->code)
+                    ->whereIn('status', ['Present', 'Late'])
+                    ->count();
+
+                $rate = round(($presentLateCount / $totalClasses) * 100);
+
+                if ($rate < $threshold) {
+                    // Check if a warning was already sent recently (e.g. within 7 days)
+                    $recentWarning = Warning::where('student_id', $student->id)
+                        ->where('subject_code', $subject->code)
+                        ->where('created_at', '>=', now()->subDays(7))
                         ->exists();
 
                     if (!$recentWarning) {
-                        // Create Warning
+                        $this->warn("Student {$student->name} is at {$rate}% in {$subject->code}");
+
+                        // Create warning
                         $warning = Warning::create([
-                            'user_id' => $student->id,
-                            'subject_code' => $recentAttendances->first()->subject_code ?? 'General',
-                            'type' => 'Consecutive Absences',
-                            'message' => 'You have accumulated ' . $threshold . ' consecutive unexcused absences. Please submit an excuse or contact your instructor.',
-                            'sent_by' => 'System'
+                            'student_id' => $student->id,
+                            'subject_code' => $subject->code,
+                            'type' => 'Attendance Drop',
+                            'severity' => 'High',
+                            'message' => "Attendance rate dropped to {$rate}% (Below {$threshold}%)",
+                            'resolved' => false,
                         ]);
 
-                        // Create Notification for the student
-                        Notification::create([
-                            'user_id' => $student->id,
-                            'title' => 'Attendance Warning',
-                            'message' => 'You have accumulated ' . $threshold . ' consecutive unexcused absences. Please check your dashboard.',
-                            'type' => 'warning',
-                            'icon' => 'bi-exclamation-triangle',
-                            'is_read' => false
-                        ]);
+                        // Notify Teacher
+                        if ($subject->instructor_id) {
+                            Notification::create([
+                                'user_id' => $subject->instructor_id,
+                                'type' => 'attendance_warning',
+                                'title' => 'Student Attendance Drop',
+                                'message' => "{$student->name} dropped to {$rate}% attendance in {$subject->code}.",
+                                'action_url' => '/students',
+                            ]);
+                        }
 
-                        // Log this action
-                        activity()
-                            ->performedOn($student)
-                            ->causedByAnonymous()
-                            ->log("System generated an attendance warning for {$threshold} consecutive absences.");
-
-                        // Send Email Notification
-                        $student->notify(new AttendanceWarningNotification($warning));
-
-                        $warningsCreated++;
+                        // Notify Parents
+                        foreach ($student->parents as $parent) {
+                            Notification::create([
+                                'user_id' => $parent->id,
+                                'type' => 'attendance_warning',
+                                'title' => 'Attendance Alert for ' . $student->name,
+                                'message' => "{$student->name}'s attendance rate in {$subject->code} dropped to {$rate}%.",
+                                'action_url' => '/child/' . $student->id,
+                            ]);
+                        }
                     }
                 }
             }
         }
 
-        $this->info("Completed. Generated {$warningsCreated} warnings.");
+        $this->info("Attendance warning check complete.");
     }
 }

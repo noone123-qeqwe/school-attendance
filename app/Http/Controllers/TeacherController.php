@@ -117,8 +117,7 @@ class TeacherController extends Controller
     public function getTeacherSubjects($teacherId)
     {
         $targetTeacher = User::findOrFail($teacherId);
-        $subjects = Subject::where('instructor', $targetTeacher->name)
-            ->orWhere('instructor', $targetTeacher->employee_id)
+        $subjects = Subject::where('instructor_id', $targetTeacher->id)
             ->get();
         return response()->json($subjects);
     }
@@ -188,7 +187,7 @@ class TeacherController extends Controller
         $teacher = Auth::user();
         
         // Verify teacher owns this subject
-        if ($subject->instructor !== $teacher->name && $subject->instructor !== $teacher->employee_id) {
+        if ($subject->instructor_id !== $teacher->id) {
             abort(403, 'Unauthorized access to this subject.');
         }
 
@@ -201,7 +200,7 @@ class TeacherController extends Controller
         $teacher = Auth::user();
         
         // Verify teacher owns this subject
-        if ($subject->instructor !== $teacher->name && $subject->instructor !== $teacher->employee_id) {
+        if ($subject->instructor_id !== $teacher->id) {
             abort(403, 'Unauthorized access to this subject.');
         }
 
@@ -239,7 +238,7 @@ class TeacherController extends Controller
         $teacher = Auth::user();
         
         // Verify teacher owns this subject
-        if ($subject->instructor !== $teacher->name && $subject->instructor !== $teacher->employee_id) {
+        if ($subject->instructor_id !== $teacher->id) {
             abort(403, 'Unauthorized access to this subject.');
         }
 
@@ -313,8 +312,7 @@ class TeacherController extends Controller
     public function attendance(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -356,8 +354,7 @@ class TeacherController extends Controller
     public function excuseAttendance(Request $request, Attendance $attendance)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->pluck('code');
 
         // Verify teacher has access to this attendance record
@@ -376,8 +373,7 @@ class TeacherController extends Controller
     public function exportAttendancePdf(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -426,8 +422,7 @@ class TeacherController extends Controller
     public function previewAttendancePdf(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -468,11 +463,11 @@ class TeacherController extends Controller
         
         $request->validate([
             'status' => 'required|in:Present,Late,Absent,Excused',
+            'reason' => 'required|string|max:255',
         ]);
 
         // Verify the teacher owns the subject for this attendance record
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->pluck('code')
             ->toArray();
 
@@ -494,7 +489,8 @@ class TeacherController extends Controller
         activity()
             ->performedOn($attendance)
             ->causedBy($teacher)
-            ->log("Attendance status overridden from {$oldStatus} to {$newStatus}");
+            ->withProperties(['reason' => $request->reason, 'old_status' => $oldStatus, 'new_status' => $newStatus])
+            ->log("Attendance status overridden from {$oldStatus} to {$newStatus}. Reason: {$request->reason}");
 
         return response()->json([
             'success' => true,
@@ -512,8 +508,7 @@ class TeacherController extends Controller
     public function students(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
 
         // Get students who match the year/semester of teacher's subjects
@@ -558,6 +553,8 @@ class TeacherController extends Controller
             $query->where(function($q) use ($request) {
                 $q->where('name', 'like', '%'.$request->search.'%')
                   ->orWhere('student_number', 'like', '%'.$request->search.'%');
+            });
+        }
         $students = $query->orderBy('year_level')->orderBy('name')->get();
 
         return view('teacher.students.index', compact('students', 'teacherSubjects'));
@@ -592,8 +589,7 @@ class TeacherController extends Controller
     public function studentDetail(User $student)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -632,8 +628,7 @@ class TeacherController extends Controller
     public function exportStudentsPdf(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
 
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -695,8 +690,7 @@ class TeacherController extends Controller
     public function previewStudentsPdf(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
 
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -750,8 +744,7 @@ class TeacherController extends Controller
     public function reports(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -812,8 +805,7 @@ class TeacherController extends Controller
     public function exportPdf(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -893,8 +885,7 @@ class TeacherController extends Controller
     public function absentReport(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -924,8 +915,7 @@ class TeacherController extends Controller
     public function notifications(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -979,8 +969,7 @@ class TeacherController extends Controller
         
         // Verify teacher has access to this notification
         if ($notification->sent_by !== $teacher->id) {
-            $teacherSubjects = Subject::where('instructor', $teacher->name)
-                ->orWhere('instructor', $teacher->employee_id)
+            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
                 ->pluck('code');
                 
             if (!$teacherSubjects->contains($notification->subject_code)) {
@@ -998,8 +987,7 @@ class TeacherController extends Controller
         
         // Verify teacher has access to this notification
         if ($notification->sent_by !== $teacher->id) {
-            $teacherSubjects = Subject::where('instructor', $teacher->name)
-                ->orWhere('instructor', $teacher->employee_id)
+            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
                 ->pluck('code');
                 
             if (!$teacherSubjects->contains($notification->subject_code)) {
@@ -1017,8 +1005,7 @@ class TeacherController extends Controller
         
         // Verify teacher has access to this notification
         if ($notification->sent_by !== $teacher->id) {
-            $teacherSubjects = Subject::where('instructor', $teacher->name)
-                ->orWhere('instructor', $teacher->employee_id)
+            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
                 ->pluck('code');
                 
             if (!$teacherSubjects->contains($notification->subject_code)) {
@@ -1036,8 +1023,7 @@ class TeacherController extends Controller
     public function sendWarning(Request $request, User $student)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -1203,8 +1189,7 @@ class TeacherController extends Controller
     public function absenceSummary(User $student)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->pluck('code');
         
         // Only show absence summary for teacher's subjects
@@ -1230,8 +1215,7 @@ class TeacherController extends Controller
     public function excuseReviews(Request $request)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
         
         $subjectCodes = $teacherSubjects->pluck('code');
@@ -1336,8 +1320,7 @@ class TeacherController extends Controller
     public function rejectExcuse(Request $request, ExcuseSubmission $excuseSubmission)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->pluck('code');
 
         // Verify teacher has access to this excuse submission
@@ -1403,8 +1386,7 @@ class TeacherController extends Controller
     public function viewExcuseDetail(ExcuseSubmission $excuseSubmission)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->pluck('code');
 
         // Verify teacher has access to this excuse submission
@@ -1423,8 +1405,7 @@ class TeacherController extends Controller
     public function storeExcuseComment(Request $request, ExcuseSubmission $excuseSubmission)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->pluck('code');
 
         if (!$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
@@ -1605,7 +1586,7 @@ class TeacherController extends Controller
         
         // Ensure the teacher is authorized to view this subject's seating chart
         $teacher = Auth::user();
-        if ($subject->instructor !== $teacher->name && $subject->instructor !== $teacher->employee_id) {
+        if ($subject->instructor_id !== $teacher->id) {
             abort(403, 'Unauthorized access to this subject.');
         }
 
@@ -1629,7 +1610,7 @@ class TeacherController extends Controller
         $subject = Subject::where('code', $subjectCode)->firstOrFail();
         
         $teacher = Auth::user();
-        if ($subject->instructor !== $teacher->name && $subject->instructor !== $teacher->employee_id) {
+        if ($subject->instructor_id !== $teacher->id) {
             return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
         }
 

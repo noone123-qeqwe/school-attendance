@@ -29,7 +29,7 @@ class UpdateSubjectRequest extends FormRequest
             'days'       => 'nullable|string|max:30',
             'start_time' => 'nullable|date_format:H:i',
             'end_time'   => 'nullable|date_format:H:i|after_or_equal:start_time',
-            'instructor' => 'nullable|string',
+            'instructor_id' => 'nullable|exists:users,id',
             'section'    => 'nullable|string',
         ];
     }

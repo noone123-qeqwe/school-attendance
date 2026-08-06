@@ -423,9 +423,10 @@ class HomeController extends Controller
         $user = Auth::user();
         
         // Get absent attendance records that can be excused
-        $absentRecords = Attendance::with(['subject', 'excuseSubmission'])
+        $absentRecords = Attendance::with(['subject'])
             ->where('user_id', $user->id)
             ->where('status', 'Absent')
+            ->doesntHave('excuseSubmission')
             ->orderBy('date', 'desc')
             ->get();
 

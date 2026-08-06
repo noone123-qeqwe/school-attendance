@@ -120,9 +120,13 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     public function startSession(Request $request)
     {
-        $request->validate(['subject_code' => 'required|string|exists:subjects,code']);
+        $request->validate(['subject_code' => 'required|string']);
 
         $subject = Subject::where('code', $request->subject_code)->first();
+        if (!$subject) {
+            abort(404, 'Subject not found');
+        }
+        $this->authorize('manage', $subject);
 
         $now         = now();
         $todayDate   = $now->toDateString();
@@ -185,17 +189,13 @@ class QrAttendanceController extends Controller
         $request->validate(['session_id' => 'required|integer']);
 
         $session = AttendanceSession::find($request->session_id);
+        if (!$session) { abort(404, 'Session not found'); }
+        $this->authorize('manage', $session);
 
-        if ($session) {
-            $session->markInactiveIfExpired();
-        }
+        $session->markInactiveIfExpired();
 
-        if (!$session || !$session->isSessionActive()) {
+        if (!$session->isSessionActive()) {
             return response()->json(['success' => false, 'message' => 'Session expired or not found.'], 404);
-        }
-
-        if ((int) $session->created_by !== (int) Auth::id()) {
-            return response()->json(['success' => false, 'message' => 'You do not own this QR session.'], 403);
         }
         $expiresAt = $this->tokenExpiresAt($session);
         $session->update([
@@ -220,9 +220,11 @@ class QrAttendanceController extends Controller
     public function stopSession(Request $request)
     {
         $request->validate(['session_id' => 'required|integer']);
-        AttendanceSession::where('id', $request->session_id)
-            ->where('created_by', Auth::id())
-            ->update(['active' => false]);
+        $session = AttendanceSession::find($request->session_id);
+        if (!$session) { abort(404, 'Session not found'); }
+        $this->authorize('manage', $session);
+        
+        $session->update(['active' => false]);
 
         return response()->json(['success' => true]);
     }
@@ -233,15 +235,16 @@ class QrAttendanceController extends Controller
     public function getScheduleInfo(Request $request)
     {
         try {
-            $request->validate(['subject_code' => 'required|string|exists:subjects,code']);
+            $request->validate(['subject_code' => 'required|string']);
             
             $subject = Subject::with('schedules')
                 ->where('code', $request->subject_code)
                 ->first();
 
             if (!$subject) {
-                return response()->json(['error' => 'Subject not found'], 404);
+                abort(404, 'Subject not found');
             }
+            $this->authorize('manage', $subject);
 
             $now = now('Asia/Manila');
             $todayName = $now->format('l');
@@ -308,7 +311,7 @@ class QrAttendanceController extends Controller
             ->where('code', $subjectCode)
             ->firstOrFail();
 
-        return view('teacher.qr_fixed', compact('subject'));
+        return view('teacher.qr', compact('subject'));
     }
     // ─────────────────────────────────────────
     // Teacher: Start QR session
@@ -886,6 +889,8 @@ class QrAttendanceController extends Controller
                 'time_in'   => $now->format('H:i:s'),
                 'latitude'  => $request->latitude,
                 'longitude' => $request->longitude,
+                'gps_accuracy' => $request->filled('accuracy') ? $request->accuracy : null,
+                'method'    => 'qr',
             ]
         );
 
