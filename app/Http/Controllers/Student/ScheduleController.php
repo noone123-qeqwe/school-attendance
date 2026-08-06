@@ -13,11 +13,8 @@ class ScheduleController extends Controller
     {
         $user = Auth::user();
 
-        // Get student's subjects based on year_level and semester
-        $subjects = Subject::with(['schedules', 'instructorUser'])
-            ->where('year_level', $user->year_level)
-            ->where('semester', $user->semester)
-            ->get();
+        // Get student's enrolled subjects
+        $subjects = $user->enrolledSubjects()->with(['schedules', 'instructorUser'])->get();
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         

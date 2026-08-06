@@ -20,61 +20,64 @@ class MarkAbsentStudents extends Command
     public function handle()
     {
         // For testing, allow date parameter
-        $today = $this->argument('date') ? Carbon::parse($this->argument('date')) : Carbon::today();
+        $today = $this->argument('date') ? Carbon::parse($this->argument('date'))->timezone('Asia/Manila') : now('Asia/Manila');
         $dayName = $today->format('l'); // e.g. "Monday"
+        $currentTime = $today->format('H:i:s');
 
         // Check if today is a holiday
-        if (Holiday::isHoliday($today)) {
-            $holiday = Holiday::getHoliday($today);
+        if (Holiday::isHoliday($today->toDateString())) {
+            $holiday = Holiday::getHoliday($today->toDateString());
             $this->info("Today is a holiday: {$holiday->name}");
             $this->info("No students will be marked absent due to holiday.");
             return;
         }
 
-        // Get subjects scheduled for today
-        $subjects = Subject::with('schedules')
-            ->whereHas('schedules', fn($q) => $q->where('day', $dayName))
+        // Get subjects scheduled for today whose end_time has passed
+        $schedules = \App\Models\Schedule::with('subject')
+            ->where('day', $dayName)
+            ->where('end_time', '<', $currentTime)
             ->get();
 
         $absentCount = 0;
         $osasWarningsCount = 0;
         $notificationsSentCount = 0;
 
-        foreach ($subjects as $subject) {
-            // Get students matching this subject's year_level and semester
-            $students = User::where('role', 'student')
-                ->where('year_level', $subject->year_level)
-                ->where('semester', $subject->semester)
-                ->get();
+        foreach ($schedules as $schedule) {
+            $subject = $schedule->subject;
+            if (!$subject) continue;
+
+            $students = $subject->enrolledStudents()->get();
 
             foreach ($students as $student) {
-                // Skip if already has attendance record today for this subject
-                $exists = Attendance::where('user_id', $student->id)
-                    ->where('subject_code', $subject->code)
-                    ->whereDate('date', $today)
-                    ->exists();
+                \Illuminate\Support\Facades\DB::transaction(function () use ($student, $subject, $today, &$absentCount, &$notificationsSentCount, &$osasWarningsCount) {
+                    // Check if already has attendance record today for this subject
+                    $exists = Attendance::where('user_id', $student->id)
+                        ->where('subject_code', $subject->code)
+                        ->whereDate('date', $today)
+                        ->exists();
 
-                if (!$exists) {
-                    // Mark as absent
-                    Attendance::create([
-                        'user_id'      => $student->id,
-                        'subject_code' => $subject->code,
-                        'date'         => $today,
-                        'status'       => 'Absent',
-                    ]);
-                    
-                    $absentCount++;
+                    if (!$exists) {
+                        // Mark as absent
+                        Attendance::create([
+                            'user_id'      => $student->id,
+                            'subject_code' => $subject->code,
+                            'date'         => $today->toDateString(),
+                            'status'       => 'Absent',
+                        ]);
+                        
+                        $absentCount++;
 
-                    // Send individual absence notification
-                    $this->sendAbsenceNotification($student, $subject, $today);
-                    $notificationsSentCount++;
+                        // Send individual absence notification
+                        $this->sendAbsenceNotification($student, $subject, $today);
+                        $notificationsSentCount++;
 
-                    // Check for 3 consecutive absences and send OSAS warning
-                    if ($this->checkConsecutiveAbsences($student->id, $subject->code)) {
-                        $osasWarningsCount++;
-                        $this->info("OSAS warning sent to {$student->name} for {$subject->code}");
+                        // Check for 3 consecutive absences and send OSAS warning
+                        if ($this->checkConsecutiveAbsences($student->id, $subject->code)) {
+                            $osasWarningsCount++;
+                            $this->info("OSAS warning sent to {$student->name} for {$subject->code}");
+                        }
                     }
-                }
+                });
             }
         }
 

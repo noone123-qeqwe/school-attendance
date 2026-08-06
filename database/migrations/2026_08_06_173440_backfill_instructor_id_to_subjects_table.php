@@ -19,14 +19,25 @@ return new class extends Migration
             });
         }
 
-        // Backfill data
-        // We look up the users table where user name or employee_id matches the instructor string
-        DB::statement("
-            UPDATE subjects
-            JOIN users ON subjects.instructor = users.name OR subjects.instructor = users.employee_id
-            SET subjects.instructor_id = users.id
-            WHERE subjects.instructor IS NOT NULL AND subjects.instructor_id IS NULL
-        ");
+        // Backfill data using chunking for DB agnosticism (supports SQLite and MySQL)
+        DB::table('subjects')
+            ->whereNotNull('instructor')
+            ->whereNull('instructor_id')
+            ->orderBy('id')
+            ->chunk(100, function ($subjects) {
+                foreach ($subjects as $subject) {
+                    $user = DB::table('users')
+                        ->where('name', $subject->instructor)
+                        ->orWhere('employee_id', $subject->instructor)
+                        ->first();
+                        
+                    if ($user) {
+                        DB::table('subjects')
+                            ->where('id', $subject->id)
+                            ->update(['instructor_id' => $user->id]);
+                    }
+                }
+            });
 
         $unresolved = DB::table('subjects')
             ->whereNotNull('instructor')

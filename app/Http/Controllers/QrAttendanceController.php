@@ -28,17 +28,17 @@ class QrAttendanceController extends Controller
 
     private function getSchoolLat(): float
     {
-        return (float) (\App\Models\Setting::where('key', 'gps_lat')->value('value') ?? 14.538800);
+        return (float) \App\Models\Setting::get('school_lat', 14.538800);
     }
 
     private function getSchoolLng(): float
     {
-        return (float) (\App\Models\Setting::where('key', 'gps_lng')->value('value') ?? 121.022300);
+        return (float) \App\Models\Setting::get('school_lng', 121.022300);
     }
 
     private function getRadiusMeters(): int
     {
-        return (int) (\App\Models\Setting::where('key', 'gps_radius')->value('value') ?? 500);
+        return (int) \App\Models\Setting::get('school_radius', 500);
     }
 
     private function getRpId(Request $request): string

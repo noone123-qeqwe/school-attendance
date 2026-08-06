@@ -131,6 +131,15 @@ class User extends Authenticatable
         return $this->hasMany(Subject::class, 'instructor_id');
     }
 
+    /**
+     * RELATIONSHIP: Enrolled Subjects (for students)
+     */
+    public function enrolledSubjects()
+    {
+        return $this->belongsToMany(Subject::class, 'enrollments', 'user_id', 'subject_id')
+                    ->withTimestamps();
+    }
+
     public function excuseSubmissions()
     {
         return $this->hasMany(ExcuseSubmission::class);

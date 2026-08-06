@@ -32,7 +32,7 @@ class OtpController extends Controller
             "{$sessionPrefix}_otp_expires" => now()->addMinutes(10)->timestamp,
         ]);
 
-        \Illuminate\Support\Facades\Log::info("Registration OTP for {$request->email}: {$code}");
+        // \Illuminate\Support\Facades\Log::info("Registration OTP for {$request->email}: {$code}");
 
         try {
             Mail::to($request->email)->send(new OtpMail($code, 'register', 'New User'));
@@ -83,7 +83,7 @@ class OtpController extends Controller
         
         if ($user) {
             $otp  = Otp::generate($user->id, 'forgot_password');
-            \Illuminate\Support\Facades\Log::info("Forgot Password OTP for {$user->email}: {$otp->code}");
+            // \Illuminate\Support\Facades\Log::info("Forgot Password OTP for {$user->email}: {$otp->code}");
 
             try {
                 Mail::to($user->email)->send(new OtpMail($otp->code, 'forgot_password', $user->name));
@@ -171,7 +171,7 @@ class OtpController extends Controller
         $user = Auth::user();
         $otp  = Otp::generate($user->id, 'change_email');
 
-        \Illuminate\Support\Facades\Log::info("Change Email OTP for {$user->email}: {$otp->code}");
+        // \Illuminate\Support\Facades\Log::info("Change Email OTP for {$user->email}: {$otp->code}");
 
         try {
             Mail::to($user->email)->send(new OtpMail($otp->code, 'change_email', $user->name));
@@ -222,7 +222,7 @@ class OtpController extends Controller
         $user = Auth::user();
         $otp  = Otp::generate($user->id, 'change_password');
 
-        \Illuminate\Support\Facades\Log::info("Change Password OTP for {$user->email}: {$otp->code}");
+        // \Illuminate\Support\Facades\Log::info("Change Password OTP for {$user->email}: {$otp->code}");
 
         try {
             Mail::to($user->email)->send(new OtpMail($otp->code, 'change_password', $user->name));

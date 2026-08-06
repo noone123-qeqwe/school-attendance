@@ -93,7 +93,7 @@
                             <td style="padding:12px;color:#111827;font-weight:600;">Year {{ $subject->year_level }}</td>
                             <td style="padding:12px;color:#111827;font-weight:600;">{{ $subject->semester }}{{ (int)$subject->semester === 1 ? 'st' : 'nd' }} Sem</td>
                             <td style="padding:12px;text-align:center;color:#111827;font-weight:600;">{{ $subject->units ?? '—' }}</td>
-                            <td style="padding:12px;color:#111827;">{{ $subject->instructor ?: 'TBA' }}</td>
+                            <td style="padding:12px;color:#111827;">{{ $subject->instructorUser->name ?? 'TBA' }}</td>
                         </tr>
                         @empty
                         <tr>

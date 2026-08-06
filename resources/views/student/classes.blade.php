@@ -427,7 +427,7 @@
                         <td>
                             <div class="units-badge">{{ $subject->units ?? '—' }}</div>
                         </td>
-                        <td style="color:#f8e7d3;">{{ $subject->instructor ?? 'TBA' }}</td>
+                        <td style="color:#f8e7d3;">{{ $subject->instructorUser->name ?? 'TBA' }}</td>
                         <td style="color:#f8e7d3;font-weight:600;">{{ $subject->section ?? '—' }}</td>
                     </tr>
                     @empty
@@ -474,7 +474,7 @@
                     <div class="detail-row">
                         <i class="bi bi-person detail-icon"></i>
                         <span class="detail-label">Instructor:</span>
-                        <span class="detail-value">{{ $subject->instructor ?? 'TBA' }}</span>
+                        <span class="detail-value">{{ $subject->instructorUser->name ?? 'TBA' }}</span>
                     </div>
                     <div class="detail-row">
                         <i class="bi bi-tag detail-icon"></i>

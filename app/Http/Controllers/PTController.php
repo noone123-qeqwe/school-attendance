@@ -187,13 +187,7 @@ public function updateImage(Request $request)
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-    $year = (int) $user->year_level;
-    $semester = (int) $user->semester;
-
-    $subjects = Subject::where('year_level', $year)
-        ->where('semester', $semester)
-        ->with('schedules')
-        ->get();
+    $subjects = $user->enrolledSubjects()->with('schedules')->get();
 
     return view('student.classes', compact('subjects'));
 }
@@ -203,11 +197,7 @@ public function updateImage(Request $request)
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-    $subjects = Subject::where('year_level', (int) $user->year_level)
-        ->where('semester', (int) $user->semester)
-        ->with('schedules')
-        ->orderBy('code')
-        ->get();
+    $subjects = $user->enrolledSubjects()->with('schedules')->orderBy('code')->get();
 
     $pdf = Pdf::loadView('student.classes-pdf', compact('user', 'subjects'))
         ->setPaper('a4', 'landscape');

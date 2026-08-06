@@ -52,7 +52,7 @@
     </td>
 
     <td>
-        {{ $subject->instructor ?? 'TBA' }}
+        {{ $subject->instructorUser->name ?? 'TBA' }}
     </td>
 
     <td>

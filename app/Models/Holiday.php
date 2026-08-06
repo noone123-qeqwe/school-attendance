@@ -38,7 +38,7 @@ class Holiday extends Model
 
     public function scopeForDate($query, $date)
     {
-        return $query->where('date', $date);
+        return $query->whereDate('date', $date);
     }
 
     public function scopeForMonth($query, $year, $month)

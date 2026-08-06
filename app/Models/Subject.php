@@ -31,6 +31,13 @@ class Subject extends Model
         return $this->hasMany(Schedule::class);
     }
 
+    public function enrolledStudents()
+    {
+        return $this->belongsToMany(User::class, 'enrollments', 'subject_id', 'user_id')
+                    ->where('role', 'student')
+                    ->withTimestamps();
+    }
+
     // Accessor to get days as a string (for backward compatibility)
    public function getDaysAttribute(): string
 {
