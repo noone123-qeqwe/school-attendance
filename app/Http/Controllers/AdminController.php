@@ -18,291 +18,19 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\AnalyticsService;
+use App\Http\Requests\UpdateStudentRequest;
+use App\Http\Requests\SendWarningRequest;
 
 class AdminController extends Controller
 {
     // ─────────────────────────────────────────
     // DASHBOARD
     // ─────────────────────────────────────────
-    public function index(Request $request)
+    public function index(Request $request, AnalyticsService $analyticsService)
     {
-        // ── Core counts ──
-        $totalStudents = User::where('role', 'student')->count();
-        $totalTeachers = User::where('role', 'teacher')->count();
-        $totalSubjects = Subject::count();
-        $totalParents  = User::where('role', 'parent')->count();
-        $totalDepartments = \App\Models\Department::count();
-        $totalCourses  = \App\Models\Course::count();
-        $totalSections = \App\Models\Section::count();
-
-        // ── Today's stats ──
-        $todayStats = Attendance::selectRaw("status, COUNT(*) as total")
-            ->whereDate('date', today())
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $totalPresent  = $todayStats->get('Present', 0);
-        $totalLate     = $todayStats->get('Late', 0);
-        $totalAbsent   = $todayStats->get('Absent', 0);
-        $totalToday    = $totalPresent + $totalLate + $totalAbsent;
-        $attendanceRate = $totalToday > 0 ? round((($totalPresent + $totalLate) / $totalToday) * 100) : 0;
-
-        // ── Yesterday's stats (for trend comparison) ──
-        $yesterdayStats = Attendance::selectRaw("status, COUNT(*) as total")
-            ->whereDate('date', today()->subDay())
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $yesterdayPresent = $yesterdayStats->get('Present', 0);
-        $yesterdayLate    = $yesterdayStats->get('Late', 0);
-        $yesterdayAbsent  = $yesterdayStats->get('Absent', 0);
-        $yesterdayTotal   = $yesterdayPresent + $yesterdayLate + $yesterdayAbsent;
-        $yesterdayRate    = $yesterdayTotal > 0 ? round((($yesterdayPresent + $yesterdayLate) / $yesterdayTotal) * 100) : 0;
-
-        // ── Active attendance sessions ──
-        $activeSessions = \App\Models\AttendanceSession::where('active', true)
-            ->with(['creator', 'subject.schedules'])
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($session) {
-                $session->markInactiveIfExpired();
-                $checkedIn = Attendance::where('subject_code', $session->subject_code)
-                    ->whereDate('date', today())
-                    ->count();
-                $session->checked_in_count = $checkedIn;
-                $session->qr_status = $session->isTokenValid() ? 'Active' : 'Expired';
-                $session->session_status = $session->isSessionActive() ? 'Active' : ($session->active ? 'Waiting' : 'Finished');
-                return $session;
-            })->filter(fn($s) => $s->active);
-
-        $activeSessionCount = $activeSessions->count();
-
-        // ── Classes completed / pending today ──
-        $todayDayName = now()->format('l');
-        $scheduledToday = \App\Models\Schedule::where('day', $todayDayName)->count();
-        $sessionsToday = \App\Models\AttendanceSession::whereDate('created_at', today())->count();
-        $classesCompleted = min($sessionsToday, $scheduledToday);
-        $classesPending = max(0, $scheduledToday - $classesCompleted);
-
-        // ── Weekly chart data (last 7 days) ──
-        $weeklyRaw = Attendance::selectRaw("DATE(date) as day, status, COUNT(*) as total")
-            ->whereBetween('date', [Carbon::today()->subDays(6)->toDateString(), Carbon::today()->toDateString()])
-            ->groupBy('day', 'status')
-            ->get()
-            ->groupBy('day');
-
-        $weeklyLabels  = [];
-        $weeklyPresent = [];
-        $weeklyLate    = [];
-        $weeklyAbsent  = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $day = Carbon::today()->subDays($i);
-            $dayKey = $day->toDateString();
-            $weeklyLabels[]  = $day->format('D');
-            $dayData = $weeklyRaw->get($dayKey, collect());
-            $weeklyPresent[] = $dayData->firstWhere('status', 'Present')->total ?? 0;
-            $weeklyLate[]    = $dayData->firstWhere('status', 'Late')->total ?? 0;
-            $weeklyAbsent[]  = $dayData->firstWhere('status', 'Absent')->total ?? 0;
-        }
-
-        // ── Teacher activity monitor ──
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $teacherIds = $teachers->pluck('id');
-        $todaySessions = \App\Models\AttendanceSession::whereIn('created_by', $teacherIds)
-            ->whereDate('created_at', today())
-            ->with('subject')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy('created_by');
-
-        $teacherActivity = $teachers->map(function ($teacher) use ($todaySessions) {
-            $session = $todaySessions->get($teacher->id)?->first();
-
-            $teacher->current_subject = $session?->subject?->name ?? '—';
-            $teacher->current_subject_code = $session?->subject_code ?? null;
-            if ($session && $session->active && $session->isSessionActive()) {
-                $teacher->attendance_status = 'Attendance Open';
-            } elseif ($session && !$session->active) {
-                $teacher->attendance_status = 'Attendance Closed';
-            } else {
-                $teacher->attendance_status = 'No Session';
-            }
-            $teacher->last_activity = $session?->updated_at?->diffForHumans() ?? '—';
-            $teacher->session_started = $session?->created_at?->format('h:i A') ?? '—';
-            return $teacher;
-        });
-
-        // ── At-risk students ──
-        $studentStats = Attendance::select('user_id',
-            \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
-            \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_sessions'),
-            \Illuminate\Support\Facades\DB::raw('max(date) as last_attendance')
-        )
-        ->groupBy('user_id')
-        ->with('user')
-        ->get();
-
-        $atRiskStudents = $studentStats->map(function ($stat) {
-            $rate = $stat->total_sessions > 0 ? round(($stat->present_sessions / $stat->total_sessions) * 100) : 100;
-            if ($rate < 80 && $stat->user && $stat->user->role === 'student') {
-                $student = $stat->user;
-                $student->attendance_rate = $rate;
-                $student->last_attendance = $stat->last_attendance ? \Carbon\Carbon::parse($stat->last_attendance)->format('M d, Y') : '—';
-                $student->risk_level = match(true) {
-                    $rate >= 70 => 'Watch',
-                    $rate >= 50 => 'Warning',
-                    default => 'Critical',
-                };
-                return $student;
-            }
-            return null;
-        })->filter()->sortBy('attendance_rate')->take(15);
-
-        // ── Class performance ──
-        $classPerformance = Attendance::selectRaw("subject_code, status, COUNT(*) as total")
-            ->groupBy('subject_code', 'status')
-            ->get()
-            ->groupBy('subject_code')
-            ->map(function ($group, $code) {
-                $present = $group->where('status', 'Present')->sum('total') + $group->where('status', 'Late')->sum('total');
-                $total = $group->sum('total');
-                $absent = $group->where('status', 'Absent')->sum('total');
-                $subject = Subject::where('code', $code)->first();
-                return (object)[
-                    'code' => $code,
-                    'name' => $subject?->name ?? $code,
-                    'present' => $present,
-                    'absent' => $absent,
-                    'total' => $total,
-                    'rate' => $total > 0 ? round(($present / $total) * 100) : 0,
-                ];
-            })->values();
-
-        $topClasses = $classPerformance->sortByDesc('rate')->take(5)->values();
-        $bottomClasses = $classPerformance->sortBy('rate')->take(5)->values();
-
-        // ── Recent activity feed (Spatie Activity Log) ──
-        $recentActivity = collect();
-        try {
-            $recentActivity = \Spatie\Activitylog\Models\Activity::with('causer')
-                ->latest()
-                ->take(15)
-                ->get();
-        } catch (\Exception $e) {
-            // Activity log table may not exist
-        }
-
-        // ── System alerts ──
-        $pendingExcuses = \App\Models\ExcuseSubmission::where('status', 'pending')->count();
-        $expiredSessions = \App\Models\AttendanceSession::where('active', true)
-            ->where('session_ends_at', '<', now())
-            ->count();
-        $lowAttendanceStudents = $atRiskStudents->where('risk_level', 'Critical')->count();
-
-        $systemAlerts = collect();
-        if ($expiredSessions > 0) {
-            $systemAlerts->push((object)['severity' => 'critical', 'icon' => 'bi-exclamation-octagon-fill', 'message' => "{$expiredSessions} QR session(s) have expired but are still marked active.", 'action' => null]);
-        }
-        if ($lowAttendanceStudents > 0) {
-            $systemAlerts->push((object)['severity' => 'warning', 'icon' => 'bi-exclamation-triangle-fill', 'message' => "{$lowAttendanceStudents} student(s) have critically low attendance (below 50%).", 'action' => '#at-risk-section']);
-        }
-        if ($pendingExcuses > 0) {
-            $systemAlerts->push((object)['severity' => 'warning', 'icon' => 'bi-file-earmark-text', 'message' => "{$pendingExcuses} excuse submission(s) awaiting review.", 'action' => route('admin.excuses')]);
-        }
-        if ($totalStudents === 0) {
-            $systemAlerts->push((object)['severity' => 'info', 'icon' => 'bi-info-circle-fill', 'message' => "No students registered yet. Add students to get started.", 'action' => route('admin.student.create')]);
-        }
-
-        // ── Recently added students ──
-        $recentStudents = User::where('role', 'student')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // ── Holiday Calendar Data ──
-        $calYear = (int) $request->get('hcal_year', now()->year);
-        $calMonth = (int) $request->get('hcal_month', now()->month);
-        $calStart = Carbon::create($calYear, $calMonth, 1);
-
-        $calendarHolidays = Holiday::active()
-            ->whereBetween('date', [
-                $calStart->copy()->subMonth()->startOfMonth()->toDateString(),
-                $calStart->copy()->addMonth()->endOfMonth()->toDateString()
-            ])
-            ->orderBy('date')
-            ->get();
-
-        $calendarAnnouncements = \App\Models\Announcement::with('author')
-            ->published()
-            ->orderBy('created_at', 'desc')
-            ->take(20)
-            ->get();
-
-        // Build events map keyed by date
-        $hcalEventsMap = [];
-        foreach ($calendarHolidays as $hol) {
-            $dateKey = $hol->date->format('Y-m-d');
-            $hcalEventsMap[$dateKey][] = [
-                'id'    => $hol->id,
-                'type'  => $hol->type,
-                'name'  => $hol->name,
-                'description' => $hol->description,
-                'date'  => $dateKey,
-                'date_formatted' => $hol->date->format('M j, Y'),
-                'type_label' => $hol->type_label,
-                'source' => 'holiday',
-            ];
-        }
-        foreach ($calendarAnnouncements as $ann) {
-            $dateKey = $ann->scheduled_for ? $ann->scheduled_for->format('Y-m-d') : $ann->created_at->format('Y-m-d');
-            $hcalEventsMap[$dateKey][] = [
-                'id'    => $ann->id,
-                'type'  => 'announcement',
-                'name'  => $ann->title,
-                'description' => \Illuminate\Support\Str::limit($ann->content, 150),
-                'date'  => $dateKey,
-                'date_formatted' => Carbon::parse($dateKey)->format('M j, Y'),
-                'type_label' => 'Announcement',
-                'source' => 'announcement',
-                'author' => $ann->author->name ?? 'Admin',
-            ];
-        }
-
-        // Build flat list for sidebar sorted by date
-        $hcalUpcoming = collect();
-        foreach ($calendarHolidays->where('date', '>=', now()->toDateString())->take(10) as $hol) {
-            $hcalUpcoming->push((object)[
-                'id' => $hol->id, 'type' => $hol->type, 'name' => $hol->name,
-                'description' => $hol->description, 'date' => $hol->date,
-                'date_formatted' => $hol->date->format('M j, Y'),
-                'type_label' => $hol->type_label, 'source' => 'holiday',
-            ]);
-        }
-        foreach ($calendarAnnouncements->take(5) as $ann) {
-            $annDate = $ann->scheduled_for ?? $ann->created_at;
-            $hcalUpcoming->push((object)[
-                'id' => $ann->id, 'type' => 'announcement', 'name' => $ann->title,
-                'description' => \Illuminate\Support\Str::limit($ann->content, 100),
-                'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
-                'type_label' => 'Announcement', 'source' => 'announcement',
-                'author' => $ann->author->name ?? 'Admin',
-            ]);
-        }
-        $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();
-
-        return view('admin.dashboard', compact(
-            'totalStudents', 'totalTeachers', 'totalSubjects', 'totalParents',
-            'totalDepartments', 'totalCourses', 'totalSections',
-            'totalPresent', 'totalLate', 'totalAbsent', 'attendanceRate', 'totalToday',
-            'yesterdayPresent', 'yesterdayLate', 'yesterdayAbsent', 'yesterdayRate', 'yesterdayTotal',
-            'activeSessions', 'activeSessionCount', 'classesCompleted', 'classesPending',
-            'weeklyLabels', 'weeklyPresent', 'weeklyLate', 'weeklyAbsent',
-            'teacherActivity', 'atRiskStudents',
-            'topClasses', 'bottomClasses',
-            'recentActivity', 'systemAlerts', 'pendingExcuses',
-            'recentStudents',
-            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
-        ));
+        $data = $analyticsService->getAdminDashboardData($request);
+        return view('admin.dashboard', $data);
     }
 
     /**
@@ -421,15 +149,9 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     // WARNING SYSTEM (Admin-scoped)
     // ─────────────────────────────────────────
-    public function sendWarning(Request $request, User $student)
+    public function sendWarning(SendWarningRequest $request, User $student)
     {
         $admin = Auth::user();
-
-        $request->validate([
-            'subject_code' => 'required|string',
-            'type' => 'required|in:warning_2,warning_3,warning_consecutive_3,custom',
-            'message' => 'nullable|string|max:500'
-        ]);
 
         // Verify student has attendance in this subject
         $hasAttendance = Attendance::where('user_id', $student->id)
@@ -555,18 +277,9 @@ class AdminController extends Controller
         return view('admin.students.edit', compact('student'));
     }
 
-    public function updateStudent(Request $request, User $student)
+    public function updateStudent(UpdateStudentRequest $request, User $student)
     {
-        $request->validate([
-            'name'       => 'required|string|max:255',
-            'course'     => 'required',
-            'year_level' => 'required',
-            'semester'   => 'required',
-            'email'      => 'required|email|unique:users,email,'.$student->id,
-        ]);
-
         $student->update($request->only('name','course','year_level','semester','email'));
-
         return redirect()->route('admin.students')->with('success', 'Student updated successfully.');
     }
 

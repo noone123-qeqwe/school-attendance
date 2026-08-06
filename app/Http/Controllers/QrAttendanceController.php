@@ -14,9 +14,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
+use App\Services\QrSessionService;
 
 class QrAttendanceController extends Controller
 {
+    protected $qrSessionService;
+
+    public function __construct(QrSessionService $qrSessionService)
+    {
+        $this->qrSessionService = $qrSessionService;
+    }
     private const QR_TTL_SECONDS = 20; // QR refreshes every 20 seconds
 
     private function getSchoolLat(): float
@@ -309,89 +316,25 @@ class QrAttendanceController extends Controller
     public function startTeacherSession(Request $request)
     {
         try {
-            $teacher = Auth::user();
+            $teacherId = Auth::id();
             $request->validate([
                 'subject_code'   => 'required|string|exists:subjects,code',
-                'classroom_lat'  => 'required|numeric|between:-90,90',
-                'classroom_lng'  => 'required|numeric|between:-180,180',
+                'classroom_lat'  => 'nullable|numeric|between:-90,90',
+                'classroom_lng'  => 'nullable|numeric|between:-180,180',
             ]);
 
-            $subject = Subject::with('schedules')
-                ->where('code', $request->subject_code)
-                ->first();
-
-            if (!$subject) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Subject not found.',
-                ], 404);
-            }
-
-            $now = now('Asia/Manila');
-            $todayName = $now->format('l');
-
-            $todaySchedule = $subject->schedules->first(function ($schedule) use ($todayName) {
-                return strcasecmp(trim($schedule->day ?? ''), $todayName) === 0;
-            });
-
-            if (!$todaySchedule) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'This subject does not have a class scheduled for today (' . $todayName . '). Please check the subject schedule.',
-                ], 422);
-            }
-
-            $todayDate = $now->toDateString();
-            $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
-            $endTime = Carbon::parse($todayDate . ' ' . $todaySchedule->end_time);
-            $sessionOpenTime = $startTime->copy()->subMinutes(5); // 5 minutes before class
-            $sessionEnd = $startTime->copy()->addMinutes(20); // 20-minute attendance window
-
-            // Check if it's too early (more than 5 minutes before class)
-            if ($now->lt($sessionOpenTime)) {
-                $waitTime = $sessionOpenTime->diffForHumans($now, true);
-                return response()->json([
-                    'success' => false,
-                    'message' => "⏰ Too early! QR session opens 5 minutes before class starts.\n\nClass time: {$startTime->format('h:i A')} - {$endTime->format('h:i A')}\nSession opens: {$sessionOpenTime->format('h:i A')}\nWait time: {$waitTime}",
-                    'schedule_info' => [
-                        'class_start' => $startTime->format('h:i A'),
-                        'class_end' => $endTime->format('h:i A'),
-                        'session_opens' => $sessionOpenTime->format('h:i A'),
-                        'current_time' => $now->format('h:i A'),
-                        'wait_minutes' => $now->diffInMinutes($sessionOpenTime)
-                    ]
-                ], 422);
-            }
-            // Check if attendance window has closed (20 minutes after class start)
-            if ($now->gt($sessionEnd)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "The 20-minute attendance window has closed at {$sessionEnd->format('h:i A')}. Cannot start new attendance session.",
-                ], 422);
-            }
-
-            // Clear any existing active sessions
-            AttendanceSession::where('subject_code', $request->subject_code)
-                ->where('active', true)
-                ->update(['active' => false]);
-
-            $session = AttendanceSession::create([
-                'subject_code'    => $request->subject_code,
-                'created_by'      => Auth::id(),
-                'token'           => AttendanceSession::generateToken($request->subject_code),
-                'expires_at'      => $now->copy()->addSeconds(self::QR_TTL_SECONDS)->min($sessionEnd),
-                'session_ends_at' => $sessionEnd, // 20 minutes from class start
-                'active'          => true,
-                'classroom_lat'   => $request->filled('classroom_lat') ? (float) $request->classroom_lat : null,
-                'classroom_lng'   => $request->filled('classroom_lng') ? (float) $request->classroom_lng : null,
-            ]);
+            $session = $this->qrSessionService->startSession(
+                $teacherId, 
+                $request->subject_code, 
+                $request->classroom_lat, 
+                $request->classroom_lng
+            );
 
             Log::info('Teacher session started', [
                 'session_id' => $session->id,
                 'subject_code' => $request->subject_code,
-                'teacher_id' => Auth::id(),
-                'class_start' => $startTime->toDateTimeString(),
-                'session_ends' => $sessionEnd->toDateTimeString(),
+                'teacher_id' => $teacherId,
+                'session_ends' => $session->session_ends_at->toDateTimeString(),
             ]);
 
             return response()->json([
@@ -405,17 +348,11 @@ class QrAttendanceController extends Controller
                 'classroom_lng'  => $session->classroom_lng,
                 'message'        => 'QR attendance session started successfully!'
             ]);
-        } catch (\Throwable $e) {
-            Log::error('Teacher start session failed', [
-                'error' => $e->getMessage(),
-                'exception' => $e->getTraceAsString(),
-                'request' => $request->all(),
-            ]);
-
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to start session: ' . $e->getMessage(),
-            ], 500);
+                'message' => $e->getMessage(),
+            ], 422);
         }
     }
     // ─────────────────────────────────────────
@@ -426,25 +363,22 @@ class QrAttendanceController extends Controller
         $request->validate(['session_id' => 'required|integer']);
         $session = AttendanceSession::find($request->session_id);
 
-        if ($session) {
-            $session->markInactiveIfExpired();
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
         }
 
-        if (!$session || !$session->isSessionActive()) {
-            return response()->json(['success' => false, 'message' => 'Session expired.'], 404);
+        try {
+            $session = $this->qrSessionService->refreshToken($session);
+
+            return response()->json([
+                'success'    => true,
+                'token'      => $session->token,
+                'scan_url'   => $this->buildScanUrl($session->token, $session->session_ends_at),
+                'expires_at' => $session->expires_at->timestamp,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         }
-
-        $session->update([
-            'token'      => AttendanceSession::generateToken($session->subject_code),
-            'expires_at' => $this->tokenExpiresAt($session),
-        ]);
-
-        return response()->json([
-            'success'    => true,
-            'token'      => $session->token,
-            'scan_url'   => $this->buildScanUrl($session->token, $session->session_ends_at),
-            'expires_at' => $session->expires_at->timestamp,
-        ]);
     }
 
     // ─────────────────────────────────────────

@@ -16,138 +16,18 @@ use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Warning;
+use App\Services\AnalyticsService;
 
 class TeacherController extends Controller
 {
     // ─────────────────────────────────────────
     // TEACHER DASHBOARD
     // ─────────────────────────────────────────
-    public function index(Request $request)
+    public function index(Request $request, AnalyticsService $analyticsService)
     {
         \Log::info("TeacherController@index START");
         $teacher = Auth::user();
         
-        $targetDateStr = $request->input('date', now()->toDateString());
-        $targetDate = Carbon::parse($targetDateStr);
-
-        // Get subjects taught by this teacher
-        $teacherSubjects = Subject::where('instructor', $teacher->name)
-            ->orWhere('instructor', $teacher->employee_id)
-            ->with('schedules')
-            ->get();
-
-        // Include subjects where teacher is a substitute for the target date
-        $substituteSubjectIds = \App\Models\SubstituteTeacher::where('substitute_id', $teacher->id)
-            ->whereDate('date', $targetDate)
-            ->pluck('subject_id');
-            
-        if ($substituteSubjectIds->isNotEmpty()) {
-            $substituteSubjects = Subject::whereIn('id', $substituteSubjectIds)
-                ->with('schedules')
-                ->get();
-            $teacherSubjects = $teacherSubjects->concat($substituteSubjects)->unique('id');
-        }
-
-        // Get today's classes for this teacher
-        $targetDayName = $targetDate->format('l'); // Day name (Monday, Tuesday, etc.)
-        $todayClasses = $teacherSubjects->filter(function($subject) use ($targetDayName) {
-            return $subject->schedules->where('day', $targetDayName)->isNotEmpty();
-        });
-
-        $attendanceStats = \App\Models\Attendance::select('subject_code', 
-            \Illuminate\Support\Facades\DB::raw('count(*) as total'),
-            \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_count')
-        )
-            ->whereIn('subject_code', $todayClasses->pluck('code'))
-            ->whereDate('date', $targetDate)
-            ->groupBy('subject_code')
-            ->get()->keyBy('subject_code');
-
-        // Check completion status and class health
-        $todayClasses = $todayClasses->map(function($subject) use ($attendanceStats) {
-            $stats = $attendanceStats->get($subject->code);
-            $total = $stats ? $stats->total : 0;
-            $present = $stats ? $stats->present_count : 0;
-            
-            $subject->has_attendance_today = $total > 0;
-            $subject->attendance_count_today = $present;
-            $subject->class_health = $total > 0 ? round(($present / $total) * 100) : 0;
-            
-            return $subject;
-        });
-
-        // Get attendance statistics for teacher's subjects only
-        $subjectCodes = $teacherSubjects->pluck('code');
-        
-        // Get students who have attendance in teacher's subjects
-        $studentIds = Attendance::whereIn('subject_code', $subjectCodes)
-            ->distinct()
-            ->pluck('user_id');
-        $totalStudents = $studentIds->count();
-        
-        $todayAttendance = Attendance::whereIn('subject_code', $subjectCodes)
-            ->whereDate('date', $targetDate)
-            ->get();
-
-        $totalPresent = $todayAttendance->whereIn('status', ['Present', 'Late'])->count();
-        $totalAbsent = $todayAttendance->where('status', 'Absent')->count();
-        $totalLate = $todayAttendance->where('status', 'Late')->count();
-
-        // Weekly attendance chart data (for teacher's subjects only) — single query
-        $weeklyRaw = Attendance::selectRaw("DATE(date) as day, status, COUNT(*) as total")
-            ->whereIn('subject_code', $subjectCodes)
-            ->whereBetween('date', [$targetDate->copy()->subDays(6)->toDateString(), $targetDate->toDateString()])
-            ->groupBy('day', 'status')
-            ->get()
-            ->groupBy('day');
-
-        $weeklyLabels = [];
-        $weeklyPresent = [];
-        $weeklyLate = [];
-        $weeklyAbsent = [];
-        
-        for ($i = 6; $i >= 0; $i--) {
-            $day = $targetDate->copy()->subDays($i);
-            $dayKey = $day->toDateString();
-            $weeklyLabels[] = $day->format('D');
-            $dayData = $weeklyRaw->get($dayKey, collect());
-            $weeklyPresent[] = $dayData->firstWhere('status', 'Present')->total ?? 0;
-            $weeklyLate[] = $dayData->firstWhere('status', 'Late')->total ?? 0;
-            $weeklyAbsent[] = $dayData->firstWhere('status', 'Absent')->total ?? 0;
-        }
-
-        // Recent attendance records (for teacher's subjects only)
-        $recentAttendance = Attendance::with(['user', 'subject'])
-            ->whereIn('subject_code', $subjectCodes)
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
-
-        // Pending excuse submissions count (for dashboard notification)
-        $pendingExcuses = ExcuseSubmission::whereHas('attendance', function($q) use ($subjectCodes) {
-            $q->whereIn('subject_code', $subjectCodes);
-        })->where('status', 'pending')->count();
-
-        // "At-Risk" Students logic
-        $atRiskStudents = collect();
-        if ($subjectCodes->isNotEmpty()) {
-            $studentStats = Attendance::select('user_id',
-                \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
-                \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_sessions')
-            )
-            ->whereIn('subject_code', $subjectCodes)
-            ->groupBy('user_id')
-            ->with('user')
-            ->get();
-
-            $atRiskStudents = $studentStats->map(function($stat) {
-                $stat->rate = $stat->total_sessions > 0 ? round(($stat->present_sessions / $stat->total_sessions) * 100) : 100;
-                return $stat;
-            })->filter(function($stat) {
-                return $stat->rate < 80;
-            })->sortBy('rate')->take(5);
-        }
-
         // ── Holiday Calendar Data ──
         $calYear = (int) $request->input('hcal_year', now()->year);
         $calMonth = (int) $request->input('hcal_month', now()->month);
@@ -212,24 +92,14 @@ class TeacherController extends Controller
         $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();
 
         \Log::info("TeacherController@index END");
-        return view('teacher.dashboard', compact(
-            'teacher',
-            'teacherSubjects',
-            'todayClasses',
-            'totalStudents',
-            'totalPresent',
-            'totalAbsent',
-            'totalLate',
-            'weeklyLabels',
-            'weeklyPresent',
-            'weeklyLate',
-            'weeklyAbsent',
-            'recentAttendance',
-            'pendingExcuses',
-            'targetDate',
-            'atRiskStudents',
-            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
-        ));
+        
+        $data = $analyticsService->getTeacherDashboardData($request, $teacher);
+        $data['calYear'] = $calYear;
+        $data['calMonth'] = $calMonth;
+        $data['hcalEventsMap'] = $hcalEventsMap;
+        $data['hcalUpcoming'] = $hcalUpcoming;
+        
+        return view('teacher.dashboard', $data);
     }
 
     // ─────────────────────────────────────────
