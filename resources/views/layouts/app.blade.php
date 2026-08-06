@@ -87,6 +87,10 @@
                    data-title="My Schedule">
                     <i class="bi bi-calendar-week-fill"></i>
                     <span class="nav-link-text">My Schedule</span>
+                </a>
+            @endif
+        </div>
+
         @auth
             @if(Auth::user()->isAdmin())
                 @include('layouts.sidebars.admin')
@@ -98,6 +102,7 @@
                 @include('layouts.sidebars.student')
             @endif
         @endauth
+        @show
     </aside>
     @endauth
 
