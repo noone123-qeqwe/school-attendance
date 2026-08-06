@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'Classroom - ' . $subject->name)
 
 @section('content')
@@ -25,9 +25,6 @@
         <div class="d-flex gap-2 flex-wrap">
             <a href="{{ route('teacher.qr', $subject->code) }}" class="btn btn-primary" style="background: var(--gold); color: #fff; border: none; font-weight: 600;">
                 <i class="bi bi-qr-code-scan"></i> Start QR Attendance
-            </a>
-            <a href="{{ route('teacher.subjects.seating-chart', $subject->code) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
-                <i class="bi bi-grid-3x3-gap-fill"></i> Seating Chart
             </a>
             <a href="{{ route('teacher.subjects.edit', $subject->id) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
                 <i class="bi bi-pencil-square"></i> Edit

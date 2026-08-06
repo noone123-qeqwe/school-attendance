@@ -1145,44 +1145,4 @@ class AdminController extends Controller
         return back()->with('success', $count . ' excuse(s) rejected.');
     }
 
-    // ─────────────────────────────────────────
-    // SEATING CHART
-    // ─────────────────────────────────────────
-    public function seatingChart(string $subjectCode)
-    {
-        $subject = Subject::where('code', $subjectCode)->firstOrFail();
-        $chart   = \App\Models\SeatingChart::firstOrCreate(
-            ['subject_code' => $subjectCode],
-            ['rows' => 5, 'cols' => 6, 'grid_data' => []]
-        );
-
-        $students = User::where('role', 'student')
-            ->where('year_level', $subject->year_level)
-            ->where('semester', $subject->semester)
-            ->when($subject->course, fn($q) => $q->where('course', $subject->course))
-            ->orderBy('name')
-            ->get();
-
-        return view('admin.seating_chart', compact('subject', 'chart', 'students'));
-    }
-
-    public function saveSeatingChart(Request $request, string $subjectCode)
-    {
-        $request->validate([
-            'grid_data' => 'required|array',
-            'rows'      => 'required|integer|min:1|max:20',
-            'cols'      => 'required|integer|min:1|max:20',
-        ]);
-
-        \App\Models\SeatingChart::updateOrCreate(
-            ['subject_code' => $subjectCode],
-            [
-                'grid_data' => $request->grid_data,
-                'rows'      => $request->rows,
-                'cols'      => $request->cols,
-            ]
-        );
-
-        return response()->json(['success' => true, 'message' => 'Seating chart saved.']);
-    }
 }

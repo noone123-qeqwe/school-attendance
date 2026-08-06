@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'My Subjects')
 
 @section('content')
@@ -175,17 +175,15 @@
                         @endif
                     </td>
                     <td data-label="Units" style="color:#b39b82;" class="mobile-hide">{{ $subject->units ?? 'â€”' }}</td>
-                    <td data-label="Section" style="color:#b39b82;" class="mobile-hide">{{ $subject->section ?? 'â€”' }}</td>
+                    <td data-label="Units" style="color:#b39b82;" class="mobile-hide">{{ $subject->units ?? '—' }}</td>
+                    <td data-label="Section" style="color:#b39b82;" class="mobile-hide">{{ $subject->section ?? '—' }}</td>
                     <td data-label="Actions">
                         <div style="display:flex;gap:5px;">
                             <a href="{{ route('teacher.qr', $subject->code) }}" class="view-btn" style="color:#cfa46f;border-color:rgba(207,164,111,0.32);background:rgba(207,164,111,0.12);" title="Start QR Attendance">
                                 <i class="bi bi-qr-code"></i>
                             </a>
-                            <a href="{{ route('teacher.subjects.students', $subject->code) }}" class="view-btn" style="color:#34d399;border-color:rgba(52,211,153,0.32);background:rgba(52,211,153,0.12);" title="View Students">
-                                <i class="bi bi-people-fill"></i>
-                            </a>
-                            <a href="{{ route('teacher.subjects.seating-chart', $subject->code) }}" class="view-btn" style="color:#60a5fa;border-color:rgba(96,165,250,0.32);background:rgba(96,165,250,0.12);" title="Seating Chart">
-                                <i class="bi bi-grid-3x3-gap-fill"></i>
+                            <a href="{{ route('teacher.subjects.students', $subject->code) }}" class="view-btn" style="color:#60a5fa;border-color:rgba(96,165,250,0.32);background:rgba(96,165,250,0.12);" title="Students">
+                                <i class="bi bi-people"></i>
                             </a>
                             <a href="{{ route('teacher.subjects.edit', $subject->id) }}" class="view-btn" style="color:#d6b67b;border-color:rgba(207,164,111,0.28);background:rgba(207,164,111,0.1);"><i class="bi bi-pencil-fill"></i></a>
                             <form action="{{ route('teacher.subjects.destroy', $subject->id) }}" method="POST" onsubmit="return confirm('Delete {{ addslashes($subject->name) }}?')">

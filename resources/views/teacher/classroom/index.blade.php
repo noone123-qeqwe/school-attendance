@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('portal-title', 'My Classes')
 
 @push('styles')
@@ -134,7 +134,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 style="color: #f3e7cd; font-weight: 800; font-size: 1.8rem; margin: 0;">My Classes</h2>
-        <p style="color: #b39b82; font-size: 0.95rem; margin-top: 4px;">Select a class to manage students, attendance, and seating.</p>
+        <p style="color: #b39b82; font-size: 0.95rem; margin-top: 4px;">Select a class to manage students and attendance.</p>
     </div>
     <div>
         <a href="{{ route('teacher.subjects.create') }}" class="btn-action btn-primary-action" style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); color: #f3e7cd; padding: 10px 20px; border-radius: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">

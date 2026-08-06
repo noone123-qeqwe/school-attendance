@@ -590,4 +590,62 @@ class HomeController extends Controller
 
         return redirect()->route('excuses')->with('success', 'Excuse submitted successfully! It will be reviewed by the teacher.');
     }
+
+    /**
+     * Student calendar view.
+     */
+    public function calendar()
+    {
+        $year = request('year', now()->year);
+        $month = request('month', now()->month);
+        
+        return view('student.calendar', compact('year', 'month'));
+    }
+
+    /**
+     * JSON feed for FullCalendar (Student).
+     */
+    public function calendarData(Request $request)
+    {
+        $start = $request->query('start');
+        $end = $request->query('end');
+        
+        $query = \App\Models\Event::visibleTo(Auth::user())
+                      ->where('status', '!=', 'cancelled');
+                      
+        if ($start) {
+            $query->where('date', '>=', Carbon::parse($start)->toDateString());
+        }
+        if ($end) {
+            $query->where('date', '<=', Carbon::parse($end)->toDateString());
+        }
+
+        $events = $query->with('attendees')->get();
+
+        $formatted = $events->map(function ($event) {
+            // Map types to colors
+            $color = match($event->type) {
+                'class' => '#3b82f6', // blue
+                'exam' => '#ef4444', // red
+                'meeting' => '#f59e0b', // amber
+                'school_event' => '#8b5cf6', // purple
+                'holiday' => '#10b981', // green
+                default => '#6b7280'
+            };
+
+            return [
+                'id' => $event->id,
+                'title' => $event->name,
+                'start' => $event->date->format('Y-m-d') . 'T' . $event->start_time->format('H:i:s'),
+                'end' => $event->date->format('Y-m-d') . 'T' . $event->end_time->format('H:i:s'),
+                'type' => $event->type,
+                'location' => $event->location,
+                'status' => $event->status,
+                'editable' => false, // Read-only for students
+                'color' => $color,
+            ];
+        });
+
+        return response()->json($formatted);
+    }
 }

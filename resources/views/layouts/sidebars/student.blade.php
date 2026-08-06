@@ -22,6 +22,10 @@
         <i class="bi bi-calendar-range-fill"></i>
         <span class="nav-link-text">My Schedule</span>
     </a>
+    <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar') ? 'active' : '' }}">
+        <i class="bi bi-calendar-event-fill"></i>
+        <span class="nav-link-text">School Calendar</span>
+    </a>
     <a href="{{ route('excuses') }}" class="nav-link {{ request()->routeIs('excuses*') ? 'active' : '' }}">
         <i class="bi bi-file-text-fill"></i>
         <span class="nav-link-text">Excuse Submissions</span>

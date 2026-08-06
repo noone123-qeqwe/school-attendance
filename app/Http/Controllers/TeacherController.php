@@ -1575,58 +1575,80 @@ class TeacherController extends Controller
     }
 
     // ─────────────────────────────────────────
-    // SEATING CHART
+    // TEACHER EXCUSES
     // ─────────────────────────────────────────
-    public function seatingChart(string $subjectCode)
+    public function myExcuses()
     {
-        $subject = Subject::where('code', $subjectCode)->firstOrFail();
-        
-        // Ensure the teacher is authorized to view this subject's seating chart
         $teacher = Auth::user();
-        if ($subject->instructor_id !== $teacher->id) {
-            abort(403, 'Unauthorized access to this subject.');
-        }
-
-        $chart = \App\Models\SeatingChart::firstOrCreate(
-            ['subject_code' => $subjectCode],
-            ['rows' => 5, 'cols' => 6, 'grid_data' => []]
-        );
-
-        $students = User::where('role', 'student')
-            ->where('year_level', $subject->year_level)
-            ->where('semester', $subject->semester)
-            ->when($subject->course, fn($q) => $q->where('course', $subject->course))
-            ->orderBy('name')
+        
+        $excuseSubmissions = \App\Models\ExcuseSubmission::with(['attendance.subject'])
+            ->where('user_id', $teacher->id)
+            ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('teacher.seating-chart', compact('subject', 'chart', 'students'));
+        return view('teacher.my_excuses.index', compact('excuseSubmissions'));
     }
 
-    public function saveSeatingChart(Request $request, string $subjectCode)
+    public function createExcuse()
     {
-        $subject = Subject::where('code', $subjectCode)->firstOrFail();
-        
         $teacher = Auth::user();
-        if ($subject->instructor_id !== $teacher->id) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized access.'], 403);
-        }
+        $subjects = \App\Models\Subject::where('instructor_id', $teacher->id)->get();
+        return view('teacher.my_excuses.create', compact('subjects'));
+    }
 
+    public function storeExcuse(Request $request)
+    {
         $request->validate([
-            'grid_data' => 'required|array',
-            'rows'      => 'required|integer|min:1|max:20',
-            'cols'      => 'required|integer|min:1|max:20',
+            'subject_code' => 'required|exists:subjects,code',
+            'date' => 'required|date',
+            'reason' => 'required|string|max:255',
+            'description' => 'required|string|max:1000',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
         ]);
 
-        \App\Models\SeatingChart::updateOrCreate(
-            ['subject_code' => $subjectCode],
-            [
-                'grid_data' => $request->grid_data,
-                'rows'      => $request->rows,
-                'cols'      => $request->cols,
-            ]
-        );
+        $teacher = Auth::user();
 
-        return response()->json(['success' => true, 'message' => 'Seating chart saved.']);
+        // Ensure teacher is the instructor for this subject
+        if (!\App\Models\Subject::where('code', $request->subject_code)->where('instructor_id', $teacher->id)->exists()) {
+            abort(403, 'You are not the instructor for this subject.');
+        }
+
+        // Get or create the attendance record
+        $attendance = \App\Models\Attendance::firstOrCreate([
+            'user_id' => $teacher->id,
+            'subject_code' => $request->subject_code,
+            'date' => $request->date,
+        ], [
+            'status' => 'Absent',
+            'time_in' => null,
+            'time_out' => null,
+            'device_id' => null,
+            'excused' => false
+        ]);
+
+        // If it already has an excuse, reject
+        if ($attendance->excuseSubmission) {
+            return redirect()->route('teacher.excuses')->with('error', 'Excuse already submitted for this class and date.');
+        }
+
+        $attachmentPaths = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('excuses', 'public');
+                $attachmentPaths[] = $path;
+            }
+        }
+
+        \App\Models\ExcuseSubmission::create([
+            'user_id' => $teacher->id,
+            'attendance_id' => $attendance->id,
+            'reason' => $request->reason,
+            'description' => $request->description,
+            'attachments' => empty($attachmentPaths) ? null : $attachmentPaths,
+            'status' => 'pending',
+        ]);
+
+        return redirect()->route('teacher.excuses')->with('success', 'Excuse submitted successfully. It is pending administrative review.');
     }
 
     // ─────────────────────────────────────────
