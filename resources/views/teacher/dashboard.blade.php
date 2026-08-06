@@ -118,8 +118,13 @@
     </a>
 </div>
 
+{{-- ─── SKELETON KPIs ─── --}}
+<div class="ent-grid ent-grid-4 ent-mb-lg skel-kpi-placeholder" id="skelKpis">
+    <x-skeleton type="kpi" :count="4" />
+</div>
+
 {{-- ─── KPI STATS ─── --}}
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2">
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realKpis" style="display:none;">
     <div class="ent-kpi-card" data-accent="success">
         <div class="ent-kpi-icon"><i class="bi bi-person-check-fill"></i></div>
         <div class="ent-kpi-body">
@@ -624,6 +629,16 @@ new Chart(ctx, {
 @endif
 
 <script>
+// ── Skeleton → Content Reveal ──
+(function() {
+    var skelKpis = document.getElementById('skelKpis');
+    var realKpis = document.getElementById('realKpis');
+    if (skelKpis && realKpis) {
+        skelKpis.style.display = 'none';
+        realKpis.style.display = '';
+    }
+})();
+
 // Real-time clock
 (function() {
     const clockEl = document.getElementById('teacherClock');
@@ -667,15 +682,17 @@ function openLeaveDrawer() {
     `;
     if(typeof openDrawer === 'function') {
         openDrawer('Request Leave / Substitute', html, function() {
-            if(typeof showToast === 'function') {
+            if(typeof showPremiumToast === 'function') {
+                showPremiumToast('Leave request submitted to Admin successfully!', 'success');
+            } else if(typeof showToast === 'function') {
                 showToast('Leave request submitted to Admin successfully!', 'success');
-            } else {
-                alert('Leave request submitted successfully!');
             }
             closeDrawer();
         }, 'Submit Request');
     } else {
-        alert("Leave request submitted successfully!");
+        if(typeof showPremiumToast === 'function') {
+            showPremiumToast("Leave request submitted successfully!", 'success');
+        }
     }
 }
 

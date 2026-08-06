@@ -52,8 +52,13 @@
 </div>
 @endif
 
+{{-- ─── SKELETON KPIs (shown briefly while page paints) ─── --}}
+<div class="ent-grid ent-grid-4 ent-mb-md skel-kpi-placeholder" id="skelKpis">
+    <x-skeleton type="kpi" :count="4" />
+</div>
+
 {{-- ─── PRIMARY KPIs: Entity Counts ─── --}}
-<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-1">
+<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-1" id="realKpis" style="display:none;">
     <div class="ent-kpi-card" data-accent="gold">
         <div class="ent-kpi-icon"><i class="bi bi-people-fill"></i></div>
         <div class="ent-kpi-body">
@@ -489,6 +494,15 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ── Skeleton → Content Reveal ──
+    var skelKpis = document.getElementById('skelKpis');
+    var realKpis = document.getElementById('realKpis');
+    if (skelKpis && realKpis) {
+        skelKpis.style.display = 'none';
+        realKpis.style.display = '';
+    }
+
+
     var options = {
         series: [
             { name: 'Present', data: {!! json_encode($weeklyPresent) !!} },

@@ -270,6 +270,33 @@ class HomeController extends Controller
         ];
     }
 
+    // 13. Per-Subject Attendance Breakdown
+    $subjectStats = collect();
+    if ($records->isNotEmpty()) {
+        $grouped = $records->groupBy('subject_code');
+        foreach ($grouped as $code => $subjectRecords) {
+            $subjectModel = $subjectRecords->first()->subject;
+            $total = $subjectRecords->count();
+            $present = $subjectRecords->where('status', 'Present')->count();
+            $late = $subjectRecords->where('status', 'Late')->count();
+            $absent = $subjectRecords->where('status', 'Absent')->count();
+            $excused = $subjectRecords->where('excused', true)->count();
+            $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;
+
+            $subjectStats->push((object)[
+                'code' => $code,
+                'name' => $subjectModel->name ?? $code,
+                'total' => $total,
+                'present' => $present,
+                'late' => $late,
+                'absent' => $absent,
+                'excused' => $excused,
+                'rate' => $rate,
+            ]);
+        }
+        $subjectStats = $subjectStats->sortBy('rate')->values();
+    }
+
     return view('home', compact(
         'currentClass',
         'attendanceStatus',
@@ -289,7 +316,8 @@ class HomeController extends Controller
         'todaySchedule',
         'announcements',
         'calendarEvents',
-        'eventsMap'
+        'eventsMap',
+        'subjectStats'
     ));
 }
 

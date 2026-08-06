@@ -1,14 +1,16 @@
-@props(['icon', 'title', 'message', 'action' => null])
+@props(['icon' => 'bi bi-inbox', 'title' => 'Nothing here yet', 'message' => '', 'action' => null])
 
-<div class="empty-card d-flex flex-column align-items-center justify-content-center p-5 text-center empty-card-content">
-    <div>
-        <div class="icon-circle mb-4">
-            <i class="{{ $icon }} empty-icon-wrapper"></i>
-        </div>
-        <h4 class="mb-3 empty-text">{{ $title }}</h4>
-        <p class="empty-link-msg">{{ $message }}</p>
-        @if($action)
-            {{ $action }}
-        @endif
+<div class="ds-empty-state {{ $attributes->get('class') }}">
+    <div class="ds-empty-state-icon">
+        <i class="{{ $icon }}"></i>
     </div>
+    <h4 class="ds-empty-state-title">{{ $title }}</h4>
+    @if($message)
+        <p class="ds-empty-state-text">{{ $message }}</p>
+    @endif
+    @if($action)
+        <div style="margin-top: var(--ds-space-sm);">
+            {{ $action }}
+        </div>
+    @endif
 </div>

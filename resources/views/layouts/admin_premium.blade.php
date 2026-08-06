@@ -10,6 +10,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     
+    <!-- Design Tokens (unified source of truth) -->
+    <link rel="stylesheet" href="{{ asset('css/design-tokens.css') }}?v={{ filemtime(public_path('css/design-tokens.css')) }}">
     <!-- Custom SaaS CSS -->
     <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}?v={{ filemtime(public_path('css/admin-saas.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
@@ -311,6 +313,8 @@
         }
     });
 </script>
+<x-command-palette />
+<script src="{{ asset('js/pull-refresh.js') }}?v={{ filemtime(public_path('js/pull-refresh.js')) }}"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 @stack('scripts')

@@ -125,8 +125,16 @@
     </div>
 </div>
 
+<!-- Skeleton Stats -->
+<div class="row g-3 mb-4" id="skelStats">
+    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
+    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
+    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
+    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
+</div>
+
 <!-- Quick Stats -->
-<div class="row g-3 mb-4">
+<div class="row g-3 mb-4" id="realStats" style="display:none;">
     <div class="col-md-3 col-6">
         <div class="adm-stat" style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);">
             <div class="adm-stat-icon" style="color: #4ade80;"><i class="bi bi-check-circle-fill"></i></div>
@@ -156,6 +164,72 @@
         </div>
     </div>
 </div>
+
+<!-- Subject Attendance Breakdown -->
+@if(isset($subjectStats) && $subjectStats->count() > 0)
+<div class="mb-4">
+    <x-card title="Subject Breakdown" icon="bi bi-bar-chart-fill">
+        <x-slot name="headerActions">
+            <span style="font-size: 0.75rem; color: #b39b82; font-weight: 600;">{{ $subjectStats->count() }} subjects</span>
+        </x-slot>
+
+        <div class="d-flex flex-column gap-3">
+            @foreach($subjectStats as $stat)
+                @php
+                    $rateColor = $stat->rate >= 90 ? '#4ade80' : ($stat->rate >= 75 ? '#fbbf24' : '#f87171');
+                    $rateBg = $stat->rate >= 90 ? 'rgba(74,222,128,0.1)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.1)' : 'rgba(248,113,113,0.1)');
+                    $rateBorder = $stat->rate >= 90 ? 'rgba(74,222,128,0.2)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.2)' : 'rgba(248,113,113,0.2)');
+                @endphp
+                <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 16px;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <div style="font-weight: 700; color: #f3e7cd; font-size: 0.95rem;">{{ $stat->name }}</div>
+                            <div style="font-size: 0.75rem; color: #b39b82; margin-top: 2px;">
+                                <i class="bi bi-tag-fill" style="font-size: 0.65rem;"></i> {{ $stat->code }} · {{ $stat->total }} classes
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 1.4rem; font-weight: 800; color: {{ $rateColor }}; line-height: 1;">{{ $stat->rate }}%</div>
+                            @if($stat->rate < 75)
+                                <div style="font-size: 0.65rem; color: #f87171; font-weight: 600; margin-top: 2px;">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> At Risk
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 10px;">
+                        <div style="height: 100%; width: {{ $stat->rate }}%; background: {{ $rateColor }}; border-radius: 99px; transition: width 0.6s ease;"></div>
+                    </div>
+
+                    <!-- Status Pills -->
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span style="font-size: 0.7rem; font-weight: 600; color: #4ade80; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); padding: 3px 10px; border-radius: 99px;">
+                            <i class="bi bi-check-circle-fill" style="font-size: 0.6rem;"></i> {{ $stat->present }} Present
+                        </span>
+                        @if($stat->late > 0)
+                        <span style="font-size: 0.7rem; font-weight: 600; color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); padding: 3px 10px; border-radius: 99px;">
+                            <i class="bi bi-clock-fill" style="font-size: 0.6rem;"></i> {{ $stat->late }} Late
+                        </span>
+                        @endif
+                        @if($stat->absent > 0)
+                        <span style="font-size: 0.7rem; font-weight: 600; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); padding: 3px 10px; border-radius: 99px;">
+                            <i class="bi bi-x-circle-fill" style="font-size: 0.6rem;"></i> {{ $stat->absent }} Absent
+                        </span>
+                        @endif
+                        @if($stat->excused > 0)
+                        <span style="font-size: 0.7rem; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.2); padding: 3px 10px; border-radius: 99px;">
+                            <i class="bi bi-file-earmark-check-fill" style="font-size: 0.6rem;"></i> {{ $stat->excused }} Excused
+                        </span>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </x-card>
+</div>
+@endif
 
 <div class="row g-4 mb-4">
     <!-- Today's Schedule -->
@@ -236,4 +310,12 @@
     </div>
 </div>
 
+<script>
+// ── Skeleton → Content Reveal ──
+document.addEventListener('DOMContentLoaded', function() {
+    var skelStats = document.getElementById('skelStats');
+    var realStats = document.getElementById('realStats');
+    if (skelStats && realStats) { skelStats.style.display = 'none'; realStats.style.display = ''; }
+});
+</script>
 @endsection

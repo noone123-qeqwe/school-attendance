@@ -806,12 +806,12 @@ document.getElementById('approveExcuseForm').addEventListener('submit', function
                 }
             }, 3000);
         } else {
-            alert('Error: ' + (data.message || 'Unknown error occurred'));
+            if (typeof showPremiumToast === 'function') showPremiumToast('Error: ' + (data.message || 'Unknown error occurred'), 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while approving the excuse: ' + error.message);
+        if (typeof showPremiumToast === 'function') showPremiumToast('An error occurred while approving the excuse: ' + error.message, 'error');
     });
 });
 
@@ -835,12 +835,12 @@ document.getElementById('rejectExcuseForm').addEventListener('submit', function(
             bootstrap.Modal.getInstance(document.getElementById('rejectExcuseModal')).hide();
             location.reload();
         } else {
-            alert('Error: ' + data.message);
+            if (typeof showPremiumToast === 'function') showPremiumToast('Error: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while rejecting the excuse.');
+        if (typeof showPremiumToast === 'function') showPremiumToast('An error occurred while rejecting the excuse.', 'error');
     });
 });
 </script>

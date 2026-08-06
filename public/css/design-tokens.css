@@ -1,0 +1,367 @@
+/* ══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Single Source of Truth
+   Smart Classroom Attendance System
+   
+   All layouts load this file FIRST. Individual layout CSS files
+   can override these via higher specificity, but these serve
+   as the canonical fallback values for the entire system.
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+    /* ── BRAND COLORS ── */
+    --ds-maroon:        #7A1A1A;
+    --ds-maroon-dark:   #4A0C0C;
+    --ds-maroon-light:  #9c2727;
+    --ds-maroon-alpha:  rgba(144, 0, 0, 0.15);
+
+    --ds-gold:          #cfa46f;
+    --ds-gold-bright:   #D4AF37;
+    --ds-gold-soft:     #d4b77d;
+    --ds-gold-dark:     #A68822;
+    --ds-gold-glow:     rgba(207, 164, 111, 0.15);
+
+    /* ── SURFACE & BACKGROUND ── */
+    --ds-bg:            #0f0b08;
+    --ds-surface:       #1a0e0b;
+    --ds-surface-soft:  rgba(255, 255, 255, 0.03);
+    --ds-surface-hover: rgba(255, 255, 255, 0.06);
+    --ds-surface-raised: rgba(255, 255, 255, 0.03);
+    --ds-surface-glass: rgba(30, 21, 21, 0.65);
+
+    /* ── BORDERS ── */
+    --ds-border:        rgba(207, 164, 111, 0.12);
+    --ds-border-hover:  rgba(207, 164, 111, 0.25);
+    --ds-border-strong: rgba(207, 164, 111, 0.3);
+    --ds-border-subtle: rgba(255, 255, 255, 0.06);
+
+    /* ── TYPOGRAPHY ── */
+    --ds-font-family:   'Inter', system-ui, -apple-system, sans-serif;
+    --ds-text-primary:  #f3e7cd;
+    --ds-text-secondary:#b39b82;
+    --ds-text-muted:    #8f826f;
+    --ds-text-on-dark:  #ffffff;
+
+    /* ── STATUS / SEMANTIC COLORS ── */
+    /* Present = Green */
+    --ds-success:       #4ade80;
+    --ds-success-alpha: rgba(74, 222, 128, 0.15);
+    --ds-success-border:rgba(74, 222, 128, 0.25);
+    --ds-success-text:  #4ade80;
+
+    /* Late = Amber/Warning */
+    --ds-warning:       #fbbf24;
+    --ds-warning-alpha: rgba(251, 191, 36, 0.15);
+    --ds-warning-border:rgba(251, 191, 36, 0.25);
+    --ds-warning-text:  #fbbf24;
+
+    /* Absent = Red/Danger */
+    --ds-danger:        #f87171;
+    --ds-danger-alpha:  rgba(248, 113, 113, 0.15);
+    --ds-danger-border: rgba(248, 113, 113, 0.25);
+    --ds-danger-text:   #f87171;
+
+    /* Excused = Blue/Info */
+    --ds-info:          #60a5fa;
+    --ds-info-alpha:    rgba(96, 165, 250, 0.15);
+    --ds-info-border:   rgba(96, 165, 250, 0.25);
+    --ds-info-text:     #60a5fa;
+
+    /* ── SHADOWS ── */
+    --ds-shadow-sm:     0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --ds-shadow-md:     0 4px 12px rgba(0, 0, 0, 0.4);
+    --ds-shadow-lg:     0 10px 30px rgba(0, 0, 0, 0.5);
+    --ds-shadow-glow:   0 0 20px rgba(207, 164, 111, 0.1);
+
+    /* ── SPACING (8px grid) ── */
+    --ds-space-xs:      4px;
+    --ds-space-sm:      8px;
+    --ds-space-md:      16px;
+    --ds-space-lg:      24px;
+    --ds-space-xl:      32px;
+    --ds-space-2xl:     48px;
+    --ds-space-3xl:     64px;
+
+    /* ── BORDER RADIUS ── */
+    --ds-radius-xs:     4px;
+    --ds-radius-sm:     8px;
+    --ds-radius-md:     12px;
+    --ds-radius-lg:     16px;
+    --ds-radius-xl:     20px;
+    --ds-radius-2xl:    24px;
+    --ds-radius-pill:   9999px;
+
+    /* ── LAYOUT ── */
+    --ds-sidebar-width: 260px;
+    --ds-sidebar-mini:  76px;
+    --ds-header-height: 72px;
+
+    /* ── TRANSITIONS ── */
+    --ds-ease:          cubic-bezier(0.4, 0, 0.2, 1);
+    --ds-ease-spring:   cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    --ds-transition-fast:   0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --ds-transition:        0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --ds-transition-slow:   0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ── GLASS EFFECTS ── */
+    --ds-glass-blur:    blur(16px);
+    --ds-glass-bg:      rgba(18, 9, 6, 0.75);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   STATUS BADGES — Unified across all views
+   These replace the inconsistent badge-present, saas-badge-*,
+   and ent-badge-* classes with one canonical set.
+   ══════════════════════════════════════════════════════════════ */
+
+.ds-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--ds-radius-pill);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.ds-badge-success,
+.ds-badge-present {
+    background: var(--ds-success-alpha);
+    color: var(--ds-success-text);
+    border: 1px solid var(--ds-success-border);
+}
+
+.ds-badge-warning,
+.ds-badge-late {
+    background: var(--ds-warning-alpha);
+    color: var(--ds-warning-text);
+    border: 1px solid var(--ds-warning-border);
+}
+
+.ds-badge-danger,
+.ds-badge-absent {
+    background: var(--ds-danger-alpha);
+    color: var(--ds-danger-text);
+    border: 1px solid var(--ds-danger-border);
+}
+
+.ds-badge-info,
+.ds-badge-excused {
+    background: var(--ds-info-alpha);
+    color: var(--ds-info-text);
+    border: 1px solid var(--ds-info-border);
+}
+
+.ds-badge-default,
+.ds-badge-pending {
+    background: var(--ds-surface-hover);
+    color: var(--ds-text-muted);
+    border: 1px solid var(--ds-border);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   FORM INPUTS — Dark-themed, works everywhere
+   ══════════════════════════════════════════════════════════════ */
+
+.ds-input,
+.ds-select,
+.ds-textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: var(--ds-radius-sm);
+    border: 1.5px solid var(--ds-border);
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--ds-text-primary);
+    font-size: 0.875rem;
+    font-family: var(--ds-font-family);
+    transition: var(--ds-transition);
+    outline: none;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.ds-input:hover,
+.ds-select:hover,
+.ds-textarea:hover {
+    border-color: var(--ds-border-hover);
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.ds-input:focus,
+.ds-select:focus,
+.ds-textarea:focus {
+    border-color: var(--ds-gold);
+    background: rgba(207, 164, 111, 0.05);
+    box-shadow: 0 0 0 3px var(--ds-gold-glow);
+}
+
+.ds-input::placeholder,
+.ds-textarea::placeholder {
+    color: var(--ds-text-muted);
+    opacity: 0.7;
+}
+
+.ds-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238f826f'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+.ds-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.ds-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ds-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.ds-form-group {
+    margin-bottom: var(--ds-space-md);
+}
+
+/* Validation states */
+.ds-input.is-invalid,
+.ds-select.is-invalid {
+    border-color: var(--ds-danger);
+    box-shadow: 0 0 0 3px var(--ds-danger-alpha);
+}
+
+.ds-invalid-feedback {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.78rem;
+    color: var(--ds-danger-text);
+    font-weight: 500;
+}
+
+.ds-input.is-valid,
+.ds-select.is-valid {
+    border-color: var(--ds-success);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   EMPTY STATES — Consistent across all views
+   ══════════════════════════════════════════════════════════════ */
+
+.ds-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--ds-space-md);
+    padding: var(--ds-space-3xl) var(--ds-space-lg);
+    text-align: center;
+}
+
+.ds-empty-state-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--ds-radius-lg);
+    background: var(--ds-surface-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--ds-text-muted);
+    opacity: 0.6;
+}
+
+.ds-empty-state-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--ds-text-primary);
+    margin: 0;
+}
+
+.ds-empty-state-text {
+    font-size: 0.875rem;
+    color: var(--ds-text-muted);
+    max-width: 320px;
+    line-height: 1.5;
+    margin: 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITY: Inline Toast (for replacing alert() calls)
+   Leverages the existing showPremiumToast() system.
+   ══════════════════════════════════════════════════════════════ */
+
+.ds-inline-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: var(--ds-radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-bottom: var(--ds-space-md);
+    animation: dsFadeSlideIn 0.3s var(--ds-ease) forwards;
+}
+
+.ds-inline-alert-success {
+    background: var(--ds-success-alpha);
+    border: 1px solid var(--ds-success-border);
+    color: var(--ds-success-text);
+}
+
+.ds-inline-alert-warning {
+    background: var(--ds-warning-alpha);
+    border: 1px solid var(--ds-warning-border);
+    color: var(--ds-warning-text);
+}
+
+.ds-inline-alert-danger {
+    background: var(--ds-danger-alpha);
+    border: 1px solid var(--ds-danger-border);
+    color: var(--ds-danger-text);
+}
+
+.ds-inline-alert-info {
+    background: var(--ds-info-alpha);
+    border: 1px solid var(--ds-info-border);
+    color: var(--ds-info-text);
+}
+
+.ds-inline-alert i {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+@keyframes dsFadeSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ACCESSIBILITY: Focus states for keyboard navigation
+   ══════════════════════════════════════════════════════════════ */
+
+:focus-visible {
+    outline: 2px solid var(--ds-gold);
+    outline-offset: 2px;
+}
+
+/* Only show focus ring on keyboard navigation, not mouse clicks */
+:focus:not(:focus-visible) {
+    outline: none;
+}

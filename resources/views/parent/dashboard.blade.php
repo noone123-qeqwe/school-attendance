@@ -25,7 +25,29 @@
 </div>
 
 
-@forelse($childrenData as $data)
+@if(count($childrenData) > 0)
+<!-- Child Tab Selector -->
+<div class="d-flex gap-2 flex-nowrap overflow-auto mb-4 pb-2" style="scrollbar-width: none; -ms-overflow-style: none;" id="childTabsContainer">
+    @foreach($childrenData as $index => $data)
+        @php
+            $rateColor = $data->rate >= 90 ? '#4ade80' : ($data->rate >= 75 ? '#fbbf24' : '#f87171');
+        @endphp
+        <button type="button" 
+                class="btn child-tab-btn {{ $index === 0 ? 'active' : '' }}" 
+                data-child-id="{{ $data->child->id }}"
+                style="white-space: nowrap; border-radius: 99px; border: 1px solid rgba(207,164,111,{{ $index === 0 ? '0.4' : '0.15' }}); background: rgba(207,164,111,{{ $index === 0 ? '0.1' : '0.02' }}); color: {{ $index === 0 ? '#f3e7cd' : '#b39b82' }}; padding: 8px 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff;">
+                {{ substr($data->child->name, 0, 2) }}
+            </div>
+            {{ explode(' ', $data->child->name)[0] }}
+            <span style="font-size: 0.7rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 99px; color: {{ $rateColor }}; border: 1px solid rgba(255,255,255,0.05);">{{ $data->rate }}%</span>
+        </button>
+    @endforeach
+</div>
+@endif
+
+@forelse($childrenData as $index => $data)
+<div class="child-view-content" id="childView_{{ $data->child->id }}" style="display: {{ $index === 0 ? 'block' : 'none' }}; animation: cmdFadeIn 0.3s ease;">
 <x-card title="{{ $data->child->name }}" icon="bi bi-person-fill" class="mb-5">
     <x-slot name="headerActions">
         <div class="d-flex gap-2 flex-wrap">
@@ -59,8 +81,17 @@
         </div>
     </div>
 
+    <!-- Skeleton Stats -->
+    <div class="row g-3 mb-4" id="skelChildStats_{{ $data->child->id }}">
+        <div class="col-md-2 col-4"><x-skeleton type="stat" /></div>
+        <div class="col-md-2 col-4"><x-skeleton type="stat" /></div>
+        <div class="col-md-2 col-4"><x-skeleton type="stat" /></div>
+        <div class="col-md-2 col-4"><x-skeleton type="stat" /></div>
+        <div class="col-md-2 col-4"><x-skeleton type="stat" /></div>
+    </div>
+
     <!-- Quick Stats -->
-    <div class="row g-3 mb-4">
+    <div class="row g-3 mb-4" id="realChildStats_{{ $data->child->id }}" style="display:none;">
         <div class="col-md-2 col-4">
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; padding: 16px; text-align: center;">
                 <div style="font-size: 1.5rem; font-weight: 800; color: {{ $data->rate >= 90 ? '#4ade80' : ($data->rate >= 75 ? '#fbbf24' : '#f87171') }};">{{ $data->rate }}%</div>
@@ -182,6 +213,7 @@
         @endif
     </div>
 </x-card>
+</div>
 @empty
 <!-- No Children Linked -->
 <div class="empty-state text-center" style="padding: 80px 20px; background: rgba(0,0,0,0.2); border: 1px dashed rgba(207,164,111,0.3); border-radius: 24px;">
@@ -197,6 +229,67 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+// ── Skeleton → Content Reveal ──
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[id^="skelChildStats_"]').forEach(function(skel) {
+        var id = skel.id.replace('skelChildStats_', '');
+        var real = document.getElementById('realChildStats_' + id);
+        if (real) { skel.style.display = 'none'; real.style.display = ''; }
+    });
+</script>
+
+<script>
+// ── Child Tab Selector Logic ──
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.child-tab-btn');
+    const views = document.querySelectorAll('.child-view-content');
+
+    // Load saved tab from localStorage if exists
+    const savedChildId = localStorage.getItem('selectedChildId');
+    if (savedChildId) {
+        const savedTab = document.querySelector('.child-tab-btn[data-child-id="' + savedChildId + '"]');
+        if (savedTab) {
+            activateTab(savedTab, savedChildId);
+        }
+    }
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+            const childId = this.getAttribute('data-child-id');
+            activateTab(this, childId);
+            localStorage.setItem('selectedChildId', childId);
+            
+            // Scroll to center of tab container on mobile
+            this.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        });
+    });
+
+    function activateTab(activeTab, childId) {
+        // Reset all tabs
+        tabs.forEach(t => {
+            t.classList.remove('active');
+            t.style.border = '1px solid rgba(207,164,111,0.15)';
+            t.style.background = 'rgba(207,164,111,0.02)';
+            t.style.color = '#b39b82';
+        });
+
+        // Set active tab
+        activeTab.classList.add('active');
+        activeTab.style.border = '1px solid rgba(207,164,111,0.4)';
+        activeTab.style.background = 'rgba(207,164,111,0.1)';
+        activeTab.style.color = '#f3e7cd';
+
+        // Show/hide views
+        views.forEach(v => {
+            if (v.id === 'childView_' + childId) {
+                v.style.display = 'block';
+            } else {
+                v.style.display = 'none';
+            }
+        });
+    }
+});
+</script>
 @foreach($childrenData as $data)
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('trendChart_{{ $data->child->id }}').getContext('2d');

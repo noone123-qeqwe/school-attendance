@@ -16,6 +16,7 @@
         border-radius: 24px;
         min-height: 400px;
         justify-content: center;
+        overflow-x: auto;
     }
     .desk {
         width: 100px;
@@ -160,7 +161,78 @@
     .roll-call-mode .desk.status-present .status-badge { display: block; background: #10b981; color: white; }
     .roll-call-mode .desk.status-late .status-badge { display: block; background: #f59e0b; color: white; }
     .roll-call-mode .desk.status-absent .status-badge { display: block; background: #ef4444; color: white; }
-    
+
+    /* Roll Call Warning Banner */
+    .roll-call-warning {
+        display: none;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-radius: var(--ds-radius-md, 12px);
+        background: var(--ds-warning-alpha, rgba(251,191,36,0.15));
+        border: 1px solid var(--ds-warning-border, rgba(251,191,36,0.25));
+        color: var(--ds-warning-text, #fbbf24);
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 16px;
+        animation: dsFadeSlideIn 0.3s ease forwards;
+    }
+    .roll-call-warning.active { display: flex; }
+    .roll-call-warning i { font-size: 1.2rem; flex-shrink: 0; }
+
+    /* Roll Call Summary Counter */
+    .roll-call-summary {
+        display: none;
+        gap: 16px;
+        align-items: center;
+        padding: 12px 18px;
+        border-radius: var(--ds-radius-md, 12px);
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--ds-border, rgba(207,164,111,0.12));
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+    }
+    .roll-call-summary.active { display: flex; }
+    .roll-call-counter {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+    .roll-call-counter .dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+    }
+    .roll-call-counter .dot-present { background: #10b981; }
+    .roll-call-counter .dot-late { background: #f59e0b; }
+    .roll-call-counter .dot-absent { background: #ef4444; }
+
+    /* Mobile responsive for seating chart */
+    @media (max-width: 768px) {
+        .grid-container {
+            padding: 12px;
+            gap: 8px;
+            border-radius: 16px;
+            justify-content: flex-start;
+        }
+        .desk {
+            width: 72px;
+            height: 72px;
+            border-radius: 12px;
+            padding: 4px;
+        }
+        .desk-student-name {
+            font-size: 0.6rem;
+        }
+        .desk i.bi-person-fill {
+            font-size: 1.2rem !important;
+        }
+        .students-pool {
+            max-height: 300px;
+            padding: 14px;
+        }
+    }
 </style>
 
 <div class="seating-dashboard">
@@ -179,25 +251,42 @@
         </div>
     </div>
 
+    <!-- Roll Call Warning Banner (hidden until Roll Call mode activated) -->
+    <div class="roll-call-warning" id="rollCallWarning">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div>
+            <strong>Roll Call Mode Active — Marks Are Visual Only</strong><br>
+            <span style="font-weight:400;opacity:0.85;">Attendance marks made here are NOT saved to the server. This feature is a visual preview only. A future update will add backend persistence.</span>
+        </div>
+    </div>
+
+    <!-- Roll Call Summary (hidden until Roll Call mode activated) -->
+    <div class="roll-call-summary" id="rollCallSummary">
+        <div class="roll-call-counter"><div class="dot dot-present"></div> Present: <span id="rcPresent">0</span></div>
+        <div class="roll-call-counter"><div class="dot dot-late"></div> Late: <span id="rcLate">0</span></div>
+        <div class="roll-call-counter"><div class="dot dot-absent"></div> Absent: <span id="rcAbsent">0</span></div>
+        <div class="roll-call-counter" style="color:var(--ds-text-muted,#8f826f);">Total Assigned: <span id="rcTotal">0</span></div>
+    </div>
+
     <div class="row g-4">
         <!-- Settings & Students -->
         <div class="col-lg-3">
             <div class="students-pool">
                 <div class="mb-4">
-                    <label style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:8px; display:block;">Grid Size</label>
+                    <label class="ds-label">Grid Size</label>
                     <div class="d-flex gap-2">
                         <div class="input-group input-group-sm">
-                            <span class="input-group-text" style="background:rgba(255,255,255,0.1); color:white; border:none;">Rows</span>
-                            <input type="number" id="gridRows" class="form-control text-center" style="background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);" value="{{ $seatingChart->rows }}" min="2" max="15" onchange="generateGrid()">
+                            <span class="input-group-text" style="background:rgba(255,255,255,0.1); color:white; border:none; border-radius:var(--ds-radius-sm,8px) 0 0 var(--ds-radius-sm,8px);">Rows</span>
+                            <input type="number" id="gridRows" class="ds-input text-center" style="border-radius:0 var(--ds-radius-sm,8px) var(--ds-radius-sm,8px) 0;" value="{{ $seatingChart->rows }}" min="2" max="15" onchange="generateGrid()">
                         </div>
                         <div class="input-group input-group-sm">
-                            <span class="input-group-text" style="background:rgba(255,255,255,0.1); color:white; border:none;">Cols</span>
-                            <input type="number" id="gridCols" class="form-control text-center" style="background:rgba(255,255,255,0.05); color:white; border:1px solid rgba(255,255,255,0.1);" value="{{ $seatingChart->cols }}" min="2" max="15" onchange="generateGrid()">
+                            <span class="input-group-text" style="background:rgba(255,255,255,0.1); color:white; border:none; border-radius:var(--ds-radius-sm,8px) 0 0 var(--ds-radius-sm,8px);">Cols</span>
+                            <input type="number" id="gridCols" class="ds-input text-center" style="border-radius:0 var(--ds-radius-sm,8px) var(--ds-radius-sm,8px) 0;" value="{{ $seatingChart->cols }}" min="2" max="15" onchange="generateGrid()">
                         </div>
                     </div>
                 </div>
 
-                <label style="font-size:0.75rem; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-bottom:12px; display:block;">Students</label>
+                <label class="ds-label" style="margin-bottom:12px;">Students</label>
                 <div id="studentList">
                     @foreach($students as $student)
                         <div class="student-item" draggable="true" ondragstart="dragStart(event, {{ $student->id }}, '{{ addslashes($student->name) }}')" id="student-{{ $student->id }}">
@@ -377,17 +466,23 @@
             }, 2000);
         })
         .catch(err => {
-            alert('Failed to save layout.');
+            if (typeof showPremiumToast === 'function') {
+                showPremiumToast('Failed to save seating layout. Please try again.', 'error');
+            }
             btn.innerHTML = '<i class="bi bi-floppy-fill me-1"></i> Save Layout';
             btn.disabled = false;
         });
     }
 
     // --- RAPID ROLL CALL ---
+    let rollCallDirty = false; // Track if any roll call marks have been made
+
     function toggleRollCall() {
         rollCallMode = !rollCallMode;
         const grid = document.getElementById('seatingGrid');
         const btn = document.getElementById('btnRollCall');
+        const warning = document.getElementById('rollCallWarning');
+        const summary = document.getElementById('rollCallSummary');
         
         if (rollCallMode) {
             grid.classList.add('roll-call-mode');
@@ -395,24 +490,42 @@
             btn.style.color = 'white';
             btn.innerHTML = '<i class="bi bi-record-circle me-1"></i> Exit Roll Call';
             document.getElementById('btnSave').style.display = 'none';
+            warning.classList.add('active');
+            summary.classList.add('active');
             
             // Initialize all assigned desks as Present visually
             document.querySelectorAll('.desk.assigned').forEach(desk => {
                 desk.classList.add('status-present');
                 desk.querySelector('.status-badge').textContent = 'Present';
             });
+            rollCallDirty = true;
+            updateRollCallSummary();
         } else {
             grid.classList.remove('roll-call-mode');
             btn.style.background = 'rgba(245,158,11,0.2)';
             btn.style.color = '#fcd34d';
             btn.innerHTML = '<i class="bi bi-list-check me-1"></i> Rapid Roll Call';
             document.getElementById('btnSave').style.display = 'block';
+            warning.classList.remove('active');
+            summary.classList.remove('active');
             
             // Remove status classes
             document.querySelectorAll('.desk').forEach(desk => {
                 desk.classList.remove('status-present', 'status-late', 'status-absent');
             });
+            rollCallDirty = false;
         }
+    }
+
+    function updateRollCallSummary() {
+        const present = document.querySelectorAll('.desk.status-present').length;
+        const late = document.querySelectorAll('.desk.status-late').length;
+        const absent = document.querySelectorAll('.desk.status-absent').length;
+        const total = document.querySelectorAll('.desk.assigned').length;
+        document.getElementById('rcPresent').textContent = present;
+        document.getElementById('rcLate').textContent = late;
+        document.getElementById('rcAbsent').textContent = absent;
+        document.getElementById('rcTotal').textContent = total;
     }
 
     function handleDeskClick(cellId) {
@@ -443,9 +556,21 @@
             newStatus = 'Present';
         }
         
-        // TODO: Send AJAX to update attendance for this student immediately
-        // Just mocking the effect for now. In a full implementation, you would call a rapid roll call API here.
+        // NOTE: Roll call marks are currently visual-only.
+        // Backend persistence requires a new API endpoint (e.g. POST /teacher/rapid-roll-call)
+        // that accepts {subject_code, student_id, status, date} and creates/updates attendance records.
+        // This is tracked as a functional bug, not a UI issue.
+        updateRollCallSummary();
     }
+
+    // Prevent accidental data loss if roll call marks exist
+    window.addEventListener('beforeunload', function(e) {
+        if (rollCallMode && rollCallDirty) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved roll call marks. Are you sure you want to leave?';
+            return e.returnValue;
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', generateGrid);
 </script>

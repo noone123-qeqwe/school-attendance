@@ -24,16 +24,16 @@
     }
 
     .tch-qr-card {
-        background: white;
-        border-radius: 16px;
-        border: 1px solid #f1f5f9;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        background: var(--ds-surface);
+        border-radius: var(--ds-radius-lg);
+        border: 1px solid var(--ds-border);
+        box-shadow: var(--ds-shadow-sm);
         overflow: hidden;
     }
 
     .tch-qr-header {
         padding: 20px 24px;
-        border-bottom: 1px solid #f8fafc;
+        border-bottom: 1px solid var(--ds-border);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -49,8 +49,8 @@
         width: 40px;
         height: 40px;
         border-radius: 10px;
-        background: #fff0f3;
-        color: #7c2d12;
+        background: rgba(207, 164, 111, 0.1);
+        color: var(--ds-gold);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -70,75 +70,29 @@
     .tch-qr-code {
         width: 280px;
         height: 280px;
-        border: 4px solid #f1f5f9;
+        border: 4px solid rgba(255, 255, 255, 0.1);
         border-radius: 16px;
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        background: white;
+        background: white; /* Keep QR code background white for scannability */
+        padding: 16px;
     }
 
     .tch-qr-info {
         text-align: center;
-        color: #64748b;
+        color: var(--ds-text-secondary);
         font-size: 0.875rem;
         line-height: 1.5;
     }
 
     .tch-controls {
         padding: 20px 24px;
-        border-top: 1px solid #f8fafc;
+        border-top: 1px solid var(--ds-border);
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
-    }
-
-    .tch-btn {
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .tch-btn-primary {
-        background: linear-gradient(135deg, #7c2d12, #9a3412);
-        color: white;
-        box-shadow: 0 4px 14px rgba(124,45,18,0.25);
-    }
-
-    .tch-btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 22px rgba(124,45,18,0.35);
-    }
-
-    .tch-btn-secondary {
-        background: #f8fafc;
-        color: #475569;
-        border: 1px solid #e2e8f0;
-    }
-
-    .tch-btn-secondary:hover {
-        background: #f1f5f9;
-        border-color: #cbd5e1;
-    }
-
-    .tch-btn-danger {
-        background: #fef2f2;
-        color: #dc2626;
-        border: 1px solid #fecaca;
-    }
-
-    .tch-btn-danger:hover {
-        background: #fee2e2;
-        border-color: #fca5a5;
     }
 
     .tch-sidebar {
@@ -161,13 +115,13 @@
     .tch-stat-value {
         font-size: 1.5rem;
         font-weight: 800;
-        color: #7c2d12;
+        color: var(--ds-text-primary);
         margin-bottom: 4px;
     }
 
     .tch-stat-label {
         font-size: 0.75rem;
-        color: #64748b;
+        color: var(--ds-text-muted);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         font-weight: 600;
@@ -191,7 +145,7 @@
         align-items: center;
         gap: 12px;
         padding: 12px 0;
-        border-bottom: 1px solid #f8fafc;
+        border-bottom: 1px solid var(--ds-border);
     }
 
     .tch-clockin-item:last-child {
@@ -202,7 +156,7 @@
         width: 36px;
         height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #7c2d12, #9a3412);
+        background: linear-gradient(135deg, var(--ds-maroon), var(--ds-maroon-dark));
         color: white;
         display: flex;
         align-items: center;
@@ -219,7 +173,7 @@
 
     .tch-clockin-name {
         font-weight: 600;
-        color: #1e293b;
+        color: var(--ds-text-primary);
         font-size: 0.875rem;
         white-space: nowrap;
         overflow: hidden;
@@ -228,7 +182,7 @@
 
     .tch-clockin-number {
         font-size: 0.75rem;
-        color: #64748b;
+        color: var(--ds-text-muted);
     }
 
     .tch-clockin-status {
@@ -238,44 +192,15 @@
         gap: 2px;
     }
 
-    .tch-status-badge {
-        padding: 2px 8px;
-        border-radius: 99px;
-        font-size: 0.7rem;
-        font-weight: 700;
-    }
-
-    .tch-status-present {
-        background: #f0fdf4;
-        color: #16a34a;
-    }
-
-    .tch-status-late {
-        background: #fffbeb;
-        color: #d97706;
-    }
-
     .tch-clockin-time {
         font-size: 0.7rem;
-        color: #94a3b8;
-    }
-
-    .tch-empty-state {
-        text-align: center;
-        padding: 40px 20px;
-        color: #94a3b8;
-    }
-
-    .tch-empty-state i {
-        font-size: 2rem;
-        margin-bottom: 12px;
-        opacity: 0.3;
+        color: var(--ds-text-muted);
     }
 
     .tch-progress-bar {
         width: 100%;
         height: 8px;
-        background: #f1f5f9;
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 4px;
         overflow: hidden;
         margin: 16px 0;
@@ -283,17 +208,17 @@
 
     .tch-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #7c2d12, #9a3412);
+        background: linear-gradient(90deg, var(--ds-gold), var(--ds-gold-soft));
         border-radius: 4px;
         transition: width 0.3s ease;
     }
 
     .tch-session-timer {
         font-size: 0.875rem;
-        color: #64748b;
+        color: var(--ds-text-secondary);
         text-align: center;
         padding: 12px;
-        background: #f8fafc;
+        background: var(--ds-surface-hover);
         border-radius: 8px;
         margin-bottom: 16px;
     }
@@ -310,13 +235,13 @@
                         <i class="bi bi-qr-code"></i>
                     </div>
                     <div>
-                        <h2 style="font-size: 1.125rem; font-weight: 700; color: #1e293b; margin: 0;">{{ $subject->name }}</h2>
-                        <p style="font-size: 0.875rem; color: #64748b; margin: 0;">{{ $subject->code }} • Year {{ $subject->year_level }} • Semester {{ $subject->semester }}</p>
+                        <h2 style="font-size: 1.125rem; font-weight: 700; color: var(--ds-text-primary); margin: 0;">{{ $subject->name }}</h2>
+                        <p style="font-size: 0.875rem; color: var(--ds-text-secondary); margin: 0;">{{ $subject->code }} • Year {{ $subject->year_level }} • Semester {{ $subject->semester }}</p>
                     </div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Today</div>
-                    <div style="font-size: 0.875rem; font-weight: 600; color: #1e293b;">{{ now()->format('M d, Y') }}</div>
+                    <div style="font-size: 0.75rem; color: var(--ds-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Today</div>
+                    <div style="font-size: 0.875rem; font-weight: 600; color: var(--ds-text-primary);">{{ now()->format('M d, Y') }}</div>
                 </div>
             </div>
         </div>
@@ -329,18 +254,18 @@
                         <i class="bi bi-camera-fill"></i>
                     </div>
                     <div>
-                        <h3 style="font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0;">QR Code Scanner</h3>
-                        <p style="font-size: 0.875rem; color: #64748b; margin: 0;">Students scan this code to clock in</p>
+                        <h3 style="font-size: 1rem; font-weight: 700; color: var(--ds-text-primary); margin: 0;">QR Code Scanner</h3>
+                        <p style="font-size: 0.875rem; color: var(--ds-text-secondary); margin: 0;">Students scan this code to clock in</p>
                     </div>
                 </div>
                 <div id="sessionStatus" style="display: none;">
-                    <span class="tch-status-badge tch-status-present">Active</span>
+                    <span class="ds-badge ds-badge-present">Active</span>
                 </div>
             </div>
 
             <div class="tch-qr-display">
                 <div id="qrCodeContainer" class="tch-qr-code">
-                    <div style="color: #94a3b8; text-align: center;">
+                    <div style="color: var(--ds-text-muted); text-align: center;">
                         <i class="bi bi-qr-code" style="font-size: 3rem; margin-bottom: 12px; opacity: 0.3;"></i>
                         <p style="margin: 0; font-size: 0.875rem;">Click "Start Session" to generate QR code</p>
                     </div>
@@ -360,13 +285,13 @@
             </div>
 
             <div class="tch-controls">
-                <button id="startBtn" class="tch-btn tch-btn-primary">
+                <button id="startBtn" class="ent-btn ent-btn-primary">
                     <i class="bi bi-play-fill"></i> Start Session
                 </button>
-                <button id="refreshBtn" class="tch-btn tch-btn-secondary" style="display: none;">
+                <button id="refreshBtn" class="ent-btn ent-btn-secondary" style="display: none;">
                     <i class="bi bi-arrow-clockwise"></i> Refresh QR
                 </button>
-                <button id="stopBtn" class="tch-btn tch-btn-danger" style="display: none;">
+                <button id="stopBtn" class="ent-btn ent-btn-danger" style="display: none;">
                     <i class="bi bi-stop-fill"></i> Stop Session
                 </button>
             </div>
@@ -383,7 +308,7 @@
                         <i class="bi bi-bar-chart-fill"></i>
                     </div>
                     <div>
-                        <h3 style="font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0;">Today's Stats</h3>
+                        <h3 style="font-size: 1rem; font-weight: 700; color: var(--ds-text-primary); margin: 0;">Today's Stats</h3>
                     </div>
                 </div>
             </div>
@@ -420,15 +345,12 @@
                         <i class="bi bi-clock-fill"></i>
                     </div>
                     <div>
-                        <h3 style="font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0;">Live Clock-ins</h3>
+                        <h3 style="font-size: 1rem; font-weight: 700; color: var(--ds-text-primary); margin: 0;">Live Clock-ins</h3>
                     </div>
                 </div>
             </div>
             <div id="clockinsList" class="tch-clockins-list">
-                <div class="tch-empty-state">
-                    <i class="bi bi-people"></i>
-                    <p style="margin: 0; font-size: 0.875rem;">No clock-ins yet</p>
-                </div>
+                <x-empty-state icon="bi bi-people" title="No clock-ins yet" />
             </div>
         </div>
     </div>
@@ -518,15 +440,17 @@ startBtn.addEventListener('click', async () => {
             startClockinsPolling();
             startSessionTimer(data.session_end);
         } else {
-            alert(data.message || 'Failed to start session');
+            if (typeof showPremiumToast === 'function') {
+                showPremiumToast(data.message || 'Failed to start session', 'error');
+            }
         }
     } catch (error) {
         console.error('Error starting session:', error);
 
         if (error instanceof SyntaxError) {
-            alert('Failed to start session: invalid server response. Check the browser console for details.');
+            if (typeof showPremiumToast === 'function') showPremiumToast('Failed to start session: invalid server response.', 'error');
         } else {
-            alert(error.message || 'Failed to start session. Please refresh the page and try again.');
+            if (typeof showPremiumToast === 'function') showPremiumToast(error.message || 'Failed to start session.', 'error');
         }
     } finally {
         startBtn.disabled = false;

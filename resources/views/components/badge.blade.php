@@ -2,20 +2,21 @@
 
 @php
     $classes = [
-        'present' => 'badge-success',
-        'success' => 'badge-success',
-        'late' => 'badge-warning',
-        'warning' => 'badge-warning',
-        'absent' => 'badge-danger',
-        'danger' => 'badge-danger',
-        'excused' => 'badge-info',
-        'info' => 'badge-info',
-        'pending' => 'badge-warning'
+        'present' => 'ds-badge ds-badge-present',
+        'success' => 'ds-badge ds-badge-success',
+        'late'    => 'ds-badge ds-badge-late',
+        'warning' => 'ds-badge ds-badge-warning',
+        'absent'  => 'ds-badge ds-badge-absent',
+        'danger'  => 'ds-badge ds-badge-danger',
+        'excused' => 'ds-badge ds-badge-excused',
+        'info'    => 'ds-badge ds-badge-info',
+        'pending' => 'ds-badge ds-badge-pending',
+        'default' => 'ds-badge ds-badge-default',
     ];
     
-    $badgeClass = $classes[$type] ?? 'badge-info';
+    $badgeClass = $classes[$type] ?? 'ds-badge ds-badge-info';
 @endphp
 
-<span class="badge {{ $badgeClass }} {{ $attributes->get('class') }}">
+<span class="{{ $badgeClass }} {{ $attributes->get('class') }}">
     {{ $slot }}
 </span>

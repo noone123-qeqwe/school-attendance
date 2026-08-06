@@ -418,7 +418,7 @@
     }
 
     /* ── FORMS ── */
-    .form-control, .form-select, .ent-input, .saas-input, .adm-input, .tch-input {
+    .form-control, .form-select, .ent-input, .saas-input, .adm-input, .tch-input, .ds-input, .ds-select, .ds-textarea {
         min-height: 48px !important;
         font-size: 16px !important;
         border-radius: 12px !important;
@@ -429,4 +429,154 @@
     .d-mobile-none { display: none !important; }
     .d-mobile-block { display: block !important; }
     .d-mobile-flex { display: flex !important; }
+
+    /* ══════════════════════════════════════════
+       TOUCH TARGET AUDIT
+       Minimum 44×44px for all interactive elements
+       ══════════════════════════════════════════ */
+
+    /* Small buttons: enforce minimum touch area */
+    .ent-btn-xs {
+        min-height: 36px !important;
+        min-width: 36px !important;
+        padding: 6px 12px !important;
+        font-size: 0.75rem !important;
+    }
+
+    .ent-btn-sm {
+        min-height: 40px !important;
+        min-width: 40px !important;
+        padding: 8px 14px !important;
+    }
+
+    .btn-sm {
+        min-height: 40px !important;
+        min-width: 40px !important;
+        padding: 8px 14px !important;
+    }
+
+    /* Bottom nav items: ensure tall enough */
+    .mbn-item {
+        min-height: 48px !important;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
+    }
+
+    /* Archive / action icon buttons */
+    .notif-archive-btn,
+    .hcal-event-action-btn {
+        min-width: 40px !important;
+        min-height: 40px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Calendar day cells */
+    .hcal-day {
+        min-width: 40px !important;
+        min-height: 40px !important;
+    }
+
+    /* Sidebar nav links */
+    .nav-link,
+    .saas-nav-item {
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        padding: 10px 16px !important;
+    }
+
+    /* Table action buttons - expand touch area via pseudo-element */
+    .ent-table td .ent-btn-xs,
+    .ent-table td .ent-btn-ghost {
+        position: relative;
+    }
+
+    .ent-table td .ent-btn-xs::after,
+    .ent-table td .ent-btn-ghost::after {
+        content: '';
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        bottom: -6px;
+        left: -6px;
+    }
+
+    /* Ensure adequate gap between tappable elements */
+    .d-flex.gap-2 { gap: 10px !important; }
+
+    /* Badge links: expand tappable area */
+    .ent-badge[onclick],
+    a.ent-badge {
+        min-height: 32px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 4px 10px !important;
+    }
+
+    /* Dropdown items */
+    .dropdown-item,
+    .fb-dropdown-item {
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+}
+
+/* ══════════════════════════════════════════
+   PULL-TO-REFRESH INDICATOR
+   ══════════════════════════════════════════ */
+.pull-refresh-indicator {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    z-index: 10000;
+    background: rgba(18, 11, 11, 0.95);
+    border: 1px solid rgba(207, 164, 111, 0.25);
+    border-radius: 999px;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #cfa46f;
+    font-family: 'Inter', sans-serif;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+
+.pull-refresh-indicator.visible {
+    transform: translateX(-50%) translateY(16px);
+}
+
+.pull-refresh-indicator.loading {
+    transform: translateX(-50%) translateY(16px);
+}
+
+@keyframes ptr-spin {
+    to { transform: rotate(360deg); }
+}
+
+.pull-refresh-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(207, 164, 111, 0.2);
+    border-top-color: #cfa46f;
+    border-radius: 50%;
+    animation: ptr-spin 0.8s linear infinite;
+}
+
+.pull-refresh-arrow {
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.pull-refresh-indicator.ready .pull-refresh-arrow {
+    transform: rotate(180deg);
 }

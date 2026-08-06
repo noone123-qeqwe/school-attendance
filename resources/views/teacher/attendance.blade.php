@@ -4,7 +4,7 @@
 @section('content')
 
 @if(session('success'))
-<div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:12px;padding:12px 16px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
+<div class="ds-inline-alert ds-inline-alert-success">
     <i class="bi bi-check-circle-fill"></i><span>{{ session('success') }}</span>
 </div>
 @endif
@@ -26,17 +26,17 @@
 
     <!-- Filters -->
     <form method="GET" action="{{ route('teacher.attendance') }}" class="d-flex gap-3 flex-wrap mb-4 align-items-end">
-        <div class="form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Date</label>
-            <input type="date" name="date" class="form-control" value="{{ request('date') }}">
+        <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
+            <label class="ds-label">Date</label>
+            <input type="date" name="date" class="ds-input" value="{{ request('date') }}">
         </div>
-        <div class="form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Student Name</label>
-            <input type="text" name="student_name" class="form-control" placeholder="Name or ID" value="{{ request('student_name') }}">
+        <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
+            <label class="ds-label">Student Name</label>
+            <input type="text" name="student_name" class="ds-input" placeholder="Name or ID" value="{{ request('student_name') }}">
         </div>
-        <div class="form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Status</label>
-            <select name="status" class="form-control">
+        <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
+            <label class="ds-label">Status</label>
+            <select name="status" class="ds-select">
                 <option value="">All</option>
                 <option value="Present" {{ request('status')=='Present'?'selected':'' }}>Present</option>
                 <option value="Late"    {{ request('status')=='Late'?'selected':'' }}>Late</option>
@@ -44,9 +44,9 @@
                 <option value="Excused" {{ request('status')=='Excused'?'selected':'' }}>Excused</option>
             </select>
         </div>
-        <div class="form-group mb-0" style="flex: 1; min-width: 200px;">
-            <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Subject</label>
-            <select name="subject" class="form-control">
+        <div class="ds-form-group mb-0" style="flex: 1; min-width: 200px;">
+            <label class="ds-label">Subject</label>
+            <select name="subject" class="ds-select">
                 <option value="">All Subjects</option>
                 @foreach($teacherSubjects as $subject)
                     <option value="{{ $subject->code }}" {{ request('subject') == $subject->code ? 'selected' : '' }}>
@@ -55,10 +55,10 @@
                 @endforeach
             </select>
         </div>
-        <div class="form-group mb-0 d-flex gap-2">
-            <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+        <div class="ds-form-group mb-0 d-flex gap-2">
+            <button type="submit" class="ent-btn ent-btn-primary"><i class="bi bi-funnel"></i> Filter</button>
             @if(request()->hasAny(['date','status','subject','student_name']))
-                <a href="{{ route('teacher.attendance') }}" class="btn btn-outline">Clear</a>
+                <a href="{{ route('teacher.attendance') }}" class="ent-btn ent-btn-secondary">Clear</a>
             @endif
         </div>
     </form>
