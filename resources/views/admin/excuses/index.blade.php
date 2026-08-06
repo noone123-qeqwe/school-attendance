@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', 'Excuse Reviews')
 
 @section('content')
@@ -62,9 +62,9 @@
                             <input type="checkbox" name="ids[]" value="{{ $excuse->id }}" class="excuse-cb" style="accent-color:#cfa46f;">
                             @endif
                         </td>
-                        <td style="padding:12px 16px;font-size:0.875rem;color:#f3e7cd;">{{ $excuse->user->name ?? '—' }}</td>
-                        <td style="padding:12px 16px;font-size:0.875rem;color:#d4c5a9;">{{ $excuse->attendance->subject->name ?? $excuse->attendance->subject_code ?? '—' }}</td>
-                        <td style="padding:12px 16px;font-size:0.875rem;color:#d4c5a9;">{{ $excuse->attendance ? $excuse->attendance->date->format('M d, Y') : '—' }}</td>
+                        <td style="padding:12px 16px;font-size:0.875rem;color:#f3e7cd;">{{ $excuse->user->name ?? 'â€”' }}</td>
+                        <td style="padding:12px 16px;font-size:0.875rem;color:#d4c5a9;">{{ $excuse->attendance->subject->name ?? $excuse->attendance->subject_code ?? 'â€”' }}</td>
+                        <td style="padding:12px 16px;font-size:0.875rem;color:#d4c5a9;">{{ $excuse->attendance ? $excuse->attendance->date->format('M d, Y') : 'â€”' }}</td>
                         <td style="padding:12px 16px;font-size:0.82rem;color:#b39b82;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $excuse->reason }}">{{ $excuse->reason }}</td>
                         <td style="padding:12px 16px;text-align:center;">
                             @if($excuse->status === 'pending')
@@ -80,11 +80,11 @@
                             <div style="display:flex;justify-content:center;gap:6px;">
                                 <form method="POST" action="{{ route('admin.excuse.approve', $excuse) }}" style="display:inline;">
                                     @csrf
-                                    <button type="submit" style="padding:5px 12px;background:rgba(34,197,94,0.15);color:#bbf7d0;border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:0.75rem;font-weight:600;cursor:pointer;">✓ Approve</button>
+                                    <button type="submit" style="padding:5px 12px;background:rgba(34,197,94,0.15);color:#bbf7d0;border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:0.75rem;font-weight:600;cursor:pointer;">âœ“ Approve</button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.excuse.reject', $excuse) }}" style="display:inline;">
                                     @csrf
-                                    <button type="submit" style="padding:5px 12px;background:rgba(220,38,38,0.14);color:#fca5a5;border:1px solid rgba(220,38,38,0.2);border-radius:8px;font-size:0.75rem;font-weight:600;cursor:pointer;">✕ Reject</button>
+                                    <button type="submit" style="padding:5px 12px;background:rgba(220,38,38,0.14);color:#fca5a5;border:1px solid rgba(220,38,38,0.2);border-radius:8px;font-size:0.75rem;font-weight:600;cursor:pointer;">âœ• Reject</button>
                                 </form>
                             </div>
                             @else

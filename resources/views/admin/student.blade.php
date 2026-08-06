@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', $student->name)
 
 @section('content')
@@ -106,7 +106,7 @@
                             <span class="badge-absent">Absent</span>
                         @endif
                     </td>
-                    <td data-label="Time In" class="attendance-time">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '—' }}</td>
+                    <td data-label="Time In" class="attendance-time">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : 'â€”' }}</td>
                 </tr>
                 @empty
                 <tr>

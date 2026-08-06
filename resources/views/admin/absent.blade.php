@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', 'Absent Report')
 
 @section('content')
@@ -78,7 +78,7 @@
     <div class="adm-card-head">
         <div class="adm-card-title">
             <div class="adm-card-icon" style="background:#fef2f2;color:#dc2626;"><i class="bi bi-person-x-fill"></i></div>
-            Absent Students — {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}
+            Absent Students â€” {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}
         </div>
         <span style="background:#fef2f2;color:#dc2626;padding:4px 12px;border-radius:99px;font-size:.78rem;font-weight:700;border:1px solid #fecaca;">
             {{ $absentRecords->count() }} absent
@@ -114,23 +114,23 @@
                         <div style="display:flex;align-items:center;gap:10px;">
                             <img src="{{ $record->user && $record->user->profile_image ? (str_starts_with($record->user->profile_image, 'http') ? $record->user->profile_image : asset('storage/'.$record->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($record->user->name ?? 'N').'&background=800000&color=fff&size=80' }}"
                                  style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid #f1f5f9;">
-                            <div style="font-weight:600;color:#f5e6d3;font-size:.875rem;">{{ $record->user->name ?? '—' }}</div>
+                            <div style="font-weight:600;color:#f5e6d3;font-size:.875rem;">{{ $record->user->name ?? 'â€”' }}</div>
                         </div>
                     </td>
-                    <td data-label="Student ID" style="font-family:monospace;font-weight:600;color:#d4b5a0;">{{ $record->user->student_number ?? '—' }}</td>
-                    <td data-label="Course"><span class="badge-course">{{ $record->user->course ?? '—' }}</span></td>
+                    <td data-label="Student ID" style="font-family:monospace;font-weight:600;color:#d4b5a0;">{{ $record->user->student_number ?? 'â€”' }}</td>
+                    <td data-label="Course"><span class="badge-course">{{ $record->user->course ?? 'â€”' }}</span></td>
                     <td data-label="Year / Sem">
                         <div class="badge-yearsem">
-                            <span class="yr">Year {{ $record->user->year_level ?? '—' }}</span>
-                            <span class="sem">Sem {{ $record->user->semester ?? '—' }}</span>
+                            <span class="yr">Year {{ $record->user->year_level ?? 'â€”' }}</span>
+                            <span class="sem">Sem {{ $record->user->semester ?? 'â€”' }}</span>
                         </div>
                     </td>
                     <td data-label="Subject" style="font-weight:600;color:#f5e6d3;">{{ $record->subject->name ?? $record->subject_code }}</td>
                     <td data-label="Total Absences">
                         @if($totalAbsences >= 3)
-                            <span class="badge-absent">{{ $totalAbsences }}x — 🚨 Critical</span>
+                            <span class="badge-absent">{{ $totalAbsences }}x â€” ðŸš¨ Critical</span>
                         @elseif($totalAbsences == 2)
-                            <span class="badge-late">{{ $totalAbsences }}x — ⚠️ Warning</span>
+                            <span class="badge-late">{{ $totalAbsences }}x â€” âš ï¸ Warning</span>
                         @else
                             <span style="color:#d4b5a0;font-size:.82rem;">{{ $totalAbsences }}x</span>
                         @endif
@@ -217,11 +217,11 @@ function openWarnModal(userId, name, subjectCode, subjectName, absenceCount) {
 
     if (absenceCount >= 3) {
         document.getElementById('warnType').value = 'warning_3';
-        const msg = `🚨 Final Notice: You have been absent ${absenceCount} or more times in ${subjectName}. You are required to report to the office to speak with your teacher.`;
+        const msg = `ðŸš¨ Final Notice: You have been absent ${absenceCount} or more times in ${subjectName}. You are required to report to the office to speak with your teacher.`;
         document.getElementById('warnMessage').value = msg;
         icon.style.cssText = 'width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:16px;background:#fef2f2;color:#dc2626;';
         icon.innerHTML = '<i class="bi bi-exclamation-octagon-fill"></i>';
-        title.textContent = `Final Notice — ${name}`;
+        title.textContent = `Final Notice â€” ${name}`;
         subtitle.textContent = `${absenceCount} absences in ${subjectName}. This requires an office visit.`;
         preview.style.cssText = 'border-radius:12px;padding:14px 16px;font-size:.85rem;line-height:1.5;margin-bottom:20px;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;';
         preview.textContent = msg;
@@ -229,11 +229,11 @@ function openWarnModal(userId, name, subjectCode, subjectName, absenceCount) {
         submitBtn.style.boxShadow = '0 4px 14px rgba(220,38,38,.3)';
     } else if (absenceCount == 2) {
         document.getElementById('warnType').value = 'warning_2';
-        const msg = `⚠️ Warning: You have been absent for 2 consecutive sessions in ${subjectName}. Please attend your next class to avoid further action.`;
+        const msg = `âš ï¸ Warning: You have been absent for 2 consecutive sessions in ${subjectName}. Please attend your next class to avoid further action.`;
         document.getElementById('warnMessage').value = msg;
         icon.style.cssText = 'width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:16px;background:#fffbeb;color:#d97706;';
         icon.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
-        title.textContent = `Absence Warning — ${name}`;
+        title.textContent = `Absence Warning â€” ${name}`;
         subtitle.textContent = `2 absences in ${subjectName}. Send a warning notification.`;
         preview.style.cssText = 'border-radius:12px;padding:14px 16px;font-size:.85rem;line-height:1.5;margin-bottom:20px;border:1px solid #fde68a;background:#fffbeb;color:#92400e;';
         preview.textContent = msg;
@@ -241,11 +241,11 @@ function openWarnModal(userId, name, subjectCode, subjectName, absenceCount) {
         submitBtn.style.boxShadow = '0 4px 14px rgba(217,119,6,.3)';
     } else {
         document.getElementById('warnType').value = 'custom';
-        const msg = `📋 Notice: You were marked absent in ${subjectName}. Please make sure to attend your next class.`;
+        const msg = `ðŸ“‹ Notice: You were marked absent in ${subjectName}. Please make sure to attend your next class.`;
         document.getElementById('warnMessage').value = msg;
         icon.style.cssText = 'width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:16px;background:#fef2f2;color:#800000;';
         icon.innerHTML = '<i class="bi bi-info-circle-fill"></i>';
-        title.textContent = `Absence Notice — ${name}`;
+        title.textContent = `Absence Notice â€” ${name}`;
         subtitle.textContent = `1 absence in ${subjectName}. Send a reminder notification.`;
         preview.style.cssText = 'border-radius:12px;padding:14px 16px;font-size:.85rem;line-height:1.5;margin-bottom:20px;border:1px solid #fecaca;background:#fef2f2;color:#800000;';
         preview.textContent = msg;

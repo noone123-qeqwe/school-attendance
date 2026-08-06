@@ -1,0 +1,27 @@
+<nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
+    <a href="{{ route('parent.dashboard') }}" class="mbn-item {{ request()->routeIs('parent.dashboard') ? 'active' : '' }}">
+        <i class="bi bi-grid-fill"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="{{ route('parent.calendar') }}" class="mbn-item {{ request()->routeIs('parent.calendar') ? 'active' : '' }}">
+        <i class="bi bi-calendar-event"></i>
+        <span>Calendar</span>
+    </a>
+    <a href="{{ route('parent.excuses') }}" class="mbn-item {{ request()->routeIs('parent.excuses') ? 'active' : '' }}">
+        <i class="bi bi-file-earmark-text"></i>
+        <span>Excuses</span>
+    </a>
+    <a href="{{ route('parent.messages.index') }}" class="mbn-item {{ request()->routeIs('parent.messages.*') ? 'active' : '' }}">
+        <i class="bi bi-chat-dots-fill"></i>
+        <span>Messages</span>
+    </a>
+    <a href="{{ route('parent.notifications') }}" class="mbn-item {{ request()->routeIs('parent.notifications') ? 'active' : '' }}">
+        @php
+            $pChildIds = Auth::user()->children()->pluck('users.id');
+            $pUnreadNotifs = \App\Models\Notification::whereIn('user_id', $pChildIds)->where('is_read', false)->count();
+        @endphp
+        @if($pUnreadNotifs > 0)<span class="mbn-badge">{{ $pUnreadNotifs > 9 ? '9+' : $pUnreadNotifs }}</span>@endif
+        <i class="bi bi-bell-fill"></i>
+        <span>Alerts</span>
+    </a>
+</nav>

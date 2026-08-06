@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', 'Students PDF Preview')
 
 @section('content')
@@ -123,7 +123,7 @@
                                 <td style="padding:12px;color:#111827;font-weight:600;">{{ $student->course }}</td>
                                 <td style="padding:12px;color:#111827;font-weight:600;">Year {{ $student->year_level }}</td>
                                 <td style="padding:12px;color:#111827;font-weight:600;">{{ $student->semester }}{{ (int)$student->semester === 1 ? 'st' : 'nd' }}</td>
-                                <td style="padding:12px;text-align:center;color:#111827;font-weight:600;">{{ $absences > 0 ? $absences : '—' }}</td>
+                                <td style="padding:12px;text-align:center;color:#111827;font-weight:600;">{{ $absences > 0 ? $absences : 'â€”' }}</td>
                             </tr>
                             @empty
                             <tr>
@@ -160,8 +160,8 @@
 
             <!-- Enhanced PDF Footer -->
             <div style="background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);border-top:3px solid #800000;padding:25px;text-align:center;color:#64748b;font-size:0.8rem;">
-                <div style="font-weight:700;color:#800000;margin-bottom:4px;">{{ config('app.name') }} • Students Directory Report</div>
-                <div style="color:#94a3b8;">This document contains {{ $students->count() }} student record{{ $students->count() !== 1 ? 's' : '' }} • Generated {{ now()->format('M d, Y \a\t g:i A') }}</div>
+                <div style="font-weight:700;color:#800000;margin-bottom:4px;">{{ config('app.name') }} â€¢ Students Directory Report</div>
+                <div style="color:#94a3b8;">This document contains {{ $students->count() }} student record{{ $students->count() !== 1 ? 's' : '' }} â€¢ Generated {{ now()->format('M d, Y \a\t g:i A') }}</div>
             </div>
         </div>
     </div>

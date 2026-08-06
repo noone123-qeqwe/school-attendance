@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'Seating Chart: ' . $subject->name)
 
 @section('content')
@@ -255,7 +255,7 @@
     <div class="roll-call-warning" id="rollCallWarning">
         <i class="bi bi-exclamation-triangle-fill"></i>
         <div>
-            <strong>Roll Call Mode Active — Marks Are Visual Only</strong><br>
+            <strong>Roll Call Mode Active â€” Marks Are Visual Only</strong><br>
             <span style="font-weight:400;opacity:0.85;">Attendance marks made here are NOT saved to the server. This feature is a visual preview only. A future update will add backend persistence.</span>
         </div>
     </div>

@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', 'Add Student')
 
 @section('content')
@@ -323,7 +323,7 @@
 
             const data = await response.json();
             if (data.success) {
-                setStatus('✓ Email verified successfully!', '#16a34a');
+                setStatus('âœ“ Email verified successfully!', '#16a34a');
                 emailVerifiedInput.value = email;
                 emailOtpVerifySection.style.display = 'none';
                 emailOtpInput.value = '';

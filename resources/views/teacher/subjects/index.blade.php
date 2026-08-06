@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'My Subjects')
 
 @section('content')
@@ -167,15 +167,15 @@
                             </div>
                         </div>
                     </td>
-                    <td data-label="Days" style="font-weight:600;color:#d6b67b;">{{ $subject->days ?? '—' }}</td>
+                    <td data-label="Days" style="font-weight:600;color:#d6b67b;">{{ $subject->days ?? 'â€”' }}</td>
                     <td data-label="Time" style="font-size:.82rem;color:#b39b82;">
                         @if($subject->start_time && $subject->end_time)
-                            {{ \Carbon\Carbon::parse($subject->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($subject->end_time)->format('h:i A') }}
-                        @else —
+                            {{ \Carbon\Carbon::parse($subject->start_time)->format('h:i A') }} â€“ {{ \Carbon\Carbon::parse($subject->end_time)->format('h:i A') }}
+                        @else â€”
                         @endif
                     </td>
-                    <td data-label="Units" style="color:#b39b82;" class="mobile-hide">{{ $subject->units ?? '—' }}</td>
-                    <td data-label="Section" style="color:#b39b82;" class="mobile-hide">{{ $subject->section ?? '—' }}</td>
+                    <td data-label="Units" style="color:#b39b82;" class="mobile-hide">{{ $subject->units ?? 'â€”' }}</td>
+                    <td data-label="Section" style="color:#b39b82;" class="mobile-hide">{{ $subject->section ?? 'â€”' }}</td>
                     <td data-label="Actions">
                         <div style="display:flex;gap:5px;">
                             <a href="{{ route('teacher.qr', $subject->code) }}" class="view-btn" style="color:#cfa46f;border-color:rgba(207,164,111,0.32);background:rgba(207,164,111,0.12);" title="Start QR Attendance">

@@ -14,32 +14,32 @@
         <div class="col-lg-12">
             <x-card title="{{ $day }}" icon="bi bi-calendar-event">
                 @if($weeklySchedule[$day]->count() > 0)
-                    <div class="table-responsive">
-                        <table class="table table-borderless" style="color: #f3e7cd; margin-bottom: 0;">
+                    <div class="ent-scroll-x" style="margin: -20px;">
+                        <table class="ent-table" style="min-width: 600px; margin-bottom: 0;">
                             <thead>
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #b39b82; font-size: 0.8rem; text-transform: uppercase;">
-                                    <th style="padding: 12px 16px;">Time</th>
-                                    <th style="padding: 12px 16px;">Subject</th>
-                                    <th style="padding: 12px 16px;">Room</th>
-                                    <th style="padding: 12px 16px;">Instructor</th>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Subject</th>
+                                    <th>Room</th>
+                                    <th>Instructor</th>
                                 </tr>
                             </thead>
                             <tbody>
                             @foreach($weeklySchedule[$day] as $sched)
-                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.02);">
-                                    <td style="padding: 16px;">
-                                        <div style="font-weight: 700; color: var(--gold);">
+                                <tr>
+                                    <td data-label="Time">
+                                        <div style="font-weight: 700; color: var(--ent-gold);">
                                             {{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}
                                         </div>
                                     </td>
-                                    <td style="padding: 16px;">
-                                        <div style="font-weight: 700;">{{ $sched->subject->name }}</div>
-                                        <div style="font-size: 0.8rem; color: #b39b82;">{{ $sched->subject->code }}</div>
+                                    <td data-label="Subject">
+                                        <div style="font-weight: 700; color: var(--ent-text);">{{ $sched->subject->name }}</div>
+                                        <div class="ent-text-muted" style="font-size: 0.8rem;">{{ $sched->subject->code }}</div>
                                     </td>
-                                    <td style="padding: 16px;">
-                                        <x-badge type="info">{{ $sched->room ?? 'TBA' }}</x-badge>
+                                    <td data-label="Room">
+                                        <span class="ent-badge ent-badge-info">{{ $sched->room ?? 'TBA' }}</span>
                                     </td>
-                                    <td style="padding: 16px;">
+                                    <td data-label="Instructor">
                                         <div style="font-size: 0.9rem;">{{ $sched->subject->instructorUser->name ?? $sched->subject->instructor ?? 'TBA' }}</div>
                                     </td>
                                 </tr>

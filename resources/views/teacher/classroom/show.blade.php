@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'Classroom - ' . $subject->name)
 
 @section('content')

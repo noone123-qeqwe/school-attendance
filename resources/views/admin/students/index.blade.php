@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 
 @section('title', 'Students')
 
@@ -85,7 +85,7 @@
                 @if($absences > 0)
                     <x-badge :type="$absences >= 3 ? 'absent' : 'late'">{{ $absences }}</x-badge>
                 @else
-                    <span style="color: rgba(179,155,130,0.5);">—</span>
+                    <span style="color: rgba(179,155,130,0.5);">â€”</span>
                 @endif
             </td>
             <td data-label="Actions">

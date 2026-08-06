@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', 'Seating Chart')
 
 @section('content')
@@ -214,7 +214,7 @@ function saveChart() {
     .then(data => {
         if (data.success) {
             const btn = document.querySelector('button[onclick="saveChart()"]');
-            btn.textContent = '✓ Saved!';
+            btn.textContent = 'âœ“ Saved!';
             setTimeout(() => { btn.innerHTML = '<i class="bi bi-save me-2"></i>Save Chart'; }, 2000);
         }
     });

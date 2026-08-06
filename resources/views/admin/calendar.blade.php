@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 
 @section('page-title', 'Holiday Calendar')
 
@@ -372,7 +372,7 @@
                         <div style="flex: 1;">
                             <div class="holiday-name">{{ $holiday->name }}</div>
                             <div class="holiday-meta">
-                                {{ $holiday->date->format('M j, Y') }} • 
+                                {{ $holiday->date->format('M j, Y') }} â€¢ 
                                 <span style="color: {{ $holiday->type_color }};">{{ $holiday->type_label }}</span>
                             </div>
                             @if($holiday->description)
@@ -572,7 +572,7 @@ function updateCalendar() {
                         <div style="flex: 1;">
                             <div class="holiday-name">${holiday.name}</div>
                             <div class="holiday-meta">
-                                ${dateStr} • 
+                                ${dateStr} â€¢ 
                                 <span style="color: ${holiday.color};">${holiday.type_label}</span>
                             </div>
                             ${descStr}

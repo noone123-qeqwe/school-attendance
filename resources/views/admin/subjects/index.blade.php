@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+@extends('layouts.app')
 
 @section('title', 'Subjects')
 
@@ -16,45 +16,38 @@
     </div>
 </div>
 
-<div class="saas-card" style="margin-bottom:24px;">
-    <form method="GET" action="{{ route('admin.subjects') }}" class="saas-card-header" style="gap:16px; flex-wrap:wrap; display:flex;">
-        <div class="saas-search" style="width:250px;">
-            <i class="bi bi-search"></i>
-            <input type="text" name="search" class="saas-search-input" placeholder="Search code or name..." value="{{ request('search') }}">
-        </div>
-        
-        <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <select name="course" class="saas-input saas-select" style="width:140px; padding:6px 30px 6px 12px;">
+<x-card type="section">
+    <x-slot:title>Subjects List</x-slot:title>
+    <x-slot:headerActions>
+        <form method="GET" action="{{ route('admin.subjects') }}" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <div class="saas-search" style="width:200px;">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="saas-search-input" placeholder="Search code..." value="{{ request('search') }}">
+            </div>
+            <select name="course" class="saas-input saas-select" style="width:120px; padding:6px 30px 6px 12px;">
                 <option value="">Course (All)</option>
                 <option value="BSCS" {{ request('course')=='BSCS'?'selected':'' }}>BSCS</option>
                 <option value="BSIT" {{ request('course')=='BSIT'?'selected':'' }}>BSIT</option>
                 <option value="BSIS" {{ request('course')=='BSIS'?'selected':'' }}>BSIS</option>
             </select>
-            
-            <select name="year" class="saas-input saas-select" style="width:120px; padding:6px 30px 6px 12px;">
+            <select name="year" class="saas-input saas-select" style="width:110px; padding:6px 30px 6px 12px;">
                 <option value="">Year (All)</option>
                 @foreach([1,2,3,4,5] as $y)
                     <option value="{{ $y }}" {{ request('year')==$y?'selected':'' }}>Year {{ $y }}</option>
                 @endforeach
             </select>
-            
-            <button type="submit" class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
-                <i class="bi bi-funnel"></i> Filter
-            </button>
-            
+            <button type="submit" class="ent-btn ent-btn-sm ent-btn-secondary"><i class="bi bi-funnel"></i> Filter</button>
             @if(request()->hasAny(['search','course','year']))
-            <a href="{{ route('admin.subjects') }}" class="saas-btn saas-btn-secondary" style="padding:6px 12px; color:var(--saas-danger);">
-                Clear
-            </a>
+                <a href="{{ route('admin.subjects') }}" class="ent-btn ent-btn-sm ent-btn-ghost text-danger">Clear</a>
             @endif
-        </div>
-    </form>
+        </form>
+    </x-slot:headerActions>
     
-    <div class="saas-table-container" style="border:none; border-radius:0;">
-        <table class="saas-table">
+    <div class="ent-scroll-x" style="margin: -20px;">
+        <table class="ent-table" style="min-width: 800px; margin-bottom: 0;">
             <thead>
                 <tr>
-                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--saas-primary);"></th>
+                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--ent-primary);"></th>
                     <th>Subject Code & Name</th>
                     <th>Course</th>
                     <th>Year/Sem</th>
@@ -65,40 +58,40 @@
             <tbody>
                 @forelse($subjects as $subject)
                 <tr>
-                    <td><input type="checkbox" style="accent-color:var(--saas-primary);"></td>
-                    <td>
-                        <div style="font-weight:600; font-family:monospace; color:var(--saas-gold);">{{ $subject->code }}</div>
+                    <td><input type="checkbox" style="accent-color:var(--ent-primary);"></td>
+                    <td data-label="Subject Code & Name">
+                        <div style="font-weight:600; font-family:monospace; color:var(--ent-gold);">{{ $subject->code }}</div>
                         <div style="font-size:0.85rem; font-weight:500;">{{ $subject->name }}</div>
                         @if($subject->description)
-                            <div class="saas-text-muted" style="font-size:0.75rem;">{{ Str::limit($subject->description, 40) }}</div>
+                            <div class="ent-text-muted" style="font-size:0.75rem;">{{ Str::limit($subject->description, 40) }}</div>
                         @endif
                     </td>
-                    <td>
-                        <span class="saas-badge saas-badge-info">{{ $subject->course }}</span>
+                    <td data-label="Course">
+                        <span class="ent-badge ent-badge-info">{{ $subject->course }}</span>
                     </td>
-                    <td>
-                        <span class="saas-badge saas-badge-default">Y{{ $subject->year }} - S{{ $subject->semester }}</span>
+                    <td data-label="Year/Sem">
+                        <span class="ent-badge ent-badge-neutral">Y{{ $subject->year }} - S{{ $subject->semester }}</span>
                     </td>
-                    <td>
+                    <td data-label="Instructor">
                         @if($subject->instructorUser)
                             <div style="display:flex;align-items:center;gap:6px;">
-                                <i class="bi bi-person-workspace saas-text-muted"></i>
+                                <i class="bi bi-person-workspace ent-text-muted"></i>
                                 <span style="font-size:0.85rem;">{{ $subject->instructorUser->name }}</span>
                             </div>
                         @else
-                            <span class="saas-text-muted" style="font-style:italic;">Unassigned</span>
+                            <span class="ent-text-muted" style="font-style:italic;">Unassigned</span>
                         @endif
                     </td>
-                    <td style="text-align:right;">
-                        <a href="{{ route('admin.enrollments.index', $subject) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-primary);" title="Manage Roster">
+                    <td data-label="Actions" style="text-align:right;">
+                        <a href="{{ route('admin.enrollments.index', $subject) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:var(--ent-primary);" title="Manage Roster">
                             <i class="bi bi-people"></i>
                         </a>
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit">
+                        <button class="ent-btn ent-btn-xs ent-btn-ghost" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <form action="{{ route('admin.subjects.destroy', $subject->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this subject?')">
                             @csrf @method('DELETE')
-                            <button type="submit" class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-danger);" title="Delete">
+                            <button type="submit" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:var(--ent-danger);" title="Delete">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </form>
@@ -106,13 +99,17 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="text-align:center; padding:48px 20px;">
-                        <i class="bi bi-book-half saas-text-muted" style="font-size:3rem; margin-bottom:16px; display:block; opacity:0.5;"></i>
-                        <div class="saas-heading" style="font-size:1.1rem; margin-bottom:8px;">No subjects found</div>
-                        <p class="saas-text-muted" style="margin-bottom:20px; max-width:400px; margin-inline:auto;">There are no subjects matching your filters.</p>
-                        <button class="saas-btn saas-btn-primary" onclick="openModal('addSubjectModal')">
-                            <i class="bi bi-plus-lg"></i> Add Subject
-                        </button>
+                    <td colspan="6">
+                        <div class="ent-empty" style="padding:48px 20px;">
+                            <div class="ent-empty-icon" style="width:64px;height:64px;font-size:2rem; margin-bottom:16px;">
+                                <i class="bi bi-book-half"></i>
+                            </div>
+                            <div class="ent-empty-title">No subjects found</div>
+                            <div class="ent-empty-text">There are no subjects matching your filters.</div>
+                            <button class="ent-btn ent-btn-primary" onclick="openModal('addSubjectModal')" style="margin-top:16px;">
+                                <i class="bi bi-plus-lg"></i> Add Subject
+                            </button>
+                        </div>
                     </td>
                 </tr>
                 @endforelse
@@ -121,8 +118,8 @@
     </div>
     
     @if($subjects->hasPages())
-    <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:space-between; align-items:center;">
-        <div class="saas-text-muted">
+    <div style="border-top:1px solid var(--ent-border); padding-top:16px; margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
+        <div class="ent-text-muted" style="font-size:0.85rem;">
             Showing {{ $subjects->firstItem() ?? 0 }} to {{ $subjects->lastItem() ?? 0 }} of {{ $subjects->total() }} results
         </div>
         <div>
@@ -130,7 +127,7 @@
         </div>
     </div>
     @endif
-</div>
+</x-card>
 
 <!-- Add Subject Modal -->
 <div id="addSubjectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">

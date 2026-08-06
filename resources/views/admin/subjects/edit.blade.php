@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', 'Edit Subject')
 
 @section('content')
@@ -10,7 +10,7 @@
     <div class="adm-card-head">
         <div class="adm-card-title">
             <div class="adm-card-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-pencil-fill"></i></div>
-            Edit — {{ $subject->code }}
+            Edit â€” {{ $subject->code }}
         </div>
     </div>
     <div style="padding:24px;">
@@ -33,7 +33,7 @@
                 $schedules   = $subject->schedules;
                 $firstSched  = $schedules->first();
                 
-                // Build days string from schedule day names e.g. "Monday,Thursday" → "MTH"
+                // Build days string from schedule day names e.g. "Monday,Thursday" â†’ "MTH"
                 $dayCodeMap  = ['Monday'=>'M','Tuesday'=>'T','Wednesday'=>'W','Thursday'=>'TH','Friday'=>'F','Saturday'=>'S','Sunday'=>'U'];
                 $existingDays = $schedules->map(fn($s) => $dayCodeMap[$s->day] ?? '')->filter()->implode('');
                 $existingStart = $firstSched ? \Carbon\Carbon::parse($firstSched->start_time)->format('H:i') : '';

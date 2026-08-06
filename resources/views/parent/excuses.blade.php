@@ -1,4 +1,4 @@
-@extends('parent.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'Excuse Letters')
 
 @section('content')

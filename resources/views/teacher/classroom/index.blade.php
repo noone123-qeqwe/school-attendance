@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('portal-title', 'My Classes')
 
 @push('styles')

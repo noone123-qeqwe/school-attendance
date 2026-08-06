@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'QR Attendance - ' . $subject->name)
 
 @push('styles')
@@ -339,7 +339,7 @@
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div>
                 <h4 class="mb-1">{{ $subject->name }} ({{ $subject->code }})</h4>
-                <small class="opacity-75">Year {{ $subject->year_level }} • Semester {{ $subject->semester }}</small>
+                <small class="opacity-75">Year {{ $subject->year_level }} â€¢ Semester {{ $subject->semester }}</small>
             </div>
             <a href="{{ route('teacher.subjects') }}" class="btn modern-btn" style="background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);">
                 <i class="bi bi-arrow-left me-2"></i> Back to Subjects
@@ -524,7 +524,7 @@ function updateScheduleUI(scheduleData) {
                 <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
                     <i class="bi bi-clock-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #92400e; font-weight: 700;">⏰ Session Opens in ${scheduleData.schedule.session_opens}</h6>
+                        <h6 class="mb-1" style="color: #92400e; font-weight: 700;">â° Session Opens in ${scheduleData.schedule.session_opens}</h6>
                         <p class="mb-0 small" style="color: #78350f;">
                             <strong>Class Time:</strong> ${scheduleData.schedule.class_start} - ${scheduleData.schedule.class_end}<br>
                             <strong>Current Time:</strong> ${scheduleData.schedule.current_time}<br>
@@ -544,7 +544,7 @@ function updateScheduleUI(scheduleData) {
                 <div class="alert alert-success d-flex align-items-center" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
                     <i class="bi bi-check-circle-fill mb-2" style="font-size: 1.5rem; color: #10b981;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #047857; font-weight: 700;">✅ Ready to Start Session</h6>
+                        <h6 class="mb-1" style="color: #047857; font-weight: 700;">âœ… Ready to Start Session</h6>
                         <p class="mb-0 small" style="color: #065f46;">
                             <strong>Class Time:</strong> ${scheduleData.schedule.class_start} - ${scheduleData.schedule.class_end}<br>
                             <strong>Current Time:</strong> ${scheduleData.schedule.current_time}
@@ -564,7 +564,7 @@ function updateScheduleUI(scheduleData) {
                 <div class="alert alert-danger d-flex align-items-center" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px;">
                     <i class="bi bi-x-circle-fill me-3" style="font-size: 1.5rem; color: #ef4444;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">❌ Class Has Ended</h6>
+                        <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">âŒ Class Has Ended</h6>
                         <p class="mb-0 small" style="color: #991b1b;">
                             Class ended at ${scheduleData.schedule.class_end}. Cannot start new attendance session.
                         </p>
@@ -583,7 +583,7 @@ function showScheduleMessage(type, message) {
             <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
                 <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ℹ️ No Class Today</h6>
+                    <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">â„¹ï¸ No Class Today</h6>
                     <p class="mb-0 small" style="color: #1e40af;">${message}</p>
                 </div>
             </div>
@@ -593,7 +593,7 @@ function showScheduleMessage(type, message) {
             <div class="alert alert-danger d-flex align-items-center" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px;">
                 <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem; color: #ef4444;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">❌ Schedule Error</h6>
+                    <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">âŒ Schedule Error</h6>
                     <p class="mb-0 small" style="color: #991b1b;">${message}</p>
                 </div>
             </div>
@@ -605,7 +605,7 @@ function showScheduleMessage(type, message) {
 startBtn.addEventListener('click', async () => {
     try {
         if (!teacherLocation) {
-            alert('❌ Location not captured! Please wait for the location to be confirmed before starting the session.');
+            alert('âŒ Location not captured! Please wait for the location to be confirmed before starting the session.');
             return;
         }
 
@@ -655,7 +655,7 @@ startBtn.addEventListener('click', async () => {
                 <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
                     <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #92400e; font-weight: 700;">⚠️ Cannot Start Session</h6>
+                        <h6 class="mb-1" style="color: #92400e; font-weight: 700;">âš ï¸ Cannot Start Session</h6>
                         <p class="mb-0 small" style="color: #78350f; white-space: pre-line;">${data.message}</p>
                     </div>
                 </div>
@@ -669,7 +669,7 @@ startBtn.addEventListener('click', async () => {
             <div class="alert alert-danger d-flex align-items-center" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
                 <i class="bi bi-wifi-off mb-2" style="font-size: 1.5rem; color: #ef4444;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">🌐 Network Error</h6>
+                    <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">ðŸŒ Network Error</h6>
                     <p class="mb-0 small" style="color: #991b1b;">${error.message}</p>
                 </div>
             </div>
@@ -816,7 +816,7 @@ function startSessionTimer(sessionEndTimestamp) {
                 <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
                     <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">🕒 Session Auto-Closed</h6>
+                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ•’ Session Auto-Closed</h6>
                         <p class="mb-0 small" style="color: #1e40af;">20-minute attendance window has ended. Students not present have been automatically marked absent.</p>
                     </div>
                 </div>
@@ -962,7 +962,7 @@ function showTeacherToast(message, type = 'info') {
         document.head.appendChild(style);
     }
 
-    const icon = type === 'success' ? '✅' : type === 'warning' ? '⚠️' : type === 'error' ? '❌' : 'ℹ️';
+    const icon = type === 'success' ? 'âœ…' : type === 'warning' ? 'âš ï¸' : type === 'error' ? 'âŒ' : 'â„¹ï¸';
     toast.innerHTML = `<span style="font-size:1.1rem;">${icon}</span><span>${message}</span>`;
 
     document.body.appendChild(toast);
@@ -978,7 +978,7 @@ function captureTeacherLocation() {
             <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
                 <i class="bi bi-geo-alt-fill me-3" style="font-size: 1.5rem; color: #f59e0b;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #92400e; font-weight: 700;">📍 Location Not Available</h6>
+                    <h6 class="mb-1" style="color: #92400e; font-weight: 700;">ðŸ“ Location Not Available</h6>
                     <p class="mb-0 small" style="color: #78350f;">Your browser does not support geolocation. Students will be validated against the default campus coordinates.</p>
                 </div>
             </div>
@@ -1000,7 +1000,7 @@ function captureTeacherLocation() {
         <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
             <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
             <div>
-                <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">📍 Capturing Laptop Location...</h6>
+                <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ“ Capturing Laptop Location...</h6>
                 <p class="mb-0 small" style="color: #1e40af;">Please allow location access so the student scan area matches your laptop.</p>
             </div>
         </div>
@@ -1030,9 +1030,9 @@ function captureTeacherLocation() {
             <div class="alert ${isReliable ? 'alert-success' : 'alert-warning'} d-flex align-items-center" style="background: linear-gradient(135deg, ${isReliable ? 'rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%' : 'rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%'}); border: 1px solid ${isReliable ? 'rgba(16, 185, 129, 0.3)' : 'rgba(249, 115, 22, 0.3)'}; border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
                 <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: ${isReliable ? '#10b981' : '#f97316'};"></i>
                 <div>
-                    <h6 class="mb-1" style="color: ${isReliable ? '#047857' : '#9a3412'}; font-weight: 700;">📍 Using Laptop Location</h6>
+                    <h6 class="mb-1" style="color: ${isReliable ? '#047857' : '#9a3412'}; font-weight: 700;">ðŸ“ Using Laptop Location</h6>
                     <p class="mb-0 small" style="color: ${isReliable ? '#065f46' : '#7c2d12'};">Latitude: ${teacherLocation.latitude.toFixed(6)}, Longitude: ${teacherLocation.longitude.toFixed(6)}</p>
-                    <p class="mb-0 small" style="color: ${isReliable ? '#065f46' : '#7c2d12'};">Accuracy: ${Math.round(accuracy)}m${isReliable ? ' — this is acceptable for classroom location.' : ' — this is a weaker fix, but the session will still use it.'}</p>
+                    <p class="mb-0 small" style="color: ${isReliable ? '#065f46' : '#7c2d12'};">Accuracy: ${Math.round(accuracy)}m${isReliable ? ' â€” this is acceptable for classroom location.' : ' â€” this is a weaker fix, but the session will still use it.'}</p>
                 </div>
             </div>
         `;
@@ -1054,7 +1054,7 @@ function captureTeacherLocation() {
                 <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
                     <i class="bi bi-geo-alt-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">📍 Retrying with lower accuracy...</h6>
+                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ“ Retrying with lower accuracy...</h6>
                         <p class="mb-0 small" style="color: #1e40af;">High accuracy did not respond. Trying a fallback request now.</p>
                     </div>
                 </div>
@@ -1074,7 +1074,7 @@ function captureTeacherLocation() {
             <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
                 <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem; color: #f59e0b;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #92400e; font-weight: 700;">⚠️ Location Access Needed</h6>
+                    <h6 class="mb-1" style="color: #92400e; font-weight: 700;">âš ï¸ Location Access Needed</h6>
                     <p class="mb-0 small" style="color: #78350f;">${message}</p>
                     <p class="mb-0 small"><strong>Please retry location capture before starting the session.</strong></p>
                 </div>
@@ -1106,7 +1106,7 @@ function captureTeacherLocation() {
                     <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
                         <i class="bi bi-geo-alt-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
                         <div>
-                            <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">📍 Trying low-accuracy fallback...</h6>
+                            <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ“ Trying low-accuracy fallback...</h6>
                             <p class="mb-0 small" style="color: #1e40af;">If this still fails, default campus coordinates will be used.</p>
                         </div>
                     </div>
