@@ -120,17 +120,15 @@ class User extends Authenticatable
      */
     public function subjects()
     {
-        return $this->hasMany(Subject::class, 'instructor', 'name');
+        return $this->hasMany(Subject::class, 'instructor_id');
     }
 
     /**
-     * RELATIONSHIP: Subjects (alternative method using instructor name/employee_id)
-     * Get subjects taught by this teacher using name or employee_id matching.
+     * RELATIONSHIP: Subjects (alternative method using instructor_id)
      */
     public function teachingSubjects()
     {
-        return Subject::where('instructor', $this->name)
-            ->orWhere('instructor', $this->employee_id);
+        return $this->hasMany(Subject::class, 'instructor_id');
     }
 
     public function excuseSubmissions()

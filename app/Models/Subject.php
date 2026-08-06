@@ -17,8 +17,14 @@ class Subject extends Model
         'course',
         'units',
         'instructor',
+        'instructor_id',
         'section',
     ];
+
+    public function instructorUser()
+    {
+        return $this->belongsTo(User::class, 'instructor_id');
+    }
 
     public function schedules()
     {

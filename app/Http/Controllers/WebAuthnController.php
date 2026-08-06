@@ -74,7 +74,7 @@ class WebAuthnController extends Controller
 
         try {
             $stored = $webauthn->storeCredential($user, $credential);
-            $stored->forceFill(['name' => $request->device_name ?? 'My Device'])->save();
+            $stored->forceFill(['device_name' => $request->device_name ?? 'My Device'])->save();
 
             // Check if user already has recovery codes
             $hasRecoveryCodes = \App\Models\RecoveryCode::where('user_id', $user->id)->exists();

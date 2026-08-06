@@ -11,7 +11,7 @@ class WebauthnCredential extends Model
         'credential_id',
         'public_key',
         'sign_count',
-        'name',
+        'device_name',
         'last_used_at',
     ];
 

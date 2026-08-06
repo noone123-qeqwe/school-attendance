@@ -21,6 +21,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', function () { return view('auth.login'); })->name('login');
     Route::post('/login', [PTController::class, 'login'])->name('login.submit');
     Route::get('/csrf-token', function () { return response()->json(['token' => csrf_token()]); })->name('csrf.token');
+    
+    Route::get('/offline', function () { return view('offline'); })->name('offline');
 
     Route::get('/register', function () { return view('auth.register'); })->name('register');
     Route::post('/register', [PTController::class, 'register'])->name('register.submit');
@@ -47,6 +49,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/image', [PTController::class, 'updateImage'])->name('profile.image.update');
     Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store');
     Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
+    
+    // Attendance Corrections
+    Route::post('/corrections', [App\Http\Controllers\AttendanceCorrectionController::class, 'store'])->name('corrections.store');
 
     Route::post('/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/my-classes', [PTController::class, 'myClasses'])->name('student.classes');
@@ -175,6 +180,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/attendance/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportAttendancePdf'])->name('attendance.pdf');
     Route::post('/attendance/{attendance}/excuse', [App\Http\Controllers\TeacherController::class, 'excuseAttendance'])->name('attendance.excuse');
     Route::post('/attendance/{attendance}/override', [App\Http\Controllers\TeacherController::class, 'overrideAttendance'])->name('attendance.override');
+    Route::post('/corrections/{correction}', [App\Http\Controllers\AttendanceCorrectionController::class, 'update'])->name('teacher.corrections.update');
     
     // Student Management - Full CRUD
     Route::get('/students', [App\Http\Controllers\TeacherController::class, 'students'])->name('students');
@@ -234,7 +240,7 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     
     // Parent-Child Linking
     Route::get('/link-child', [App\Http\Controllers\ParentController::class, 'linkChildForm'])->name('link.form');
-    Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->name('link.send-otp');
+    Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->middleware('throttle:3,1')->name('link.send-otp');
     Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->name('link.verify-otp');
     
     Route::get('/child/{child}', [App\Http\Controllers\ParentController::class, 'childDetail'])->name('child');

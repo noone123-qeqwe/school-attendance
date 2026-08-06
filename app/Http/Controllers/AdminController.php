@@ -399,7 +399,9 @@ class AdminController extends Controller
             $query->where(fn($q) => $q
                 ->where('name','like','%'.$request->search.'%')
                 ->orWhere('code','like','%'.$request->search.'%')
-                ->orWhere('instructor','like','%'.$request->search.'%')
+                ->orWhereHas('instructorUser', function($query) use ($request) {
+                    $query->where('name', 'like', '%'.$request->search.'%');
+                })
             );
         }
 
@@ -418,7 +420,9 @@ class AdminController extends Controller
             $query->where(fn($q) => $q
                 ->where('name','like','%'.$request->search.'%')
                 ->orWhere('code','like','%'.$request->search.'%')
-                ->orWhere('instructor','like','%'.$request->search.'%')
+                ->orWhereHas('instructorUser', function($query) use ($request) {
+                    $query->where('name', 'like', '%'.$request->search.'%');
+                })
             );
         }
 
@@ -448,7 +452,9 @@ class AdminController extends Controller
             $query->where(fn($q) => $q
                 ->where('name','like','%'.$request->search.'%')
                 ->orWhere('code','like','%'.$request->search.'%')
-                ->orWhere('instructor','like','%'.$request->search.'%')
+                ->orWhereHas('instructorUser', function($query) use ($request) {
+                    $query->where('name', 'like', '%'.$request->search.'%');
+                })
             );
         }
 
@@ -473,7 +479,7 @@ class AdminController extends Controller
             'semester',
             'course',
             'units',
-            'instructor',
+            'instructor_id',
             'section',
             'activeSessionCount',
             'scheduledToday',
@@ -504,7 +510,7 @@ class AdminController extends Controller
 {
 
     $subject->update($request->only([
-        'code', 'name', 'year_level', 'semester', 'course', 'units', 'instructor', 'section',
+        'code', 'name', 'year_level', 'semester', 'course', 'units', 'instructor_id', 'section',
     ]));
 
     $this->saveSubjectSchedules($subject, $request);
