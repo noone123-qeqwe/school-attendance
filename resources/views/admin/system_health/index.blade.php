@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 
 @section('title', 'System Health')
 
@@ -35,44 +35,54 @@
         </div>
     </div>
     
-    <!-- WebSocket Status -->
+    <!-- Queue Status -->
     <div class="saas-card" style="padding:24px; display:flex; flex-direction:column;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
             <div style="width:48px; height:48px; border-radius:12px; background:rgba(234, 179, 8, 0.1); color:var(--saas-warning); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
-                <i class="bi bi-broadcast-pin"></i>
+                <i class="bi bi-list-task"></i>
             </div>
-            <span class="saas-badge saas-badge-warning" style="background:transparent; border:1px solid var(--saas-warning);">
-                <span class="saas-health-dot" style="background:var(--saas-warning); margin-right:6px; animation:pulse 2s infinite;"></span> Reconnecting
+            <span class="saas-badge {{ $failedJobs > 0 ? 'saas-badge-danger' : 'saas-badge-success' }}" style="background:transparent; border:1px solid currentColor;">
+                {{ $failedJobs > 0 ? $failedJobs . ' Failed Jobs' : 'Healthy' }}
             </span>
         </div>
-        <h3 class="saas-heading saas-heading-sm" style="margin-bottom:4px;">Pusher / WebSocket</h3>
-        <p class="saas-text-muted" style="font-size:0.85rem; margin-bottom:16px;">Attempting to establish connection for real-time events.</p>
+        <h3 class="saas-heading saas-heading-sm" style="margin-bottom:4px;">Queue System</h3>
+        <p class="saas-text-muted" style="font-size:0.85rem; margin-bottom:16px;">Background jobs processing.</p>
         <div style="margin-top:auto; font-family:monospace; font-size:0.8rem; color:var(--saas-text-muted); background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:6px;">
-            Status: Retrying (Attempt 2)
+            Jobs in queue: {{ $queueSize }}
         </div>
     </div>
     
-    <!-- Storage Status -->
+    <!-- Mail Status -->
     <div class="saas-card" style="padding:24px; display:flex; flex-direction:column;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
             <div style="width:48px; height:48px; border-radius:12px; background:rgba(56, 189, 248, 0.1); color:var(--saas-info); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
-                <i class="bi bi-hdd-network"></i>
+                <i class="bi bi-envelope"></i>
             </div>
-            <span class="saas-badge saas-badge-info" style="background:transparent; border:1px solid var(--saas-info);">
-                Healthy
+            <span class="saas-badge {{ $mailConfigured ? 'saas-badge-info' : 'saas-badge-danger' }}" style="background:transparent; border:1px solid currentColor;">
+                {{ $mailConfigured ? 'Configured' : 'Missing Config' }}
             </span>
         </div>
-        <h3 class="saas-heading saas-heading-sm" style="margin-bottom:4px;">Storage Capacity</h3>
-        <p class="saas-text-muted" style="font-size:0.85rem; margin-bottom:16px;">Local disk space is sufficient for operations.</p>
-        
-        <div style="margin-top:auto;">
-            <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px; font-weight:600;">
-                <span>Used: 42.5 GB</span>
-                <span class="saas-text-muted">Total: 100 GB</span>
+        <h3 class="saas-heading saas-heading-sm" style="margin-bottom:4px;">Mail Service</h3>
+        <p class="saas-text-muted" style="font-size:0.85rem; margin-bottom:16px;">SMTP relay for notifications.</p>
+        <div style="margin-top:auto; font-family:monospace; font-size:0.8rem; color:var(--saas-text-muted); background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:6px;">
+            Host: {{ config('mail.mailers.smtp.host') ?: 'None' }}
+        </div>
+    </div>
+
+    <!-- Backup Status -->
+    <div class="saas-card" style="padding:24px; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px;">
+            <div style="width:48px; height:48px; border-radius:12px; background:rgba(139, 92, 246, 0.1); color:var(--saas-primary); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+                <i class="bi bi-shield-check"></i>
             </div>
-            <div style="width:100%; height:6px; background:var(--saas-border); border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:42.5%; background:var(--saas-info);"></div>
-            </div>
+            <span class="saas-badge saas-badge-primary" style="background:transparent; border:1px solid currentColor;">
+                {{ $backupCount }} Files
+            </span>
+        </div>
+        <h3 class="saas-heading saas-heading-sm" style="margin-bottom:4px;">Database Backups</h3>
+        <p class="saas-text-muted" style="font-size:0.85rem; margin-bottom:16px;">System backup snapshots.</p>
+        <div style="margin-top:auto; font-family:monospace; font-size:0.8rem; color:var(--saas-text-muted); background:rgba(0,0,0,0.2); padding:8px 12px; border-radius:6px;">
+            <a href="{{ route('backups.index') }}" style="color:inherit; text-decoration:underline;">Manage Backups</a>
         </div>
     </div>
 </div>

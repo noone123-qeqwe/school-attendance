@@ -1,5 +1,5 @@
-@extends('parent.layout')
-@section('page-title', $child->name . ' — Attendance Detail')
+@extends('layouts.app')
+@section('page-title', $child->name . ' â€” Attendance Detail')
 
 @section('content')
 <style>
@@ -69,155 +69,130 @@
              style="width: 64px; height: 64px; object-fit: cover; border: 2px solid rgba(207,164,111,0.4);">
         <div>
             <h3 style="color: #f3e7cd; font-weight: 800; margin: 0;">{{ $child->name }}</h3>
-            <small style="color: #b39b82;">{{ $child->student_number }} &bull; {{ $child->course }} — Year {{ $child->year_level }}, Semester {{ $child->semester }}</small>
+            <small style="color: #b39b82;">{{ $child->student_number }} &bull; {{ $child->course }} â€” Year {{ $child->year_level }}, Semester {{ $child->semester }}</small>
         </div>
     </div>
 
     {{-- Stats --}}
-    <div class="adm-stats" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 24px;">
-        <div class="adm-stat" style="text-align: center;">
-            <div class="adm-stat-val" style="color: #cfa46f;">{{ $rate }}%</div>
-            <div class="adm-stat-lbl">Attendance Rate</div>
-        </div>
-        <div class="adm-stat" style="text-align: center;">
-            <div class="adm-stat-val">{{ $total }}</div>
-            <div class="adm-stat-lbl">Total Records</div>
-        </div>
-        <div class="adm-stat" style="text-align: center;">
-            <div class="adm-stat-val" style="color: #66bb6a;">{{ $present }}</div>
-            <div class="adm-stat-lbl">Present</div>
-        </div>
-        <div class="adm-stat" style="text-align: center;">
-            <div class="adm-stat-val" style="color: #ffa726;">{{ $late }}</div>
-            <div class="adm-stat-lbl">Late</div>
-        </div>
-        <div class="adm-stat" style="text-align: center;">
-            <div class="adm-stat-val" style="color: #ef5350;">{{ $absent }}</div>
-            <div class="adm-stat-lbl">Absent</div>
-        </div>
+    <div class="ent-grid ent-grid-5 ent-mb-lg">
+        <x-card type="kpi" accent="gold" label="Attendance Rate" value="{{ $rate }}%" icon="bi bi-graph-up" />
+        <x-card type="kpi" accent="info" label="Total Records" value="{{ $total }}" icon="bi bi-file-earmark-text" />
+        <x-card type="kpi" accent="success" label="Present" value="{{ $present }}" icon="bi bi-check-circle" />
+        <x-card type="kpi" accent="warning" label="Late" value="{{ $late }}" icon="bi bi-clock" />
+        <x-card type="kpi" accent="danger" label="Absent" value="{{ $absent }}" icon="bi bi-x-circle" />
     </div>
 
     {{-- Filters --}}
-    <div class="adm-card" style="margin-bottom: 24px;">
-        <div class="adm-card-body" style="padding: 16px 20px;">
-            <form method="GET" action="{{ route('parent.child', $child) }}" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.72rem; font-weight: 600; color: #b39b82; text-transform: uppercase;">Subject</label>
-                    <select name="subject" class="tch-input" style="min-width: 160px;">
-                        <option value="">All Subjects</option>
-                        @foreach($subjects as $subj)
-                            <option value="{{ $subj->code }}" {{ request('subject') == $subj->code ? 'selected' : '' }}>{{ $subj->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.72rem; font-weight: 600; color: #b39b82; text-transform: uppercase;">Status</label>
-                    <select name="status" class="tch-input" style="min-width: 120px;">
-                        <option value="">All</option>
-                        <option value="Present" {{ request('status') == 'Present' ? 'selected' : '' }}>Present</option>
-                        <option value="Late" {{ request('status') == 'Late' ? 'selected' : '' }}>Late</option>
-                        <option value="Absent" {{ request('status') == 'Absent' ? 'selected' : '' }}>Absent</option>
-                        <option value="Excused" {{ request('status') == 'Excused' ? 'selected' : '' }}>Excused</option>
-                    </select>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.72rem; font-weight: 600; color: #b39b82; text-transform: uppercase;">From</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="tch-input">
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 4px;">
-                    <label style="font-size: 0.72rem; font-weight: 600; color: #b39b82; text-transform: uppercase;">To</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="tch-input">
-                </div>
-                <button type="submit" class="adm-btn adm-btn-primary" style="font-size: 0.82rem;"><i class="bi bi-funnel"></i> Filter</button>
-                <a href="{{ route('parent.child', $child) }}" class="adm-btn adm-btn-ghost" style="font-size: 0.82rem;">Clear</a>
-            </form>
-        </div>
-    </div>
+    <x-card type="section" class="ent-mb-lg">
+        <form method="GET" action="{{ route('parent.child', $child) }}" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+            <div style="flex:1; min-width: 150px;">
+                <label class="ent-label">Subject</label>
+                <select name="subject" class="ent-input">
+                    <option value="">All Subjects</option>
+                    @foreach($subjects as $subj)
+                        <option value="{{ $subj->code }}" {{ request('subject') == $subj->code ? 'selected' : '' }}>{{ $subj->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div style="flex:1; min-width: 120px;">
+                <label class="ent-label">Status</label>
+                <select name="status" class="ent-input">
+                    <option value="">All</option>
+                    <option value="Present" {{ request('status') == 'Present' ? 'selected' : '' }}>Present</option>
+                    <option value="Late" {{ request('status') == 'Late' ? 'selected' : '' }}>Late</option>
+                    <option value="Absent" {{ request('status') == 'Absent' ? 'selected' : '' }}>Absent</option>
+                    <option value="Excused" {{ request('status') == 'Excused' ? 'selected' : '' }}>Excused</option>
+                </select>
+            </div>
+            <div style="flex:1; min-width: 130px;">
+                <label class="ent-label">From</label>
+                <input type="date" name="date_from" value="{{ request('date_from') }}" class="ent-input">
+            </div>
+            <div style="flex:1; min-width: 130px;">
+                <label class="ent-label">To</label>
+                <input type="date" name="date_to" value="{{ request('date_to') }}" class="ent-input">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <button type="submit" class="ent-btn ent-btn-primary"><i class="bi bi-funnel"></i> Filter</button>
+                @if(request()->hasAny(['subject', 'status', 'date_from', 'date_to']))
+                    <a href="{{ route('parent.child', $child) }}" class="ent-btn ent-btn-ghost text-danger">Clear</a>
+                @endif
+            </div>
+        </form>
+    </x-card>
 
     {{-- Records Table --}}
-    <div class="adm-card">
-        <div class="adm-card-head">
-            <div class="adm-card-title">
-                <div class="adm-card-icon"><i class="bi bi-journal-text"></i></div>
-                Attendance Records
-            </div>
-            <span style="color: #b39b82; font-size: 0.82rem;">{{ $records->total() }} records</span>
+    <x-card type="section" title="Attendance Records">
+        <x-slot:headerActions>
+            <span style="color: var(--ent-text-muted); font-size: 0.85rem;">{{ $records->total() }} records</span>
+        </x-slot:headerActions>
+        
+        @if($records->count() > 0)
+        <div class="ent-scroll-x" style="margin: -20px;">
+            <table class="ent-table" style="min-width: 600px; margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Day</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Time In</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($records as $record)
+                    <tr>
+                        <td data-label="Date">
+                            <span style="font-weight: 500;">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</span>
+                        </td>
+                        <td data-label="Day">
+                            <span class="ent-text-muted">{{ \Carbon\Carbon::parse($record->date)->format('l') }}</span>
+                        </td>
+                        <td data-label="Subject">
+                            <span style="font-weight: 500; color: var(--ent-text);">{{ $record->subject->name ?? $record->subject_code }}</span>
+                        </td>
+                        <td data-label="Status">
+                            @if($record->excused)
+                                <span class="ent-badge ent-badge-info">Excused</span>
+                            @elseif($record->status === 'Present')
+                                <span class="ent-badge ent-badge-success">Present</span>
+                            @elseif($record->status === 'Late')
+                                <span class="ent-badge ent-badge-warning">Late</span>
+                            @else
+                                <span class="ent-badge ent-badge-danger">Absent</span>
+                            @endif
+                        </td>
+                        <td data-label="Time In">
+                            <span style="font-family: monospace;">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '--' }}</span>
+                        </td>
+                        <td data-label="Action">
+                            @if($record->status === 'Absent' && !$record->excused)
+                                <a href="{{ route('parent.child.excuse', [$child, $record]) }}" class="ent-btn ent-btn-xs ent-btn-ghost text-primary">
+                                    <i class="bi bi-pencil-square"></i> Excuse
+                                </a>
+                            @else
+                                <span class="ent-text-muted">â€”</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
-        <div class="adm-card-body" style="padding: 0;">
-            @if($records->count() > 0)
-            <div class="table-responsive">
-                <table class="adm-table">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Day</th>
-                            <th>Subject</th>
-                            <th>Status</th>
-                            <th>Time In</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($records as $record)
-                        <tr>
-                            <td>
-                                <span class="attendance-date">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</span>
-                            </td>
-                            <td>
-                                <span class="attendance-day">{{ \Carbon\Carbon::parse($record->date)->format('l') }}</span>
-                            </td>
-                            <td>
-                                <span class="attendance-subject">{{ $record->subject->name ?? $record->subject_code }}</span>
-                            </td>
-                            <td>
-                                @if($record->excused)
-                                    <span class="badge-present" style="background: rgba(66,165,245,0.15); color: #42a5f5;">Excused</span>
-                                @elseif($record->status === 'Present')
-                                    <span class="badge-present">Present</span>
-                                @elseif($record->status === 'Late')
-                                    <span class="badge-late">Late</span>
-                                @else
-                                    <span class="badge-absent">Absent</span>
-                                @endif
-                            </td>
-                            <td>
-                                <span class="attendance-time">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '--' }}</span>
-                            </td>
-                            <td>
-                                @if($record->status === 'Absent' && !$record->excused)
-                                    <a href="{{ route('parent.child.excuse', [$child, $record]) }}" class="adm-btn adm-btn-ghost" style="font-size: 0.75rem; padding: 5px 10px;">
-                                        <i class="bi bi-pencil-square"></i> Excuse
-                                    </a>
-                                @else
-                                    <span style="color: #8f826f;">—</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
 
-            {{-- Pagination --}}
-            <div style="padding: 16px 20px; border-top: 1px solid rgba(255,215,145,0.08);">
-                {{ $records->links() }}
-            </div>
-            @else
-            <div class="empty-state" style="padding: 40px;">
-                <i class="bi bi-calendar-x" style="font-size: 2rem;"></i>
-                <span>No records match your filters.</span>
-            </div>
-            @endif
+        {{-- Pagination --}}
+        <div style="border-top:1px solid var(--ent-border); padding-top:16px; margin-top:16px;">
+            {{ $records->links() }}
         </div>
-    </div>
+        @else
+        <div class="ent-empty" style="padding: 40px;">
+            <div class="ent-empty-icon" style="width:64px;height:64px;font-size:2rem; margin-bottom:16px;">
+                <i class="bi bi-calendar-x"></i>
+            </div>
+            <div class="ent-empty-text">No records match your filters.</div>
+        </div>
+        @endif
+    </x-card>
 </div>
-
-<style>
-@media (max-width: 768px) {
-    .adm-stats { grid-template-columns: repeat(3, 1fr) !important; }
-}
-@media (max-width: 480px) {
-    .adm-stats { grid-template-columns: repeat(2, 1fr) !important; }
-}
-</style>
 @endsection

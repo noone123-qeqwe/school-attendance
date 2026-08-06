@@ -56,6 +56,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/my-classes', [PTController::class, 'myClasses'])->name('student.classes');
     Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('student.schedule');
+    Route::get('/student/calendar', [App\Http\Controllers\HomeController::class, 'calendar'])->name('student.calendar');
+    Route::get('/student/calendar/data', [App\Http\Controllers\HomeController::class, 'calendarData'])->name('student.calendar.data');
 
     Route::get('/classes', [ClassController::class, 'index'])->name('classes.index');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
@@ -70,6 +72,8 @@ Route::middleware('auth')->group(function () {
 
     // Excuse Submissions
     Route::get('/excuses', [App\Http\Controllers\HomeController::class, 'excuses'])->name('excuses');
+    Route::get('/excuses/general/new', [App\Http\Controllers\HomeController::class, 'createGeneralExcuse'])->name('excuses.create_general');
+    Route::post('/excuses/general/store', [App\Http\Controllers\HomeController::class, 'storeGeneralExcuse'])->name('excuses.store_general');
     Route::get('/excuses/create/{attendance}', [App\Http\Controllers\HomeController::class, 'createExcuse'])->name('excuses.create');
     Route::post('/excuses', [App\Http\Controllers\HomeController::class, 'storeExcuse'])->name('excuses.store');
 
@@ -161,8 +165,6 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::put('/subjects/{subject}', [App\Http\Controllers\TeacherController::class, 'updateSubject'])->name('subjects.update');
     Route::delete('/subjects/{subject}', [App\Http\Controllers\TeacherController::class, 'destroySubject'])->name('subjects.destroy');
     Route::get('/subjects/{subjectCode}/students', [App\Http\Controllers\TeacherController::class, 'subjectStudents'])->name('subjects.students');
-    Route::get('/subjects/{subjectCode}/seating-chart', [App\Http\Controllers\TeacherController::class, 'seatingChart'])->name('subjects.seating-chart');
-    Route::post('/subjects/{subjectCode}/seating-chart', [App\Http\Controllers\TeacherController::class, 'saveSeatingChart'])->name('subjects.seating-chart.save');
     
     // QR Attendance for Teachers
     // Specific routes must come BEFORE the parameterized route
@@ -203,12 +205,12 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/student/{student}/warn', [App\Http\Controllers\TeacherController::class, 'sendWarning'])->name('student.warn');
     Route::get('/student/{student}/absences', [App\Http\Controllers\TeacherController::class, 'absenceSummary'])->name('student.absences');
     
-    // Holiday Calendar Management
-    Route::get('/calendar', [App\Http\Controllers\TeacherController::class, 'calendar'])->name('calendar');
-    Route::post('/holidays', [App\Http\Controllers\TeacherController::class, 'storeHoliday'])->name('holidays.store');
-    Route::put('/holidays/{holiday}', [App\Http\Controllers\TeacherController::class, 'updateHoliday'])->name('holidays.update');
-    Route::delete('/holidays/{holiday}', [App\Http\Controllers\TeacherController::class, 'destroyHoliday'])->name('holidays.destroy');
-    Route::get('/calendar/data', [App\Http\Controllers\TeacherController::class, 'getCalendarData'])->name('calendar.data');
+    // Holiday & Events Calendar Management
+    Route::get('/calendar', [App\Http\Controllers\Instructor\CalendarController::class, 'index'])->name('calendar');
+    Route::get('/calendar/data', [App\Http\Controllers\Instructor\CalendarController::class, 'data'])->name('calendar.data');
+    Route::post('/calendar/meetings', [App\Http\Controllers\Instructor\CalendarController::class, 'storeMeeting'])->name('calendar.meetings.store');
+    Route::put('/calendar/reschedule/{event}', [App\Http\Controllers\Instructor\CalendarController::class, 'reschedule'])->name('calendar.reschedule');
+    Route::get('/calendar/search-invitees', [App\Http\Controllers\Instructor\CalendarController::class, 'searchInvitees'])->name('calendar.search-invitees');
     
     // Reports
     Route::get('/reports', [App\Http\Controllers\TeacherController::class, 'reports'])->name('reports');
@@ -229,6 +231,11 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/excuse/{excuseSubmission}/reject', [App\Http\Controllers\TeacherController::class, 'rejectExcuse'])->name('excuse.reject');
     Route::get('/excuse/{excuseSubmission}/detail', [App\Http\Controllers\TeacherController::class, 'viewExcuseDetail'])->name('excuse.detail');
     Route::post('/excuse/{excuseSubmission}/comment', [App\Http\Controllers\TeacherController::class, 'storeExcuseComment'])->name('excuse.comment');
+
+    // My Excuses (Teacher Submitting)
+    Route::get('/my-excuses', [App\Http\Controllers\TeacherController::class, 'myExcuses'])->name('excuses');
+    Route::get('/my-excuses/create', [App\Http\Controllers\TeacherController::class, 'createExcuse'])->name('excuses.create');
+    Route::post('/my-excuses', [App\Http\Controllers\TeacherController::class, 'storeExcuse'])->name('excuses.store');
 
     // Messages
     Route::resource('messages', MessageController::class)->only(['index', 'create', 'store', 'show']);
@@ -291,6 +298,11 @@ Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.'
     Route::get('/subjects/create', [App\Http\Controllers\AdminController::class, 'createSubject'])->name('subjects.create');
     Route::post('/subjects', [App\Http\Controllers\AdminController::class, 'storeSubject'])->name('subjects.store');
 
+    // Enrollments
+    Route::get('/subjects/{subject}/enrollments', [App\Http\Controllers\Admin\EnrollmentController::class, 'index'])->name('enrollments.index');
+    Route::post('/subjects/{subject}/enrollments', [App\Http\Controllers\Admin\EnrollmentController::class, 'store'])->name('enrollments.store');
+    Route::delete('/subjects/{subject}/enrollments/{student}', [App\Http\Controllers\Admin\EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
+
     // QR Management
     Route::get('/qr-management', [App\Http\Controllers\Admin\QrManagementController::class, 'index'])->name('qr');
 
@@ -305,12 +317,12 @@ Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.'
     Route::get('/attendance/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewAttendancePdf'])->name('attendance.preview');
     Route::get('/attendance/export-pdf', [App\Http\Controllers\AdminController::class, 'exportAttendancePdf'])->name('attendance.pdf');
 
-    // Holiday Calendar Management (system-wide)
-    Route::get('/calendar', [App\Http\Controllers\AdminController::class, 'calendar'])->name('calendar');
-    Route::post('/holidays', [App\Http\Controllers\AdminController::class, 'storeHoliday'])->name('holidays.store');
-    Route::put('/holidays/{holiday}', [App\Http\Controllers\AdminController::class, 'updateHoliday'])->name('holidays.update');
-    Route::delete('/holidays/{holiday}', [App\Http\Controllers\AdminController::class, 'destroyHoliday'])->name('holidays.destroy');
-    Route::get('/calendar/data', [App\Http\Controllers\AdminController::class, 'getCalendarData'])->name('calendar.data');
+    // Holiday & Events Calendar Management (system-wide)
+    Route::get('/calendar', [App\Http\Controllers\Admin\CalendarController::class, 'index'])->name('calendar');
+    Route::get('/calendar/data', [App\Http\Controllers\Admin\CalendarController::class, 'data'])->name('calendar.data');
+    Route::post('/calendar', [App\Http\Controllers\Admin\CalendarController::class, 'store'])->name('calendar.store');
+    Route::put('/calendar/{event}', [App\Http\Controllers\Admin\CalendarController::class, 'update'])->name('calendar.update');
+    Route::delete('/calendar/{event}', [App\Http\Controllers\Admin\CalendarController::class, 'destroy'])->name('calendar.destroy');
 
     // Notifications (system alerts)
     Route::get('/notifications', [App\Http\Controllers\AdminController::class, 'notifications'])->name('notifications');
@@ -350,10 +362,6 @@ Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.'
     Route::get('/excuses', [App\Http\Controllers\AdminController::class, 'excuses'])->name('excuses');
     Route::post('/excuse/{excuseSubmission}/approve', [App\Http\Controllers\AdminController::class, 'approveExcuse'])->name('excuse.approve');
     Route::post('/excuse/{excuseSubmission}/reject', [App\Http\Controllers\AdminController::class, 'rejectExcuse'])->name('excuse.reject');
-
-    // Seating Chart
-    Route::get('/seating-chart/{subjectCode}', [App\Http\Controllers\AdminController::class, 'seatingChart'])->name('seating.chart');
-    Route::post('/seating-chart/{subjectCode}', [App\Http\Controllers\AdminController::class, 'saveSeatingChart'])->name('seating.chart.save');
 
     // Excel Export
     Route::get('/attendance/export-excel', [App\Http\Controllers\AdminController::class, 'exportAttendance'])->name('attendance.export');

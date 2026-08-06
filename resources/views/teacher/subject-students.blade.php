@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'Students - ' . $subject->name)
 
 @section('content')
@@ -20,8 +20,8 @@
             <div>
                 <h1 style="font-size: 1.5rem; font-weight: 800; color: #f3e7cd; margin: 0 0 4px 0;">{{ $subject->name }}</h1>
                 <p style="color: #b39b82; margin: 0; font-size: 0.875rem;">
-                    {{ $subject->code }} • Year {{ $subject->year_level }} • Semester {{ $subject->semester }}
-                    @if($subject->room) • Room {{ $subject->room }} @endif
+                    {{ $subject->code }} â€¢ Year {{ $subject->year_level }} â€¢ Semester {{ $subject->semester }}
+                    @if($subject->room) â€¢ Room {{ $subject->room }} @endif
                 </p>
             </div>
             <div style="display: flex; gap: 12px;">
@@ -145,7 +145,7 @@
             <div class="tch-card">
                 <div style="padding: 20px; text-align: center;">
                     <div style="font-size: 2rem; font-weight: 800; color: #cfa46f; margin-bottom: 8px;">{{ $studentsWithGoodAttendance }}</div>
-                    <div style="font-size: 0.875rem; color: #b39b82; font-weight: 600;">Good Attendance (≥75%)</div>
+                    <div style="font-size: 0.875rem; color: #b39b82; font-weight: 600;">Good Attendance (â‰¥75%)</div>
                 </div>
             </div>
         </div>

@@ -38,17 +38,23 @@ class MessageController extends Controller
         $teachers = collect();
 
         if ($user->role === 'parent') {
-            // Get teachers of the parent's children
             $childIds = $user->children()->pluck('users.id');
-            // Subjects taken by children
-            $subjects = \App\Models\Attendance::whereIn('user_id', $childIds)
-                ->distinct()
-                ->pluck('subject_code');
-            
-            // Get teachers for these subjects
-            $teachers = User::where('role', 'teacher')->get(); // Simplification: let parent pick from any teacher or we can filter if there's a subject-teacher mapping. 
-            // In the DB, teachers have no direct subject relationship unless they are in 'subjects' table? 
-            // Let's just list all teachers for now to avoid complex queries if we don't know the exact schema.
+            $teachers = User::where('role', 'teacher')
+                ->whereHas('subjects', function($q) use ($childIds) {
+                    $q->whereHas('enrolledStudents', function($q2) use ($childIds) {
+                        $q2->whereIn('users.id', $childIds);
+                    });
+                })
+                ->get();
+        } elseif ($user->role === 'teacher') {
+            // Get parents of students enrolled in the teacher's subjects
+            $parents = User::where('role', 'parent')
+                ->whereHas('children', function($q) use ($user) {
+                    $q->whereHas('enrolledSubjects', function($q2) use ($user) {
+                        $q2->where('instructor_id', $user->id);
+                    });
+                })
+                ->get();
         }
 
         $replyTo = null;
@@ -59,7 +65,7 @@ class MessageController extends Controller
         if ($user->role === 'parent') {
             return view('parent.messages.create', compact('teachers', 'replyTo'));
         } elseif ($user->role === 'teacher') {
-            return view('teacher.messages.create', compact('replyTo'));
+            return view('teacher.messages.create', compact('parents', 'replyTo'));
         }
 
         abort(403);

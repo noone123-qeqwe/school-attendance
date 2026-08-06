@@ -1,5 +1,5 @@
-@extends('parent.layout')
-@section('page-title', $child->name . ' — Warnings')
+﻿@extends('layouts.app')
+@section('page-title', $child->name . ' â€” Warnings')
 
 @section('content')
 <div class="p-4">
@@ -58,7 +58,7 @@
                                 {{ $warning->message }}
                             </p>
                             <div style="display: flex; gap: 16px; color: #8f826f; font-size: 0.72rem;">
-                                <span><i class="bi bi-calendar3 me-1"></i>{{ $warning->created_at->format('M d, Y — h:i A') }}</span>
+                                <span><i class="bi bi-calendar3 me-1"></i>{{ $warning->created_at->format('M d, Y â€” h:i A') }}</span>
                                 @if($warning->sender)
                                     <span><i class="bi bi-person me-1"></i>{{ $warning->sender->name }}</span>
                                 @endif

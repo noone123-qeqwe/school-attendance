@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 
 @section('title', 'System Settings')
 
@@ -67,7 +67,7 @@
                 </div>
             </div>
             
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">Late Threshold (Minutes)</label>
                     <input type="number" name="late_threshold" class="saas-input" value="{{ \App\Models\Setting::get('late_threshold', 15) }}">
@@ -77,6 +77,11 @@
                     <label class="saas-label">Absent Threshold (Minutes)</label>
                     <input type="number" name="absent_threshold" class="saas-input" value="{{ \App\Models\Setting::get('absent_threshold', 45) }}">
                     <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Students arriving after this time are marked Absent.</p>
+                </div>
+                <div class="saas-form-group">
+                    <label class="saas-label">Warning Threshold (Absences)</label>
+                    <input type="number" name="warning_threshold" class="saas-input" value="{{ \App\Models\Setting::get('warning_threshold', 3) }}">
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Number of absences before OSAS warning.</p>
                 </div>
             </div>
             

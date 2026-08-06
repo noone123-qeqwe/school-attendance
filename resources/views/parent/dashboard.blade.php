@@ -1,4 +1,4 @@
-@extends('parent.layout')
+@extends('layouts.app')
 @section('page-title', 'Parent Dashboard')
 
 @section('content')
@@ -8,7 +8,7 @@
     <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
         <div class="d-flex align-items-center gap-4">
-            <div style="font-size: 3rem;">👨‍👩‍👧‍👦</div>
+            <div style="font-size: 3rem;">ðŸ‘¨â€ðŸ‘©â€ðŸ‘§â€ðŸ‘¦</div>
             <div>
                 <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">My Children</h1>
                 <div style="color: #b39b82; font-size: 0.95rem;">
@@ -76,7 +76,7 @@
         <div>
             <div style="font-weight: 700; color: #f3e7cd;">{{ $data->child->student_number }}</div>
             <div style="font-size: 0.85rem; color: #b39b82;">
-                {{ $data->child->course }} — Year {{ $data->child->year_level }}
+                {{ $data->child->course }} â€” Year {{ $data->child->year_level }}
             </div>
         </div>
     </div>
@@ -91,53 +91,26 @@
     </div>
 
     <!-- Quick Stats -->
-    <div class="row g-3 mb-4" id="realChildStats_{{ $data->child->id }}" style="display:none;">
-        <div class="col-md-2 col-4">
-            <div class="ent-kpi-card" style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);">
-                <div class="ent-kpi-value" style="font-size: 1.5rem; color: {{ $data->rate >= 90 ? '#4ade80' : ($data->rate >= 75 ? '#fbbf24' : '#f87171') }}; text-align: center;">{{ $data->rate }}%</div>
-                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px;">Rate</div>
-            </div>
-        </div>
-        <div class="col-md-2 col-4">
-            <div class="ent-kpi-card" style="padding: 16px; background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15);">
-                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #4ade80; text-align: center;">{{ $data->present }}</div>
-                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #4ade80;">Present</div>
-            </div>
-        </div>
-        <div class="col-md-2 col-4">
-            <div class="ent-kpi-card" style="padding: 16px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15);">
-                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #fbbf24; text-align: center;">{{ $data->late }}</div>
-                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #fbbf24;">Late</div>
-            </div>
-        </div>
-        <div class="col-md-2 col-4">
-            <div class="ent-kpi-card" style="padding: 16px; background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);">
-                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #f87171; text-align: center;">{{ $data->absent }}</div>
-                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #f87171;">Absent</div>
-            </div>
-        </div>
-        <div class="col-md-2 col-4">
-            <div class="ent-kpi-card" style="padding: 16px; background: rgba(96,165,250,0.05); border: 1px solid rgba(96,165,250,0.15);">
-                <div class="ent-kpi-value" style="font-size: 1.5rem; color: #60a5fa; text-align: center;">{{ $data->excused }}</div>
-                <div class="ent-kpi-label" style="text-align: center; margin-top: 4px; color: #60a5fa;">Excused</div>
-            </div>
-        </div>
+    <div class="ent-grid ent-grid-5 mb-4" id="realChildStats_{{ $data->child->id }}" style="display:none;">
+        <x-card type="kpi" accent="{{ $data->rate >= 90 ? 'success' : ($data->rate >= 75 ? 'warning' : 'danger') }}" label="Rate" value="{{ $data->rate }}%" />
+        <x-card type="kpi" accent="success" label="Present" value="{{ $data->present }}" />
+        <x-card type="kpi" accent="warning" label="Late" value="{{ $data->late }}" />
+        <x-card type="kpi" accent="danger" label="Absent" value="{{ $data->absent }}" />
+        <x-card type="kpi" accent="info" label="Excused" value="{{ $data->excused }}" />
     </div>
 
     <div class="row g-4 mb-4">
         <!-- Chart -->
         <div class="col-lg-8">
-            <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; height: 100%;">
-                <h6 style="color: var(--gold); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 16px;"><i class="bi bi-graph-up me-2"></i> 30-Day Trend</h6>
+            <x-card type="section" class="h-100" icon="bi bi-graph-up" title="30-Day Trend">
                 <div style="height: 180px;">
                     <canvas id="trendChart_{{ $data->child->id }}"></canvas>
                 </div>
-            </div>
+            </x-card>
         </div>
         <!-- Warnings -->
         <div class="col-lg-4">
-            <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 20px; height: 100%; display: flex; flex-direction: column;">
-                <h6 style="color: #f87171; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 16px;"><i class="bi bi-exclamation-triangle me-2"></i> Warnings</h6>
+            <x-card type="section" class="h-100 d-flex flex-column" icon="bi bi-exclamation-triangle" title="Warnings">
                 <div style="flex: 1; overflow-y: auto;">
                     @if($data->warnings->count() > 0)
                         @foreach($data->warnings as $warning)
@@ -157,17 +130,16 @@
                         <div class="text-center" style="padding: 20px;">
                             <i class="bi bi-shield-check" style="font-size: 2rem; color: #4ade80; opacity: 0.5;"></i>
                             <div style="font-size: 0.85rem; color: #4ade80; margin-top: 8px;">All Clear!</div>
-                            <div style="font-size: 0.78rem; color: #b39b82;">No warnings — great job!</div>
+                            <div style="font-size: 0.78rem; color: #b39b82;">No warnings â€” great job!</div>
                         </div>
                     @endif
                 </div>
-            </div>
+            </x-card>
         </div>
     </div>
 
     <!-- Recent Attendance -->
-    <div>
-        <h6 style="color: var(--gold); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 16px;"><i class="bi bi-clock-history me-2"></i> Recent Attendance</h6>
+    <x-card type="section" icon="bi bi-clock-history" title="Recent Attendance">
         @if($data->child->attendances->count() > 0)
             <x-data-table :headers="['Date', 'Subject', 'Status', 'Time In', 'Action']">
                 @foreach($data->child->attendances as $attendance)
@@ -194,24 +166,20 @@
                     </td>
                     <td data-label="Action">
                         @if($attendance->status === 'Absent' && !$attendance->excused)
-                            <a href="{{ route('parent.child.excuse', [$data->child, $attendance]) }}" class="btn btn-sm btn-outline" style="color: var(--gold); border-color: rgba(207,164,111,0.3); padding: 4px 10px; font-size: 0.75rem;">
+                            <a href="{{ route('parent.child.excuse', [$data->child, $attendance]) }}" class="ent-btn ent-btn-sm ent-btn-ghost">
                                 <i class="bi bi-pencil-square"></i> Excuse
                             </a>
                         @else
-                            <span style="color: rgba(179,155,130,0.5); font-size: 0.75rem;">—</span>
+                            <span style="color: rgba(179,155,130,0.5); font-size: 0.75rem;">â€”</span>
                         @endif
                     </td>
                 </tr>
                 @endforeach
             </x-data-table>
         @else
-            <div class="empty-state text-center" style="padding: 40px;">
-                <i class="bi bi-calendar-x" style="font-size: 2.5rem; color: #b39b82; opacity: 0.5;"></i>
-                <div style="font-size: 1.1rem; color: #f3e7cd; margin-top: 16px;">No Records</div>
-                <div style="font-size: 0.85rem; color: #b39b82;">No attendance records yet for this student.</div>
-            </div>
+            <x-empty-state icon="bi bi-calendar-x" title="No Records" description="No attendance records yet for this student." />
         @endif
-    </div>
+    </x-card>
 </x-card>
 </div>
 @empty
@@ -229,7 +197,7 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// ── Skeleton → Content Reveal ──
+// â”€â”€ Skeleton â†’ Content Reveal â”€â”€
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[id^="skelChildStats_"]').forEach(function(skel) {
         var id = skel.id.replace('skelChildStats_', '');
@@ -239,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// ── Child Tab Selector Logic ──
+// â”€â”€ Child Tab Selector Logic â”€â”€
 document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.child-tab-btn');
     const views = document.querySelectorAll('.child-view-content');

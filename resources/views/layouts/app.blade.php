@@ -30,84 +30,19 @@
             </button>
         </div>
         @section('role-sidebar')
-        <!-- Default (Student) sidebar -->
-        <!-- Logo area -->
-        <div class="sidebar-head">
-            <img src="{{ asset('images/logo.png') }}" class="sidebar-logo">
-            <div class="sidebar-text">
-                <div class="sidebar-brand">{{ config('app.name') }}</div>
-                <div class="sidebar-subtitle">{{ config('app.subtitle') }}</div>
-            </div>
-        </div>
 
-        <div class="sidebar-divider"></div>
 
-        <!-- Nav -->
-        <div class="sidebar-nav">
-            @if(Auth::check() && Auth::user()->isAdmin())
-                <a href="{{ route('admin.dashboard') }}"
-                   class="nav-link"
-                   data-title="Admin Dashboard">
-                    <i class="bi bi-speedometer2"></i>
-                    <span class="nav-link-text">Admin Dashboard</span>
-                </a>
-                <a href="{{ route('admin.teachers') }}"
-                   class="nav-link"
-                   data-title="Teachers">
-                    <i class="bi bi-person-workspace"></i>
-                    <span class="nav-link-text">Teachers</span>
-                </a>
-                <a href="{{ route('admin.excuses') }}"
-                   class="nav-link"
-                   data-title="Excuse Reviews">
-                    <i class="bi bi-file-earmark-check"></i>
-                    <span class="nav-link-text">Excuse Reviews</span>
-                </a>
-                <a href="{{ route('admin.calendar') }}"
-                   class="nav-link {{ request()->routeIs('admin.calendar') ? 'active' : '' }}"
-                   data-title="Holiday Calendar">
-                    <i class="bi bi-calendar-event"></i>
-                    <span class="nav-link-text">Holiday Calendar</span>
-                </a>
+        @auth
+            @if(Auth::user()->isAdmin())
+                @include('layouts.sidebars.admin')
+            @elseif(Auth::user()->isTeacher())
+                @include('layouts.sidebars.teacher')
+            @elseif(Auth::user()->isParent())
+                @include('layouts.sidebars.parent')
             @else
-                <a href="{{ route('home') }}"
-                   class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}"
-                   data-title="Dashboard">
-                    <i class="bi bi-grid-fill"></i>
-                    <span class="nav-link-text">Dashboard</span>
-                </a>
-                <a href="{{ route('student.classes') }}"
-                   class="nav-link {{ request()->routeIs('student.classes') ? 'active' : '' }}"
-                   data-title="My Classes">
-                    <i class="bi bi-folder-fill"></i>
-                    <span class="nav-link-text">My Classes</span>
-                </a>
-                <a href="{{ route('student.schedule') }}"
-                   class="nav-link {{ request()->routeIs('student.schedule') ? 'active' : '' }}"
-                   data-title="My Schedule">
-                    <i class="bi bi-calendar-week-fill"></i>
-                    <span class="nav-link-text">My Schedule</span>
-                </a>
-                <a href="{{ route('notifications') }}"
-                   class="nav-link {{ request()->routeIs('notifications') ? 'active' : '' }}"
-                   data-title="Notifications">
-                    <i class="bi bi-bell-fill"></i>
-                    <span class="nav-link-text">Notifications</span>
-                </a>
-                <a href="{{ route('excuses') }}"
-                   class="nav-link {{ request()->routeIs('excuses*') ? 'active' : '' }}"
-                   data-title="Excuse Submissions">
-                    <i class="bi bi-file-text-fill"></i>
-                    <span class="nav-link-text">Excuse Submissions</span>
-                </a>
+                @include('layouts.sidebars.student')
             @endif
-        </div>
-
-
-
-        <div class="sidebar-footer text-center">
-            <small>&copy; {{ date('Y') }} {{ config('app.name') }}</small>
-        </div>
+        @endauth
         @show
     </aside>
     @endauth
@@ -122,10 +57,16 @@
                     </button>
                     <div>
                         <div class="header-page-title">
-                            @if(request()->routeIs('home')) Dashboard
-                            @elseif(request()->routeIs('student.classes')) My Classes
-                            @elseif(request()->routeIs('settings')) Settings
-                            @else Portal
+                            @hasSection('page-title')
+                                @yield('page-title')
+                            @else
+                                @if(request()->routeIs('home') || request()->routeIs('admin.dashboard') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard'))
+                                    Dashboard
+                                @elseif(request()->routeIs('student.classes')) My Classes
+                                @elseif(request()->routeIs('settings')) Settings
+                                @else
+                                    Portal
+                                @endif
                             @endif
                         </div>
                         <div class="header-page-sub">{{ now()->format('l, F j, Y') }}</div>
@@ -578,33 +519,15 @@
     </script>
 
     @auth
-    @if(!Auth::user()->isAdmin())
-    {{-- ═══ MOBILE BOTTOM NAVIGATION BAR (STUDENT) ═══ --}}
-    <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
-        <a href="{{ route('home') }}" class="mbn-item {{ request()->routeIs('home') ? 'active' : '' }}">
-            <i class="bi bi-grid-fill"></i>
-            <span>Home</span>
-        </a>
-        <a href="{{ route('student.classes') }}" class="mbn-item {{ request()->routeIs('student.classes') ? 'active' : '' }}">
-            <i class="bi bi-folder-fill"></i>
-            <span>Classes</span>
-        </a>
-        <a href="{{ route('notifications') }}" class="mbn-item {{ request()->routeIs('notifications') ? 'active' : '' }}">
-            @php $mbnUnread = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count(); @endphp
-            @if($mbnUnread > 0)<span class="mbn-badge">{{ $mbnUnread > 9 ? '9+' : $mbnUnread }}</span>@endif
-            <i class="bi bi-bell-fill"></i>
-            <span>Alerts</span>
-        </a>
-        <a href="{{ route('excuses') }}" class="mbn-item {{ request()->routeIs('excuses*') ? 'active' : '' }}">
-            <i class="bi bi-file-text-fill"></i>
-            <span>Excuses</span>
-        </a>
-        <a href="{{ route('settings') }}" class="mbn-item {{ request()->routeIs('settings') ? 'active' : '' }}">
-            <i class="bi bi-person-fill"></i>
-            <span>Profile</span>
-        </a>
-    </nav>
-    @endif
+        @if(Auth::user()->isAdmin())
+            @include('layouts.mbn.admin')
+        @elseif(Auth::user()->isTeacher())
+            @include('layouts.mbn.teacher')
+        @elseif(Auth::user()->isParent())
+            @include('layouts.mbn.parent')
+        @else
+            @include('layouts.mbn.student')
+        @endif
     @endauth
     @auth
         <x-command-palette />

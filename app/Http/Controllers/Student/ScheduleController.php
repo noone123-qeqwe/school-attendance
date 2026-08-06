@@ -13,8 +13,15 @@ class ScheduleController extends Controller
     {
         $user = Auth::user();
 
-        // Get student's enrolled subjects
+        // Get student's enrolled subjects (fallback to year/semester if explicit enrollments are empty)
         $subjects = $user->enrolledSubjects()->with(['schedules', 'instructorUser'])->get();
+        
+        if ($subjects->isEmpty()) {
+            $subjects = Subject::where('year_level', $user->year_level)
+                               ->where('semester', $user->semester)
+                               ->with(['schedules', 'instructorUser'])
+                               ->get();
+        }
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         
@@ -25,9 +32,9 @@ class ScheduleController extends Controller
 
         foreach ($subjects as $subject) {
             foreach ($subject->schedules as $schedule) {
-                if (in_array($schedule->day_of_week, $days)) {
+                if (in_array($schedule->day, $days)) {
                     $schedule->subject = $subject; // Attach subject to schedule for easy access
-                    $weeklySchedule[$schedule->day_of_week]->push($schedule);
+                    $weeklySchedule[$schedule->day]->push($schedule);
                 }
             }
         }

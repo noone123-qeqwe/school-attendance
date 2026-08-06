@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 
 @section('title', 'Reports')
 
@@ -124,7 +124,7 @@
                         @endif
                     </td>
                     <td style="font-family:monospace; color:var(--saas-text-muted);">
-                        {{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : '—' }}
+                        {{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : 'â€”' }}
                     </td>
                 </tr>
                 @empty

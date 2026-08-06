@@ -117,11 +117,16 @@
                 </div>
             </div>
         </div>
-        <div style="text-align: right; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
-            <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-clock"></i> <span>{{ now()->format('h:i A') }}</span>
+        <div style="display:flex; flex-direction:column; gap:12px; text-align:right;">
+            <div style="text-align: right; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <i class="bi bi-clock"></i> <span>{{ now()->format('h:i A') }}</span>
+                </div>
+                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 2px;">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <div style="color: #b39b82; font-size: 0.85rem; margin-top: 2px;">{{ now()->format('l, F j, Y') }}</div>
+            <a href="{{ route('excuses') }}" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
+                <i class="bi bi-envelope-paper-fill me-2"></i> Submit Excuse / Leave
+            </a>
         </div>
     </div>
 </div>
@@ -136,34 +141,10 @@
 
 <!-- Quick Stats -->
 <div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:24px; margin-bottom:24px;">
-    <div class="ent-kpi-card" data-accent="success" style="background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.15);">
-        <div class="ent-kpi-icon" style="color: #4ade80;"><i class="bi bi-check-circle-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label" style="color: #4ade80;">Present</div>
-            <div class="ent-kpi-value" style="color: #4ade80;">{{ $totalPresent ?? 0 }}</div>
-        </div>
-    </div>
-    <div class="ent-kpi-card" data-accent="warning" style="background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.15);">
-        <div class="ent-kpi-icon" style="color: #fbbf24;"><i class="bi bi-clock-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label" style="color: #fbbf24;">Late</div>
-            <div class="ent-kpi-value" style="color: #fbbf24;">{{ $totalLate ?? 0 }}</div>
-        </div>
-    </div>
-    <div class="ent-kpi-card" data-accent="danger" style="background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.15);">
-        <div class="ent-kpi-icon" style="color: #f87171;"><i class="bi bi-x-circle-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label" style="color: #f87171;">Absent</div>
-            <div class="ent-kpi-value" style="color: #f87171;">{{ $totalAbsent ?? 0 }}</div>
-        </div>
-    </div>
-    <div class="ent-kpi-card" data-accent="gold" style="background: rgba(207,164,111,0.05); border: 1px solid rgba(207,164,111,0.15);">
-        <div class="ent-kpi-icon" style="color: var(--gold);"><i class="bi bi-book-fill"></i></div>
-        <div class="ent-kpi-body">
-            <div class="ent-kpi-label" style="color: var(--gold);">Subjects</div>
-            <div class="ent-kpi-value" style="color: var(--gold);">{{ isset($subjects) ? count($subjects) : 0 }}</div>
-        </div>
-    </div>
+    <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
+    <x-card type="kpi" accent="warning" label="Late" value="{{ $totalLate ?? 0 }}" icon="bi bi-clock-fill" />
+    <x-card type="kpi" accent="danger" label="Absent" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
+    <x-card type="kpi" accent="gold" label="Subjects" value="{{ isset($subjects) ? count($subjects) : 0 }}" icon="bi bi-book-fill" />
 </div>
 
 <!-- Subject Attendance Breakdown -->

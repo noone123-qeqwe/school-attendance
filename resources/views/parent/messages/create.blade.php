@@ -1,4 +1,4 @@
-@extends('parent.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'Compose Message')
 
 @section('content')

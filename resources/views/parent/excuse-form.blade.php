@@ -1,5 +1,5 @@
-@extends('parent.layout')
-@section('page-title', 'Submit Excuse — ' . $child->name)
+﻿@extends('layouts.app')
+@section('page-title', 'Submit Excuse â€” ' . $child->name)
 
 @section('content')
 <div class="p-4">
@@ -105,7 +105,7 @@
                                  onclick="document.getElementById('fileInput').click()" id="uploadArea">
                                 <i class="bi bi-cloud-arrow-up" style="font-size: 2rem; color: #cfa46f;"></i>
                                 <p style="color: #b39b82; font-size: 0.85rem; margin: 8px 0 0;" id="uploadText">
-                                    Click to upload — PDF, JPG, or PNG (max 5MB)
+                                    Click to upload â€” PDF, JPG, or PNG (max 5MB)
                                 </p>
                                 <input type="file" name="document" id="fileInput" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" onchange="updateFileName(this)">
                             </div>

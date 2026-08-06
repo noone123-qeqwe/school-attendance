@@ -1,10 +1,11 @@
-@extends('layouts.admin_premium')
+@extends('layouts.app')
 
-@section('page-title', 'Holiday Calendar')
+@section('page-title', 'Holiday & Events Calendar')
 
 @section('content')
 <div id="holidayCalendarPage" class="holiday-dashboard">
 <style>
+    /* Styling from previous admin calendar */
     #holidayCalendarPage { padding-bottom: 18px; }
     .holiday-dashboard .adm-stats {
         display: flex;
@@ -56,16 +57,28 @@
     }
     .holiday-dashboard .glass-card .adm-card-head {
         padding: 20px 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     .holiday-dashboard .glass-card .adm-card-title {
         font-size: 1.05rem;
         font-weight: 800;
         color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
     .holiday-dashboard .glass-card .adm-card-icon {
         background: rgba(255,255,255,0.08);
         color: #ffe4e6;
         box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
     }
     .holiday-dashboard .calendar-controls {
         display: flex;
@@ -80,14 +93,26 @@
         min-width: 168px;
         text-align: center;
     }
-    .holiday-dashboard .maroon-btn {
+    .holiday-dashboard .adm-btn-ghost {
+        background: rgba(255,255,255,0.08);
+        color: #f8fafc;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 12px;
+        transition: all 0.2s ease;
+    }
+    .holiday-dashboard .adm-btn-ghost:hover {
+        background: rgba(255,255,255,0.16);
+    }
+    .holiday-dashboard .adm-btn-primary {
         background: linear-gradient(135deg, #7f1d1d, #3b0215);
         color: #fff;
         border: none;
+        border-radius: 12px;
+        padding: 6px 16px;
         box-shadow: 0 16px 32px rgba(124,58,58,0.24);
         transition: transform .2s ease, box-shadow .2s ease;
     }
-    .holiday-dashboard .maroon-btn:hover {
+    .holiday-dashboard .adm-btn-primary:hover {
         transform: translateY(-1px);
         box-shadow: 0 20px 40px rgba(124,58,58,0.32);
     }
@@ -135,7 +160,6 @@
         font-weight: 700;
         letter-spacing: 0.12em;
         text-transform: uppercase;
-        color: #fde68a;
         background: rgba(255,255,255,0.08);
         border: 1px solid rgba(255,255,255,0.12);
         margin-top: 8px;
@@ -170,6 +194,10 @@
         background: rgba(255,255,255,0.08);
         border: 1px solid rgba(255,255,255,0.14);
         color: #f8fafc;
+        border-radius: 12px;
+        padding: 10px 14px;
+        width: 100%;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .holiday-dashboard .adm-input option {
         background: #1e293b;
@@ -194,6 +222,9 @@
     }
     .holiday-dashboard .form-label {
         color: #e2e8f0;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
     }
     .holiday-dashboard .modal-content {
         background: rgba(34, 12, 25, 0.96);
@@ -237,15 +268,16 @@
         border: none;
     }
     .fc .fc-daygrid-event {
-        background: linear-gradient(135deg, #9f1239, #4c0519) !important;
         color: #fff !important;
         border: none !important;
-        box-shadow: 0 18px 30px rgba(120,40,60,0.24) !important;
-        border-radius: 12px !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
+        border-radius: 6px !important;
+        padding: 2px 4px;
+        font-size: 0.8rem;
     }
     .fc .fc-daygrid-event:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 22px 44px rgba(120,40,60,0.3) !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
     }
     .fc .fc-col-header-cell {
         background: rgba(255,255,255,0.06) !important;
@@ -259,20 +291,20 @@
 
 <div class="adm-stats">
     <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #fde68a;">{{ $holidays->count() }}</div>
-        <div class="adm-stat-lbl">This Month</div>
+        <div class="adm-stat-val" style="color: #fde68a;">{{ $events->count() }}</div>
+        <div class="adm-stat-lbl">Events This Month</div>
     </div>
     <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #dc2626;">{{ $holidays->where('type', 'national')->count() }}</div>
-        <div class="adm-stat-lbl">National</div>
+        <div class="adm-stat-val" style="color: #10b981;">{{ $events->where('type', 'holiday')->count() }}</div>
+        <div class="adm-stat-lbl">Holidays</div>
     </div>
     <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #7c2d12;">{{ $holidays->where('type', 'school')->count() }}</div>
-        <div class="adm-stat-lbl">School</div>
+        <div class="adm-stat-val" style="color: #3b82f6;">{{ $events->where('type', 'class')->count() + $events->where('type', 'exam')->count() }}</div>
+        <div class="adm-stat-lbl">Classes & Exams</div>
     </div>
     <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #6366f1;">{{ $holidays->where('type', 'no_class')->count() }}</div>
-        <div class="adm-stat-lbl">No Classes</div>
+        <div class="adm-stat-val" style="color: #f59e0b;">{{ $events->where('type', 'meeting')->count() }}</div>
+        <div class="adm-stat-lbl">Meetings</div>
     </div>
 </div>
 
@@ -285,7 +317,7 @@
                     <div class="adm-card-icon" style="background: rgba(255,255,255,0.12); color: #fde68a;">
                         <i class="bi bi-calendar3"></i>
                     </div>
-                    Holiday Calendar
+                    Holiday & Events Calendar
                 </div>
                 <div class="calendar-controls">
                     <button type="button" onclick="previousMonth()" class="adm-btn adm-btn-ghost" style="padding: 6px 10px;">
@@ -308,39 +340,58 @@
         </div>
     </div>
 
-    <!-- Holiday List & Add Form -->
+    <!-- Event List & Add Form -->
     <div class="col-lg-4">
-        <!-- Add Holiday Form -->
+        <!-- Add Event Form -->
         <div class="adm-card glass-card" style="margin-bottom: 20px;">
             <div class="adm-card-head">
                 <div class="adm-card-title">
                     <div class="adm-card-icon" style="background: rgba(255,255,255,0.12); color: #fecaca;">
                         <i class="bi bi-plus-circle"></i>
                     </div>
-                    Add Holiday
+                    Add Event / Holiday
                 </div>
             </div>
             <div style="padding: 20px;">
-                <form method="POST" action="{{ route('admin.holidays.store') }}">
+                <form method="POST" action="{{ route('admin.calendar.store') }}">
                     @csrf
+                    <div class="mb-3">
+                        <label class="form-label">Event Name</label>
+                        <input type="text" name="name" class="adm-input" placeholder="e.g., Summer Break" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select name="type" class="adm-input" required id="addEventType" onchange="toggleTimeLocation(this.value, 'add')">
+                            <option value="holiday">Holiday</option>
+                            <option value="class">Class</option>
+                            <option value="exam">Exam</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="school_event">School Event</option>
+                        </select>
+                    </div>
+                    
                     <div class="mb-3">
                         <label class="form-label">Date</label>
                         <input type="date" name="date" class="adm-input" required min="{{ now()->format('Y-m-d') }}">
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Holiday Name</label>
-                        <input type="text" name="name" class="adm-input" placeholder="e.g., Eid'l Adha" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select name="type" class="adm-input" required>
-                            <option value="national">National Holiday</option>
-                            <option value="local">Local Holiday</option>
-                            <option value="school">School Holiday</option>
-                            <option value="no_class">No Classes</option>
-                        </select>
+                    <div id="addTimeLocContainer" style="display: none;">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Start Time</label>
+                                <input type="time" name="start_time" id="addStartTime" class="adm-input">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">End Time</label>
+                                <input type="time" name="end_time" id="addEndTime" class="adm-input">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" name="location" id="addLocation" class="adm-input" placeholder="e.g., Auditorium">
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -349,44 +400,62 @@
                     </div>
                     
                     <button type="submit" class="adm-btn adm-btn-primary" style="width: 100%;">
-                        <i class="bi bi-plus"></i> Add Holiday
+                        <i class="bi bi-plus"></i> Add Event
                     </button>
                 </form>
             </div>
         </div>
 
-        <!-- Holiday List -->
+        <!-- Events List -->
         <div class="adm-card glass-card">
             <div class="adm-card-head">
                 <div class="adm-card-title">
                     <div class="adm-card-icon" style="background: rgba(255,255,255,0.12); color: #fde68a;">
                         <i class="bi bi-list-ul"></i>
                     </div>
-                    This Month's Holidays
+                    This Month's Events
                 </div>
             </div>
-            <div style="padding: 20px;" id="holidayListContainer">
-                @forelse($holidays as $holiday)
+            <div style="padding: 20px;" id="eventListContainer">
+                @forelse($events as $event)
+                    @php
+                        $color = match($event->type) {
+                            'class' => '#3b82f6',
+                            'exam' => '#ef4444',
+                            'meeting' => '#f59e0b',
+                            'school_event' => '#8b5cf6',
+                            'holiday' => '#10b981',
+                            default => '#6b7280'
+                        };
+                        $typeLabel = str_replace('_', ' ', $event->type);
+                    @endphp
                     <div class="holiday-card">
-                        <span class="holiday-dot" style="background: {{ $holiday->type_color }};"></span>
+                        <span class="holiday-dot" style="background: {{ $color }};"></span>
                         <div style="flex: 1;">
-                            <div class="holiday-name">{{ $holiday->name }}</div>
+                            <div class="holiday-name">{{ $event->name }}</div>
                             <div class="holiday-meta">
-                                {{ $holiday->date->format('M j, Y') }} • 
-                                <span style="color: {{ $holiday->type_color }};">{{ $holiday->type_label }}</span>
+                                {{ $event->date->format('M j, Y') }}
+                                @if($event->type !== 'holiday')
+                                    â€¢ {{ $event->start_time->format('h:i A') }} - {{ $event->end_time->format('h:i A') }}
+                                @endif
                             </div>
-                            @if($holiday->description)
-                                <div class="holiday-meta" style="margin-top: 6px; color: #cbd5e1;">
-                                    {{ $holiday->description }}
+                            @if($event->location)
+                                <div class="holiday-meta" style="margin-top: 2px;">
+                                    <i class="bi bi-geo-alt"></i> {{ $event->location }}
                                 </div>
                             @endif
-                            <div class="holiday-chip">{{ $holiday->type_label }}</div>
+                            @if($event->description)
+                                <div class="holiday-meta" style="margin-top: 6px; color: #cbd5e1;">
+                                    {{ $event->description }}
+                                </div>
+                            @endif
+                            <div class="holiday-chip" style="color: {{ $color }}">{{ $typeLabel }}</div>
                         </div>
                         <div class="holiday-card-actions">
-                            <button type="button" onclick="editHoliday({{ $holiday->id }}, '{{ $holiday->name }}', '{{ $holiday->description }}', '{{ $holiday->type }}')" class="holiday-btn-edit view-btn">
+                            <button type="button" onclick="editEvent({{ $event->id }}, '{{ addslashes($event->name) }}', '{{ addslashes($event->description) }}', '{{ $event->type }}', '{{ $event->date->format('Y-m-d') }}', '{{ $event->start_time ? $event->start_time->format('H:i') : '' }}', '{{ $event->end_time ? $event->end_time->format('H:i') : '' }}', '{{ addslashes($event->location) }}')" class="holiday-btn-edit view-btn">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button type="button" onclick="deleteHoliday({{ $holiday->id }})" class="holiday-btn-delete view-btn">
+                            <button type="button" onclick="deleteEvent({{ $event->id }})" class="holiday-btn-delete view-btn">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -394,8 +463,7 @@
                 @empty
                     <div style="padding: 40px 20px; text-align: center; color: #cbd5e1;">
                         <i class="bi bi-calendar-x" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 8px;"></i>
-                        <div>No holidays this month</div>
-                        <div style="font-size: 0.8rem; margin-top: 4px; color: #94a3b8;">Add holidays to prevent automatic absences</div>
+                        <div>No events this month</div>
                     </div>
                 @endforelse
             </div>
@@ -403,34 +471,58 @@
     </div>
 </div>
 
-<!-- Edit Holiday Modal -->
-<div class="modal fade" id="editHolidayModal" tabindex="-1">
+<!-- Edit Event Modal -->
+<div class="modal fade" id="editEventModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
                     <i class="bi bi-pencil" style="color: #fde68a;"></i>
-                    Edit Holiday
+                    Edit Event
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="editHolidayForm" method="POST">
+            <form id="editEventForm" method="POST">
                 @csrf
                 @method('PUT')
                 <div class="modal-body" style="padding: 20px;">
                     <div class="mb-3">
-                        <label class="form-label">Holiday Name</label>
+                        <label class="form-label">Event Name</label>
                         <input type="text" name="name" id="editName" class="adm-input" required>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Type</label>
-                        <select name="type" id="editType" class="adm-input" required>
-                            <option value="national">National Holiday</option>
-                            <option value="local">Local Holiday</option>
-                            <option value="school">School Holiday</option>
-                            <option value="no_class">No Classes</option>
+                        <select name="type" id="editType" class="adm-input" required onchange="toggleTimeLocation(this.value, 'edit')">
+                            <option value="holiday">Holiday</option>
+                            <option value="class">Class</option>
+                            <option value="exam">Exam</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="school_event">School Event</option>
                         </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" id="editDate" class="adm-input" required>
+                    </div>
+                    
+                    <div id="editTimeLocContainer" style="display: none;">
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label class="form-label">Start Time</label>
+                                <input type="time" name="start_time" id="editStartTime" class="adm-input">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">End Time</label>
+                                <input type="time" name="end_time" id="editEndTime" class="adm-input">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" name="location" id="editLocation" class="adm-input">
+                        </div>
                     </div>
                     
                     <div class="mb-3">
@@ -441,7 +533,7 @@
                 <div class="modal-footer">
                     <button type="button" class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="adm-btn adm-btn-primary">
-                        <i class="bi bi-check"></i> Update Holiday
+                        <i class="bi bi-check"></i> Update Event
                     </button>
                 </div>
             </form>
@@ -455,6 +547,22 @@ let calendar;
 let currentYear = {{ $year }};
 let currentMonth = {{ $month }};
 
+function toggleTimeLocation(type, prefix) {
+    const container = document.getElementById(`${prefix}TimeLocContainer`);
+    const start = document.getElementById(`${prefix}StartTime`);
+    const end = document.getElementById(`${prefix}EndTime`);
+    
+    if (type === 'holiday') {
+        container.style.display = 'none';
+        start.required = false;
+        end.required = false;
+    } else {
+        container.style.display = 'block';
+        start.required = true;
+        end.required = true;
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('calendar');
     
@@ -464,19 +572,20 @@ document.addEventListener('DOMContentLoaded', function() {
         headerToolbar: false,
         height: 'auto',
         events: function(fetchInfo, successCallback, failureCallback) {
-            fetch(`{{ route('admin.calendar.data') }}?year=${currentYear}&month=${currentMonth}`)
+            fetch(`{{ route('admin.calendar.data') }}?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
                 .then(response => response.json())
                 .then(data => {
-                    const events = data.map(holiday => ({
-                        id: holiday.id,
-                        title: holiday.name,
-                        date: holiday.date,
-                        backgroundColor: holiday.color,
-                        borderColor: holiday.color,
-                        textColor: 'white',
+                    const events = data.map(event => ({
+                        id: event.id,
+                        title: event.title,
+                        start: event.start,
+                        end: event.end,
+                        backgroundColor: event.color,
+                        borderColor: event.color,
                         extendedProps: {
-                            description: holiday.description,
-                            type: holiday.type_label
+                            type: event.type,
+                            location: event.location,
+                            description: event.description
                         }
                     }));
                     successCallback(events);
@@ -487,7 +596,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         },
         eventClick: function(info) {
-            alert(`${info.event.title}\nType: ${info.event.extendedProps.type}\n${info.event.extendedProps.description || ''}`);
+            const props = info.event.extendedProps;
+            alert(`${info.event.title}\nType: ${props.type.replace('_', ' ')}\n${props.location ? 'Location: ' + props.location + '\n' : ''}${props.description || ''}`);
         },
         dayCellClassNames: function(arg) {
             const today = new Date();
@@ -535,84 +645,34 @@ function updateCalendar() {
     calendar.gotoDate(`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`);
     calendar.refetchEvents();
     
-    // Fetch and update the side panel holidays without reloading
-    fetch(`{{ route('admin.calendar.data') }}?year=${currentYear}&month=${currentMonth}`)
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('holidayListContainer');
-            
-            // Update stats
-            const stats = document.querySelectorAll('.adm-stat-val');
-            if (stats.length >= 4) {
-                stats[0].textContent = data.length;
-                stats[1].textContent = data.filter(h => h.type === 'national').length;
-                stats[2].textContent = data.filter(h => h.type === 'school').length;
-                stats[3].textContent = data.filter(h => h.type === 'no_class').length;
-            }
-
-            if (data.length === 0) {
-                container.innerHTML = `
-                    <div style="padding: 40px 20px; text-align: center; color: #cbd5e1;">
-                        <i class="bi bi-calendar-x" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 8px;"></i>
-                        <div>No holidays this month</div>
-                        <div style="font-size: 0.8rem; margin-top: 4px; color: #94a3b8;">Add holidays to prevent automatic absences</div>
-                    </div>`;
-                return;
-            }
-
-            let html = '';
-            data.forEach(holiday => {
-                const dateObj = new Date(holiday.date);
-                const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-                const descStr = holiday.description ? `<div class="holiday-meta" style="margin-top: 6px; color: #cbd5e1;">${holiday.description}</div>` : '';
-                
-                html += `
-                    <div class="holiday-card">
-                        <span class="holiday-dot" style="background: ${holiday.color};"></span>
-                        <div style="flex: 1;">
-                            <div class="holiday-name">${holiday.name}</div>
-                            <div class="holiday-meta">
-                                ${dateStr} • 
-                                <span style="color: ${holiday.color};">${holiday.type_label}</span>
-                            </div>
-                            ${descStr}
-                            <div class="holiday-chip">${holiday.type_label}</div>
-                        </div>
-                        <div class="holiday-card-actions">
-                            <button type="button" onclick="editHoliday(${holiday.id}, '${holiday.name.replace(/'/g, "\\'")}', '${(holiday.description || '').replace(/'/g, "\\'")}', '${holiday.type}')" class="holiday-btn-edit view-btn">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button type="button" onclick="deleteHoliday(${holiday.id})" class="holiday-btn-delete view-btn">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        });
-    
-    // Update URL without page reload
+    // Skip updating side panel dynamically for now to keep things simple. Let the page reload via location.href if needed.
     const url = new URL(window.location);
     url.searchParams.set('year', currentYear);
     url.searchParams.set('month', currentMonth);
-    window.history.pushState({}, '', url);
+    window.location.href = url.toString();
 }
 
-function editHoliday(id, name, description, type) {
+function editEvent(id, name, description, type, date, startTime, endTime, location) {
     document.getElementById('editName').value = name;
-    document.getElementById('editDescription').value = description || '';
     document.getElementById('editType').value = type;
-    document.getElementById('editHolidayForm').action = `/admin/holidays/${id}`;
+    document.getElementById('editDate').value = date;
+    document.getElementById('editStartTime').value = startTime;
+    document.getElementById('editEndTime').value = endTime;
+    document.getElementById('editLocation').value = location;
+    document.getElementById('editDescription').value = description;
     
-    new bootstrap.Modal(document.getElementById('editHolidayModal')).show();
+    document.getElementById('editEventForm').action = `/admin/calendar/${id}`;
+    
+    toggleTimeLocation(type, 'edit');
+    
+    new bootstrap.Modal(document.getElementById('editEventModal')).show();
 }
 
-function deleteHoliday(id) {
-    if (confirm('Are you sure you want to remove this holiday?')) {
+function deleteEvent(id) {
+    if (confirm('Are you sure you want to remove this event?')) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/admin/holidays/${id}`;
+        form.action = `/admin/calendar/${id}`;
         form.innerHTML = `
             @csrf
             @method('DELETE')

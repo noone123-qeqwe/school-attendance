@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'Reports')
 
 @section('content')
@@ -145,8 +145,8 @@
     <div class="tch-card-head">
         <div class="tch-card-title">
             <div class="tch-card-icon" style="background:#fff5f5;color:#7c2d12;"><i class="bi bi-bar-chart-fill"></i></div>
-            @if($type==='daily') Daily Report — {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}
-            @elseif($type==='monthly') Monthly Report — {{ \Carbon\Carbon::createFromFormat('Y-m',$month)->format('F Y') }}
+            @if($type==='daily') Daily Report â€” {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}
+            @elseif($type==='monthly') Monthly Report â€” {{ \Carbon\Carbon::createFromFormat('Y-m',$month)->format('F Y') }}
             @else Attendance Percentage Report
             @endif
         </div>
@@ -192,7 +192,7 @@
                 <tr>
                     <td data-label="#" style="color:#cbd5e1;font-size:.78rem;">{{ $i+1 }}</td>
                     <td data-label="Student">
-                        <div style="font-weight:600;color:#f8e7d3;">{{ $log->user->name ?? '—' }}</div>
+                        <div style="font-weight:600;color:#f8e7d3;">{{ $log->user->name ?? 'â€”' }}</div>
                         <div style="font-size:.72rem;color:#d8c5a8;">{{ $log->user->student_number ?? '' }}</div>
                     </td>
                     <td data-label="Subject" style="font-weight:600;color:#f8e7d3;">{{ $log->subject->name ?? $log->subject_code }}</td>
@@ -203,7 +203,7 @@
                         @else <span class="badge-absent">Absent</span>
                         @endif
                     </td>
-                    <td data-label="Time In" style="color:#64748b;">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : '—' }}</td>
+                    <td data-label="Time In" style="color:#64748b;">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : 'â€”' }}</td>
                 </tr>
                 @empty
                 <tr><td colspan="6"><div class="empty-state"><i class="bi bi-inbox"></i><p>No records for this period.</p></div></td></tr>

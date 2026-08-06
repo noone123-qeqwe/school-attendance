@@ -1,4 +1,4 @@
-@extends('teacher.layout')
+﻿@extends('layouts.app')
 @section('page-title', 'Add Subject')
 
 @section('content')

@@ -159,4 +159,16 @@ class User extends Authenticatable
     {
         return $this->hasMany(Leave::class, 'student_id');
     }
+
+    public function organizedEvents()
+    {
+        return $this->hasMany(Event::class, 'organizer_id');
+    }
+
+    public function invitedEvents()
+    {
+        return $this->belongsToMany(Event::class, 'event_attendees', 'user_id', 'event_id')
+                    ->withPivot('response', 'decline_reason')
+                    ->withTimestamps();
+    }
 }

@@ -1,4 +1,4 @@
-@extends('layouts.admin_premium')
+﻿@extends('layouts.app')
 @section('page-title', 'Edit Student')
 
 @section('content')
@@ -10,7 +10,7 @@
     <div class="adm-card-head">
         <div class="adm-card-title">
             <div class="adm-card-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-pencil-fill"></i></div>
-            Edit — {{ $student->name }}
+            Edit â€” {{ $student->name }}
         </div>
     </div>
     <div style="padding:24px;">

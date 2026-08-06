@@ -454,6 +454,81 @@ class HomeController extends Controller
         return view('excuses.create', compact('attendance'));
     }
 
+    public function createGeneralExcuse()
+    {
+        $user = Auth::user();
+        $subjects = $user->enrolledSubjects()->get();
+        return view('excuses.create_general', compact('subjects'));
+    }
+
+    public function storeGeneralExcuse(Request $request)
+    {
+        $request->validate([
+            'subject_code' => 'required|exists:subjects,code',
+            'date' => 'required|date',
+            'reason' => 'required|string|max:255',
+            'description' => 'required|string|max:1000',
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
+        ]);
+
+        $user = Auth::user();
+
+        // Ensure student is enrolled in the subject
+        if (!$user->enrolledSubjects()->where('code', $request->subject_code)->exists()) {
+            abort(403, 'You are not enrolled in this subject.');
+        }
+
+        // Get or create the attendance record
+        $attendance = Attendance::firstOrCreate([
+            'user_id' => $user->id,
+            'subject_code' => $request->subject_code,
+            'date' => $request->date,
+        ], [
+            'status' => 'Absent', // Mark as absent since they are submitting an excuse
+            'time_in' => null,
+            'time_out' => null,
+            'device_id' => null,
+            'excused' => false
+        ]);
+
+        // If it already has an excuse, reject
+        if ($attendance->excuseSubmission) {
+            return redirect()->route('excuses')->with('error', 'Excuse already submitted for this class and date.');
+        }
+
+        $attachmentPaths = [];
+        
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $path = $file->store('excuse_attachments', 'public');
+                $attachmentPaths[] = $path;
+            }
+        }
+
+        $excuseSubmission = ExcuseSubmission::create([
+            'user_id' => $user->id,
+            'attendance_id' => $attendance->id,
+            'reason' => $request->reason,
+            'description' => $request->description,
+            'attachments' => $attachmentPaths,
+            'status' => 'pending'
+        ]);
+
+        // Notify Teacher
+        $subject = \App\Models\Subject::where('code', $attendance->subject_code)->first();
+        if ($subject && $subject->instructor_id) {
+            \App\Models\Notification::create([
+                'user_id' => $subject->instructor_id,
+                'title' => 'New Leave Request',
+                'message' => "{$user->name} submitted a leave request for {$subject->name} on " . \Carbon\Carbon::parse($request->date)->format('M d, Y'),
+                'type' => 'custom',
+                'link' => route('admin.excuses')
+            ]);
+        }
+
+        return redirect()->route('excuses')->with('success', 'Excuse/Leave request submitted successfully.');
+    }
+
     public function storeExcuse(Request $request)
     {
         $request->validate([
@@ -514,5 +589,63 @@ class HomeController extends Controller
         }
 
         return redirect()->route('excuses')->with('success', 'Excuse submitted successfully! It will be reviewed by the teacher.');
+    }
+
+    /**
+     * Student calendar view.
+     */
+    public function calendar()
+    {
+        $year = request('year', now()->year);
+        $month = request('month', now()->month);
+        
+        return view('student.calendar', compact('year', 'month'));
+    }
+
+    /**
+     * JSON feed for FullCalendar (Student).
+     */
+    public function calendarData(Request $request)
+    {
+        $start = $request->query('start');
+        $end = $request->query('end');
+        
+        $query = \App\Models\Event::visibleTo(Auth::user())
+                      ->where('status', '!=', 'cancelled');
+                      
+        if ($start) {
+            $query->where('date', '>=', Carbon::parse($start)->toDateString());
+        }
+        if ($end) {
+            $query->where('date', '<=', Carbon::parse($end)->toDateString());
+        }
+
+        $events = $query->with('attendees')->get();
+
+        $formatted = $events->map(function ($event) {
+            // Map types to colors
+            $color = match($event->type) {
+                'class' => '#3b82f6', // blue
+                'exam' => '#ef4444', // red
+                'meeting' => '#f59e0b', // amber
+                'school_event' => '#8b5cf6', // purple
+                'holiday' => '#10b981', // green
+                default => '#6b7280'
+            };
+
+            return [
+                'id' => $event->id,
+                'title' => $event->name,
+                'start' => $event->date->format('Y-m-d') . 'T' . $event->start_time->format('H:i:s'),
+                'end' => $event->date->format('Y-m-d') . 'T' . $event->end_time->format('H:i:s'),
+                'type' => $event->type,
+                'location' => $event->location,
+                'status' => $event->status,
+                'editable' => false, // Read-only for students
+                'color' => $color,
+            ];
+        });
+
+        return response()->json($formatted);
     }
 }
