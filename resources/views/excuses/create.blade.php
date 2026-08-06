@@ -1,4 +1,4 @@
-@extends('layouts.portal')
+@extends('layouts.app')
 @section('page-title', 'Submit Excuse')
 
 @section('content')
