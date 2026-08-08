@@ -329,7 +329,7 @@
                             <button type="button" class="hcal-event-action-btn" onclick="openHcalEditModal({{ $evt->id }}, '{{ addslashes($evt->name) }}', '{{ $evt->description ? addslashes($evt->description) : '' }}', '{{ $evt->type }}', '{{ is_object($evt->date) ? $evt->date->format('Y-m-d') : $evt->date }}')">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <form action="{{ route('admin.holidays.destroy', $evt->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this holiday?');">
+                            <form action="{{ route('admin.calendar.destroy', $evt->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this holiday?');">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="hcal-event-action-btn danger"><i class="bi bi-trash3"></i></button>
                             </form>
@@ -358,7 +358,7 @@
             <div class="hcal-modal-title" id="hcalModalTitle">Add Holiday / Event</div>
             <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">âœ•</button>
         </div>
-        <form id="hcalForm" method="POST" action="{{ route('admin.holidays.store') }}">
+        <form id="hcalForm" method="POST" action="{{ route('admin.calendar.store') }}">
             @csrf
             <div id="hcalMethodField"></div>
             <div class="hcal-modal-body">
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // â”€â”€ HOLIDAY CALENDAR MODAL â”€â”€
 function openHcalModal() {
     document.getElementById('hcalModalTitle').textContent = 'Add Holiday / Event';
-    document.getElementById('hcalForm').action = '{{ route("admin.holidays.store") }}';
+    document.getElementById('hcalForm').action = '{{ route("admin.calendar.store") }}';
     document.getElementById('hcalMethodField').innerHTML = '';
     document.getElementById('hcalName').value = '';
     document.getElementById('hcalDate').value = '';
@@ -504,7 +504,7 @@ function openHcalModal() {
 
 function openHcalEditModal(id, name, desc, type, date) {
     document.getElementById('hcalModalTitle').textContent = 'Edit Holiday';
-    document.getElementById('hcalForm').action = '/admin/holidays/' + id;
+    document.getElementById('hcalForm').action = '/admin/calendar/' + id;
     document.getElementById('hcalMethodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
     document.getElementById('hcalName').value = name;
     document.getElementById('hcalDate').value = date;
