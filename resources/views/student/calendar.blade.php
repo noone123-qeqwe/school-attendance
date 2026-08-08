@@ -366,7 +366,7 @@
 <!-- New Meeting Modal -->
 <div class="modal fade" id="newMeetingModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="event-modal-content w-100">
+        <div class="modal-content event-modal-content w-100">
             <div class="event-modal-header">
                 <h5 class="modal-title" style="margin: 0; font-weight: 700;">Schedule New Meeting</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -426,7 +426,7 @@
 <!-- Event Detail Modal -->
 <div class="modal fade" id="eventDetailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="event-modal-content w-100">
+        <div class="modal-content event-modal-content w-100">
             <div class="event-modal-header">
                 <h5 class="modal-title" style="margin: 0; font-weight: 700;" id="eventTitle">Event Title</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
