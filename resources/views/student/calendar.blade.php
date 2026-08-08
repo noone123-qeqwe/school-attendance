@@ -168,6 +168,90 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
     
+    /* Inputs and Chips for Modals */
+    .holiday-dashboard .adm-input {
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #f3e7cd;
+        border-radius: 10px;
+        padding: 10px 14px;
+        width: 100%;
+        transition: all 0.2s ease;
+    }
+    .holiday-dashboard .adm-input:focus {
+        outline: none;
+        border-color: rgba(207, 164, 111, 0.4);
+        box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.15);
+    }
+    .holiday-dashboard .form-label {
+        color: #b39b82;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .invitee-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .chip {
+        background: rgba(207, 164, 111, 0.1);
+        border: 1px solid rgba(207, 164, 111, 0.2);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #cfa46f;
+    }
+    .chip button {
+        background: none;
+        border: none;
+        color: #cfa46f;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+    .chip button:hover {
+        opacity: 1;
+    }
+    
+    .search-results {
+        background: rgba(15, 15, 20, 0.95);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        margin-top: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        position: absolute;
+        width: 100%;
+        z-index: 10;
+        display: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .search-result-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+    .search-result-item:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
     /* Event Details Modal Pro Max */
     .event-modal-content {
         background: rgba(10, 10, 10, 0.95);
@@ -253,8 +337,11 @@
                     <button type="button" onclick="nextMonth()" class="adm-btn adm-btn-ghost" style="padding: 6px 10px;">
                         <i class="bi bi-chevron-right"></i>
                     </button>
-                    <button type="button" onclick="goToToday()" class="adm-btn adm-btn-primary" style="margin-left: 10px;">
+                    <button type="button" onclick="goToToday()" class="adm-btn adm-btn-ghost" style="margin-left: 10px; margin-right: 10px;">
                         Today
+                    </button>
+                    <button type="button" class="adm-btn adm-btn-primary" data-bs-toggle="modal" data-bs-target="#newMeetingModal">
+                        <i class="bi bi-plus-lg"></i> Schedule Meeting
                     </button>
                 </div>
             </div>
@@ -272,6 +359,66 @@
             <div style="padding: 20px;">
                 <div id="calendar" style="min-height: 600px;"></div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Meeting Modal -->
+<div class="modal fade" id="newMeetingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="event-modal-content w-100">
+            <div class="event-modal-header">
+                <h5 class="modal-title" style="margin: 0; font-weight: 700;">Schedule New Meeting</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="newMeetingForm" onsubmit="handleCreateMeeting(event)">
+                @csrf
+                <div class="event-modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Meeting Name</label>
+                            <input type="text" name="name" class="adm-input" required placeholder="e.g. Study Group">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" class="adm-input" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" name="start_time" class="adm-input" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">End Time</label>
+                            <input type="time" name="end_time" class="adm-input" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Location (Optional)</label>
+                            <input type="text" name="location" class="adm-input" placeholder="e.g. Library or Zoom Link">
+                        </div>
+                        
+                        <!-- Invitees Section -->
+                        <div class="col-12 mt-4">
+                            <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>Invitees</span>
+                            </label>
+                            
+                            <div style="position: relative;">
+                                <input type="text" id="inviteeSearch" class="adm-input" placeholder="Search for teachers or students..." onkeyup="debounceSearch(this.value)">
+                                <div id="searchResults" class="search-results"></div>
+                            </div>
+                            
+                            <div id="selectedInvitees" class="invitee-chips"></div>
+                            
+                            <!-- Hidden inputs will be appended here via JS -->
+                            <div id="hiddenInviteeInputs"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.06); padding: 16px 32px;">
+                    <button type="button" class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="adm-btn adm-btn-primary">Schedule Meeting</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -426,6 +573,107 @@ function updateCalendar() {
     url.searchParams.set('year', currentYear);
     url.searchParams.set('month', currentMonth);
     window.history.pushState({}, '', url);
+}
+
+// Search & Invites
+let searchTimeout;
+let selectedInvitees = [];
+
+function debounceSearch(query) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => searchInvitees(query), 300);
+}
+
+function searchInvitees(query) {
+    if (query.length < 2) {
+        document.getElementById('searchResults').style.display = 'none';
+        return;
+    }
+    
+    fetch(`{{ route('student.calendar.search-invitees') }}?q=${encodeURIComponent(query)}`)
+        .then(res => res.json())
+        .then(data => {
+            const results = document.getElementById('searchResults');
+            if (data.data.length === 0) {
+                results.innerHTML = '<div class="search-result-item" style="color: #b39b82;">No users found</div>';
+            } else {
+                results.innerHTML = data.data.map(user => `
+                    <div class="search-result-item" onclick="addInvitee(${user.id}, '${user.name.replace(/'/g, "\\'")}')">
+                        <div>
+                            <div style="font-weight: 600; color: #f3e7cd;">${user.name}</div>
+                            <div style="font-size: 0.75rem; color: #b39b82;">${user.role} â€¢ ${user.email}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            results.style.display = 'block';
+        });
+}
+
+function addInvitee(id, name) {
+    if (!selectedInvitees.some(i => i.id === id)) {
+        selectedInvitees.push({id, name});
+        renderChips();
+    }
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('inviteeSearch').value = '';
+}
+
+function removeInvitee(id) {
+    selectedInvitees = selectedInvitees.filter(i => i.id !== id);
+    renderChips();
+}
+
+function renderChips() {
+    let html = '';
+    
+    selectedInvitees.forEach(inv => {
+        html += `<div class="chip">
+                    ${inv.name}
+                    <button type="button" onclick="removeInvitee(${inv.id})"><i class="bi bi-x"></i></button>
+                 </div>`;
+    });
+    
+    document.getElementById('selectedInvitees').innerHTML = html;
+    
+    let inputsHtml = '';
+    selectedInvitees.forEach(inv => {
+        inputsHtml += `<input type="hidden" name="attendee_ids[]" value="${inv.id}">`;
+    });
+    document.getElementById('hiddenInviteeInputs').innerHTML = inputsHtml;
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#inviteeSearch') && !e.target.closest('#searchResults')) {
+        document.getElementById('searchResults').style.display = 'none';
+    }
+});
+
+function handleCreateMeeting(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    
+    fetch(`{{ route('student.calendar.meetings.store') }}`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('newMeetingModal')).hide();
+            form.reset();
+            selectedInvitees = [];
+            renderChips();
+            calendar.refetchEvents();
+        } else {
+            alert(data.message || 'Error creating meeting');
+        }
+    })
+    .catch(err => alert('An error occurred'));
 }
 </script>
 </div>

@@ -58,6 +58,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('student.schedule');
     Route::get('/student/calendar', [App\Http\Controllers\HomeController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/calendar/data', [App\Http\Controllers\HomeController::class, 'calendarData'])->name('student.calendar.data');
+    Route::get('/student/calendar/search-invitees', [App\Http\Controllers\HomeController::class, 'searchInvitees'])->name('student.calendar.search-invitees');
+    Route::post('/student/calendar/meetings', [App\Http\Controllers\HomeController::class, 'storeMeeting'])->name('student.calendar.meetings.store');
 
     Route::get('/classes', [ClassController::class, 'index'])->name('classes.index');
     Route::get('/home', [HomeController::class, 'index'])->name('home');

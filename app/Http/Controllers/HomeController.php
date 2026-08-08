@@ -10,8 +10,10 @@ use App\Models\ExcuseSubmission;
 use App\Models\Holiday;
 use App\Models\Announcement;
 use Carbon\Carbon;
-
 use Illuminate\Http\Request;
+use App\Models\Event;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 
 class HomeController extends Controller
@@ -641,11 +643,92 @@ class HomeController extends Controller
                 'type' => $event->type,
                 'location' => $event->location,
                 'status' => $event->status,
-                'editable' => false, // Read-only for students
+                'editable' => Auth::user()->can('update', $event),
                 'color' => $color,
             ];
         });
 
         return response()->json($formatted);
+    }
+
+    /**
+     * Search invitees for the attendee picker (Student).
+     */
+    public function searchInvitees(Request $request)
+    {
+        $q = $request->query('q');
+
+        $query = User::query();
+
+        if ($q) {
+            $query->where(function($sq) use ($q) {
+                $sq->where('name', 'like', "%{$q}%")
+                   ->orWhere('email', 'like', "%{$q}%");
+            });
+        }
+
+        $query->whereIn('role', ['teacher', 'student']);
+
+        $results = $query->select('id', 'name', 'email', 'role', 'profile_image')
+                         ->paginate(10);
+
+        return response()->json($results);
+    }
+
+    /**
+     * Create a meeting event (Student).
+     */
+    public function storeMeeting(Request $request)
+    {
+        $this->authorize('create', [Event::class, 'meeting']);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'date' => 'required|date',
+            'start_time' => 'required',
+            'end_time' => 'required|after:start_time',
+            'location' => 'nullable|string|max:255',
+            'attendee_ids' => 'nullable|array',
+            'attendee_ids.*' => 'exists:users,id',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            $event = Event::create([
+                'name' => $request->name,
+                'date' => $request->date,
+                'start_time' => $request->start_time,
+                'end_time' => $request->end_time,
+                'type' => 'meeting',
+                'status' => 'scheduled',
+                'location' => $request->location,
+                'organizer_id' => Auth::id(),
+                'created_by' => Auth::id(),
+            ]);
+
+            $userIdsToInvite = [];
+
+            if ($request->has('attendee_ids')) {
+                foreach ($request->attendee_ids as $id) {
+                    $userIdsToInvite[] = $id;
+                }
+            }
+
+            $userIdsToInvite = array_unique($userIdsToInvite);
+            
+            $attendeeData = [];
+            foreach ($userIdsToInvite as $uid) {
+                $attendeeData[$uid] = ['response' => 'pending'];
+            }
+            
+            $event->attendees()->syncWithoutDetaching($attendeeData);
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'event' => $event]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
     }
 }

@@ -23,6 +23,12 @@ class EventPolicy
             }
         }
 
+        if ($user->isStudent()) {
+            if ($type === 'meeting') {
+                return true;
+            }
+        }
+
         return false; // school_event and holiday creation is admin-only
     }
 
@@ -39,12 +45,12 @@ class EventPolicy
             return false; // Only admin can update these
         }
 
-        if ($user->isTeacher()) {
+        if ($user->isTeacher() || $user->isStudent()) {
             if ($event->type === 'meeting' && $event->organizer_id === $user->id) {
                 return true;
             }
             
-            if (in_array($event->type, ['class', 'exam']) && $event->class_id) {
+            if ($user->isTeacher() && in_array($event->type, ['class', 'exam']) && $event->class_id) {
                 return $user->subjects()->where('id', $event->class_id)->exists();
             }
         }
