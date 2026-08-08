@@ -546,9 +546,7 @@ var fpSec   = document.getElementById('fingerprintSection');
 
 function updateFpVisibility() {
     if (!window.PublicKeyCredential) return;
-    var val = idInput.value.trim();
-    // Only hide if it clearly looks like an email (has @)
-    fpSec.style.display = (val.indexOf('@') !== -1) ? 'none' : 'block';
+    fpSec.style.display = 'block';
 }
 
 // Show on page load
