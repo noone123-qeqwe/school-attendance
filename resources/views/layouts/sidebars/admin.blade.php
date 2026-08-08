@@ -69,9 +69,7 @@
     <a href="{{ route('admin.announcements.index') }}" class="nav-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
         <i class="bi bi-megaphone-fill"></i> <span class="nav-link-text">Announcements</span>
     </a>
-    <a href="{{ route('admin.messages.index') }}" class="nav-link {{ request()->routeIs('admin.messages*') ? 'active' : '' }}">
-        <i class="bi bi-chat-dots-fill"></i> <span class="nav-link-text">Messages</span>
-    </a>
+
     <a href="{{ route('admin.excuses') }}" class="nav-link {{ request()->routeIs('admin.excuses') ? 'active' : '' }}">
         <i class="bi bi-file-text-fill"></i> <span class="nav-link-text">Excuse Reviews</span>
     </a>
