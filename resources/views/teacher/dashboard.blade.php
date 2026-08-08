@@ -3,7 +3,38 @@
 
 @section('content')
 <style>
-    /* â”€â”€ TEACHER DASHBOARD MOBILE â”€â”€ */
+    /* ── UI/UX Enhancements ── */
+    .class-item { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important; }
+    .class-item:hover { transform: translateX(6px); background: rgba(255,255,255,0.04) !important; }
+    
+    .ent-kpi-card, .ent-section { transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important; }
+    .ent-kpi-card:hover, .ent-section:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 12px 30px -10px rgba(207,164,111,0.15), 0 4px 6px -4px rgba(0,0,0,0.5); }
+    
+    .ent-btn { transition: all 0.2s ease !important; }
+    .ent-btn:active { transform: scale(0.96); }
+    .ent-btn-primary:hover { box-shadow: 0 0 15px rgba(207,164,111,0.25); }
+    
+    .teacher-quick-bar { background: rgba(15, 11, 8, 0.5) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(207,164,111,0.1); box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+    
+    .clock-text { font-variant-numeric: tabular-nums; letter-spacing: -0.5px !important; }
+    
+    @keyframes float-icon {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-6px); }
+        100% { transform: translateY(0px); }
+    }
+    .ent-empty-icon i { display: inline-block; animation: float-icon 3s ease-in-out infinite; }
+    
+    @keyframes pulse-today {
+        0% { box-shadow: 0 0 0 0 rgba(207,164,111, 0.3); }
+        70% { box-shadow: 0 0 0 8px rgba(207,164,111, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(207,164,111, 0); }
+    }
+    .hcal-day.today { animation: pulse-today 2s infinite; border: 1px solid rgba(207,164,111,0.5) !important; position: relative; z-index: 2; }
+    .hcal-dot { transition: transform 0.2s; }
+    .hcal-day:hover .hcal-dot { transform: scale(1.6); }
+
+    /* ── TEACHER DASHBOARD MOBILE ── */
     @media (max-width: 768px) {
         .col-lg-8, .col-lg-4 { width: 100% !important; flex: none !important; max-width: 100% !important; }
         .stat-card-premium { padding: 14px !important; min-height: 90px !important; }
@@ -15,7 +46,7 @@
     }
 </style>
 
-{{-- â”€â”€â”€ MOBILE HEADER â”€â”€â”€ --}}
+{{-- ── MOBILE HEADER ── --}}
 <div class="teacher-mobile-header mobile-dash-header d-md-none ent-fade-up" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
     <div>
         <div class="mobile-dash-title" style="font-size:1.45rem; font-weight:800; line-height:1.2;">
@@ -26,7 +57,7 @@
         </div>
     </div>
     <div style="text-align:right;">
-        <div id="teacherClockMobile" style="font-size:1.1rem;font-weight:800;color:var(--gold);">{{ now()->format('h:i A') }}</div>
+        <div id="teacherClockMobile" class="clock-text" style="font-size:1.1rem;font-weight:800;color:var(--gold);">{{ now()->format('h:i A') }}</div>
         <div class="mobile-dash-date" style="font-size:0.75rem; color:var(--text-muted);">Teacher Portal</div>
     </div>
 </div>
@@ -55,7 +86,7 @@
         </div>
         <div>
             <div style="font-size:0.72rem;font-weight:600;color:var(--ent-text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Current Session Time</div>
-            <div id="teacherClock" class="clock-text" style="font-size:2.2rem;font-weight:800;line-height:1.1;letter-spacing:-1px;color:var(--ent-text);">
+            <div id="teacherClock" class="clock-text" style="font-size:2.2rem;font-weight:800;line-height:1.1;color:var(--ent-text);">
                 {{ now()->format('h:i:s A') }}
             </div>
             <div style="font-size:0.85rem;color:var(--ent-text-secondary);margin-top:2px;font-weight:500;">
