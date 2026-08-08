@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'QR Management')
 
@@ -10,8 +10,8 @@
     </div>
     
     <div style="display:flex; gap:12px;">
-        <button class="saas-btn saas-btn-secondary" onclick="alert('Bulk Print feature coming soon!')">
-            <i class="bi bi-printer"></i> Bulk Print QR Codes
+        <button type="button" class="saas-btn saas-btn-secondary" onclick="document.getElementById('bulkPrintForm').submit()">
+            <i class="bi bi-printer"></i> Bulk Print Selected
         </button>
     </div>
 </div>
@@ -42,10 +42,19 @@
         </div>
     </div>
     
-    <div style="padding:24px;">
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
+    <form id="bulkPrintForm" action="{{ route('qr.bulk-print') }}" method="POST" target="_blank">
+        @csrf
+        <div style="padding:24px;">
+            <div style="margin-bottom: 16px; padding: 0 4px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--saas-text); width: fit-content;">
+                    <input type="checkbox" id="selectAllQR" style="accent-color: var(--saas-gold); width: 16px; height: 16px;" onclick="document.querySelectorAll('.qr-checkbox').forEach(cb => cb.checked = this.checked)">
+                    <span style="font-size: 0.9rem; font-weight: 500;">Select All</span>
+                </label>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;">
             @forelse($students as $student)
-            <div style="border:1px solid var(--saas-border); border-radius:var(--saas-radius-md); padding:20px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; align-items:center; text-align:center;">
+            <div style="position:relative; border:1px solid var(--saas-border); border-radius:var(--saas-radius-md); padding:20px; background:rgba(255,255,255,0.02); display:flex; flex-direction:column; align-items:center; text-align:center;">
+                <input type="checkbox" name="student_ids[]" value="{{ $student->id }}" class="qr-checkbox" style="position:absolute; top: 16px; left: 16px; accent-color: var(--saas-gold); width: 18px; height: 18px; cursor: pointer;">
                 <div style="width:120px; height:120px; background:white; padding:10px; border-radius:12px; margin-bottom:16px;">
                     <!-- Real QR generation using Google Charts API for placeholder if local image doesn't exist -->
                     @if($student->qr_code_path)
@@ -82,6 +91,7 @@
             @endforelse
         </div>
     </div>
+    </form>
     
     @if(isset($students) && $students->hasPages())
     <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:space-between; align-items:center;">

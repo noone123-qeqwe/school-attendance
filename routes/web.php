@@ -320,6 +320,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
 
     // QR Management
     Route::get('/qr-management', [App\Http\Controllers\Admin\QrManagementController::class, 'index'])->name('qr');
+    Route::post('/qr-management/bulk-print', [App\Http\Controllers\Admin\QrManagementController::class, 'bulkPrint'])->name('qr.bulk-print');
 
     Route::get('/subjects/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewSubjectsPdf'])->name('subjects.preview');
     Route::get('/subjects/export-pdf', [App\Http\Controllers\AdminController::class, 'exportSubjectsPdf'])->name('subjects.pdf');

@@ -279,7 +279,8 @@
                     </div>
                 @endforelse
             </div>
-        </div>
+            </div>
+        </x-card>
     </div>
 
     {{-- Recent Attendance Logs --}}
@@ -349,11 +350,7 @@
             <i class="bi bi-calendar-heart-fill"></i>
         </div>
     </x-slot:icon>
-    <x-slot:headerActions>
-        <button type="button" class="ent-btn ent-btn-sm ent-btn-primary" onclick="openHcalModal()">
-            <i class="bi bi-plus-lg"></i> Add Event
-        </button>
-    </x-slot:headerActions>
+
     
     <div style="padding:16px 20px;">
         <div class="hcal-container">
@@ -438,17 +435,7 @@
                             <div class="hcal-event-desc">{{ $evt->description }}</div>
                         @endif
 
-                        @if($evt->source === 'holiday')
-                        <div class="hcal-event-actions">
-                            <button type="button" class="hcal-event-action-btn" onclick="openHcalEditModal({{ $evt->id }}, '{{ addslashes($evt->name) }}', '{{ $evt->description ? addslashes($evt->description) : '' }}', '{{ $evt->type }}', '{{ is_object($evt->date) ? $evt->date->format('Y-m-d') : $evt->date }}')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <form action="{{ route('teacher.holidays.destroy', $evt->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this holiday?');">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="hcal-event-action-btn danger"><i class="bi bi-trash3"></i></button>
-                            </form>
-                        </div>
-                        @endif
+
                     </div>
                 @empty
                     <div class="hcal-empty">
@@ -457,54 +444,13 @@
                     </div>
                 @endforelse
 
-                <button type="button" class="hcal-add-btn" onclick="openHcalModal()" style="margin-top:8px;">
-                    <i class="bi bi-plus-circle"></i> Add Holiday / Event
-                </button>
+
             </div>
+        </div>
         </div>
     </div>
-</div>
+</x-card>
 
-{{-- â”€â”€â”€ ADD/EDIT HOLIDAY MODAL â”€â”€â”€ --}}
-<div class="hcal-modal-overlay" id="hcalModalOverlay">
-    <div class="hcal-modal">
-        <div class="hcal-modal-header">
-            <div class="hcal-modal-title" id="hcalModalTitle">Add Holiday / Event</div>
-            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">âœ•</button>
-        </div>
-        <form id="hcalForm" method="POST" action="{{ route('teacher.holidays.store') }}">
-            @csrf
-            <div id="hcalMethodField"></div>
-            <div class="hcal-modal-body">
-                <div class="hcal-form-group">
-                    <label class="hcal-form-label">Event Name *</label>
-                    <input type="text" name="name" class="hcal-form-input" id="hcalName" required placeholder="e.g. Independence Day">
-                </div>
-                <div class="hcal-form-group">
-                    <label class="hcal-form-label">Date *</label>
-                    <input type="date" name="date" class="hcal-form-input" id="hcalDate" required>
-                </div>
-                <div class="hcal-form-group">
-                    <label class="hcal-form-label">Type *</label>
-                    <select name="type" class="hcal-form-select" id="hcalType" required>
-                        <option value="national">National Holiday</option>
-                        <option value="local">Local Holiday</option>
-                        <option value="school">School Holiday</option>
-                        <option value="no_class">No Classes</option>
-                    </select>
-                </div>
-                <div class="hcal-form-group" style="margin-bottom:0;">
-                    <label class="hcal-form-label">Description</label>
-                    <textarea name="description" class="hcal-form-textarea" id="hcalDesc" placeholder="Optional description..."></textarea>
-                </div>
-            </div>
-            <div class="hcal-modal-footer">
-                <button type="button" class="hcal-btn-cancel" onclick="closeHcalModal()">Cancel</button>
-                <button type="submit" class="hcal-btn-submit" id="hcalSubmitBtn">
-                    <i class="bi bi-check-lg"></i> Save Event
-                </button>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -652,41 +598,7 @@ function openLeaveDrawer() {
     }
 }
 
-// â”€â”€ HOLIDAY CALENDAR MODAL â”€â”€
-function openHcalModal() {
-    document.getElementById('hcalModalTitle').textContent = 'Add Holiday / Event';
-    document.getElementById('hcalForm').action = '{{ route("teacher.holidays.store") }}';
-    document.getElementById('hcalMethodField').innerHTML = '';
-    document.getElementById('hcalName').value = '';
-    document.getElementById('hcalDate').value = '';
-    document.getElementById('hcalType').value = 'national';
-    document.getElementById('hcalDesc').value = '';
-    document.getElementById('hcalSubmitBtn').innerHTML = '<i class="bi bi-check-lg"></i> Save Event';
-    document.getElementById('hcalModalOverlay').classList.add('active');
-}
 
-function openHcalEditModal(id, name, desc, type, date) {
-    document.getElementById('hcalModalTitle').textContent = 'Edit Holiday';
-    document.getElementById('hcalForm').action = '/teacher/holidays/' + id;
-    document.getElementById('hcalMethodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
-    document.getElementById('hcalName').value = name;
-    document.getElementById('hcalDate').value = date;
-    document.getElementById('hcalType').value = type;
-    document.getElementById('hcalDesc').value = desc;
-    document.getElementById('hcalSubmitBtn').innerHTML = '<i class="bi bi-check-lg"></i> Update Event';
-    document.getElementById('hcalModalOverlay').classList.add('active');
-}
-
-function closeHcalModal() {
-    document.getElementById('hcalModalOverlay').classList.remove('active');
-}
-
-document.getElementById('hcalModalOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeHcalModal();
-});
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeHcalModal();
-});
 
 function scrollToEvent(dateKey) {
     const el = document.getElementById('evt-' + dateKey);

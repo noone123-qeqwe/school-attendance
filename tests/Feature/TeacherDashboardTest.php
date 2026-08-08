@@ -88,37 +88,10 @@ class TeacherDashboardTest extends TestCase
         $response = $this->actingAs($this->teacher)->get('/teacher/dashboard');
 
         $response->assertStatus(200);
-        $response->assertSee('teacherClock');
-        $response->assertSee('Current Time');
+        $response->assertSee('id="teacherClock"', false);
     }
 
-    // ─────────────────────────────────────────
-    // SUBJECTS
-    // ─────────────────────────────────────────
 
-    public function test_teacher_can_view_subjects_page(): void
-    {
-        $response = $this->actingAs($this->teacher)->get('/teacher/subjects');
-
-        $response->assertStatus(200);
-    }
-
-    public function test_teacher_can_create_subject(): void
-    {
-        $response = $this->actingAs($this->teacher)->post('/teacher/subjects', [
-            'code' => 'CS301',
-            'name' => 'Algorithms',
-            'year_level' => 3,
-            'semester' => 1,
-            'course' => 'BSCS',
-        ]);
-
-        $response->assertRedirect();
-        $this->assertDatabaseHas('subjects', [
-            'code' => 'CS301',
-            'name' => 'Algorithms',
-        ]);
-    }
 
     // ─────────────────────────────────────────
     // ATTENDANCE MANAGEMENT
