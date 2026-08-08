@@ -51,6 +51,9 @@
     <a href="{{ route('admin.attendance') }}" class="nav-link {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
         <i class="bi bi-clipboard-check-fill"></i> <span class="nav-link-text">Attendance</span>
     </a>
+    <a href="{{ route('admin.early-warnings') }}" class="nav-link {{ request()->routeIs('admin.early-warnings') ? 'active' : '' }}">
+        <i class="bi bi-exclamation-triangle-fill text-warning"></i> <span class="nav-link-text">Early Warnings</span>
+    </a>
     <a href="{{ route('admin.qr') }}" class="nav-link {{ request()->routeIs('admin.qr*') ? 'active' : '' }}">
         <i class="bi bi-qr-code"></i> <span class="nav-link-text">QR Management</span>
     </a>

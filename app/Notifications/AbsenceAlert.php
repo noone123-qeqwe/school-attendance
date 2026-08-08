@@ -12,13 +12,15 @@ class AbsenceAlert extends Notification
     use Queueable;
 
     public $attendance;
+    public $signedUrl;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($attendance)
+    public function __construct($attendance, $signedUrl = null)
     {
         $this->attendance = $attendance;
+        $this->signedUrl = $signedUrl;
     }
 
     /**
@@ -28,7 +30,8 @@ class AbsenceAlert extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        // Support custom semaphore channel via App\Channels\SemaphoreChannel
+        return ['mail', \App\Channels\SemaphoreChannel::class];
     }
 
     /**
@@ -36,13 +39,28 @@ class AbsenceAlert extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject('Absence Alert: ' . $this->attendance->user->name)
             ->greeting('Hello ' . $notifiable->name . ',')
             ->line('This is an automated notification from the School Attendance System.')
-            ->line('Your child, **' . $this->attendance->user->name . '**, was marked **Absent** in **' . $this->attendance->subject_code . '** on ' . $this->attendance->date->format('M d, Y') . '.')
-            ->action('View Attendance Record', url('/parent/dashboard'))
-            ->line('Please contact the teacher or submit an excuse letter if necessary.');
+            ->line('Your child, **' . $this->attendance->user->name . '**, was marked **' . $this->attendance->status . '** in **' . $this->attendance->subject_code . '** on ' . $this->attendance->date->format('M d, Y') . '.');
+            
+        if ($this->signedUrl) {
+            $mail->action('Submit Excuse Letter', $this->signedUrl);
+        } else {
+            $mail->action('View Attendance Record', url('/parent/dashboard'));
+        }
+            
+        return $mail->line('Please contact the teacher or submit an excuse letter if necessary.');
+    }
+
+    /**
+     * Get the SMS representation of the notification.
+     */
+    public function toSemaphore(object $notifiable): string
+    {
+        $link = $this->signedUrl ? " Submit excuse: {$this->signedUrl}" : "";
+        return "School Alert: {$this->attendance->user->name} was marked {$this->attendance->status} in {$this->attendance->subject_code} on {$this->attendance->date->format('M d, Y')}.{$link}";
     }
 
     /**

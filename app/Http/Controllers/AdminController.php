@@ -111,6 +111,27 @@ class AdminController extends Controller
     }
 
     // ─────────────────────────────────────────
+    // EARLY WARNINGS
+    // ─────────────────────────────────────────
+    public function earlyWarnings()
+    {
+        $warnings = \App\Models\Warning::where('type', 'chronic_absenteeism')
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+            
+        return view('admin.early-warnings', compact('warnings'));
+    }
+
+    public function exportEarlyWarningsExcel()
+    {
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\EarlyWarningsExport, 
+            'early_warnings_' . now()->format('Y_m_d') . '.xlsx'
+        );
+    }
+
+    // ─────────────────────────────────────────
     // STUDENT MANAGEMENT
     // ─────────────────────────────────────────
     public function students(Request $request)

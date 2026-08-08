@@ -112,15 +112,20 @@
             <div>
                 <div style="color: var(--gold); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">{{ $greeting }}</div>
                 <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">{{ Auth::user()->name }}</h1>
-                <div style="color: #b39b82; font-size: 0.95rem;">
-                    {{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}
+                <div style="color: #b39b82; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span>{{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}</span>
+                    @if(isset($totalAbsent) && $totalAbsent === 0 && isset($totalPresent) && $totalPresent > 0)
+                        <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);"><i class="bi bi-star-fill"></i> Perfect Attendance</span>
+                    @elseif(isset($totalPresent) && $totalPresent > 3)
+                        <span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);"><i class="bi bi-fire"></i> {{ $totalPresent }} Class Streak</span>
+                    @endif
                 </div>
             </div>
         </div>
         <div style="display:flex; flex-direction:column; gap:12px; text-align:right;">
             <div style="text-align: right; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
                 <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                    <i class="bi bi-clock"></i> <span>{{ now()->format('h:i A') }}</span>
+                    <i class="bi bi-clock"></i> <span id="studentClock">{{ now()->format('h:i A') }}</span>
                 </div>
                 <div style="color: #b39b82; font-size: 0.85rem; margin-top: 2px;">{{ now()->format('l, F j, Y') }}</div>
             </div>
@@ -299,5 +304,19 @@ document.addEventListener('DOMContentLoaded', function() {
     var realStats = document.getElementById('realStats');
     if (skelStats && realStats) { skelStats.style.display = 'none'; realStats.style.display = ''; }
 });
+
+// ── Real-time Clock ──
+(function() {
+    function tick() {
+        const now = new Date();
+        let h = now.getHours(), m = now.getMinutes();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        const short = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+        const clockEl = document.getElementById('studentClock');
+        if (clockEl) clockEl.textContent = short;
+    }
+    setInterval(tick, 1000);
+})();
 </script>
 @endsection

@@ -116,120 +116,6 @@ class QrAttendanceController extends Controller
     }
 
     // ─────────────────────────────────────────
-    // ADMIN: Start a QR attendance session
-    // ─────────────────────────────────────────
-    public function startSession(Request $request)
-    {
-        $request->validate(['subject_code' => 'required|string']);
-
-        $subject = Subject::where('code', $request->subject_code)->first();
-        if (!$subject) {
-            abort(404, 'Subject not found');
-        }
-        $this->authorize('manage', $subject);
-
-        $now         = now();
-        $todayDate   = $now->toDateString();
-        $currentTime = $now->format('H:i:s');
-        $dayMap      = ['Monday'=>'M','Tuesday'=>'T','Wednesday'=>'W','Thursday'=>'TH','Friday'=>'F','Saturday'=>'S'];
-        $todayLetter = $dayMap[$now->format('l')] ?? '';
-
-        if (!str_contains(strtoupper($subject->days ?? ''), $todayLetter)) {
-            return response()->json(['success' => false, 'message' => 'This subject does not meet today.'], 422);
-        }
-
-        // ── Guard: subject must have a schedule time set ──
-        if (!$subject->start_time || !$subject->end_time) {
-            return response()->json(['success' => false, 'message' => 'This subject has no schedule time set. Please edit the subject and add a start and end time.'], 422);
-        }
-        $startTime   = Carbon::parse($todayDate . ' ' . $subject->start_time);
-        $sessionEnd  = $startTime->copy()->addMinutes(20);
-
-        if ($now->lt($startTime->copy()->subMinutes(5))) {
-            return response()->json(['success' => false, 'message' => 'Too early. Session opens 5 minutes before class.'], 422);
-        }
-
-        if ($now->gt($sessionEnd)) {
-            return response()->json(['success' => false, 'message' => 'The 20-minute attendance window has closed.'], 422);
-        }
-
-        // Deactivate any existing session for this subject today
-        AttendanceSession::where('subject_code', $request->subject_code)
-            ->where('active', true)
-            ->update(['active' => false]);
-
-        // Create new session
-        $session = AttendanceSession::create([
-            'subject_code'    => $request->subject_code,
-            'created_by'      => Auth::id(),
-            'token'           => AttendanceSession::generateToken($request->subject_code),
-            'expires_at'      => $now->copy()->addSeconds(self::QR_TTL_SECONDS)->min($sessionEnd),
-            'session_ends_at' => $sessionEnd,
-            'active'          => true,
-        ]);
-
-        $scanUrl = $this->buildScanUrl($session->token, $session->session_ends_at);
-
-        return response()->json([
-            'success'     => true,
-            'session_id'  => $session->id,
-            'token'       => $session->token,
-            'scan_url'    => $scanUrl,
-            'expires_at'  => $session->expires_at->timestamp,
-            'session_end' => $session->session_ends_at->timestamp,
-            'ttl'         => self::QR_TTL_SECONDS, // 20 seconds
-        ]);
-    }
-
-    // ─────────────────────────────────────────
-    // ADMIN: Refresh QR token (every 30s)
-    // ─────────────────────────────────────────
-    public function refreshToken(Request $request)
-    {
-        $request->validate(['session_id' => 'required|integer']);
-
-        $session = AttendanceSession::find($request->session_id);
-        if (!$session) { abort(404, 'Session not found'); }
-        $this->authorize('manage', $session);
-
-        $session->markInactiveIfExpired();
-
-        if (!$session->isSessionActive()) {
-            return response()->json(['success' => false, 'message' => 'Session expired or not found.'], 404);
-        }
-        $expiresAt = $this->tokenExpiresAt($session);
-        $session->update([
-            'token'      => AttendanceSession::generateToken($session->subject_code),
-            'expires_at' => $expiresAt,
-        ]);
-
-        $scanUrl = $this->buildScanUrl($session->token, $session->session_ends_at);
-
-        return response()->json([
-            'success'    => true,
-            'token'      => $session->token,
-            'scan_url'   => $scanUrl,
-            'expires_at' => $session->expires_at->timestamp,
-            'ttl'        => self::QR_TTL_SECONDS, // 20 seconds
-        ]);
-    }
-
-    // ─────────────────────────────────────────
-    // ADMIN: Stop session
-    // ─────────────────────────────────────────
-    public function stopSession(Request $request)
-    {
-        $request->validate(['session_id' => 'required|integer']);
-        $session = AttendanceSession::find($request->session_id);
-        if (!$session) { abort(404, 'Session not found'); }
-        $this->authorize('manage', $session);
-        
-        $session->update(['active' => false]);
-
-        return response()->json(['success' => true]);
-    }
-
-    // ─────────────────────────────────────────
     // Get schedule info for QR session timing
     // ─────────────────────────────────────────
     public function getScheduleInfo(Request $request)
@@ -390,13 +276,57 @@ class QrAttendanceController extends Controller
     public function stopTeacherSession(Request $request)
     {
         $request->validate(['session_id' => 'required|integer']);
-        $session = AttendanceSession::find($request->session_id);
+        $session = AttendanceSession::with('subject')->find($request->session_id);
 
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
         }
 
         $session->update(['active' => false]);
+
+        // Dispatch notifications for absent/late students
+        $subject = $session->subject;
+        $today = now()->toDateString();
+        
+        if ($subject) {
+            $studentQuery = \App\Models\User::where('role', 'student')
+                ->where('year_level', $subject->year_level)
+                ->where('semester', $subject->semester);
+                
+            if (!empty($subject->course)) {
+                $studentQuery->where('course', $subject->course);
+            }
+            if (!empty($subject->section)) {
+                $studentQuery->where('section', $subject->section);
+            }
+            
+            $students = $studentQuery->get();
+            
+            foreach ($students as $student) {
+                // Ensure record exists; if not, mark absent
+                $attendance = \App\Models\Attendance::firstOrCreate(
+                    [
+                        'user_id' => $student->id,
+                        'subject_code' => $session->subject_code,
+                        'date' => $today
+                    ],
+                    [
+                        'status' => 'Absent',
+                        'time_in' => null,
+                        'latitude' => null,
+                        'longitude' => null,
+                        'device_id' => null,
+                        'excused' => false
+                    ]
+                );
+
+                if (in_array($attendance->status, ['Absent', 'Late']) && !$attendance->excused) {
+                    $signedUrl = \Illuminate\Support\Facades\URL::signedRoute('guest.excuse', ['attendance' => $attendance->id]);
+                    $student->notify(new \App\Notifications\AbsenceAlert($attendance, $signedUrl));
+                }
+            }
+        }
+
         return response()->json(['success' => true]);
     }
 
@@ -791,9 +721,9 @@ class QrAttendanceController extends Controller
             ], 422);
         }
 
-        $schoolLat    = $session->classroom_lat ?? \App\Models\Setting::get('gps_lat', self::SCHOOL_LAT);
-        $schoolLng    = $session->classroom_lng ?? \App\Models\Setting::get('gps_lng', self::SCHOOL_LNG);
-        $radiusMeters = \App\Models\Setting::get('gps_radius', 50);
+        $schoolLat    = $session->classroom_lat ?? $this->getSchoolLat();
+        $schoolLng    = $session->classroom_lng ?? $this->getSchoolLng();
+        $radiusMeters = \App\Models\Setting::get('gps_radius', $this->getRadiusMeters());
 
         $distance = $this->distance(
             (float) $request->latitude,
@@ -879,20 +809,49 @@ class QrAttendanceController extends Controller
             $lateThreshold = $startTime->copy()->addMinutes(15);
             $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
         }
-        $attendance = Attendance::updateOrCreate(
-            ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
-            [
-                // If attendance is marked Present/Late, it cannot also be "excused" (excused applies only to Absent).
-                'status'    => $status,
-                'excused'   => false,
-                'excuse_note' => null,
-                'time_in'   => $now->format('H:i:s'),
-                'latitude'  => $request->latitude,
-                'longitude' => $request->longitude,
-                'gps_accuracy' => $request->filled('accuracy') ? $request->accuracy : null,
-                'method'    => 'qr',
-            ]
-        );
+        try {
+            $attendance = Attendance::updateOrCreate(
+                ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
+                [
+                    // If attendance is marked Present/Late, it cannot also be "excused" (excused applies only to Absent).
+                    'status'    => $status,
+                    'excused'   => false,
+                    'excuse_note' => null,
+                    'time_in'   => $now->format('H:i:s'),
+                    'latitude'  => $request->latitude,
+                    'longitude' => $request->longitude,
+                    'gps_accuracy' => $request->filled('accuracy') ? $request->accuracy : null,
+                    'method'    => 'qr',
+                ]
+            );
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Check if it's a unique constraint violation (code 23000 or 23505)
+            if ($e->getCode() == '23000' || $e->getCode() == '23505') {
+                Log::warning('QR race condition prevented duplicate attendance', [
+                    'student_id' => $user->id,
+                    'subject_code' => $session->subject_code,
+                    'date' => $todayDate,
+                ]);
+                $attendance = Attendance::where('user_id', $user->id)
+                    ->where('subject_code', $session->subject_code)
+                    ->where('date', $todayDate)
+                    ->first();
+                
+                // If it exists but is absent, we can update it safely
+                if ($attendance && $attendance->status === 'Absent') {
+                    $attendance->update([
+                        'status'    => $status,
+                        'time_in'   => $now->format('H:i:s'),
+                        'latitude'  => $request->latitude,
+                        'longitude' => $request->longitude,
+                        'method'    => 'qr',
+                        'excused'   => false,
+                    ]);
+                }
+            } else {
+                throw $e;
+            }
+        }
 
         event(new \App\Events\AttendanceMarked($attendance));
 
@@ -938,108 +897,6 @@ class QrAttendanceController extends Controller
             'success'  => true,
             'redirect' => route('home'),
             'message'  => "Clock-in successful! Status: {$status}",
-        ]);
-    }
-
-    // ─────────────────────────────────────────
-    // ADMIN: Get live clock-ins for a session
-    // ─────────────────────────────────────────
-    public function getClockIns(Request $request)
-    {
-        $session = AttendanceSession::find($request->session_id);
-
-        if (!$session) {
-            return response()->json([
-                'clockins' => [],
-                'stats'    => [
-                    'total_students' => 0,
-                    'clocked_in'     => 0,
-                    'inside_radius'  => 0,
-                    'late'           => 0,
-                    'progress'       => 0,
-                ],
-            ]);
-        }
-
-        $today         = now()->toDateString();
-        $subject       = $session->subject;
-        if (!$subject) {
-            $totalStudents = 0;
-        } else {
-            $studentQuery = User::where('role', 'student')
-                ->where('year_level', $subject->year_level)
-                ->where('semester', $subject->semester);
-
-            if (!empty($subject->course)) {
-                $studentQuery->where('course', $subject->course);
-            }
-
-            if (!empty($subject->section)) {
-                $studentQuery->where('section', $subject->section);
-            }
-
-            $totalStudents = $studentQuery->count();
-        }
-
-        $attendanceRecords = Attendance::with('user')
-            ->where('subject_code', $session->subject_code)
-            ->whereDate('date', $today)
-            ->whereNotNull('time_in')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        $insideRadius = $attendanceRecords->filter(function ($record) {
-            if (!$record->latitude || !$record->longitude) {
-                return false;
-            }
-            return $this->distance((float) $record->latitude, (float) $record->longitude, self::SCHOOL_LAT, self::SCHOOL_LNG) <= self::RADIUS_METERS;
-        })->count();
-        $records = $attendanceRecords->map(fn($r) => [
-            'name'           => $r->user->name ?? '—',
-            'student_number' => $r->user->student_number ?? '—',
-            'status'         => $r->status,
-            'time'           => Carbon::parse($r->time_in)->format('h:i A'),
-            'avatar'         => $r->user && $r->user->profile_image
-                ? (str_starts_with($r->user->profile_image, 'http') ? $r->user->profile_image : asset('storage/' . $r->user->profile_image))
-                : 'https://ui-avatars.com/api/?name=' . urlencode($r->user->name ?? 'S'),
-        ]);
-
-        return response()->json([
-            'clockins' => $records,
-            'stats'    => [
-                'total_students' => $totalStudents,
-                'clocked_in'     => $attendanceRecords->count(),
-                'inside_radius'  => $insideRadius,
-                'late'           => $attendanceRecords->where('status', 'Late')->count(),
-                'progress'       => $totalStudents > 0
-                    ? round(($attendanceRecords->count() / $totalStudents) * 100)
-                    : 0,
-            ],
-        ]);
-    }
-
-    // ─────────────────────────────────────────
-    // DEBUG: Test QR timing
-    // ─────────────────────────────────────────
-    public function debugTiming(Request $request)
-    {
-        $session = AttendanceSession::where('active', true)->latest()->first();
-        
-        if (!$session) {
-            return response()->json(['error' => 'No active session found']);
-        }
-        
-        $now = now('Asia/Manila');
-        
-        return response()->json([
-            'current_time' => $now->toDateTimeString(),
-            'session_created' => $session->created_at->toDateTimeString(),
-            'token_expires' => $session->expires_at->toDateTimeString(),
-            'session_ends' => $session->session_ends_at->toDateTimeString(),
-            'token_valid' => $session->isTokenValid(),
-            'session_active' => $session->isSessionActive(),
-            'token_seconds_left' => $now->diffInSeconds($session->expires_at, false),
-            'session_minutes_left' => $now->diffInMinutes($session->session_ends_at, false),
         ]);
     }
 

@@ -125,7 +125,7 @@ if (app()->environment('local') || config('app.debug')) {
 }
 
 // QR Scan (student) - allow public access so guests can scan and login through the QR flow
-Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->name('qr.scan');
+Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->name('qr.scan')->middleware('signed');
 
 Route::middleware('auth')->group(function () {
     Route::post('/qr/confirm', [App\Http\Controllers\QrAttendanceController::class, 'confirm'])->name('qr.confirm');
@@ -152,10 +152,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/classroom/{subjectCode}', [App\Http\Controllers\TeacherController::class, 'classroomShow'])->name('classroom.show');
     Route::post('/classroom/{subjectCode}/attendance', [App\Http\Controllers\TeacherController::class, 'classroomStoreAttendance'])->name('classroom.attendance.store');
 
-    // Cover Class (Substitute Access)
-    Route::get('/cover-class', [App\Http\Controllers\TeacherController::class, 'coverClassForm'])->name('cover.form');
-    Route::get('/cover-class/subjects/{teacherId}', [App\Http\Controllers\TeacherController::class, 'getTeacherSubjects'])->name('cover.subjects');
-    Route::post('/cover-class', [App\Http\Controllers\TeacherController::class, 'storeCoverClass'])->name('cover.store');
+
 
     // My Subjects - Full CRUD
     Route::get('/subjects', [App\Http\Controllers\TeacherController::class, 'mySubjects'])->name('subjects');
@@ -241,6 +238,14 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::resource('messages', MessageController::class)->only(['index', 'create', 'store', 'show']);
 });
 
+// Guest Excuse Submission (Signed URLs)
+Route::get('/excuse/{attendance}/submit', [App\Http\Controllers\GuestExcuseController::class, 'showForm'])
+    ->middleware('signed')
+    ->name('guest.excuse');
+Route::post('/excuse/{attendance}/submit', [App\Http\Controllers\GuestExcuseController::class, 'storeExcuse'])
+    ->middleware('signed')
+    ->name('guest.excuse.store');
+
 // Parent Routes (Parents/Guardians only)
 Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\ParentController::class, 'dashboard'])->name('dashboard');
@@ -277,6 +282,10 @@ Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.'
 
         Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/stats', [App\Http\Controllers\AdminController::class, 'dashboardStats'])->name('dashboard.stats');
+
+    // Early Warnings
+    Route::get('/early-warnings', [App\Http\Controllers\AdminController::class, 'earlyWarnings'])->name('early-warnings');
+    Route::get('/early-warnings/export', [App\Http\Controllers\AdminController::class, 'exportEarlyWarningsExcel'])->name('early-warnings.export');
 
     // Student management
     Route::get('/students', [App\Http\Controllers\AdminController::class, 'students'])->name('students');

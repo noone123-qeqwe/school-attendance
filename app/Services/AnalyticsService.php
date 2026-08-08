@@ -317,17 +317,7 @@ class AnalyticsService
             ->with('schedules')
             ->get();
 
-        // Include subjects where teacher is a substitute for the target date
-        $substituteSubjectIds = \App\Models\SubstituteTeacher::where('substitute_id', $teacher->id)
-            ->whereDate('date', $targetDate)
-            ->pluck('subject_id');
-            
-        if ($substituteSubjectIds->isNotEmpty()) {
-            $substituteSubjects = Subject::whereIn('id', $substituteSubjectIds)
-                ->with('schedules')
-                ->get();
-            $teacherSubjects = $teacherSubjects->concat($substituteSubjects)->unique('id');
-        }
+
 
         // Get today's classes for this teacher
         $targetDayName = $targetDate->format('l'); // Day name (Monday, Tuesday, etc.)

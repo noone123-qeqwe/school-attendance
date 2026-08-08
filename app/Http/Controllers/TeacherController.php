@@ -102,44 +102,7 @@ class TeacherController extends Controller
         return view('teacher.dashboard', $data);
     }
 
-    // ─────────────────────────────────────────
-    // SUBSTITUTE / COVER CLASS
-    // ─────────────────────────────────────────
-    public function coverClassForm()
-    {
-        $teacher = Auth::user();
-        $otherTeachers = User::where('role', 'teacher')
-            ->where('id', '!=', $teacher->id)
-            ->get();
-        return view('teacher.cover-class', compact('otherTeachers'));
-    }
 
-    public function getTeacherSubjects($teacherId)
-    {
-        $targetTeacher = User::findOrFail($teacherId);
-        $subjects = Subject::where('instructor_id', $targetTeacher->id)
-            ->get();
-        return response()->json($subjects);
-    }
-
-    public function storeCoverClass(Request $request)
-    {
-        $request->validate([
-            'subject_id' => 'required|exists:subjects,id',
-            'date' => 'required|date'
-        ]);
-
-        $teacher = Auth::user();
-        $subject = Subject::findOrFail($request->subject_id);
-
-        \App\Models\SubstituteTeacher::firstOrCreate([
-            'substitute_id' => $teacher->id,
-            'subject_id' => $subject->id,
-            'date' => $request->date,
-        ]);
-
-        return redirect()->route('teacher.dashboard')->with('success', 'Successfully registered as a substitute for ' . $subject->code . ' on ' . Carbon::parse($request->date)->format('M d, Y'));
-    }
 
     // ─────────────────────────────────────────
     // MY SUBJECTS

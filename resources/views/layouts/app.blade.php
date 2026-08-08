@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
     <link rel="manifest" href="/manifest.json">
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body>

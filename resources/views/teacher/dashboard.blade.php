@@ -70,9 +70,7 @@
         <button type="button" class="ent-btn ent-btn-secondary" style="color:#fca5a5;border-color:rgba(239,68,68,0.2);" onclick="openLeaveDrawer()">
             <i class="bi bi-calendar-x-fill"></i> Request Leave
         </button>
-        <a href="{{ route('teacher.cover.form') }}" class="ent-btn ent-btn-secondary" style="color:#60a5fa;border-color:rgba(96,165,250,0.2);">
-            <i class="bi bi-person-badge-fill"></i> Cover Class
-        </a>
+
         @php
             $nextClass = $todayClasses->first(function($c) {
                 $sched = $c->schedules->first();
@@ -107,9 +105,7 @@
     <button type="button" class="ent-mobile-action-btn" onclick="openLeaveDrawer()">
         <i class="bi bi-calendar-x-fill"></i> Leave
     </button>
-    <a href="{{ route('teacher.cover.form') }}" class="ent-mobile-action-btn">
-        <i class="bi bi-person-badge-fill"></i> Cover
-    </a>
+
     <a href="{{ route('teacher.classroom.index') }}" class="ent-mobile-action-btn">
         <i class="bi bi-journal-album"></i> Classes
     </a>
