@@ -7,163 +7,228 @@
 <style>
     #schoolCalendarPage { padding-bottom: 18px; }
     .holiday-dashboard .glass-card {
-        background: rgba(67, 12, 29, 0.18);
-        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(26, 26, 46, 0.4);
+        border: 1px solid rgba(255,255,255,0.06);
         backdrop-filter: blur(20px);
-        box-shadow: 0 32px 80px rgba(15,23,42,0.2);
+        box-shadow: 0 32px 80px rgba(0,0,0,0.4);
         border-radius: 28px;
     }
     .holiday-dashboard .glass-card .adm-card-head {
-        padding: 20px 22px;
+        padding: 24px 32px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .holiday-dashboard .glass-card .adm-card-title {
-        font-size: 1.05rem;
+        font-size: 1.25rem;
         font-weight: 800;
-        color: #f8fafc;
+        color: #f3e7cd;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
     .holiday-dashboard .glass-card .adm-card-icon {
-        background: rgba(255,255,255,0.08);
-        color: #ffe4e6;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+        background: rgba(207, 164, 111, 0.1);
+        color: #cfa46f;
+        box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.2);
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 1.2rem;
     }
     .holiday-dashboard .calendar-controls {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
         justify-content: flex-end;
     }
     .holiday-dashboard .calendar-header {
         font-weight: 700;
-        color: #f8fafc;
+        color: #f3e7cd;
         min-width: 168px;
         text-align: center;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
     }
     .holiday-dashboard .adm-btn-ghost {
-        background: rgba(255,255,255,0.08);
-        color: #f8fafc;
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 12px;
-        transition: all 0.2s ease;
+        background: rgba(255,255,255,0.04);
+        color: #b39b82;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        padding: 8px 12px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .holiday-dashboard .adm-btn-ghost:hover {
-        background: rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.08);
+        color: #cfa46f;
+        border-color: rgba(207, 164, 111, 0.3);
+        transform: translateY(-1px);
     }
     .holiday-dashboard .adm-btn-primary {
-        background: linear-gradient(135deg, #7f1d1d, #3b0215);
-        color: #fff;
+        background: linear-gradient(135deg, #d4a574, #cfa46f);
+        color: #1a1a2e;
         border: none;
-        border-radius: 12px;
-        padding: 6px 16px;
-        box-shadow: 0 16px 32px rgba(124,58,58,0.24);
-        transition: transform .2s ease, box-shadow .2s ease;
+        border-radius: 10px;
+        padding: 8px 20px;
+        font-weight: 700;
+        box-shadow: 0 8px 24px rgba(207, 164, 111, 0.2);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .holiday-dashboard .adm-btn-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 20px 40px rgba(124,58,58,0.32);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(207, 164, 111, 0.3);
     }
     
-    .fc .fc-button {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: #f8fafc;
+    /* FullCalendar Overrides for Pro Max */
+    .fc {
+        color: #b39b82;
     }
-    .fc .fc-button:hover {
-        background: rgba(255,255,255,0.16);
-    }
-    .fc .fc-button-primary {
-        background: linear-gradient(135deg, rgba(139,15,22,0.92), rgba(97,6,25,0.92));
-        border: none;
-    }
-    .fc .fc-daygrid-event {
-        color: #fff !important;
-        border: none !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
-        border-radius: 6px !important;
-        padding: 2px 4px;
-        font-size: 0.8rem;
-    }
-    .fc .fc-daygrid-event:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
+    .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+        border-color: rgba(255,255,255,0.06) !important;
     }
     .fc .fc-col-header-cell {
-        background: rgba(255,255,255,0.06) !important;
-        color: #f8fafc !important;
-        padding: 8px 0;
+        background: rgba(255,255,255,0.02) !important;
+        padding: 12px 0;
     }
-    .fc .fc-day-today {
-        background: rgba(167,28,48,0.18) !important;
-        box-shadow: inset 0 0 0 2px rgba(253,230,138,0.4) !important;
-    }
-    .fc .fc-event-title {
-        font-weight: 600;
-    }
-    
-    /* Event Details Modal */
-    .event-modal-content {
-        background: rgba(34, 12, 25, 0.96);
-        border: 1px solid rgba(255,255,255,0.18);
-        box-shadow: 0 35px 80px rgba(15,23,42,0.35);
-        border-radius: 24px;
-        color: #f8fafc;
-    }
-    .event-modal-header {
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        padding: 20px 24px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-    .event-modal-body {
-        padding: 24px;
-    }
-    .event-detail-item {
-        margin-bottom: 16px;
-    }
-    .event-detail-label {
-        font-size: 0.75rem;
+    .fc .fc-col-header-cell-cushion {
+        color: #b39b82;
         text-transform: uppercase;
-        letter-spacing: 0.1em;
-        color: #94a3b8;
-        margin-bottom: 4px;
-    }
-    .event-detail-value {
-        font-size: 1rem;
-        color: #f8fafc;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .event-type-badge {
-        display: inline-block;
-        padding: 4px 10px;
-        border-radius: 999px;
         font-size: 0.75rem;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 1px;
+        text-decoration: none !important;
     }
+    .fc .fc-daygrid-day-number {
+        color: #f3e7cd;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 12px !important;
+        text-decoration: none !important;
+    }
+    .fc .fc-day-other .fc-daygrid-day-number {
+        color: #6b5c4d;
+    }
+    .fc a {
+        text-decoration: none !important;
+    }
+    .fc .fc-day-today {
+        background: rgba(207, 164, 111, 0.05) !important;
+        box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.3) !important;
+    }
+    .fc .fc-daygrid-event {
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+        border-radius: 6px !important;
+        padding: 3px 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1a1a2e !important;
+        margin: 2px 6px !important;
+        transition: all 0.2s;
+    }
+    .fc .fc-daygrid-event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+        filter: brightness(1.1);
+    }
+    .fc .fc-daygrid-day-frame {
+        transition: background 0.2s;
+    }
+    .fc .fc-daygrid-day-frame:hover {
+        background: rgba(255,255,255,0.02);
+    }
+    
+    /* Legend */
     .legend-container {
         display: flex;
         flex-wrap: wrap;
-        gap: 16px;
-        margin-top: 16px;
-        padding: 16px;
-        background: rgba(255,255,255,0.04);
+        gap: 20px;
+        margin-top: 24px;
+        padding: 16px 24px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.04);
         border-radius: 16px;
     }
     .legend-item {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 0.85rem;
-        color: #e2e8f0;
+        gap: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #b39b82;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
     }
     .legend-dot {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    /* Event Details Modal Pro Max */
+    .event-modal-content {
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+        border-radius: 24px;
+        color: #f3e7cd;
+    }
+    .event-modal-header {
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 24px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .event-modal-header .modal-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #f3e7cd;
+        margin: 0;
+    }
+    .event-modal-body {
+        padding: 32px;
+    }
+    .event-detail-item {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .event-detail-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .event-detail-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        color: #b39b82;
+        margin-bottom: 8px;
+    }
+    .event-detail-value {
+        font-size: 1.05rem;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+    }
+    .event-type-badge {
+        display: inline-flex;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #1a1a2e !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 </style>
 
@@ -173,7 +238,7 @@
         <div class="adm-card glass-card">
             <div class="adm-card-head">
                 <div class="adm-card-title">
-                    <div class="adm-card-icon" style="background: rgba(255,255,255,0.12); color: #fde68a;">
+                    <div class="adm-card-icon">
                         <i class="bi bi-calendar3"></i>
                     </div>
                     School Calendar
@@ -196,11 +261,11 @@
             
             <div style="padding: 0 20px;">
                 <div class="legend-container">
-                    <div class="legend-item"><div class="legend-dot" style="background: #3b82f6;"></div> Class</div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #ef4444;"></div> Exam</div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #f59e0b;"></div> Meeting</div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #8b5cf6;"></div> School Event</div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #10b981;"></div> Holiday</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div> Class</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #f87171;"></div> Exam</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #fbbf24;"></div> Meeting</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #a78bfa;"></div> School Event</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #4ade80;"></div> Holiday</div>
                 </div>
             </div>
             
