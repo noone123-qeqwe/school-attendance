@@ -59,7 +59,7 @@ class AttendanceAutoCloseService
         $today = $session->session_ends_at->toDateString();
         
         // Get all students who should attend this class
-        $enrolledStudents = $subject->enrolledStudents()->get();
+        $enrolledStudents = $subject->getAllStudents();
         
         $absentCount = 0;
         

@@ -110,10 +110,8 @@ class HomeController extends Controller
     }
 
     // 6. Subjects
-    $subjects = Subject::with('schedules')
-        ->where('year_level', $user->year_level)
-        ->where('semester', $user->semester)
-        ->get();
+    $subjects = clone $user->getAllSubjects();
+    $subjects->load('schedules');
 
     // 7. Fetch Attendance History
     $records = Attendance::with('subject') 
@@ -138,12 +136,55 @@ class HomeController extends Controller
     $totalLate    = $stats['Late'] ?? 0;
     $totalAbsent  = $stats['Absent'] ?? 0;
 
-    $totalRecords = array_sum($stats);
+    // Determine dynamically missed classes today that have no database record yet
+    $dynamicMissesTotal = 0;
+    
+    // First, build today's schedule if it isn't built yet
+    $todaySchedule = collect();
+    if ($todaySubjects->isNotEmpty()) {
+        foreach ($todaySubjects as $subject) {
+            $sched = $subject->schedules->first();
+            if (!$sched) continue;
+
+            $classStart = Carbon::parse($todayDate . ' ' . $sched->start_time);
+            $classEnd   = Carbon::parse($todayDate . ' ' . $sched->end_time);
+
+            $existing = Attendance::where('user_id', $user->id)
+                ->where('subject_code', $subject->code)
+                ->where('date', $todayDate)
+                ->first();
+
+            $status = 'upcoming';
+            if ($existing && in_array($existing->status, ['Present', 'Late'])) {
+                $status = 'completed';
+            } elseif ($now->greaterThan($classEnd)) {
+                $status = $existing && $existing->status === 'Absent' ? 'missed' : 'missed';
+                if (!$existing) {
+                    $dynamicMissesTotal++;
+                }
+            } elseif ($now->greaterThanOrEqualTo($classStart) && $now->lessThanOrEqualTo($classEnd)) {
+                $status = 'ongoing';
+            }
+
+            $todaySchedule->push((object)[
+                'subject'    => $subject,
+                'schedule'   => $sched,
+                'start_time' => $classStart,
+                'end_time'   => $classEnd,
+                'status'     => $status,
+                'attendance' => $existing,
+            ]);
+        }
+        $todaySchedule = $todaySchedule->sortBy('start_time')->values();
+    }
+
+    $totalAbsent += $dynamicMissesTotal;
+    $totalRecords = array_sum($stats) + $dynamicMissesTotal;
     $presentRecords = $totalPresent + $totalLate;
 
     $attendanceRate = $totalRecords > 0
         ? round(($presentRecords / $totalRecords) * 100)
-        : 0;
+        : 100; // If they have 0 total classes, attendance is effectively 100% (default)
 
     // 8b. Detailed stats for dashboard donut chart
     // (Already captured above)
@@ -165,40 +206,7 @@ class HomeController extends Controller
     }
 
     // 8d. Today's schedule with status (upcoming, ongoing, completed, missed)
-    $todaySchedule = collect();
-    if ($todaySubjects->isNotEmpty()) {
-        foreach ($todaySubjects as $subject) {
-            $sched = $subject->schedules->first();
-            if (!$sched) continue;
-
-            $classStart = Carbon::parse($todayDate . ' ' . $sched->start_time);
-            $classEnd   = Carbon::parse($todayDate . ' ' . $sched->end_time);
-
-            $existing = Attendance::where('user_id', $user->id)
-                ->where('subject_code', $subject->code)
-                ->where('date', $todayDate)
-                ->first();
-
-            $status = 'upcoming';
-            if ($existing && in_array($existing->status, ['Present', 'Late'])) {
-                $status = 'completed';
-            } elseif ($now->greaterThan($classEnd)) {
-                $status = $existing && $existing->status === 'Absent' ? 'missed' : 'missed';
-            } elseif ($now->greaterThanOrEqualTo($classStart) && $now->lessThanOrEqualTo($classEnd)) {
-                $status = 'ongoing';
-            }
-
-            $todaySchedule->push((object)[
-                'subject'    => $subject,
-                'schedule'   => $sched,
-                'start_time' => $classStart,
-                'end_time'   => $classEnd,
-                'status'     => $status,
-                'attendance' => $existing,
-            ]);
-        }
-        $todaySchedule = $todaySchedule->sortBy('start_time')->values();
-    }
+    // (Already built above to calculate dynamic misses)
 
 
     // 9. Check for holidays
@@ -271,30 +279,42 @@ class HomeController extends Controller
 
     // 13. Per-Subject Attendance Breakdown
     $subjectStats = collect();
-    if ($records->isNotEmpty()) {
-        $grouped = $records->groupBy('subject_code');
-        foreach ($grouped as $code => $subjectRecords) {
-            $subjectModel = $subjectRecords->first()->subject;
-            $total = $subjectRecords->count();
-            $present = $subjectRecords->where('status', 'Present')->count();
-            $late = $subjectRecords->where('status', 'Late')->count();
-            $absent = $subjectRecords->where('status', 'Absent')->count();
-            $excused = $subjectRecords->where('excused', true)->count();
-            $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;
+    $grouped = $records->groupBy('subject_code');
+    
+    foreach ($subjects as $subjectModel) {
+        $subjectRecords = $grouped->get($subjectModel->code, collect());
+        
+        $total = $subjectRecords->count();
+        $present = $subjectRecords->where('status', 'Present')->count();
+        $late = $subjectRecords->where('status', 'Late')->count();
+        $absent = $subjectRecords->where('status', 'Absent')->count();
+        $excused = $subjectRecords->where('excused', true)->count();
+        
+        // Include dynamically missed classes today (where time has passed but no DB record exists yet)
+        $dynamicMiss = $todaySchedule->where('subject.code', $subjectModel->code)
+                                     ->where('status', 'missed')
+                                     ->whereNull('attendance')
+                                     ->count();
 
-            $subjectStats->push((object)[
-                'code' => $code,
-                'name' => $subjectModel->name ?? $code,
-                'total' => $total,
-                'present' => $present,
-                'late' => $late,
-                'absent' => $absent,
-                'excused' => $excused,
-                'rate' => $rate,
-            ]);
-        }
-        $subjectStats = $subjectStats->sortBy('rate')->values();
+        $total += $dynamicMiss;
+        $absent += $dynamicMiss;
+
+        // If no records exist or all are excused, we assume 100% since they haven't been unexcusedly absent
+        $effectiveTotal = $total - $excused;
+        $rate = $effectiveTotal > 0 ? round((($present + $late) / $effectiveTotal) * 100) : 100;
+
+        $subjectStats->push((object)[
+            'code' => $subjectModel->code,
+            'name' => $subjectModel->name ?? $subjectModel->code,
+            'total' => $total,
+            'present' => $present,
+            'late' => $late,
+            'absent' => $absent,
+            'excused' => $excused,
+            'rate' => $rate,
+        ]);
     }
+    $subjectStats = $subjectStats->sortBy('rate')->values();
 
     return view('home', compact(
         'currentClass',

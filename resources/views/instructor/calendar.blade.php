@@ -5,157 +5,193 @@
 @section('content')
 <div id="instructorCalendarPage" class="holiday-dashboard">
 <style>
-    /* Add base styling similar to the student view */
-    #instructorCalendarPage { padding-bottom: 18px; }
+    #schoolCalendarPage { padding-bottom: 18px; }
     .holiday-dashboard .glass-card {
-        background: rgba(67, 12, 29, 0.18);
-        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(26, 26, 46, 0.4);
+        border: 1px solid rgba(255,255,255,0.06);
         backdrop-filter: blur(20px);
-        box-shadow: 0 32px 80px rgba(15,23,42,0.2);
+        box-shadow: 0 32px 80px rgba(0,0,0,0.4);
         border-radius: 28px;
     }
     .holiday-dashboard .glass-card .adm-card-head {
-        padding: 20px 22px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        padding: 24px 32px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .holiday-dashboard .glass-card .adm-card-title {
-        font-size: 1.05rem;
+        font-size: 1.25rem;
         font-weight: 800;
-        color: #f8fafc;
+        color: #f3e7cd;
         display: flex;
         align-items: center;
         gap: 12px;
     }
     .holiday-dashboard .glass-card .adm-card-icon {
-        background: rgba(255,255,255,0.08);
-        color: #ffe4e6;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-        width: 36px;
-        height: 36px;
+        background: rgba(207, 164, 111, 0.1);
+        color: #cfa46f;
+        box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.2);
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 12px;
+        font-size: 1.2rem;
     }
     .holiday-dashboard .calendar-controls {
         display: flex;
-        gap: 10px;
+        flex-wrap: wrap;
+        gap: 12px;
         align-items: center;
+        justify-content: flex-end;
     }
     .holiday-dashboard .calendar-header {
         font-weight: 700;
-        color: #f8fafc;
-        min-width: 140px;
+        color: #f3e7cd;
+        min-width: 168px;
         text-align: center;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
     }
     .holiday-dashboard .adm-btn-ghost {
-        background: rgba(255,255,255,0.08);
-        color: #f8fafc;
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 12px;
-        transition: all 0.2s ease;
+        background: rgba(255,255,255,0.04);
+        color: #b39b82;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        padding: 8px 12px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .holiday-dashboard .adm-btn-ghost:hover {
-        background: rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.08);
+        color: #cfa46f;
+        border-color: rgba(207, 164, 111, 0.3);
+        transform: translateY(-1px);
     }
     .holiday-dashboard .adm-btn-primary {
-        background: linear-gradient(135deg, #7f1d1d, #3b0215);
-        color: #fff;
+        background: linear-gradient(135deg, #d4a574, #cfa46f);
+        color: #1a1a2e;
         border: none;
-        border-radius: 12px;
-        padding: 8px 16px;
-        box-shadow: 0 16px 32px rgba(124,58,58,0.24);
-        transition: transform .2s ease, box-shadow .2s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
+        border-radius: 10px;
+        padding: 8px 20px;
+        font-weight: 700;
+        box-shadow: 0 8px 24px rgba(207, 164, 111, 0.2);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .holiday-dashboard .adm-btn-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 20px 40px rgba(124,58,58,0.32);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(207, 164, 111, 0.3);
     }
     
-    .fc .fc-button {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: #f8fafc;
+    /* FullCalendar Overrides for Pro Max */
+    .fc {
+        color: #b39b82;
     }
-    .fc .fc-button:hover {
-        background: rgba(255,255,255,0.16);
-    }
-    .fc .fc-button-primary {
-        background: linear-gradient(135deg, rgba(139,15,22,0.92), rgba(97,6,25,0.92));
-        border: none;
-    }
-    .fc .fc-daygrid-event {
-        color: #fff !important;
-        border: none !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
-        border-radius: 6px !important;
-        padding: 2px 4px;
-        font-size: 0.8rem;
-        cursor: pointer;
-    }
-    .fc .fc-daygrid-event:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
+    .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+        border-color: rgba(255,255,255,0.06) !important;
     }
     .fc .fc-col-header-cell {
-        background: rgba(255,255,255,0.06) !important;
-        color: #f8fafc !important;
-        padding: 8px 0;
+        background: rgba(255,255,255,0.02) !important;
+        padding: 12px 0;
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: #b39b82;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-decoration: none !important;
+    }
+    .fc .fc-daygrid-day-number {
+        color: #f3e7cd;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 12px !important;
+        text-decoration: none !important;
+    }
+    .fc .fc-day-other .fc-daygrid-day-number {
+        color: #6b5c4d;
+    }
+    .fc a {
+        text-decoration: none !important;
     }
     .fc .fc-day-today {
-        background: rgba(167,28,48,0.18) !important;
-        box-shadow: inset 0 0 0 2px rgba(253,230,138,0.4) !important;
+        background: rgba(207, 164, 111, 0.05) !important;
+        box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.3) !important;
     }
-    .fc .fc-event-title {
-        font-weight: 600;
+    .fc .fc-daygrid-event {
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+        border-radius: 6px !important;
+        padding: 3px 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1a1a2e !important;
+        margin: 2px 6px !important;
+        transition: all 0.2s;
     }
-
-    /* Modal Styling */
-    .holiday-dashboard .modal-content {
-        background: rgba(34, 12, 25, 0.96);
-        border: 1px solid rgba(255,255,255,0.18);
-        box-shadow: 0 35px 80px rgba(15,23,42,0.35);
-        border-radius: 24px;
-        color: #f8fafc;
+    .fc .fc-daygrid-event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+        filter: brightness(1.1);
     }
-    .holiday-dashboard .modal-header {
-        border-bottom: 1px solid rgba(255,255,255,0.08);
-        padding: 20px 24px;
+    .fc .fc-daygrid-day-frame {
+        transition: background 0.2s;
     }
-    .holiday-dashboard .modal-body {
-        padding: 24px;
+    .fc .fc-daygrid-day-frame:hover {
+        background: rgba(255,255,255,0.02);
     }
-    .holiday-dashboard .modal-footer {
-        border-top: 1px solid rgba(255,255,255,0.08);
+    
+    /* Legend */
+    .legend-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 24px;
         padding: 16px 24px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.04);
+        border-radius: 16px;
     }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #b39b82;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    /* Inputs and Chips for Modals */
     .holiday-dashboard .adm-input {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.14);
-        color: #f8fafc;
-        border-radius: 12px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #f3e7cd;
+        border-radius: 10px;
         padding: 10px 14px;
         width: 100%;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        transition: all 0.2s ease;
     }
     .holiday-dashboard .adm-input:focus {
         outline: none;
-        border-color: rgba(255,255,255,0.32);
-        box-shadow: 0 0 0 4px rgba(167,28,48,0.18);
+        border-color: rgba(207, 164, 111, 0.4);
+        box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.15);
     }
     .holiday-dashboard .form-label {
-        color: #cbd5e1;
-        font-size: 0.85rem;
+        color: #b39b82;
+        font-size: 0.8rem;
         font-weight: 600;
         margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
-    /* Search and Chips */
     .invitee-chips {
         display: flex;
         flex-wrap: wrap;
@@ -163,30 +199,33 @@
         margin-top: 12px;
     }
     .chip {
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        padding: 4px 12px;
-        border-radius: 999px;
+        background: rgba(207, 164, 111, 0.1);
+        border: 1px solid rgba(207, 164, 111, 0.2);
+        padding: 6px 14px;
+        border-radius: 20px;
         font-size: 0.8rem;
+        font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 6px;
-        color: #e2e8f0;
+        gap: 8px;
+        color: #cfa46f;
     }
     .chip button {
         background: none;
         border: none;
-        color: #94a3b8;
+        color: #cfa46f;
         padding: 0;
         display: flex;
         align-items: center;
         cursor: pointer;
+        opacity: 0.7;
     }
     .chip button:hover {
-        color: #f8fafc;
+        opacity: 1;
     }
+    
     .search-results {
-        background: #1e293b;
+        background: rgba(15, 15, 20, 0.95);
         border: 1px solid rgba(255,255,255,0.1);
         border-radius: 12px;
         margin-top: 4px;
@@ -196,29 +235,84 @@
         width: 100%;
         z-index: 10;
         display: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .search-result-item {
-        padding: 10px 14px;
+        padding: 12px 16px;
         cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .search-result-item:last-child {
+        border-bottom: none;
     }
     .search-result-item:hover {
         background: rgba(255,255,255,0.05);
     }
-    .bulk-invite-btn {
-        background: rgba(59, 130, 246, 0.15);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        color: #bfdbfe;
-        border-radius: 8px;
-        padding: 4px 10px;
-        font-size: 0.75rem;
-        cursor: pointer;
-        transition: background 0.2s;
+
+    /* Event Details Modal Pro Max */
+    .event-modal-content {
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+        border-radius: 24px;
+        color: #f3e7cd;
     }
-    .bulk-invite-btn:hover {
-        background: rgba(59, 130, 246, 0.25);
+    .event-modal-header {
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 24px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .event-modal-header .modal-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #f3e7cd;
+        margin: 0;
+    }
+    .event-modal-body {
+        padding: 32px;
+    }
+    .event-detail-item {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .event-detail-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .event-detail-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        color: #b39b82;
+        margin-bottom: 8px;
+    }
+    .event-detail-value {
+        font-size: 1.05rem;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+    }
+    .event-type-badge {
+        display: inline-flex;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #1a1a2e !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 </style>
 
@@ -246,9 +340,6 @@
                     <button type="button" onclick="goToToday()" class="adm-btn adm-btn-ghost" style="margin-left: 10px; margin-right: 10px;">
                         Today
                     </button>
-                    <button type="button" class="adm-btn adm-btn-primary" data-bs-toggle="modal" data-bs-target="#newMeetingModal">
-                        <i class="bi bi-plus-lg"></i> New Meeting
-                    </button>
                 </div>
             </div>
             
@@ -259,104 +350,19 @@
     </div>
 </div>
 
-<!-- New Meeting Modal -->
-<div class="modal fade" id="newMeetingModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Schedule New Meeting</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="newMeetingForm" onsubmit="handleCreateMeeting(event)">
-                @csrf
-                <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label">Meeting Name</label>
-                            <input type="text" name="name" class="adm-input" required placeholder="e.g. Parent-Teacher Conference">
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Date</label>
-                            <input type="date" name="date" class="adm-input" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Start Time</label>
-                            <input type="time" name="start_time" class="adm-input" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">End Time</label>
-                            <input type="time" name="end_time" class="adm-input" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Location (Optional)</label>
-                            <input type="text" name="location" class="adm-input" placeholder="e.g. Room 302 or Zoom Link">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Description (Optional)</label>
-                            <textarea name="description" class="adm-input" rows="2"></textarea>
-                        </div>
-                        
-                        <!-- Invitees Section -->
-                        <div class="col-12 mt-4">
-                            <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>Invitees</span>
-                                <div style="display: flex; gap: 8px;">
-                                    <select id="searchRole" class="adm-input" style="padding: 2px 8px; font-size: 0.8rem; width: auto;">
-                                        <option value="">Any Role</option>
-                                        <option value="Student">Student</option>
-                                        <option value="Parent-Guardian">Parent/Guardian</option>
-                                        <option value="Instructor">Instructor</option>
-                                    </select>
-                                </div>
-                            </label>
-                            
-                            <div style="position: relative;">
-                                <input type="text" id="inviteeSearch" class="adm-input" placeholder="Search by name or email..." onkeyup="debounceSearch(this.value)">
-                                <div id="searchResults" class="search-results"></div>
-                            </div>
-                            
-                            <!-- Quick Bulk Invites -->
-                            @if($classes->isNotEmpty())
-                                <div class="mt-2" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                    @foreach($classes as $class)
-                                        <button type="button" class="bulk-invite-btn" onclick="addBulkGroup('class_students', {{ $class->id }}, '{{ addslashes($class->name) }} Students')">
-                                            + All {{ $class->name }} Students
-                                        </button>
-                                        <button type="button" class="bulk-invite-btn" onclick="addBulkGroup('class_parents', {{ $class->id }}, '{{ addslashes($class->name) }} Parents')">
-                                            + All {{ $class->name }} Parents
-                                        </button>
-                                    @endforeach
-                                </div>
-                            @endif
-                            
-                            <div id="selectedInvitees" class="invitee-chips"></div>
-                            
-                            <!-- Hidden inputs will be appended here via JS -->
-                            <div id="hiddenInviteeInputs"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="adm-btn adm-btn-primary">Schedule Meeting</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 
 <!-- Reschedule Modal -->
 <div class="modal fade" id="rescheduleModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content event-modal-content w-100">
+            <div class="event-modal-header">
                 <h5 class="modal-title">Confirm Reschedule</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="rescheduleForm" onsubmit="handleReschedule(event)">
                 @csrf
                 @method('PUT')
-                <div class="modal-body">
+                <div class="event-modal-body">
                     <input type="hidden" id="rescheduleEventId">
                     <input type="hidden" id="rescheduleDate" name="date">
                     <input type="hidden" id="rescheduleStart" name="start_time">
@@ -386,12 +392,12 @@
 <!-- View Event Modal -->
 <div class="modal fade" id="viewEventModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
+        <div class="modal-content event-modal-content w-100">
+            <div class="event-modal-header">
                 <h5 class="modal-title" id="viewEventTitle">Event Details</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="event-modal-body">
                 <div class="mb-3">
                     <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase;">Date & Time</label>
                     <div id="viewEventTime" style="font-size: 1.05rem;"></div>
@@ -560,134 +566,7 @@ function updateCalendar() {
     const url = new URL(window.location); url.searchParams.set('year', currentYear); url.searchParams.set('month', currentMonth); window.history.pushState({}, '', url);
 }
 
-// Search & Invites
-let searchTimeout;
-function debounceSearch(query) {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => searchInvitees(query), 300);
-}
 
-function searchInvitees(query) {
-    if (query.length < 2) {
-        document.getElementById('searchResults').style.display = 'none';
-        return;
-    }
-    
-    const role = document.getElementById('searchRole').value;
-    
-    fetch(`{{ route('teacher.calendar.search-invitees') }}?q=${encodeURIComponent(query)}&role=${encodeURIComponent(role)}`)
-        .then(res => res.json())
-        .then(data => {
-            const results = document.getElementById('searchResults');
-            if (data.data.length === 0) {
-                results.innerHTML = '<div class="search-result-item" style="color: #94a3b8;">No users found</div>';
-            } else {
-                results.innerHTML = data.data.map(user => `
-                    <div class="search-result-item" onclick="addInvitee(${user.id}, '${user.name.replace(/'/g, "\\'")}')">
-                        <div>
-                            <div style="font-weight: 600; color: #f8fafc;">${user.name}</div>
-                            <div style="font-size: 0.75rem; color: #94a3b8;">${user.role} â€¢ ${user.email}</div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            results.style.display = 'block';
-        });
-}
-
-function addInvitee(id, name) {
-    if (!selectedInvitees.some(i => i.id === id)) {
-        selectedInvitees.push({id, name});
-        renderChips();
-    }
-    document.getElementById('searchResults').style.display = 'none';
-    document.getElementById('inviteeSearch').value = '';
-}
-
-function addBulkGroup(type, classId, label) {
-    if (!selectedGroups.some(g => g.type === type && g.classId === classId)) {
-        selectedGroups.push({type, classId, label});
-        renderChips();
-    }
-}
-
-function removeInvitee(id) {
-    selectedInvitees = selectedInvitees.filter(i => i.id !== id);
-    renderChips();
-}
-
-function removeGroup(type, classId) {
-    selectedGroups = selectedGroups.filter(g => !(g.type === type && g.classId === classId));
-    renderChips();
-}
-
-function renderChips() {
-    let html = '';
-    
-    // Render individual invitees
-    selectedInvitees.forEach(inv => {
-        html += `<div class="chip">
-                    ${inv.name}
-                    <button type="button" onclick="removeInvitee(${inv.id})"><i class="bi bi-x"></i></button>
-                 </div>`;
-    });
-    
-    // Render bulk groups
-    selectedGroups.forEach(grp => {
-        html += `<div class="chip" style="background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.4); color: #bfdbfe;">
-                    <i class="bi bi-people-fill" style="margin-right: 4px;"></i> ${grp.label}
-                    <button type="button" onclick="removeGroup('${grp.type}', ${grp.classId})"><i class="bi bi-x"></i></button>
-                 </div>`;
-    });
-    
-    document.getElementById('selectedInvitees').innerHTML = html;
-    
-    // Update hidden inputs
-    let inputsHtml = '';
-    selectedInvitees.forEach(inv => {
-        inputsHtml += `<input type="hidden" name="attendee_ids[]" value="${inv.id}">`;
-    });
-    selectedGroups.forEach((grp, index) => {
-        inputsHtml += `<input type="hidden" name="attendee_groups[${index}][group_type]" value="${grp.type}">`;
-        inputsHtml += `<input type="hidden" name="attendee_groups[${index}][class_id]" value="${grp.classId}">`;
-    });
-    document.getElementById('hiddenInviteeInputs').innerHTML = inputsHtml;
-}
-
-// Close search results when clicking outside
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('#inviteeSearch') && !e.target.closest('#searchResults')) {
-        document.getElementById('searchResults').style.display = 'none';
-    }
-});
-
-function handleCreateMeeting(e) {
-    e.preventDefault();
-    const form = e.target;
-    const formData = new FormData(form);
-    
-    fetch(`{{ route('teacher.calendar.meetings.store') }}`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            bootstrap.Modal.getInstance(document.getElementById('newMeetingModal')).hide();
-            form.reset();
-            selectedInvitees = [];
-            selectedGroups = [];
-            renderChips();
-            calendar.refetchEvents();
-        } else {
-            alert(data.message || 'Error creating meeting');
-        }
-    })
-    .catch(err => alert('An error occurred'));
-}
 
 function handleReschedule(e) {
     e.preventDefault();
@@ -724,3 +603,5 @@ function handleReschedule(e) {
 </script>
 </div>
 @endsection
+
+

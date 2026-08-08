@@ -51,6 +51,10 @@
 
 * { box-sizing: border-box; }
 
+html {
+    zoom: 1.15;
+}
+
 body {
     font-family: 'Inter', sans-serif !important;
     background: radial-gradient(circle at top right, rgba(212, 175, 55, 0.04), transparent 30%),

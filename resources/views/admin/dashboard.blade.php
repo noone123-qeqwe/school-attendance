@@ -21,7 +21,7 @@
 <div class="ent-dash-header ent-fade-up ent-desktop-only">
     <div>
         <h1 class="ent-dash-title">Command Center</h1>
-        <p class="ent-dash-subtitle">Overview of academic and attendance operations â€” {{ now()->format('l, F j, Y') }}</p>
+        <p class="ent-dash-subtitle">Overview of academic and attendance operations &mdash; {{ now()->format('l, F j, Y') }}</p>
     </div>
     <div class="ent-dash-actions">
         <span class="ent-btn ent-btn-secondary">
@@ -33,9 +33,17 @@
     </div>
 </div>
 
-{{-- â”€â”€â”€ SYSTEM ALERTS â”€â”€â”€ --}}
+{{-- ─── LIVE TODAY REGION ─── --}}
+<div class="ent-fade-up" style="margin-bottom: 24px;">
+    <h2 style="font-size: 1.2rem; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--ent-success); display: inline-block; box-shadow: 0 0 8px var(--ent-success);"></span>
+        Live Today
+    </h2>
+</div>
+
+{{-- ─── SYSTEM ALERTS ─── --}}
 @if($systemAlerts->count() > 0)
-<div class="ent-fade-up ent-delay-1 ent-mb-md">
+<div class="ent-fade-up ent-delay-1 ent-mb-md" aria-live="polite">
     @foreach($systemAlerts as $alert)
     <div class="ent-alert {{ $alert->severity === 'critical' ? 'danger' : ($alert->severity === 'warning' ? 'warning' : 'info') }}">
         <div class="ent-alert-icon">
@@ -52,21 +60,21 @@
 </div>
 @endif
 
-{{-- â”€â”€â”€ SKELETON KPIs (shown briefly while page paints) â”€â”€â”€ --}}
+{{-- ─── SKELETON KPIs (shown briefly while page paints) ─── --}}
 <div class="ent-grid ent-grid-4 ent-mb-md skel-kpi-placeholder" id="skelKpis">
     <x-skeleton type="kpi" :count="4" />
 </div>
 
-{{-- â”€â”€â”€ PRIMARY KPIs: Entity Counts â”€â”€â”€ --}}
-<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-1" id="realKpis" style="display:none;">
+{{-- ─── PRIMARY KPIs: Entity Counts ─── --}}
+<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-1" id="realKpis" style="display:none;" aria-live="polite">
     <x-card type="kpi" icon="bi bi-people-fill" label="Total Students" value="{{ number_format($totalStudents) }}" />
     <x-card type="kpi" icon="bi bi-person-workspace" label="Instructors" value="{{ number_format($totalTeachers) }}" />
     <x-card type="kpi" icon="bi bi-building" label="Departments" value="{{ number_format($totalDepartments) }}" />
     <x-card type="kpi" icon="bi bi-diagram-3" label="Sections" value="{{ number_format($totalSections) }}" />
 </div>
 
-{{-- â”€â”€â”€ ATTENDANCE KPIs â”€â”€â”€ --}}
-<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-2">
+{{-- ─── ATTENDANCE KPIs ─── --}}
+<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-2" aria-live="polite">
     @php
         $presentDiff = $totalPresent - $yesterdayPresent;
         $lateDiff = $totalLate - $yesterdayLate;
@@ -84,24 +92,9 @@
     </x-card>
 </div>
 
-{{-- â”€â”€â”€ WEEKLY CHART â”€â”€â”€ --}}
-<x-card type="section" class="ent-mb-md ent-fade-up ent-delay-3" icon="bi bi-bar-chart-line-fill" title="Weekly Attendance Trend">
-    <x-slot:headerActions>
-        <div style="display:flex;gap:6px;">
-            <span class="ent-badge ent-badge-success"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Present</span>
-            <span class="ent-badge ent-badge-warning"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Late</span>
-            <span class="ent-badge ent-badge-danger"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Absent</span>
-        </div>
-    </x-slot:headerActions>
-    
-    <div id="weeklyChart" class="ent-chart-container" style="min-height:260px;"></div>
-</x-card>
-
-{{-- â”€â”€â”€ LIVE SESSIONS + AT-RISK (Two Column) â”€â”€â”€ --}}
-<div class="ent-grid ent-grid-7-5 ent-mb-md ent-fade-up ent-delay-3">
-
-    {{-- Live QR Sessions --}}
-    <x-card type="section" style="min-width:0;">
+{{-- ─── LIVE SESSIONS (Full Width in Live Today) ─── --}}
+<div class="ent-mb-md ent-fade-up ent-delay-3">
+    <x-card type="section" style="min-width:0;" aria-live="polite">
         <x-slot:title>
             <div class="ent-section-title-icon" style="background:rgba(74,222,128,0.12);color:var(--ent-success);">
                 <i class="bi bi-broadcast"></i>
@@ -153,6 +146,31 @@
                 </tbody>
             </table>
         </div>
+    </x-card>
+</div>
+
+{{-- ─── PAST RECORDS REGION ─── --}}
+<div class="ent-fade-up" style="margin-top: 40px; margin-bottom: 24px;">
+    <h2 style="font-size: 1.2rem; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px;">
+        <i class="bi bi-clock-history"></i>
+        Past Records & Analytics
+    </h2>
+</div>
+
+{{-- ─── WEEKLY CHART & AT-RISK (Two Column) ─── --}}
+<div class="ent-grid ent-grid-7-5 ent-mb-md ent-fade-up ent-delay-3">
+
+    {{-- Weekly Chart --}}
+    <x-card type="section" style="min-width:0;" icon="bi bi-bar-chart-line-fill" title="Weekly Attendance Trend">
+        <x-slot:headerActions>
+            <div style="display:flex;gap:6px;">
+                <span class="ent-badge ent-badge-success"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Present</span>
+                <span class="ent-badge ent-badge-warning"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Late</span>
+                <span class="ent-badge ent-badge-danger"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Absent</span>
+            </div>
+        </x-slot:headerActions>
+        
+        <div id="weeklyChart" class="ent-chart-container" style="min-height:260px;"></div>
     </x-card>
 
     {{-- At-Risk Students --}}

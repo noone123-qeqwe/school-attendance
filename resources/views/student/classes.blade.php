@@ -52,7 +52,7 @@
     }
 
     /* Table */
-    .cls-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+    .cls-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
     .cls-table thead th {
         font-size: 0.7rem; font-weight: 700; color: rgba(248,231,211,0.8);
         text-transform: uppercase; letter-spacing: 0.5px;

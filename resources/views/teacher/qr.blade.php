@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'QR Attendance - ' . $subject->name)
 
 @push('styles')
@@ -288,6 +288,22 @@
     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
+.status-absent { 
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.status-missing {
+    background: rgba(0,0,0,0.1);
+    color: #666;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.clockin-item.missing {
+    opacity: 0.6;
+}
+
 /* Main Card Glass Effect */
 .main-card {
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
@@ -357,8 +373,14 @@
                     </div>
                     
                     <!-- QR Refresh Countdown -->
-                    <div id="qrRefreshCountdown" style="display: none; text-align: center; margin: 1rem auto; color: #666; font-size: 0.9rem;">
-                        <small>QR refreshing in: <strong id="refreshCountdownText" style="color: var(--tch-primary); font-weight: 700;">--</strong>s</small>
+                    <div id="qrRefreshCountdown" style="display: none; text-align: center; margin: 2rem auto;">
+                        <div style="font-size: 3.5rem; font-weight: 800; font-family: monospace; color: var(--tch-primary); line-height: 1; text-shadow: 0 4px 12px rgba(124, 45, 18, 0.15);">
+                            <span id="refreshCountdownText">--</span><span style="font-size: 1.5rem; opacity: 0.5;">s</span>
+                        </div>
+                        <div class="progress" style="height: 6px; border-radius: 3px; max-width: 200px; margin: 12px auto; background: rgba(0,0,0,0.05); overflow: hidden;">
+                            <div id="qrProgressIndicator" class="progress-bar" style="width: 100%; background: linear-gradient(90deg, var(--tch-primary), var(--tch-light)); transition: width 1s linear;"></div>
+                        </div>
+                        <small style="color: #666; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 0.75rem;">Code Expires In</small>
                     </div>
                     
                     <!-- Session Timer -->
@@ -698,12 +720,31 @@ function resetRefreshTimers() {
     const ttl = Number(currentSession?.ttl) || 20;
     refreshCountdownSeconds = ttl;
     document.getElementById('refreshCountdownText').textContent = refreshCountdownSeconds;
+    
+    const progressIndicator = document.getElementById('qrProgressIndicator');
+    if (progressIndicator) {
+        progressIndicator.style.transition = 'none';
+        progressIndicator.style.width = '100%';
+        void progressIndicator.offsetWidth; // Force reflow
+        progressIndicator.style.transition = 'width 1s linear';
+    }
 
     if (refreshCountdownInterval) clearInterval(refreshCountdownInterval);
     refreshCountdownInterval = setInterval(() => {
         refreshCountdownSeconds--;
         if (refreshCountdownSeconds <= 0) {
             refreshCountdownSeconds = ttl;
+            if (progressIndicator) {
+                progressIndicator.style.transition = 'none';
+                progressIndicator.style.width = '100%';
+                void progressIndicator.offsetWidth;
+                progressIndicator.style.transition = 'width 1s linear';
+            }
+        } else {
+            if (progressIndicator) {
+                const percentage = (refreshCountdownSeconds / ttl) * 100;
+                progressIndicator.style.width = percentage + '%';
+            }
         }
         document.getElementById('refreshCountdownText').textContent = refreshCountdownSeconds;
     }, 1000);
@@ -764,12 +805,45 @@ stopBtn.addEventListener('click', async () => {
             })
         });
         
-        resetUI();
+        enterGracePeriod();
     } catch (error) {
         console.error('Error stopping:', error);
-        resetUI();
+        enterGracePeriod();
     }
 });
+
+function enterGracePeriod() {
+    if (refreshInterval) clearInterval(refreshInterval);
+    if (clockinInterval) clearInterval(clockinInterval);
+    if (timerInterval) clearInterval(timerInterval);
+    if (refreshCountdownInterval) clearInterval(refreshCountdownInterval);
+
+    startBtn.style.display = 'none';
+    refreshBtn.style.display = 'none';
+    stopBtn.style.display = 'none';
+    document.getElementById('sessionTimer').style.display = 'none';
+    document.getElementById('qrRefreshCountdown').style.display = 'none';
+    
+    qrContainer.classList.remove('active');
+    qrContainer.innerHTML = `
+        <div style="color: #666; text-align: center;">
+            <i class="bi bi-clock-history" style="font-size: 4.5rem; opacity: 0.4; margin-bottom: 1.5rem; color: var(--tch-primary);"></i>
+            <h5 style="color: var(--tch-primary); font-weight: 700;">Session Closed — Grace Period Active</h5>
+            <p class="text-muted">You can review and edit the roster on the right. You can leave this page when done.</p>
+            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn mt-3">Finish & Exit</a>
+        </div>
+    `;
+    
+    document.getElementById('statusMessages').innerHTML = `
+        <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
+            <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
+            <div>
+                <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ•’ Session Closed</h6>
+                <p class="mb-0 small" style="color: #1e40af;">Students can no longer clock in. You can still make manual adjustments in the sidebar.</p>
+            </div>
+        </div>
+    `;
+}
 
 function showQRCode(url) {
     // Use reliable online QR service with better error handling
@@ -817,12 +891,12 @@ function startSessionTimer(sessionEndTimestamp) {
                     <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
                     <div>
                         <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ•’ Session Auto-Closed</h6>
-                        <p class="mb-0 small" style="color: #1e40af;">20-minute attendance window has ended. Students not present have been automatically marked absent.</p>
+                        <p class="mb-0 small" style="color: #1e40af;">20-minute attendance window has ended. You can still make manual adjustments.</p>
                     </div>
                 </div>
             `;
             
-            resetUI();
+            enterGracePeriod();
             return;
         }
 
@@ -877,7 +951,7 @@ async function updateClockIns() {
             `;
         } else {
             clockinsList.innerHTML = data.clockins.map(clockin => `
-                <div class="clockin-item">
+                <div class="clockin-item ${clockin.status === 'Missing' ? 'missing' : ''}">
                     <div class="clockin-avatar">
                         <div class="avatar-circle">${clockin.name.substring(0, 2).toUpperCase()}</div>
                     </div>
@@ -885,9 +959,21 @@ async function updateClockIns() {
                         <div class="fw-bold text-dark" style="font-size: 0.9rem;">${clockin.name}</div>
                         <div class="text-muted" style="font-size: 0.75rem; font-family: monospace;">${clockin.student_number}</div>
                     </div>
-                    <div class="clockin-status text-end">
-                        <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
-                        <div class="text-muted" style="font-size: 0.7rem;">${clockin.time}</div>
+                    <div class="clockin-status text-end d-flex align-items-center gap-2">
+                        <div style="text-align: right; min-width: 70px;">
+                            <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
+                            <div class="text-muted" style="font-size: 0.7rem;">${clockin.time}</div>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; box-shadow:none;" data-bs-toggle="dropdown">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius:12px; border:1px solid rgba(0,0,0,0.08); font-size: 0.85rem; padding: 8px;">
+                                <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
+                                <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
+                                <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 8px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -923,6 +1009,36 @@ function subscribeToTeacherAttendanceUpdates() {
 }
 
 subscribeToTeacherAttendanceUpdates();
+
+async function overrideStatus(studentId, newStatus, event) {
+    event.preventDefault();
+    if (!currentSession) return;
+    
+    try {
+        const response = await fetch('{{ route("teacher.qr.override") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                session_id: currentSession.session_id,
+                student_id: studentId,
+                status: newStatus
+            })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            updateClockIns();
+            showTeacherToast(\`Student marked as \${newStatus}\`, 'success');
+        } else {
+            showTeacherToast(data.message || 'Failed to update status', 'error');
+        }
+    } catch (error) {
+        showTeacherToast('Network error while updating status', 'error');
+    }
+}
 
 function showTeacherToast(message, type = 'info') {
     const colors = {

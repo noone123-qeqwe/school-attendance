@@ -169,6 +169,42 @@
         opacity: 0.8;
         margin: 0;
     }
+    
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+        }
+        .page-header h1 { font-size: 1.25rem; }
+        .notification-card { padding: 16px; }
+        .notification-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .notification-actions {
+            width: 100%;
+        }
+        .notification-actions form {
+            width: 100%;
+        }
+        .action-btn {
+            width: 100%;
+            justify-content: center;
+            padding: 8px 16px;
+        }
+        .filter-tabs {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 8px;
+        }
+        .filter-tabs::-webkit-scrollbar { display: none; }
+        .notification-meta {
+            flex-wrap: wrap;
+            gap: 8px 16px;
+        }
+    }
 </style>
 
 <div class="container-fluid" style="max-width: 1000px;">

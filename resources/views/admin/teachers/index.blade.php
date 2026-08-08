@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Instructors')
 
@@ -10,6 +10,9 @@
     </div>
     
     <div style="display:flex; gap:12px;">
+        <button type="button" class="saas-btn saas-btn-secondary" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-upload"></i> Import CSV
+        </button>
         <a href="{{ route('admin.teachers.pdf', request()->query()) }}" class="saas-btn saas-btn-secondary">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
         </a>
@@ -33,6 +36,12 @@
                 <option value="IT" {{ request('department')=='IT'?'selected':'' }}>Information Tech</option>
             </select>
             
+            <select name="bulk_action" class="saas-input saas-select" style="width:140px; padding:6px 30px 6px 12px;">
+                <option value="">Bulk Actions</option>
+                <option value="delete">Delete Selected</option>
+                <option value="export">Export Selected</option>
+            </select>
+            
             <button type="submit" class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
                 <i class="bi bi-funnel"></i> Filter
             </button>
@@ -49,7 +58,7 @@
         <table class="saas-table">
             <thead>
                 <tr>
-                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--saas-primary);"></th>
+                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--saas-primary);" onclick="document.querySelectorAll('.teacher-checkbox').forEach(c => c.checked = this.checked)"></th>
                     <th>Instructor</th>
                     <th>Employee ID</th>
                     <th>Department</th>
@@ -59,7 +68,7 @@
             <tbody>
                 @forelse($teachers as $teacher)
                 <tr>
-                    <td><input type="checkbox" style="accent-color:var(--saas-primary);"></td>
+                    <td><input type="checkbox" class="teacher-checkbox" name="selected_teachers[]" value="{{ $teacher->id }}" style="accent-color:var(--saas-primary);"></td>
                     <td>
                         <div style="display:flex;align-items:center;gap:12px;">
                             <img src="{{ $teacher->profile_image ? (str_starts_with($teacher->profile_image, 'http') ? $teacher->profile_image : asset('storage/'.$teacher->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($teacher->name).'&background=900000&color=fff' }}"
@@ -76,6 +85,9 @@
                     </td>
                     <td style="text-align:right;">
                         <div style="display:flex; gap:6px; justify-content:flex-end;">
+                            <a href="{{ route('admin.teacher.history', $teacher) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="History">
+                                <i class="bi bi-clock-history"></i>
+                            </a>
                             <a href="{{ route('admin.teacher.edit', $teacher) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -102,4 +114,34 @@
     </div>
     
 </div>
+
+<!-- Import CSV Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: #ffffff; border: 1px solid var(--saas-border);">
+            <form action="{{ route('admin.teachers.import') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header" style="border-bottom: 1px solid var(--saas-border);">
+                    <h5 class="modal-title" style="color: var(--saas-text);"><i class="bi bi-upload me-2 text-primary"></i> Import Instructors</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" style="background: rgba(14,165,233,0.1); border-color: rgba(14,165,233,0.2); color: #0284c7; font-size: 0.85rem;">
+                        <strong>Format:</strong> CSV file with headers: <br>
+                        <code>name, email, employee_id, department</code>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: var(--saas-text);">CSV File</label>
+                        <input type="file" name="csv_file" class="form-control" style="background: #f8fafc; border: 1px solid var(--saas-border); color: var(--saas-text);" accept=".csv" required>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid var(--saas-border);">
+                    <button type="button" class="saas-btn saas-btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="saas-btn saas-btn-primary">Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection

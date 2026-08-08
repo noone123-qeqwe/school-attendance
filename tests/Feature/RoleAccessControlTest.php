@@ -71,7 +71,7 @@ class RoleAccessControlTest extends TestCase
     public function test_teacher_can_access_teacher_routes(): void
     {
         $this->actingAs($this->teacher)->get('/teacher/dashboard')->assertStatus(200);
-        $this->actingAs($this->teacher)->get('/teacher/subjects')->assertStatus(200);
+        $this->actingAs($this->teacher)->get('/teacher/subjects')->assertRedirect(route('teacher.classroom.index'));
         $this->actingAs($this->teacher)->get('/teacher/attendance')->assertStatus(200);
     }
 

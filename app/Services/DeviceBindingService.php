@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Jenssegers\Agent\Agent;
 
 class DeviceBindingService
 {
@@ -22,20 +23,36 @@ class DeviceBindingService
             return;
         }
 
-        $deviceKey = $request->cookie(self::COOKIE_NAME) ?: Str::random(64);
+        $deviceKey = $request->input('device_fingerprint') ?: $request->cookie(self::COOKIE_NAME) ?: Str::random(64);
         $deviceHash = $this->hashDeviceKey($deviceKey);
         $sessionId = $request->session()->getId();
         $binding = $user->deviceBinding;
-        $replaced = $binding && $binding->device_hash !== $deviceHash;
+        
+        // Strict Binding Check: If they have a binding, and it doesn't match the current device hash
+        if ($binding && $binding->device_hash !== $deviceHash) {
+            \Illuminate\Support\Facades\Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'identifier' => 'Your account is already bound to another device. Please contact an admin to reset it.',
+            ]);
+        }
 
-        if ($replaced && $binding->session_id && Schema::hasTable('sessions')) {
-            DB::table('sessions')->where('id', $binding->session_id)->delete();
+        $agent = new Agent();
+        $agent->setUserAgent($request->userAgent());
+        $deviceNameStr = $agent->device() ?: $agent->platform();
+        $browserStr = $agent->browser();
+        $friendlyDeviceName = trim("$deviceNameStr - $browserStr", ' -');
+        if (empty($friendlyDeviceName)) {
+            $friendlyDeviceName = 'Unknown Device';
         }
 
         DeviceBinding::updateOrCreate(
             ['user_id' => $user->id],
             [
                 'device_hash' => $deviceHash,
+                'device_name' => $friendlyDeviceName,
                 'session_id' => $sessionId,
                 'user_agent' => substr((string) $request->userAgent(), 0, 500),
                 'ip_address' => $request->ip(),
@@ -44,10 +61,6 @@ class DeviceBindingService
         );
 
         Cookie::queue(cookie(self::COOKIE_NAME, $deviceKey, self::COOKIE_MINUTES, null, null, $request->isSecure(), true, false, 'Lax'));
-
-        if ($replaced) {
-            $this->alertAdmins($user, $request);
-        }
     }
 
     public function isCurrentDevice(User $user, Request $request): bool

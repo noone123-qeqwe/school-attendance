@@ -105,8 +105,14 @@ class WebAuthnController extends Controller
     public function loginOptions(Request $request, WebauthnService $webauthn)
     {
         $request->validate(["student_number" => "required|string"]);
-        $user = User::where("student_number", $request->student_number)->first();
-        if (!$user) return response()->json(["success" => false, "message" => "Student not found."], 404);
+        
+        $identifier = $request->student_number;
+        $user = User::where("student_number", $identifier)
+            ->orWhere("email", $identifier)
+            ->orWhere("employee_id", $identifier)
+            ->first();
+
+        if (!$user) return response()->json(["success" => false, "message" => "Account not found."], 404);
         
         $credentials = DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
         if (!$credentials) return response()->json(["success" => false, "message" => "No fingerprint registered for this account."], 404);

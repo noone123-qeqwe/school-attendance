@@ -105,7 +105,7 @@ class AuthenticationTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
-        $response->assertRedirect(route('admin.2fa.form'));
+        $response->assertRedirect(route('admin.dashboard'));
     }
 
     public function test_student_cannot_login_with_email(): void

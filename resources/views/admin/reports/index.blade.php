@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Reports')
 
@@ -44,6 +44,25 @@
                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
             </button>
         </form>
+    </div>
+    
+    <div class="saas-card-body" style="background: rgba(0,0,0,0.02); border-bottom: 1px solid var(--saas-border); display: flex; justify-content: space-between; align-items: center; padding: 12px 24px;">
+        <div style="display: flex; gap: 24px; font-size: 0.85rem; color: var(--saas-text-muted);">
+            <div>
+                <strong><i class="bi bi-card-list"></i> Records:</strong> {{ $type === 'percentage' ? (isset($percentageData) ? count($percentageData) : 0) : (isset($logs) ? count($logs) : 0) }}
+            </div>
+            <div>
+                <strong><i class="bi bi-funnel"></i> Filter:</strong> {{ $type === 'daily' ? 'Date (' . ($date ?? 'None') . ')' : ($type === 'monthly' ? 'Month (' . ($month ?? 'None') . ')' : 'All Time') }}
+            </div>
+            <div>
+                <strong><i class="bi bi-file-earmark-text"></i> Type:</strong> {{ ucfirst($type) }}
+            </div>
+        </div>
+        <div>
+            <span class="saas-badge saas-badge-success" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <i class="bi bi-check-circle"></i> Ready to Export
+            </span>
+        </div>
     </div>
     
     <div class="saas-table-container" style="border:none; border-radius:0;">

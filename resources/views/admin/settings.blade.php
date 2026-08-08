@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'System Settings')
 
@@ -85,6 +85,45 @@
                 </div>
             </div>
             
+            <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-qr-code-scan saas-text-muted"></i> Attendance Rules
+                </h3>
+                <button type="button" class="saas-btn saas-btn-secondary" style="padding:4px 12px; font-size:0.8rem;" onclick="resetAttendanceRules()">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
+                </button>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+                <div class="saas-form-group">
+                    <label class="saas-label">QR Token Expiry (Seconds)</label>
+                    <input type="number" name="qr_expiry" id="setting_qr_expiry" class="saas-input" value="{{ \App\Models\Setting::get('qr_expiry', 20) }}">
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">How long each QR code is valid before refreshing.</p>
+                </div>
+                <div class="saas-form-group">
+                    <label class="saas-label">GPS Radius (Meters)</label>
+                    <input type="number" name="gps_radius" id="setting_gps_radius" class="saas-input" value="{{ \App\Models\Setting::get('gps_radius', 50) }}">
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Maximum allowed distance from the classroom coordinates.</p>
+                </div>
+                <div class="saas-form-group">
+                    <label class="saas-label" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="require_biometric" id="setting_require_biometric" value="1" {{ \App\Models\Setting::get('require_biometric', 1) ? 'checked' : '' }} style="accent-color:var(--saas-primary); width:16px; height:16px;">
+                        Require Biometrics
+                    </label>
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Force fingerprint or face scan for clock-in.</p>
+                </div>
+            </div>
+
+            <script>
+                function resetAttendanceRules() {
+                    document.getElementById('setting_qr_expiry').value = 20;
+                    document.getElementById('setting_gps_radius').value = 50;
+                    document.getElementById('setting_require_biometric').checked = true;
+                }
+            </script>
+
             <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
             
             <h3 class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">

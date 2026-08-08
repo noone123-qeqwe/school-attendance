@@ -175,6 +175,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/qr/start', [App\Http\Controllers\QrAttendanceController::class, 'startTeacherSession'])->name('qr.start');
     Route::post('/qr/refresh', [App\Http\Controllers\QrAttendanceController::class, 'refreshTeacherToken'])->name('qr.refresh');
     Route::post('/qr/stop', [App\Http\Controllers\QrAttendanceController::class, 'stopTeacherSession'])->name('qr.stop');
+    Route::post('/qr/override', [App\Http\Controllers\QrAttendanceController::class, 'overrideStudentStatus'])->name('qr.override');
     Route::get('/qr/clockins', [App\Http\Controllers\QrAttendanceController::class, 'getTeacherClockIns'])->name('qr.clockins');
     // Parameterized route comes last
     Route::get('/qr/{subjectCode}', [App\Http\Controllers\QrAttendanceController::class, 'showTeacherQrPage'])->name('qr');
@@ -307,6 +308,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
     Route::get('/student/{student}/edit', [App\Http\Controllers\AdminController::class, 'editStudent'])->name('student.edit');
     Route::put('/student/{student}', [App\Http\Controllers\AdminController::class, 'updateStudent'])->name('student.update');
     Route::delete('/student/{student}', [App\Http\Controllers\AdminController::class, 'destroyStudent'])->name('student.destroy');
+    Route::post('/student/{student}/reset-device', [App\Http\Controllers\AdminController::class, 'resetDevice'])->name('student.reset_device');
 
     // Subject management
     Route::get('/subjects', [App\Http\Controllers\AdminController::class, 'subjects'])->name('subjects');

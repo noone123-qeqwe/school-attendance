@@ -1,0 +1,1492 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="mxjJcskYkz3udb5xsVBbo3SpbmwXlqP45ZCWQaBV">
+    <title>Smart Classroom Attendance System | Student Portal</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="http://localhost:8000/css/design-tokens.css?v=1785990390">
+    <link rel="stylesheet" href="http://localhost:8000/css/premium.css?v=1786175083">
+    <link rel="stylesheet" href="http://localhost:8000/css/dashboard-enterprise.css?v=1785996821">
+    <link rel="stylesheet" href="http://localhost:8000/css/mobile-enterprise.css?v=1786003963">
+    <link rel="manifest" href="/manifest.json">
+    <script type="module" src="http://[::1]:5173/@vite/client"></script><link rel="stylesheet" href="http://[::1]:5173/resources/css/app.css" /><script type="module" src="http://[::1]:5173/resources/js/app.js"></script></head>
+
+<body>
+
+        <!-- Mobile overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="d-md-none" style="padding: 16px 16px 0 16px; display: flex; align-items: center;">
+            <button onclick="closeSidebar()" class="btn btn-sm" style="color: #cfa46f; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2); border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="bi bi-chevron-left"></i> Back
+            </button>
+        </div>
+        
+
+                                    <div class="sidebar-head">
+    <img src="http://localhost:8000/images/logo.png" class="sidebar-logo">
+    <div class="sidebar-text">
+        <div class="sidebar-brand">Smart Classroom Attendance System</div>
+        <div class="sidebar-subtitle">QR, GPS, and Biometric-Based Attendance Monitoring</div>
+        <div class="sidebar-portal">Instructor Portal</div>
+    </div>
+</div>
+
+<div class="sidebar-divider"></div>
+
+<div class="sidebar-nav">
+    <a href="http://localhost:8000/teacher/dashboard" class="nav-link active">
+        <i class="bi bi-grid-fill"></i>
+        <span class="nav-link-text">Dashboard</span>
+    </a>
+    <a href="http://localhost:8000/teacher/classroom" class="nav-link ">
+        <i class="bi bi-folder-fill"></i>
+        <span class="nav-link-text">My Classes</span>
+    </a>
+    <a href="http://localhost:8000/teacher/calendar" class="nav-link ">
+        <i class="bi bi-calendar-event-fill"></i>
+        <span class="nav-link-text">School Calendar</span>
+    </a>
+    <a href="http://localhost:8000/teacher/my-excuses" class="nav-link ">
+        <i class="bi bi-file-text-fill"></i>
+        <span class="nav-link-text">Excuse Submissions</span>
+    </a>
+</div>
+                                </aside>
+    
+    <div class="main-wrapper">
+        <header class="top-header " id="topHeader">
+                            <div class="header-left">
+                    <!-- Burger -->
+                    <button class="burger-btn" id="burgerBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
+                    <div>
+                        <div class="header-page-title">
+                                                            Instructor Dashboard                                                    </div>
+                        <div class="header-page-sub">Saturday, August 8, 2026</div>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    
+                    <div class="dropdown">
+                        <div class="notif-btn position-relative" data-bs-toggle="dropdown" style="cursor:pointer;">
+                            <i class="bi bi-bell-fill" style="font-size:0.95rem;"></i>
+                                                    </div>
+                        <div class="dropdown-menu dropdown-menu-end mt-2" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
+                            <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+                                <span style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
+                                <div style="display:flex;align-items:center;gap:10px;">
+                                                                    </div>
+                            </div>
+                                                        <div style="max-height:360px;overflow-y:auto;">
+                                                                <div style="text-align:center;padding:32px 20px;color:#94a3b8;">
+                                    <i class="bi bi-bell-slash" style="font-size:1.8rem;display:block;margin-bottom:8px;opacity:.3;"></i>
+                                    <span style="font-size:.85rem;">No notifications yet</span>
+                                </div>
+                                                            </div>
+                                                        <a href="http://localhost:8000/teacher/notifications" class="notif-view-all">
+                                View all notifications <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                                                    </div>
+                    </div>
+                                        <a href="http://localhost:8000/teacher/dashboard" class="role-link role-teacher" title="Teacher Panel">
+                        <i class="bi bi-person-workspace"></i>
+                    </a>
+                                        <div class="dropdown">
+                                                <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2">
+                            <img src="https://ui-avatars.com/api/?name=Prof.+Mitchel+Goldner&amp;background=800000&amp;color=fff&amp;size=200" class="header-profile-img">
+                            <div class="d-none d-md-block text-start" style="line-height:1.2;">
+                                <div style="font-size:0.8rem;font-weight:600;color:#ffffff;">Prof. Mitchel Goldner</div>
+                            </div>
+                            <i class="bi bi-chevron-down d-none d-md-block" style="font-size:0.7rem;color:rgba(255,255,255,0.75);"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2">
+                            <!-- Profile summary (non-clickable, just info) -->
+                            <div class="fb-profile-header" style="cursor:default;">
+                                <img src="https://ui-avatars.com/api/?name=Prof.+Mitchel+Goldner&amp;background=800000&amp;color=fff&amp;size=200" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
+                                <div>
+                                    <div class="fw-bold" style="font-size:0.9rem;">Prof. Mitchel Goldner</div>
+                                    <div style="font-size:0.75rem;color:#94a3b8;">6708274</div>
+                                </div>
+                            </div>
+                            <hr class="my-2" style="border-color:#f1f5f9;">
+                                                        <a class="fb-dropdown-item" href="http://localhost:8000/teacher/profile">
+                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <span>Settings</span>
+                            </a>
+                                                        <form action="http://localhost:8000/logout" method="POST" class="m-0">
+                                <input type="hidden" name="_token" value="mxjJcskYkz3udb5xsVBbo3SpbmwXlqP45ZCWQaBV" autocomplete="off">                                <button type="submit" class="fb-dropdown-item" style="color:#dc2626 !important;">
+                                    <div class="fb-icon-circle" style="background:#fef2f2;color:#dc2626;"><i class="bi bi-box-arrow-right"></i></div>
+                                    <span>Log Out</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                    </header>
+
+        <main class="main-content " id="mainContent">
+            <div class="p-4 page-enter">
+
+                
+
+
+
+<!-- Urgent Alerts -->
+
+<!-- Hero Banner -->
+<div class="mb-4" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+    <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
+        <div class="d-flex align-items-center gap-4">
+            <div>
+                <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">Prof. Mitchel Goldner</h1>
+                <div style="color: #b39b82; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span>Instructor</span>
+                </div>
+            </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px; text-align:right;">
+            <div style="text-align: right; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <i class="bi bi-clock"></i> <span id="teacherClock">06:43 PM</span>
+                </div>
+                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 2px;">Saturday, August 8, 2026</div>
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="http://localhost:8000/teacher/reports/export-pdf" target="_blank" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
+                    <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Export
+                </a>
+                <a href="http://localhost:8000/teacher/my-excuses/create" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
+                    <i class="bi bi-calendar-x-fill me-1"></i> Leave
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Skeleton Stats -->
+<div class="row g-3 mb-4" id="skelStats">
+    <div class="col-md-3 col-6"><div class="skel-stat ">
+            <div class="skel-shimmer skel-circle" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                <div class="skel-shimmer skel-line" style="width:50%;height:10px;"></div>
+                <div class="skel-shimmer skel-line" style="width:35%;height:18px;"></div>
+            </div>
+        </div>
+        </div>
+    <div class="col-md-3 col-6"><div class="skel-stat ">
+            <div class="skel-shimmer skel-circle" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                <div class="skel-shimmer skel-line" style="width:50%;height:10px;"></div>
+                <div class="skel-shimmer skel-line" style="width:35%;height:18px;"></div>
+            </div>
+        </div>
+        </div>
+    <div class="col-md-3 col-6"><div class="skel-stat ">
+            <div class="skel-shimmer skel-circle" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                <div class="skel-shimmer skel-line" style="width:50%;height:10px;"></div>
+                <div class="skel-shimmer skel-line" style="width:35%;height:18px;"></div>
+            </div>
+        </div>
+        </div>
+    <div class="col-md-3 col-6"><div class="skel-stat ">
+            <div class="skel-shimmer skel-circle" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+                <div class="skel-shimmer skel-line" style="width:50%;height:10px;"></div>
+                <div class="skel-shimmer skel-line" style="width:35%;height:18px;"></div>
+            </div>
+        </div>
+        </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:24px; margin-bottom:24px;">
+    <div class="ent-kpi-card " data-accent="gold">
+                    <div class="ent-kpi-icon"><i class="bi bi-easel-fill"></i></div>
+                <div class="ent-kpi-body">
+                            <div class="ent-kpi-label">Today&#039;s Classes</div>
+                                                
+        </div>
+    </div>
+    <div class="ent-kpi-card " data-accent="primary">
+                    <div class="ent-kpi-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="ent-kpi-body">
+                            <div class="ent-kpi-label">Total Students</div>
+                                                
+        </div>
+    </div>
+    <div class="ent-kpi-card " data-accent="success">
+                    <div class="ent-kpi-icon"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="ent-kpi-body">
+                            <div class="ent-kpi-label">Present Today</div>
+                                                
+        </div>
+    </div>
+    <div class="ent-kpi-card " data-accent="danger">
+                    <div class="ent-kpi-icon"><i class="bi bi-x-circle-fill"></i></div>
+                <div class="ent-kpi-body">
+                            <div class="ent-kpi-label">Absent Today</div>
+                                                
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Left Column -->
+    <div class="col-lg-8">
+        
+        <!-- School Calendar -->
+        <div class="mb-4">
+            <div class="adm-card ">
+                    <div class="adm-card-head">
+                <div class="adm-card-title">
+                                            <div class="adm-card-icon" style="background: rgba(212, 175, 55, 0.1); color: var(--gold);">
+                            <i class="bi bi-calendar3"></i>
+                        </div>
+                                        School Calendar
+                </div>
+                                    <div class="header-actions">
+                        <div class="d-flex align-items-center gap-2">
+                        <button type="button" onclick="schoolCalendar.prev(); updateCalendarTitle();" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" onclick="schoolCalendar.next(); updateCalendarTitle();" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <button type="button" onclick="schoolCalendar.today(); updateCalendarTitle();" class="btn btn-outline btn-sm" style="color: var(--ent-text); border-color: var(--ent-border);">
+                            Today
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" style="color: #fbbf24; border-color: rgba(251,191,36,0.3); background: rgba(251,191,36,0.15);" data-bs-toggle="modal" data-bs-target="#newMeetingModal">
+                            <i class="bi bi-plus-lg"></i> New Meeting
+                        </button>
+                    </div>
+                    </div>
+                            </div>
+                
+        <div style="padding: 24px;">
+            <div id="calendarTitle" style="font-weight: 700; color: var(--ent-text); font-size: 1.1rem; margin-bottom: 16px;"></div>
+
+                <div class="legend-container mb-3 d-flex gap-3 flex-wrap" style="font-size:0.8rem; font-weight:600; color:var(--ent-text-muted);">
+                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#60a5fa;"></div> Class</div>
+                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#f87171;"></div> Exam</div>
+                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#fbbf24;"></div> Meeting</div>
+                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#a78bfa;"></div> School Event</div>
+                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#4ade80;"></div> Holiday</div>
+                </div>
+
+                <div id="schoolCalendar" style="min-height: 500px;"></div>
+        </div>
+    </div>
+        </div>
+        
+        <!-- Weekly Chart -->
+                <div class="mb-4">
+            <div class="adm-card ">
+                    <div class="adm-card-head">
+                <div class="adm-card-title">
+                                            <div class="adm-card-icon" style="background: rgba(212, 175, 55, 0.1); color: var(--gold);">
+                            <i class="bi bi-bar-chart-fill"></i>
+                        </div>
+                                        Weekly Attendance Overview
+                </div>
+                            </div>
+                
+        <div style="padding: 24px;">
+            <div class="ent-chart-container" style="height:250px;">
+                    <canvas id="weeklyChart"></canvas>
+                </div>
+        </div>
+    </div>
+        </div>
+        
+        <!-- Recent Logs -->
+        <div class="mb-4">
+            <div class="adm-card ">
+                    <div class="adm-card-head">
+                <div class="adm-card-title">
+                                            <div class="adm-card-icon" style="background: rgba(212, 175, 55, 0.1); color: var(--gold);">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                                        Recent Logs
+                </div>
+                            </div>
+                
+        <div style="padding: 24px;">
+            <div class="mb-3">
+                    <input type="text" id="recentLogsSearch" placeholder="Search logs..." 
+                        style="background:rgba(255,255,255,0.04);border:1px solid var(--ent-border);border-radius:8px;color:var(--ent-text);padding:8px 12px;font-size:0.85rem;width:100%;outline:none;font-family:'Inter',sans-serif;" 
+                        onkeyup="filterRecentLogs()">
+                </div>
+                
+                <div class="d-flex flex-column gap-3" style="max-height: 300px; overflow-y: auto;">
+                                            <div class="empty-state text-center" style="padding: 40px 20px;">
+                            <i class="bi bi-inbox-fill" style="font-size: 3rem; color: #b39b82; opacity: 0.5;"></i>
+                            <p style="color: #b39b82; font-size: 1rem; margin-top: 16px; font-weight: 600;">No recent logs</p>
+                        </div>
+                                    </div>
+        </div>
+    </div>
+        </div>
+
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-lg-4">
+        
+        <!-- Quick Switch -->
+                <div class="mb-4">
+            <div class="adm-card ">
+                    <div class="adm-card-head">
+                <div class="adm-card-title">
+                                            <div class="adm-card-icon" style="background: rgba(212, 175, 55, 0.1); color: var(--gold);">
+                            <i class="bi bi-easel-fill"></i>
+                        </div>
+                                        Today&#039;s Classes
+                </div>
+                            </div>
+                
+        <div style="padding: 24px;">
+            <div class="empty-state text-center" style="padding: 20px;">
+                    <i class="bi bi-cup-hot" style="font-size: 2rem; color: #b39b82; opacity: 0.5;"></i>
+                    <p style="color: #b39b82; font-size: 0.9rem; margin-top: 10px; font-weight: 600;">No classes scheduled today</p>
+                </div>
+        </div>
+    </div>
+        </div>
+        
+        <!-- At-Risk Students -->
+                
+    </div>
+</div>
+
+<!-- New Meeting Modal -->
+<div class="modal fade" id="newMeetingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background: rgba(20, 15, 10, 0.95); border: 1px solid rgba(207,164,111,0.2); backdrop-filter: blur(20px); box-shadow: 0 32px 80px rgba(0,0,0,0.6); border-radius: 24px; color: #f3e7cd;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(207,164,111,0.2); padding: 24px 32px;">
+                <h5 class="modal-title" style="margin: 0; font-weight: 700;">Schedule New Meeting</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="newMeetingForm" onsubmit="handleCreateMeeting(event)">
+                <input type="hidden" name="_token" value="mxjJcskYkz3udb5xsVBbo3SpbmwXlqP45ZCWQaBV" autocomplete="off">                <div class="modal-body" style="padding: 32px;">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82;">Meeting Name</label>
+                            <input type="text" name="name" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required placeholder="e.g. Parent-Teacher Conference">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82;">Date</label>
+                            <input type="date" name="date" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82;">Start Time</label>
+                            <input type="time" name="start_time" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82;">End Time</label>
+                            <input type="time" name="end_time" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82;">Location (Optional)</label>
+                            <input type="text" name="location" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" placeholder="e.g. Room 302 or Zoom Link">
+                        </div>
+                        
+                        <!-- Invitees Section -->
+                        <div class="col-12 mt-4">
+                            <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82;">Invitees</span>
+                                <div style="display: flex; gap: 8px;">
+                                    <select id="searchRole" class="form-control form-control-sm" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 2px 8px; font-size: 0.8rem; width: auto;">
+                                        <option value="" style="color: #000;">Any Role</option>
+                                        <option value="Student" style="color: #000;">Student</option>
+                                        <option value="Parent-Guardian" style="color: #000;">Parent/Guardian</option>
+                                        <option value="Instructor" style="color: #000;">Instructor</option>
+                                    </select>
+                                </div>
+                            </label>
+                            
+                            <div style="position: relative;">
+                                <input type="text" id="inviteeSearch" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" placeholder="Search by name or email..." onkeyup="debounceSearch(this.value)">
+                                <div id="searchResults" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #1a1a2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; margin-top: 4px; z-index: 1000; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                            
+                            <!-- Quick Bulk Invites -->
+                                                        
+                            <div id="selectedInvitees" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;"></div>
+                            
+                            <!-- Hidden inputs will be appended here via JS -->
+                            <div id="hiddenInviteeInputs"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(207,164,111,0.2); padding: 24px 32px;">
+                    <button type="button" class="ent-btn ent-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="ent-btn" style="background: #fbbf24; color: #1a1a2e; border: none;">Schedule Meeting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- System Toast Container (for websocket notifications) -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+        <script>
+        const sidebar     = document.getElementById('sidebar');
+        const burgerBtn   = document.getElementById('burgerBtn');
+        const topHeader   = document.getElementById('topHeader');
+        const mainContent = document.getElementById('mainContent');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        // ── TOAST HELPER ──
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const iconMap = { warning_3: 'bi-exclamation-octagon-fill', warning_2: 'bi-exclamation-triangle-fill', custom: 'bi-info-circle-fill', success: 'bi-check-circle-fill' };
+            const colorMap = { warning_3: 'background:rgba(239,68,68,0.15);color:#f87171;', warning_2: 'background:rgba(245,158,11,0.15);color:#fbbf24;', custom: 'background:rgba(59,130,246,0.15);color:#60a5fa;', success: 'background:rgba(34,197,94,0.16);color:#4ade80;' };
+            const toast = document.createElement('div');
+            toast.className = 'toast-item';
+            toast.innerHTML = '<div class="toast-icon" style="' + (colorMap[type] || colorMap.custom) + '"><i class="bi ' + (iconMap[type] || 'bi-bell-fill') + '"></i></div><div style="flex:1;min-width:0;">' + message + '</div>';
+            container.appendChild(toast);
+            setTimeout(function() {
+                toast.classList.add('toast-out');
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 2000);
+        }
+
+        // Check if mobile
+        const isMobile = window.innerWidth <= 768;
+
+        // Restore saved state (only for desktop)
+        if (!isMobile && localStorage.getItem('sidebarMini') === 'true') applyMini(true, false);
+
+        function toggleSidebar() {
+            if (isMobile) {
+                const isOpen = sidebar.classList.contains('open');
+                if (isOpen) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            } else {
+                const isMini = sidebar.classList.contains('collapsed');
+                applyMini(!isMini, true);
+                localStorage.setItem('sidebarMini', !isMini);
+            }
+        }
+
+        function openSidebar() {
+            sidebar.classList.add('open');
+            sidebarOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            sidebarOverlay.classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function applyMini(mini, animate) {
+            if (!animate) {
+                const noTrans = 'transition:none!important';
+                sidebar.style.cssText     += noTrans;
+                topHeader.style.cssText   += noTrans;
+                mainContent.style.cssText += noTrans;
+            }
+
+            if (mini) {
+                sidebar.classList.add('collapsed');
+                topHeader.classList.add('mini');
+                mainContent.classList.add('mini');
+                burgerBtn.classList.add('open');
+            } else {
+                sidebar.classList.remove('collapsed');
+                topHeader.classList.remove('mini');
+                mainContent.classList.remove('mini');
+                burgerBtn.classList.remove('open');
+            }
+
+            if (!animate) {
+                requestAnimationFrame(() => {
+                    sidebar.style.cssText     = '';
+                    topHeader.style.cssText   = '';
+                    mainContent.style.cssText = '';
+                });
+            }
+        }
+
+        function markAllRead() {
+            fetch('http://localhost:8000/notifications/read', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': 'mxjJcskYkz3udb5xsVBbo3SpbmwXlqP45ZCWQaBV',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => location.reload());
+        }
+
+        function archiveNotif(id, btn) {
+            const row = document.getElementById('notif-' + id);
+            // Animate out
+            row.style.transition = 'opacity .2s, transform .2s';
+            row.style.opacity = '0';
+            row.style.transform = 'translateX(10px)';
+            setTimeout(() => {
+                fetch(`/notifications/${id}/archive`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': 'mxjJcskYkz3udb5xsVBbo3SpbmwXlqP45ZCWQaBV',
+                        'Content-Type': 'application/json'
+                    }
+                }).then(r => r.json()).then(data => {
+                    if (data.success) {
+                        row.remove();
+                        // Update badge count
+                        const badge = document.querySelector('.notif-btn span');
+                        if (badge) {
+                            const current = parseInt(badge.textContent) || 0;
+                            if (current <= 1) badge.remove();
+                            else badge.textContent = current - 1;
+                        }
+                    }
+                });
+            }, 200);
+        }
+
+        // ── WEBSOCKET: Real-time notifications via Laravel Echo + Reverb ──
+        (function() {
+            // Dynamically load Laravel Echo + Pusher-js (Reverb uses Pusher protocol)
+            const script1 = document.createElement('script');
+            script1.src = 'https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js';
+            script1.onload = function() {
+                const script2 = document.createElement('script');
+                script2.src = 'https://cdn.jsdelivr.net/npm/laravel-echo@1.16.0/dist/echo.iife.js';
+                script2.onload = function() {
+                    window.adminEcho = new Echo({
+                        broadcaster: 'reverb',
+                        key: 'xcf5ogx2pxoqfy8luqko',
+                        wsHost: 'localhost',
+                        wsPort: 8080,
+                        wssPort: 8080,
+                        forceTLS: false,
+                        enabledTransports: ['ws'],
+                    });
+
+                    // Listen on private channel
+                    window.adminEcho.private('notifications.1')
+                        .listen('.notification.sent', (e) => {
+                            // Bump badge count
+                            const notifBtn = document.querySelector('.notif-btn');
+                            let badge = notifBtn.querySelector('span');
+                            if (badge) {
+                                const count = parseInt(badge.textContent) || 0;
+                                badge.textContent = count + 1 > 9 ? '9+' : count + 1;
+                            } else {
+                                badge = document.createElement('span');
+                                badge.style.cssText = 'position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#dc2626;color:white;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid white;';
+                                badge.textContent = '1';
+                                notifBtn.appendChild(badge);
+                            }
+
+                            // Add notification to dropdown list
+                            const list = document.querySelector('.dropdown-menu .overflow-auto, .dropdown-menu [style*="max-height"]');
+                            if (list) {
+                                const iconMap = { warning_3: 'bi-exclamation-octagon-fill', warning_2: 'bi-exclamation-triangle-fill', custom: 'bi-info-circle-fill' };
+                                const colorMap = { warning_3: 'background:#fef2f2;color:#dc2626;', warning_2: 'background:#fffbeb;color:#d97706;', custom: 'background:#eff6ff;color:#2563eb;' };
+                                const id = Date.now();
+                                const div = document.createElement('div');
+                                div.id = 'notif-' + id;
+                                div.style.cssText = 'padding:13px 18px;border-bottom:1px solid #f8fafc;background:#fffbeb;';
+                                div.innerHTML = `
+                                    <div style="display:flex;gap:10px;align-items:flex-start;">
+                                        <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[e.type]||colorMap.custom}">
+                                            <i class="bi ${iconMap[e.type]||'bi-bell-fill'}"></i>
+                                        </div>
+                                        <div style="flex:1;min-width:0;">
+                                            <div style="font-size:.82rem;color:#1e293b;line-height:1.4;">${e.message}</div>
+                                            <div style="font-size:.72rem;color:#94a3b8;margin-top:4px;">Just now</div>
+                                        </div>
+                                        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+                                            <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;"></div>
+                                        </div>
+                                    </div>`;
+                                list.prepend(div);
+                            }
+
+                            // Show toast notification
+                            if (typeof showToast === 'function') {
+                                showToast(e.message, e.type || 'custom');
+                            }
+                        });
+                };
+                document.head.appendChild(script2);
+            };
+            document.head.appendChild(script1);
+        })();
+    </script>
+        
+    <!-- Premium Toast Container (for session messages) -->
+    <div class="premium-toast-container" id="premiumToastContainer"></div>
+    <script>
+    function showPremiumToast(message, type = 'success') {
+        const container = document.getElementById('premiumToastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'premium-toast';
+        
+        let iconClass = 'bi-check-circle-fill';
+        let iconColor = 'var(--gold)';
+        
+        if (type === 'error') {
+            iconClass = 'bi-x-circle-fill';
+            iconColor = '#f87171';
+            toast.style.borderLeftColor = '#f87171';
+        } else if (type === 'warning') {
+            iconClass = 'bi-exclamation-triangle-fill';
+            iconColor = '#fbbf24';
+            toast.style.borderLeftColor = '#fbbf24';
+        }
+
+        toast.innerHTML = `
+            <i class="bi ${iconClass} premium-toast-icon" style="color: ${iconColor};"></i>
+            <div class="premium-toast-content">${message}</div>
+        `;
+        
+        container.appendChild(toast);
+        
+        requestAnimationFrame(() => {
+            setTimeout(() => toast.classList.add('show'), 50);
+        });
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 400);
+        }, 2000);
+    }
+    </script>
+
+        
+    <!-- Premium Drawer -->
+    <div class="premium-drawer-overlay" id="globalDrawerOverlay" onclick="closeDrawer()"></div>
+    <div class="premium-drawer" id="globalDrawer">
+        <div class="premium-drawer-header">
+            <h3 class="premium-drawer-title" id="globalDrawerTitle">Drawer</h3>
+            <button class="premium-drawer-close" onclick="closeDrawer()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="premium-drawer-body" id="globalDrawerBody"></div>
+        <div class="premium-drawer-footer" id="globalDrawerFooter">
+            <button class="adm-btn adm-btn-ghost" onclick="closeDrawer()">Cancel</button>
+            <button class="adm-btn adm-btn-primary" id="globalDrawerSaveBtn">Confirm</button>
+        </div>
+    </div>
+    <script>
+    function openDrawer(title, contentHtml, saveCallback = null, saveText = 'Confirm') {
+        document.getElementById('globalDrawerTitle').innerText = title;
+        document.getElementById('globalDrawerBody').innerHTML = contentHtml;
+        const saveBtn = document.getElementById('globalDrawerSaveBtn');
+        if (saveCallback) {
+            saveBtn.style.display = 'inline-flex';
+            saveBtn.innerText = saveText;
+            saveBtn.onclick = () => { saveCallback(); };
+        } else {
+            saveBtn.style.display = 'none';
+        }
+        document.getElementById('globalDrawerOverlay').classList.add('show');
+        document.getElementById('globalDrawer').classList.add('open');
+    }
+    function closeDrawer() {
+        document.getElementById('globalDrawerOverlay').classList.remove('show');
+        document.getElementById('globalDrawer').classList.remove('open');
+    }
+    </script>
+
+                        <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
+    <a href="http://localhost:8000/teacher/dashboard" class="mbn-item active">
+        <i class="bi bi-grid-fill"></i>
+        <span>Dashboard</span>
+    </a>
+    <a href="http://localhost:8000/teacher/classroom" class="mbn-item ">
+        <i class="bi bi-journal-album"></i>
+        <span>Classes</span>
+    </a>
+    <a href="http://localhost:8000/teacher/absent" class="mbn-item ">
+        <i class="bi bi-person-x-fill"></i>
+        <span>Absent</span>
+    </a>
+    <a href="http://localhost:8000/teacher/excuse-reviews" class="mbn-item ">
+        <i class="bi bi-file-text-fill"></i>
+        <span>Excuses</span>
+    </a>
+    <a href="http://localhost:8000/teacher/profile" class="mbn-item ">
+        <i class="bi bi-person-fill"></i>
+        <span>Profile</span>
+    </a>
+</nav>
+                        <div class="cmd-palette-overlay" id="cmdPaletteOverlay">
+    <div class="cmd-palette" id="cmdPalette">
+        <div class="cmd-palette-header">
+            <i class="bi bi-search cmd-palette-search-icon"></i>
+            <input type="text" class="cmd-palette-input" id="cmdPaletteInput"
+                   placeholder="Search pages, actions..."
+                   autocomplete="off" spellcheck="false">
+            <kbd class="cmd-palette-kbd">ESC</kbd>
+        </div>
+
+        <div class="cmd-palette-body" id="cmdPaletteBody">
+            <div class="cmd-palette-group" id="cmdPaletteRecent" style="display:none;">
+                <div class="cmd-palette-group-label">
+                    <i class="bi bi-clock-history"></i> Recent
+                </div>
+                <div id="cmdPaletteRecentItems"></div>
+            </div>
+            <div class="cmd-palette-group">
+                <div class="cmd-palette-group-label">
+                    <i class="bi bi-compass"></i> Navigation
+                </div>
+                <div id="cmdPaletteItems"></div>
+            </div>
+            <div class="cmd-palette-empty" id="cmdPaletteEmpty" style="display:none;">
+                <i class="bi bi-search" style="font-size:1.5rem;opacity:0.3;"></i>
+                <div style="margin-top:8px;">No results found</div>
+            </div>
+        </div>
+
+        <div class="cmd-palette-footer">
+            <span><kbd>↑↓</kbd> Navigate</span>
+            <span><kbd>↵</kbd> Open</span>
+            <span><kbd>ESC</kbd> Close</span>
+        </div>
+    </div>
+</div>
+
+<style>
+/* ── COMMAND PALETTE STYLES ── */
+.cmd-palette-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: min(20vh, 120px);
+}
+
+.cmd-palette-overlay.active {
+    display: flex;
+    animation: cmdFadeIn 0.15s ease;
+}
+
+@keyframes cmdFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.cmd-palette {
+    width: 560px;
+    max-width: calc(100vw - 32px);
+    max-height: 480px;
+    background: rgba(22, 14, 10, 0.98);
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(207, 164, 111, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: cmdSlideUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cmdSlideUp {
+    from { transform: translateY(16px) scale(0.97); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.cmd-palette-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(207, 164, 111, 0.12);
+}
+
+.cmd-palette-search-icon {
+    font-size: 1.1rem;
+    color: #cfa46f;
+    flex-shrink: 0;
+}
+
+.cmd-palette-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #f3e7cd;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+}
+
+.cmd-palette-input::placeholder {
+    color: #8f826f;
+}
+
+.cmd-palette-kbd {
+    background: rgba(207, 164, 111, 0.1);
+    color: #b39b82;
+    border: 1px solid rgba(207, 164, 111, 0.15);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 0.68rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.cmd-palette-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.cmd-palette-group-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8f826f;
+    padding: 8px 12px 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cmd-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: #f3e7cd;
+    text-decoration: none;
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.cmd-palette-item:hover,
+.cmd-palette-item.active {
+    background: rgba(207, 164, 111, 0.1);
+    color: #f3e7cd;
+}
+
+.cmd-palette-item.active {
+    outline: 1px solid rgba(207, 164, 111, 0.2);
+}
+
+.cmd-palette-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(207, 164, 111, 0.08);
+    color: #cfa46f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.cmd-palette-item-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.cmd-palette-item-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.cmd-palette-item-hint {
+    font-size: 0.72rem;
+    color: #8f826f;
+    margin-top: 1px;
+}
+
+.cmd-palette-empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: #8f826f;
+    font-size: 0.85rem;
+}
+
+.cmd-palette-footer {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    border-top: 1px solid rgba(207, 164, 111, 0.08);
+    font-size: 0.7rem;
+    color: #8f826f;
+}
+
+.cmd-palette-footer kbd {
+    background: rgba(207, 164, 111, 0.08);
+    border: 1px solid rgba(207, 164, 111, 0.12);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 0.65rem;
+    font-family: 'Inter', sans-serif;
+    color: #b39b82;
+}
+
+@media (max-width: 768px) {
+    .cmd-palette-overlay { padding-top: 16px; }
+    .cmd-palette { max-height: 70vh; border-radius: 16px 16px 0 0; }
+    .cmd-palette-footer { display: none; }
+}
+</style>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── Role-aware navigation items ──
+    var navItems = [];
+
+                        navItems = [
+                { label: 'Dashboard', hint: 'Teacher overview', icon: 'bi-grid-fill', url: 'http://localhost:8000/teacher/dashboard' },
+                { label: 'My Classes', hint: 'Classroom view', icon: 'bi-journal-album', url: 'http://localhost:8000/teacher/classroom' },
+                { label: 'My Subjects', hint: 'Subject management', icon: 'bi-book', url: 'http://localhost:8000/teacher/subjects' },
+                { label: 'Attendance', hint: 'Attendance records', icon: 'bi-clipboard-check', url: 'http://localhost:8000/teacher/attendance' },
+                { label: 'Absent Report', hint: 'Absent students', icon: 'bi-person-x', url: 'http://localhost:8000/teacher/absent' },
+                { label: 'Excuse Reviews', hint: 'Review excuses', icon: 'bi-file-text', url: 'http://localhost:8000/teacher/excuse-reviews' },
+                { label: 'Students', hint: 'Student list', icon: 'bi-people', url: 'http://localhost:8000/teacher/students' },
+                { label: 'Reports', hint: 'Generate reports', icon: 'bi-bar-chart', url: 'http://localhost:8000/teacher/reports' },
+                { label: 'Holiday Calendar', hint: 'Holidays & events', icon: 'bi-calendar-event', url: 'http://localhost:8000/teacher/calendar' },
+                { label: 'Notifications', hint: 'Alerts', icon: 'bi-bell', url: 'http://localhost:8000/teacher/notifications' },
+                { label: 'Messages', hint: 'Send messages', icon: 'bi-envelope', url: 'http://localhost:8000/teacher/messages' },
+                { label: 'Profile', hint: 'My profile', icon: 'bi-person-circle', url: 'http://localhost:8000/teacher/profile' },
+            ];
+            
+    var overlay = document.getElementById('cmdPaletteOverlay');
+    var input = document.getElementById('cmdPaletteInput');
+    var itemsContainer = document.getElementById('cmdPaletteItems');
+    var recentContainer = document.getElementById('cmdPaletteRecentItems');
+    var recentGroup = document.getElementById('cmdPaletteRecent');
+    var emptyState = document.getElementById('cmdPaletteEmpty');
+    var activeIndex = -1;
+
+    // Render items
+    function renderItems(items, container) {
+        container.innerHTML = '';
+        items.forEach(function(item, i) {
+            var a = document.createElement('a');
+            a.href = item.url;
+            a.className = 'cmd-palette-item';
+            a.setAttribute('data-index', i);
+            a.innerHTML = '<div class="cmd-palette-item-icon"><i class="bi ' + item.icon + '"></i></div>' +
+                '<div class="cmd-palette-item-text"><div class="cmd-palette-item-label">' + item.label + '</div>' +
+                '<div class="cmd-palette-item-hint">' + item.hint + '</div></div>';
+            a.addEventListener('click', function() {
+                saveRecent(item);
+            });
+            container.appendChild(a);
+        });
+    }
+
+    // Filter
+    function filterItems(query) {
+        var q = query.toLowerCase().trim();
+        var filtered = navItems.filter(function(item) {
+            return item.label.toLowerCase().includes(q) || item.hint.toLowerCase().includes(q);
+        });
+
+        renderItems(filtered, itemsContainer);
+        emptyState.style.display = filtered.length === 0 ? 'block' : 'none';
+        recentGroup.style.display = q.length > 0 ? 'none' : (getRecent().length > 0 ? '' : 'none');
+        activeIndex = -1;
+        updateActive();
+    }
+
+    // Recent pages
+    function getRecent() {
+        try {
+            return JSON.parse(localStorage.getItem('cmdPaletteRecent') || '[]').slice(0, 3);
+        } catch(e) { return []; }
+    }
+
+    function saveRecent(item) {
+        var recent = getRecent().filter(function(r) { return r.url !== item.url; });
+        recent.unshift(item);
+        localStorage.setItem('cmdPaletteRecent', JSON.stringify(recent.slice(0, 5)));
+    }
+
+    function showRecent() {
+        var recent = getRecent();
+        if (recent.length > 0) {
+            renderItems(recent, recentContainer);
+            recentGroup.style.display = '';
+        } else {
+            recentGroup.style.display = 'none';
+        }
+    }
+
+    // Keyboard nav
+    function getAllItems() {
+        return overlay.querySelectorAll('.cmd-palette-item');
+    }
+
+    function updateActive() {
+        var items = getAllItems();
+        items.forEach(function(el, i) {
+            el.classList.toggle('active', i === activeIndex);
+        });
+        if (items[activeIndex]) {
+            items[activeIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    // Open/Close
+    function openPalette() {
+        overlay.classList.add('active');
+        input.value = '';
+        renderItems(navItems, itemsContainer);
+        showRecent();
+        emptyState.style.display = 'none';
+        activeIndex = -1;
+        setTimeout(function() { input.focus(); }, 50);
+    }
+
+    function closePalette() {
+        overlay.classList.remove('active');
+        activeIndex = -1;
+    }
+
+    // Event Listeners
+    document.addEventListener('keydown', function(e) {
+        // Cmd+K or Ctrl+K
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay.classList.contains('active')) {
+                closePalette();
+            } else {
+                openPalette();
+            }
+            return;
+        }
+
+        if (!overlay.classList.contains('active')) return;
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closePalette();
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            var items = getAllItems();
+            activeIndex = Math.min(activeIndex + 1, items.length - 1);
+            updateActive();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, -1);
+            updateActive();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            var items = getAllItems();
+            if (items[activeIndex]) {
+                items[activeIndex].click();
+            }
+        }
+    });
+
+    input.addEventListener('input', function() {
+        filterItems(this.value);
+    });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closePalette();
+    });
+
+    // Wire existing search bars to open palette
+    var saasSearch = document.querySelector('.saas-search-input');
+    if (saasSearch) {
+        saasSearch.addEventListener('focus', function(e) {
+            e.target.blur();
+            openPalette();
+        });
+    }
+
+    // Expose globally for external triggers
+    window.openCommandPalette = openPalette;
+    window.closeCommandPalette = closePalette;
+})();
+</script>
+        <script src="http://localhost:8000/js/pull-refresh.js?v=1785997024"></script>
+    
+    <style>
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: rgba(255,255,255,0.06) !important;
+    }
+    .fc .fc-toolbar-title {
+        font-size: 1.1rem !important;
+        font-weight: 700;
+        color: var(--ent-text);
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: #b39b82;
+        font-weight: 600;
+        padding: 8px 0 !important;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+    .fc .fc-daygrid-day-number {
+        color: var(--ent-text);
+        font-size: 0.85rem;
+        font-weight: 600;
+        padding: 8px !important;
+    }
+    .fc .fc-day-today {
+        background: rgba(251,191,36,0.05) !important;
+    }
+    .fc .fc-daygrid-event {
+        border-radius: 6px !important;
+        padding: 3px 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1a1a2e !important;
+        margin: 2px 6px !important;
+        transition: all 0.2s;
+        border: none !important;
+    }
+    .fc .fc-daygrid-event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+        filter: brightness(1.1);
+    }
+    .fc .fc-daygrid-day-frame:hover {
+        background: rgba(255,255,255,0.02);
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('weeklyChart').getContext('2d');
+Chart.defaults.color = '#b39b82';
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+        datasets: [{
+            label: 'Present',
+            data: [0,0,0,0,0,0,0],
+            backgroundColor: 'rgba(74, 222, 128, 0.8)',
+            borderColor: 'rgba(74, 222, 128, 1)',
+            borderWidth: 1,
+            borderRadius: 6,
+        }, {
+            label: 'Late',
+            data: [0,0,0,0,0,0,0],
+            backgroundColor: 'rgba(245, 158, 11, 0.8)',
+            borderColor: 'rgba(245, 158, 11, 1)',
+            borderWidth: 1,
+            borderRadius: 6,
+        }, {
+            label: 'Absent',
+            data: [0,0,0,0,0,0,0],
+            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+            borderColor: 'rgba(239, 68, 68, 1)',
+            borderWidth: 1,
+            borderRadius: 6,
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    boxWidth: 8,
+                    padding: 20,
+                    font: { weight: '600', size: 11 }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(15, 11, 8, 0.95)',
+                titleColor: '#f3e7cd',
+                bodyColor: '#e7dcc8',
+                borderColor: 'rgba(207,164,111,0.2)',
+                borderWidth: 1,
+                padding: 12,
+                cornerRadius: 10
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(255, 225, 150, 0.04)', drawBorder: false },
+                ticks: { stepSize: 1, font: { weight: '500' } }
+            },
+            x: {
+                grid: { display: false, drawBorder: false },
+                ticks: { font: { weight: '600' } }
+            }
+        }
+    }
+});
+</script>
+
+<script>
+// Skeleton -> Real Content
+document.addEventListener('DOMContentLoaded', function() {
+    var skelStats = document.getElementById('skelStats');
+    var realStats = document.getElementById('realStats');
+    if (skelStats && realStats) { skelStats.style.display = 'none'; realStats.style.display = ''; }
+});
+
+// Real-time clock
+(function() {
+    const clockEl = document.getElementById('teacherClock');
+    function tick() {
+        const now = new Date();
+        let h = now.getHours(), m = now.getMinutes();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12 || 12;
+        const short = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+        if (clockEl) clockEl.textContent = short;
+    }
+    setInterval(tick, 1000);
+    tick();
+})();
+
+function filterRecentLogs() {
+    const input = document.getElementById('recentLogsSearch').value.toLowerCase();
+    const rows = document.querySelectorAll('.attendance-row');
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? 'flex' : 'none';
+    });
+}
+
+// School Calendar Initialization
+let schoolCalendar;
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('schoolCalendar');
+    if (!calendarEl) return;
+    
+    schoolCalendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: false,
+        height: 'auto',
+        events: function(fetchInfo, successCallback, failureCallback) {
+            fetch(`http://localhost:8000/teacher/calendar/data?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
+                .then(response => response.json())
+                .then(data => {
+                    const events = data.map(event => ({
+                        id: event.id,
+                        title: event.name || event.title,
+                        start: event.date || event.start,
+                        end: event.end,
+                        backgroundColor: event.color || '#4ade80',
+                        borderColor: event.color || '#4ade80',
+                        textColor: '#ffffff',
+                        extendedProps: {
+                            type: event.type_label || event.type,
+                            description: event.description,
+                            location: event.location,
+                            status: event.status
+                        }
+                    }));
+                    successCallback(events);
+                })
+                .catch(error => {
+                    console.error('Error fetching calendar data:', error);
+                    failureCallback(error);
+                });
+        },
+        dayCellClassNames: function(arg) {
+            const today = new Date();
+            if (arg.date.toDateString() === today.toDateString()) {
+                return ['fc-day-today'];
+            }
+            return [];
+        }
+    });
+    
+    schoolCalendar.render();
+    updateCalendarTitle();
+});
+
+function updateCalendarTitle() {
+    if(schoolCalendar) {
+        document.getElementById('calendarTitle').textContent = schoolCalendar.view.title;
+    }
+}
+
+// Search & Invites for Meetings
+let searchTimeout;
+let selectedInvitees = [];
+let selectedGroups = [];
+
+function debounceSearch(query) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => searchInvitees(query), 300);
+}
+
+function searchInvitees(query) {
+    if (query.length < 2) {
+        document.getElementById('searchResults').style.display = 'none';
+        return;
+    }
+    
+    const role = document.getElementById('searchRole').value;
+    
+    fetch(`http://localhost:8000/teacher/calendar/search-invitees?q=${encodeURIComponent(query)}&role=${encodeURIComponent(role)}`)
+        .then(res => res.json())
+        .then(data => {
+            const results = document.getElementById('searchResults');
+            if (data.data.length === 0) {
+                results.innerHTML = '<div style="padding: 12px; color: #94a3b8; font-size: 0.85rem;">No users found</div>';
+            } else {
+                results.innerHTML = data.data.map(user => `
+                    <div style="padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'" onclick="addInvitee(${user.id}, '${user.name.replace(/'/g, "\\'")}')">
+                        <div style="font-weight: 600; color: #f8fafc; font-size: 0.9rem;">${user.name}</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8;">${user.role} • ${user.email}</div>
+                    </div>
+                `).join('');
+            }
+            results.style.display = 'block';
+        });
+}
+
+function addInvitee(id, name) {
+    if (!selectedInvitees.some(i => i.id === id)) {
+        selectedInvitees.push({id, name});
+        renderChips();
+    }
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('inviteeSearch').value = '';
+}
+
+function addBulkGroup(type, classId, label) {
+    if (!selectedGroups.some(g => g.type === type && g.classId === classId)) {
+        selectedGroups.push({type, classId, label});
+        renderChips();
+    }
+}
+
+function removeInvitee(id) {
+    selectedInvitees = selectedInvitees.filter(i => i.id !== id);
+    renderChips();
+}
+
+function removeGroup(type, classId) {
+    selectedGroups = selectedGroups.filter(g => !(g.type === type && g.classId === classId));
+    renderChips();
+}
+
+function renderChips() {
+    let html = '';
+    
+    // Render individual invitees
+    selectedInvitees.forEach(inv => {
+        html += `<div style="display: inline-flex; align-items: center; background: rgba(255,255,255,0.08); border-radius: 16px; padding: 4px 12px; font-size: 0.8rem; color: #f8fafc;">
+                    ${inv.name}
+                    <button type="button" onclick="removeInvitee(${inv.id})" style="background: none; border: none; color: #94a3b8; margin-left: 6px; cursor: pointer; padding: 0;"><i class="bi bi-x"></i></button>
+                 </div>`;
+    });
+    
+    // Render bulk groups
+    selectedGroups.forEach(grp => {
+        html += `<div style="display: inline-flex; align-items: center; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59,130,246,0.3); border-radius: 16px; padding: 4px 12px; font-size: 0.8rem; color: #bfdbfe;">
+                    <i class="bi bi-people-fill" style="margin-right: 4px;"></i> ${grp.label}
+                    <button type="button" onclick="removeGroup('${grp.type}', ${grp.classId})" style="background: none; border: none; color: #93c5fd; margin-left: 6px; cursor: pointer; padding: 0;"><i class="bi bi-x"></i></button>
+                 </div>`;
+    });
+    
+    document.getElementById('selectedInvitees').innerHTML = html;
+    
+    // Update hidden inputs
+    let inputsHtml = '';
+    selectedInvitees.forEach(inv => {
+        inputsHtml += `<input type="hidden" name="attendee_ids[]" value="${inv.id}">`;
+    });
+    selectedGroups.forEach((grp, index) => {
+        inputsHtml += `<input type="hidden" name="attendee_groups[${index}][group_type]" value="${grp.type}">`;
+        inputsHtml += `<input type="hidden" name="attendee_groups[${index}][class_id]" value="${grp.classId}">`;
+    });
+    document.getElementById('hiddenInviteeInputs').innerHTML = inputsHtml;
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#inviteeSearch') && !e.target.closest('#searchResults')) {
+        const results = document.getElementById('searchResults');
+        if (results) results.style.display = 'none';
+    }
+});
+
+function handleCreateMeeting(e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    
+    fetch(`http://localhost:8000/teacher/calendar/meetings`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('newMeetingModal')).hide();
+            form.reset();
+            selectedInvitees = [];
+            selectedGroups = [];
+            renderChips();
+            if(schoolCalendar) schoolCalendar.refetchEvents();
+        } else {
+            alert(data.message || 'Error creating meeting');
+        }
+    })
+    .catch(err => alert('An error occurred'));
+}
+</script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                }, function(err) {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

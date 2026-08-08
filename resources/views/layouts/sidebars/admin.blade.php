@@ -76,7 +76,7 @@
     
     <!-- System -->
     <div class="sidebar-section-label">System</div>
-    <a href="{{ route('admin.health') }}" class="nav-link {{ request()->routeIs('admin.health') ? 'active' : '' }}">
+    <a href="{{ route('admin.system-health.index') }}" class="nav-link {{ request()->routeIs('admin.system-health.index') ? 'active' : '' }}">
         <i class="bi bi-heart-pulse-fill"></i> <span class="nav-link-text">System Health</span>
     </a>
     <a href="{{ route('admin.settings') }}" class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}">

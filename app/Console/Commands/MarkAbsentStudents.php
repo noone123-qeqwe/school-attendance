@@ -46,7 +46,7 @@ class MarkAbsentStudents extends Command
             $subject = $schedule->subject;
             if (!$subject) continue;
 
-            $students = $subject->enrolledStudents()->get();
+            $students = $subject->getAllStudents();
 
             foreach ($students as $student) {
                 \Illuminate\Support\Facades\DB::transaction(function () use ($student, $subject, $today, &$absentCount, &$notificationsSentCount, &$osasWarningsCount) {

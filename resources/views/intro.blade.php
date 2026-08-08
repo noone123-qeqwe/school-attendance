@@ -22,54 +22,131 @@
             height: 100%;
             object-fit: cover;
             z-index: 1;
+            filter: brightness(1.05) contrast(1.1) saturate(1.15); /* Enhance colors */
+        }
+
+        /* ── VIGNETTE OVERLAY ── */
+        .vignette {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%);
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ── BRANDING OVERLAY ── */
+        .branding {
+            position: fixed;
+            bottom: 60px;
+            left: 40px;
+            z-index: 5;
+            color: white;
+            animation: slideUpFade 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.5s;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .branding h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            background: linear-gradient(135deg, #fff, #f3e7cd);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .branding p {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.7);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        @media (max-width: 768px) {
+            .branding {
+                bottom: 80px;
+                left: 24px;
+            }
+            .branding h1 { font-size: 2rem; }
+            .branding p { font-size: 0.85rem; }
+        }
+
+        @keyframes slideUpFade {
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* ── OVERLAY (subtle dark gradient at bottom) ── */
         .overlay {
             position: fixed;
             inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
-            z-index: 2;
+            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+            z-index: 3;
             pointer-events: none;
         }
 
         /* ── SKIP BUTTON ── */
         .skip-btn {
             position: fixed;
-            bottom: 36px;
-            right: 36px;
+            bottom: 40px;
+            right: 40px;
             z-index: 10;
-            background: rgba(255,255,255,0.15);
-            backdrop-filter: blur(8px);
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             color: white;
-            border: 1.5px solid rgba(255,255,255,0.3);
-            padding: 10px 22px;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 12px 26px;
             border-radius: 99px;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex;
             align-items: center;
-            gap: 8px;
-            letter-spacing: 0.3px;
+            gap: 10px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            animation: fadeIn 1s ease forwards;
+            animation-delay: 1.5s;
+            opacity: 0;
         }
         .skip-btn:hover {
-            background: rgba(255,255,255,0.25);
-            border-color: rgba(255,255,255,0.5);
-            transform: scale(1.05);
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.4);
+            transform: scale(1.08);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+        }
+        @media (max-width: 768px) {
+            .skip-btn {
+                bottom: 30px;
+                right: 20px;
+                padding: 10px 20px;
+                font-size: 0.85rem;
+            }
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
         }
 
         /* Progress bar */
-        .progress-bar {
+        .progress-bar-container {
             position: fixed;
             bottom: 0;
             left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #800000, #f59e0b);
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
             z-index: 10;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #b91c1c, #f59e0b, #cfa46f);
             width: 0%;
             transition: width 0.3s linear;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+            border-radius: 0 4px 4px 0;
         }
 
         /* ── FADE OUT OVERLAY ── */
@@ -90,20 +167,29 @@
 </head>
 <body>
 
-    <!-- Video: desktop default, switch to mobile file on small screens -->
+    <!-- Video -->
     <video id="introVideo" autoplay muted playsinline>
         <source id="introSource" src="{{ asset('videos/intro.mp4') }}" type="video/mp4">
     </video>
 
-    <!-- Overlay gradient -->
+    <!-- Cinematic Overlays -->
+    <div class="vignette"></div>
     <div class="overlay"></div>
 
+    <!-- Animated Branding -->
+    <div class="branding">
+        <h1>{{ config('app.name', 'Smart Classroom') }}</h1>
+        <p>Intelligent Attendance</p>
+    </div>
+
     <!-- Progress bar -->
-    <div class="progress-bar" id="progressBar"></div>
+    <div class="progress-bar-container">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
 
     <!-- Skip button -->
     <button class="skip-btn" onclick="goToLogin()">
-        Skip <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        Skip Intro <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
     </button>
 
     <!-- Fade out overlay -->

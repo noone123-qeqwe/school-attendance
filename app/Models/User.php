@@ -140,6 +140,22 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
 
+    /**
+     * Get all subjects for this student (explicitly enrolled + implicitly via year level / semester)
+     */
+    public function getAllSubjects()
+    {
+        if (!$this->isStudent()) return collect();
+        
+        $explicit = $this->enrolledSubjects()->get();
+        
+        $implicit = Subject::where('year_level', $this->year_level)
+            ->where('semester', $this->semester)
+            ->get();
+            
+        return $explicit->merge($implicit)->unique('id')->values();
+    }
+
     public function excuseSubmissions()
     {
         return $this->hasMany(ExcuseSubmission::class);

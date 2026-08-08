@@ -5,319 +5,327 @@
 @section('content')
 <div id="holidayCalendarPage" class="holiday-dashboard">
 <style>
-    /* Styling from previous admin calendar */
-    #holidayCalendarPage { padding-bottom: 18px; }
-    .holiday-dashboard .adm-stats {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 18px;
-        margin-bottom: 24px;
-    }
-    .holiday-dashboard .adm-stat {
-        flex: 1;
-        min-width: 180px;
-        padding: 22px 20px;
-        border-radius: 24px;
-        background: rgba(96, 14, 36, 0.18);
-        border: 1px solid rgba(255,255,255,0.12);
-        backdrop-filter: blur(16px);
-        box-shadow: 0 28px 60px rgba(15,23,42,0.18);
-        position: relative;
-        overflow: hidden;
-        animation: floatUp 0.8s ease both;
-    }
-    .holiday-dashboard .adm-stat::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: radial-gradient(circle at top left, rgba(255,255,255,0.15), transparent 36%);
-        opacity: 0.7;
-        pointer-events: none;
-    }
-    .holiday-dashboard .adm-stat-val {
-        font-size: 2rem;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-        margin-bottom: 6px;
-        color: #f8fafc;
-    }
-    .holiday-dashboard .adm-stat-lbl {
-        font-size: 0.78rem;
-        opacity: 0.76;
-        text-transform: uppercase;
-        letter-spacing: 0.16em;
-        color: #f8fafc;
-    }
+    #schoolCalendarPage { padding-bottom: 18px; }
     .holiday-dashboard .glass-card {
-        background: rgba(67, 12, 29, 0.18);
-        border: 1px solid rgba(255,255,255,0.14);
+        background: rgba(26, 26, 46, 0.4);
+        border: 1px solid rgba(255,255,255,0.06);
         backdrop-filter: blur(20px);
-        box-shadow: 0 32px 80px rgba(15,23,42,0.2);
+        box-shadow: 0 32px 80px rgba(0,0,0,0.4);
         border-radius: 28px;
     }
     .holiday-dashboard .glass-card .adm-card-head {
-        padding: 20px 22px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        padding: 24px 32px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .holiday-dashboard .glass-card .adm-card-title {
-        font-size: 1.05rem;
+        font-size: 1.25rem;
         font-weight: 800;
-        color: #f8fafc;
+        color: #f3e7cd;
         display: flex;
         align-items: center;
         gap: 12px;
     }
     .holiday-dashboard .glass-card .adm-card-icon {
-        background: rgba(255,255,255,0.08);
-        color: #ffe4e6;
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
-        width: 36px;
-        height: 36px;
+        background: rgba(207, 164, 111, 0.1);
+        color: #cfa46f;
+        box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.2);
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
         border-radius: 12px;
+        font-size: 1.2rem;
     }
     .holiday-dashboard .calendar-controls {
         display: flex;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 12px;
         align-items: center;
         justify-content: flex-end;
     }
     .holiday-dashboard .calendar-header {
         font-weight: 700;
-        color: #f8fafc;
+        color: #f3e7cd;
         min-width: 168px;
         text-align: center;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
     }
     .holiday-dashboard .adm-btn-ghost {
-        background: rgba(255,255,255,0.08);
-        color: #f8fafc;
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 12px;
-        transition: all 0.2s ease;
+        background: rgba(255,255,255,0.04);
+        color: #b39b82;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 10px;
+        padding: 8px 12px;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .holiday-dashboard .adm-btn-ghost:hover {
-        background: rgba(255,255,255,0.16);
+        background: rgba(255,255,255,0.08);
+        color: #cfa46f;
+        border-color: rgba(207, 164, 111, 0.3);
+        transform: translateY(-1px);
     }
     .holiday-dashboard .adm-btn-primary {
-        background: linear-gradient(135deg, #7f1d1d, #3b0215);
-        color: #fff;
+        background: linear-gradient(135deg, #d4a574, #cfa46f);
+        color: #1a1a2e;
         border: none;
-        border-radius: 12px;
-        padding: 6px 16px;
-        box-shadow: 0 16px 32px rgba(124,58,58,0.24);
-        transition: transform .2s ease, box-shadow .2s ease;
+        border-radius: 10px;
+        padding: 8px 20px;
+        font-weight: 700;
+        box-shadow: 0 8px 24px rgba(207, 164, 111, 0.2);
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .holiday-dashboard .adm-btn-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 20px 40px rgba(124,58,58,0.32);
-    }
-    .holiday-dashboard .holiday-card {
-        border-radius: 22px;
-        padding: 18px 20px;
-        margin-bottom: 14px;
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.12);
-        backdrop-filter: blur(12px);
-        display: flex;
-        gap: 16px;
-        align-items: flex-start;
-        animation: fadeInUp .6s ease both;
-    }
-    .holiday-dashboard .holiday-card:nth-child(even) {
-        background: rgba(255,255,255,0.04);
-    }
-    .holiday-dashboard .holiday-dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 999px;
-        margin-top: 6px;
-        flex-shrink: 0;
-        box-shadow: 0 0 0 6px rgba(255,255,255,0.03);
-    }
-    .holiday-dashboard .holiday-name {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #fff;
-        margin-bottom: 4px;
-    }
-    .holiday-dashboard .holiday-meta {
-        color: #cbd5e1;
-        font-size: 0.82rem;
-        line-height: 1.5;
-    }
-    .holiday-dashboard .holiday-chip {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 5px 10px;
-        border-radius: 999px;
-        font-size: 0.72rem;
-        font-weight: 700;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        margin-top: 8px;
-    }
-    .holiday-dashboard .holiday-card-actions {
-        display: flex;
-        gap: 8px;
-    }
-    .holiday-dashboard .holiday-card-actions button {
-        min-width: 40px;
-        width: 40px;
-        aspect-ratio: 1;
-        border-radius: 14px;
-        border: none;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform .2s ease, background .2s ease;
-    }
-    .holiday-dashboard .holiday-card-actions button:hover {
         transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(207, 164, 111, 0.3);
     }
-    .holiday-dashboard .holiday-btn-edit {
-        background: rgba(255,255,255,0.11);
-        color: #bfdbfe;
+    
+    /* FullCalendar Overrides for Pro Max */
+    .fc {
+        color: #b39b82;
     }
-    .holiday-dashboard .holiday-btn-delete {
-        background: rgba(220,38,38,0.16);
-        color: #fecaca;
+    .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+        border-color: rgba(255,255,255,0.06) !important;
     }
+    .fc .fc-col-header-cell {
+        background: rgba(255,255,255,0.02) !important;
+        padding: 12px 0;
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: #b39b82;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-decoration: none !important;
+    }
+    .fc .fc-daygrid-day-number {
+        color: #f3e7cd;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 12px !important;
+        text-decoration: none !important;
+    }
+    .fc .fc-day-other .fc-daygrid-day-number {
+        color: #6b5c4d;
+    }
+    .fc a {
+        text-decoration: none !important;
+    }
+    .fc .fc-day-today {
+        background: rgba(207, 164, 111, 0.05) !important;
+        box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.3) !important;
+    }
+    .fc .fc-daygrid-event {
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+        border-radius: 6px !important;
+        padding: 3px 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1a1a2e !important;
+        margin: 2px 6px !important;
+        transition: all 0.2s;
+    }
+    .fc .fc-daygrid-event:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
+        filter: brightness(1.1);
+    }
+    .fc .fc-daygrid-day-frame {
+        transition: background 0.2s;
+    }
+    .fc .fc-daygrid-day-frame:hover {
+        background: rgba(255,255,255,0.02);
+    }
+    
+    /* Legend */
+    .legend-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 24px;
+        padding: 16px 24px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.04);
+        border-radius: 16px;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #b39b82;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+    }
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    
+    /* Inputs and Chips for Modals */
     .holiday-dashboard .adm-input {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.14);
-        color: #f8fafc;
-        border-radius: 12px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #f3e7cd;
+        border-radius: 10px;
         padding: 10px 14px;
         width: 100%;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-    .holiday-dashboard .adm-input option {
-        background: #1e293b;
-        color: #f8fafc;
-    }
-    .holiday-dashboard select.adm-input {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.14);
-        color: #f8fafc;
-    }
-    .holiday-dashboard select.adm-input option {
-        background: #1e293b !important;
-        color: #f8fafc !important;
-    }
-    .holiday-dashboard .adm-input::placeholder {
-        color: rgba(241,245,249,0.6);
+        transition: all 0.2s ease;
     }
     .holiday-dashboard .adm-input:focus {
         outline: none;
-        border-color: rgba(255,255,255,0.32);
-        box-shadow: 0 0 0 4px rgba(167,28,48,0.18);
+        border-color: rgba(207, 164, 111, 0.4);
+        box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.15);
     }
     .holiday-dashboard .form-label {
-        color: #e2e8f0;
+        color: #b39b82;
+        font-size: 0.8rem;
         font-weight: 600;
-        font-size: 0.85rem;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .invitee-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .chip {
+        background: rgba(207, 164, 111, 0.1);
+        border: 1px solid rgba(207, 164, 111, 0.2);
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #cfa46f;
+    }
+    .chip button {
+        background: none;
+        border: none;
+        color: #cfa46f;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+    .chip button:hover {
+        opacity: 1;
+    }
+    
+    .search-results {
+        background: rgba(15, 15, 20, 0.95);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        margin-top: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        position: absolute;
+        width: 100%;
+        z-index: 10;
+        display: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .search-result-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .search-result-item:last-child {
+        border-bottom: none;
+    }
+    .search-result-item:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    /* Event Details Modal Pro Max */
+    .event-modal-content {
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+        border-radius: 24px;
+        color: #f3e7cd;
+    }
+    .event-modal-header {
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 24px 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .event-modal-header .modal-title {
+        font-size: 1.25rem;
+        font-weight: 800;
+        color: #f3e7cd;
+        margin: 0;
+    }
+    .event-modal-body {
+        padding: 32px;
+    }
+    .event-detail-item {
+        margin-bottom: 24px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .event-detail-item:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .event-detail-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+        color: #b39b82;
         margin-bottom: 8px;
     }
-    .holiday-dashboard .modal-content {
-        background: rgba(34, 12, 25, 0.96);
-        border: 1px solid rgba(255,255,255,0.18);
-        box-shadow: 0 35px 80px rgba(15,23,42,0.35);
-        border-radius: 24px;
-    }
-    .holiday-dashboard .modal-header,
-    .holiday-dashboard .modal-footer {
-        border-color: rgba(255,255,255,0.08);
-    }
-    .holiday-dashboard .modal-title {
+    .event-detail-value {
+        font-size: 1.05rem;
         color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
     }
-    .holiday-dashboard .adm-card {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-    }
-    .holiday-dashboard .view-btn {
-        border-radius: 14px;
-    }
-    @keyframes floatUp {
-        from { opacity: 0; transform: translateY(18px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(16px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .fc .fc-button {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: #f8fafc;
-    }
-    .fc .fc-button:hover {
-        background: rgba(255,255,255,0.16);
-    }
-    .fc .fc-button-primary {
-        background: linear-gradient(135deg, rgba(139,15,22,0.92), rgba(97,6,25,0.92));
-        border: none;
-    }
-    .fc .fc-daygrid-event {
-        color: #fff !important;
-        border: none !important;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
-        border-radius: 6px !important;
-        padding: 2px 4px;
-        font-size: 0.8rem;
-    }
-    .fc .fc-daygrid-event:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.3) !important;
-    }
-    .fc .fc-col-header-cell {
-        background: rgba(255,255,255,0.06) !important;
-        color: #f8fafc !important;
-    }
-    .fc .fc-day-today {
-        background: rgba(167,28,48,0.18) !important;
-        box-shadow: inset 0 0 0 2px rgba(253,230,138,0.4) !important;
+    .event-type-badge {
+        display: inline-flex;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #1a1a2e !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     }
 </style>
 
-<div class="adm-stats">
-    <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #fde68a;">{{ $events->count() }}</div>
-        <div class="adm-stat-lbl">Events This Month</div>
-    </div>
-    <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #10b981;">{{ $events->where('type', 'holiday')->count() }}</div>
-        <div class="adm-stat-lbl">Holidays</div>
-    </div>
-    <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #3b82f6;">{{ $events->where('type', 'class')->count() + $events->where('type', 'exam')->count() }}</div>
-        <div class="adm-stat-lbl">Classes & Exams</div>
-    </div>
-    <div class="adm-stat">
-        <div class="adm-stat-val" style="color: #f59e0b;">{{ $events->where('type', 'meeting')->count() }}</div>
-        <div class="adm-stat-lbl">Meetings</div>
-    </div>
-</div>
-
 <div class="row g-3">
     <!-- Calendar -->
-    <div class="col-lg-8">
+    <div class="col-12">
         <div class="adm-card glass-card">
             <div class="adm-card-head">
                 <div class="adm-card-title">
-                    <div class="adm-card-icon" style="background: rgba(255,255,255,0.12); color: #fde68a;">
+                    <div class="adm-card-icon">
                         <i class="bi bi-calendar3"></i>
                     </div>
-                    Holiday & Events Calendar
+                    School Calendar
                 </div>
                 <div class="calendar-controls">
                     <button type="button" onclick="previousMonth()" class="adm-btn adm-btn-ghost" style="padding: 6px 10px;">
@@ -329,213 +337,203 @@
                     <button type="button" onclick="nextMonth()" class="adm-btn adm-btn-ghost" style="padding: 6px 10px;">
                         <i class="bi bi-chevron-right"></i>
                     </button>
-                    <button type="button" onclick="goToToday()" class="adm-btn adm-btn-primary" style="margin-left: 10px;">
+                    <button type="button" onclick="goToToday()" class="adm-btn adm-btn-ghost" style="margin-left: 10px; margin-right: 10px;">
                         Today
+                    </button>
+                    <button type="button" class="adm-btn adm-btn-primary" data-bs-toggle="modal" data-bs-target="#addEventModal">
+                        <i class="bi bi-plus-lg"></i> Add Event
                     </button>
                 </div>
             </div>
+            
+            <div style="padding: 0 20px;">
+                <div class="legend-container">
+                    <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div> Class</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #f87171;"></div> Exam</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #a78bfa;"></div> School Event</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #4ade80;"></div> Holiday</div>
+                </div>
+            </div>
+            
             <div style="padding: 20px;">
-                <div id="calendar" style="min-height: 400px;"></div>
+                <div id="calendar" style="min-height: 600px;"></div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Event List & Add Form -->
-    <div class="col-lg-4">
-        <!-- Add Event Form -->
-        <div class="adm-card glass-card" style="margin-bottom: 20px;">
-            <div class="adm-card-head">
-                <div class="adm-card-title">
-                    <div class="adm-card-icon" style="background: rgba(255,255,255,0.12); color: #fecaca;">
-                        <i class="bi bi-plus-circle"></i>
-                    </div>
-                    Add Event / Holiday
-                </div>
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content event-modal-content w-100">
+            <div class="event-modal-header">
+                <h5 class="modal-title" style="margin: 0; font-weight: 700;">Add Event / Holiday</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div style="padding: 20px;">
-                <form method="POST" action="{{ route('admin.calendar.store') }}">
-                    @csrf
-                    <div class="mb-3">
-                        <label class="form-label">Event Name</label>
-                        <input type="text" name="name" class="adm-input" placeholder="e.g., Summer Break" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select name="type" class="adm-input" required id="addEventType" onchange="toggleTimeLocation(this.value, 'add')">
-                            <option value="holiday">Holiday</option>
-                            <option value="class">Class</option>
-                            <option value="exam">Exam</option>
-                            <option value="meeting">Meeting</option>
-                            <option value="school_event">School Event</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Date</label>
-                        <input type="date" name="date" class="adm-input" required min="{{ now()->format('Y-m-d') }}">
-                    </div>
-                    
-                    <div id="addTimeLocContainer" style="display: none;">
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <label class="form-label">Start Time</label>
-                                <input type="time" name="start_time" id="addStartTime" class="adm-input">
+            <form method="POST" action="{{ route('admin.calendar.store') }}">
+                @csrf
+                <div class="event-modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Event Name</label>
+                            <input type="text" name="name" class="adm-input" placeholder="e.g., Summer Break" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Type</label>
+                            <select name="type" class="adm-input" required id="addEventType" onchange="toggleTimeLocation(this.value, 'add')">
+                                <option value="holiday">Holiday</option>
+                                <option value="class">Class</option>
+                                <option value="exam">Exam</option>
+                                <option value="meeting">Meeting</option>
+                                <option value="school_event">School Event</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" class="adm-input" required min="{{ now()->format('Y-m-d') }}">
+                        </div>
+                        
+                        <div class="col-12" id="addTimeLocContainer" style="display: none;">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" name="start_time" id="addStartTime" class="adm-input">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">End Time</label>
+                                    <input type="time" name="end_time" id="addEndTime" class="adm-input">
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <label class="form-label">End Time</label>
-                                <input type="time" name="end_time" id="addEndTime" class="adm-input">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" name="location" id="addLocation" class="adm-input" placeholder="e.g., Auditorium">
                             </div>
                         </div>
                         
-                        <div class="mb-3">
-                            <label class="form-label">Location</label>
-                            <input type="text" name="location" id="addLocation" class="adm-input" placeholder="e.g., Auditorium">
+                        <div class="col-12">
+                            <label class="form-label">Description (Optional)</label>
+                            <textarea name="description" class="adm-input" rows="2" placeholder="Additional details..."></textarea>
                         </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Description (Optional)</label>
-                        <textarea name="description" class="adm-input" rows="2" placeholder="Additional details..."></textarea>
-                    </div>
-                    
-                    <button type="submit" class="adm-btn adm-btn-primary" style="width: 100%;">
-                        <i class="bi bi-plus"></i> Add Event
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Events List -->
-        <div class="adm-card glass-card">
-            <div class="adm-card-head">
-                <div class="adm-card-title">
-                    <div class="adm-card-icon" style="background: rgba(255,255,255,0.12); color: #fde68a;">
-                        <i class="bi bi-list-ul"></i>
-                    </div>
-                    This Month's Events
                 </div>
-            </div>
-            <div style="padding: 20px;" id="eventListContainer">
-                @forelse($events as $event)
-                    @php
-                        $color = match($event->type) {
-                            'class' => '#3b82f6',
-                            'exam' => '#ef4444',
-                            'meeting' => '#f59e0b',
-                            'school_event' => '#8b5cf6',
-                            'holiday' => '#10b981',
-                            default => '#6b7280'
-                        };
-                        $typeLabel = str_replace('_', ' ', $event->type);
-                    @endphp
-                    <div class="holiday-card">
-                        <span class="holiday-dot" style="background: {{ $color }};"></span>
-                        <div style="flex: 1;">
-                            <div class="holiday-name">{{ $event->name }}</div>
-                            <div class="holiday-meta">
-                                {{ $event->date->format('M j, Y') }}
-                                @if($event->type !== 'holiday')
-                                    â€¢ {{ $event->start_time->format('h:i A') }} - {{ $event->end_time->format('h:i A') }}
-                                @endif
-                            </div>
-                            @if($event->location)
-                                <div class="holiday-meta" style="margin-top: 2px;">
-                                    <i class="bi bi-geo-alt"></i> {{ $event->location }}
-                                </div>
-                            @endif
-                            @if($event->description)
-                                <div class="holiday-meta" style="margin-top: 6px; color: #cbd5e1;">
-                                    {{ $event->description }}
-                                </div>
-                            @endif
-                            <div class="holiday-chip" style="color: {{ $color }}">{{ $typeLabel }}</div>
-                        </div>
-                        <div class="holiday-card-actions">
-                            <button type="button" onclick="editEvent({{ $event->id }}, '{{ addslashes($event->name) }}', '{{ addslashes($event->description) }}', '{{ $event->type }}', '{{ $event->date->format('Y-m-d') }}', '{{ $event->start_time ? $event->start_time->format('H:i') : '' }}', '{{ $event->end_time ? $event->end_time->format('H:i') : '' }}', '{{ addslashes($event->location) }}')" class="holiday-btn-edit view-btn">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <button type="button" onclick="deleteEvent({{ $event->id }})" class="holiday-btn-delete view-btn">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                @empty
-                    <div style="padding: 40px 20px; text-align: center; color: #cbd5e1;">
-                        <i class="bi bi-calendar-x" style="font-size: 2rem; opacity: 0.3; display: block; margin-bottom: 8px;"></i>
-                        <div>No events this month</div>
-                    </div>
-                @endforelse
-            </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.06); padding: 16px 32px;">
+                    <button type="button" class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="adm-btn adm-btn-primary">Add Event</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <!-- Edit Event Modal -->
 <div class="modal fade" id="editEventModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="bi bi-pencil" style="color: #fde68a;"></i>
-                    Edit Event
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content event-modal-content w-100">
+            <div class="event-modal-header">
+                <h5 class="modal-title" style="margin: 0; font-weight: 700;">
+                    <i class="bi bi-pencil" style="color: #fde68a;"></i> Edit Event
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="editEventForm" method="POST">
                 @csrf
                 @method('PUT')
-                <div class="modal-body" style="padding: 20px;">
-                    <div class="mb-3">
-                        <label class="form-label">Event Name</label>
-                        <input type="text" name="name" id="editName" class="adm-input" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Type</label>
-                        <select name="type" id="editType" class="adm-input" required onchange="toggleTimeLocation(this.value, 'edit')">
-                            <option value="holiday">Holiday</option>
-                            <option value="class">Class</option>
-                            <option value="exam">Exam</option>
-                            <option value="meeting">Meeting</option>
-                            <option value="school_event">School Event</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Date</label>
-                        <input type="date" name="date" id="editDate" class="adm-input" required>
-                    </div>
-                    
-                    <div id="editTimeLocContainer" style="display: none;">
-                        <div class="row g-2 mb-3">
-                            <div class="col-6">
-                                <label class="form-label">Start Time</label>
-                                <input type="time" name="start_time" id="editStartTime" class="adm-input">
+                <div class="event-modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Event Name</label>
+                            <input type="text" name="name" id="editName" class="adm-input" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Type</label>
+                            <select name="type" id="editType" class="adm-input" required onchange="toggleTimeLocation(this.value, 'edit')">
+                                <option value="holiday">Holiday</option>
+                                <option value="class">Class</option>
+                                <option value="exam">Exam</option>
+                                <option value="meeting">Meeting</option>
+                                <option value="school_event">School Event</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Date</label>
+                            <input type="date" name="date" id="editDate" class="adm-input" required>
+                        </div>
+                        <div class="col-12" id="editTimeLocContainer" style="display: none;">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Start Time</label>
+                                    <input type="time" name="start_time" id="editStartTime" class="adm-input">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">End Time</label>
+                                    <input type="time" name="end_time" id="editEndTime" class="adm-input">
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <label class="form-label">End Time</label>
-                                <input type="time" name="end_time" id="editEndTime" class="adm-input">
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" name="location" id="editLocation" class="adm-input">
                             </div>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Location</label>
-                            <input type="text" name="location" id="editLocation" class="adm-input">
+                        <div class="col-12">
+                            <label class="form-label">Description (Optional)</label>
+                            <textarea name="description" id="editDescription" class="adm-input" rows="2"></textarea>
                         </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Description (Optional)</label>
-                        <textarea name="description" id="editDescription" class="adm-input" rows="2"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.06); padding: 16px 32px;">
                     <button type="button" class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="adm-btn adm-btn-primary">
-                        <i class="bi bi-check"></i> Update Event
-                    </button>
+                    <button type="submit" class="adm-btn adm-btn-primary">Update Event</button>
                 </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Event Detail Modal (For generic viewing / delete) -->
+<div class="modal fade" id="eventDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content event-modal-content w-100">
+            <div class="event-modal-header">
+                <h5 class="modal-title" style="margin: 0; font-weight: 700;" id="eventTitle">Event Title</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="event-modal-body">
+                <div class="event-detail-item">
+                    <div class="event-detail-label">Event Type</div>
+                    <div class="event-detail-value">
+                        <span id="eventTypeBadge" class="event-type-badge">Type</span>
+                    </div>
+                </div>
+                <div class="event-detail-item">
+                    <div class="event-detail-label">Date & Time</div>
+                    <div class="event-detail-value">
+                        <i class="bi bi-clock" style="color: #94a3b8;"></i>
+                        <span id="eventTime">Date</span>
+                    </div>
+                </div>
+                <div class="event-detail-item" id="eventLocationContainer">
+                    <div class="event-detail-label">Location</div>
+                    <div class="event-detail-value">
+                        <i class="bi bi-geo-alt" style="color: #94a3b8;"></i>
+                        <span id="eventLocation">Location</span>
+                    </div>
+                </div>
+                <div class="event-detail-item" id="eventDescriptionContainer" style="display:none;">
+                    <div class="event-detail-label">Description</div>
+                    <div class="event-detail-value" style="font-size: 0.95rem; font-weight: normal;" id="eventDescription">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.06); padding: 16px 32px; display: flex; justify-content: space-between;">
+                <button type="button" class="adm-btn adm-btn-ghost" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="triggerDelete()">Delete Event</button>
+                <button type="button" class="adm-btn adm-btn-primary" onclick="triggerEdit()">Edit Event</button>
+            </div>
+            
+            <form id="deleteEventForm" method="POST" style="display:none;">
+                @csrf
+                @method('DELETE')
             </form>
         </div>
     </div>
@@ -546,11 +544,12 @@
 let calendar;
 let currentYear = {{ $year }};
 let currentMonth = {{ $month }};
+let activeEvent = null;
 
 function toggleTimeLocation(type, prefix) {
-    const container = document.getElementById(`${prefix}TimeLocContainer`);
-    const start = document.getElementById(`${prefix}StartTime`);
-    const end = document.getElementById(`${prefix}EndTime`);
+    const container = document.getElementById(prefix + 'TimeLocContainer');
+    const start = document.getElementById(prefix + 'StartTime');
+    const end = document.getElementById(prefix + 'EndTime');
     
     if (type === 'holiday') {
         container.style.display = 'none';
@@ -585,7 +584,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         extendedProps: {
                             type: event.type,
                             location: event.location,
-                            description: event.description
+                            description: event.description,
+                            start_time: event.start_time,
+                            end_time: event.end_time
                         }
                     }));
                     successCallback(events);
@@ -596,8 +597,42 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
         },
         eventClick: function(info) {
+            activeEvent = info.event;
             const props = info.event.extendedProps;
-            alert(`${info.event.title}\nType: ${props.type.replace('_', ' ')}\n${props.location ? 'Location: ' + props.location + '\n' : ''}${props.description || ''}`);
+            
+            document.getElementById('eventTitle').textContent = info.event.title;
+            
+            const badge = document.getElementById('eventTypeBadge');
+            badge.textContent = props.type.replace('_', ' ');
+            badge.style.backgroundColor = info.event.backgroundColor;
+            
+            const start = info.event.start;
+            const end = info.event.end;
+            
+            let timeStr = start.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            if (props.type !== 'holiday' && !info.event.allDay) {
+                timeStr += ` • ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                if (end) {
+                    timeStr += ` - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                }
+            }
+            document.getElementById('eventTime').textContent = timeStr;
+            
+            if (props.location) {
+                document.getElementById('eventLocation').textContent = props.location;
+                document.getElementById('eventLocationContainer').style.display = 'block';
+            } else {
+                document.getElementById('eventLocationContainer').style.display = 'none';
+            }
+            
+            if (props.description) {
+                document.getElementById('eventDescription').textContent = props.description;
+                document.getElementById('eventDescriptionContainer').style.display = 'block';
+            } else {
+                document.getElementById('eventDescriptionContainer').style.display = 'none';
+            }
+            
+            new bootstrap.Modal(document.getElementById('eventDetailModal')).show();
         },
         dayCellClassNames: function(arg) {
             const today = new Date();
@@ -610,6 +645,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     calendar.render();
 });
+
+function triggerEdit() {
+    if (!activeEvent) return;
+    bootstrap.Modal.getInstance(document.getElementById('eventDetailModal')).hide();
+    
+    const props = activeEvent.extendedProps;
+    document.getElementById('editName').value = activeEvent.title;
+    document.getElementById('editType').value = props.type;
+    document.getElementById('editDate').value = activeEvent.start.toLocaleDateString('en-CA');
+    
+    if (props.type !== 'holiday' && !activeEvent.allDay) {
+        document.getElementById('editStartTime').value = activeEvent.start.toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+        if (activeEvent.end) {
+            document.getElementById('editEndTime').value = activeEvent.end.toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'});
+        }
+    }
+    document.getElementById('editLocation').value = props.location || '';
+    document.getElementById('editDescription').value = props.description || '';
+    
+    document.getElementById('editEventForm').action = `/admin/calendar/${activeEvent.id}`;
+    toggleTimeLocation(props.type, 'edit');
+    
+    new bootstrap.Modal(document.getElementById('editEventModal')).show();
+}
+
+function triggerDelete() {
+    if (!activeEvent) return;
+    if (confirm('Are you sure you want to delete this event?')) {
+        const form = document.getElementById('deleteEventForm');
+        form.action = `/admin/calendar/${activeEvent.id}`;
+        form.submit();
+    }
+}
 
 function previousMonth() {
     currentMonth--;
@@ -641,45 +709,13 @@ function updateCalendar() {
         'July', 'August', 'September', 'October', 'November', 'December'];
     
     document.getElementById('currentMonth').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
-    
     calendar.gotoDate(`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`);
     calendar.refetchEvents();
     
-    // Skip updating side panel dynamically for now to keep things simple. Let the page reload via location.href if needed.
     const url = new URL(window.location);
     url.searchParams.set('year', currentYear);
     url.searchParams.set('month', currentMonth);
-    window.location.href = url.toString();
-}
-
-function editEvent(id, name, description, type, date, startTime, endTime, location) {
-    document.getElementById('editName').value = name;
-    document.getElementById('editType').value = type;
-    document.getElementById('editDate').value = date;
-    document.getElementById('editStartTime').value = startTime;
-    document.getElementById('editEndTime').value = endTime;
-    document.getElementById('editLocation').value = location;
-    document.getElementById('editDescription').value = description;
-    
-    document.getElementById('editEventForm').action = `/admin/calendar/${id}`;
-    
-    toggleTimeLocation(type, 'edit');
-    
-    new bootstrap.Modal(document.getElementById('editEventModal')).show();
-}
-
-function deleteEvent(id) {
-    if (confirm('Are you sure you want to remove this event?')) {
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/calendar/${id}`;
-        form.innerHTML = `
-            @csrf
-            @method('DELETE')
-        `;
-        document.body.appendChild(form);
-        form.submit();
-    }
+    window.history.pushState({}, '', url);
 }
 </script>
 </div>

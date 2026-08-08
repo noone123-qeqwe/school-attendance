@@ -20,7 +20,8 @@ class WebauthnService
                 'challenge' => $this->base64UrlEncode($challenge),
                 'rp' => ['name' => config('app.name'), 'id' => $this->rpId()],
                 'user' => [
-                    'id' => $this->base64UrlEncode((string) $user->id),
+                    // Hash user ID to 32 bytes (some Android authenticators throw NotReadableError for short IDs)
+                    'id' => $this->base64UrlEncode(hash('sha256', (string) $user->id, true)),
                     'name' => $user->email,
                     'displayName' => $user->name,
                 ],
@@ -30,8 +31,7 @@ class WebauthnService
                 ],
                 'authenticatorSelection' => [
                     'authenticatorAttachment' => 'platform',
-                    'userVerification' => 'required',
-                    'residentKey' => 'preferred',
+                    'userVerification' => 'preferred',
                 ],
                 'timeout' => 60000,
                 'attestation' => 'none',
@@ -89,7 +89,7 @@ class WebauthnService
                         'id' => $credential->credential_id,
                     ])
                     ->values(),
-                'userVerification' => 'required',
+                'userVerification' => 'preferred',
                 'timeout' => 60000,
             ],
         ];

@@ -104,32 +104,36 @@
 @endif
 
 <!-- Hero Banner -->
-<div class="mb-4" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+<div class="mb-4" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
     <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
-        <div class="d-flex align-items-center gap-4">
-            <div style="font-size: 3rem;">🎓</div>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+        <div class="d-flex align-items-center gap-3">
+            <div style="font-size: 3.5rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(207,164,111,0.3));">🎓</div>
             <div>
-                <div style="color: var(--gold); font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">{{ $greeting }}</div>
-                <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">{{ Auth::user()->name }}</h1>
-                <div style="color: #b39b82; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    <span>{{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Semester {{ Auth::user()->semester }}</span>
-                    @if(isset($totalAbsent) && $totalAbsent === 0 && isset($totalPresent) && $totalPresent > 0)
-                        <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);"><i class="bi bi-star-fill"></i> Perfect Attendance</span>
-                    @elseif(isset($totalPresent) && $totalPresent > 3)
-                        <span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 4px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);"><i class="bi bi-fire"></i> {{ $totalPresent }} Class Streak</span>
-                    @endif
+                <div style="color: var(--gold); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">{{ $greeting }}</div>
+                <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 5vw, 2.2rem); line-height: 1.1;">{{ Auth::user()->name }}</h1>
+                <div style="color: #b39b82; font-size: 0.85rem; font-weight: 500;">
+                    {{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Sem {{ Auth::user()->semester }}
                 </div>
+                @if(isset($totalAbsent) && $totalAbsent === 0 && isset($totalPresent) && $totalPresent > 0)
+                    <div class="mt-2">
+                        <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);"><i class="bi bi-star-fill"></i> Perfect Attendance</span>
+                    </div>
+                @elseif(isset($totalPresent) && $totalPresent > 3)
+                    <div class="mt-2">
+                        <span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);"><i class="bi bi-fire"></i> {{ $totalPresent }} Class Streak</span>
+                    </div>
+                @endif
             </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:12px; text-align:right;">
-            <div style="text-align: right; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
-                <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+        <div class="d-flex flex-column gap-3" style="min-width: 250px;">
+            <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <div style="color: var(--gold); font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; font-variant-numeric: tabular-nums;">
                     <i class="bi bi-clock"></i> <span id="studentClock">{{ now()->format('h:i A') }}</span>
                 </div>
-                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 2px;">{{ now()->format('l, F j, Y') }}</div>
+                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 4px; font-weight: 500;">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <a href="{{ route('excuses') }}" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
+            <a href="{{ route('excuses') }}" class="ent-btn w-100 d-flex justify-content-center align-items-center" style="background: rgba(255,255,255,0.05); color: var(--gold); border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 12px; border-radius: 14px; transition: all 0.2s;">
                 <i class="bi bi-envelope-paper-fill me-2"></i> Submit Excuse / Leave
             </a>
         </div>
@@ -160,25 +164,37 @@
             <span style="font-size: 0.75rem; color: #b39b82; font-weight: 600;">{{ $subjectStats->count() }} subjects</span>
         </x-slot>
 
+        <style>
+            .subject-stat-card:hover {
+                transform: translateY(-2px);
+                border-color: rgba(207,164,111,0.4) !important;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
+            }
+        </style>
         <div class="d-flex flex-column gap-3">
             @foreach($subjectStats as $stat)
                 @php
                     $rateColor = $stat->rate >= 90 ? '#4ade80' : ($stat->rate >= 75 ? '#fbbf24' : '#f87171');
-                    $rateBg = $stat->rate >= 90 ? 'rgba(74,222,128,0.1)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.1)' : 'rgba(248,113,113,0.1)');
-                    $rateBorder = $stat->rate >= 90 ? 'rgba(74,222,128,0.2)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.2)' : 'rgba(248,113,113,0.2)');
+                    $rateBg = $stat->rate >= 90 ? 'rgba(74,222,128,0.15)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.15)' : 'rgba(248,113,113,0.15)');
+                    $rateBorder = $stat->rate >= 90 ? 'rgba(74,222,128,0.3)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.3)' : 'rgba(248,113,113,0.3)');
                 @endphp
-                <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 16px;">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="subject-stat-card" style="background: rgba(17, 9, 6, 0.7); border: 1px solid rgba(207,164,111,0.15); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+                    <!-- Background Glow -->
+                    <div style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: {{ $rateColor }}; border-radius: 50%; filter: blur(50px); opacity: 0.15; pointer-events: none;"></div>
+
+                    <div class="d-flex justify-content-between align-items-start mb-3" style="position: relative; z-index: 2;">
                         <div>
-                            <div style="font-weight: 700; color: #f3e7cd; font-size: 0.95rem;">{{ $stat->name }}</div>
-                            <div style="font-size: 0.75rem; color: #b39b82; margin-top: 2px;">
-                                <i class="bi bi-tag-fill" style="font-size: 0.65rem;"></i> {{ $stat->code }} · {{ $stat->total }} classes
+                            <div style="font-weight: 800; color: #f3e7cd; font-size: 1.1rem; letter-spacing: -0.3px;">{{ $stat->name }}</div>
+                            <div style="font-size: 0.8rem; color: #b39b82; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                                <span style="background: rgba(207,164,111,0.1); padding: 3px 8px; border-radius: 6px; font-weight: 700;">{{ $stat->code }}</span>
+                                <span>•</span>
+                                <span>{{ $stat->total }} Classes</span>
                             </div>
                         </div>
                         <div style="text-align: right;">
-                            <div style="font-size: 1.4rem; font-weight: 800; color: {{ $rateColor }}; line-height: 1;">{{ $stat->rate }}%</div>
+                            <div style="font-size: 1.7rem; font-weight: 900; color: {{ $rateColor }}; line-height: 1; text-shadow: 0 0 20px {{ $rateBg }};">{{ $stat->rate }}<span style="font-size: 1.1rem; opacity: 0.8;">%</span></div>
                             @if($stat->rate < 75)
-                                <div style="font-size: 0.65rem; color: #f87171; font-weight: 600; margin-top: 2px;">
+                                <div style="font-size: 0.7rem; color: #f87171; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(248,113,113,0.15); padding: 3px 10px; border-radius: 99px;">
                                     <i class="bi bi-exclamation-triangle-fill"></i> At Risk
                                 </div>
                             @endif
@@ -186,34 +202,43 @@
                     </div>
 
                     <!-- Progress Bar -->
-                    <div style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 10px;">
-                        <div style="height: 100%; width: {{ $stat->rate }}%; background: {{ $rateColor }}; border-radius: 99px; transition: width 0.6s ease;"></div>
+                    <div style="position: relative; z-index: 2; height: 8px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 16px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);">
+                        <div style="height: 100%; width: 0%; background: linear-gradient(90deg, {{ $rateColor }}, {{ $rateColor }}dd); border-radius: 99px; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 0 10px {{ $rateColor }};" class="animated-progress" data-width="{{ $stat->rate }}%"></div>
                     </div>
 
                     <!-- Status Pills -->
-                    <div class="d-flex gap-2 flex-wrap">
-                        <span style="font-size: 0.7rem; font-weight: 600; color: #4ade80; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); padding: 3px 10px; border-radius: 99px;">
-                            <i class="bi bi-check-circle-fill" style="font-size: 0.6rem;"></i> {{ $stat->present }} Present
+                    <div class="d-flex gap-2 flex-wrap" style="position: relative; z-index: 2;">
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #4ade80; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-check-circle-fill" style="font-size: 0.7rem;"></i> {{ $stat->present }} Present
                         </span>
                         @if($stat->late > 0)
-                        <span style="font-size: 0.7rem; font-weight: 600; color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); padding: 3px 10px; border-radius: 99px;">
-                            <i class="bi bi-clock-fill" style="font-size: 0.6rem;"></i> {{ $stat->late }} Late
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-clock-fill" style="font-size: 0.7rem;"></i> {{ $stat->late }} Late
                         </span>
                         @endif
                         @if($stat->absent > 0)
-                        <span style="font-size: 0.7rem; font-weight: 600; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); padding: 3px 10px; border-radius: 99px;">
-                            <i class="bi bi-x-circle-fill" style="font-size: 0.6rem;"></i> {{ $stat->absent }} Absent
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-x-circle-fill" style="font-size: 0.7rem;"></i> {{ $stat->absent }} Absent
                         </span>
                         @endif
                         @if($stat->excused > 0)
-                        <span style="font-size: 0.7rem; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.2); padding: 3px 10px; border-radius: 99px;">
-                            <i class="bi bi-file-earmark-check-fill" style="font-size: 0.6rem;"></i> {{ $stat->excused }} Excused
+                        <span style="font-size: 0.75rem; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-file-earmark-check-fill" style="font-size: 0.7rem;"></i> {{ $stat->excused }} Excused
                         </span>
                         @endif
                     </div>
                 </div>
             @endforeach
         </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    document.querySelectorAll('.animated-progress').forEach(function(el) {
+                        el.style.width = el.getAttribute('data-width');
+                    });
+                }, 150);
+            });
+        </script>
     </x-card>
 </div>
 @endif

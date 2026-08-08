@@ -363,29 +363,47 @@ class QrAttendanceController extends Controller
             ]);
         }
 
+        $studentQuery = User::where('role', 'student')
+            ->where('year_level', $subject->year_level)
+            ->where('semester', $subject->semester);
+            
+        if (!empty($subject->course)) {
+            $studentQuery->where('course', $subject->course);
+        }
+        if (!empty($subject->section)) {
+            $studentQuery->where('section', $subject->section);
+        }
+        
+        $students = $studentQuery->get();
+
         $todayRecords = Attendance::with('user')
             ->where('subject_code', $session->subject_code)
             ->whereDate('date', today())
-            ->whereNotNull('time_in')
-            ->orderBy('created_at', 'desc')
             ->get();
 
-        $clockins = $todayRecords->map(fn ($r) => [
-            'name'           => $r->user->name ?? '—',
-            'student_number' => $r->user->student_number ?? '—',
-            'status'         => $r->status,
-            'time'           => $r->time_in ? Carbon::parse($r->time_in)->format('h:i A') : '—',
-            'avatar'         => $r->user && $r->user->profile_image
-                ? (str_starts_with($r->user->profile_image, 'http') ? $r->user->profile_image : asset('storage/' . $r->user->profile_image))
-                : 'https://ui-avatars.com/api/?name=' . urlencode($r->user->name ?? 'S') . '&background=7c2d12&color=fff&size=80',
-        ]);
+        $clockins = $students->map(function ($student) use ($todayRecords) {
+            $record = $todayRecords->firstWhere('user_id', $student->id);
+            $status = $record ? $record->status : 'Missing';
+            
+            return [
+                'id'             => $student->id,
+                'name'           => $student->name,
+                'student_number' => $student->student_number ?? '—',
+                'status'         => $status,
+                'time'           => ($record && $record->time_in) ? Carbon::parse($record->time_in)->format('h:i A') : '—',
+                'avatar'         => $student->profile_image
+                    ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/' . $student->profile_image))
+                    : 'https://ui-avatars.com/api/?name=' . urlencode($student->name) . '&background=7c2d12&color=fff&size=80',
+                'sort_order'     => $record && in_array($record->status, ['Present', 'Late']) ? 0 : 1
+            ];
+        })->sortBy([
+            ['sort_order', 'asc'],
+            ['name', 'asc']
+        ])->values()->all();
 
-        $totalStudents = User::where('role', 'student')
-            ->where('year_level', $subject->year_level)
-            ->where('semester', $subject->semester)
-            ->count();
+        $totalStudents = $students->count();
 
-        $clockedIn = $todayRecords->count();
+        $clockedIn = $todayRecords->where('status', 'Present')->count() + $todayRecords->where('status', 'Late')->count();
         $late = $todayRecords->where('status', 'Late')->count();
         $progress = $totalStudents > 0 ? round(($clockedIn / $totalStudents) * 100) : 0;
 
@@ -400,6 +418,54 @@ class QrAttendanceController extends Controller
             ],
         ]);
     }
+
+    // ─────────────────────────────────────────
+    // Teacher: Manual override student status
+    // ─────────────────────────────────────────
+    public function overrideStudentStatus(Request $request)
+    {
+        $request->validate([
+            'session_id' => 'required|integer',
+            'student_id' => 'required|integer',
+            'status'     => 'required|string|in:Present,Absent,Late'
+        ]);
+
+        $session = AttendanceSession::find($request->session_id);
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'Session not found.']);
+        }
+
+        $student = User::where('id', $request->student_id)->where('role', 'student')->first();
+        if (!$student) {
+            return response()->json(['success' => false, 'message' => 'Student not found.']);
+        }
+
+        $attendance = Attendance::updateOrCreate(
+            [
+                'user_id' => $student->id,
+                'subject_code' => $session->subject_code,
+                'date' => today()->toDateString(),
+            ],
+            [
+                'status' => $request->status,
+                'time_in' => $request->status === 'Absent' ? null : now(),
+                'latitude' => null,
+                'longitude' => null,
+                'device_id' => 'teacher-override',
+                'excused' => false
+            ]
+        );
+
+        event(new TeacherAttendanceUpdated($session->teacher_id, [
+            'type'         => 'clock_in',
+            'student_name' => $student->name,
+            'subject_code' => $session->subject_code,
+            'status'       => $attendance->status,
+        ]));
+
+        return response()->json(['success' => true]);
+    }
+
     // ─────────────────────────────────────────
     // STUDENT: Scan QR → clock in
     // ─────────────────────────────────────────

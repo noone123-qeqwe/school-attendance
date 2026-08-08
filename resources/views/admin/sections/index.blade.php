@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Sections')
 
@@ -10,6 +10,9 @@
     </div>
     
     <div style="display:flex; gap:12px;">
+        <button type="button" class="saas-btn saas-btn-secondary" onclick="openModal('importSectionModal')">
+            <i class="bi bi-upload"></i> Import CSV
+        </button>
         <button class="saas-btn saas-btn-primary" onclick="openModal('addSectionModal')">
             <i class="bi bi-plus-lg"></i> Add Section
         </button>
@@ -31,6 +34,12 @@
                 @endforeach
             </select>
             
+            <select name="bulk_action" class="saas-input saas-select" style="width:140px; padding:6px 30px 6px 12px;">
+                <option value="">Bulk Actions</option>
+                <option value="delete">Delete Selected</option>
+                <option value="export">Export Selected</option>
+            </select>
+            
             <button class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
                 <i class="bi bi-funnel"></i> Filter
             </button>
@@ -41,7 +50,7 @@
         <table class="saas-table">
             <thead>
                 <tr>
-                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--saas-primary);"></th>
+                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--saas-primary);" onclick="document.querySelectorAll('.section-checkbox').forEach(c => c.checked = this.checked)"></th>
                     <th>Section Name</th>
                     <th>Course Code</th>
                     <th>Year Level</th>
@@ -52,7 +61,7 @@
             <tbody>
                 @forelse($sections as $section)
                 <tr>
-                    <td><input type="checkbox" style="accent-color:var(--saas-primary);"></td>
+                    <td><input type="checkbox" class="section-checkbox" name="selected_sections[]" value="{{ $section->id }}" style="accent-color:var(--saas-primary);"></td>
                     <td style="font-weight:500;">
                         <span class="saas-badge saas-badge-default" style="font-family:monospace;font-size:0.85rem;">{{ $section->name }}</span>
                     </td>
@@ -66,6 +75,9 @@
                         <span class="saas-text-muted">{{ $section->students()->count() ?? 0 }} students</span>
                     </td>
                     <td style="text-align:right;">
+                        <a href="{{ route('admin.section.history', $section) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="History">
+                            <i class="bi bi-clock-history"></i>
+                        </a>
                         <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
@@ -139,6 +151,30 @@
             <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:flex-end; gap:12px; background:rgba(0,0,0,0.2);">
                 <button type="button" class="saas-btn saas-btn-secondary" onclick="closeModal('addSectionModal')">Cancel</button>
                 <button type="submit" class="saas-btn saas-btn-primary">Save Section</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Import Section Modal -->
+<div id="importSectionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
+    <div class="saas-card" style="width:100%; max-width:400px; transform:scale(0.95); transition:transform 0.2s;" id="importSectionCard">
+        <div class="saas-card-header">
+            <div class="saas-heading saas-heading-sm">Import Sections</div>
+            <button onclick="closeModal('importSectionModal')" style="background:none; border:none; color:var(--saas-text-muted); cursor:pointer;"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form action="{{ route('admin.sections.import') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="saas-card-body">
+                <div class="saas-form-group">
+                    <label class="saas-label">CSV File</label>
+                    <input type="file" name="csv_file" class="saas-input" accept=".csv" required>
+                    <div style="font-size:0.75rem; color:var(--saas-text-muted); margin-top:8px;">Format: <code>name, course_id, year_level</code></div>
+                </div>
+            </div>
+            <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:flex-end; gap:12px; background:rgba(0,0,0,0.2);">
+                <button type="button" class="saas-btn saas-btn-secondary" onclick="closeModal('importSectionModal')">Cancel</button>
+                <button type="submit" class="saas-btn saas-btn-primary">Import</button>
             </div>
         </form>
     </div>

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Students')
 
@@ -54,6 +54,13 @@
                 <i class="bi bi-funnel"></i> Filter
             </button>
             
+            <select name="bulk_action" class="form-select" style="width:140px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd;">
+                <option value="">Bulk Actions</option>
+                <option value="delete">Delete Selected</option>
+                <option value="export">Export Selected</option>
+            </select>
+            <button type="submit" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">Apply</button>
+            
             @if(request()->hasAny(['search','course','year_level','semester']))
             <a href="{{ route('admin.students') }}" class="btn btn-outline" style="color: #f87171; border-color: rgba(239,68,68,0.3);">
                 Clear
@@ -62,10 +69,24 @@
         </form>
     </x-slot>
     
-    <x-data-table :headers="['Student', 'ID', 'Course & Year', 'Absences', 'Actions']">
+    <div class="table-responsive">
+        <table class="adm-table">
+            <thead>
+                <tr>
+                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--gold);" onclick="document.querySelectorAll('.student-checkbox').forEach(c => c.checked = this.checked)"></th>
+                    <th>Student</th>
+                    <th>ID</th>
+                    <th>Course & Year</th>
+                    <th>Bound Device</th>
+                    <th>Absences</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
         @forelse($students as $student)
         @php $absences = $student->attendances->where('status','Absent')->count(); @endphp
         <tr>
+            <td><input type="checkbox" class="student-checkbox" name="selected_students[]" value="{{ $student->id }}" style="accent-color:var(--gold);"></td>
             <td data-label="Student">
                 <div class="d-flex align-items-center gap-3">
                     <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=900000&color=fff' }}"
@@ -80,6 +101,15 @@
             <td data-label="Course & Year">
                 <span style="color: #60a5fa; font-weight: 600;">{{ $student->course }}</span>
                 <span style="margin-left:4px; color: #b39b82;">Y{{ $student->year_level }} - S{{ $student->semester }}</span>
+            </td>
+            <td data-label="Bound Device">
+                @if($student->deviceBinding)
+                    <div style="font-size: 0.8rem; font-weight: 500; color: #a7f3d0;">
+                        <i class="bi bi-phone me-1"></i>{{ $student->deviceBinding->device_name ?: 'Unknown Device' }}
+                    </div>
+                @else
+                    <span style="color: rgba(179,155,130,0.5); font-size: 0.8rem;">Unbound</span>
+                @endif
             </td>
             <td data-label="Absences">
                 @if($absences > 0)
@@ -96,6 +126,12 @@
                     <a href="{{ route('admin.student.edit', $student->id) }}" class="btn btn-sm btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" title="Edit">
                         <i class="bi bi-pencil"></i>
                     </a>
+                    <form action="{{ route('admin.student.reset_device', $student->id) }}" method="POST" onsubmit="return confirm('Reset device binding for {{ addslashes($student->name) }}?')">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline" style="border-color: rgba(74,222,128,0.3); color: #4ade80;" title="Reset Device Binding">
+                            <i class="bi bi-phone"></i>
+                        </button>
+                    </form>
                     <form action="{{ route('admin.student.destroy', $student->id) }}" method="POST" onsubmit="return confirm('Delete {{ addslashes($student->name) }}?')">
                         @csrf @method('DELETE')
                         <button type="submit" class="btn btn-sm btn-outline" style="border-color: rgba(239,68,68,0.3); color: #f87171;" title="Delete">
@@ -114,7 +150,9 @@
             </td>
         </tr>
         @endforelse
-    </x-data-table>
+            </tbody>
+        </table>
+    </div>
     
     @if($students->hasPages())
     <div class="mt-4 d-flex justify-content-between align-items-center">

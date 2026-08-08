@@ -148,7 +148,7 @@ class AdminController extends Controller
             );
         }
 
-        $students = $query->orderBy('year_level')->orderBy('name')->get();
+        $students = $query->orderBy('year_level')->orderBy('name')->paginate(20)->withQueryString();
         return view('admin.students.index', compact('students'));
     }
 
@@ -217,6 +217,14 @@ class AdminController extends Controller
         return view('admin.student', compact('student','records','totalPresent','totalLate','totalAbsent','total','rate'));
     }
 
+    public function resetDevice(User $student)
+    {
+        if ($student->deviceBinding) {
+            $student->deviceBinding()->delete();
+        }
+        
+        return back()->with('success', "Device binding for {$student->name} has been reset successfully.");
+    }
     // ─────────────────────────────────────────
     // WARNING SYSTEM (Admin-scoped)
     // ─────────────────────────────────────────
@@ -426,7 +434,7 @@ class AdminController extends Controller
             );
         }
 
-        $subjects = $query->orderBy('year_level')->orderBy('code')->get();
+        $subjects = $query->orderBy('year_level')->orderBy('code')->paginate(20)->withQueryString();
         return view('admin.subjects.index', compact('subjects'));
     }
 

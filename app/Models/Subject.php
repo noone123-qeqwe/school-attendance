@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subject extends Model
 {
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'code',
@@ -36,6 +37,21 @@ class Subject extends Model
         return $this->belongsToMany(User::class, 'enrollments', 'subject_id', 'user_id')
                     ->where('role', 'student')
                     ->withTimestamps();
+    }
+
+    /**
+     * Get all students for this subject (both explicitly enrolled and implicitly via year level / semester)
+     */
+    public function getAllStudents()
+    {
+        $explicit = $this->enrolledStudents()->get();
+        
+        $implicit = User::where('role', 'student')
+            ->where('year_level', $this->year_level)
+            ->where('semester', $this->semester)
+            ->get();
+            
+        return $explicit->merge($implicit)->unique('id')->values();
     }
 
     // Accessor to get days as a string (for backward compatibility)

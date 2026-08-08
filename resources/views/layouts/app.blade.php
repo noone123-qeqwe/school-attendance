@@ -53,7 +53,7 @@
             @auth
                 <div class="header-left">
                     <!-- Burger -->
-                    <button class="burger-btn" id="burgerBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <button class="burger-btn d-none d-md-flex" id="burgerBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
                         <i class="bi bi-layout-sidebar-inset"></i>
                     </button>
                     <div>
@@ -163,9 +163,17 @@
                                 </div>
                                 @endif
                             </div>
+                            @if(Auth::user()->isTeacher())
+                            <a href="{{ route('teacher.notifications') }}" class="notif-view-all">
+                                View all notifications <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                            @elseif(Auth::user()->isAdmin())
+                            <!-- Admin notifications route if it exists, else hide -->
+                            @else
                             <a href="{{ route('notifications') }}" class="notif-view-all">
                                 View all notifications <i class="bi bi-arrow-right ms-1"></i>
                             </a>
+                            @endif
                         </div>
                     </div>
                     @if(Auth::user()->isAdmin())
@@ -198,10 +206,19 @@
                                 </div>
                             </div>
                             <hr class="my-2" style="border-color:#f1f5f9;">
+                            @if(Auth::user()->isTeacher())
+                            <a class="fb-dropdown-item" href="{{ route('teacher.profile') }}">
+                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <span>Settings</span>
+                            </a>
+                            @elseif(Auth::user()->isAdmin())
+                            <!-- Admin settings if it exists -->
+                            @else
                             <a class="fb-dropdown-item" href="{{ route('settings') }}">
                                 <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
                             </a>
+                            @endif
                             <form action="{{ route('logout') }}" method="POST" class="m-0">
                                 @csrf
                                 <button type="submit" class="fb-dropdown-item" style="color:#dc2626 !important;">
@@ -254,7 +271,7 @@
             setTimeout(function() {
                 toast.classList.add('toast-out');
                 setTimeout(function() { toast.remove(); }, 300);
-            }, 4500);
+            }, 2000);
         }
 
         // Check if mobile
@@ -466,7 +483,7 @@
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 400);
-        }, 4000);
+        }, 2000);
     }
     </script>
 
@@ -537,6 +554,22 @@
 
     @yield('scripts')
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const inlineFlashes = document.querySelectorAll('.flash-ok, .flash-error');
+            if (inlineFlashes.length > 0) {
+                setTimeout(() => {
+                    inlineFlashes.forEach(el => {
+                        el.style.transition = 'opacity 0.5s ease, height 0.5s ease, padding 0.5s ease, margin 0.5s ease';
+                        el.style.opacity = '0';
+                        el.style.height = '0';
+                        el.style.padding = '0';
+                        el.style.margin = '0';
+                        el.style.overflow = 'hidden';
+                        setTimeout(() => el.remove(), 500);
+                    });
+                }, 1000);
+            }
+        });
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/sw.js').then(function(registration) {

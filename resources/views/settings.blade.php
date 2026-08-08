@@ -98,12 +98,20 @@
         .pg-sub { font-size: 0.8rem; }
 
         .stabs {
-            flex-wrap: wrap;
-            gap: 4px;
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            gap: 8px;
+            padding-bottom: 2px;
+        }
+        .stabs::-webkit-scrollbar {
+            display: none;
         }
         .stab {
-            padding: 8px 12px;
-            font-size: 0.8rem;
+            white-space: nowrap;
+            padding: 8px 16px;
+            font-size: 0.85rem;
         }
 
         .sc-head {
@@ -413,8 +421,19 @@
             </div>
             <div class="sc-body">
 
-                <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:10px;padding:12px 16px;font-size:.85rem;margin-bottom:16px;">
-                    <i class="bi bi-exclamation-triangle me-2"></i>Your browser/device doesn't support biometric login.
+                <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:16px;">
+                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                        <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
+                        <div>
+                            <div style="font-weight:700;margin-bottom:4px;">Biometric login not available</div>
+                            <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
+                                You're using an in-app browser that doesn't support fingerprint/biometric login. Please open this page in <strong>Chrome</strong> or <strong>Safari</strong> to register your fingerprint.
+                            </div>
+                            <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
+                                <i class="bi bi-box-arrow-up-right"></i> Open in Browser
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Registered devices -->
@@ -521,11 +540,46 @@ if (ct) {
 // Auto-open security tab on validation errors
 @if($errors->any()) switchTab('security', document.querySelectorAll('.stab')[1]); @endif
 
-// â”€â”€ WebAuthn Fingerprint Registration â”€â”€
+// ── In-app browser detection ──
+function isInAppBrowser() {
+    var ua = navigator.userAgent || '';
+    // Detect Facebook, Messenger, Instagram, LINE, Twitter, Snapchat, etc.
+    return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Twitter|Snapchat|MicroMessenger|KAKAOTALK/i.test(ua);
+}
+
+function openInSystemBrowser() {
+    var url = window.location.href;
+    // Android: use intent to open in Chrome
+    if (/android/i.test(navigator.userAgent)) {
+        window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
+        // Fallback after a short delay (if intent doesn't work)
+        setTimeout(function() { window.open(url, '_system'); }, 500);
+    } else {
+        // iOS and others: window.open usually opens Safari
+        window.open(url, '_blank');
+    }
+}
+
+// ── WebAuthn Fingerprint Registration ──
 async function loadDevices() {
+    var inApp = isInAppBrowser();
+
     if (!window.PublicKeyCredential) {
         document.getElementById('registerFpBtn').style.display = 'none';
-        document.getElementById('webauthnUnsupported') && (document.getElementById('webauthnUnsupported').style.display = 'block');
+        var unsupported = document.getElementById('webauthnUnsupported');
+        if (unsupported) {
+            unsupported.style.display = 'block';
+            // Customize message based on whether it's an in-app browser or truly unsupported
+            var msgEl = document.getElementById('webauthnUnsupportedMsg');
+            var openBtn = document.getElementById('openInBrowserBtn');
+            if (inApp) {
+                msgEl.innerHTML = 'You\'re using an in-app browser (like Messenger or Facebook) that doesn\'t support fingerprint login. Tap the button below to open this page in <strong>Chrome</strong> or <strong>Safari</strong>.';
+                openBtn.style.display = 'inline-flex';
+            } else {
+                msgEl.innerHTML = 'Your browser or device doesn\'t support biometric login. Please try using <strong>Chrome</strong> or <strong>Safari</strong> on a device with a fingerprint sensor or Face ID.';
+                openBtn.style.display = 'none';
+            }
+        }
         return;
     }
     try {
@@ -537,17 +591,17 @@ async function loadDevices() {
             noDevices.style.display = 'none';
             devices.forEach(d => {
                 const div = document.createElement('div');
-                div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #f8fafc;';
+                div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,215,145,0.06);';
                 div.innerHTML = `
-                    <div style="width:38px;height:38px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;color:#16a34a;flex-shrink:0;">
+                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(74,222,128,0.1);display:flex;align-items:center;justify-content:center;color:#4ade80;flex-shrink:0;">
                         <i class="bi bi-fingerprint"></i>
                     </div>
                     <div style="flex:1;">
-                        <div style="font-size:.875rem;font-weight:600;color:#1e293b;">${d.name || d.device_name || "My Device"}</div>
-                        <div style="font-size:.72rem;color:#94a3b8;">Registered ${new Date(d.created_at).toLocaleDateString()}</div>
+                        <div style="font-size:.875rem;font-weight:600;color:#f3e7cd;">${d.name || d.device_name || "My Device"}</div>
+                        <div style="font-size:.72rem;color:#b39b82;">Registered ${new Date(d.created_at).toLocaleDateString()}</div>
                     </div>
                     <button onclick="removeDevice('${d.credential_id}', this)"
-                        style="padding:5px 12px;border-radius:7px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:.75rem;font-weight:600;cursor:pointer;">
+                        style="padding:5px 12px;border-radius:7px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:.75rem;font-weight:600;cursor:pointer;">
                         Remove
                     </button>`;
                 list.appendChild(div);
@@ -582,6 +636,27 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
+let prefetchOptions = null;
+let isFetchingOptions = false;
+
+async function prefetchWebAuthn() {
+    if (isFetchingOptions || prefetchOptions) return;
+    isFetchingOptions = true;
+    try {
+        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+            headers: { 
+                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                'Accept': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
+        prefetchOptions = await optRes.json();
+    } catch(e) {
+        console.error(e);
+    }
+    isFetchingOptions = false;
+}
+
 async function registerFingerprint() {
     const btn = document.getElementById('registerFpBtn');
     const msg = document.getElementById('fpMessage');
@@ -590,11 +665,21 @@ async function registerFingerprint() {
     msg.style.display = 'none';
 
     try {
-        // Step 1: get challenge from server
-        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
-        });
-        const opts = await optRes.json();
+        let opts = prefetchOptions;
+        if (!opts) {
+            // Step 1: get challenge from server (fallback)
+            const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+                headers: { 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                    'Accept': 'application/json',
+                    'ngrok-skip-browser-warning': 'true'
+                }
+            });
+            opts = await optRes.json();
+        }
+        
+        // Reset prefetch for next time
+        prefetchOptions = null;
 
         // Decode challenge and userId from base64
         const challenge = base64ToUint8Array(opts.challenge);
@@ -602,7 +687,14 @@ async function registerFingerprint() {
 
         // Step 2: prompt device biometric
         const rpId = opts.rp?.id || window.location.hostname;
-        const credential = await navigator.credentials.create({
+        
+        const timeoutPromise = new Promise((_, reject) => {
+            const err = new Error('Biometric prompt timed out. Please try again.');
+            err.name = 'TimeoutError';
+            setTimeout(() => reject(err), 60000);
+        });
+
+        const createPromise = navigator.credentials.create({
             publicKey: {
                 challenge: challenge,
                 rp: { ...opts.rp, id: rpId },
@@ -613,6 +705,8 @@ async function registerFingerprint() {
                 attestation: opts.attestation
             }
         });
+
+        const credential = await Promise.race([createPromise, timeoutPromise]);
 
         // Step 3: encode credential id and attestation object
         var rawId = new Uint8Array(credential.rawId);
@@ -634,7 +728,8 @@ async function registerFingerprint() {
             headers: {
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
             },
             body: JSON.stringify({
                 credential_id: credentialId,
@@ -661,6 +756,7 @@ async function registerFingerprint() {
             msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + result.message;
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
+            prefetchWebAuthn();
         }
     } catch(err) {
         msg.style.display = 'block';
@@ -669,11 +765,16 @@ async function registerFingerprint() {
             msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Fingerprint cancelled or not allowed.';
         } else if (err.name === 'InvalidStateError') {
             msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>This device is already registered.';
+        } else if (err.name === 'NotReadableError') {
+            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Fingerprint cancelled or device is not configured for biometric login.';
         } else {
             msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + err.name + ': ' + err.message;
         }
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
+        
+        // Prefetch a new challenge for next attempt
+        prefetchWebAuthn();
     }
 }
 
@@ -690,7 +791,10 @@ async function removeDevice(credentialId, btn) {
 // Load devices when fingerprint tab is opened
 document.querySelectorAll('.stab').forEach(btn => {
     btn.addEventListener('click', () => {
-        if (btn.textContent.trim() === 'Fingerprint') loadDevices();
+        if (btn.textContent.trim() === 'Fingerprint') {
+            loadDevices();
+            prefetchWebAuthn();
+        }
     });
 });
 

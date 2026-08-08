@@ -429,6 +429,7 @@
         <!-- Single unified form -->
         <form method="POST" action="{{ route('login.submit') }}" id="loginForm">
             @csrf
+            <input type="hidden" name="device_fingerprint" id="deviceFingerprint">
             @php
                 $qrToken = old('qr_token', session('qr_token') ?? request('qr_token'));
             @endphp
@@ -517,6 +518,20 @@
 </div>
 
 <script>
+// FingerprintJS initialization
+const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
+    .then(FingerprintJS => FingerprintJS.load());
+
+fpPromise
+    .then(fp => fp.get())
+    .then(result => {
+        const visitorId = result.visitorId;
+        var hiddenInput = document.getElementById('deviceFingerprint');
+        if (hiddenInput) {
+            hiddenInput.value = visitorId;
+        }
+    })
+    .catch(error => console.error('FingerprintJS error:', error));
 
 function toggleEye(inputId, btn) {
     var input = document.getElementById(inputId);
