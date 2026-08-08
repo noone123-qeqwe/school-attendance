@@ -270,7 +270,6 @@
                 { label: 'Excuse Reviews', hint: 'Review excuses', icon: 'bi-file-text', url: '{{ route("teacher.excuse.reviews") }}' },
                 { label: 'Students', hint: 'Student list', icon: 'bi-people', url: '{{ route("teacher.students") }}' },
                 { label: 'Reports', hint: 'Generate reports', icon: 'bi-bar-chart', url: '{{ route("teacher.reports") }}' },
-                { label: 'Cover Class', hint: 'Substitute teaching', icon: 'bi-person-badge', url: '{{ route("teacher.cover.form") }}' },
                 { label: 'Holiday Calendar', hint: 'Holidays & events', icon: 'bi-calendar-event', url: '{{ route("teacher.calendar") }}' },
                 { label: 'Notifications', hint: 'Alerts', icon: 'bi-bell', url: '{{ route("teacher.notifications") }}' },
                 { label: 'Messages', hint: 'Send messages', icon: 'bi-envelope', url: '{{ route("teacher.messages.index") }}' },

@@ -203,12 +203,10 @@ class HomeController extends Controller
 
     // 9. Check for holidays
     $todayHoliday = Holiday::getHoliday($now->toDateString());
-    $upcomingHolidays = Holiday::active()
-        ->where('date', '>', $now->toDateString())
-        ->where('date', '<=', $now->copy()->addDays(7)->toDateString())
-        ->orderBy('date')
-        ->take(3)
-        ->get();
+    $upcomingHolidays = Holiday::getUpcoming(
+        $now->copy()->addDay()->toDateString(),
+        $now->copy()->addDays(7)->toDateString()
+    )->take(3);
 
     // 10. Fetch Active Warnings
     $activeWarnings = \App\Models\Warning::where('user_id', $user->id)
@@ -241,11 +239,10 @@ class HomeController extends Controller
     }
 
     // Add holidays as events
-    $allHolidays = Holiday::active()
-        ->where('date', '>=', $now->copy()->subDays(30)->toDateString())
-        ->where('date', '<=', $now->copy()->addDays(60)->toDateString())
-        ->orderBy('date')
-        ->get();
+    $allHolidays = Holiday::getUpcoming(
+        $now->copy()->subDays(30)->toDateString(),
+        $now->copy()->addDays(60)->toDateString()
+    );
 
     foreach ($allHolidays as $hol) {
         $calendarEvents->push((object) [
@@ -604,51 +601,15 @@ class HomeController extends Controller
         return view('student.calendar', compact('year', 'month'));
     }
 
-    /**
-     * JSON feed for FullCalendar (Student).
-     */
-    public function calendarData(Request $request)
+    public function data(Request $request, \App\Services\CalendarService $calendarService)
     {
-        $start = $request->query('start');
-        $end = $request->query('end');
-        
-        $query = \App\Models\Event::visibleTo(Auth::user())
-                      ->where('status', '!=', 'cancelled');
-                      
-        if ($start) {
-            $query->where('date', '>=', Carbon::parse($start)->toDateString());
-        }
-        if ($end) {
-            $query->where('date', '<=', Carbon::parse($end)->toDateString());
-        }
-
-        $events = $query->with('attendees')->get();
-
-        $formatted = $events->map(function ($event) {
-            // Map types to colors
-            $color = match($event->type) {
-                'class' => '#3b82f6', // blue
-                'exam' => '#ef4444', // red
-                'meeting' => '#f59e0b', // amber
-                'school_event' => '#8b5cf6', // purple
-                'holiday' => '#10b981', // green
-                default => '#6b7280'
-            };
-
-            return [
-                'id' => $event->id,
-                'title' => $event->name,
-                'start' => $event->date->format('Y-m-d') . 'T' . $event->start_time->format('H:i:s'),
-                'end' => $event->date->format('Y-m-d') . 'T' . $event->end_time->format('H:i:s'),
-                'type' => $event->type,
-                'location' => $event->location,
-                'status' => $event->status,
-                'editable' => Auth::user()->can('update', $event),
-                'color' => $color,
-            ];
-        });
-
-        return response()->json($formatted);
+        return response()->json(
+            $calendarService->getEventsForUser(
+                Auth::user(),
+                $request->query('start'),
+                $request->query('end')
+            )
+        );
     }
 
     /**

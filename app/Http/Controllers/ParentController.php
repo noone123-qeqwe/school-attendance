@@ -443,61 +443,14 @@ class ParentController extends Controller
         return view('parent.calendar', compact('children'));
     }
 
-    public function getCalendarData(Request $request)
+    public function data(Request $request, \App\Services\CalendarService $calendarService)
     {
-        $parent = Auth::user();
-        $childIds = $parent->children()->pluck('users.id');
-        
-        $start = $request->start;
-        $end = $request->end;
-
-        $attendances = Attendance::with('subject', 'user')
-            ->whereIn('user_id', $childIds)
-            ->when($start, function($q) use ($start) {
-                return $q->whereDate('date', '>=', $start);
-            })
-            ->when($end, function($q) use ($end) {
-                return $q->whereDate('date', '<=', $end);
-            })
-            ->get();
-
-        $events = [];
-        foreach ($attendances as $att) {
-            $color = '#10b981'; // Present
-            if ($att->status === 'Late') $color = '#f59e0b';
-            if ($att->status === 'Absent') $color = '#ef4444';
-            if ($att->excused) $color = '#6366f1';
-
-            $events[] = [
-                'title' => $att->user->name . ' - ' . ($att->subject->name ?? $att->subject_code),
-                'start' => $att->date,
-                'color' => $color,
-                'extendedProps' => [
-                    'status' => $att->status,
-                    'excused' => $att->excused
-                ]
-            ];
-        }
-
-        // Include Holidays
-        $holidays = \App\Models\Holiday::active()
-            ->when($start, function($q) use ($start) {
-                return $q->whereDate('date', '>=', $start);
-            })
-            ->when($end, function($q) use ($end) {
-                return $q->whereDate('date', '<=', $end);
-            })
-            ->get();
-
-        foreach ($holidays as $hol) {
-            $events[] = [
-                'title' => 'Holiday: ' . $hol->name,
-                'start' => $hol->date->toDateString(),
-                'color' => '#8b5cf6',
-                'allDay' => true
-            ];
-        }
-
-        return response()->json($events);
+        return response()->json(
+            $calendarService->getEventsForUser(
+                Auth::user(),
+                $request->query('start'),
+                $request->query('end')
+            )
+        );
     }
 }

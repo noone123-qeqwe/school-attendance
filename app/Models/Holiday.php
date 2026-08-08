@@ -49,12 +49,53 @@ class Holiday extends Model
     // Helper methods
     public static function isHoliday($date)
     {
-        return self::active()->forDate($date)->exists();
+        return self::active()->forDate($date)->exists() || 
+               \App\Models\Event::where('type', 'holiday')->where('status', '!=', 'cancelled')->whereDate('date', $date)->exists();
     }
 
     public static function getHoliday($date)
     {
-        return self::active()->forDate($date)->first();
+        $holiday = self::active()->forDate($date)->first();
+        if ($holiday) return $holiday;
+
+        $event = \App\Models\Event::where('type', 'holiday')->where('status', '!=', 'cancelled')->whereDate('date', $date)->first();
+        if ($event) {
+            $h = new static([
+                'name' => $event->name,
+                'description' => $event->description,
+                'type' => 'school',
+            ]);
+            $h->date = $event->date;
+            return $h;
+        }
+        
+        return null;
+    }
+
+    public static function getUpcoming($startDate, $endDate)
+    {
+        $holidays = self::active()
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->get();
+            
+        $events = \App\Models\Event::where('type', 'holiday')
+            ->where('status', '!=', 'cancelled')
+            ->where('date', '>=', $startDate)
+            ->where('date', '<=', $endDate)
+            ->get()
+            ->map(function($e) {
+                $h = new static([
+                    'name' => $e->name,
+                    'description' => $e->description,
+                    'type' => 'school',
+                ]);
+                $h->date = $e->date;
+                $h->created_at = $e->created_at;
+                return $h;
+            });
+            
+        return $holidays->concat($events)->sortBy('date')->values();
     }
 
     public function getTypeColorAttribute()

@@ -395,7 +395,7 @@ class AnalyticsService
             ->get();
 
         // Pending excuse submissions count (for dashboard notification)
-        $pendingExcuses = ExcuseSubmission::whereHas('attendance', function($q) use ($subjectCodes) {
+        $pendingExcuses = \App\Models\ExcuseSubmission::whereHas('attendance', function($q) use ($subjectCodes) {
             $q->whereIn('subject_code', $subjectCodes);
         })->where('status', 'pending')->count();
 

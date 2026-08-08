@@ -61,35 +61,6 @@ class Attendance extends Model
                 }
             }
         });
-        
-        static::created(function ($attendance) {
-            if ($attendance->status === 'Absent') {
-                \App\Models\Notification::create([
-                    'user_id' => $attendance->user_id,
-                    'type' => 'absence_alert',
-                    'subject_code' => $attendance->subject_code,
-                    'message' => "{$attendance->user->name} was marked Absent in {$attendance->subject_code} on {$attendance->date->format('M d, Y')}.",
-                    'is_read' => false
-                ]);
-                
-                $parents = $attendance->user->parents;
-                if ($parents) {
-                    foreach ($parents as $parent) {
-                        $prefs = collect($parent->notification_preferences ?? ['in_app' => true, 'email' => true]);
-                        
-                        if ($prefs->get('in_app')) {
-                            \App\Models\Notification::create([
-                                'user_id' => $parent->id,
-                                'type' => 'absence_alert',
-                                'subject_code' => $attendance->subject_code,
-                                'message' => "{$attendance->user->name} was marked Absent in {$attendance->subject_code} on {$attendance->date->format('M d, Y')}.",
-                                'is_read' => false
-                            ]);
-                        }
-                    }
-                }
-            }
-        });
     }
 
     public function getActivitylogOptions(): LogOptions

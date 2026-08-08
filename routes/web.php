@@ -43,17 +43,21 @@ Route::middleware('guest')->group(function () {
     Route::post('/recovery/login', [App\Http\Controllers\RecoveryCodeController::class, 'login'])->middleware('throttle:5,1')->name('recovery.login');
 });
 
-// Authenticated Routes (Protected) - Student Routes
+// Authenticated Routes (Protected) - Shared
 Route::middleware('auth')->group(function () {
+    Route::post('/logout', [PTController::class, 'logout'])->name('logout');
+});
+
+// Authenticated Routes (Protected) - Student Routes
+Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/profile', [PTController::class, 'profile'])->name('profile');
     Route::post('/profile/image', [PTController::class, 'updateImage'])->name('profile.image.update');
-    Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store');
+    Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store')->middleware('device.bound');
     Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
     
     // Attendance Corrections
     Route::post('/corrections', [App\Http\Controllers\AttendanceCorrectionController::class, 'store'])->name('corrections.store');
 
-    Route::post('/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/my-classes', [PTController::class, 'myClasses'])->name('student.classes');
     Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('student.schedule');
     Route::get('/student/calendar', [App\Http\Controllers\HomeController::class, 'calendar'])->name('student.calendar');
@@ -129,8 +133,8 @@ if (app()->environment('local') || config('app.debug')) {
 // QR Scan (student) - allow public access so guests can scan and login through the QR flow
 Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->name('qr.scan')->middleware('signed');
 
-Route::middleware('auth')->group(function () {
-    Route::post('/qr/confirm', [App\Http\Controllers\QrAttendanceController::class, 'confirm'])->name('qr.confirm');
+Route::middleware(['auth', 'student'])->group(function () {
+    Route::post('/qr/confirm', [App\Http\Controllers\QrAttendanceController::class, 'confirm'])->name('qr.confirm')->middleware('device.bound');
 
 
 
@@ -205,11 +209,11 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/student/{student}/absences', [App\Http\Controllers\TeacherController::class, 'absenceSummary'])->name('student.absences');
     
     // Holiday & Events Calendar Management
-    Route::get('/calendar', [App\Http\Controllers\Instructor\CalendarController::class, 'index'])->name('calendar');
-    Route::get('/calendar/data', [App\Http\Controllers\Instructor\CalendarController::class, 'data'])->name('calendar.data');
-    Route::post('/calendar/meetings', [App\Http\Controllers\Instructor\CalendarController::class, 'storeMeeting'])->name('calendar.meetings.store');
-    Route::put('/calendar/reschedule/{event}', [App\Http\Controllers\Instructor\CalendarController::class, 'reschedule'])->name('calendar.reschedule');
-    Route::get('/calendar/search-invitees', [App\Http\Controllers\Instructor\CalendarController::class, 'searchInvitees'])->name('calendar.search-invitees');
+    Route::get('/calendar', [App\Http\Controllers\Teacher\CalendarController::class, 'index'])->name('calendar');
+    Route::get('/calendar/data', [App\Http\Controllers\Teacher\CalendarController::class, 'data'])->name('calendar.data');
+    Route::post('/calendar/meetings', [App\Http\Controllers\Teacher\CalendarController::class, 'storeMeeting'])->name('calendar.meetings.store');
+    Route::put('/calendar/reschedule/{event}', [App\Http\Controllers\Teacher\CalendarController::class, 'reschedule'])->name('calendar.reschedule');
+    Route::get('/calendar/search-invitees', [App\Http\Controllers\Teacher\CalendarController::class, 'searchInvitees'])->name('calendar.search-invitees');
     
     // Reports
     Route::get('/reports', [App\Http\Controllers\TeacherController::class, 'reports'])->name('reports');
@@ -268,18 +272,18 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     Route::get('/notifications', [App\Http\Controllers\ParentController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/read', [App\Http\Controllers\ParentController::class, 'markNotificationsRead'])->name('notifications.read');
     Route::get('/calendar', [App\Http\Controllers\ParentController::class, 'calendar'])->name('calendar');
-    Route::get('/calendar/data', [App\Http\Controllers\ParentController::class, 'getCalendarData'])->name('calendar.data');
+    Route::get('/calendar/data', [App\Http\Controllers\ParentController::class, 'data'])->name('calendar.data');
 
     // Messages
     Route::resource('messages', MessageController::class)->only(['index', 'create', 'store', 'show']);
 });
 
 // Admin Routes (Admins only)
-Route::middleware(['auth', 'admin', 'admin.ip'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->name('admin.')->group(function () {
     // 2FA Routes
-    Route::get('/2fa', [App\Http\Controllers\AdminController::class, 'twoFactorForm'])->name('2fa.form');
-    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify');
-    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend');
+    Route::get('/2fa', [App\Http\Controllers\AdminController::class, 'twoFactorForm'])->name('2fa.form')->withoutMiddleware('admin.2fa');
+    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware('admin.2fa');
+    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware('admin.2fa');
 
 
         Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'index'])->name('dashboard');

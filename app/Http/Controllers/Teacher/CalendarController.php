@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Instructor;
+namespace App\Http\Controllers\Teacher;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
@@ -35,62 +35,15 @@ class CalendarController extends Controller
     /**
      * JSON feed for FullCalendar.
      */
-    public function data(Request $request)
+    public function data(Request $request, \App\Services\CalendarService $calendarService)
     {
-        $start = $request->query('start');
-        $end = $request->query('end');
-        
-        $query = Event::visibleTo(Auth::user())
-                      ->where('status', '!=', 'cancelled');
-                      
-        if ($start) {
-            $query->where('date', '>=', Carbon::parse($start)->toDateString());
-        }
-        if ($end) {
-            $query->where('date', '<=', Carbon::parse($end)->toDateString());
-        }
-
-        $events = $query->with('attendees')->get();
-
-        $formatted = $events->map(function ($event) {
-            $editable = Auth::user()->can('update', $event);
-            
-            // Map types to colors
-            $color = match($event->type) {
-                'class' => '#3b82f6', // blue
-                'exam' => '#ef4444', // red
-                'meeting' => '#f59e0b', // amber
-                'school_event' => '#8b5cf6', // purple
-                'holiday' => '#10b981', // green
-                default => '#6b7280'
-            };
-
-            return [
-                'id' => $event->id,
-                'title' => $event->name,
-                'start' => $event->date->format('Y-m-d') . 'T' . $event->start_time->format('H:i:s'),
-                'end' => $event->date->format('Y-m-d') . 'T' . $event->end_time->format('H:i:s'),
-                'type' => $event->type,
-                'location' => $event->location,
-                'original_location' => $event->original_location,
-                'organizer_id' => $event->organizer_id,
-                'class_id' => $event->class_id,
-                'status' => $event->status,
-                'editable' => $editable,
-                'reschedule_reason' => $event->reschedule_reason,
-                'color' => $color,
-                'attendees' => $event->attendees->map(function($a) {
-                    return [
-                        'user_id' => $a->id,
-                        'name' => $a->name,
-                        'response' => $a->pivot->response,
-                        'decline_reason' => $a->pivot->decline_reason
-                    ];
-                })
-            ];
-        });
-
-        return response()->json($formatted);
+        return response()->json(
+            $calendarService->getEventsForUser(
+                Auth::user(),
+                $request->query('start'),
+                $request->query('end')
+            )
+        );
     }
 
     /**
@@ -217,7 +170,17 @@ class CalendarController extends Controller
 
             DB::commit();
 
-            // TODO: Send MeetingInviteNotification to $userIdsToInvite
+            // Send MeetingInviteNotification to $userIdsToInvite
+            foreach ($userIdsToInvite as $uid) {
+                if ($uid !== Auth::id()) {
+                    \App\Models\Notification::create([
+                        'user_id' => $uid,
+                        'sent_by' => Auth::id(),
+                        'type' => 'calendar_invite',
+                        'message' => "You have been invited to a meeting: {$event->name} on {$event->date->format('M d, Y')} at {$event->start_time->format('h:i A')}.",
+                    ]);
+                }
+            }
 
             return response()->json(['success' => true, 'event' => $event]);
         } catch (\Exception $e) {
@@ -291,7 +254,18 @@ class CalendarController extends Controller
 
             DB::commit();
 
-            // TODO: Send EventRescheduledNotification to appropriate users
+            // Send EventRescheduledNotification to appropriate users
+            $attendees = $event->attendees()->pluck('users.id');
+            foreach ($attendees as $uid) {
+                if ($uid !== Auth::id()) {
+                    \App\Models\Notification::create([
+                        'user_id' => $uid,
+                        'sent_by' => Auth::id(),
+                        'type' => 'calendar_reschedule',
+                        'message' => "The event '{$event->name}' has been rescheduled to {$event->date->format('M d, Y')} at {$event->start_time->format('h:i A')}. Reason: {$request->reschedule_reason}",
+                    ]);
+                }
+            }
 
             return response()->json(['success' => true, 'event' => $event]);
         } catch (\Exception $e) {
