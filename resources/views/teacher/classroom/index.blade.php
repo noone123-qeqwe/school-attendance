@@ -161,11 +161,17 @@
                 </div>
                 
                 <div class="class-meta-grid">
+                    @php
+                        $activeDays = $subject->schedules->pluck('day')->toArray();
+                        $firstSched = $subject->schedules->first();
+                        $dayShort = ['Monday'=>'Mon', 'Tuesday'=>'Tue', 'Wednesday'=>'Wed', 'Thursday'=>'Thu', 'Friday'=>'Fri', 'Saturday'=>'Sat'];
+                        $dayLabels = array_map(fn($d) => $dayShort[$d] ?? $d, $activeDays);
+                    @endphp
                     <div class="meta-item">
                         <div class="meta-icon"><i class="bi bi-calendar-range"></i></div>
                         <div>
                             <div class="meta-label">Schedule</div>
-                            <div class="meta-text">{{ $subject->days ?: 'TBA' }}</div>
+                            <div class="meta-text">{{ !empty($dayLabels) ? implode(',', $dayLabels) : 'TBA' }}</div>
                         </div>
                     </div>
                     <div class="meta-item">
@@ -173,8 +179,8 @@
                         <div>
                             <div class="meta-label">Time</div>
                             <div class="meta-text">
-                                @if($subject->start_time && $subject->end_time)
-                                    {{ \Carbon\Carbon::parse($subject->start_time)->format('h:i A') }}
+                                @if($firstSched)
+                                    {{ \Carbon\Carbon::parse($firstSched->start_time)->format('h:i A') }}
                                 @else
                                     TBA
                                 @endif

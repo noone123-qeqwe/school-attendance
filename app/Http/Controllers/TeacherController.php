@@ -134,8 +134,7 @@ class TeacherController extends Controller
         ]);
 
         $subject = Subject::create(array_merge($request->only([
-            'code', 'name', 'year_level', 'semester', 'units', 'days', 
-            'start_time', 'end_time', 'section'
+            'code', 'name', 'year_level', 'semester', 'units', 'section'
         ]), [
             'instructor_id' => $teacher->id
         ]));
@@ -185,8 +184,7 @@ class TeacherController extends Controller
         ]);
 
         $subject->update(array_merge($request->only([
-            'code', 'name', 'year_level', 'semester', 'units', 'days', 
-            'start_time', 'end_time', 'section'
+            'code', 'name', 'year_level', 'semester', 'units', 'section'
         ]), [
             'instructor_id' => $teacher->id
         ]));
