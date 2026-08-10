@@ -126,11 +126,14 @@ class PTController extends Controller
             } elseif ($user->isParent()) {
                 return redirect()->route('parent.dashboard');
             } else {
-                // Student trying to login with email
-                Auth::logout();
-                $request->session()->flush();
-                return back()->withInput($request->only('identifier'))
-                    ->withErrors(['identifier' => 'Students should use their Student ID number to sign in.']);
+                // Student logging in with email
+                Log::info('Student login successful via email', ['user_id' => Auth::id(), 'email' => $identifier]);
+                
+                app(DeviceBindingService::class)->bind($user, $request);
+                if ($request->filled('qr_token')) {
+                    return redirect()->route('qr.scan', ['token' => $request->qr_token]);
+                }
+                return redirect()->intended('/home');
             }
         }
     }

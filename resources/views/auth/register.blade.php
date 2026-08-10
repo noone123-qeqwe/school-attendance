@@ -435,10 +435,7 @@
                                     <label for="semester">Semester</label>
                                     <i class="bi bi-chevron-down select-arrow"></i>
                                 </div>
-                                <div class="form-floating-custom">
-                                    <input type="text" name="section" id="section" placeholder=" " value="{{ old('section') }}" maxlength="20">
-                                    <label for="section">Section (Optional)</label>
-                                </div>
+
                             </div>
 
                             <!-- Teacher Specific -->

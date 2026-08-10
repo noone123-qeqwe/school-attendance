@@ -140,6 +140,395 @@
         background: rgba(255,255,255,0.02);
     }
     
+    /* Force Saturday to display in case it is hidden by CSS */
+    .fc-day-sat, th.fc-day-sat, td.fc-day-sat {
+        display: table-cell !important;
+    }
+    .fc-scrollgrid th:last-child, .fc-scrollgrid td:last-child {
+        display: table-cell !important;
+    }
+    .fc-scrollgrid th:nth-child(7), .fc-scrollgrid td:nth-child(7) {
+        display: table-cell !important;
+    }
+    
+    /* Ensure calendar table shows all 7 columns */
+    .fc .fc-scrollgrid-sync-table { width: 100% !important; min-width: 100% !important; }
+    .fc-col-header { display: table !important; width: 100% !important; }
+    .fc-daygrid-body { width: 100% !important; }
+    .fc-scrollgrid { width: 100% !important; }
+    
+    /* Mobile Responsive Enhancements */
+    @media (max-width: 768px) {
+        /* Mobile Page Layout */
+        #schoolCalendarPage {
+            padding-bottom: 0 !important;
+        }
+        
+        .holiday-dashboard .glass-card {
+            margin: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+        }
+        
+        /* Mobile Calendar Header */
+        .holiday-dashboard .glass-card .adm-card-head {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 100 !important;
+            flex-direction: row !important;
+            gap: 10px !important;
+            padding: 12px 16px !important;
+            align-items: center !important;
+            background: rgba(26, 26, 46, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+        }
+        
+        .holiday-dashboard .glass-card .adm-card-title {
+            display: none !important; /* Hide title to save space */
+        }
+        
+        /* Month Navigation */
+        .holiday-dashboard .calendar-controls {
+            width: 100% !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+            flex-wrap: nowrap !important;
+        }
+        
+        .holiday-dashboard .calendar-controls button {
+            min-width: 48px !important;
+            height: 48px !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(207, 164, 111, 0.12) !important;
+            border: 1px solid rgba(207, 164, 111, 0.25) !important;
+            border-radius: 14px !important;
+            font-size: 1.3rem !important;
+            flex-shrink: 0 !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .holiday-dashboard .calendar-controls button:active {
+            transform: scale(0.95) !important;
+        }
+        
+        .holiday-dashboard .calendar-header {
+            flex: 1 !important;
+            min-width: auto !important;
+            font-size: 1.15rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.3px !important;
+        }
+        
+        .holiday-dashboard .adm-btn-primary {
+            min-width: 80px !important;
+            height: 48px !important;
+            padding: 0 18px !important;
+            font-size: 0.95rem !important;
+            border-radius: 14px !important;
+        }
+        
+        /* Floating Legend */
+        .holiday-dashboard .glass-card > div[style*="padding"]:first-of-type {
+            position: fixed !important;
+            bottom: 80px !important;
+            right: 16px !important;
+            left: 16px !important;
+            z-index: 99 !important;
+            padding: 0 !important;
+        }
+        
+        .legend-container {
+            margin-top: 0 !important;
+            padding: 12px 16px !important;
+            gap: 12px !important;
+            background: rgba(26, 26, 46, 0.95) !important;
+            backdrop-filter: blur(10px) !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+        }
+        
+        .legend-item {
+            font-size: 0.75rem !important;
+            gap: 8px !important;
+        }
+        
+        .legend-dot {
+            width: 10px !important;
+            height: 10px !important;
+        }
+        
+        /* Calendar Container */
+        .holiday-dashboard .glass-card > div:last-child {
+            padding: 8px !important;
+        }
+        
+        #calendar {
+            min-width: 0 !important;
+            width: 100% !important;
+            min-height: auto !important;
+        }
+        
+        /* FullCalendar Mobile Optimizations */
+        .fc {
+            font-size: 0.75rem !important;
+            background: rgba(26, 26, 46, 0.6) !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2) !important;
+        }
+        
+        /* Force calendar to fit width */
+        .fc-scrollgrid,
+        .fc-scrollgrid-sync-table {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        
+        .fc table {
+            width: 100% !important;
+            table-layout: fixed !important;
+        }
+        
+        /* Day headers */
+        .fc .fc-col-header-cell {
+            padding: 12px 4px !important;
+            background: linear-gradient(180deg, rgba(207, 164, 111, 0.08), rgba(207, 164, 111, 0.03)) !important;
+            border-bottom: 2px solid rgba(207, 164, 111, 0.15) !important;
+            border-right: none !important;
+        }
+        
+        .fc .fc-col-header-cell-cushion {
+            font-size: 0.7rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.08em !important;
+            color: #d4a574 !important;
+        }
+        
+        /* Day cells - Larger touch targets */
+        .fc .fc-daygrid-day {
+            min-height: 85px !important;
+            border-right: 1px solid rgba(255,255,255,0.04) !important;
+            border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+        }
+        
+        .fc .fc-daygrid-day-frame {
+            min-height: 85px !important;
+            padding: 4px !important;
+        }
+        
+        .fc .fc-daygrid-day-number {
+            font-size: 1rem !important;
+            font-weight: 700 !important;
+            padding: 8px 10px !important;
+            text-align: center !important;
+        }
+        
+        /* Other month days */
+        .fc .fc-day-other {
+            opacity: 0.25 !important;
+            background: rgba(0,0,0,0.2) !important;
+        }
+        
+        /* Today cell - Enhanced */
+        .fc .fc-day-today {
+            background: linear-gradient(135deg, rgba(207, 164, 111, 0.18), rgba(207, 164, 111, 0.08)) !important;
+            box-shadow: inset 0 0 0 2px rgba(207, 164, 111, 0.4) !important;
+        }
+        
+        .fc .fc-day-today .fc-daygrid-day-number {
+            color: #d4a574 !important;
+            font-weight: 900 !important;
+            background: rgba(207, 164, 111, 0.15) !important;
+            border-radius: 8px !important;
+            padding: 6px 12px !important;
+        }
+        
+        /* Events - Better visibility */
+        .fc .fc-daygrid-event {
+            font-size: 0.7rem !important;
+            padding: 3px 6px !important;
+            margin: 2px !important;
+            border-radius: 6px !important;
+            min-height: 20px !important;
+            transition: transform 0.15s ease !important;
+        }
+        
+        .fc .fc-daygrid-event:active {
+            transform: scale(0.98) !important;
+        }
+        
+        .fc .fc-daygrid-event .fc-event-title {
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+        
+        /* Better touch targets */
+        .fc .fc-daygrid-day-top {
+            padding: 2px !important;
+            min-height: 36px !important;
+            justify-content: center !important;
+        }
+        
+        .fc .fc-daygrid-day-events {
+            margin-top: 2px !important;
+            min-height: 40px !important;
+        }
+        
+        /* More events indicator */
+        .fc .fc-daygrid-more-link {
+            font-size: 0.65rem !important;
+            font-weight: 700 !important;
+            color: #d4a574 !important;
+            background: rgba(207, 164, 111, 0.15) !important;
+            padding: 2px 6px !important;
+            border-radius: 4px !important;
+            margin: 2px !important;
+        }
+        
+        /* Event Modal - Bottom Sheet */
+        .modal-dialog-centered {
+            margin: 0 !important;
+            max-width: 100% !important;
+            height: 100vh !important;
+            display: flex !important;
+            align-items: flex-end !important;
+        }
+        
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(4px) !important;
+        }
+        
+        .event-modal-content {
+            border-radius: 24px 24px 0 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-height: 80vh !important;
+        }
+        
+        .event-modal-header {
+            padding: 24px 24px 16px !important;
+            border-radius: 24px 24px 0 0 !important;
+            position: relative !important;
+        }
+        
+        .event-modal-header::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 5px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+        
+        .event-modal-header .modal-title {
+            font-size: 1.2rem !important;
+            margin-top: 12px !important;
+            line-height: 1.3 !important;
+        }
+        
+        .event-modal-body {
+            padding: 20px 24px 32px !important;
+            max-height: calc(80vh - 100px) !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+        
+        .event-detail-item {
+            margin-bottom: 20px !important;
+            padding-bottom: 20px !important;
+        }
+        
+        .event-detail-label {
+            font-size: 0.75rem !important;
+            margin-bottom: 8px !important;
+        }
+        
+        .event-detail-value {
+            font-size: 1rem !important;
+        }
+        
+        .btn-close {
+            width: 36px !important;
+            height: 36px !important;
+            background-size: 16px !important;
+            opacity: 0.7 !important;
+        }
+        
+        /* Form inputs mobile */
+        .holiday-dashboard .adm-input {
+            font-size: 0.9rem !important;
+            padding: 10px 14px !important;
+        }
+        
+        .holiday-dashboard .form-label {
+            font-size: 0.75rem !important;
+        }
+        
+        /* Invitee chips mobile */
+        .chip {
+            font-size: 0.75rem !important;
+            padding: 5px 12px !important;
+        }
+        
+        /* Reschedule Modal Mobile */
+        .modal-dialog-centered .modal-dialog {
+            margin: 0.5rem !important;
+        }
+        
+        .modal-footer {
+            flex-direction: column !important;
+            gap: 10px !important;
+        }
+        
+        .modal-footer button {
+            width: 100% !important;
+        }
+        
+        /* Fix scrolling */
+        body {
+            overflow-x: hidden !important;
+        }
+        
+        /* Tap highlighting */
+        .fc .fc-daygrid-day {
+            -webkit-tap-highlight-color: rgba(207, 164, 111, 0.15);
+            cursor: pointer;
+        }
+        
+        /* Swipe hint */
+        .swipe-hint {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: rgba(255, 255, 255, 0.7);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 98;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        
+        .swipe-hint.show {
+            opacity: 1;
+        }
+    }
+    
     /* Legend */
     .legend-container {
         display: flex;
@@ -346,14 +735,14 @@
             <div style="padding: 0 20px;">
                 <div class="legend-container">
                     <div class="legend-item"><div class="legend-dot" style="background: #60a5fa;"></div> Class</div>
-                    <div class="legend-item"><div class="legend-dot" style="background: #f87171;"></div> Exam</div>
+                    <div class="legend-item"><div class="legend-dot" style="background: #ec4899;"></div> Exam</div>
                     <div class="legend-item"><div class="legend-dot" style="background: #a78bfa;"></div> School Event</div>
                     <div class="legend-item"><div class="legend-dot" style="background: #4ade80;"></div> Holiday</div>
                 </div>
             </div>
             
-            <div style="padding: 20px;">
-                <div id="calendar" style="min-height: 600px;"></div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="calendar" style="min-height: 600px; min-width: 700px;"></div>
             </div>
         </div>
     </div>
@@ -393,7 +782,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <script>
 let calendar;
 let currentYear = {{ $year }};
@@ -404,9 +793,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        initialDate: `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`,
+        initialDate: new Date(currentYear, currentMonth - 1, 1),
         headerToolbar: false,
         height: 'auto',
+        firstDay: 0,
+        weekends: true,
+        hiddenDays: [],
+        dayHeaders: true,
+        dayHeaderFormat: { weekday: 'short' },
+        showNonCurrentDates: true,
+        fixedWeekCount: false,
         events: function(fetchInfo, successCallback, failureCallback) {
             fetch(`{{ route('teacher.calendar.data') }}?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
                 .then(response => response.json())
@@ -471,6 +867,72 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     calendar.render();
+    
+    // Mobile touch enhancements
+    if (window.innerWidth <= 768) {
+        // Swipe gesture support for month navigation (improved)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        const calendarEl = document.getElementById('calendar');
+        
+        calendarEl.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, { passive: true });
+        
+        calendarEl.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipeGesture();
+        }, { passive: true });
+        
+        function handleSwipeGesture() {
+            const swipeThreshold = 80;
+            const diffX = touchStartX - touchEndX;
+            const diffY = Math.abs(touchStartY - touchEndY);
+            
+            // Only trigger if horizontal swipe is more dominant than vertical
+            if (Math.abs(diffX) > swipeThreshold && diffY < swipeThreshold) {
+                if (diffX > 0) {
+                    // Swiped left - next month
+                    nextMonth();
+                    showSwipeHint('→ Next Month');
+                } else {
+                    // Swiped right - previous month
+                    previousMonth();
+                    showSwipeHint('← Previous Month');
+                }
+            }
+        }
+        
+        // Show swipe hint temporarily
+        function showSwipeHint(text) {
+            let hint = document.querySelector('.swipe-hint');
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.className = 'swipe-hint';
+                document.body.appendChild(hint);
+            }
+            hint.textContent = text;
+            hint.classList.add('show');
+            
+            setTimeout(() => {
+                hint.classList.remove('show');
+            }, 800);
+        }
+        
+        // Add haptic feedback for interactions (if supported)
+        if ('vibrate' in navigator) {
+            // Wrap event handlers to add haptic feedback
+            const originalEventClick = calendar.getOption('eventClick');
+            calendar.setOption('eventClick', function(info) {
+                navigator.vibrate(10);
+                if (originalEventClick) originalEventClick(info);
+            });
+        }
+    }
 });
 
 function previousMonth() {
@@ -503,7 +965,9 @@ function updateCalendar() {
         'July', 'August', 'September', 'October', 'November', 'December'];
     
     document.getElementById('currentMonth').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
-    calendar.gotoDate(`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`);
+    
+    calendar.gotoDate(new Date(currentYear, currentMonth - 1, 1));
+    calendar.refetchEvents();
     
     const url = new URL(window.location);
     url.searchParams.set('year', currentYear);

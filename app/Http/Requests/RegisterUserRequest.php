@@ -50,7 +50,7 @@ class RegisterUserRequest extends FormRequest
             $rules['course']         = 'required|string';
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';
-            $rules['section']        = 'nullable|string|max:20';
+
         } elseif ($this->role === 'teacher') {
             $rules['employee_id']    = 'nullable|string|max:50|unique:users';
             $rules['department']     = 'nullable|string|max:255';

@@ -19,25 +19,44 @@ class DeviceBindingService
 
     public function bind(User $user, Request $request): void
     {
-        if ($user->isAdmin()) {
+        if (!$user->isStudent()) {
             return;
         }
 
-        $deviceKey = $request->input('device_fingerprint') ?: $request->cookie(self::COOKIE_NAME) ?: Str::random(64);
-        $deviceHash = $this->hashDeviceKey($deviceKey);
-        $sessionId = $request->session()->getId();
-        $binding = $user->deviceBinding;
+        $fpKey = $request->input('device_fingerprint');
+        $cookieKey = $request->cookie(self::COOKIE_NAME);
         
-        // Strict Binding Check: If they have a binding, and it doesn't match the current device hash
-        if ($binding && $binding->device_hash !== $deviceHash) {
-            \Illuminate\Support\Facades\Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        $binding = $user->deviceBinding;
+        $deviceKey = null;
+        $deviceHash = null;
+
+        // Strict Binding Check: If they have a binding, check if either cookie or fingerprint matches
+        if ($binding) {
+            $fpHash = $fpKey ? $this->hashDeviceKey($fpKey) : null;
+            $cookieHash = $cookieKey ? $this->hashDeviceKey($cookieKey) : null;
             
-            throw \Illuminate\Validation\ValidationException::withMessages([
-                'identifier' => 'Your account is already bound to another device. Please contact an admin to reset it.',
-            ]);
+            if ($cookieHash && hash_equals($binding->device_hash, $cookieHash)) {
+                $deviceKey = $cookieKey;
+                $deviceHash = $cookieHash;
+            } elseif ($fpHash && hash_equals($binding->device_hash, $fpHash)) {
+                $deviceKey = $fpKey;
+                $deviceHash = $fpHash;
+            } else {
+                \Illuminate\Support\Facades\Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'identifier' => 'Your account is already bound to another device. Please contact an admin to reset it.',
+                ]);
+            }
+        } else {
+            // First time binding
+            $deviceKey = $fpKey ?: $cookieKey ?: Str::random(64);
+            $deviceHash = $this->hashDeviceKey($deviceKey);
         }
+
+        $sessionId = $request->session()->getId();
 
         $agent = new Agent();
         $agent->setUserAgent($request->userAgent());
@@ -65,18 +84,26 @@ class DeviceBindingService
 
     public function isCurrentDevice(User $user, Request $request): bool
     {
-        if ($user->isAdmin()) {
+        if (!$user->isStudent()) {
             return true;
         }
 
-        $deviceKey = $request->cookie(self::COOKIE_NAME);
         $binding = $user->deviceBinding;
-
-        if (!$deviceKey || !$binding) {
+        if (!$binding) {
             return false;
         }
 
-        if (!hash_equals($binding->device_hash, $this->hashDeviceKey($deviceKey))) {
+        $cookieKey = $request->cookie(self::COOKIE_NAME);
+        $fpKey = $request->input('device_fingerprint');
+
+        $isValid = false;
+        if ($cookieKey && hash_equals($binding->device_hash, $this->hashDeviceKey($cookieKey))) {
+            $isValid = true;
+        } elseif ($fpKey && hash_equals($binding->device_hash, $this->hashDeviceKey($fpKey))) {
+            $isValid = true;
+        }
+
+        if (!$isValid) {
             return false;
         }
 

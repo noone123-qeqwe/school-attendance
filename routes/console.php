@@ -13,6 +13,9 @@ Schedule::command('attendance:mark-absent')->everyThirtyMinutes();
 // Check for excessive absences and issue warnings
 Schedule::command('attendance:check-warnings')->dailyAt('19:00'); // Evening check
 
+// Process unexcused absence count warnings
+Schedule::command('attendance:warnings')->dailyAt('19:15');
+
 // Check students with low attendance rate
 Schedule::command('attendance:check-rate')->dailyAt('20:00'); // Evening rate check
 

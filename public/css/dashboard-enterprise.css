@@ -1049,6 +1049,12 @@
 .hcal-calendar-pane {
     flex: 1;
     min-width: 0;
+    overflow: visible;
+}
+
+/* Prevent the card container from clipping the 7-column calendar grid */
+.ent-section:has(.hcal-container) {
+    overflow: visible;
 }
 
 .hcal-events-pane {

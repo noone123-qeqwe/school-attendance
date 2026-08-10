@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'My Students')
 
 @section('content')
@@ -32,10 +32,16 @@
 
 <x-card title="My Students" icon="bi bi-people-fill">
     <x-slot name="headerActions">
-        <button onclick="window.location.href='{{ route('teacher.students.preview', request()->query()) }}'" 
-                class="btn btn-outline btn-sm">
-            <i class="bi bi-eye-fill"></i> Preview PDF
-        </button>
+        <div class="d-flex gap-2">
+            <button onclick="window.location.href='{{ route('teacher.students.preview', request()->query()) }}'" 
+                    class="btn btn-outline btn-sm">
+                <i class="bi bi-eye-fill"></i> Preview PDF
+            </button>
+            <button onclick="window.location.href='{{ route('teacher.students.csv', request()->query()) }}'" 
+                    class="btn btn-outline btn-sm">
+                <i class="bi bi-filetype-csv"></i> Export CSV
+            </button>
+        </div>
     </x-slot>
 
     <!-- Filters -->

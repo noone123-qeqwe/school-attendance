@@ -9,7 +9,7 @@
             @if($label)
                 <div class="ent-kpi-label">{{ $label }}</div>
             @endif
-            @if($value)
+            @if($value !== null)
                 <div class="ent-kpi-value">{{ $value }}</div>
             @endif
             @if($trend)

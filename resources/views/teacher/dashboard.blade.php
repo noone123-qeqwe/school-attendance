@@ -112,13 +112,15 @@
 
                 <div class="legend-container mb-3 d-flex gap-3 flex-wrap" style="font-size:0.8rem; font-weight:600; color:var(--ent-text-muted);">
                     <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#60a5fa;"></div> Class</div>
-                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#f87171;"></div> Exam</div>
+                    <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#ec4899;"></div> Exam</div>
                     <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#fbbf24;"></div> Meeting</div>
                     <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#a78bfa;"></div> School Event</div>
                     <div class="d-flex align-items-center gap-1"><div style="width:10px;height:10px;border-radius:50%;background:#4ade80;"></div> Holiday</div>
                 </div>
 
-                <div id="schoolCalendar" style="min-height: 500px;"></div>
+                <div style="overflow-x: auto;">
+                    <div id="schoolCalendar" style="min-height: 500px; min-width: 700px;"></div>
+                </div>
             </x-card>
         </div>
         
@@ -407,6 +409,9 @@ document.addEventListener('DOMContentLoaded', function() {
         initialView: 'dayGridMonth',
         headerToolbar: false,
         height: 'auto',
+        firstDay: 0,
+        weekends: true,
+        fixedWeekCount: false,
         events: function(fetchInfo, successCallback, failureCallback) {
             fetch(`{{ route('teacher.calendar.data') }}?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
                 .then(response => response.json())

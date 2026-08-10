@@ -589,6 +589,12 @@ async function loadDevices() {
         const noDevices = document.getElementById('noDevices');
         if (devices.length > 0) {
             noDevices.style.display = 'none';
+            
+            const registeredMsg = document.createElement('div');
+            registeredMsg.style.cssText = 'text-align:center;padding:16px;color:#16a34a;font-size:.9rem;background:rgba(22,163,74,0.1);border-radius:12px;border:1px solid rgba(22,163,74,0.2);margin-bottom:16px;font-weight:600;';
+            registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill me-2" style="font-size:1.1rem;vertical-align:middle;"></i>You have registered a fingerprint.';
+            list.appendChild(registeredMsg);
+
             devices.forEach(d => {
                 const div = document.createElement('div');
                 div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,215,145,0.06);';

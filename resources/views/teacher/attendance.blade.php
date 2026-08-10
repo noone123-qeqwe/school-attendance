@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'Attendance Records')
 
 @section('content')
@@ -17,6 +17,9 @@
         <div class="d-flex gap-2">
             <a href="{{ route('teacher.attendance.preview', $attendanceFilterQuery) }}" class="btn btn-outline">
                 <i class="bi bi-eye-fill"></i> Preview PDF
+            </a>
+            <a href="{{ route('teacher.attendance.csv', $attendanceFilterQuery) }}" class="btn btn-outline">
+                <i class="bi bi-filetype-csv"></i> Export CSV
             </a>
             <a href="{{ route('teacher.reports') }}" class="btn btn-outline">
                 <i class="bi bi-bar-chart-fill"></i> View Reports

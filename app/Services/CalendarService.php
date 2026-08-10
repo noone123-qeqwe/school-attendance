@@ -38,7 +38,7 @@ class CalendarService
         if ($user->isParent()) {
             $childIds = $user->children()->pluck('users.id');
             
-            $attendanceQuery = Attendance::with(['subject', 'user'])
+            $attendanceQuery = Attendance::with(['subject.schedules', 'subject.instructorUser', 'user'])
                 ->whereIn('user_id', $childIds);
                 
             if ($start) {
@@ -48,8 +48,27 @@ class CalendarService
                 $attendanceQuery->where('date', '<=', Carbon::parse($end)->toDateString());
             }
             
-            $attendances = $attendanceQuery->get()->map(function ($attendance) {
-                return $this->formatAttendanceAsEvent($attendance);
+            $attendances = $attendanceQuery->get()->map(function ($attendance) use ($user) {
+                return $this->formatAttendanceAsEvent($attendance, $user);
+            });
+            
+            $events = $events->concat($attendances);
+        }
+
+        // If the user is a student, fetch their own attendance records
+        if ($user->isStudent()) {
+            $attendanceQuery = Attendance::with(['subject.schedules', 'subject.instructorUser'])
+                ->where('user_id', $user->id);
+                
+            if ($start) {
+                $attendanceQuery->where('date', '>=', Carbon::parse($start)->toDateString());
+            }
+            if ($end) {
+                $attendanceQuery->where('date', '<=', Carbon::parse($end)->toDateString());
+            }
+            
+            $attendances = $attendanceQuery->get()->map(function ($attendance) use ($user) {
+                return $this->formatAttendanceAsEvent($attendance, $user);
             });
             
             $events = $events->concat($attendances);
@@ -65,7 +84,7 @@ class CalendarService
     {
         $color = match($event->type) {
             'class' => '#3b82f6', // blue
-            'exam' => '#ef4444', // red
+            'exam' => '#ec4899', // pink
             'meeting' => '#f59e0b', // amber
             'school_event' => '#8b5cf6', // purple
             'holiday' => '#10b981', // green
@@ -86,30 +105,52 @@ class CalendarService
     }
     
     /**
-     * Map an Attendance record to the FullCalendar format for Parents
+     * Map an Attendance record to the FullCalendar format
      */
-    private function formatAttendanceAsEvent(Attendance $attendance): array
+    private function formatAttendanceAsEvent(Attendance $attendance, User $currentUser): array
     {
         $color = match($attendance->status) {
-            'Present' => '#10b981', // green
-            'Late' => '#f59e0b',    // amber
+            'Present' => '#3b82f6', // blue
+            'Late' => '#f97316',    // orange
             'Absent' => '#ef4444',  // red
             default => '#6b7280'
         };
         
-        $childName = $attendance->user->name ?? 'Child';
         $subjectCode = $attendance->subject_code;
+        $subject = $attendance->subject;
+        $subjectName = $subject ? ($subject->name ?? $subjectCode) : $subjectCode;
+        $instructorName = $subject && $subject->instructorUser ? $subject->instructorUser->name : ($subject->instructor ?? 'Unknown Instructor');
+        
+        $dayName = $attendance->date->format('l'); // e.g., 'Monday'
+        $schedule = $subject ? $subject->schedules->where('day', $dayName)->first() : null;
+        
+        $timeString = '';
+        if ($schedule) {
+            $start = \Carbon\Carbon::parse($schedule->start_time)->format('g:i A');
+            $end = \Carbon\Carbon::parse($schedule->end_time)->format('g:i A');
+            $timeString = "{$start} - {$end}";
+        }
+        
+        if ($currentUser->isParent()) {
+            $childName = $attendance->user->name ?? 'Child';
+            $title = "{$childName} - {$subjectCode}";
+        } else {
+            $title = "{$subjectCode}";
+        }
 
         return [
             'id' => 'att_' . $attendance->id,
-            'title' => "{$childName} - {$subjectCode} ({$attendance->status})",
+            'title' => $title,
             'start' => $attendance->date->format('Y-m-d') . 'T00:00:00',
             'end' => $attendance->date->format('Y-m-d') . 'T23:59:59',
             'type' => 'attendance',
             'status' => $attendance->status,
             'editable' => false,
             'color' => $color,
-            'allDay' => true
+            'allDay' => true,
+            'subject_name' => $subjectName,
+            'instructor_name' => $instructorName,
+            'time_string' => $timeString,
         ];
     }
 }

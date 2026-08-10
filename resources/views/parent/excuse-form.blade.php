@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'Submit Excuse â€” ' . $child->name)
 
 @section('content')
@@ -73,7 +73,7 @@
                     </div>
                 </div>
                 <div class="adm-card-body">
-                    <form method="POST" action="{{ route('parent.excuse.store') }}" enctype="multipart/form-data">
+                    <form id="excuseForm" method="POST" action="{{ route('parent.excuse.store') }}" enctype="multipart/form-data">
                         @csrf
                         <input type="hidden" name="attendance_id" value="{{ $attendance->id }}">
 
@@ -93,7 +93,13 @@
                                 <option value="natural_disaster">Natural Disaster / Calamity</option>
                                 <option value="other">Other (please specify)</option>
                             </select>
-                            <textarea name="reason" class="tch-input" style="width: 100%; min-height: 120px; resize: vertical;"
+                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 8px;">
+                                <label style="font-size: 0.82rem; color: #e7dcc8; font-weight: 600; margin:0;">
+                                    Detailed Explanation <span style="color: #ef5350;">*</span>
+                                </label>
+                                <span id="charCount" style="font-size:0.7rem; color: #888;">0 / 500</span>
+                            </div>
+                            <textarea name="reason" id="descInput" class="tch-input" maxlength="500" style="width: 100%; min-height: 120px; resize: vertical; transition: all 0.2s;"
                                       placeholder="Provide details about the reason for absence..." required>{{ old('reason') }}</textarea>
                         </div>
 
@@ -101,20 +107,19 @@
                             <label style="font-size: 0.82rem; color: #e7dcc8; font-weight: 600; display: block; margin-bottom: 8px;">
                                 Supporting Document <span style="color: #8f826f;">(optional)</span>
                             </label>
-                            <div style="background: rgba(255,235,190,0.04); border: 2px dashed rgba(255,215,145,0.15); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s;" 
-                                 onclick="document.getElementById('fileInput').click()" id="uploadArea">
+                            <label for="fileInput" id="dropZone" style="display:block; background: rgba(255,235,190,0.04); border: 2px dashed rgba(255,215,145,0.15); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s;">
                                 <i class="bi bi-cloud-arrow-up" style="font-size: 2rem; color: #cfa46f;"></i>
                                 <p style="color: #b39b82; font-size: 0.85rem; margin: 8px 0 0;" id="uploadText">
-                                    Click to upload â€” PDF, JPG, or PNG (max 5MB)
+                                    Click or drag to upload &mdash; PDF, JPG, or PNG (max 5MB)
                                 </p>
                                 <input type="file" name="document" id="fileInput" style="display: none;" accept=".pdf,.jpg,.jpeg,.png" onchange="updateFileName(this)">
-                            </div>
+                            </label>
                         </div>
 
                         <div style="display: flex; gap: 12px; justify-content: flex-end;">
                             <a href="{{ route('parent.child', $child) }}" class="adm-btn adm-btn-ghost">Cancel</a>
-                            <button type="submit" class="adm-btn adm-btn-primary">
-                                <i class="bi bi-send me-1"></i> Submit Excuse
+                            <button type="submit" id="submitBtn" class="adm-btn adm-btn-primary" style="transition: all 0.2s;">
+                                <i class="bi bi-send me-1"></i> <span>Submit Excuse</span>
                             </button>
                         </div>
                     </form>
@@ -125,24 +130,89 @@
 </div>
 
 <script>
+// Character Counter
+const descInput = document.getElementById('descInput');
+const charCount = document.getElementById('charCount');
+if(descInput && charCount) {
+    const updateCount = () => {
+        const len = descInput.value.length;
+        charCount.textContent = `${len} / 500`;
+        charCount.style.color = len >= 490 ? '#ef5350' : '#888';
+    };
+    descInput.addEventListener('input', updateCount);
+    updateCount();
+}
+
 function toggleCustomReason(select) {
-    const textarea = document.querySelector('textarea[name="reason"]');
+    const textarea = document.getElementById('descInput');
     if (select.value && select.value !== 'other') {
         const selectedText = select.options[select.selectedIndex].text;
         if (!textarea.value || textarea.value === textarea.getAttribute('data-auto')) {
             textarea.value = selectedText + ': ';
             textarea.setAttribute('data-auto', selectedText + ': ');
+            if (descInput) {
+                descInput.dispatchEvent(new Event('input'));
+            }
         }
     }
 }
 
+// Drag and Drop styling
+const dropZone = document.getElementById('dropZone');
+if (dropZone) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.borderColor = 'rgba(255,215,145,0.4)';
+            dropZone.style.background = 'rgba(255,235,190,0.08)';
+            dropZone.style.transform = 'scale(1.02)';
+        }, false);
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.borderColor = 'rgba(255,215,145,0.15)';
+            dropZone.style.background = 'rgba(255,235,190,0.04)';
+            dropZone.style.transform = 'scale(1)';
+        }, false);
+    });
+    dropZone.addEventListener('drop', (e) => {
+        const input = document.getElementById('fileInput');
+        if (e.dataTransfer.files.length) {
+            input.files = e.dataTransfer.files;
+            updateFileName(input);
+        }
+    }, false);
+}
+
 function updateFileName(input) {
     const text = document.getElementById('uploadText');
-    const area = document.getElementById('uploadArea');
+    const area = document.getElementById('dropZone');
     if (input.files.length > 0) {
         text.innerHTML = '<i class="bi bi-file-earmark-check me-1" style="color: #66bb6a;"></i> ' + input.files[0].name;
         area.style.borderColor = 'rgba(102,187,106,0.4)';
+    } else {
+        text.innerHTML = 'Click or drag to upload &mdash; PDF, JPG, or PNG (max 5MB)';
+        area.style.borderColor = 'rgba(255,215,145,0.15)';
     }
+}
+
+// Form Submission Loading State
+const form = document.getElementById('excuseForm');
+if (form) {
+    form.addEventListener('submit', function() {
+        const btn = document.getElementById('submitBtn');
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.8';
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" style="width: 1rem; height: 1rem; border-width: 0.15em;"></span> <span>Submitting...</span>';
+        }
+    });
 }
 </script>
 @endsection

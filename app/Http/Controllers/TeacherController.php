@@ -17,6 +17,9 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Warning;
 use App\Services\AnalyticsService;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\StudentsExport;
+use App\Exports\AttendanceExport;
 
 class TeacherController extends Controller
 {
@@ -1705,5 +1708,42 @@ class TeacherController extends Controller
         }
 
         return redirect()->route('teacher.classroom.show', $subjectCode)->with('success', "Attendance saved for {$count} student(s) on " . \Carbon\Carbon::parse($request->date)->format('M d, Y') . ".");
+    }
+
+    public function exportStudentsCsv(Request $request)
+    {
+        $teacher = Auth::user();
+        $mySubjectCodes = $teacher->taughtSubjects()->pluck('code')->toArray();
+        $query = User::where('role', 'student')
+            ->whereHas('attendances', function ($q) use ($mySubjectCodes) {
+                $q->whereIn('subject_code', $mySubjectCodes);
+            });
+
+        if ($request->filled('search')) {
+            $search = strtolower($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                  ->orWhere('student_number', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $students = $query->get();
+        return Excel::download(new StudentsExport($students), 'students.csv', \Maatwebsite\Excel\Excel::CSV);
+    }
+
+    public function exportAttendanceCsv(Request $request)
+    {
+        $teacher = Auth::user();
+        $mySubjectCodes = $teacher->taughtSubjects()->pluck('code')->toArray();
+
+        $filters = $request->only(['subject_code', 'date', 'status']);
+        
+        // Ensure teacher can only export their own subjects
+        if (empty($filters['subject_code']) || !in_array($filters['subject_code'], $mySubjectCodes)) {
+            // Default to first subject if not specified or invalid
+            $filters['subject_code'] = $mySubjectCodes[0] ?? null;
+        }
+
+        return Excel::download(new AttendanceExport($filters), 'attendance.csv', \Maatwebsite\Excel\Excel::CSV);
     }
 }

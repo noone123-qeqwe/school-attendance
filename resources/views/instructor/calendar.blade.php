@@ -140,6 +140,148 @@
         background: rgba(255,255,255,0.02);
     }
     
+    /* Force Saturday to display in case it is hidden by CSS */
+    .fc-day-sat, th.fc-day-sat, td.fc-day-sat {
+        display: table-cell !important;
+    }
+    .fc-scrollgrid th:last-child, .fc-scrollgrid td:last-child {
+        display: table-cell !important;
+    }
+    .fc-scrollgrid th:nth-child(7), .fc-scrollgrid td:nth-child(7) {
+        display: table-cell !important;
+    }
+    
+    /* Ensure calendar table shows all 7 columns */
+    .fc .fc-scrollgrid-sync-table { width: 100% !important; min-width: 100% !important; }
+    .fc-col-header { display: table !important; width: 100% !important; }
+    .fc-daygrid-body { width: 100% !important; }
+    .fc-scrollgrid { width: 100% !important; }
+    
+    /* Mobile Responsive Enhancements */
+    @media (max-width: 768px) {
+        /* Mobile Calendar Header */
+        .holiday-dashboard .glass-card .adm-card-head {
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px 20px !important;
+        }
+        
+        .holiday-dashboard .calendar-controls {
+            width: 100%;
+            justify-content: center !important;
+        }
+        
+        .holiday-dashboard .calendar-controls button {
+            min-width: 36px;
+            padding: 6px 10px !important;
+        }
+        
+        .holiday-dashboard .calendar-header {
+            min-width: 140px !important;
+            font-size: 0.95rem !important;
+        }
+        
+        /* Calendar Container */
+        .holiday-dashboard .glass-card > div[style*="padding"] {
+            padding: 8px !important;
+        }
+        
+        /* Optimize FullCalendar for mobile */
+        .fc {
+            font-size: 0.75rem;
+        }
+        
+        .fc .fc-col-header-cell {
+            padding: 8px 2px !important;
+        }
+        
+        .fc .fc-col-header-cell-cushion {
+            font-size: 0.65rem !important;
+            letter-spacing: 0.5px !important;
+        }
+        
+        .fc .fc-daygrid-day-number {
+            font-size: 0.8rem !important;
+            padding: 6px 4px !important;
+        }
+        
+        .fc .fc-daygrid-day-frame {
+            min-height: 60px;
+        }
+        
+        .fc .fc-daygrid-event {
+            font-size: 0.65rem !important;
+            padding: 2px 4px !important;
+            margin: 1px 2px !important;
+        }
+        
+        /* Better touch targets */
+        .fc .fc-daygrid-day-top {
+            padding: 4px;
+        }
+        
+        /* Event Modal Mobile */
+        .event-modal-content {
+            margin: 0.5rem;
+            border-radius: 16px !important;
+        }
+        
+        .event-modal-header {
+            padding: 16px 20px !important;
+        }
+        
+        .event-modal-header .modal-title {
+            font-size: 1rem !important;
+        }
+        
+        .event-modal-body {
+            padding: 20px !important;
+        }
+        
+        .event-detail-item {
+            margin-bottom: 16px !important;
+            padding-bottom: 16px !important;
+        }
+        
+        .event-detail-label {
+            font-size: 0.7rem !important;
+        }
+        
+        .event-detail-value {
+            font-size: 0.85rem !important;
+        }
+        
+        /* Reschedule Modal Mobile */
+        .modal-dialog-centered {
+            margin: 0.5rem !important;
+        }
+        
+        .modal-footer {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .modal-footer button {
+            width: 100% !important;
+        }
+        
+        /* Form inputs mobile */
+        .holiday-dashboard .adm-input {
+            font-size: 0.9rem !important;
+            padding: 8px 12px !important;
+        }
+        
+        .holiday-dashboard .form-label {
+            font-size: 0.75rem !important;
+        }
+        
+        /* Invitee chips mobile */
+        .chip {
+            font-size: 0.75rem !important;
+            padding: 4px 10px !important;
+        }
+    }
+    
     /* Legend */
     .legend-container {
         display: flex;
@@ -343,8 +485,8 @@
                 </div>
             </div>
             
-            <div style="padding: 20px;">
-                <div id="calendar" style="min-height: 600px;"></div>
+            <div style="padding: 20px; overflow-x: auto;">
+                <div id="calendar" style="min-height: 600px; min-width: 700px;"></div>
             </div>
         </div>
     </div>
@@ -420,7 +562,7 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <script>
 let calendar;
 let currentYear = {{ $year }};
@@ -433,9 +575,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-        initialDate: `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`,
+        initialDate: new Date(currentYear, currentMonth - 1, 1),
         headerToolbar: false,
         height: 'auto',
+        firstDay: 0,
+        weekends: true,
+        hiddenDays: [],
+        dayHeaders: true,
+        dayHeaderFormat: { weekday: 'short' },
+        showNonCurrentDates: true,
+        fixedWeekCount: false,
         editable: true,
         droppable: true,
         events: function(fetchInfo, successCallback, failureCallback) {
@@ -553,6 +702,38 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     calendar.render();
+    
+    // Mobile touch enhancements
+    if (window.innerWidth <= 768) {
+        // Add swipe gesture support for month navigation
+        let touchStartX = 0;
+        let touchEndX = 0;
+        const calendarEl = document.getElementById('calendar');
+        
+        calendarEl.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+        
+        calendarEl.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipeGesture();
+        }, { passive: true });
+        
+        function handleSwipeGesture() {
+            const swipeThreshold = 50;
+            const diff = touchStartX - touchEndX;
+            
+            if (Math.abs(diff) > swipeThreshold) {
+                if (diff > 0) {
+                    // Swiped left - next month
+                    nextMonth();
+                } else {
+                    // Swiped right - previous month
+                    previousMonth();
+                }
+            }
+        }
+    }
 });
 
 // Navigation functions (previousMonth, nextMonth, goToToday, updateCalendar) are same as student
@@ -562,7 +743,10 @@ function goToToday() { const today = new Date(); currentYear = today.getFullYear
 function updateCalendar() {
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     document.getElementById('currentMonth').textContent = `${monthNames[currentMonth - 1]} ${currentYear}`;
-    calendar.gotoDate(`${currentYear}-${String(currentMonth).padStart(2, '0')}-01`);
+    
+    calendar.gotoDate(new Date(currentYear, currentMonth - 1, 1));
+    calendar.refetchEvents();
+    
     const url = new URL(window.location); url.searchParams.set('year', currentYear); url.searchParams.set('month', currentMonth); window.history.pushState({}, '', url);
 }
 

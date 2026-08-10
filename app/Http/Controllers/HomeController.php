@@ -184,7 +184,7 @@ class HomeController extends Controller
 
     $attendanceRate = $totalRecords > 0
         ? round(($presentRecords / $totalRecords) * 100)
-        : 100; // If they have 0 total classes, attendance is effectively 100% (default)
+        : 0; // If they have 0 total classes, attendance is 0%
 
     // 8b. Detailed stats for dashboard donut chart
     // (Already captured above)
@@ -301,7 +301,7 @@ class HomeController extends Controller
 
         // If no records exist or all are excused, we assume 100% since they haven't been unexcusedly absent
         $effectiveTotal = $total - $excused;
-        $rate = $effectiveTotal > 0 ? round((($present + $late) / $effectiveTotal) * 100) : 100;
+        $rate = $effectiveTotal > 0 ? round((($present + $late) / $effectiveTotal) * 100) : 0;
 
         $subjectStats->push((object)[
             'code' => $subjectModel->code,
@@ -476,14 +476,14 @@ class HomeController extends Controller
     public function createGeneralExcuse()
     {
         $user = Auth::user();
-        $subjects = $user->enrolledSubjects()->get();
+        $subjects = $user->getAllSubjects();
         return view('excuses.create_general', compact('subjects'));
     }
 
     public function storeGeneralExcuse(Request $request)
     {
         $request->validate([
-            'subject_code' => 'required|exists:subjects,code',
+            'subject_code' => 'required',
             'date' => 'required|date',
             'reason' => 'required|string|max:255',
             'description' => 'required|string|max:1000',
@@ -492,27 +492,17 @@ class HomeController extends Controller
 
         $user = Auth::user();
 
-        // Ensure student is enrolled in the subject
-        if (!$user->enrolledSubjects()->where('code', $request->subject_code)->exists()) {
-            abort(403, 'You are not enrolled in this subject.');
-        }
-
-        // Get or create the attendance record
-        $attendance = Attendance::firstOrCreate([
-            'user_id' => $user->id,
-            'subject_code' => $request->subject_code,
-            'date' => $request->date,
-        ], [
-            'status' => 'Absent', // Mark as absent since they are submitting an excuse
-            'time_in' => null,
-            'time_out' => null,
-            'device_id' => null,
-            'excused' => false
-        ]);
-
-        // If it already has an excuse, reject
-        if ($attendance->excuseSubmission) {
-            return redirect()->route('excuses')->with('error', 'Excuse already submitted for this class and date.');
+        if ($request->subject_code !== 'all_subjects') {
+            $request->validate(['subject_code' => 'exists:subjects,code']);
+            if (!$user->getAllSubjects()->where('code', $request->subject_code)->count()) {
+                abort(403, 'You are not enrolled in this subject.');
+            }
+            $subjectCodes = [$request->subject_code];
+        } else {
+            $subjectCodes = $user->getAllSubjects()->pluck('code')->toArray();
+            if (empty($subjectCodes)) {
+                return redirect()->back()->with('error', 'You are not enrolled in any subjects.');
+            }
         }
 
         $attachmentPaths = [];
@@ -524,25 +514,45 @@ class HomeController extends Controller
             }
         }
 
-        $excuseSubmission = ExcuseSubmission::create([
-            'user_id' => $user->id,
-            'attendance_id' => $attendance->id,
-            'reason' => $request->reason,
-            'description' => $request->description,
-            'attachments' => $attachmentPaths,
-            'status' => 'pending'
-        ]);
-
-        // Notify Teacher
-        $subject = \App\Models\Subject::where('code', $attendance->subject_code)->first();
-        if ($subject && $subject->instructor_id) {
-            \App\Models\Notification::create([
-                'user_id' => $subject->instructor_id,
-                'title' => 'New Leave Request',
-                'message' => "{$user->name} submitted a leave request for {$subject->name} on " . \Carbon\Carbon::parse($request->date)->format('M d, Y'),
-                'type' => 'custom',
-                'link' => route('admin.excuses')
+        foreach ($subjectCodes as $code) {
+            // Get or create the attendance record
+            $attendance = Attendance::firstOrCreate([
+                'user_id' => $user->id,
+                'subject_code' => $code,
+                'date' => $request->date,
+            ], [
+                'status' => 'Absent', // Mark as absent since they are submitting an excuse
+                'time_in' => null,
+                'time_out' => null,
+                'device_id' => null,
+                'excused' => false
             ]);
+
+            // If it already has an excuse, skip
+            if ($attendance->excuseSubmission) {
+                continue;
+            }
+
+            ExcuseSubmission::create([
+                'user_id' => $user->id,
+                'attendance_id' => $attendance->id,
+                'reason' => $request->reason,
+                'description' => $request->description,
+                'attachments' => $attachmentPaths,
+                'status' => 'pending'
+            ]);
+
+            // Notify Teacher
+            $subject = \App\Models\Subject::where('code', $code)->first();
+            if ($subject && $subject->instructor_id) {
+                \App\Models\Notification::create([
+                    'user_id' => $subject->instructor_id,
+                    'title' => 'New Leave Request',
+                    'message' => "{$user->name} submitted a leave request for {$subject->name} on " . \Carbon\Carbon::parse($request->date)->format('M d, Y'),
+                    'type' => 'custom',
+                    'link' => route('admin.excuses')
+                ]);
+            }
         }
 
         return redirect()->route('excuses')->with('success', 'Excuse/Leave request submitted successfully.');
@@ -621,7 +631,7 @@ class HomeController extends Controller
         return view('student.calendar', compact('year', 'month'));
     }
 
-    public function data(Request $request, \App\Services\CalendarService $calendarService)
+    public function calendarData(Request $request, \App\Services\CalendarService $calendarService)
     {
         return response()->json(
             $calendarService->getEventsForUser(

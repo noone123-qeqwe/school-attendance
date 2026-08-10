@@ -149,6 +149,27 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->name('qr.verify.complete');
 });
 
+// Parent Routes (Parents only)
+Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\ParentController::class, 'dashboard'])->name('dashboard');
+    Route::get('/link-child', [App\Http\Controllers\ParentController::class, 'linkChildForm'])->name('link-child.form');
+    Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->name('link-child.send-otp');
+    Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->name('link-child.verify-otp');
+    
+    Route::get('/child/{child}', [App\Http\Controllers\ParentController::class, 'childDetail'])->name('child.detail');
+    Route::get('/child/{child}/warnings', [App\Http\Controllers\ParentController::class, 'childWarnings'])->name('child.warnings');
+    Route::get('/child/{child}/excuses', [App\Http\Controllers\ParentController::class, 'childExcuses'])->name('child.excuses');
+    
+    // Calendar
+    Route::get('/calendar', [App\Http\Controllers\ParentController::class, 'calendar'])->name('calendar');
+    Route::get('/calendar/data', [App\Http\Controllers\ParentController::class, 'calendarData'])->name('calendar.data');
+    Route::get('/calendar/search-invitees', [App\Http\Controllers\ParentController::class, 'searchInvitees'])->name('calendar.search-invitees');
+    Route::post('/calendar/meetings', [App\Http\Controllers\ParentController::class, 'storeMeeting'])->name('calendar.meetings.store');
+    
+    // Messages
+    Route::resource('messages', App\Http\Controllers\MessageController::class)->only(['index', 'create', 'store', 'show']);
+});
+
 // Teacher Routes (Teachers only)
 Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\TeacherController::class, 'index'])->name('dashboard');
@@ -184,6 +205,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/attendance', [App\Http\Controllers\TeacherController::class, 'attendance'])->name('attendance');
     Route::get('/attendance/preview-pdf', [App\Http\Controllers\TeacherController::class, 'previewAttendancePdf'])->name('attendance.preview');
     Route::get('/attendance/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportAttendancePdf'])->name('attendance.pdf');
+    Route::get('/attendance/export-csv', [App\Http\Controllers\TeacherController::class, 'exportAttendanceCsv'])->name('attendance.csv');
     Route::post('/attendance/{attendance}/excuse', [App\Http\Controllers\TeacherController::class, 'excuseAttendance'])->name('attendance.excuse');
     Route::post('/attendance/{attendance}/override', [App\Http\Controllers\TeacherController::class, 'overrideAttendance'])->name('attendance.override');
     Route::post('/corrections/{correction}', [App\Http\Controllers\AttendanceCorrectionController::class, 'update'])->name('teacher.corrections.update');
@@ -194,6 +216,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/student-notes', [App\Http\Controllers\TeacherController::class, 'storeStudentNote'])->name('notes.store');
     Route::delete('/student-notes/{note}', [App\Http\Controllers\TeacherController::class, 'destroyStudentNote'])->name('notes.destroy');
     Route::get('/students/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportStudentsPdf'])->name('students.pdf');
+    Route::get('/students/export-csv', [App\Http\Controllers\TeacherController::class, 'exportStudentsCsv'])->name('students.csv');
     Route::get('/student/{student}', [App\Http\Controllers\TeacherController::class, 'studentDetail'])->name('student');
     
     // Absent Report
