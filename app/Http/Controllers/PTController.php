@@ -45,12 +45,6 @@ class PTController extends Controller
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
             $userData['section'] = $request->section;
-        } elseif ($request->role === 'teacher') {
-            $userData['employee_id'] = $request->employee_id;
-            // Use custom department if "Other" was selected, otherwise use the selected department
-            $userData['department'] = $request->department === 'Other' ? $request->custom_department : $request->department;
-            $userData['position'] = $request->position;
-            $userData['specialization'] = $request->specialization;
         }
 
         /** @var \App\Models\User $user */

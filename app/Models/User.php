@@ -39,6 +39,7 @@ class User extends Authenticatable
     'guardian_email',
     'email',
     'password',
+    'must_change_password',
     'role',
     'profile_image',
     'phone',

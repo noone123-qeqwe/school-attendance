@@ -15,8 +15,8 @@
         <i class="bi bi-qr-code"></i>
         <span>QR</span>
     </a>
-    <a href="{{ route('admin.settings') }}" class="mbn-item {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
-        <i class="bi bi-gear-fill"></i>
-        <span>Settings</span>
+    <a href="javascript:void(0)" class="mbn-item" onclick="openMoreSheet()">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+        <span>More</span>
     </a>
 </nav>

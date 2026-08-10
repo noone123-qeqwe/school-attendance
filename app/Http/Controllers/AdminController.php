@@ -1043,6 +1043,7 @@ class AdminController extends Controller
             'position'    => $request->position,
             'password'    => Hash::make($request->password),
             'role'        => 'teacher',
+            'must_change_password' => true,
             'email_verified_at' => now(),
         ]);
 

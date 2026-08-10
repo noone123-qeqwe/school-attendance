@@ -546,6 +546,147 @@
         @else
             @include('layouts.mbn.student')
         @endif
+
+        <!-- More Bottom Sheet -->
+        <div class="more-sheet-overlay" id="moreSheetOverlay" onclick="closeMoreSheet()"></div>
+        <div class="more-sheet" id="moreSheet">
+            <div class="more-sheet-handle"></div>
+            <div class="more-sheet-header">
+                <span class="more-sheet-title">More</span>
+                <button class="more-sheet-close" onclick="closeMoreSheet()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="more-sheet-grid" id="moreSheetContent">
+                @if(Auth::user()->isAdmin())
+                    <a href="{{ route('admin.teachers') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-workspace"></i></div>
+                        <span class="more-sheet-item-label">Teachers</span>
+                    </a>
+                    <a href="{{ route('admin.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
+                        <span class="more-sheet-item-label">Calendar</span>
+                    </a>
+                    <a href="{{ route('admin.departments.index') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-building"></i></div>
+                        <span class="more-sheet-item-label">Departments</span>
+                    </a>
+                    <a href="{{ route('admin.sections.index') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                        <span class="more-sheet-item-label">Sections</span>
+                    </a>
+                    <a href="{{ route('admin.subjects') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-book-half"></i></div>
+                        <span class="more-sheet-item-label">Subjects</span>
+                    </a>
+                    <a href="{{ route('admin.excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
+                        <span class="more-sheet-item-label">Excuses</span>
+                    </a>
+                    <a href="{{ route('admin.profile') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
+                        <span class="more-sheet-item-label">Profile</span>
+                    </a>
+                    <a href="{{ route('admin.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
+                        <span class="more-sheet-item-label">Notifications</span>
+                    </a>
+                @elseif(Auth::user()->isTeacher())
+                    <a href="{{ route('teacher.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
+                        <span class="more-sheet-item-label">Calendar</span>
+                    </a>
+                    <a href="{{ route('teacher.subjects') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-qr-code-scan"></i></div>
+                        <span class="more-sheet-item-label">QR / Subjects</span>
+                    </a>
+                    <a href="{{ route('teacher.reports') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                        <span class="more-sheet-item-label">Reports</span>
+                    </a>
+                    <a href="{{ route('teacher.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
+                        <span class="more-sheet-item-label">Notifications</span>
+                    </a>
+                    <a href="{{ route('teacher.students') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-people-fill"></i></div>
+                        <span class="more-sheet-item-label">Students</span>
+                    </a>
+                    <a href="{{ route('teacher.attendance') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+                        <span class="more-sheet-item-label">Attendance</span>
+                    </a>
+                @elseif(Auth::user()->isParent())
+                    <a href="{{ route('parent.link.form') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-link-45deg"></i></div>
+                        <span class="more-sheet-item-label">Link Child</span>
+                    </a>
+                    <a href="{{ route('parent.excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
+                        <span class="more-sheet-item-label">Excuses</span>
+                    </a>
+                @else
+                    <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
+                        <span class="more-sheet-item-label">Calendar</span>
+                    </a>
+                    <a href="{{ route('notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
+                        <span class="more-sheet-item-label">Notifications</span>
+                    </a>
+                    <a href="{{ route('attendance.records') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-data-fill"></i></div>
+                        <span class="more-sheet-item-label">Records</span>
+                    </a>
+                    <a href="{{ route('settings') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
+                        <span class="more-sheet-item-label">Settings</span>
+                    </a>
+                @endif
+            </div>
+        </div>
+        <script>
+        function openMoreSheet() {
+            document.getElementById('moreSheetOverlay').classList.add('show');
+            document.getElementById('moreSheet').classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeMoreSheet() {
+            document.getElementById('moreSheetOverlay').classList.remove('show');
+            document.getElementById('moreSheet').classList.remove('open');
+            document.body.style.overflow = '';
+        }
+        // Swipe-down to dismiss
+        (function() {
+            const sheet = document.getElementById('moreSheet');
+            if (!sheet) return;
+            let startY = 0, currentY = 0, isDragging = false;
+            sheet.addEventListener('touchstart', function(e) {
+                if (sheet.scrollTop > 0) return;
+                startY = e.touches[0].clientY;
+                isDragging = true;
+            }, { passive: true });
+            sheet.addEventListener('touchmove', function(e) {
+                if (!isDragging) return;
+                currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                if (diff > 0) {
+                    sheet.style.transform = 'translateY(' + diff + 'px)';
+                    sheet.style.transition = 'none';
+                }
+            }, { passive: true });
+            sheet.addEventListener('touchend', function() {
+                if (!isDragging) return;
+                isDragging = false;
+                const diff = currentY - startY;
+                sheet.style.transition = '';
+                if (diff > 80) {
+                    closeMoreSheet();
+                } else {
+                    sheet.style.transform = '';
+                }
+                sheet.style.transform = '';
+            });
+        })();
+        </script>
     @endauth
     @auth
         <x-command-palette />
@@ -580,5 +721,45 @@
             });
         }
     </script>
+    @auth
+    <script>
+        // Idle Timeout (15 minutes = 900,000 ms)
+        let idleTime = 0;
+        const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+        
+        function resetIdleTimer() {
+            idleTime = 0;
+        }
+
+        // Increment idle time every second
+        const idleInterval = setInterval(() => {
+            idleTime += 1000;
+            if (idleTime >= IDLE_TIMEOUT_MS) {
+                clearInterval(idleInterval);
+                // Trigger logout
+                const logoutForm = document.createElement('form');
+                logoutForm.method = 'POST';
+                logoutForm.action = '{{ route("logout") }}';
+                
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = '_token';
+                csrfInput.value = '{{ csrf_token() }}';
+                
+                logoutForm.appendChild(csrfInput);
+                document.body.appendChild(logoutForm);
+                logoutForm.submit();
+            }
+        }, 1000);
+
+        // Reset timer on any interaction
+        window.onload = resetIdleTimer;
+        window.onmousemove = resetIdleTimer;
+        window.onmousedown = resetIdleTimer;
+        window.ontouchstart = resetIdleTimer;
+        window.onclick = resetIdleTimer;
+        window.onkeydown = resetIdleTimer;
+    </script>
+    @endauth
 </body>
 </html>

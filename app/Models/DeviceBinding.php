@@ -9,6 +9,7 @@ class DeviceBinding extends Model
     protected $fillable = [
         'user_id',
         'device_hash',
+        'device_name',
         'session_id',
         'user_agent',
         'ip_address',

@@ -50,6 +50,11 @@ class RecoveryCodeController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        // Bind device on recovery login (same as password login)
+        if ($user->isStudent()) {
+            app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+        }
+
         return redirect()->to($user->isAdmin() ? route('admin.dashboard') : route('home'));
     }
 }

@@ -108,7 +108,7 @@
     <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
         <div class="d-flex align-items-center gap-3">
-            <div style="font-size: 3.5rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(207,164,111,0.3));">🎓</div>
+            <div class="d-none d-md-block" style="font-size: 3.5rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(207,164,111,0.3));">🎓</div>
             <div>
                 <div style="color: var(--gold); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">{{ $greeting }}</div>
                 <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 5vw, 2.2rem); line-height: 1.1;">{{ Auth::user()->name }}</h1>
@@ -124,9 +124,16 @@
                         <span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);"><i class="bi bi-fire"></i> {{ $totalPresent }} Class Streak</span>
                     </div>
                 @endif
+                <!-- Mobile-only compact CTA -->
+                <div class="d-md-none mt-3">
+                    <a href="{{ route('excuses') }}" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(207,164,111,0.12); color: #cfa46f; border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 8px 16px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
+                        <i class="bi bi-envelope-paper-fill"></i> Submit Excuse
+                    </a>
+                </div>
             </div>
         </div>
-        <div class="d-flex flex-column gap-3" style="min-width: 250px;">
+        <!-- Desktop: Clock + CTA (hidden on mobile) -->
+        <div class="d-none d-md-flex flex-column gap-3" style="min-width: 250px;">
             <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
                 <div style="color: var(--gold); font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; font-variant-numeric: tabular-nums;">
                     <i class="bi bi-clock"></i> <span id="studentClock">{{ now()->format('h:i A') }}</span>

@@ -1,7 +1,7 @@
 <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
     <a href="{{ route('teacher.dashboard') }}" class="mbn-item {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}">
         <i class="bi bi-grid-fill"></i>
-        <span>Dashboard</span>
+        <span>Home</span>
     </a>
     <a href="{{ route('teacher.classroom.index') }}" class="mbn-item {{ request()->routeIs('teacher.classroom*') ? 'active' : '' }}">
         <i class="bi bi-journal-album"></i>
@@ -15,8 +15,8 @@
         <i class="bi bi-file-text-fill"></i>
         <span>Excuses</span>
     </a>
-    <a href="{{ route('teacher.profile') }}" class="mbn-item {{ request()->routeIs('teacher.profile') ? 'active' : '' }}">
-        <i class="bi bi-person-fill"></i>
-        <span>Profile</span>
+    <a href="javascript:void(0)" class="mbn-item" onclick="openMoreSheet()">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+        <span>More</span>
     </a>
 </nav>

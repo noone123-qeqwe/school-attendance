@@ -26,6 +26,12 @@
             <a href="{{ route('teacher.qr', $subject->code) }}" class="btn btn-primary" style="background: var(--gold); color: #fff; border: none; font-weight: 600;">
                 <i class="bi bi-qr-code-scan"></i> Start QR Attendance
             </a>
+            <form action="{{ route('teacher.classroom.markAllPresent', $subject->code) }}" method="POST" style="display:inline;" onsubmit="return confirm('Mark all students present for today?');">
+                @csrf
+                <button type="submit" class="btn btn-primary" style="background: #10b981; color: #fff; border: none; font-weight: 600;">
+                    <i class="bi bi-check2-all"></i> Mark All Present (Today)
+                </button>
+            </form>
             <a href="{{ route('teacher.subjects.edit', $subject->id) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
                 <i class="bi bi-pencil-square"></i> Edit
             </a>

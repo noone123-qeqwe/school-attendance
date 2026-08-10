@@ -46,6 +46,8 @@ Route::middleware('guest')->group(function () {
 // Authenticated Routes (Protected) - Shared
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [PTController::class, 'logout'])->name('logout');
+    Route::get('/password/change', [App\Http\Controllers\HomeController::class, 'showPasswordChangeForm'])->name('password.change.form');
+    Route::post('/password/change', [App\Http\Controllers\HomeController::class, 'submitPasswordChange'])->name('password.change.submit');
 });
 
 // Authenticated Routes (Protected) - Student Routes
@@ -178,6 +180,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/classroom', [App\Http\Controllers\TeacherController::class, 'classroomIndex'])->name('classroom.index');
     Route::get('/classroom/{subjectCode}', [App\Http\Controllers\TeacherController::class, 'classroomShow'])->name('classroom.show');
     Route::post('/classroom/{subjectCode}/attendance', [App\Http\Controllers\TeacherController::class, 'classroomStoreAttendance'])->name('classroom.attendance.store');
+    Route::post('/classroom/{subjectCode}/mark-all-present', [App\Http\Controllers\TeacherController::class, 'markAllPresent'])->name('classroom.markAllPresent');
 
 
 

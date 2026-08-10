@@ -158,6 +158,11 @@ class WebAuthnController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
         session()->forget(["webauthn_login_user_id"]);
+
+        // Bind device on WebAuthn login too (same as password login)
+        if ($user->isStudent()) {
+            app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+        }
         
         return response()->json(["success" => true, "redirect" => $user->isAdmin() ? route("admin.dashboard") : route("home")]);
     }

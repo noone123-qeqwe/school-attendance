@@ -14,10 +14,29 @@ use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 
 class HomeController extends Controller
 {
+    public function showPasswordChangeForm()
+    {
+        return view('auth.force-change-password');
+    }
+
+    public function submitPasswordChange(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = Auth::user();
+        $user->password = Hash::make($request->password);
+        $user->must_change_password = false;
+        $user->save();
+
+        return redirect()->route('home')->with('success', 'Password updated successfully. Welcome!');
+    }
    public function index()
 {
     $user = Auth::user();

@@ -15,12 +15,8 @@
         <i class="bi bi-file-text-fill"></i>
         <span>Excuses</span>
     </a>
-    <a href="{{ route('student.calendar') }}" class="mbn-item {{ request()->routeIs('student.calendar') ? 'active' : '' }}">
-        <i class="bi bi-calendar-event-fill"></i>
-        <span>Calendar</span>
-    </a>
-    <a href="{{ route('settings') }}" class="mbn-item {{ request()->routeIs('settings') ? 'active' : '' }}">
-        <i class="bi bi-person-fill"></i>
-        <span>Profile</span>
+    <a href="javascript:void(0)" class="mbn-item" onclick="openMoreSheet()">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+        <span>More</span>
     </a>
 </nav>

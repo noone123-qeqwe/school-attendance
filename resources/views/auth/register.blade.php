@@ -166,7 +166,7 @@
 
         /* Role Selector Cards */
         .role-selector {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;
         }
         .role-card {
             background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
@@ -386,11 +386,6 @@
                                 <span>Student</span>
                             </label>
                             <label class="role-card">
-                                <input type="radio" name="role" value="teacher" style="display:none;" onchange="toggleFields()" {{ old('role')=='teacher'?'checked':'' }}>
-                                <i class="bi bi-person-video3"></i>
-                                <span>Teacher</span>
-                            </label>
-                            <label class="role-card">
                                 <input type="radio" name="role" value="parent" style="display:none;" onchange="toggleFields()" {{ old('role')=='parent'?'checked':'' }}>
                                 <i class="bi bi-people"></i>
                                 <span>Parent</span>
@@ -403,7 +398,7 @@
                             <div id="student-fields" style="display:none;">
                                 <div class="form-floating-custom">
                                     <input type="text" name="student_number" id="student_number" placeholder=" " maxlength="7" value="{{ old('student_number') }}">
-                                    <label for="student_number">Student ID (7 characters)</label>
+                                    <label for="student_number">Student ID</label>
                                 </div>
                                 <div class="row g-3 mb-3">
                                     <div class="col-7">
@@ -436,29 +431,6 @@
                                     <i class="bi bi-chevron-down select-arrow"></i>
                                 </div>
 
-                            </div>
-
-                            <!-- Teacher Specific -->
-                            <div id="teacher-fields" style="display:none;">
-                                <div class="form-floating-custom">
-                                    <input type="text" name="employee_id" id="employee_id" placeholder=" " value="{{ old('employee_id') }}">
-                                    <label for="employee_id">Employee ID (Optional)</label>
-                                </div>
-                                <div class="form-floating-custom">
-                                    <select name="department" id="department" onchange="toggleCustomDept()">
-                                        <option value="" disabled selected></option>
-                                        <option value="Computer Science" {{ old('department')=='Computer Science'?'selected':'' }}>Computer Science</option>
-                                        <option value="Information Technology" {{ old('department')=='Information Technology'?'selected':'' }}>Information Technology</option>
-                                        <option value="Mathematics" {{ old('department')=='Mathematics'?'selected':'' }}>Mathematics</option>
-                                        <option value="Other" {{ (old('department')=='Other' || old('custom_department'))?'selected':'' }}>Other (Specify)</option>
-                                    </select>
-                                    <label for="department">Department</label>
-                                    <i class="bi bi-chevron-down select-arrow"></i>
-                                </div>
-                                <div class="form-floating-custom" id="custom-dept-wrapper" style="display:{{ (old('department')=='Other' || old('custom_department')) ? 'block' : 'none' }};">
-                                    <input type="text" name="custom_department" id="custom_department" placeholder=" " value="{{ old('custom_department') }}">
-                                    <label for="custom_department">Specify Department</label>
-                                </div>
                             </div>
                         </div>
 
@@ -561,35 +533,23 @@
             const role = document.querySelector('input[name="role"]:checked')?.value;
             const dynamicFields = document.getElementById('dynamic-fields');
             const studentFields = document.getElementById('student-fields');
-            const teacherFields = document.getElementById('teacher-fields');
 
             if (!role) { dynamicFields.style.display = 'none'; return; }
             dynamicFields.style.display = 'block';
 
             if (role === 'student') {
-                studentFields.style.display = 'block'; teacherFields.style.display = 'none';
+                studentFields.style.display = 'block';
                 document.getElementById('student_number').required = true;
                 document.getElementById('course').required = true;
                 document.getElementById('year_level').required = true;
                 document.getElementById('semester').required = true;
-            } else if (role === 'teacher') {
-                studentFields.style.display = 'none'; teacherFields.style.display = 'block';
+            } else {
+                studentFields.style.display = 'none';
                 document.getElementById('student_number').required = false;
                 document.getElementById('course').required = false;
                 document.getElementById('year_level').required = false;
                 document.getElementById('semester').required = false;
-            } else {
-                studentFields.style.display = 'none'; teacherFields.style.display = 'none';
-                document.getElementById('student_number').required = false;
             }
-        }
-
-        function toggleCustomDept() {
-            const dept = document.getElementById('department').value;
-            const custom = document.getElementById('custom-dept-wrapper');
-            const input = document.getElementById('custom_department');
-            if (dept === 'Other') { custom.style.display = 'block'; input.required = true; } 
-            else { custom.style.display = 'none'; input.required = false; input.value = ''; }
         }
 
         function updateFullName() {
@@ -792,7 +752,6 @@
         // Init on load
         document.addEventListener('DOMContentLoaded', () => {
             toggleFields();
-            toggleCustomDept();
         });
     </script>
 </body>

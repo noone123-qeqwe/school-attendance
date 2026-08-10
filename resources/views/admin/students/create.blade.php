@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'Add Student')
 
 @section('content')
@@ -51,7 +51,7 @@
                 
                 <div class="col-md-6">
                     <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
-                        Student ID (7 characters) *
+                        Student ID *
                     </label>
                     <input type="text" 
                            name="student_number" 

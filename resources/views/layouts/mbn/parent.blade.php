@@ -1,15 +1,11 @@
 <nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
     <a href="{{ route('parent.dashboard') }}" class="mbn-item {{ request()->routeIs('parent.dashboard') ? 'active' : '' }}">
         <i class="bi bi-grid-fill"></i>
-        <span>Dashboard</span>
+        <span>Home</span>
     </a>
     <a href="{{ route('parent.calendar') }}" class="mbn-item {{ request()->routeIs('parent.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-event"></i>
         <span>Calendar</span>
-    </a>
-    <a href="{{ route('parent.excuses') }}" class="mbn-item {{ request()->routeIs('parent.excuses') ? 'active' : '' }}">
-        <i class="bi bi-file-earmark-text"></i>
-        <span>Excuses</span>
     </a>
     <a href="{{ route('parent.messages.index') }}" class="mbn-item {{ request()->routeIs('parent.messages.*') ? 'active' : '' }}">
         <i class="bi bi-chat-dots-fill"></i>
@@ -23,5 +19,9 @@
         @if($pUnreadNotifs > 0)<span class="mbn-badge">{{ $pUnreadNotifs > 9 ? '9+' : $pUnreadNotifs }}</span>@endif
         <i class="bi bi-bell-fill"></i>
         <span>Alerts</span>
+    </a>
+    <a href="javascript:void(0)" class="mbn-item" onclick="openMoreSheet()">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+        <span>More</span>
     </a>
 </nav>

@@ -40,10 +40,16 @@ class RegisterUserRequest extends FormRequest
     {
         $rules = [
             'name'     => 'required|string|max:255',
-            'role'     => 'required|in:student,teacher,parent',
             'email'    => 'required|email|unique:users',
             'password' => 'required|min:8|confirmed',
         ];
+
+        // Strict role validation based on the route
+        if ($this->routeIs('admin.teacher.store')) {
+            $rules['role'] = 'required|in:teacher';
+        } else {
+            $rules['role'] = 'required|in:student,parent';
+        }
 
         if ($this->role === 'student') {
             $rules['student_number'] = 'required|alpha_num|size:7|unique:users';

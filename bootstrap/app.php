@@ -25,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'dept_head'     => \App\Http\Middleware\DepartmentHeadMiddleware::class,
         ]);
 
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckPasswordChange::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'register',
         ]);
