@@ -10,7 +10,7 @@
 </div>
 
 <div class="row g-4">
-    @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as $day)
+    @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
         <div class="col-lg-12">
             <x-card title="{{ $day }}" icon="bi bi-calendar-event">
                 @if($weeklySchedule[$day]->count() > 0)

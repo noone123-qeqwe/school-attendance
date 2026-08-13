@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Backup & Restore')
 
@@ -10,9 +10,9 @@
     </div>
     
     <div style="display:flex; gap:12px;">
-        <form action="#" method="POST" style="margin:0;">
+        <form action="{{ route('backups.create') }}" method="POST" style="margin:0;">
             @csrf
-            <button type="button" class="saas-btn saas-btn-primary" onclick="alert('Backup process initiated. This may take a few moments.')">
+            <button type="submit" class="saas-btn saas-btn-primary" onclick="this.disabled=true; this.form.submit();">
                 <i class="bi bi-cloud-arrow-up"></i> Run Manual Backup
             </button>
         </form>
@@ -59,12 +59,16 @@
                         @endif
                     </td>
                     <td style="text-align:right;">
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Download">
+                        <a href="{{ route('backups.download', $backup) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Download">
                             <i class="bi bi-download"></i>
-                        </button>
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-danger);" title="Delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        </a>
+                        <form action="{{ route('backups.destroy', $backup) }}" method="POST" style="display:inline-block; margin:0;" onsubmit="return confirm('Are you sure you want to delete this backup?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-danger);" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 @empty
@@ -73,9 +77,12 @@
                         <i class="bi bi-hdd-rack saas-text-muted" style="font-size:3rem; margin-bottom:16px; display:block; opacity:0.5;"></i>
                         <div class="saas-heading" style="font-size:1.1rem; margin-bottom:8px;">No backups found</div>
                         <p class="saas-text-muted" style="margin-bottom:20px; max-width:400px; margin-inline:auto;">It's highly recommended to run a manual backup to secure your data.</p>
-                        <button class="saas-btn saas-btn-primary" onclick="alert('Backup process initiated.')">
-                            <i class="bi bi-cloud-arrow-up"></i> Run First Backup
-                        </button>
+                        <form action="{{ route('backups.create') }}" method="POST" style="margin:0; display:inline-block;">
+                            @csrf
+                            <button type="submit" class="saas-btn saas-btn-primary" onclick="this.disabled=true; this.form.submit();">
+                                <i class="bi bi-cloud-arrow-up"></i> Run First Backup
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 @endforelse

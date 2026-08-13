@@ -12,6 +12,17 @@ use Illuminate\Support\Facades\Mail;
 
 class OtpController extends Controller
 {
+    /**
+     * Get the appropriate redirect route after a security change based on user role.
+     */
+    private function roleRedirect(): string
+    {
+        $user = Auth::user();
+        if ($user->isAdmin()) return 'admin.profile';
+        if ($user->isTeacher()) return 'teacher.profile';
+        if ($user->isParent()) return 'parent.profile';
+        return 'settings'; // student
+    }
     // ─────────────────────────────────────────
     // REGISTRATION — Send OTP to verify email
     // ─────────────────────────────────────────
@@ -211,7 +222,7 @@ class OtpController extends Controller
         $otpRecord->update(['used' => true]);
         $user->update(['email' => $request->new_email]);
 
-        return redirect()->route('settings')->with('success', 'Email address updated successfully!');
+        return redirect()->route($this->roleRedirect())->with('success', 'Email address updated successfully!');
     }
 
     // ─────────────────────────────────────────
@@ -260,7 +271,7 @@ class OtpController extends Controller
         $otpRecord->update(['used' => true]);
         $user->update(['password' => Hash::make($request->password)]);
 
-        return redirect()->route('settings')->with('success', 'Password changed successfully!');
+        return redirect()->route($this->roleRedirect())->with('success', 'Password changed successfully!');
     }
 
     // ─────────────────────────────────────────

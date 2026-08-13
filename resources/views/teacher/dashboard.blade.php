@@ -63,8 +63,8 @@
                 <a href="{{ route('teacher.reports.pdf') }}" target="_blank" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
                     <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Export
                 </a>
-                <a href="{{ route('teacher.excuses.create') }}" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
-                    <i class="bi bi-calendar-x-fill me-1"></i> Leave
+                <a href="{{ route('teacher.excuse.reviews') }}" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
+                    <i class="bi bi-file-earmark-text me-1"></i> Reviews
                 </a>
             </div>
         </div>
@@ -243,12 +243,46 @@
         </div>
         @endif
         
+        <!-- Post Announcement -->
+        <div class="mb-4">
+            <x-card title="Post Announcement" icon="bi bi-megaphone-fill">
+                <form action="{{ route('teacher.announcements.store') }}" method="POST">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Target Class *</label>
+                        <select name="target_id" class="form-select" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                            <option value="">Select a class...</option>
+                            @foreach($teacherSubjects as $sub)
+                                <option value="{{ $sub->id }}" style="color: #000;">{{ $sub->name }} ({{ $sub->code }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Title *</label>
+                        <input type="text" name="title" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Message *</label>
+                        <textarea name="content" class="form-control" rows="3" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label" style="font-weight: 600; color: #b39b82;">Schedule For (Optional)</label>
+                        <input type="datetime-local" name="scheduled_for" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" style="background: var(--gold); border: none; font-weight: 600; color: #fff;">
+                        <i class="bi bi-send-fill"></i> Post Announcement
+                    </button>
+                </form>
+            </x-card>
+        </div>
+        
     </div>
 </div>
 
 @endsection
 
 @section('scripts')
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <style>
     .fc-theme-standard td, .fc-theme-standard th {
         border-color: rgba(255,255,255,0.06) !important;
@@ -372,7 +406,7 @@ new Chart(ctx, {
 document.addEventListener('DOMContentLoaded', function() {
     var skelStats = document.getElementById('skelStats');
     var realStats = document.getElementById('realStats');
-    if (skelStats && realStats) { skelStats.style.display = 'none'; realStats.style.display = ''; }
+    if (skelStats && realStats) { skelStats.style.display = 'none'; realStats.style.display = 'grid'; }
 });
 
 // Real-time clock
@@ -449,7 +483,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     schoolCalendar.render();
     updateCalendarTitle();
-});}
+});
 
 function updateCalendarTitle() {
     if(schoolCalendar) {

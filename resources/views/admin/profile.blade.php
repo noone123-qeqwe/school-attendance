@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'My Profile')
 
 @section('content')
@@ -236,8 +236,50 @@
             </div>
             <div class="adm-info-card-body" style="padding-top:16px;">
 
+                <!-- Change Email via OTP -->
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
+                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Email Address</div>
+                    
+                    <div id="admEmailStep1">
+                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,235,190,0.04);border-radius:10px;border:1px solid rgba(255,215,145,0.12);margin-bottom:12px;">
+                            <i class="bi bi-envelope-fill" style="color:#b39b82;"></i>
+                            <span style="font-size:.875rem;font-weight:600;color:#f3e7cd;">{{ $user->email }}</span>
+                        </div>
+                        <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
+                            An OTP will be sent to your <strong>current email</strong> to verify it's you before changing.
+                        </p>
+                        <button type="button" onclick="admRequestEmailOtp()" id="admSendEmailOtpBtn" class="adm-save-btn">
+                            <i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email
+                        </button>
+                    </div>
+
+                    <div id="admEmailStep2" style="display:none;">
+                        <div style="background:rgba(255,235,190,0.06);border:1px solid rgba(255,215,145,0.12);color:#f3e7cd;border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
+                            <i class="bi bi-envelope-check me-2"></i>OTP sent to <strong>{{ $user->email }}</strong>
+                        </div>
+                        <form action="{{ route('otp.email.change') }}" method="POST">
+                            @csrf
+                            <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Enter OTP</label>
+                            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                                @for($j=1;$j<=6;$j++)
+                                <input type="text" class="adm-email-otp-digit" maxlength="1" inputmode="numeric" id="aed{{$j}}" style="width:42px;height:48px;border-radius:9px;border:1.5px solid rgba(255,215,145,0.12);font-size:1.2rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.04);outline:none;transition:all .2s;">
+                                @endfor
+                            </div>
+                            <input type="hidden" name="otp" id="admEmailOtpHidden">
+                            <div class="mb-3">
+                                <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Email Address</label>
+                                <input type="email" name="new_email" class="adm-form-input" placeholder="newemail@example.com" required>
+                            </div>
+                            <div style="display:flex;gap:10px;">
+                                <button type="button" onclick="admCancelEmailOtp()" style="padding:11px 20px;background:rgba(255,235,190,0.06);color:#f3e7cd;border:1.5px solid rgba(255,215,145,0.12);border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
+                                <button type="submit" class="adm-save-btn" style="flex:1;" onclick="admCollectEmailOtp()"><i class="bi bi-check2 me-2"></i>Change Email</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 <!-- OTP Password Change -->
-                <div>
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
                     <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Change Password</div>
                     <div id="admOtpStep1">
                         <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
@@ -281,6 +323,27 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Recovery Codes -->
+                <div>
+                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Recovery Codes</div>
+                    <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
+                        Recovery codes can be used to log in if you lose access to your email or fingerprint.
+                    </p>
+                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="adm-save-btn" style="background:linear-gradient(135deg,#eab308,#ca8a04);border-color:#ca8a04;color:white;">
+                        <i class="bi bi-key-fill me-2"></i>Generate Recovery Codes
+                    </button>
+                    
+                    <div id="recoveryCodesList" style="display:none;margin-top:16px;background:rgba(255,235,190,0.05);border:1px solid rgba(255,215,145,0.12);border-radius:10px;padding:16px;">
+                        <div style="font-size:.875rem;font-weight:600;color:#f87171;margin-bottom:12px;">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Save these codes in a safe place. They will not be shown again.
+                        </div>
+                        <div id="codesContainer" style="display:flex;flex-wrap:wrap;gap:10px;">
+                            <!-- Codes will be injected here -->
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -335,6 +398,94 @@ function admCancelOtp() {
     document.getElementById('admOtpStep1').style.display = 'block';
     document.getElementById('admOtpStep2').style.display = 'none';
     admDigits.forEach(d => d.value = '');
+}
+
+// Admin Email OTP
+const admEmailDigits = document.querySelectorAll('.adm-email-otp-digit');
+admEmailDigits.forEach((input, idx) => {
+    input.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '');
+        if (e.target.value && idx < admEmailDigits.length - 1) admEmailDigits[idx + 1].focus();
+    });
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) admEmailDigits[idx - 1].focus();
+    });
+});
+
+function admCollectEmailOtp() {
+    document.getElementById('admEmailOtpHidden').value = Array.from(admEmailDigits).map(d => d.value).join('');
+}
+
+function admRequestEmailOtp() {
+    const btn = document.getElementById('admSendEmailOtpBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
+    fetch('{{ route("otp.email.send") }}', {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+    }).then(r => r.json()).then(data => {
+        if (data.success) {
+            document.getElementById('admEmailStep1').style.display = 'none';
+            document.getElementById('admEmailStep2').style.display = 'block';
+            if (admEmailDigits[0]) admEmailDigits[0].focus();
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
+            alert(data.message || 'Failed to send OTP.');
+        }
+    }).catch(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
+        alert('Network error. Please try again.');
+    });
+}
+
+function admCancelEmailOtp() {
+    document.getElementById('admEmailStep1').style.display = 'block';
+    document.getElementById('admEmailStep2').style.display = 'none';
+    admEmailDigits.forEach(d => d.value = '');
+}
+
+function generateRecoveryCodes() {
+    if(!confirm("Are you sure? Generating new recovery codes will invalidate all your old codes.")) return;
+    
+    const btn = document.getElementById('generateCodesBtn');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating...';
+    
+    fetch('{{ route("recovery.generate") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        if(data.success) {
+            const container = document.getElementById('codesContainer');
+            container.innerHTML = '';
+            data.codes.forEach(code => {
+                const codeEl = document.createElement('div');
+                codeEl.style.cssText = 'background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px;font-family:monospace;font-size:1.1rem;color:#f3e7cd;letter-spacing:1px;font-weight:700;';
+                codeEl.textContent = code;
+                container.appendChild(codeEl);
+            });
+            document.getElementById('recoveryCodesList').style.display = 'block';
+            alert('New recovery codes generated successfully. Please save them now.');
+        } else {
+            alert(data.message || 'Failed to generate recovery codes.');
+        }
+    })
+    .catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        alert('Network error. Please try again.');
+    });
 }
 </script>
 @endsection

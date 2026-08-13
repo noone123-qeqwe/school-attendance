@@ -3,14 +3,15 @@
         <i class="bi bi-grid-fill"></i>
         <span>Home</span>
     </a>
+    <a href="{{ route('parent.schedule') }}" class="mbn-item {{ request()->routeIs('parent.schedule') ? 'active' : '' }}">
+        <i class="bi bi-clock-fill"></i>
+        <span>Schedule</span>
+    </a>
     <a href="{{ route('parent.calendar') }}" class="mbn-item {{ request()->routeIs('parent.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-event"></i>
         <span>Calendar</span>
     </a>
-    <a href="{{ route('parent.messages.index') }}" class="mbn-item {{ request()->routeIs('parent.messages.*') ? 'active' : '' }}">
-        <i class="bi bi-chat-dots-fill"></i>
-        <span>Messages</span>
-    </a>
+
     <a href="{{ route('parent.notifications') }}" class="mbn-item {{ request()->routeIs('parent.notifications') ? 'active' : '' }}">
         @php
             $pChildIds = Auth::user()->children()->pluck('users.id');

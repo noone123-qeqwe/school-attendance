@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'Edit Teacher')
 
 @section('content')
@@ -45,6 +45,36 @@
                 </div>
                 <div class="col-12" style="margin-top:16px;">
                     <button type="submit" class="adm-btn adm-btn-primary"><i class="bi bi-save me-2"></i>Save Changes</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="adm-card" style="max-width:680px; margin-top:24px;">
+    <div class="adm-card-head" style="background-color:#fee2e2;">
+        <div class="adm-card-title" style="color:#b91c1c;">
+            <div class="adm-card-icon" style="background:#fecaca;color:#991b1b;"><i class="bi bi-key-fill"></i></div>
+            Reset Password
+        </div>
+    </div>
+    <div style="padding:24px;">
+        <p style="font-size:0.875rem; color:#64748b; margin-bottom:16px;">
+            Force a password reset for this user. They will be required to change this password upon their next login.
+        </p>
+        <form method="POST" action="{{ route('admin.user.reset_password', $teacher) }}">
+            @csrf
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
+                    <input type="password" name="password" class="adm-input" required minlength="8" style="width:100%;">
+                </div>
+                <div class="col-md-6">
+                    <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
+                    <input type="password" name="password_confirmation" class="adm-input" required minlength="8" style="width:100%;">
+                </div>
+                <div class="col-12" style="margin-top:16px;">
+                    <button type="submit" class="adm-btn" style="background-color:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="bi bi-exclamation-triangle me-2"></i>Reset Password</button>
                 </div>
             </div>
         </form>

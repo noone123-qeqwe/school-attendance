@@ -9,7 +9,7 @@ class AnnouncementController extends Controller
 {
     public function index()
     {
-        $announcements = \App\Models\Announcement::latest()->paginate(10);
+        $announcements = \App\Models\Announcement::with('author')->latest()->paginate(10);
         return view('admin.announcements.index', compact('announcements'));
     }
 }

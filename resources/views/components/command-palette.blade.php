@@ -272,7 +272,7 @@
                 { label: 'Reports', hint: 'Generate reports', icon: 'bi-bar-chart', url: '{{ route("teacher.reports") }}' },
                 { label: 'Holiday Calendar', hint: 'Holidays & events', icon: 'bi-calendar-event', url: '{{ route("teacher.calendar") }}' },
                 { label: 'Notifications', hint: 'Alerts', icon: 'bi-bell', url: '{{ route("teacher.notifications") }}' },
-                { label: 'Messages', hint: 'Send messages', icon: 'bi-envelope', url: '{{ route("teacher.messages.index") }}' },
+
                 { label: 'Profile', hint: 'My profile', icon: 'bi-person-circle', url: '{{ route("teacher.profile") }}' },
             ];
         @elseif(Auth::user()->role === 'parent')
@@ -280,7 +280,7 @@
                 { label: 'Dashboard', hint: 'Children overview', icon: 'bi-grid-fill', url: '{{ route("parent.dashboard") }}' },
                 { label: 'Calendar', hint: 'School calendar', icon: 'bi-calendar-event', url: '{{ route("parent.calendar") }}' },
                 { label: 'Excuse Letters', hint: 'Submit excuses', icon: 'bi-file-earmark-text', url: '{{ route("parent.excuses") }}' },
-                { label: 'Messages', hint: 'Teacher messages', icon: 'bi-chat-dots', url: '{{ route("parent.messages.index") }}' },
+
                 { label: 'Notifications', hint: 'Alerts', icon: 'bi-bell', url: '{{ route("parent.notifications") }}' },
                 { label: 'Link a Child', hint: 'Connect student', icon: 'bi-link-45deg', url: '{{ route("parent.link.form") }}' },
             ];

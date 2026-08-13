@@ -56,6 +56,10 @@ class Announcement extends Model
               ->orWhere(function ($q2) use ($user) {
                   $q2->where('target_audience', 'Department')
                      ->where('target_id', $user->department_id ?? 0);
+              })
+              ->orWhere(function ($q2) use ($user) {
+                  $q2->where('target_audience', 'Subject')
+                     ->whereIn('target_id', $user->enrolledSubjects()->pluck('subjects.id')->toArray() ?? []);
               });
         });
     }

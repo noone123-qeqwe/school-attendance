@@ -69,6 +69,7 @@ class TeacherController extends Controller
                 'date' => $dateKey, 'date_formatted' => Carbon::parse($dateKey)->format('M j, Y'),
                 'type_label' => 'Announcement', 'source' => 'announcement',
                 'author' => $ann->author->name ?? 'Admin',
+                'author_role' => $ann->author->role ?? 'admin',
             ];
         }
 
@@ -90,6 +91,7 @@ class TeacherController extends Controller
                 'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
                 'type_label' => 'Announcement', 'source' => 'announcement',
                 'author' => $ann->author->name ?? 'Admin',
+                'author_role' => $ann->author->role ?? 'admin',
             ]);
         }
         $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();
@@ -145,6 +147,32 @@ class TeacherController extends Controller
         $this->saveSubjectSchedules($subject, $request);
 
         return redirect()->route('teacher.classroom.index')->with('success', 'Subject added successfully.');
+    }
+
+    public function storeAnnouncement(Request $request)
+    {
+        $teacher = Auth::user();
+        
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'target_id' => 'required|exists:subjects,id',
+            'scheduled_for' => 'nullable|date',
+        ]);
+
+        // Verify teacher owns the subject
+        $subject = Subject::where('id', $request->target_id)->where('instructor_id', $teacher->id)->firstOrFail();
+
+        \App\Models\Announcement::create([
+            'title' => $request->title,
+            'content' => $request->content,
+            'target_audience' => 'Subject',
+            'target_id' => $subject->id,
+            'author_id' => $teacher->id,
+            'scheduled_for' => $request->scheduled_for,
+        ]);
+
+        return redirect()->back()->with('success', 'Announcement posted successfully.');
     }
 
     public function editSubject(Subject $subject)
@@ -208,6 +236,61 @@ class TeacherController extends Controller
 
         $subject->delete();
         return redirect()->route('teacher.classroom.index')->with('success', 'Subject deleted successfully.');
+    }
+
+    public function storeMaterial(Request $request, $subjectCode)
+    {
+        $teacher = Auth::user();
+        $subject = Subject::where('code', $subjectCode)
+            ->where('instructor_id', $teacher->id)
+            ->firstOrFail();
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'file' => 'required|file|max:10240', // Max 10MB
+        ]);
+
+        $file = $request->file('file');
+        $originalName = $file->getClientOriginalName();
+        $fileSize = $file->getSize();
+        
+        // Convert to KB/MB
+        if ($fileSize > 1048576) {
+            $formattedSize = round($fileSize / 1048576, 2) . ' MB';
+        } else {
+            $formattedSize = round($fileSize / 1024, 2) . ' KB';
+        }
+
+        $path = $file->store('materials/' . $subjectCode, 'public');
+
+        $subject->materials()->create([
+            'title' => $request->title,
+            'description' => $request->description,
+            'file_path' => $path,
+            'file_type' => $file->getClientOriginalExtension(),
+            'original_filename' => $originalName,
+            'file_size' => $formattedSize,
+        ]);
+
+        return redirect()->back()->with('success', 'Material uploaded successfully.');
+    }
+
+    public function destroyMaterial(Request $request, $subjectCode, \App\Models\SubjectMaterial $material)
+    {
+        $teacher = Auth::user();
+        $subject = Subject::where('code', $subjectCode)
+            ->where('instructor_id', $teacher->id)
+            ->firstOrFail();
+
+        if ($material->subject_id !== $subject->id) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($material->file_path);
+        $material->delete();
+
+        return redirect()->back()->with('success', 'Material deleted successfully.');
     }
 
     private function saveSubjectSchedules(Subject $subject, Request $request)
@@ -873,6 +956,21 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     // NOTIFICATIONS (Teacher-scoped)
     // ─────────────────────────────────────────
+    public function markNotificationsRead()
+    {
+        $teacher = Auth::user();
+        $subjectCodes = Subject::where('instructor_id', $teacher->id)->pluck('code');
+
+        Notification::where(function($q) use ($teacher, $subjectCodes) {
+                $q->where('sent_by', $teacher->id)
+                  ->orWhereIn('subject_code', $subjectCodes);
+            })
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json(['success' => true]);
+    }
+
     public function notifications(Request $request)
     {
         $teacher = Auth::user();
@@ -1398,6 +1496,22 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
 
+        // Handle Notification Preferences Update
+        if ($request->has('notif_email') || $request->has('notif_push') || $request->isMethod('post')) {
+            $prefs = is_string($teacher->notification_preferences) ? json_decode($teacher->notification_preferences, true) : (is_array($teacher->notification_preferences) ? $teacher->notification_preferences : []);
+            
+            // Only update if it's the notification form (it won't have name)
+            if (!$request->has('name')) {
+                $prefs['email'] = $request->has('notif_email');
+                $prefs['push'] = $request->has('notif_push');
+                
+                $teacher->notification_preferences = $prefs;
+                $teacher->save();
+                
+                return redirect()->route('teacher.profile')->with('success', 'Notification preferences updated!');
+            }
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $teacher->id,
@@ -1708,6 +1822,43 @@ class TeacherController extends Controller
         }
 
         return redirect()->route('teacher.classroom.show', $subjectCode)->with('success', "Attendance saved for {$count} student(s) on " . \Carbon\Carbon::parse($request->date)->format('M d, Y') . ".");
+    }
+
+    public function markAllPresent(Request $request, $subjectCode)
+    {
+        $teacher = Auth::user();
+        $subject = Subject::where('code', $subjectCode)
+            ->where('instructor_id', $teacher->id)
+            ->firstOrFail();
+
+        $request->validate([
+            'date' => 'required|date',
+        ]);
+
+        $students = User::where('role', 'student')
+            ->where('year_level', $subject->year_level)
+            ->where('semester', $subject->semester)
+            ->when($subject->course, fn($q) => $q->where('course', $subject->course))
+            ->get();
+
+        $count = 0;
+        foreach ($students as $student) {
+            Attendance::updateOrCreate(
+                [
+                    'user_id' => $student->id,
+                    'subject_code' => $subjectCode,
+                    'date' => $request->date,
+                ],
+                [
+                    'status' => 'Present',
+                    'excused' => false,
+                    'excuse_note' => null,
+                ]
+            );
+            $count++;
+        }
+
+        return redirect()->route('teacher.classroom.show', $subjectCode)->with('success', "Marked all {$count} student(s) present for " . \Carbon\Carbon::parse($request->date)->format('M d, Y') . ".");
     }
 
     public function exportStudentsCsv(Request $request)

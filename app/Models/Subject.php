@@ -32,6 +32,11 @@ class Subject extends Model
         return $this->hasMany(Schedule::class);
     }
 
+    public function materials()
+    {
+        return $this->hasMany(SubjectMaterial::class);
+    }
+
     public function enrolledStudents()
     {
         return $this->belongsToMany(User::class, 'enrollments', 'subject_id', 'user_id')
@@ -46,10 +51,19 @@ class Subject extends Model
     {
         $explicit = $this->enrolledStudents()->get();
         
-        $implicit = User::where('role', 'student')
+        $query = User::where('role', 'student')
             ->where('year_level', $this->year_level)
-            ->where('semester', $this->semester)
-            ->get();
+            ->where('semester', $this->semester);
+            
+        if (!empty($this->course)) {
+            $query->where('course', $this->course);
+        }
+        
+        if (!empty($this->section)) {
+            $query->where('section', $this->section);
+        }
+            
+        $implicit = $query->get();
             
         return $explicit->merge($implicit)->unique('id')->values();
     }

@@ -123,13 +123,7 @@ class AdminController extends Controller
         return view('admin.early-warnings', compact('warnings'));
     }
 
-    public function exportEarlyWarningsExcel()
-    {
-        return \Maatwebsite\Excel\Facades\Excel::download(
-            new \App\Exports\EarlyWarningsExport, 
-            'early_warnings_' . now()->format('Y_m_d') . '.xlsx'
-        );
-    }
+
 
     // ─────────────────────────────────────────
     // STUDENT MANAGEMENT
@@ -152,55 +146,7 @@ class AdminController extends Controller
         return view('admin.students.index', compact('students'));
     }
 
-    public function importStudents(Request $request)
-    {
-        $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
-        ]);
 
-        $file = $request->file('csv_file');
-        
-        $handle = fopen($file->getRealPath(), 'r');
-        $header = fgetcsv($handle); // Assuming first row is header
-        
-        if (!$header || count($header) < 5) {
-            fclose($handle);
-            return back()->with('error', 'Invalid CSV format. Please ensure headers are correct (name, email, student_number, year_level, section).');
-        }
-
-        $imported = 0;
-        while (($row = fgetcsv($handle)) !== false) {
-            if (count($row) < 5) continue;
-            
-            // Expected columns: Name, Email, Student Number, Year Level, Section
-            $name = trim($row[0]);
-            $email = trim($row[1]);
-            $studentNumber = trim($row[2]);
-            $yearLevel = trim($row[3]);
-            $section = trim($row[4]);
-            
-            if (empty($name) || empty($email)) continue;
-            
-            // Skip if user already exists
-            if (User::where('email', $email)->orWhere('student_number', $studentNumber)->exists()) {
-                continue;
-            }
-
-            User::create([
-                'name' => $name,
-                'email' => $email,
-                'student_number' => $studentNumber,
-                'year_level' => $yearLevel,
-                'section' => $section,
-                'role' => 'student',
-                'password' => Hash::make('password'), // Default password
-            ]);
-            $imported++;
-        }
-        fclose($handle);
-
-        return back()->with('success', "Successfully imported {$imported} students.");
-    }
 
     public function studentDetail(User $student)
     {
@@ -288,68 +234,7 @@ class AdminController extends Controller
         return back()->with('success', "Warning sent to {$student->name}.");
     }
 
-    public function createStudent()
-    {
-        return view('admin.students.create');
-    }
-    public function storeStudent(RegisterUserRequest $request)
-    {
-        try {
 
-            // Check email verification
-            $verifiedEmail = session('admin_reg_email_verified');
-            if (!$verifiedEmail || $verifiedEmail !== $request->email) {
-                return back()
-                    ->withInput()
-                    ->with('error', 'Please verify the student email address using OTP before adding the student.');
-            }
-
-            // Create the student
-            $student = User::create([
-                'name'           => trim($request->name),
-                'student_number' => $request->student_number,
-                'course'         => $request->course,
-                'year_level'     => (int) $request->year_level,
-                'semester'       => (int) $request->semester,
-                'email'          => strtolower(trim($request->email)),
-                'password'       => Hash::make($request->password),
-                'role'           => 'student',
-                'email_verified_at' => now(), // Mark as verified since admin verified it
-            ]);
-
-            // Send welcome notification to the student
-            Notification::create([
-                'user_id' => $student->id,
-                'sent_by' => auth()->id(),
-                'type' => 'welcome',
-                'message' => "🎉 Welcome to the Smart Classroom Attendance System! Your account has been created successfully. You can now log in using your student number ({$student->student_number}) and the password provided by your administrator."
-            ]);
-
-            // Clear verification session data
-            session()->forget([
-                'admin_reg_email_verified', 
-                'admin_reg_otp_code', 
-                'admin_reg_otp_email', 
-                'admin_reg_otp_expires'
-            ]);
-
-            return redirect()
-                ->route('admin.students')
-                ->with('success', "Student '{$student->name}' (#{$student->student_number}) has been added successfully.");
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withInput()->withErrors($e->errors());
-        } catch (\Exception $e) {
-            \Log::error('Admin add student error: ' . $e->getMessage(), [
-                'request_data' => $request->except('password'),
-                'admin_id' => auth()->id()
-            ]);
-            
-            return back()
-                ->withInput()
-                ->with('error', 'An error occurred while adding the student. Please try again.');
-        }
-    }
 
     public function editStudent(User $student)
     {
@@ -368,52 +253,7 @@ class AdminController extends Controller
         return redirect()->route('admin.students')->with('success', 'Student deleted.');
     }
 
-    public function exportStudentsPdf(Request $request)
-    {
-        $query = User::where('role', 'student')->with('attendances');
 
-        // Apply same filters as students method
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
-        if ($request->filled('course'))     $query->where('course', $request->course);
-        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
-        if ($request->filled('semester'))   $query->where('semester', $request->semester);
-
-        $students = $query->orderBy('year_level')->orderBy('course')->orderBy('name')->get();
-        $filters = $request->only(['search', 'course', 'year_level', 'semester']);
-        
-        $pdf = Pdf::loadView('admin.students.pdf', compact('students', 'filters'));
-        
-        $filename = 'students-list-' . now()->format('Y-m-d-H-i-s') . '.pdf';
-        return $pdf->download($filename);
-    }
-
-    public function previewStudentsPdf(Request $request)
-    {
-        $query = User::where('role', 'student')->with('attendances');
-
-        // Apply same filters as students method
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('student_number', 'like', "%{$search}%");
-            });
-        }
-        if ($request->filled('course'))     $query->where('course', $request->course);
-        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
-        if ($request->filled('semester'))   $query->where('semester', $request->semester);
-
-        $students = $query->orderBy('year_level')->orderBy('course')->orderBy('name')->get();
-        $filters = $request->only(['search', 'course', 'year_level', 'semester']);
-        
-        return view('admin.students.preview', compact('students', 'filters'));
-    }
 
     // ─────────────────────────────────────────
     // SUBJECT MANAGEMENT
@@ -438,60 +278,7 @@ class AdminController extends Controller
         return view('admin.subjects.index', compact('subjects'));
     }
 
-    public function exportSubjectsPdf(Request $request)
-    {
-        $query = Subject::query()->with('schedules');
 
-        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
-        if ($request->filled('semester'))   $query->where('semester', $request->semester);
-        if ($request->filled('course'))     $query->where('course', $request->course);
-        if ($request->filled('search')) {
-            $query->where(fn($q) => $q
-                ->where('name','like','%'.$request->search.'%')
-                ->orWhere('code','like','%'.$request->search.'%')
-                ->orWhereHas('instructorUser', function($query) use ($request) {
-                    $query->where('name', 'like', '%'.$request->search.'%');
-                })
-            );
-        }
-
-        $subjects = $query->orderBy('year_level')->orderBy('semester')->orderBy('code')->get();
-        $filters = $request->only(['search', 'course', 'year_level', 'semester']);
-
-        $pdf = Pdf::loadView('admin.subjects.pdf', compact('subjects', 'filters'))
-            ->setPaper('a4', 'landscape')
-            ->setOptions([
-                'isRemoteEnabled' => true,
-                'isHtml5ParserEnabled' => true,
-                'dpi' => 120,
-                'defaultFont' => 'Helvetica',
-            ]);
-
-        return $pdf->download('subjects.pdf');
-    }
-
-    public function previewSubjectsPdf(Request $request)
-    {
-        $query = Subject::query()->with('schedules');
-
-        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
-        if ($request->filled('semester'))   $query->where('semester', $request->semester);
-        if ($request->filled('course'))     $query->where('course', $request->course);
-        if ($request->filled('search')) {
-            $query->where(fn($q) => $q
-                ->where('name','like','%'.$request->search.'%')
-                ->orWhere('code','like','%'.$request->search.'%')
-                ->orWhereHas('instructorUser', function($query) use ($request) {
-                    $query->where('name', 'like', '%'.$request->search.'%');
-                })
-            );
-        }
-
-        $subjects = $query->orderBy('year_level')->orderBy('semester')->orderBy('code')->get();
-        $filters = $request->only(['search', 'course', 'year_level', 'semester']);
-        
-        return view('admin.subjects.preview', compact('subjects', 'filters'));
-    }
 
     public function createSubject()
     {
@@ -860,6 +647,20 @@ class AdminController extends Controller
         return back()->with('success', 'Password updated successfully!');
     }
 
+    public function resetPassword(Request $request, User $user)
+    {
+        $request->validate([
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user->update([
+            'password' => Hash::make($request->password),
+            'must_change_password' => true,
+        ]);
+
+        return back()->with('success', "Password for {$user->name} has been reset successfully.");
+    }
+
     // ─────────────────────────────────────────
     // 2FA Admin Authentication
     // ─────────────────────────────────────────
@@ -1008,6 +809,96 @@ class AdminController extends Controller
 
 
     // ─────────────────────────────────────────
+    // ADMIN MANAGEMENT
+    // ─────────────────────────────────────────
+    public function admins(Request $request)
+    {
+        $query = User::where('role', 'admin');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(fn($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+            );
+        }
+
+        $admins = $query->orderBy('name')->get();
+        return view('admin.admins.index', compact('admins'));
+    }
+
+    public function createAdmin()
+    {
+        return view('admin.admins.create');
+    }
+
+    public function storeAdmin(Request $request)
+    {
+        $request->validate([
+            'name'        => 'required|string|max:255',
+            'email'       => 'required|email|unique:users,email',
+            'password'    => 'required|string|min:8|confirmed',
+            'phone'       => 'nullable|string|max:20',
+            'department'  => 'nullable|string|max:255',
+        ]);
+
+        $admin = User::create([
+            'name'        => $request->name,
+            'email'       => $request->email,
+            'password'    => Hash::make($request->password),
+            'role'        => 'admin',
+            'phone'       => $request->phone,
+            'department'  => $request->department,
+            'must_change_password' => true,
+        ]);
+
+        return redirect()->route('admin.admins')->with('success', 'Admin created successfully.');
+    }
+
+    public function editAdmin(User $admin)
+    {
+        if ($admin->role !== 'admin') {
+            abort(404);
+        }
+        return view('admin.admins.edit', compact('admin'));
+    }
+
+    public function updateAdmin(Request $request, User $admin)
+    {
+        if ($admin->role !== 'admin') {
+            abort(404);
+        }
+
+        $request->validate([
+            'name'       => 'required|string|max:255',
+            'email'      => 'required|email|unique:users,email,' . $admin->id,
+            'phone'      => 'nullable|string|max:20',
+            'department' => 'nullable|string|max:255',
+        ]);
+
+        $admin->update($request->only([
+            'name', 'email', 'phone', 'department'
+        ]));
+
+        return redirect()->route('admin.admins')->with('success', 'Admin updated successfully.');
+    }
+
+    public function destroyAdmin(User $admin)
+    {
+        if ($admin->role !== 'admin') {
+            abort(404);
+        }
+        
+        // Prevent deleting oneself
+        if ($admin->id === Auth::id()) {
+            return redirect()->route('admin.admins')->with('error', 'You cannot delete your own account.');
+        }
+
+        $admin->delete();
+        return redirect()->route('admin.admins')->with('success', 'Admin deleted.');
+    }
+
+    // ─────────────────────────────────────────
     // TEACHER MANAGEMENT
     // ─────────────────────────────────────────
     public function teachers(Request $request)
@@ -1082,17 +973,62 @@ class AdminController extends Controller
         return redirect()->route('admin.teachers')->with('success', 'Teacher deleted.');
     }
 
-    public function exportTeachersPdf(Request $request)
+
+
+    // ─────────────────────────────────────────
+    // ─────────────────────────────────────────
+    // CORRECTION MANAGEMENT (Admin-level)
+    // ─────────────────────────────────────────
+    public function corrections(Request $request)
     {
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $pdf = Pdf::loadView('admin.teachers.pdf', compact('teachers'));
-        return $pdf->download('teachers-' . now()->format('Y-m-d') . '.pdf');
+        $query = \App\Models\AttendanceCorrection::with(['user', 'attendance.subject'])
+            ->orderBy('created_at', 'desc');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $corrections = $query->paginate(20)->withQueryString();
+        return view('admin.corrections.index', compact('corrections'));
     }
 
-    public function exportTeachersExcel(Request $request)
+    public function approveCorrection(\App\Models\AttendanceCorrection $correction)
     {
-        $filename = 'teachers_' . now()->format('Y-m-d_His') . '.xlsx';
-        return Excel::download(new \App\Exports\TeacherExport(), $filename);
+        try {
+            $correction->update([
+                'status' => 'approved',
+                'reviewed_by' => Auth::id(),
+                'reviewed_at' => now(),
+            ]);
+
+            // Update original attendance
+            $attendance = $correction->attendance;
+            if ($attendance) {
+                $attendance->status = $correction->requested_status;
+                $attendance->save();
+            }
+
+            return back()->with('success', 'Correction request approved.');
+        } catch (\Exception $e) {
+            \Log::error('Correction approval error: ' . $e->getMessage());
+            return back()->with('error', 'Error approving correction.');
+        }
+    }
+
+    public function rejectCorrection(Request $request, \App\Models\AttendanceCorrection $correction)
+    {
+        $request->validate([
+            'admin_notes' => 'required|string|max:500'
+        ]);
+
+        $correction->update([
+            'status' => 'rejected',
+            'reviewed_by' => Auth::id(),
+            'reviewed_at' => now(),
+            'admin_notes' => $request->admin_notes
+        ]);
+
+        return back()->with('success', 'Correction request rejected.');
     }
 
     // ─────────────────────────────────────────
@@ -1174,5 +1110,7 @@ class AdminController extends Controller
 
         return back()->with('success', $count . ' excuse(s) rejected.');
     }
+
+
 
 }

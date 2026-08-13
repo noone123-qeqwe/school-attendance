@@ -5,7 +5,6 @@ use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\MessageController;
 
 
 // WebAuthn login — works for both guests and authenticated users
@@ -48,6 +47,17 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/password/change', [App\Http\Controllers\HomeController::class, 'showPasswordChangeForm'])->name('password.change.form');
     Route::post('/password/change', [App\Http\Controllers\HomeController::class, 'submitPasswordChange'])->name('password.change.submit');
+
+    // Change Password via OTP (all authenticated roles)
+    Route::post('/otp/send-change', [App\Http\Controllers\OtpController::class, 'sendChangeOtp'])->middleware('throttle:3,1')->name('otp.change.send');
+    Route::post('/otp/change-password', [App\Http\Controllers\OtpController::class, 'changePassword'])->name('otp.change');
+
+    // Change Email via Email OTP (all authenticated roles)
+    Route::post('/otp/send-email-change', [App\Http\Controllers\OtpController::class, 'sendEmailChangeOtp'])->middleware('throttle:3,1')->name('otp.email.send');
+    Route::post('/otp/change-email', [App\Http\Controllers\OtpController::class, 'changeEmail'])->name('otp.email.change');
+
+    // Generate Recovery Codes
+    Route::post('/recovery/generate', [App\Http\Controllers\RecoveryCodeController::class, 'generate'])->name('recovery.generate');
 });
 
 // Authenticated Routes (Protected) - Student Routes
@@ -62,6 +72,7 @@ Route::middleware(['auth', 'student'])->group(function () {
 
     Route::get('/my-classes', [PTController::class, 'myClasses'])->name('student.classes');
     Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('student.schedule');
+    Route::get('/student/attendance-calendar', [App\Http\Controllers\HomeController::class, 'attendanceCalendar'])->name('student.attendance.calendar');
     Route::get('/student/calendar', [App\Http\Controllers\HomeController::class, 'calendar'])->name('student.calendar');
     Route::get('/student/calendar/data', [App\Http\Controllers\HomeController::class, 'calendarData'])->name('student.calendar.data');
     Route::get('/student/calendar/search-invitees', [App\Http\Controllers\HomeController::class, 'searchInvitees'])->name('student.calendar.search-invitees');
@@ -84,17 +95,6 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/excuses/general/store', [App\Http\Controllers\HomeController::class, 'storeGeneralExcuse'])->name('excuses.store_general');
     Route::get('/excuses/create/{attendance}', [App\Http\Controllers\HomeController::class, 'createExcuse'])->name('excuses.create');
     Route::post('/excuses', [App\Http\Controllers\HomeController::class, 'storeExcuse'])->name('excuses.store');
-
-    // Change Password via OTP (authenticated)
-    Route::post('/otp/send-change', [App\Http\Controllers\OtpController::class, 'sendChangeOtp'])->middleware('throttle:3,1')->name('otp.change.send');
-    Route::post('/otp/change-password', [App\Http\Controllers\OtpController::class, 'changePassword'])->name('otp.change');
-
-
-
-    // GPS Testing (for debugging)
-    // Change Email via Email OTP (authenticated)
-    Route::post('/otp/send-email-change', [App\Http\Controllers\OtpController::class, 'sendEmailChangeOtp'])->middleware('throttle:3,1')->name('otp.email.send');
-    Route::post('/otp/change-email', [App\Http\Controllers\OtpController::class, 'changeEmail'])->name('otp.email.change');
 });
 
 // Local debug helper: generate students PDF as the first teacher (development only)
@@ -168,8 +168,6 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     Route::get('/calendar/search-invitees', [App\Http\Controllers\ParentController::class, 'searchInvitees'])->name('calendar.search-invitees');
     Route::post('/calendar/meetings', [App\Http\Controllers\ParentController::class, 'storeMeeting'])->name('calendar.meetings.store');
     
-    // Messages
-    Route::resource('messages', App\Http\Controllers\MessageController::class)->only(['index', 'create', 'store', 'show']);
 });
 
 // Teacher Routes (Teachers only)
@@ -192,6 +190,8 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::put('/subjects/{subject}', [App\Http\Controllers\TeacherController::class, 'updateSubject'])->name('subjects.update');
     Route::delete('/subjects/{subject}', [App\Http\Controllers\TeacherController::class, 'destroySubject'])->name('subjects.destroy');
     Route::get('/subjects/{subjectCode}/students', [App\Http\Controllers\TeacherController::class, 'subjectStudents'])->name('subjects.students');
+    Route::post('/subjects/{subjectCode}/materials', [App\Http\Controllers\TeacherController::class, 'storeMaterial'])->name('materials.store');
+    Route::delete('/subjects/{subjectCode}/materials/{material}', [App\Http\Controllers\TeacherController::class, 'destroyMaterial'])->name('materials.destroy');
     
     // QR Attendance for Teachers
     // Specific routes must come BEFORE the parameterized route
@@ -227,6 +227,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     
     // Notifications Management
     Route::get('/notifications', [App\Http\Controllers\TeacherController::class, 'notifications'])->name('notifications');
+    Route::post('/notifications/read', [App\Http\Controllers\TeacherController::class, 'markNotificationsRead'])->name('notifications.read');
     Route::post('/notifications/{notification}/archive', [App\Http\Controllers\TeacherController::class, 'archiveNotification'])->name('notifications.archive');
     Route::post('/notifications/{notification}/unarchive', [App\Http\Controllers\TeacherController::class, 'unarchiveNotification'])->name('notifications.unarchive');
     Route::delete('/notifications/{notification}', [App\Http\Controllers\TeacherController::class, 'deleteNotification'])->name('notifications.delete');
@@ -251,9 +252,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/profile', [App\Http\Controllers\TeacherController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/image', [App\Http\Controllers\TeacherController::class, 'updateImage'])->name('profile.image');
     
-    // OTP Password Change for Teachers
-    Route::post('/otp/send-change', [App\Http\Controllers\OtpController::class, 'sendTeacherChangeOtp'])->middleware('throttle:3,1')->name('otp.change.send');
-    Route::post('/otp/change-password', [App\Http\Controllers\OtpController::class, 'changeTeacherPassword'])->name('otp.change');
+
     
     // Excuse Reviews
     Route::get('/excuse-reviews', [App\Http\Controllers\TeacherController::class, 'excuseReviews'])->name('excuse.reviews');
@@ -267,8 +266,8 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/my-excuses/create', [App\Http\Controllers\TeacherController::class, 'createExcuse'])->name('excuses.create');
     Route::post('/my-excuses', [App\Http\Controllers\TeacherController::class, 'storeExcuse'])->name('excuses.store');
 
-    // Messages
-    Route::resource('messages', MessageController::class)->only(['index', 'create', 'store', 'show']);
+    // Announcements
+    Route::post('/announcements', [App\Http\Controllers\TeacherController::class, 'storeAnnouncement'])->name('announcements.store');
 });
 
 // Guest Excuse Submission (Signed URLs)
@@ -294,15 +293,18 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     Route::get('/child/{child}/excuse/{attendance}', [App\Http\Controllers\ParentController::class, 'submitExcuse'])->name('child.excuse');
     Route::post('/excuse', [App\Http\Controllers\ParentController::class, 'storeExcuse'])->name('excuse.store');
     Route::get('/excuses', [App\Http\Controllers\ParentController::class, 'excuses'])->name('excuses');
+    Route::get('/excuses/new', [App\Http\Controllers\ParentController::class, 'createGeneralExcuse'])->name('excuses.create_general');
+    Route::post('/excuses/new', [App\Http\Controllers\ParentController::class, 'storeGeneralExcuse'])->name('excuses.store_general');
     Route::get('/excuse/{excuseSubmission}/detail', [App\Http\Controllers\ParentController::class, 'showExcuse'])->name('excuse.show');
     Route::post('/excuse/{excuseSubmission}/comment', [App\Http\Controllers\ParentController::class, 'storeExcuseComment'])->name('excuse.comment');
     Route::get('/notifications', [App\Http\Controllers\ParentController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/read', [App\Http\Controllers\ParentController::class, 'markNotificationsRead'])->name('notifications.read');
     Route::get('/calendar', [App\Http\Controllers\ParentController::class, 'calendar'])->name('calendar');
     Route::get('/calendar/data', [App\Http\Controllers\ParentController::class, 'data'])->name('calendar.data');
-
-    // Messages
-    Route::resource('messages', MessageController::class)->only(['index', 'create', 'store', 'show']);
+    Route::get('/attendance-calendar', [App\Http\Controllers\ParentController::class, 'attendanceCalendar'])->name('attendance.calendar');
+    Route::get('/schedule', [App\Http\Controllers\ParentController::class, 'schedule'])->name('schedule');
+    Route::get('/profile', [App\Http\Controllers\ParentController::class, 'profile'])->name('profile');
+    Route::post('/profile', [App\Http\Controllers\ParentController::class, 'updateProfile'])->name('profile.update');
 });
 
 // Admin Routes (Admins only)
@@ -312,23 +314,16 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
     Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware('admin.2fa');
     Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware('admin.2fa');
 
-
+    // Reset Password
+    Route::post('/user/{user}/reset-password', [App\Http\Controllers\AdminController::class, 'resetPassword'])->name('user.reset_password');
         Route::get('/dashboard', [App\Http\Controllers\AdminController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/stats', [App\Http\Controllers\AdminController::class, 'dashboardStats'])->name('dashboard.stats');
 
     // Early Warnings
     Route::get('/early-warnings', [App\Http\Controllers\AdminController::class, 'earlyWarnings'])->name('early-warnings');
-    Route::get('/early-warnings/export', [App\Http\Controllers\AdminController::class, 'exportEarlyWarningsExcel'])->name('early-warnings.export');
 
     // Student management
     Route::get('/students', [App\Http\Controllers\AdminController::class, 'students'])->name('students');
-    Route::get('/students/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewStudentsPdf'])->name('students.preview');
-    Route::get('/students/export-pdf', [App\Http\Controllers\AdminController::class, 'exportStudentsPdf'])->name('students.pdf');
-    Route::get('/student/create', [App\Http\Controllers\AdminController::class, 'createStudent'])->name('student.create');
-    Route::post('/student', [App\Http\Controllers\AdminController::class, 'storeStudent'])->name('student.store');
-    Route::post('/students/import', [App\Http\Controllers\AdminController::class, 'importStudents'])->name('students.import');
-    Route::post('/otp/send-register', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->middleware('throttle:3,1')->name('otp.register.send');
-    Route::post('/otp/verify-register', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->name('otp.register.verify');
     Route::get('/student/{student}', [App\Http\Controllers\AdminController::class, 'studentDetail'])->name('student');
     Route::post('/student/{student}/warn', [App\Http\Controllers\AdminController::class, 'sendWarning'])->name('student.warn');
     Route::get('/student/{student}/edit', [App\Http\Controllers\AdminController::class, 'editStudent'])->name('student.edit');
@@ -346,20 +341,10 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
     Route::post('/subjects/{subject}/enrollments', [App\Http\Controllers\Admin\EnrollmentController::class, 'store'])->name('enrollments.store');
     Route::delete('/subjects/{subject}/enrollments/{student}', [App\Http\Controllers\Admin\EnrollmentController::class, 'destroy'])->name('enrollments.destroy');
 
-    // QR Management
-    Route::get('/qr-management', [App\Http\Controllers\Admin\QrManagementController::class, 'index'])->name('qr');
-    Route::post('/qr-management/bulk-print', [App\Http\Controllers\Admin\QrManagementController::class, 'bulkPrint'])->name('qr.bulk-print');
 
-    Route::get('/subjects/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewSubjectsPdf'])->name('subjects.preview');
-    Route::get('/subjects/export-pdf', [App\Http\Controllers\AdminController::class, 'exportSubjectsPdf'])->name('subjects.pdf');
     Route::get('/subjects/{subject}/edit', [App\Http\Controllers\AdminController::class, 'editSubject'])->name('subjects.edit');
     Route::put('/subjects/{subject}', [App\Http\Controllers\AdminController::class, 'updateSubject'])->name('subjects.update');
     Route::delete('/subjects/{subject}', [App\Http\Controllers\AdminController::class, 'destroySubject'])->name('subjects.destroy');
-
-    // Attendance monitoring (read-only)
-    Route::get('/attendance', [App\Http\Controllers\AdminController::class, 'attendanceLogs'])->name('attendance');
-    Route::get('/attendance/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewAttendancePdf'])->name('attendance.preview');
-    Route::get('/attendance/export-pdf', [App\Http\Controllers\AdminController::class, 'exportAttendancePdf'])->name('attendance.pdf');
 
     // Holiday & Events Calendar Management (system-wide)
     Route::get('/calendar', [App\Http\Controllers\Admin\CalendarController::class, 'index'])->name('calendar');
@@ -392,13 +377,21 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
 
     // Teacher Management
     Route::get('/teachers', [App\Http\Controllers\AdminController::class, 'teachers'])->name('teachers');
-    Route::get('/teachers/export-excel', [App\Http\Controllers\AdminController::class, 'exportTeachersExcel'])->name('teachers.export');
-    Route::get('/teachers/export-pdf', [App\Http\Controllers\AdminController::class, 'exportTeachersPdf'])->name('teachers.pdf');
     Route::get('/teacher/create', [App\Http\Controllers\AdminController::class, 'createTeacher'])->name('teacher.create');
     Route::post('/teacher', [App\Http\Controllers\AdminController::class, 'storeTeacher'])->name('teacher.store');
     Route::get('/teacher/{teacher}/edit', [App\Http\Controllers\AdminController::class, 'editTeacher'])->name('teacher.edit');
     Route::put('/teacher/{teacher}', [App\Http\Controllers\AdminController::class, 'updateTeacher'])->name('teacher.update');
     Route::delete('/teacher/{teacher}', [App\Http\Controllers\AdminController::class, 'destroyTeacher'])->name('teacher.destroy');
+
+    // Admin Management
+    Route::get('/admins', [App\Http\Controllers\AdminController::class, 'admins'])->name('admins');
+    Route::get('/admin/create', [App\Http\Controllers\AdminController::class, 'createAdmin'])->name('admin.create');
+    Route::post('/admin', [App\Http\Controllers\AdminController::class, 'storeAdmin'])->name('admin.store');
+    Route::get('/admin/{admin}/edit', [App\Http\Controllers\AdminController::class, 'editAdmin'])->name('admin.edit');
+    Route::put('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'updateAdmin'])->name('admin.update');
+    Route::delete('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'destroyAdmin'])->name('admin.destroy');
+
+
 
     // Bulk Excuse Approval
     Route::post('/excuses/bulk-approve', [App\Http\Controllers\AdminController::class, 'bulkApproveExcuses'])->name('excuses.bulk.approve');
@@ -407,8 +400,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
     Route::post('/excuse/{excuseSubmission}/approve', [App\Http\Controllers\AdminController::class, 'approveExcuse'])->name('excuse.approve');
     Route::post('/excuse/{excuseSubmission}/reject', [App\Http\Controllers\AdminController::class, 'rejectExcuse'])->name('excuse.reject');
 
-    // Excel Export
-    Route::get('/attendance/export-excel', [App\Http\Controllers\AdminController::class, 'exportAttendance'])->name('attendance.export');
+
     
     // New Academic Modules (SaaS Design Expansion)
     Route::resource('departments', App\Http\Controllers\Admin\DepartmentController::class);
@@ -423,6 +415,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
         Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
         Route::get('/backups', [App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups/create', [App\Http\Controllers\Admin\BackupController::class, 'create'])->name('backups.create');
+        Route::get('/backups/{backup}/download', [App\Http\Controllers\Admin\BackupController::class, 'download'])->name('backups.download');
         Route::delete('/backups/{backup}', [App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backups.destroy');
         
         Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);

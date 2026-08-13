@@ -22,7 +22,7 @@
         <i class="bi bi-calendar-event-fill"></i>
         <span class="nav-link-text">School Calendar</span>
     </a>
-    <a href="{{ route('teacher.excuses') }}" class="nav-link {{ request()->routeIs('teacher.excuse*') ? 'active' : '' }}">
+    <a href="{{ route('teacher.excuse.reviews') }}" class="nav-link {{ request()->routeIs('teacher.excuse*') ? 'active' : '' }}">
         <i class="bi bi-file-text-fill"></i>
         <span class="nav-link-text">Excuse Submissions</span>
     </a>

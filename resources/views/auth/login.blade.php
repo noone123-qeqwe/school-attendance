@@ -488,7 +488,7 @@
             @csrf
             <div class="glass-input-wrap anim-fade-up anim-d4">
                 <i class="bi bi-person-fill g-icon"></i>
-                <input type="text" name="student_number" class="glass-input" placeholder="Student ID" required autocomplete="username">
+                <input type="text" name="identifier" class="glass-input" placeholder="Student ID or Email" required autocomplete="username">
             </div>
             <div class="glass-input-wrap mb-3 anim-fade-up anim-d5">
                 <i class="bi bi-key-fill g-icon"></i>

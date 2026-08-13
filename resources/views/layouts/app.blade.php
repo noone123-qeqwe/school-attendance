@@ -75,7 +75,14 @@
                 </div>
 
                 <div class="header-right">
-                    @php $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count(); @endphp
+                    @php
+                        if (Auth::user()->isParent()) {
+                            $childIds = Auth::user()->children()->pluck('users.id');
+                            $unreadCount = \App\Models\Notification::whereIn('user_id', $childIds)->where('is_read', false)->count();
+                        } else {
+                            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count();
+                        }
+                    @endphp
 
                     <div class="dropdown">
                         <div class="notif-btn position-relative" data-bs-toggle="dropdown" style="cursor:pointer;">
@@ -97,9 +104,16 @@
                                 </div>
                             </div>
                             @php
-                                $notifications = \App\Models\Notification::where('user_id', Auth::id())
-                                    ->active()
-                                    ->orderBy('created_at','desc')->take(8)->get();
+                                if (Auth::user()->isParent()) {
+                                    $notifications = \App\Models\Notification::with(['user', 'sender', 'subject'])
+                                        ->whereIn('user_id', $childIds)
+                                        ->active()
+                                        ->orderBy('created_at','desc')->take(8)->get();
+                                } else {
+                                    $notifications = \App\Models\Notification::where('user_id', Auth::id())
+                                        ->active()
+                                        ->orderBy('created_at','desc')->take(8)->get();
+                                }
                                 $todayNotifs = $notifications->filter(fn($n) => $n->created_at->isToday());
                                 $olderNotifs = $notifications->filter(fn($n) => !$n->created_at->isToday());
                             @endphp
@@ -122,9 +136,11 @@
                                                 @if(!$notif->is_read)
                                                 <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;"></div>
                                                 @endif
+                                                @if(!Auth::user()->isParent())
                                                 <button onclick="archiveNotif({{ $notif->id }}, this)" title="Archive" class="notif-archive-btn">
                                                     <i class="bi bi-archive-fill"></i>
                                                 </button>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -148,9 +164,11 @@
                                                 @if(!$notif->is_read)
                                                 <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;"></div>
                                                 @endif
+                                                @if(!Auth::user()->isParent())
                                                 <button onclick="archiveNotif({{ $notif->id }}, this)" title="Archive" class="notif-archive-btn">
                                                     <i class="bi bi-archive-fill"></i>
                                                 </button>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -168,7 +186,13 @@
                                 View all notifications <i class="bi bi-arrow-right ms-1"></i>
                             </a>
                             @elseif(Auth::user()->isAdmin())
-                            <!-- Admin notifications route if it exists, else hide -->
+                            <a href="{{ route('admin.notifications') }}" class="notif-view-all">
+                                View all notifications <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                            @elseif(Auth::user()->isParent())
+                            <a href="{{ route('parent.notifications') }}" class="notif-view-all">
+                                View all notifications <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
                             @else
                             <a href="{{ route('notifications') }}" class="notif-view-all">
                                 View all notifications <i class="bi bi-arrow-right ms-1"></i>
@@ -176,15 +200,7 @@
                             @endif
                         </div>
                     </div>
-                    @if(Auth::user()->isAdmin())
-                    <a href="{{ route('admin.dashboard') }}" class="role-link role-admin" title="Admin Panel">
-                        <i class="bi bi-shield-fill"></i>
-                    </a>
-                    @elseif(Auth::user()->isTeacher())
-                    <a href="{{ route('teacher.dashboard') }}" class="role-link role-teacher" title="Teacher Panel">
-                        <i class="bi bi-person-workspace"></i>
-                    </a>
-                    @endif
+
                     <div class="dropdown">
                         @php
                             $profileImageUrl = Auth::user()->profile_image ? (str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name).'&background=800000&color=fff&size=200';
@@ -212,14 +228,22 @@
                                 <span>Settings</span>
                             </a>
                             @elseif(Auth::user()->isAdmin())
-                            <!-- Admin settings if it exists -->
-                            @else
+                            <a class="fb-dropdown-item" href="{{ route('admin.profile') }}">
+                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <span>Settings</span>
+                            </a>
+                            @elseif(Auth::user()->isParent())
+                            <a class="fb-dropdown-item" href="{{ route('parent.profile') }}">
+                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <span>Settings</span>
+                            </a>
+                            @elseif(Auth::user()->isStudent())
                             <a class="fb-dropdown-item" href="{{ route('settings') }}">
                                 <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
                             </a>
                             @endif
-                            <form action="{{ route('logout') }}" method="POST" class="m-0">
+                            <form action="{{ route('logout') }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to log out?');">
                                 @csrf
                                 <button type="submit" class="fb-dropdown-item" style="color:#dc2626 !important;">
                                     <div class="fb-icon-circle" style="background:#fef2f2;color:#dc2626;"><i class="bi bi-box-arrow-right"></i></div>
@@ -337,13 +361,43 @@
         }
 
         function markAllRead() {
-            fetch('{{ route("notifications.read") }}', {
+            @if(Auth::user()->isTeacher())
+            const markReadUrl = '{{ route("teacher.notifications.read") }}';
+            fetch(markReadUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Content-Type': 'application/json'
                 }
             }).then(() => location.reload());
+            @elseif(Auth::user()->isAdmin())
+            const markReadUrl = '{{ route("admin.notifications.markAllRead") }}';
+            fetch(markReadUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => location.reload());
+            @elseif(Auth::user()->isParent())
+            const markReadUrl = '{{ route("parent.notifications.read") }}';
+            fetch(markReadUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => location.reload());
+            @else
+            const markReadUrl = '{{ route("notifications.read") }}';
+            fetch(markReadUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Content-Type': 'application/json'
+                }
+            }).then(() => location.reload());
+            @endif
         }
 
         function archiveNotif(id, btn) {
@@ -353,7 +407,14 @@
             row.style.opacity = '0';
             row.style.transform = 'translateX(10px)';
             setTimeout(() => {
-                fetch(`/notifications/${id}/archive`, {
+                @if(Auth::user()->isTeacher())
+                const archiveUrl = `/teacher/notifications/${id}/archive`;
+                @elseif(Auth::user()->isAdmin())
+                const archiveUrl = `/admin/notifications/${id}/archive`;
+                @else
+                const archiveUrl = `/notifications/${id}/archive`;
+                @endif
+                fetch(archiveUrl, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
@@ -622,6 +683,14 @@
                     <a href="{{ route('parent.excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
                         <span class="more-sheet-item-label">Excuses</span>
+                    </a>
+                    <a href="{{ route('parent.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
+                        <span class="more-sheet-item-label">Notifications</span>
+                    </a>
+                    <a href="{{ route('parent.profile') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
+                        <span class="more-sheet-item-label">Settings</span>
                     </a>
                 @else
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">

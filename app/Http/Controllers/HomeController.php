@@ -260,6 +260,7 @@ class HomeController extends Controller
             'content' => \Illuminate\Support\Str::limit($ann->content, 120),
             'date'  => $eventDate,
             'author' => $ann->author->name ?? 'Admin',
+            'author_role' => $ann->author->role ?? 'admin',
             'audience' => $ann->target_audience,
             'created_at' => $ann->created_at,
         ]);
@@ -358,6 +359,26 @@ class HomeController extends Controller
         'subjectStats'
     ));
 }
+
+    /**
+     * Dedicated Attendance Calendar page.
+     */
+    public function attendanceCalendar()
+    {
+        $user = Auth::user();
+
+        if (!$user->isStudent()) {
+            return redirect()->route('home');
+        }
+
+        // Fetch all attendance records with subject relation
+        $records = Attendance::with('subject')
+            ->where('user_id', $user->id)
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return view('student.attendance-calendar', compact('records'));
+    }
 
     public function settings()
     {

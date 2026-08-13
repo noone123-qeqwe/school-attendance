@@ -52,7 +52,7 @@
     }
 
     /* Table */
-    .cls-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+    .cls-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; }
     .cls-table thead th {
         font-size: 0.7rem; font-weight: 700; color: rgba(248,231,211,0.8);
         text-transform: uppercase; letter-spacing: 0.5px;
@@ -81,18 +81,6 @@
         font-family: monospace;
     }
 
-    /* Day pills */
-    .day-pills { display: flex; gap: 4px; flex-wrap: wrap; }
-    .day-pill {
-        width: 28px; height: 28px;
-        border-radius: 7px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 0.68rem; font-weight: 800;
-        text-transform: uppercase;
-    }
-    .day-pill.active { background: #800000; color: white; }
-    .day-pill.inactive { background: rgba(255,255,255,0.08); color: rgba(248,231,211,0.75); }
-
     /* Time */
     .time-cell { white-space: nowrap; font-size: 0.82rem; }
     .time-cell .time-range { font-weight: 600; color: #f8e7d3; }
@@ -110,108 +98,6 @@
     /* Empty */
     .empty-state { text-align: center; padding: 60px 20px; color: rgba(248,231,211,0.7); }
     .empty-state i { font-size: 3rem; opacity: 0.25; display: block; margin-bottom: 12px; }
-
-    /* ── SUBJECT CARDS FOR MOBILE ── */
-    .subject-cards {
-        display: none;
-    }
-    .subject-card {
-        width: 100%;
-        max-width: 100%;
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
-        transition: box-shadow 0.2s, transform 0.2s;
-    }
-    .subject-card:hover {
-        box-shadow: 0 16px 38px rgba(0,0,0,0.24);
-        transform: translateY(-2px);
-    }
-    .subject-card-header {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        margin-bottom: 12px;
-    }
-    .subject-code-mobile {
-        background: #800000;
-        color: white;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 4px 10px;
-        border-radius: 6px;
-        font-family: monospace;
-        display: inline-block;
-    }
-    .subject-units-mobile {
-        background: #eff6ff;
-        color: #2563eb;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 4px 8px;
-        border-radius: 6px;
-        border: 1px solid #bfdbfe;
-        display: inline-block;
-    }
-    .subject-name-mobile {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #f8e7d3;
-        margin-bottom: 8px;
-        line-height: 1.3;
-    }
-    .subject-details {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    .detail-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.85rem;
-    }
-    .detail-icon {
-        width: 16px;
-        color: rgba(248,231,211,0.65);
-        flex-shrink: 0;
-    }
-    .detail-label {
-        font-weight: 600;
-        color: rgba(248,231,211,0.8);
-        min-width: 60px;
-    }
-    .detail-value {
-        color: #f8e7d3;
-        font-weight: 500;
-    }
-    .day-badges-mobile {
-        display: flex;
-        gap: 4px;
-        flex-wrap: wrap;
-        margin-top: 4px;
-    }
-    .day-badge-mobile {
-        width: 24px;
-        height: 24px;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.65rem;
-        font-weight: 800;
-        text-transform: uppercase;
-    }
-    .day-badge-mobile.active {
-        background: #800000;
-        color: white;
-    }
-    .day-badge-mobile.inactive {
-        background: rgba(255,255,255,0.08);
-        color: rgba(248,231,211,0.75);
-    }
 
     /* ── ENHANCED INFO SUMMARY ── */
     .summary-grid {
@@ -268,7 +154,7 @@
         .page-header-sub { font-size: 0.8rem; }
 
         .info-pills {
-            display: none; /* Hide old pills, show summary grid instead */
+            display: none;
         }
 
         .summary-grid {
@@ -285,21 +171,6 @@
         }
         .summary-value { font-size: 1.3rem; }
         .summary-label { font-size: 0.75rem; }
-
-        .table-card {
-            display: none; /* Hide table on mobile */
-        }
-        .subject-cards {
-            display: block; /* Show cards on mobile */
-        }
-
-        .subject-card {
-            padding: 16px;
-            margin-bottom: 12px;
-        }
-        .subject-name-mobile { font-size: 1rem; }
-        .detail-row { font-size: 0.8rem; }
-        .detail-label { min-width: 50px; }
     }
 </style>
 
@@ -307,7 +178,7 @@
 
     <div style="margin-bottom:20px;">
         <div style="font-size:1.4rem;font-weight:800;color:#f8e7d3;letter-spacing:-.3px;">My Class Schedule</div>
-        <div style="font-size:.875rem;color:rgba(248,231,211,0.72);margin-top:2px;">Your enrolled subjects for this semester</div>
+        <div style="font-size:.875rem;color:rgba(248,231,211,0.72);margin-top:2px;">Your enrolled subjects and unified schedule for this semester</div>
     </div>
 
     <!-- Info pills -->
@@ -362,6 +233,85 @@
         </div>
     </div>
 
+    @php
+        $groupedSchedules = [];
+        $dayMap = ['Monday'=>'M', 'Tuesday'=>'T', 'Wednesday'=>'W', 'Thursday'=>'TH', 'Friday'=>'F', 'Saturday'=>'S', 'Sunday'=>'U'];
+
+        foreach($subjects as $subject) {
+            $groups = [];
+            foreach($subject->schedules as $sched) {
+                $key = $sched->start_time . '-' . $sched->end_time . '-' . $sched->room;
+                if (!isset($groups[$key])) {
+                    $groups[$key] = [
+                        'days' => [],
+                        'start_time' => $sched->start_time,
+                        'end_time' => $sched->end_time,
+                        'room' => $sched->room
+                    ];
+                }
+                $groups[$key]['days'][] = $sched->day;
+            }
+            
+            if (count($groups) > 0) {
+                foreach($groups as $group) {
+                    $daysStr = '';
+                    foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as $d) {
+                        if (in_array($d, $group['days'])) {
+                            $daysStr .= $dayMap[$d];
+                        }
+                    }
+                    $groupedSchedules[] = (object) [
+                        'section' => $subject->section ?? '—',
+                        'code' => $subject->code,
+                        'name' => $subject->name,
+                        'class_number' => $subject->id,
+                        'units' => $subject->units ?? '—',
+                        'start_time' => $group['start_time'],
+                        'end_time' => $group['end_time'],
+                        'days' => $daysStr,
+                        'room' => $group['room'] ?? 'TBA',
+                        'teacher' => $subject->instructorUser->name ?? $subject->instructor ?? 'TBA',
+                    ];
+                }
+            } else {
+                $groupedSchedules[] = (object) [
+                    'section' => $subject->section ?? '—',
+                    'code' => $subject->code,
+                    'name' => $subject->name,
+                    'class_number' => $subject->id,
+                    'units' => $subject->units ?? '—',
+                    'start_time' => null,
+                    'end_time' => null,
+                    'days' => 'TBA',
+                    'room' => 'TBA',
+                    'teacher' => $subject->instructorUser->name ?? $subject->instructor ?? 'TBA',
+                ];
+            }
+        }
+    @endphp
+
+    <!-- Controls (Search & Filter) -->
+    <div class="d-flex flex-column flex-md-row gap-3 mb-4 justify-content-between">
+        <div class="input-group" style="max-width: 400px;">
+            <span class="input-group-text bg-dark border-secondary text-light">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="scheduleSearch" class="form-control bg-dark border-secondary text-light" placeholder="Search by name, subject, section, instructor...">
+        </div>
+        
+        <div class="d-flex gap-2">
+            <select id="dayFilter" class="form-select bg-dark border-secondary text-light" style="width: auto;">
+                <option value="">All Days</option>
+                <option value="M">Monday</option>
+                <option value="T">Tuesday</option>
+                <option value="W">Wednesday</option>
+                <option value="TH">Thursday</option>
+                <option value="F">Friday</option>
+                <option value="S">Saturday</option>
+            </select>
+        </div>
+    </div>
+
     <!-- Table card -->
     <div class="table-card">
         <div class="table-card-header">
@@ -369,73 +319,59 @@
                 <div class="table-title-icon" style="background:#fff5f5;color:#800000;">
                     <i class="bi bi-journal-bookmark-fill"></i>
                 </div>
-                Enrolled Subjects
+                My Schedule & Classes
             </div>
-            <span class="subject-count">{{ $subjects->count() }} total</span>
+            <span class="subject-count" id="itemCount">{{ count($groupedSchedules) }} items</span>
         </div>
 
         <div style="overflow-x:auto;">
-            <table class="cls-table">
+            <table class="cls-table" id="scheduleTable">
                 <thead>
                     <tr>
-                        <th>Code</th>
-                        <th>Subject</th>
-                        <th>Days</th>
-                        <th>Time</th>
-                        <th>Units</th>
-                        <th>Instructor</th>
                         <th>Section</th>
+                        <th>Subject Code</th>
+                        <th>Class Number</th>
+                        <th>Units</th>
+                        <th>Time</th>
+                        <th>Day</th>
+                        <th>Room</th>
+                        <th>Teacher's Name</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($subjects as $subject)
-                    @php
-                        $allDays    = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-                        $dayShort   = ['Monday'=>'M','Tuesday'=>'T','Wednesday'=>'W','Thursday'=>'Th','Friday'=>'F','Saturday'=>'Sa'];
-                        $activeDays = $subject->schedules->pluck('day')->toArray();
-                        $firstSched = $subject->schedules->first();
-                    @endphp
-                    <tr>
+                    @forelse($groupedSchedules as $sched)
+                    <tr class="schedule-row" 
+                        data-days="{{ $sched->days }}">
+                        <td><strong>{{ $sched->section }}</strong></td>
                         <td>
-                            <span class="subject-code-badge">{{ $subject->code }}</span>
+                            <span class="subject-code-badge">{{ $sched->code }}</span>
+                            <div style="font-size: 0.75rem; color: rgba(248,231,211,0.6); margin-top: 4px;">{{ $sched->name }}</div>
                         </td>
-                        <td class="subject-name-cell">{{ $subject->name }}</td>
+                        <td style="color:#f8e7d3; font-weight:600;">{{ $sched->class_number }}</td>
                         <td>
-                            @if($subject->schedules->isNotEmpty())
-                            <div class="day-pills">
-                                @foreach($allDays as $day)
-                                    <div class="day-pill {{ in_array($day, $activeDays) ? 'active' : 'inactive' }}">
-                                        {{ $dayShort[$day] }}
-                                    </div>
-                                @endforeach
-                            </div>
-                            @else
-                                <span style="color:#cbd5e1;font-size:0.8rem;">—</span>
-                            @endif
+                            <div class="units-badge">{{ $sched->units }}</div>
                         </td>
                         <td class="time-cell">
-                            @if($firstSched)
+                            @if($sched->start_time)
                                 <span class="time-range">
-                                    {{ \Carbon\Carbon::parse($firstSched->start_time)->format('h:i A') }}
+                                    {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i a') }}
                                     <span class="time-sep">–</span>
-                                    {{ \Carbon\Carbon::parse($firstSched->end_time)->format('h:i A') }}
+                                    {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i a') }}
                                 </span>
                             @else
                                 <span style="color:#cbd5e1;">TBA</span>
                             @endif
                         </td>
-                        <td>
-                            <div class="units-badge">{{ $subject->units ?? '—' }}</div>
-                        </td>
-                        <td style="color:#f8e7d3;">{{ $subject->instructorUser->name ?? 'TBA' }}</td>
-                        <td style="color:#f8e7d3;font-weight:600;">{{ $subject->section ?? '—' }}</td>
+                        <td><strong style="color: #d8b35c;">{{ $sched->days }}</strong></td>
+                        <td style="font-family: monospace; color:#f8e7d3;">{{ $sched->room }}</td>
+                        <td style="color:#f8e7d3;">{{ $sched->teacher }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7">
+                        <td colspan="8">
                             <div class="empty-state">
                                 <i class="bi bi-journal-x"></i>
-                                <p>No subjects found for your year level and semester.</p>
+                                <p>No classes found.</p>
                             </div>
                         </td>
                     </tr>
@@ -443,67 +379,41 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- Mobile Subject Cards — outside table-card so they show on mobile -->
-        </div><!-- end table-card -->
-
-        <div class="subject-cards">
-            @forelse($subjects as $subject)
-            @php
-                $allDays    = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-                $dayShort   = ['Monday'=>'M','Tuesday'=>'T','Wednesday'=>'W','Thursday'=>'Th','Friday'=>'F','Saturday'=>'Sa'];
-                $activeDays = $subject->schedules->pluck('day')->toArray();
-                $firstSched = $subject->schedules->first();
-            @endphp
-            <div class="subject-card">
-                <div class="subject-card-header">
-                    <span class="subject-code-mobile">{{ $subject->code }}</span>
-                    <span class="subject-units-mobile">{{ $subject->units ?? '—' }} units</span>
-                </div>
-                <div class="subject-name-mobile">{{ $subject->name }}</div>
-                <div class="subject-details">
-                    <div class="detail-row">
-                        <i class="bi bi-clock detail-icon"></i>
-                        <span class="detail-label">Time:</span>
-                        <span class="detail-value">
-                            @if($firstSched)
-                                {{ \Carbon\Carbon::parse($firstSched->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($firstSched->end_time)->format('h:i A') }}
-                            @else TBA @endif
-                        </span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="bi bi-person detail-icon"></i>
-                        <span class="detail-label">Instructor:</span>
-                        <span class="detail-value">{{ $subject->instructorUser->name ?? 'TBA' }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="bi bi-tag detail-icon"></i>
-                        <span class="detail-label">Section:</span>
-                        <span class="detail-value">{{ $subject->section ?? '—' }}</span>
-                    </div>
-                    <div class="detail-row">
-                        <i class="bi bi-calendar-week detail-icon"></i>
-                        <span class="detail-label">Days:</span>
-                        <div class="day-badges-mobile">
-                            @if($subject->schedules->isNotEmpty())
-                                @foreach($allDays as $day)
-                                    <div class="day-badge-mobile {{ in_array($day, $activeDays) ? 'active' : 'inactive' }}">
-                                        {{ $dayShort[$day] }}
-                                    </div>
-                                @endforeach
-                            @else
-                                <span class="detail-value">—</span>
-                            @endif
-                        </div>
-                    </div>
-                </div>
-            </div>
-            @empty
-            <div class="empty-state">
-                <i class="bi bi-journal-x"></i>
-                <p>No subjects found for your year level and semester.</p>
-            </div>
-            @endforelse
-        </div>
+    </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('scheduleSearch');
+    const dayFilter = document.getElementById('dayFilter');
+    const rows = document.querySelectorAll('.schedule-row');
+    const countDisplay = document.getElementById('itemCount');
+
+    function filterTable() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedDay = dayFilter.value;
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const searchData = row.textContent.toLowerCase();
+            const daysData = row.getAttribute('data-days');
+            
+            const matchesSearch = searchData.includes(searchTerm);
+            const matchesDay = selectedDay === '' || daysData.includes(selectedDay);
+
+            if (matchesSearch && matchesDay) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        countDisplay.textContent = visibleCount + (visibleCount === 1 ? ' item' : ' items');
+    }
+
+    searchInput.addEventListener('input', filterTable);
+    dayFilter.addEventListener('change', filterTable);
+});
+</script>
 @endsection

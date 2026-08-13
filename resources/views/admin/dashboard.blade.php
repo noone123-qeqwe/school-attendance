@@ -335,7 +335,22 @@
                         <div class="hcal-event-date">
                             <i class="bi bi-calendar3"></i> {{ $evt->date_formatted }}
                             @if(isset($evt->author))
+                                @php
+                                    $evtRole = 'admin';
+                                    if (isset($evt->source) && $evt->source === 'announcement' && isset($evt->author_role)) {
+                                        $evtRole = $evt->author_role;
+                                    }
+                                    $evtIsAdminRole = $evtRole === 'admin';
+                                    $dashBadgeBg = $evtIsAdminRole ? 'rgba(207,164,111,0.15)' : 'rgba(139,90,43,0.15)';
+                                    $dashBadgeBorder = $evtIsAdminRole ? 'rgba(207,164,111,0.35)' : 'rgba(139,90,43,0.35)';
+                                    $dashBadgeColor = $evtIsAdminRole ? '#CFA46F' : '#8B5A2B';
+                                    $dashRoleLabel = $evtIsAdminRole ? 'Admin' : 'Instructor';
+                                @endphp
                                 Â· <i class="bi bi-person"></i> {{ $evt->author }}
+                                <span style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:99px;font-size:0.6rem;font-weight:700;background:{{ $dashBadgeBg }};border:1px solid {{ $dashBadgeBorder }};color:{{ $dashBadgeColor }};vertical-align:middle;">
+                                    <span style="width:4px;height:4px;border-radius:50%;background:{{ $dashBadgeColor }};display:inline-block;"></span>
+                                    {{ $dashRoleLabel }}
+                                </span>
                             @endif
                         </div>
                         @if($evt->description)

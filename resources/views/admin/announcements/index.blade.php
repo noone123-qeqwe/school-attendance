@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Announcements')
 
@@ -29,6 +29,7 @@
             <thead>
                 <tr>
                     <th>Title & Content</th>
+                    <th>Posted By</th>
                     <th>Target Audience</th>
                     <th>Date Posted</th>
                     <th>Status</th>
@@ -43,6 +44,24 @@
                         <div class="saas-text-muted" style="font-size:0.8rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                             {{ strip_tags($announcement->content) }}
                         </div>
+                    </td>
+                    <td>
+                        @php
+                            $authorRole = $announcement->author->role ?? 'unknown';
+                            $isAdmin = $authorRole === 'admin';
+                            $roleBadgeBg = $isAdmin ? 'rgba(207,164,111,0.15)' : 'rgba(139,90,43,0.15)';
+                            $roleBadgeBorder = $isAdmin ? 'rgba(207,164,111,0.35)' : 'rgba(139,90,43,0.35)';
+                            $roleBadgeColor = $isAdmin ? '#CFA46F' : '#8B5A2B';
+                            $roleBadgeDot = $isAdmin ? '#CFA46F' : '#8B5A2B';
+                            $roleLabel = $isAdmin ? 'Administrator' : 'Instructor';
+                        @endphp
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-weight:600;font-size:0.85rem;color:var(--saas-text);">{{ $announcement->author->name ?? 'Unknown' }}</span>
+                        </div>
+                        <span style="display:inline-flex;align-items:center;gap:5px;margin-top:4px;padding:3px 10px;border-radius:99px;font-size:0.7rem;font-weight:700;background:{{ $roleBadgeBg }};border:1px solid {{ $roleBadgeBorder }};color:{{ $roleBadgeColor }};">
+                            <span style="width:6px;height:6px;border-radius:50%;background:{{ $roleBadgeDot }};display:inline-block;"></span>
+                            {{ $roleLabel }}
+                        </span>
                     </td>
                     <td>
                         @if($announcement->target_role == 'all')
@@ -77,7 +96,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" style="text-align:center; padding:48px 20px;">
+                    <td colspan="6" style="text-align:center; padding:48px 20px;">
                         <i class="bi bi-megaphone saas-text-muted" style="font-size:3rem; margin-bottom:16px; display:block; opacity:0.5;"></i>
                         <div class="saas-heading" style="font-size:1.1rem; margin-bottom:8px;">No announcements</div>
                         <p class="saas-text-muted" style="margin-bottom:20px; max-width:400px; margin-inline:auto;">Keep your users informed by posting an announcement.</p>

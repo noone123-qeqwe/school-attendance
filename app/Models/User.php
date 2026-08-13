@@ -8,6 +8,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class User extends Authenticatable
 {
@@ -19,6 +20,26 @@ class User extends Authenticatable
         return LogOptions::defaults()
             ->logOnly(['name', 'email', 'role', 'course', 'year_level'])
             ->logOnlyDirty();
+    }
+
+    /**
+     * Get and set the user's name correctly capitalized.
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: function (?string $value) {
+                if (!$value) return null;
+                $titleCased = ucwords(strtolower($value));
+                // Add a period to any single uppercase letter that acts as an initial (bounded by spaces)
+                return preg_replace('/\b([A-Z])\b(?!\.)/u', '$1.', $titleCased);
+            },
+            set: function (?string $value) {
+                if (!$value) return null;
+                $titleCased = ucwords(strtolower($value));
+                return preg_replace('/\b([A-Z])\b(?!\.)/u', '$1.', $titleCased);
+            },
+        );
     }
 
     /**
@@ -150,9 +171,24 @@ class User extends Authenticatable
         
         $explicit = $this->enrolledSubjects()->get();
         
-        $implicit = Subject::where('year_level', $this->year_level)
-            ->where('semester', $this->semester)
-            ->get();
+        $query = Subject::where('year_level', $this->year_level)
+            ->where('semester', $this->semester);
+            
+        // If subject specifies a course, it must match the student's course
+        $query->where(function ($q) {
+            $q->whereNull('course')
+              ->orWhere('course', '')
+              ->orWhere('course', $this->course);
+        });
+        
+        // If subject specifies a section, it must match the student's section
+        $query->where(function ($q) {
+            $q->whereNull('section')
+              ->orWhere('section', '')
+              ->orWhere('section', $this->section);
+        });
+            
+        $implicit = $query->get();
             
         return $explicit->merge($implicit)->unique('id')->values();
     }

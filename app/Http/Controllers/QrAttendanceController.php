@@ -289,18 +289,7 @@ class QrAttendanceController extends Controller
         $today = now()->toDateString();
         
         if ($subject) {
-            $studentQuery = \App\Models\User::where('role', 'student')
-                ->where('year_level', $subject->year_level)
-                ->where('semester', $subject->semester);
-                
-            if (!empty($subject->course)) {
-                $studentQuery->where('course', $subject->course);
-            }
-            if (!empty($subject->section)) {
-                $studentQuery->where('section', $subject->section);
-            }
-            
-            $students = $studentQuery->get();
+            $students = $subject->getAllStudents();
             
             foreach ($students as $student) {
                 // Ensure record exists; if not, mark absent

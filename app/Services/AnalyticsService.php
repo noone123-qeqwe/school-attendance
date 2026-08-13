@@ -265,6 +265,7 @@ class AnalyticsService
                 'type_label' => 'Announcement',
                 'source' => 'announcement',
                 'author' => $ann->author->name ?? 'Admin',
+                'author_role' => $ann->author->role ?? 'admin',
             ];
         }
 
@@ -285,6 +286,7 @@ class AnalyticsService
                 'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
                 'type_label' => 'Announcement', 'source' => 'announcement',
                 'author' => $ann->author->name ?? 'Admin',
+                'author_role' => $ann->author->role ?? 'admin',
             ]);
         }
         $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();

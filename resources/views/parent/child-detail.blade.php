@@ -3,7 +3,6 @@
 
 @section('content')
 <style>
-    /* Premium Header Glow */
     .child-header-glow {
         background: linear-gradient(135deg, rgba(207, 164, 111, 0.15) 0%, rgba(128, 0, 0, 0.05) 100%);
         border: 1px solid rgba(207, 164, 111, 0.2);
@@ -13,46 +12,32 @@
         position: relative;
         overflow: hidden;
     }
+    .filter-group { flex: 1; min-width: 150px; }
     
-    /* Stat Box Hover */
-    .adm-stat {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        background: rgba(255,235,190,0.03) !important;
-        border: 1px solid rgba(255,215,145,0.05);
-        border-radius: 16px;
-        padding: 16px;
-        position: relative;
-        overflow: hidden;
+    .mobile-timeline {
+        display: flex; flex-direction: column; gap: 16px;
     }
-    .adm-stat:hover {
-        transform: translateY(-3px) scale(1.02) !important;
-        background: rgba(255,235,190,0.06) !important;
-        border-color: rgba(207, 164, 111, 0.25) !important;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.2) !important;
+    .timeline-item {
+        display: flex; gap: 12px; background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px;
+        transition: transform 0.2s;
     }
-
-    /* Filters / Form Card Glassmorphism */
-    .adm-card {
-        background: rgba(26, 17, 13, 0.6) !important;
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(207, 164, 111, 0.15) !important;
-        transition: box-shadow 0.3s ease !important;
-        border-radius: 20px !important;
+    .timeline-item:active { transform: scale(0.98); }
+    .timeline-date {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        width: 48px; height: 52px; background: rgba(207,164,111,0.1); border-radius: 10px;
+        color: var(--gold); border: 1px solid rgba(207,164,111,0.2); flex-shrink: 0;
     }
+    .timeline-date .day { font-size: 1.1rem; font-weight: 700; line-height: 1; }
+    .timeline-date .month { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; }
+    .timeline-content { flex-grow: 1; min-width: 0; }
+    .timeline-content .subject-name { font-weight: 600; color: #f3e7cd; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; display: inline-block; }
+    .timeline-content .time-in { font-size: 0.8rem; color: #8f826f; font-family: monospace; }
     
-    /* Action Buttons */
-    .adm-btn {
-        transition: all 0.2s ease !important;
-        border-radius: 8px !important;
-    }
-    .adm-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(207, 164, 111, 0.2); }
-    
-    /* Table Rows Hover */
-    .adm-table tbody tr { transition: all 0.2s ease; border-bottom: 1px solid rgba(255,215,145,0.04); }
-    .adm-table tbody tr:hover {
-        background: rgba(207, 164, 111, 0.04) !important;
-        transform: scale(1.002);
+    @media (max-width: 768px) {
+        .filter-group { flex-basis: 100%; min-width: 100%; }
+        .ent-grid-5 { grid-template-columns: 1fr 1fr; }
+        .ent-grid-5 > :last-child { grid-column: span 2; }
     }
 </style>
 
@@ -85,7 +70,7 @@
     {{-- Filters --}}
     <x-card type="section" class="ent-mb-lg">
         <form method="GET" action="{{ route('parent.child', $child) }}" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
-            <div style="flex:1; min-width: 150px;">
+            <div class="filter-group">
                 <label class="ent-label">Subject</label>
                 <select name="subject" class="ent-input">
                     <option value="">All Subjects</option>
@@ -94,7 +79,7 @@
                     @endforeach
                 </select>
             </div>
-            <div style="flex:1; min-width: 120px;">
+            <div class="filter-group">
                 <label class="ent-label">Status</label>
                 <select name="status" class="ent-input">
                     <option value="">All</option>
@@ -104,11 +89,11 @@
                     <option value="Excused" {{ request('status') == 'Excused' ? 'selected' : '' }}>Excused</option>
                 </select>
             </div>
-            <div style="flex:1; min-width: 130px;">
+            <div class="filter-group">
                 <label class="ent-label">From</label>
                 <input type="date" name="date_from" value="{{ request('date_from') }}" class="ent-input">
             </div>
-            <div style="flex:1; min-width: 130px;">
+            <div class="filter-group">
                 <label class="ent-label">To</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="ent-input">
             </div>
@@ -128,7 +113,8 @@
         </x-slot:headerActions>
         
         @if($records->count() > 0)
-        <div class="ent-scroll-x" style="margin: -20px;">
+        <!-- Desktop Table -->
+        <div class="ent-scroll-x d-none d-md-block" style="margin: -20px;">
             <table class="ent-table" style="min-width: 600px; margin-bottom: 0;">
                 <thead>
                     <tr>
@@ -179,6 +165,44 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        <!-- Mobile Cards -->
+        <div class="d-block d-md-none">
+            <div class="mobile-timeline">
+                @foreach($records as $record)
+                <div class="timeline-item">
+                    <div class="timeline-date">
+                        <span class="day">{{ \Carbon\Carbon::parse($record->date)->format('d') }}</span>
+                        <span class="month">{{ \Carbon\Carbon::parse($record->date)->format('M') }}</span>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="subject-name">{{ $record->subject->name ?? $record->subject_code }}</span>
+                            @if($record->excused)
+                                <span class="ent-badge ent-badge-info">Excused</span>
+                            @elseif($record->status === 'Present')
+                                <span class="ent-badge ent-badge-success">Present</span>
+                            @elseif($record->status === 'Late')
+                                <span class="ent-badge ent-badge-warning">Late</span>
+                            @else
+                                <span class="ent-badge ent-badge-danger">Absent</span>
+                            @endif
+                        </div>
+                        <div class="d-flex justify-content-between align-items-end mt-2">
+                            <div class="time-in">
+                                <i class="bi bi-clock me-1"></i>{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '--' }}
+                            </div>
+                            @if($record->status === 'Absent' && !$record->excused)
+                                <a href="{{ route('parent.child.excuse', [$child, $record]) }}" class="ent-btn ent-btn-xs" style="background: rgba(56,189,248,0.1); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 4px 10px;">
+                                    <i class="bi bi-pencil-square"></i> Excuse
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
         </div>
 
         {{-- Pagination --}}

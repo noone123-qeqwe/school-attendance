@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use App\Services\ParentService;
 use Exception;
+use Illuminate\Support\Facades\Hash;
+use App\Models\Subject;
 
 class ParentController extends Controller
 {
@@ -52,8 +54,36 @@ class ParentController extends Controller
             'attendances as absent_count' => fn($q) => $q->where('status', 'Absent'),
         ])->get();
 
+        // Fetch related data in bulk for all children to prevent N+1 queries
+        $childIds = $children->pluck('id');
+
+        $allStreakRecords = Attendance::whereIn('user_id', $childIds)
+            ->select('user_id', 'date', 'status')
+            ->orderBy('date', 'desc')
+            ->get()
+            ->groupBy('user_id');
+
+        $allTrendData = Attendance::selectRaw("user_id, DATE(date) as day, status, COUNT(*) as total")
+            ->whereIn('user_id', $childIds)
+            ->whereBetween('date', [now()->subDays(30)->toDateString(), now()->toDateString()])
+            ->groupBy('user_id', 'day', 'status')
+            ->get()
+            ->groupBy('user_id');
+
+        $allWarnings = Warning::whereIn('user_id', $childIds)
+            ->with('subject')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->groupBy('user_id');
+
+        $allPendingExcuses = ExcuseSubmission::whereIn('user_id', $childIds)
+            ->where('status', 'pending')
+            ->selectRaw('user_id, COUNT(*) as count')
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id');
+
         // Calculate stats per child
-        $childrenData = $children->map(function ($child) {
+        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allTrendData, $allWarnings, $allPendingExcuses) {
             $total = $child->total_attendances;
             $present = $child->present_count;
             $late = $child->late_count;
@@ -62,12 +92,9 @@ class ParentController extends Controller
 
             // Attendance streak
             $streakCount = 0;
-            $streakRecords = Attendance::where('user_id', $child->id)
-                ->select('date', 'status')
-                ->orderBy('date', 'desc')
+            $streakRecords = collect($allStreakRecords->get($child->id, []))
                 ->take(60)
-                ->get()
-                ->groupBy(fn($r) => $r->date->toDateString());
+                ->groupBy(fn($r) => \Carbon\Carbon::parse($r->date)->toDateString());
 
             foreach ($streakRecords as $dayRecords) {
                 $allOnTime = $dayRecords->every(fn($r) => in_array($r->status, ['Present', 'Late']));
@@ -79,12 +106,7 @@ class ParentController extends Controller
             }
 
             // 30-day trend data
-            $trendData = Attendance::selectRaw("DATE(date) as day, status, COUNT(*) as total")
-                ->where('user_id', $child->id)
-                ->whereBetween('date', [now()->subDays(30)->toDateString(), now()->toDateString()])
-                ->groupBy('day', 'status')
-                ->get()
-                ->groupBy('day');
+            $trendData = collect($allTrendData->get($child->id, []))->groupBy('day');
 
             $trendLabels = [];
             $trendPresent = [];
@@ -101,16 +123,10 @@ class ParentController extends Controller
             }
 
             // Active warnings
-            $warnings = Warning::where('user_id', $child->id)
-                ->with('subject')
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
+            $warnings = collect($allWarnings->get($child->id, []))->take(5);
 
             // Pending excuses
-            $pendingExcuses = ExcuseSubmission::where('user_id', $child->id)
-                ->where('status', 'pending')
-                ->count();
+            $pendingExcuses = $allPendingExcuses->get($child->id, 0);
 
             return (object) [
                 'child' => $child,
@@ -307,6 +323,65 @@ class ParentController extends Controller
     }
 
     /**
+     * Show general excuse form where parent can select child and attendance record.
+     */
+    public function createGeneralExcuse()
+    {
+        $parent = Auth::user();
+        // Load children and their un-excused absent/late attendances
+        $children = $parent->children()->with(['attendances' => function ($q) {
+            $q->whereIn('status', ['Absent', 'Late'])
+              ->doesntHave('excuseSubmission')
+              ->with('subject')
+              ->orderBy('date', 'desc');
+        }])->get();
+
+        return view('parent.excuse-form-general', compact('children'));
+    }
+
+    /**
+     * Store a general excuse submission.
+     */
+    public function storeGeneralExcuse(Request $request)
+    {
+        $request->validate([
+            'attendance_id' => 'required|exists:attendances,id',
+            'reason' => 'required|string|max:1000',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ]);
+
+        $attendance = Attendance::findOrFail($request->attendance_id);
+        $parent = Auth::user();
+
+        // Verify parent has access to this student
+        if (!$parent->children()->where('student_id', $attendance->user_id)->exists()) {
+            abort(403, 'Unauthorized.');
+        }
+
+        // Check if excuse already exists
+        $existingExcuse = ExcuseSubmission::where('attendance_id', $attendance->id)->first();
+        if ($existingExcuse) {
+            return back()->with('error', 'An excuse has already been submitted for this attendance record.')->withInput();
+        }
+
+        $data = [
+            'user_id' => $attendance->user_id,
+            'attendance_id' => $attendance->id,
+            'reason' => $request->reason,
+            'status' => 'pending',
+        ];
+
+        if ($request->hasFile('document')) {
+            $path = $request->file('document')->store('excuse_documents', 'public');
+            $data['attachments'] = [$path];
+        }
+
+        ExcuseSubmission::create($data);
+
+        return redirect()->route('parent.excuses')->with('success', 'Excuse submitted successfully. It will be reviewed by the teacher.');
+    }
+
+    /**
      * View all excuse submissions for parent's children.
      */
     public function excuses(Request $request)
@@ -452,5 +527,131 @@ class ParentController extends Controller
                 $request->query('end')
             )
         );
+    }
+
+    public function schedule(Request $request)
+    {
+        $parent = Auth::user();
+        $children = $parent->children()->get();
+        
+        if ($children->isEmpty()) {
+            return view('parent.schedule', ['children' => $children, 'selectedChild' => null, 'weeklySchedule' => [], 'days' => []]);
+        }
+
+        $childId = $request->query('child_id');
+        $selectedChild = $childId ? $children->firstWhere('id', $childId) : $children->first();
+
+        // Fallback to first child if invalid ID
+        if (!$selectedChild) {
+            $selectedChild = $children->first();
+        }
+
+        // Get student's enrolled subjects (fallback to year/semester if explicit enrollments are empty)
+        $subjects = $selectedChild->enrolledSubjects()->with(['schedules', 'instructorUser'])->get();
+        
+        if ($subjects->isEmpty()) {
+            $subjects = Subject::where('year_level', $selectedChild->year_level)
+                               ->where('semester', $selectedChild->semester)
+                               ->with(['schedules', 'instructorUser'])
+                               ->get();
+        }
+
+        $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        
+        $weeklySchedule = [];
+        foreach ($days as $day) {
+            $weeklySchedule[$day] = collect();
+        }
+
+        foreach ($subjects as $subject) {
+            foreach ($subject->schedules as $schedule) {
+                if (in_array($schedule->day, $days)) {
+                    $schedule->subject = $subject; // Attach subject to schedule for easy access
+                    $weeklySchedule[$schedule->day]->push($schedule);
+                }
+            }
+        }
+
+        // Sort schedules by start_time for each day
+        foreach ($days as $day) {
+            $weeklySchedule[$day] = $weeklySchedule[$day]->sortBy('start_time')->values();
+        }
+
+        return view('parent.schedule', compact('children', 'selectedChild', 'weeklySchedule', 'days'));
+    }
+
+    public function attendanceCalendar(Request $request)
+    {
+        $parent = Auth::user();
+        $children = $parent->children()->get();
+        
+        if ($children->isEmpty()) {
+            return view('parent.attendance-calendar', ['children' => $children, 'selectedChild' => null, 'records' => collect()]);
+        }
+
+        $childId = $request->query('child_id');
+        $selectedChild = $childId ? $children->firstWhere('id', $childId) : $children->first();
+
+        // Fallback to first child if invalid ID
+        if (!$selectedChild) {
+            $selectedChild = $children->first();
+        }
+
+        // Fetch all attendance records with subject relation for the selected child
+        $records = Attendance::with('subject')
+            ->where('user_id', $selectedChild->id)
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return view('parent.attendance-calendar', compact('children', 'selectedChild', 'records'));
+    }
+
+    public function profile()
+    {
+        $user = Auth::user();
+        return view('parent.profile', compact('user'));
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+
+        $rules = [
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ];
+
+        if ($request->filled('current_password') || $request->filled('password')) {
+            $rules['current_password'] = 'required|current_password';
+            $rules['password'] = 'required|string|min:8|confirmed';
+        }
+
+        $request->validate($rules);
+
+        $user->name = $request->name;
+        $user->phone = $request->phone;
+
+        if ($request->hasFile('profile_image')) {
+            if ($user->profile_image && !str_starts_with($user->profile_image, 'http')) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($user->profile_image);
+            }
+            $path = $request->file('profile_image')->store('profile_images', 'public');
+            $user->profile_image = $path;
+        }
+
+        if ($request->filled('password')) {
+            $user->password = Hash::make($request->password);
+        }
+
+        // Update notification preferences
+        $preferences = $user->notification_preferences ?? [];
+        $preferences['email_notifications'] = $request->has('email_notifications');
+        $preferences['push_notifications'] = $request->has('push_notifications');
+        $user->notification_preferences = $preferences;
+
+        $user->save();
+
+        return back()->with('success', 'Profile updated successfully.');
     }
 }

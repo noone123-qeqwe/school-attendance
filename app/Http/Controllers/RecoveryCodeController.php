@@ -13,14 +13,19 @@ class RecoveryCodeController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'student_number' => 'required|string',
+            'identifier' => 'required|string',
             'recovery_code' => 'required|string',
         ]);
 
-        $user = User::where('student_number', $request->student_number)->first();
+        $identifier = trim($request->identifier);
+
+        // Look up by student_number or email
+        $user = str_contains($identifier, '@')
+            ? User::where('email', $identifier)->first()
+            : User::where('student_number', $identifier)->first();
 
         if (!$user) {
-            return back()->withErrors(['student_number' => 'Student not found.'])->withInput();
+            return back()->withErrors(['identifier' => 'User not found.'])->withInput();
         }
 
         // Fetch unused recovery codes for this user
@@ -55,6 +60,34 @@ class RecoveryCodeController extends Controller
             app(\App\Services\DeviceBindingService::class)->bind($user, $request);
         }
 
-        return redirect()->to($user->isAdmin() ? route('admin.dashboard') : route('home'));
+        // Redirect based on role
+        if ($user->isAdmin()) return redirect()->route('admin.dashboard');
+        if ($user->isTeacher()) return redirect()->route('teacher.dashboard');
+        if ($user->isParent()) return redirect()->route('parent.dashboard');
+        return redirect()->route('home');
+    }
+
+    public function generate(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Delete any existing unused codes
+        RecoveryCode::where('user_id', $user->id)->where('used', false)->delete();
+
+        $recoveryCodes = [];
+        for ($i = 0; $i < 5; $i++) {
+            $rawCode = strtoupper(\Illuminate\Support\Str::random(4) . '-' . \Illuminate\Support\Str::random(4));
+            $recoveryCodes[] = $rawCode;
+            
+            RecoveryCode::create([
+                'user_id' => $user->id,
+                'code' => Hash::make($rawCode),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'codes' => $recoveryCodes
+        ]);
     }
 }

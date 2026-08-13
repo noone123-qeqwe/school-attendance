@@ -2,22 +2,77 @@
 @section('page-title', 'Parent Dashboard')
 
 @section('content')
+<style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(207,164,111,0.2); border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(207,164,111,0.4); }
+
+    .parent-header-card {
+        background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%);
+        border: 1px solid rgba(207,164,111,0.25);
+        border-radius: 24px; padding: 20px 24px; position: relative; overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .parent-header-card::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%;
+        background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);
+    }
+    .parent-header-title { color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.5rem, 3vw, 2rem); }
+    .parent-header-sub { color: #b39b82; font-size: 0.95rem; }
+    
+    .child-tab-container {
+        display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
+        scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 8px;
+        -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory;
+    }
+    .child-tab-container::-webkit-scrollbar { display: none; }
+    
+    .child-tab-btn {
+        scroll-snap-align: start; white-space: nowrap; border-radius: 99px;
+        border: 1px solid rgba(207,164,111,0.15); background: rgba(207,164,111,0.02);
+        color: #b39b82; padding: 8px 20px; font-weight: 600;
+        display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer;
+    }
+    .child-tab-btn:hover:not(.active) { background: rgba(207,164,111,0.06); transform: translateY(-1px); }
+    .child-tab-btn.active {
+        border-color: rgba(207,164,111,0.4); background: rgba(207,164,111,0.1);
+        color: #f3e7cd; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transform: scale(1.02);
+    }
+    .child-avatar-mini {
+        width: 24px; height: 24px; border-radius: 50%; background: rgba(207,164,111,0.2);
+        display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff;
+    }
+    .child-rate-badge {
+        font-size: 0.7rem; background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .parent-empty-state {
+        padding: 60px 20px; background: linear-gradient(145deg, rgba(32,20,15,0.8) 0%, rgba(20,10,5,0.9) 100%);
+        border: 1px solid rgba(207,164,111,0.2); border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        backdrop-filter: blur(10px); text-align: center;
+    }
+    .parent-empty-icon {
+        width: 80px; height: 80px; margin: 0 auto 20px; background: rgba(207,164,111,0.1); border-radius: 50%;
+        display: flex; align-items: center; justify-content: center; border: 1px solid rgba(207,164,111,0.2);
+    }
+</style>
 
 <!-- Desktop Header -->
-<div class="mb-4" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-    <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
+<div class="mb-4 parent-header-card">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
-        <div class="d-flex align-items-center gap-4">
-            <div style="font-size: 3rem;">ðŸ‘¨â€ðŸ‘©â€ðŸ‘§â€ðŸ‘¦</div>
+        <div class="d-flex align-items-center gap-3 gap-md-4">
+            <div class="d-none d-md-block" style="font-size: 3rem;">👨‍👩‍👧‍👦</div>
             <div>
-                <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">My Children</h1>
-                <div style="color: #b39b82; font-size: 0.95rem;">
+                <h1 class="parent-header-title">My Children</h1>
+                <div class="parent-header-sub">
                     Monitor attendance, performance & warnings
                 </div>
             </div>
         </div>
-        <div>
-            <a href="{{ route('parent.link.form') }}" class="btn btn-primary" style="background: var(--gold); border: none; font-weight: 600;">
+        <div class="w-100 d-md-block" style="max-width: 280px; flex-grow: 1;">
+            <a href="{{ route('parent.link.form') }}" class="ent-btn w-100" style="background: var(--gold); border: none; font-weight: 600; color: #1a1d24;">
                 <i class="bi bi-link-45deg"></i> Link Another Child
             </a>
         </div>
@@ -27,21 +82,20 @@
 
 @if(count($childrenData) > 0)
 <!-- Child Tab Selector -->
-<div class="d-flex gap-2 flex-nowrap overflow-auto mb-4 pb-2" style="scrollbar-width: none; -ms-overflow-style: none;" id="childTabsContainer">
+<div class="child-tab-container mb-4" id="childTabsContainer">
     @foreach($childrenData as $index => $data)
         @php
             $rateColor = $data->rate >= 90 ? '#4ade80' : ($data->rate >= 75 ? '#fbbf24' : '#f87171');
         @endphp
-        <button type="button" 
-                class="btn child-tab-btn {{ $index === 0 ? 'active' : '' }}" 
-                data-child-id="{{ $data->child->id }}"
-                style="white-space: nowrap; border-radius: 99px; border: 1px solid rgba(255,255,255,{{ $index === 0 ? '0.15' : '0.06' }}); background: rgba(255,255,255,{{ $index === 0 ? '0.05' : '0.02' }}); color: {{ $index === 0 ? '#f3e7cd' : '#b39b82' }}; padding: 8px 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; backdrop-filter: blur(8px); transition: all 0.2s ease;">
-            <div style="width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: #fff;">
+        <div class="child-tab-btn {{ $index === 0 ? 'active' : '' }}" data-child-id="{{ $data->child->id }}">
+            <div class="child-avatar-mini">
                 {{ substr($data->child->name, 0, 2) }}
             </div>
-            {{ explode(' ', $data->child->name)[0] }}
-            <span style="font-size: 0.7rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 99px; color: {{ $rateColor }}; border: 1px solid rgba(255,255,255,0.05);">{{ $data->rate }}%</span>
-        </button>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; display: inline-block; vertical-align: middle;">
+                {{ $data->child->name }}
+            </span>
+            <span class="child-rate-badge" style="color: {{ $rateColor }};">{{ $data->rate }}%</span>
+        </div>
     @endforeach
 </div>
 @endif
@@ -76,7 +130,7 @@
         <div>
             <div style="font-weight: 700; color: #f3e7cd;">{{ $data->child->student_number }}</div>
             <div style="font-size: 0.85rem; color: #b39b82;">
-                {{ $data->child->course }} â€” Year {{ $data->child->year_level }}
+                {{ $data->child->course }} — Year {{ $data->child->year_level }}
             </div>
         </div>
     </div>
@@ -103,7 +157,7 @@
         <!-- Chart -->
         <div class="col-lg-8">
             <x-card type="section" class="h-100" icon="bi bi-graph-up" title="30-Day Trend">
-                <div style="height: 180px;">
+                <div style="min-height: 250px; height: 100%;">
                     <canvas id="trendChart_{{ $data->child->id }}"></canvas>
                 </div>
             </x-card>
@@ -111,7 +165,7 @@
         <!-- Warnings -->
         <div class="col-lg-4">
             <x-card type="section" class="h-100 d-flex flex-column" icon="bi bi-exclamation-triangle" title="Warnings">
-                <div style="flex: 1; overflow-y: auto;">
+                <div style="flex: 1; overflow-y: auto; max-height: 250px;" class="custom-scrollbar pe-2">
                     @if($data->warnings->count() > 0)
                         @foreach($data->warnings as $warning)
                         <div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -130,7 +184,7 @@
                         <div class="text-center" style="padding: 20px;">
                             <i class="bi bi-shield-check" style="font-size: 2rem; color: #4ade80; opacity: 0.5;"></i>
                             <div style="font-size: 0.85rem; color: #4ade80; margin-top: 8px;">All Clear!</div>
-                            <div style="font-size: 0.78rem; color: #b39b82;">No warnings â€” great job!</div>
+                            <div style="font-size: 0.78rem; color: #b39b82;">No warnings — great job!</div>
                         </div>
                     @endif
                 </div>
@@ -170,7 +224,7 @@
                                 <i class="bi bi-pencil-square"></i> Excuse
                             </a>
                         @else
-                            <span style="color: rgba(179,155,130,0.5); font-size: 0.75rem;">â€”</span>
+                            <span style="color: rgba(179,155,130,0.5); font-size: 0.75rem;">—</span>
                         @endif
                     </td>
                 </tr>
@@ -184,11 +238,13 @@
 </div>
 @empty
 <!-- No Children Linked -->
-<div class="empty-state text-center" style="padding: 80px 20px; background: rgba(0,0,0,0.2); border: 1px dashed rgba(207,164,111,0.3); border-radius: 24px;">
-    <i class="bi bi-people" style="font-size: 3rem; color: var(--gold); opacity: 0.8;"></i>
-    <h3 style="color: #f3e7cd; margin-top: 24px; font-weight: 700;">No Children Linked</h3>
-    <p style="color: #b39b82; max-width: 400px; margin: 0 auto 24px;">You currently don't have any children linked to your account. Link your child's account by entering their Student ID.</p>
-    <a href="{{ route('parent.link.form') }}" class="btn btn-primary" style="background: var(--gold); border: none; font-weight: 600; padding: 12px 24px;">
+<div class="parent-empty-state">
+    <div class="parent-empty-icon">
+        <i class="bi bi-link-45deg" style="font-size: 2.5rem; color: var(--gold); opacity: 0.9;"></i>
+    </div>
+    <h3 style="color: #f3e7cd; margin-top: 10px; font-weight: 700; font-size: 1.5rem;">No Children Linked</h3>
+    <p style="color: #b39b82; max-width: 400px; margin: 0 auto 24px; font-size: 0.95rem; line-height: 1.5;">You currently don't have any children linked to your account. Link your child's account to start monitoring their attendance and performance.</p>
+    <a href="{{ route('parent.link.form') }}" class="ent-btn" style="background: var(--gold); border: none; font-weight: 600; padding: 12px 30px; border-radius: 12px; color: #1a1d24; box-shadow: 0 4px 15px rgba(207,164,111,0.3); transition: all 0.3s ease;">
         <i class="bi bi-link-45deg"></i> Link a Child
     </a>
 </div>
@@ -197,17 +253,18 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// â”€â”€ Skeleton â†’ Content Reveal â”€â”€
+// ── Skeleton → Content Reveal ──
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('[id^="skelChildStats_"]').forEach(function(skel) {
         var id = skel.id.replace('skelChildStats_', '');
         var real = document.getElementById('realChildStats_' + id);
         if (real) { skel.style.display = 'none'; real.style.display = ''; }
     });
+});
 </script>
 
 <script>
-// â”€â”€ Child Tab Selector Logic â”€â”€
+// ── Child Tab Selector Logic ──
 document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.child-tab-btn');
     const views = document.querySelectorAll('.child-view-content');
@@ -239,6 +296,8 @@ document.addEventListener('DOMContentLoaded', function() {
             t.style.border = '1px solid rgba(207,164,111,0.15)';
             t.style.background = 'rgba(207,164,111,0.02)';
             t.style.color = '#b39b82';
+            t.style.boxShadow = 'none';
+            t.style.transform = 'none';
         });
 
         // Set active tab
@@ -246,6 +305,8 @@ document.addEventListener('DOMContentLoaded', function() {
         activeTab.style.border = '1px solid rgba(207,164,111,0.4)';
         activeTab.style.background = 'rgba(207,164,111,0.1)';
         activeTab.style.color = '#f3e7cd';
+        activeTab.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+        activeTab.style.transform = 'scale(1.02)';
 
         // Show/hide views
         views.forEach(v => {

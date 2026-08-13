@@ -62,6 +62,11 @@
             <i class="bi bi-journal-check me-2"></i> Manual Entry
         </button>
     </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="materials-tab" data-bs-toggle="pill" data-bs-target="#materials" type="button" role="tab" style="color: #b39b82; font-weight: 700;">
+            <i class="bi bi-folder-fill me-2"></i> Materials
+        </button>
+    </li>
 </ul>
 
 <div class="tab-content">
@@ -178,6 +183,78 @@
                 </div>
             </form>
         </x-card>
+    </div>
+
+    <!-- Tab 4: Materials -->
+    <div class="tab-pane fade" id="materials" role="tabpanel">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <x-card title="Course Materials" icon="bi bi-folder2-open">
+                    <div class="d-flex flex-column gap-3">
+                        @forelse($subject->materials as $material)
+                            <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(207,164,111,0.1); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.2rem;">
+                                        @if(in_array(strtolower($material->file_type), ['pdf']))
+                                            <i class="bi bi-file-earmark-pdf-fill" style="color: #ef4444;"></i>
+                                        @elseif(in_array(strtolower($material->file_type), ['doc', 'docx']))
+                                            <i class="bi bi-file-earmark-word-fill" style="color: #3b82f6;"></i>
+                                        @elseif(in_array(strtolower($material->file_type), ['xls', 'xlsx']))
+                                            <i class="bi bi-file-earmark-excel-fill" style="color: #10b981;"></i>
+                                        @else
+                                            <i class="bi bi-file-earmark-text-fill"></i>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 700; color: #f3e7cd;">{{ $material->title }}</div>
+                                        <div style="font-size: 0.8rem; color: #b39b82;">{{ $material->original_filename }} &bull; {{ $material->file_size }} &bull; Uploaded {{ $material->created_at->format('M d, Y') }}</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a href="{{ Storage::url($material->file_path) }}" target="_blank" class="btn btn-sm btn-outline" style="border-color: rgba(255,255,255,0.1); color: #f3e7cd;">
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <form action="{{ route('teacher.materials.destroy', [$subject->code, $material->id]) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this material?');">
+                                        @csrf @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline" style="border-color: rgba(239,68,68,0.2); color: #f87171;">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="text-center p-4" style="color: #b39b82;">
+                                <i class="bi bi-folder-x" style="font-size: 2rem; opacity: 0.5;"></i>
+                                <div class="mt-2" style="font-weight: 600;">No materials uploaded yet</div>
+                            </div>
+                        @endforelse
+                    </div>
+                </x-card>
+            </div>
+            <div class="col-lg-4">
+                <x-card title="Upload Material" icon="bi bi-cloud-upload">
+                    <form action="{{ route('teacher.materials.store', $subject->code) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600; color: #b39b82;">Title *</label>
+                            <input type="text" name="title" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label" style="font-weight: 600; color: #b39b82;">Description</label>
+                            <textarea name="description" class="form-control" rows="2" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label" style="font-weight: 600; color: #b39b82;">File *</label>
+                            <input type="file" name="file" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
+                            <div class="form-text" style="color: rgba(179,155,130,0.7); font-size: 0.75rem;">Max 10MB</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="background: var(--gold); border: none; font-weight: 600; color: #fff;">
+                            <i class="bi bi-upload"></i> Upload
+                        </button>
+                    </form>
+                </x-card>
+            </div>
+        </div>
     </div>
 </div>
 

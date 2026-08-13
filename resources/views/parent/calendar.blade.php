@@ -874,7 +874,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showNonCurrentDates: true,
         fixedWeekCount: false,
         events: function(fetchInfo, successCallback, failureCallback) {
-            fetch(`{{ route('calendar.data') }}?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
+            fetch(`{{ route('parent.calendar.data') }}?start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`)
                 .then(response => response.json())
                 .then(data => {
                     const events = data.map(event => ({
