@@ -94,7 +94,7 @@
             style="background-color: #140d07; border: 1px solid rgba(207,164,111,0.35); color: #f3e7cd; font-weight: 600; font-size: 0.9rem; border-radius: 12px; padding: 8px 36px 8px 14px; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 100%;">
             @foreach($childrenData as $index => $data)
                 <option value="{{ $data->child->id }}" {{ $index === 0 ? 'selected' : '' }} style="background: #140d07; color: #f3e7cd;">
-                    {{ $data->child->name }} — {{ $data->child->student_number ?? 'Student' }} ({{ $data->rate }}%)
+                    {{ $data->child->name }} — {{ $data->child->student_number ?? 'Student' }}
                 </option>
             @endforeach
         </select>
