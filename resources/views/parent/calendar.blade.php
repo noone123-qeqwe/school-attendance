@@ -468,17 +468,6 @@
     flex-shrink: 0;
 }
 
-/* ── Subject count chip ───────────────────────────────── */
-.scal-chip {
-    font-size: 0.54rem;
-    font-weight: 700;
-    color: rgba(255,255,255,0.45);
-    background: rgba(255,255,255,0.06);
-    border-radius: 4px;
-    padding: 1px 5px;
-    line-height: 1.5;
-    border: 1px solid rgba(255,255,255,0.06);
-}
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
@@ -884,19 +873,10 @@ function scalRender() {
               ).join('')
             : '';
 
-        // Subject count chip for attendance days
-        const attCount = (scalEventMap[dateStr] || []).filter(e =>
-            (e.type || '').toLowerCase() === 'attendance'
-        ).length;
-        const chipHtml = attCount > 0
-            ? `<span class="scal-chip">${attCount} subj</span>`
-            : '';
-
         html += `
         <div class="${classes}" data-date="${dateStr}" onclick="scalDayClick('${dateStr}')">
             <span class="scal-num">${d}</span>
             <div class="scal-dots-row">${dotsHtml}</div>
-            ${chipHtml}
         </div>`;
     }
 
