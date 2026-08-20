@@ -8,28 +8,6 @@
     $selectedChild = $children->firstWhere('id', $selectedChildId) ?? $firstChild;
 @endphp
 
-@section('page-sub')
-    @if($children->count() === 1)
-        <span style="display:inline-flex;align-items:center;gap:6px;">
-            <i class="bi bi-person-fill" style="color:#cfa46f;font-size:0.8rem;"></i>
-            {{ $firstChild->name }}
-        </span>
-    @elseif($children->count() > 1)
-        <span style="display:inline-flex;align-items:center;gap:6px;">
-            <i class="bi bi-people-fill" style="color:#cfa46f;font-size:0.8rem;"></i>
-            <select id="childSelector" onchange="scalSwitchChild(this.value)"
-                style="background:transparent;border:none;color:inherit;font-size:inherit;font-weight:600;cursor:pointer;outline:none;padding:0;">
-                @foreach($children as $child)
-                    <option value="{{ $child->id }}" {{ $child->id == $selectedChildId ? 'selected' : '' }}
-                        style="background:#1a1209;color:#f3ede4;">{{ $child->name }}</option>
-                @endforeach
-            </select>
-        </span>
-    @else
-        {{ now()->format('l, F j, Y') }}
-    @endif
-@endsection
-
 @section('content')
 <style>
 /* ─── Squircle Attendance Calendar (Parent) ──────────────── */
