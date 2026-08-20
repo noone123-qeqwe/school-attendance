@@ -187,8 +187,10 @@ class CalendarService
             $timeString = "{$start} - {$end}";
         }
         
+        $studentName = $attendance->user->name ?? null;
+
         if ($currentUser->isParent()) {
-            $childName = $attendance->user->name ?? 'Child';
+            $childName = $studentName ?? 'Child';
             $title = "{$childName} - {$subjectCode}";
         } else {
             $title = "{$subjectCode}";
@@ -207,6 +209,8 @@ class CalendarService
             'subject_name' => $subjectName,
             'instructor_name' => $instructorName,
             'time_string' => $timeString,
+            'student_name' => $studentName,
+            'excused' => (bool) $attendance->excused,
         ];
     }
 }

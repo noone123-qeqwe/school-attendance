@@ -518,9 +518,10 @@
 /* ═══════════════════════════════════════════════════
    Squircle Attendance Calendar — Parent View
    ═══════════════════════════════════════════════════ */
-let scalYear     = new Date().getFullYear();
-let scalMonth    = new Date().getMonth() + 1;
-let scalChildId  = {{ $selectedChildId ?? 'null' }};
+let scalYear       = new Date().getFullYear();
+let scalMonth      = new Date().getMonth() + 1;
+let scalChildId    = {{ $selectedChildId ?? 'null' }};
+const scalChildCount = {{ $children->count() }};
 
 // Raw events from API: date string → array of event objects
 const scalEventMap = {};
@@ -701,6 +702,13 @@ function scalDayClick(dateStr) {
                 // Excused absences get a dashed border
                 const excusedStyle = ev.excused ? 'border:2px dashed rgba(255,255,255,0.25);' : '';
 
+                const studentNameHtml = (scalChildCount > 1 && ev.student_name)
+                    ? `<div style="display:inline-flex;align-items:center;gap:4px;margin-top:3px;">
+                          <i class="bi bi-person-fill" style="font-size:0.68rem;color:#cfa46f;"></i>
+                          <span style="font-size:0.72rem;color:#cfa46f;font-weight:600;">${ev.student_name}</span>
+                       </div>`
+                    : '';
+
                 content.insertAdjacentHTML('beforeend', `
                 <div class="subject-card" style="${excusedStyle}">
                     <div class="subject-card-icon" style="background:${iconColor}20;color:${iconColor};">
@@ -708,7 +716,8 @@ function scalDayClick(dateStr) {
                     </div>
                     <div class="subject-card-info">
                         <div class="subject-card-title">${ev.subject_name || ev.title}</div>
-                        <div class="subject-card-time">${ev.time_string || 'Time not set'}</div>
+                        ${studentNameHtml}
+                        <div class="subject-card-time" style="margin-top:2px;">${ev.time_string || 'Time not set'}</div>
                         <div class="subject-card-teacher">${ev.instructor_name || 'No Instructor'}${ev.excused ? ' &nbsp;<span style=\"font-size:0.7rem;color:#cfa46f;\">(Excused)</span>' : ''}</div>
                     </div>
                     <div class="subject-card-badge" style="background:${badge.bg};color:${badge.color};">${ev.status}</div>

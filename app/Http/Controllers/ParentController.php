@@ -521,11 +521,16 @@ class ParentController extends Controller
         return $pdf->download('Attendance_Report_' . $child->student_number . '.pdf');
     }
 
-    public function calendar()
+    public function calendar(Request $request)
     {
         $parent = Auth::user();
         $children = $parent->children()->get();
-        return view('parent.calendar', compact('children'));
+        $childId = $request->query('child_id');
+        $selectedChild = $childId ? $children->firstWhere('id', $childId) : $children->first();
+        if (!$selectedChild && $children->isNotEmpty()) {
+            $selectedChild = $children->first();
+        }
+        return view('parent.calendar', compact('children', 'selectedChild'));
     }
 
     public function data(Request $request, \App\Services\CalendarService $calendarService)
