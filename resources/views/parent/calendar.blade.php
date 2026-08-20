@@ -312,6 +312,71 @@
     .scal-nav-btn   { width: 40px; height: 40px; font-size: 1rem; border-radius: 11px; }
 }
 
+/* ── Student chips strip ────────────────────────────── */
+.scal-students-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.scal-students-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(207,164,111,0.6);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.scal-child-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 13px 5px 7px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.03);
+    color: #a09080;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.22s cubic-bezier(0.16,1,0.3,1);
+    user-select: none;
+}
+.scal-child-chip:hover {
+    background: rgba(207,164,111,0.07);
+    border-color: rgba(207,164,111,0.25);
+    color: #f3ede4;
+    transform: translateY(-1px);
+}
+.scal-child-chip.active {
+    background: rgba(207,164,111,0.12);
+    border-color: rgba(207,164,111,0.45);
+    color: #f3ede4;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0 0 1px rgba(207,164,111,0.15);
+}
+.scal-child-chip.single {
+    cursor: default;
+    pointer-events: none;
+}
+.scal-child-avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(207,164,111,0.22);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #cfa46f;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
 /* ─── Modal styles ───────────────────────────────────────── */
 .ent-modal-content {
     background: #0f0a08;
@@ -670,6 +735,10 @@ const STATUS_CLASS = {
 /* ── Switch active child ────────────────────────────────── */
 function scalSwitchChild(childId) {
     scalChildId = parseInt(childId);
+    // Sync active chip
+    document.querySelectorAll('.scal-child-chip').forEach(chip => {
+        chip.classList.toggle('active', parseInt(chip.dataset.childId) === scalChildId);
+    });
     scalLoadAndRender();
 }
 
