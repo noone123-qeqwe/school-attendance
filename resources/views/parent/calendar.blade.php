@@ -448,6 +448,51 @@
     font-family: monospace;
 }
 
+/* ── Status Dot Indicators ────────────────────────────── */
+.scal-dots-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: center;
+    min-height: 8px;
+    margin-top: 3px;
+}
+.scal-mdot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+    transition: transform 0.2s ease;
+}
+.scal-tile:hover .scal-mdot {
+    transform: scale(1.25);
+}
+.scal-dot-present {
+    background: #10b981 !important;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.8) !important;
+}
+.scal-dot-late {
+    background: #f59e0b !important;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.8) !important;
+}
+.scal-dot-absent {
+    background: #ef4444 !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.8) !important;
+}
+.scal-dot-exam {
+    background: #ec4899 !important;
+    box-shadow: 0 0 8px rgba(236, 72, 153, 0.8) !important;
+}
+.scal-dot-event {
+    background: #8b5cf6 !important;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.8) !important;
+}
+.scal-dot-holiday {
+    background: #4ade80 !important;
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.8) !important;
+}
+
 /* ─── Modal styles ───────────────────────────────────────── */
 .ent-modal-content {
     background: #0f0a08;
@@ -1066,11 +1111,16 @@ function scalRender() {
         if (status)  classes += ' ' + STATUS_CLASS[status];
 
         // Multi-dot row (up to 3 statuses)
-        const dotsHtml = statuses.length > 0
-            ? statuses.slice(0, 3).map(s =>
-                `<span class="scal-mdot" style="background:${DOT_COLORS[s]|'#fff'};"></span>`
-              ).join('')
-            : '';
+        let dotsHtml = '';
+        if (statuses && statuses.length > 0) {
+            dotsHtml = statuses.slice(0, 3).map(s => {
+                const col = DOT_COLORS[s] || '#fff';
+                return `<span class="scal-mdot scal-dot-${s}" style="background-color: ${col}; box-shadow: 0 0 6px ${col};"></span>`;
+            }).join('');
+        } else if (status) {
+            const col = DOT_COLORS[status] || '#fff';
+            dotsHtml = `<span class="scal-mdot scal-dot-${status}" style="background-color: ${col}; box-shadow: 0 0 6px ${col};"></span>`;
+        }
 
         html += `
         <div class="${classes}" data-date="${dateStr}" onclick="scalDayClick('${dateStr}')">
