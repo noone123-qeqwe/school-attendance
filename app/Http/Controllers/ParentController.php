@@ -530,11 +530,13 @@ class ParentController extends Controller
 
     public function data(Request $request, \App\Services\CalendarService $calendarService)
     {
+        $childId = $request->query('child_id');
         return response()->json(
             $calendarService->getEventsForUser(
                 Auth::user(),
                 $request->query('start'),
-                $request->query('end')
+                $request->query('end'),
+                $childId ? (int) $childId : null
             )
         );
     }

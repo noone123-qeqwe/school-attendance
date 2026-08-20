@@ -2,6 +2,34 @@
 
 @section('page-title', 'Attendance Calendar')
 
+@php
+    $firstChild = $children->first();
+    $selectedChildId = request('child_id', $firstChild?->id);
+    $selectedChild = $children->firstWhere('id', $selectedChildId) ?? $firstChild;
+@endphp
+
+@section('page-sub')
+    @if($children->count() === 1)
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+            <i class="bi bi-person-fill" style="color:#cfa46f;font-size:0.8rem;"></i>
+            {{ $firstChild->name }}
+        </span>
+    @elseif($children->count() > 1)
+        <span style="display:inline-flex;align-items:center;gap:6px;">
+            <i class="bi bi-people-fill" style="color:#cfa46f;font-size:0.8rem;"></i>
+            <select id="childSelector" onchange="scalSwitchChild(this.value)"
+                style="background:transparent;border:none;color:inherit;font-size:inherit;font-weight:600;cursor:pointer;outline:none;padding:0;">
+                @foreach($children as $child)
+                    <option value="{{ $child->id }}" {{ $child->id == $selectedChildId ? 'selected' : '' }}
+                        style="background:#1a1209;color:#f3ede4;">{{ $child->name }}</option>
+                @endforeach
+            </select>
+        </span>
+    @else
+        {{ now()->format('l, F j, Y') }}
+    @endif
+@endsection
+
 @section('content')
 <style>
 /* ─── Squircle Attendance Calendar (Parent) ──────────────── */
@@ -490,8 +518,9 @@
 /* ═══════════════════════════════════════════════════
    Squircle Attendance Calendar — Parent View
    ═══════════════════════════════════════════════════ */
-let scalYear  = new Date().getFullYear();
-let scalMonth = new Date().getMonth() + 1;
+let scalYear     = new Date().getFullYear();
+let scalMonth    = new Date().getMonth() + 1;
+let scalChildId  = {{ $selectedChildId ?? 'null' }};
 
 // Raw events from API: date string → array of event objects
 const scalEventMap = {};
@@ -511,12 +540,19 @@ const STATUS_CLASS = {
     exam    : 'status-exam',
 };
 
+/* ── Switch active child ────────────────────────────────── */
+function scalSwitchChild(childId) {
+    scalChildId = parseInt(childId);
+    scalLoadAndRender();
+}
+
 /* ── Fetch events for a month range ─────────────────────── */
 function scalFetchEvents(year, month, cb) {
     const start   = `${year}-${String(month).padStart(2,'0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const end     = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-    fetch(`{{ route('parent.calendar.data') }}?start=${start}&end=${end}`)
+    const childParam = scalChildId ? `&child_id=${scalChildId}` : '';
+    fetch(`{{ route('parent.calendar.data') }}?start=${start}&end=${end}${childParam}`)
         .then(r => r.json())
         .then(data => {
             Object.keys(scalEventMap).forEach(k => delete scalEventMap[k]);

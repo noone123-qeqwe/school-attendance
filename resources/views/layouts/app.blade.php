@@ -76,7 +76,7 @@
                                 @endif
                             @endif
                         </div>
-                        <div class="header-page-sub">{{ now()->format('l, F j, Y') }}</div>
+                        <div class="header-page-sub">@hasSection('page-sub')@yield('page-sub')@else{{ now()->format('l, F j, Y') }}@endif</div>
                     </div>
                 </div>
 

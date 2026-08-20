@@ -14,7 +14,7 @@ class CalendarService
     /**
      * Get formatted calendar events for a specific user and date range.
      */
-    public function getEventsForUser(User $user, ?string $start = null, ?string $end = null): Collection
+    public function getEventsForUser(User $user, ?string $start = null, ?string $end = null, ?int $childId = null): Collection
     {
         $events = collect();
 
@@ -53,7 +53,11 @@ class CalendarService
 
         // If the user is a parent, also fetch and format attendance records for their children
         if ($user->isParent()) {
-            $childIds = $user->children()->pluck('users.id');
+            $allChildIds = $user->children()->pluck('users.id');
+            // Filter to specific child if requested, otherwise show all
+            $childIds = $childId && $allChildIds->contains($childId)
+                ? collect([$childId])
+                : $allChildIds;
             
             $attendanceQuery = Attendance::with(['subject.schedules', 'subject.instructorUser', 'user'])
                 ->whereIn('user_id', $childIds);
