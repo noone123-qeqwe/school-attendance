@@ -290,69 +290,41 @@
     .scal-nav-btn   { width: 40px; height: 40px; font-size: 1rem; border-radius: 11px; }
 }
 
-/* ── Student chips strip ────────────────────────────── */
-.scal-students-row {
+/* ── Student dropdown selector ──────────────────────── */
+.scal-student-select-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: space-between;
     flex-wrap: wrap;
-    margin-bottom: 18px;
-    padding-bottom: 18px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 14px;
 }
-.scal-students-label {
-    font-size: 0.68rem;
+.scal-student-select-label {
+    font-size: 0.78rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(207,164,111,0.6);
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-.scal-child-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    padding: 5px 13px 5px 7px;
-    border-radius: 99px;
-    border: 1px solid rgba(255,255,255,0.07);
-    background: rgba(255,255,255,0.03);
-    color: #a09080;
-    font-size: 0.82rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.22s cubic-bezier(0.16,1,0.3,1);
-    user-select: none;
-}
-.scal-child-chip:hover {
-    background: rgba(207,164,111,0.07);
-    border-color: rgba(207,164,111,0.25);
-    color: #f3ede4;
-    transform: translateY(-1px);
-}
-.scal-child-chip.active {
-    background: rgba(207,164,111,0.12);
-    border-color: rgba(207,164,111,0.45);
-    color: #f3ede4;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.25), 0 0 0 1px rgba(207,164,111,0.15);
-}
-.scal-child-chip.single {
-    cursor: default;
-    pointer-events: none;
-}
-.scal-child-avatar {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: rgba(207,164,111,0.22);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.62rem;
-    font-weight: 800;
+    letter-spacing: 0.06em;
     color: #cfa46f;
-    text-transform: uppercase;
-    flex-shrink: 0;
+    margin: 0;
+}
+.scal-select {
+    background: #140d07 !important;
+    border: 1px solid rgba(207, 164, 111, 0.3) !important;
+    color: #f3ede4 !important;
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 6px 14px;
+    cursor: pointer;
+    outline: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.scal-select option {
+    background: #140d07;
+    color: #f3ede4;
 }
 
 /* ─── Modal styles ───────────────────────────────────────── */
@@ -530,24 +502,30 @@
             </button>
         </div>
 
-        {{-- Student chips strip --}}
-        @if($children->count() > 0)
-        <div class="scal-students-row">
-            <span class="scal-students-label">
-                <i class="bi bi-people-fill" style="margin-right:4px;"></i>Students
-            </span>
-            @foreach($children as $child)
-            @php
-                $isActive = $child->id == $selectedChildId || ($loop->first && !$selectedChildId);
-                $initials = strtoupper(substr($child->name, 0, 2));
-            @endphp
-            <div class="scal-child-chip {{ $isActive ? 'active' : '' }} {{ $children->count() === 1 ? 'single' : '' }}"
-                 data-child-id="{{ $child->id }}"
-                 onclick="scalSwitchChild({{ $child->id }})">
-                <div class="scal-child-avatar">{{ $initials }}</div>
-                <span>{{ $child->name }}</span>
+        {{-- Student Dropdown Selector --}}
+        @if($children->count() > 1)
+        <div class="scal-student-select-row">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-people-fill" style="color: #cfa46f; font-size: 1.05rem;"></i>
+                <label for="scalChildSelect" class="scal-student-select-label">Select Student:</label>
             </div>
-            @endforeach
+            <div style="min-width: 220px; max-width: 360px; flex-grow: 1;">
+                <select id="scalChildSelect" class="form-select form-select-sm scal-select" onchange="scalSwitchChild(this.value)">
+                    @foreach($children as $child)
+                        <option value="{{ $child->id }}" {{ $child->id == $selectedChildId ? 'selected' : '' }}>
+                            {{ $child->name }} — {{ $child->student_number ?? 'Student' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        @elseif($children->count() === 1)
+        <div class="scal-student-select-row">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-person-fill" style="color: #cfa46f; font-size: 1rem;"></i>
+                <span class="scal-student-select-label">Student:</span>
+                <span style="font-weight: 700; color: #f3ede4; font-size: 0.9rem;">{{ $firstChild->name }}</span>
+            </div>
         </div>
         @endif
 
@@ -734,10 +712,10 @@ const STATUS_CLASS = {
 /* ── Switch active child ────────────────────────────────── */
 function scalSwitchChild(childId) {
     scalChildId = parseInt(childId);
-    // Sync active chip
-    document.querySelectorAll('.scal-child-chip').forEach(chip => {
-        chip.classList.toggle('active', parseInt(chip.dataset.childId) === scalChildId);
-    });
+    const select = document.getElementById('scalChildSelect');
+    if (select && select.value !== childId.toString()) {
+        select.value = childId;
+    }
     scalLoadAndRender();
 }
 

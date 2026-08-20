@@ -80,23 +80,25 @@
 </div>
 
 
-@if(count($childrenData) > 0)
-<!-- Child Tab Selector -->
-<div class="child-tab-container mb-4" id="childTabsContainer">
-    @foreach($childrenData as $index => $data)
-        @php
-            $rateColor = $data->rate >= 90 ? '#4ade80' : ($data->rate >= 75 ? '#fbbf24' : '#f87171');
-        @endphp
-        <div class="child-tab-btn {{ $index === 0 ? 'active' : '' }}" data-child-id="{{ $data->child->id }}">
-            <div class="child-avatar-mini">
-                {{ substr($data->child->name, 0, 2) }}
-            </div>
-            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px; display: inline-block; vertical-align: middle;">
-                {{ $data->child->name }}
-            </span>
-            <span class="child-rate-badge" style="color: {{ $rateColor }};">{{ $data->rate }}%</span>
-        </div>
-    @endforeach
+@if(count($childrenData) > 1)
+<!-- Child Dropdown Selector -->
+<div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: linear-gradient(135deg, rgba(32,20,15,0.7) 0%, rgba(20,10,5,0.85) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 18px; padding: 14px 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-people-fill" style="color: var(--gold); font-size: 1.15rem;"></i>
+        <label for="dashboardChildSelect" style="font-weight: 700; color: #f3e7cd; margin: 0; font-size: 0.95rem;">
+            Select Student:
+        </label>
+    </div>
+    <div style="min-width: 240px; flex-grow: 1; max-width: 380px;">
+        <select id="dashboardChildSelect" class="form-select" onchange="switchDashboardChild(this.value)"
+            style="background: rgba(15,10,8,0.9); border: 1px solid rgba(207,164,111,0.35); color: #f3e7cd; font-weight: 600; border-radius: 12px; padding: 8px 16px; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            @foreach($childrenData as $index => $data)
+                <option value="{{ $data->child->id }}" {{ $index === 0 ? 'selected' : '' }} style="background: #140d07; color: #f3e7cd;">
+                    {{ $data->child->name }} — {{ $data->child->student_number ?? 'Student' }} ({{ $data->rate }}% Attendance)
+                </option>
+            @endforeach
+        </select>
+    </div>
 </div>
 @endif
 
@@ -250,58 +252,22 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script>
-// ── Child Tab Selector Logic ──
-document.addEventListener('DOMContentLoaded', function() {
-    const tabs = document.querySelectorAll('.child-tab-btn');
-    const views = document.querySelectorAll('.child-view-content');
-
-    // Load saved tab from localStorage if exists
-    const savedChildId = localStorage.getItem('selectedChildId');
-    if (savedChildId) {
-        const savedTab = document.querySelector('.child-tab-btn[data-child-id="' + savedChildId + '"]');
-        if (savedTab) {
-            activateTab(savedTab, savedChildId);
-        }
-    }
-
-    tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
-            const childId = this.getAttribute('data-child-id');
-            activateTab(this, childId);
-            localStorage.setItem('selectedChildId', childId);
-            
-            // Scroll to center of tab container on mobile
-            this.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        });
+// ── Child Dropdown Selector Logic ──
+function switchDashboardChild(childId) {
+    document.querySelectorAll('.child-view-content').forEach(function(v) {
+        v.style.display = (v.id === 'childView_' + childId) ? 'block' : 'none';
     });
+    localStorage.setItem('selectedChildId', childId);
+    var select = document.getElementById('dashboardChildSelect');
+    if (select && select.value !== childId.toString()) {
+        select.value = childId;
+    }
+}
 
-    function activateTab(activeTab, childId) {
-        // Reset all tabs
-        tabs.forEach(t => {
-            t.classList.remove('active');
-            t.style.border = '1px solid rgba(207,164,111,0.15)';
-            t.style.background = 'rgba(207,164,111,0.02)';
-            t.style.color = '#b39b82';
-            t.style.boxShadow = 'none';
-            t.style.transform = 'none';
-        });
-
-        // Set active tab
-        activeTab.classList.add('active');
-        activeTab.style.border = '1px solid rgba(207,164,111,0.4)';
-        activeTab.style.background = 'rgba(207,164,111,0.1)';
-        activeTab.style.color = '#f3e7cd';
-        activeTab.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
-        activeTab.style.transform = 'scale(1.02)';
-
-        // Show/hide views
-        views.forEach(v => {
-            if (v.id === 'childView_' + childId) {
-                v.style.display = 'block';
-            } else {
-                v.style.display = 'none';
-            }
-        });
+document.addEventListener('DOMContentLoaded', function() {
+    var savedChildId = localStorage.getItem('selectedChildId');
+    if (savedChildId && document.getElementById('childView_' + savedChildId)) {
+        switchDashboardChild(savedChildId);
     }
 });
 </script>
