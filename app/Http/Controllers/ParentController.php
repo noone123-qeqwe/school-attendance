@@ -63,12 +63,6 @@ class ParentController extends Controller
             ->get()
             ->groupBy('user_id');
 
-        $allTrendData = Attendance::selectRaw("user_id, DATE(date) as day, status, COUNT(*) as total")
-            ->whereIn('user_id', $childIds)
-            ->whereBetween('date', [now()->subDays(30)->toDateString(), now()->toDateString()])
-            ->groupBy('user_id', 'day', 'status')
-            ->get()
-            ->groupBy('user_id');
 
         $allWarnings = Warning::whereIn('user_id', $childIds)
             ->with('subject')
@@ -89,7 +83,7 @@ class ParentController extends Controller
             ->pluck('count', 'user_id');
 
         // Calculate stats per child
-        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allTrendData, $allWarnings, $allPendingExcuses, $allApprovedExcuses) {
+        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allWarnings, $allPendingExcuses, $allApprovedExcuses) {
             $total = $child->total_attendances;
             $present = $child->present_count;
             $late = $child->late_count;
@@ -111,23 +105,6 @@ class ParentController extends Controller
                 }
             }
 
-            // 30-day trend data
-            $trendData = collect($allTrendData->get($child->id, []))->groupBy('day');
-
-            $trendLabels = [];
-            $trendPresent = [];
-            $trendAbsent = [];
-            for ($i = 29; $i >= 0; $i--) {
-                $day = now()->subDays($i);
-                $dayKey = $day->toDateString();
-                $trendLabels[] = $day->format('M d');
-                $dayData = $trendData->get($dayKey, collect());
-                $presentCount = ($dayData->firstWhere('status', 'Present')->total ?? 0) +
-                                ($dayData->firstWhere('status', 'Late')->total ?? 0);
-                $trendPresent[] = $presentCount;
-                $trendAbsent[] = $dayData->firstWhere('status', 'Absent')->total ?? 0;
-            }
-
             // Active warnings
             $warnings = collect($allWarnings->get($child->id, []))->take(5);
 
@@ -138,18 +115,15 @@ class ParentController extends Controller
             $excused = $allApprovedExcuses->get($child->id, 0);
 
             return (object) [
-                'child' => $child,
-                'total' => $total,
-                'present' => $present,
-                'late' => $late,
-                'absent' => $absent,
-                'excused' => $excused,
-                'rate' => $rate,
-                'streak' => $streakCount,
-                'trendLabels' => $trendLabels,
-                'trendPresent' => $trendPresent,
-                'trendAbsent' => $trendAbsent,
-                'warnings' => $warnings,
+                'child'          => $child,
+                'total'          => $total,
+                'present'        => $present,
+                'late'           => $late,
+                'absent'         => $absent,
+                'excused'        => $excused,
+                'rate'           => $rate,
+                'streak'         => $streakCount,
+                'warnings'       => $warnings,
                 'pendingExcuses' => $pendingExcuses,
             ];
         });

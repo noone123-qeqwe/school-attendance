@@ -153,44 +153,32 @@
         <x-card type="kpi" accent="info" label="Excused" value="{{ $data->excused }}" />
     </div>
 
-    <div class="row g-4 mb-4">
-        <!-- Chart -->
-        <div class="col-lg-8">
-            <x-card type="section" class="h-100" icon="bi bi-graph-up" title="30-Day Trend">
-                <div style="min-height: 250px; height: 100%;">
-                    <canvas id="trendChart_{{ $data->child->id }}"></canvas>
+    <!-- Warnings -->
+    <x-card type="section" class="mb-4" icon="bi bi-exclamation-triangle" title="Warnings">
+        <div style="overflow-y: auto; max-height: 250px;" class="custom-scrollbar pe-2">
+            @if($data->warnings->count() > 0)
+                @foreach($data->warnings as $warning)
+                <div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size: 0.82rem; font-weight: 700; color: #f87171; margin-bottom: 4px;">
+                        {{ $warning->subject->name ?? $warning->subject_code }}
+                    </div>
+                    <div style="font-size: 0.78rem; color: #b39b82; line-height: 1.5;">
+                        {{ Str::limit($warning->message, 80) }}
+                    </div>
+                    <div style="font-size: 0.68rem; color: rgba(179,155,130,0.6); margin-top: 4px;">
+                        <i class="bi bi-clock me-1"></i>{{ $warning->created_at->diffForHumans() }}
+                    </div>
                 </div>
-            </x-card>
-        </div>
-        <!-- Warnings -->
-        <div class="col-lg-4">
-            <x-card type="section" class="h-100 d-flex flex-column" icon="bi bi-exclamation-triangle" title="Warnings">
-                <div style="flex: 1; overflow-y: auto; max-height: 250px;" class="custom-scrollbar pe-2">
-                    @if($data->warnings->count() > 0)
-                        @foreach($data->warnings as $warning)
-                        <div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <div style="font-size: 0.82rem; font-weight: 700; color: #f87171; margin-bottom: 4px;">
-                                {{ $warning->subject->name ?? $warning->subject_code }}
-                            </div>
-                            <div style="font-size: 0.78rem; color: #b39b82; line-height: 1.5;">
-                                {{ Str::limit($warning->message, 80) }}
-                            </div>
-                            <div style="font-size: 0.68rem; color: rgba(179,155,130,0.6); margin-top: 4px;">
-                                <i class="bi bi-clock me-1"></i>{{ $warning->created_at->diffForHumans() }}
-                            </div>
-                        </div>
-                        @endforeach
-                    @else
-                        <div class="text-center" style="padding: 20px;">
-                            <i class="bi bi-shield-check" style="font-size: 2rem; color: #4ade80; opacity: 0.5;"></i>
-                            <div style="font-size: 0.85rem; color: #4ade80; margin-top: 8px;">All Clear!</div>
-                            <div style="font-size: 0.78rem; color: #b39b82;">No warnings — great job!</div>
-                        </div>
-                    @endif
+                @endforeach
+            @else
+                <div class="text-center" style="padding: 20px;">
+                    <i class="bi bi-shield-check" style="font-size: 2rem; color: #4ade80; opacity: 0.5;"></i>
+                    <div style="font-size: 0.85rem; color: #4ade80; margin-top: 8px;">All Clear!</div>
+                    <div style="font-size: 0.78rem; color: #b39b82;">No warnings — great job!</div>
                 </div>
-            </x-card>
+            @endif
         </div>
-    </div>
+    </x-card>
 
     <!-- Recent Attendance -->
     <x-card type="section" icon="bi bi-clock-history" title="Recent Attendance">
@@ -250,8 +238,6 @@
 </div>
 @endforelse
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // ── Skeleton → Content Reveal ──
 document.addEventListener('DOMContentLoaded', function() {
@@ -318,100 +304,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-</script>
-@foreach($childrenData as $data)
-document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('trendChart_{{ $data->child->id }}').getContext('2d');
-    
-    const presentGradient = ctx.createLinearGradient(0, 0, 0, 180);
-    presentGradient.addColorStop(0, 'rgba(74,222,128,0.25)');
-    presentGradient.addColorStop(1, 'rgba(74,222,128,0.01)');
-    
-    const absentGradient = ctx.createLinearGradient(0, 0, 0, 180);
-    absentGradient.addColorStop(0, 'rgba(248,113,113,0.25)');
-    absentGradient.addColorStop(1, 'rgba(248,113,113,0.01)');
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: @json($data->trendLabels),
-            datasets: [
-                {
-                    label: 'Present/Late',
-                    data: @json($data->trendPresent),
-                    borderColor: '#4ade80',
-                    backgroundColor: presentGradient,
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointBackgroundColor: '#1a1d24',
-                    pointBorderColor: '#4ade80',
-                    pointBorderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#4ade80',
-                    pointHoverBorderColor: '#fff',
-                },
-                {
-                    label: 'Absent',
-                    data: @json($data->trendAbsent),
-                    borderColor: '#f87171',
-                    backgroundColor: absentGradient,
-                    fill: true,
-                    tension: 0.4,
-                    borderWidth: 2,
-                    pointBackgroundColor: '#1a1d24',
-                    pointBorderColor: '#f87171',
-                    pointBorderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#f87171',
-                    pointHoverBorderColor: '#fff',
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: { mode: 'index', intersect: false },
-            plugins: {
-                legend: {
-                    position: 'top',
-                    align: 'end',
-                    labels: { 
-                        color: '#b39b82', 
-                        font: { size: 11, family: 'Inter', weight: '500' }, 
-                        boxWidth: 10, boxHeight: 10,
-                        usePointStyle: true, padding: 15
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(26, 29, 36, 0.95)',
-                    titleColor: '#cfa46f',
-                    bodyColor: '#f3e7cd',
-                    borderColor: 'rgba(207,164,111,0.2)',
-                    borderWidth: 1,
-                    padding: 12, boxPadding: 6,
-                    usePointStyle: true,
-                    titleFont: { family: 'Inter', size: 12, weight: '600' },
-                    bodyFont: { family: 'Inter', size: 12 }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { color: '#8f826f', font: { size: 10, family: 'Inter' }, stepSize: 1, padding: 8 },
-                    grid: { color: 'rgba(255,215,145,0.04)', drawBorder: false }
-                },
-                x: {
-                    ticks: { color: '#8f826f', font: { size: 9, family: 'Inter' }, maxRotation: 45, padding: 8 },
-                    grid: { display: false, drawBorder: false }
-                }
-            }
-        }
-    });
-});
-@endforeach
 </script>
 
 @endsection
