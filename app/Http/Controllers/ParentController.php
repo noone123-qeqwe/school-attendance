@@ -82,8 +82,14 @@ class ParentController extends Controller
             ->groupBy('user_id')
             ->pluck('count', 'user_id');
 
+        $allApprovedExcuses = ExcuseSubmission::whereIn('user_id', $childIds)
+            ->where('status', 'approved')
+            ->selectRaw('user_id, COUNT(*) as count')
+            ->groupBy('user_id')
+            ->pluck('count', 'user_id');
+
         // Calculate stats per child
-        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allTrendData, $allWarnings, $allPendingExcuses) {
+        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allTrendData, $allWarnings, $allPendingExcuses, $allApprovedExcuses) {
             $total = $child->total_attendances;
             $present = $child->present_count;
             $late = $child->late_count;
@@ -128,12 +134,16 @@ class ParentController extends Controller
             // Pending excuses
             $pendingExcuses = $allPendingExcuses->get($child->id, 0);
 
+            // Approved (excused) absences
+            $excused = $allApprovedExcuses->get($child->id, 0);
+
             return (object) [
                 'child' => $child,
                 'total' => $total,
                 'present' => $present,
                 'late' => $late,
                 'absent' => $absent,
+                'excused' => $excused,
                 'rate' => $rate,
                 'streak' => $streakCount,
                 'trendLabels' => $trendLabels,
