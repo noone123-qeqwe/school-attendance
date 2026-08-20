@@ -3,471 +3,745 @@
 @section('page-title', 'School Calendar')
 
 @section('content')
-<div id="studentCalendarPage" class="holiday-dashboard">
 <style>
-    .hcal-pro-wrapper {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        max-width: 860px;
-        margin: 0 auto;
-        padding-bottom: 30px;
-    }
-    
-    .hcal-top-bar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-        margin-bottom: 20px;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-    
-    .hcal-top-title {
-        font-size: 1.4rem;
-        font-weight: 800;
-        color: #f3ede4;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .hcal-card-box {
-        background: #0f0a08;
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: 28px;
-        padding: 32px 36px;
-        width: 100%;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
-    }
-    
-    .hcal-header-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 24px;
-    }
-    
-    .hcal-btn-arrow {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #cfa46f;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        text-decoration: none;
-    }
-    
-    .hcal-btn-arrow:hover {
-        background: rgba(207, 164, 111, 0.15);
-        border-color: rgba(207, 164, 111, 0.4);
-        color: #ffffff;
-        transform: translateY(-2px);
-    }
-    
-    .hcal-current-title {
-        font-size: 1.5rem;
-        font-weight: 800;
-        color: #fdfbf7;
-        letter-spacing: -0.02em;
-    }
-    
-    .hcal-weekdays-pill {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
-        margin-bottom: 16px;
-        background: rgba(255, 255, 255, 0.025);
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        border-radius: 16px;
-        padding: 14px 0;
-    }
-    
-    .hcal-weekday-item {
-        text-align: center;
-        font-size: 0.82rem;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: #cfa46f;
-    }
-    
-    .hcal-days-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 12px;
-    }
-    
-    .hcal-tile {
-        height: 68px;
-        min-height: 68px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border-radius: 16px;
-        border: 1px solid rgba(255, 255, 255, 0.04);
-        background: rgba(255, 255, 255, 0.025);
-        position: relative;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        cursor: pointer;
-        padding: 6px 0;
-    }
-    
-    .hcal-tile:hover {
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(207, 164, 111, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-    }
-    
-    .hcal-tile.empty {
-        visibility: hidden;
-        background: transparent;
-        border-color: transparent;
-        cursor: default;
-    }
-    
-    .hcal-tile-num {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #f3ede4;
-        line-height: 1;
-    }
-    
-    /* Sunday Red Tint */
-    .hcal-tile.sunday .hcal-tile-num {
-        color: #f87171 !important;
-    }
-    
-    /* Today Cell - Illuminated Glowing Border */
-    .hcal-tile.today {
-        background: rgba(255, 209, 102, 0.08) !important;
-        border: 2px solid #ffd166 !important;
-        box-shadow: 0 0 24px rgba(255, 209, 102, 0.28), inset 0 0 14px rgba(255, 209, 102, 0.1) !important;
-    }
-    
-    .hcal-tile.today .hcal-tile-num {
-        color: #ffffff !important;
-        font-weight: 800;
-    }
-    
-    /* Holiday / Event Days - Crimson Squircle with Centered Red Dot */
-    .hcal-tile.holiday-day,
-    .hcal-tile.has-event {
-        background: rgba(220, 38, 38, 0.15) !important;
-        border: 1.5px solid rgba(220, 38, 38, 0.5) !important;
-    }
-    
-    .hcal-tile.holiday-day .hcal-tile-num,
-    .hcal-tile.has-event .hcal-tile-num {
-        color: #fca5a5 !important;
-        font-weight: 800;
-    }
-    
-    .hcal-tile-dots {
-        display: flex;
-        gap: 4px;
-        margin-top: 5px;
-        height: 6px;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .hcal-tile-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: #ef4444;
-        box-shadow: 0 0 8px #ef4444;
-        flex-shrink: 0;
-    }
-    
-    .hcal-bottom-legend {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 28px;
-        padding-top: 20px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-    
-    .hcal-bottom-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.78rem;
-        color: #b39b82;
-        font-weight: 600;
-        letter-spacing: 0.03em;
-    }
-    
-    .hcal-bottom-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
+/* ─── Squircle School Calendar ─────────────────────────── */
+.scal-outer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+    gap: 20px;
+}
 
-    @media (max-width: 768px) {
-        .hcal-card-box {
-            padding: 20px 16px;
-            border-radius: 20px;
-        }
-        .hcal-current-title {
-            font-size: 1.2rem;
-        }
-        .hcal-btn-arrow {
-            width: 38px;
-            height: 38px;
-            font-size: 1rem;
-        }
-        .hcal-weekdays-pill {
-            padding: 10px 0;
-            gap: 4px;
-        }
-        .hcal-weekday-item {
-            font-size: 0.7rem;
-        }
-        .hcal-days-grid {
-            gap: 6px;
-        }
-        .hcal-tile {
-            height: 50px;
-            min-height: 50px;
-            border-radius: 12px;
-        }
-        .hcal-tile-num {
-            font-size: 0.92rem;
-        }
+.scal-card {
+    background: #0f0a08;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 28px;
+    padding: 32px 36px;
+    width: 100%;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+}
+
+/* Nav row */
+.scal-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.scal-nav-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #cfa46f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scal-nav-btn:hover {
+    background: rgba(207, 164, 111, 0.15);
+    border-color: rgba(207, 164, 111, 0.4);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.scal-nav-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fdfbf7;
+    letter-spacing: -0.02em;
+}
+
+/* Weekday headers */
+.scal-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    padding: 12px 0;
+}
+.scal-wd {
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #cfa46f;
+}
+
+/* Day grid */
+.scal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+/* Base tile */
+.scal-tile {
+    height: 62px;
+    min-height: 62px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.025);
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    gap: 4px;
+    user-select: none;
+}
+.scal-tile:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(207, 164, 111, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+.scal-tile.empty {
+    visibility: hidden;
+    background: transparent !important;
+    border-color: transparent !important;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Number label */
+.scal-num {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f3ede4;
+    line-height: 1;
+}
+
+/* Sunday tint */
+.scal-tile.sunday .scal-num { color: #f87171; }
+
+/* Status dot indicator */
+.scal-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0.8;
+}
+
+/* TODAY — golden glow border */
+.scal-tile.today {
+    border: 2px solid #ffd166 !important;
+    box-shadow: 0 0 16px rgba(255, 209, 102, 0.3), inset 0 0 10px rgba(255, 209, 102, 0.07) !important;
+    background: rgba(255, 209, 102, 0.07) !important;
+}
+.scal-tile.today .scal-num {
+    color: #ffd166;
+}
+
+/* Status fills */
+.scal-tile.status-present {
+    background: rgba(6, 78, 59, 0.5) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+}
+.scal-tile.status-present .scal-dot { background: #10b981; }
+
+.scal-tile.status-late {
+    background: rgba(120, 80, 20, 0.5) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+}
+.scal-tile.status-late .scal-dot { background: #f59e0b; }
+
+.scal-tile.status-absent {
+    background: rgba(100, 15, 15, 0.6) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+.scal-tile.status-absent .scal-dot { background: #ef4444; }
+
+.scal-tile.status-event {
+    background: rgba(60, 25, 120, 0.45) !important;
+    border-color: rgba(139, 92, 246, 0.35) !important;
+}
+.scal-tile.status-event .scal-dot { background: #8b5cf6; }
+
+.scal-tile.status-holiday {
+    background: rgba(5, 60, 50, 0.45) !important;
+    border-color: rgba(74, 222, 128, 0.35) !important;
+}
+.scal-tile.status-holiday .scal-dot { background: #4ade80; }
+
+.scal-tile.status-exam {
+    background: rgba(100, 20, 60, 0.5) !important;
+    border-color: rgba(236, 72, 153, 0.35) !important;
+}
+.scal-tile.status-exam .scal-dot { background: #ec4899; }
+
+/* Loading pulse */
+.scal-tile.loading {
+    animation: scal-pulse 1.4s ease-in-out infinite;
+}
+@keyframes scal-pulse {
+    0%, 100% { opacity: 0.4; }
+    50%       { opacity: 0.8; }
+}
+
+/* Side panel */
+.scal-side {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Legend card */
+.scal-legend-card {
+    background: #0f0a08;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 22px;
+    padding: 24px 28px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.scal-legend-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #cfa46f;
+    margin-bottom: 16px;
+}
+.scal-legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+.scal-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.83rem;
+    color: #e0d6cc;
+}
+.scal-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+/* Tips card */
+.scal-tips-card {
+    background: rgba(207, 164, 111, 0.05);
+    border: 1px solid rgba(207, 164, 111, 0.12);
+    border-radius: 18px;
+    padding: 20px 24px;
+}
+.scal-tips-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #cfa46f;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.scal-tips-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.83rem;
+    color: rgba(224, 214, 204, 0.7);
+    line-height: 1.65;
+}
+
+/* Responsive: desktop side-by-side */
+@media (min-width: 860px) {
+    .scal-outer {
+        flex-direction: row;
+        align-items: flex-start;
+        max-width: 1100px;
     }
+    .scal-card {
+        flex: 1;
+        min-width: 0;
+    }
+    .scal-side {
+        width: 260px;
+        flex-shrink: 0;
+    }
+}
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+    .scal-card { padding: 20px 16px; border-radius: 20px; }
+    .scal-tile { height: 50px; min-height: 50px; border-radius: 11px; }
+    .scal-num  { font-size: 0.9rem; }
+    .scal-grid { gap: 7px; }
+    .scal-weekdays { gap: 7px; padding: 10px 0; }
+    .scal-nav-title { font-size: 1.15rem; }
+    .scal-nav-btn   { width: 40px; height: 40px; font-size: 1rem; border-radius: 11px; }
+}
+
+/* ─── Modal styles ───────────────────────────────────────── */
+.ent-modal-content {
+    background: #0f0a08;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.ent-modal-header {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0,0,0,0.2);
+    border-radius: 24px 24px 0 0;
+}
+.ent-modal-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f3ede4;
+    margin: 0;
+}
+.ent-modal-body  { padding: 24px; }
+.ent-modal-row   { margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.ent-modal-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+.ent-modal-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; color: #8b7d70; margin-bottom: 6px; }
+.ent-modal-value { font-size: 0.95rem; color: #f3ede4; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+
+/* Bottom sheet */
+.modal-dialog-bottom { display: flex; align-items: flex-end; min-height: 100%; margin: 0; padding: 0; }
+@media (min-width: 576px) {
+    .modal-dialog-bottom { align-items: center; margin: 1.75rem auto; max-width: 500px; min-height: calc(100% - 3.5rem); }
+}
+.bottom-sheet-content {
+    background: #0f0a08;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+}
+@media (min-width: 576px) { .bottom-sheet-content { border-radius: 24px; } }
+.bottom-sheet-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 12px auto; }
+
+/* Subject cards */
+.subject-card {
+    background: rgba(255,255,255,0.025);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.2s;
+}
+.subject-card:hover { background: rgba(255,255,255,0.05); }
+.subject-card-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+.subject-card-info { flex: 1; }
+.subject-card-title { font-weight: 600; font-size: 0.95rem; color: #f3ede4; margin-bottom: 2px; }
+.subject-card-time  { font-size: 0.8rem; color: #8b7d70; margin-bottom: 1px; }
+.subject-card-teacher { font-size: 0.8rem; color: #a09080; }
+.subject-card-badge { padding: 5px 11px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
 </style>
 
-@php
-    $hcalStart = \Carbon\Carbon::create($calYear, $calMonth, 1);
-    $hcalEnd = $hcalStart->copy()->endOfMonth();
-    $hcalPrev = $hcalStart->copy()->subMonth();
-    $hcalNext = $hcalStart->copy()->addMonth();
-    $hcalStartDow = $hcalStart->dayOfWeek;
-    $hcalIsCurrentMonth = (now()->year == $calYear && now()->month == $calMonth);
-    $hcalToday = now()->day;
-@endphp
+{{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
+<div class="scal-outer">
 
-<div class="hcal-pro-wrapper">
-    {{-- Top Action Bar --}}
-    <div class="hcal-top-bar">
-        <div>
-            <h1 class="hcal-top-title">
-                <i class="bi bi-calendar-event" style="color: #cfa46f;"></i> School Calendar
-            </h1>
-            <p style="font-size: 0.82rem; color: #b39b82; margin: 4px 0 0 0;">View academic schedules, holidays, school events, and announcements.</p>
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-            <a href="?year={{ now()->year }}&month={{ now()->month }}" class="ent-btn ent-btn-secondary ent-btn-sm" style="padding: 8px 16px; border-radius: 10px; font-weight: 700;">
-                Today
-            </a>
-        </div>
-    </div>
-
-    {{-- Main Squircle Calendar Card (Exact 2nd Image) --}}
-    <div class="hcal-card-box">
-        {{-- Navigation Row --}}
-        <div class="hcal-header-row">
-            <a href="?year={{ $hcalPrev->year }}&month={{ $hcalPrev->month }}" class="hcal-btn-arrow" title="Previous Month">
+    {{-- MAIN CALENDAR CARD --}}
+    <div class="scal-card">
+        {{-- Navigation --}}
+        <div class="scal-nav">
+            <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month">
                 <i class="bi bi-chevron-left"></i>
-            </a>
-            <div class="hcal-current-title">
-                {{ $hcalStart->format('F Y') }}
-            </div>
-            <a href="?year={{ $hcalNext->year }}&month={{ $hcalNext->month }}" class="hcal-btn-arrow" title="Next Month">
+            </button>
+            <span class="scal-nav-title" id="scalMonthLabel">{{ \Carbon\Carbon::create($year, $month)->format('F Y') }}</span>
+            <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month">
                 <i class="bi bi-chevron-right"></i>
-            </a>
+            </button>
         </div>
 
-        {{-- Weekdays Header Pill --}}
-        <div class="hcal-weekdays-pill">
-            @foreach(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as $dayLbl)
-                <div class="hcal-weekday-item">{{ $dayLbl }}</div>
+        {{-- Weekday headers --}}
+        <div class="scal-weekdays">
+            @foreach(['S','M','T','W','T','F','S'] as $d)
+                <div class="scal-wd">{{ $d }}</div>
             @endforeach
         </div>
 
-        {{-- Days Grid (Squircles) --}}
-        <div class="hcal-days-grid">
-            {{-- Empty cells before month start --}}
-            @for($i = 0; $i < $hcalStartDow; $i++)
-                <div class="hcal-tile empty"></div>
-            @endfor
+        {{-- Day grid (rendered by JS) --}}
+        <div class="scal-grid" id="scalGrid"></div>
+    </div>
 
-            @for($d = 1; $d <= $hcalEnd->day; $d++)
-                @php
-                    $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
-                    $formattedDate = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('l, F j, Y');
-                    $isToday = $hcalIsCurrentMonth && $d === $hcalToday;
-                    $isSunday = \Carbon\Carbon::create($calYear, $calMonth, $d)->dayOfWeek === 0;
-                    $dayEvents = $hcalEventsMap[$dateKey] ?? [];
-                    $hasEvents = count($dayEvents) > 0;
-                    $isHoliday = collect($dayEvents)->where('source', 'holiday')->isNotEmpty();
-
-                    $cls = '';
-                    if ($isToday) $cls .= ' today';
-                    if ($isSunday) $cls .= ' sunday';
-                    if ($hasEvents) $cls .= ' has-event';
-                    if ($isHoliday) $cls .= ' holiday-day';
-                @endphp
-                <div class="hcal-tile{{ $cls }}" onclick="openHcalDateDetails('{{ $dateKey }}', '{{ $formattedDate }}')" title="{{ $hasEvents ? collect($dayEvents)->pluck('name')->join(', ') : 'Click to view events' }}">
-                    <div class="hcal-tile-num">{{ $d }}</div>
-                    @if($hasEvents)
-                        <div class="hcal-tile-dots">
-                            @foreach(collect($dayEvents)->unique('type')->take(3) as $evt)
-                                <div class="hcal-tile-dot"></div>
-                            @endforeach
-                        </div>
-                    @endif
+    {{-- SIDE PANEL --}}
+    <div class="scal-side">
+        {{-- Legend --}}
+        <div class="scal-legend-card">
+            <div class="scal-legend-title">Legend</div>
+            <div class="scal-legend-grid">
+                <div class="scal-legend-item">
+                    <span class="scal-legend-dot" style="background:#10b981; box-shadow:0 0 6px rgba(16,185,129,0.4);"></span>
+                    Present
                 </div>
-            @endfor
+                <div class="scal-legend-item">
+                    <span class="scal-legend-dot" style="background:#f59e0b; box-shadow:0 0 6px rgba(245,158,11,0.4);"></span>
+                    Late
+                </div>
+                <div class="scal-legend-item">
+                    <span class="scal-legend-dot" style="background:#ef4444; box-shadow:0 0 6px rgba(239,68,68,0.4);"></span>
+                    Absent
+                </div>
+                <div class="scal-legend-item">
+                    <span class="scal-legend-dot" style="background:#ec4899; box-shadow:0 0 6px rgba(236,72,153,0.4);"></span>
+                    Exam
+                </div>
+                <div class="scal-legend-item">
+                    <span class="scal-legend-dot" style="background:#8b5cf6; box-shadow:0 0 6px rgba(139,92,246,0.4);"></span>
+                    Event
+                </div>
+                <div class="scal-legend-item">
+                    <span class="scal-legend-dot" style="background:#4ade80; box-shadow:0 0 6px rgba(74,222,128,0.4);"></span>
+                    Holiday
+                </div>
+            </div>
         </div>
 
-        {{-- Legend --}}
-        <div class="hcal-bottom-legend">
-            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#dc2626;"></div> National Holiday</div>
-            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#d97706;"></div> Local Holiday</div>
-            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#7c2d12;"></div> School Holiday</div>
-            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#6366f1;"></div> No Class</div>
-            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#60a5fa;"></div> Announcement</div>
+        {{-- Tips --}}
+        <div class="scal-tips-card">
+            <div class="scal-tips-title">
+                <i class="bi bi-lightbulb"></i> Calendar Tips
+            </div>
+            <ul class="scal-tips-list">
+                <li>Tap any <strong>day tile</strong> to view your subjects and attendance for that day.</li>
+                <li>Tile color shows your <strong>dominant attendance status</strong> for the day.</li>
+                <li>The <strong>golden border</strong> marks today.</li>
+            </ul>
         </div>
     </div>
 </div>
 
-{{-- ─── CALENDAR EVENT DETAILS POPUP MODAL (Student View) ─── --}}
-<div class="hcal-modal-overlay" id="hcalDetailsModalOverlay">
-    <div class="hcal-modal hcal-details-modal" style="max-width: 540px;">
-        <div class="hcal-modal-header" style="padding: 20px 24px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 38px; height: 38px; border-radius: 12px; background: rgba(207, 164, 111, 0.12); border: 1px solid rgba(207, 164, 111, 0.25); display: flex; align-items: center; justify-content: center; color: #cfa46f; font-size: 1.15rem; flex-shrink: 0;">
-                    <i class="bi bi-calendar-event"></i>
+{{-- ── Event Detail Modal ──────────────────────────────────────────────── --}}
+<div class="modal fade" id="eventDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content ent-modal-content w-100">
+            <div class="ent-modal-header position-relative">
+                <h5 class="ent-modal-title" id="eventTitle" style="padding-right: 24px;">Event</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
+            </div>
+            <div class="ent-modal-body">
+                <div class="ent-modal-row">
+                    <div class="ent-modal-label">Event Type</div>
+                    <div class="ent-modal-value">
+                        <span id="eventTypeBadge" class="ent-badge" style="font-size:0.75rem;padding:4px 10px;border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.3);">Type</span>
+                    </div>
                 </div>
-                <div>
-                    <div class="hcal-modal-title" style="font-size: 1.1rem; line-height: 1.2;">Calendar Event Details</div>
-                    <div id="hcalDetailsDateLabel" style="font-size: 0.78rem; color: #b39b82; font-weight: 600; margin-top: 2px;"></div>
+                <div class="ent-modal-row">
+                    <div class="ent-modal-label">Date &amp; Time</div>
+                    <div class="ent-modal-value">
+                        <i class="bi bi-clock" style="color:#cfa46f;"></i>
+                        <span id="eventTime">Date</span>
+                    </div>
+                </div>
+                <div class="ent-modal-row" id="eventLocationContainer">
+                    <div class="ent-modal-label">Location</div>
+                    <div class="ent-modal-value">
+                        <i class="bi bi-geo-alt" style="color:#cfa46f;"></i>
+                        <span id="eventLocation">Location</span>
+                    </div>
                 </div>
             </div>
-            <button type="button" class="hcal-modal-close" onclick="closeHcalDetailsModal()">×</button>
         </div>
-        <div class="hcal-modal-body" id="hcalDetailsBody" style="padding: 20px 24px; max-height: 460px; overflow-y: auto;">
-            {{-- Dynamically populated via JS --}}
-        </div>
-        <div class="hcal-modal-footer" id="hcalDetailsFooter" style="padding: 16px 24px; display: flex; justify-content: flex-end; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0, 0, 0, 0.25);">
-            <button type="button" class="hcal-btn-cancel" onclick="closeHcalDetailsModal()">Close</button>
+    </div>
+</div>
+
+{{-- ── Day Summary Modal ───────────────────────────────────────────────── --}}
+<div class="modal fade" id="daySummaryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
+        <div class="modal-content bottom-sheet-content">
+            <div class="bottom-sheet-handle d-none"></div>
+            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
+                <div>
+                    <h3 style="font-weight:700;font-size:1.2rem;color:#f3ede4;margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
+                    <div style="font-size:0.85rem;color:#8b7d70;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
+                        <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+                        <span id="daySummaryStatusText">Status</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
+            </div>
+            <div class="px-4 pb-4">
+                <h6 style="font-size:0.78rem;font-weight:700;color:#8b7d70;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
+                <div id="daySummaryContent" class="d-flex flex-column gap-2">
+                    <!-- dynamically populated -->
+                </div>
+                <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:18px;">
+                    <i class="bi bi-info-circle"></i> All subjects for this day are shown above.
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-window.hcalEventsMap = @json($hcalEventsMap ?? []);
-let selectedHcalDate = null;
-let selectedHcalDateFormatted = '';
+/* ═══════════════════════════════════════════════════
+   Squircle School Calendar — Vanilla JS Engine
+   ═══════════════════════════════════════════════════ */
+let scalYear  = {{ $year }};
+let scalMonth = {{ $month }};
 
-function openHcalDateDetails(dateKey, formattedDate) {
-    selectedHcalDate = dateKey;
-    selectedHcalDateFormatted = formattedDate;
-    
-    document.getElementById('hcalDetailsDateLabel').textContent = formattedDate;
-    const body = document.getElementById('hcalDetailsBody');
-    const events = window.hcalEventsMap[dateKey] || [];
-    
-    if (events.length === 0) {
-        body.innerHTML = `
-            <div style="text-align: center; padding: 36px 16px;">
-                <div style="width: 58px; height: 58px; border-radius: 16px; background: rgba(207, 164, 111, 0.08); border: 1px solid rgba(207, 164, 111, 0.2); color: #cfa46f; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; margin: 0 auto 16px;">
-                    <i class="bi bi-calendar2-check"></i>
-                </div>
-                <h4 style="font-size: 1.05rem; font-weight: 700; color: #f3ede4; margin-bottom: 6px;">No Scheduled Events</h4>
-                <p style="font-size: 0.82rem; color: #8f826f; margin-bottom: 0;">There are no holidays or special announcements scheduled for this date.</p>
-            </div>
-        `;
+// Raw events from API: date string → array of event objects
+const scalEventMap = {};
+
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+
+// Dominant status priority (worst-first so we pick the most visible)
+const STATUS_PRIORITY = ['absent','late','present','exam','event','holiday'];
+
+// Status → CSS class & dot colour
+const STATUS_CLASS = {
+    present : 'status-present',
+    late    : 'status-late',
+    absent  : 'status-absent',
+    event   : 'status-event',
+    holiday : 'status-holiday',
+    exam    : 'status-exam',
+};
+
+/* ── Fetch events for a month range ─────────────────────── */
+function scalFetchEvents(year, month, cb) {
+    const start = `${year}-${String(month).padStart(2,'0')}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const end   = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    fetch(`{{ route('student.calendar.data') }}?start=${start}&end=${end}`)
+        .then(r => r.json())
+        .then(data => {
+            // Clear previous month data
+            Object.keys(scalEventMap).forEach(k => delete scalEventMap[k]);
+            data.forEach(ev => {
+                // ev.start may be "2026-08-20" or "2026-08-20T..."
+                const dateStr = ev.start ? ev.start.split('T')[0] : null;
+                if (!dateStr) return;
+                if (!scalEventMap[dateStr]) scalEventMap[dateStr] = [];
+                scalEventMap[dateStr].push(ev);
+            });
+            cb();
+        })
+        .catch(() => cb()); // render even on error
+}
+
+/* ── Derive dominant status for a day ───────────────────── */
+function scalDominantStatus(dateStr) {
+    const evts = scalEventMap[dateStr];
+    if (!evts || evts.length === 0) return null;
+
+    // Map raw type/status → our simplified statuses
+    const statuses = new Set();
+    evts.forEach(ev => {
+        const t = (ev.type || '').toLowerCase();
+        const s = (ev.status || '').toLowerCase();
+        if (t === 'attendance') {
+            if (s === 'absent')  statuses.add('absent');
+            else if (s === 'late') statuses.add('late');
+            else if (s === 'present') statuses.add('present');
+        } else if (t === 'exam')    statuses.add('exam');
+        else if (t === 'holiday')   statuses.add('holiday');
+        else                        statuses.add('event');
+    });
+
+    // Return highest priority
+    for (const p of STATUS_PRIORITY) {
+        if (statuses.has(p)) return p;
+    }
+    return null;
+}
+
+/* ── Build & render the grid ────────────────────────────── */
+function scalRender() {
+    document.getElementById('scalMonthLabel').textContent =
+        `${MONTH_NAMES[scalMonth-1]} ${scalYear}`;
+
+    const grid   = document.getElementById('scalGrid');
+    const today  = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+    const firstDay = new Date(scalYear, scalMonth - 1, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(scalYear, scalMonth, 0).getDate();
+
+    let html = '';
+
+    // Empty tiles before first day
+    for (let i = 0; i < firstDay; i++) {
+        html += '<div class="scal-tile empty"></div>';
+    }
+
+    // Day tiles
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${scalYear}-${String(scalMonth).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dow     = new Date(scalYear, scalMonth - 1, d).getDay();
+        const isSun   = dow === 0;
+        const isToday = dateStr === todayStr;
+        const status  = scalDominantStatus(dateStr);
+
+        let classes = 'scal-tile';
+        if (isSun)   classes += ' sunday';
+        if (isToday) classes += ' today';
+        if (status)  classes += ' ' + STATUS_CLASS[status];
+
+        const dotColor = status ? '' : 'transparent';
+        const dotStyle = status ? '' : 'opacity:0;';
+
+        html += `
+        <div class="${classes}" data-date="${dateStr}" onclick="scalDayClick('${dateStr}')">
+            <span class="scal-num">${d}</span>
+            <span class="scal-dot" style="${dotStyle}"></span>
+        </div>`;
+    }
+
+    grid.innerHTML = html;
+}
+
+/* ── Navigate ───────────────────────────────────────────── */
+function scalPrevMonth() {
+    scalMonth--;
+    if (scalMonth < 1) { scalMonth = 12; scalYear--; }
+    scalLoadAndRender();
+}
+function scalNextMonth() {
+    scalMonth++;
+    if (scalMonth > 12) { scalMonth = 1; scalYear++; }
+    scalLoadAndRender();
+}
+
+function scalLoadAndRender() {
+    // Show loading state
+    const grid = document.getElementById('scalGrid');
+    grid.innerHTML = Array(35).fill('<div class="scal-tile loading"></div>').join('');
+
+    scalFetchEvents(scalYear, scalMonth, () => scalRender());
+
+    // Update URL
+    const url = new URL(window.location);
+    url.searchParams.set('year',  scalYear);
+    url.searchParams.set('month', scalMonth);
+    window.history.pushState({}, '', url);
+}
+
+/* ── Day click → Day Summary Modal ─────────────────────── */
+function scalDayClick(dateStr) {
+    const evts = scalEventMap[dateStr] || [];
+    const dateObj = new Date(dateStr + 'T00:00:00');
+    document.getElementById('daySummaryTitle').textContent =
+        dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    const content = document.getElementById('daySummaryContent');
+    content.innerHTML = '';
+
+    let hasAbsent = false, hasPresent = false, hasLate = false, hasEvent = false;
+
+    if (evts.length === 0) {
+        document.getElementById('daySummarySubtitle').style.display = 'none';
+        document.getElementById('daySummarySectionTitle').style.display = 'none';
+        content.innerHTML = '<div style="text-align:center;color:#a0948a;font-size:0.95rem;padding:28px 0;">No activities recorded for this day.</div>';
     } else {
-        let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
-        events.forEach(evt => {
-            const isHoliday = evt.source === 'holiday';
-            const typeColorMap = {
-                national: '#dc2626',
-                local: '#d97706',
-                school: '#7c2d12',
-                no_class: '#6366f1',
-                announcement: '#60a5fa',
-                event: '#a78bfa',
-                school_event: '#a78bfa'
-            };
-            const borderColor = typeColorMap[evt.type] || '#cfa46f';
-            
-            html += `
-                <div class="hcal-details-item" data-type="${evt.type}" style="border-left: 4px solid ${borderColor};">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                        <span class="hcal-event-type ${evt.type}" style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 5px;">
-                            <i class="bi ${isHoliday ? 'bi-calendar-heart' : 'bi-megaphone'}"></i>
-                            ${evt.type_label || evt.type}
-                        </span>
+        document.getElementById('daySummarySectionTitle').style.display = 'block';
+
+        evts.forEach(ev => {
+            const t  = (ev.type || '').toLowerCase();
+            const s  = (ev.status || '').toLowerCase();
+
+            if (t === 'attendance') {
+                if (s === 'absent')  hasAbsent  = true;
+                if (s === 'present') hasPresent = true;
+                if (s === 'late')    hasLate    = true;
+
+                const colors = ['#8b5cf6','#10b981','#f59e0b','#3b82f6','#ec4899'];
+                let hash = 0;
+                const sn = ev.subject_name || ev.title || 'Subject';
+                for (let i = 0; i < sn.length; i++) hash = sn.charCodeAt(i) + ((hash << 5) - hash);
+                const iconColor = colors[Math.abs(hash) % colors.length];
+
+                let iconCls = 'bi-journal-bookmark';
+                const lc = sn.toLowerCase();
+                if (lc.includes('code')||lc.includes('web')||lc.includes('prog')) iconCls = 'bi-code-slash';
+                else if (lc.includes('math')||lc.includes('discrete'))            iconCls = 'bi-bar-chart-fill';
+                else if (lc.includes('science')||lc.includes('physics'))          iconCls = 'bi-lightbulb';
+
+                const badgeMap = {
+                    absent:  { bg:'rgba(239,68,68,0.18)',  color:'#ef4444' },
+                    present: { bg:'rgba(16,185,129,0.18)', color:'#10b981' },
+                    late:    { bg:'rgba(245,158,11,0.18)', color:'#f59e0b' },
+                };
+                const badge = badgeMap[s] || { bg:'rgba(255,255,255,0.1)', color:'#fff' };
+
+                content.insertAdjacentHTML('beforeend', `
+                <div class="subject-card">
+                    <div class="subject-card-icon" style="background:${iconColor}20;color:${iconColor};">
+                        <i class="bi ${iconCls}"></i>
                     </div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: #f3ede4; margin-bottom: 4px;">${escapeHtml(evt.name)}</div>
-                    ${evt.author ? `
-                        <div style="font-size: 0.75rem; color: #b39b82; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-                            <i class="bi bi-person"></i> Posted by <strong>${escapeHtml(evt.author)}</strong>
-                        </div>
-                    ` : ''}
-                    ${evt.location ? `
-                        <div style="font-size: 0.75rem; color: #b39b82; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-                            <i class="bi bi-geo-alt"></i> ${escapeHtml(evt.location)}
-                        </div>
-                    ` : ''}
-                    ${evt.description ? `
-                        <div style="font-size: 0.82rem; color: #d4c8b8; line-height: 1.45; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
-                            ${escapeHtml(evt.description)}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
+                    <div class="subject-card-info">
+                        <div class="subject-card-title">${ev.subject_name || ev.title}</div>
+                        <div class="subject-card-time">${ev.time_string || 'Time not set'}</div>
+                        <div class="subject-card-teacher">${ev.instructor_name || 'No Instructor'}</div>
+                    </div>
+                    <div class="subject-card-badge" style="background:${badge.bg};color:${badge.color};">${ev.status}</div>
+                </div>`);
+            } else {
+                hasEvent = true;
+                const evColor = ev.color || '#8b5cf6';
+                content.insertAdjacentHTML('beforeend', `
+                <div class="subject-card" style="border:1px dashed ${evColor}40;">
+                    <div class="subject-card-icon" style="background:${evColor}20;color:${evColor};">
+                        <i class="bi bi-calendar-event"></i>
+                    </div>
+                    <div class="subject-card-info">
+                        <div class="subject-card-title">${ev.title}</div>
+                        <div class="subject-card-time">${ev.time_string || 'All Day'}</div>
+                        <div class="subject-card-teacher" style="text-transform:capitalize;">${(ev.type||'').replace('_',' ')}</div>
+                    </div>
+                </div>`);
+            }
         });
-        html += '</div>';
-        body.innerHTML = html;
+
+        // Status summary
+        document.getElementById('daySummarySubtitle').style.display = 'flex';
+        const dot  = document.getElementById('daySummaryStatusDot');
+        const txt  = document.getElementById('daySummaryStatusText');
+        if (hasAbsent)       { dot.style.background = '#ef4444'; txt.textContent = 'Absent'; }
+        else if (hasLate)    { dot.style.background = '#f59e0b'; txt.textContent = 'Late'; }
+        else if (hasPresent) { dot.style.background = '#10b981'; txt.textContent = 'Present'; }
+        else if (hasEvent)   { dot.style.background = '#8b5cf6'; txt.textContent = 'School Event'; }
+        else                 { dot.style.background = '#6b7280'; txt.textContent = 'No Status'; }
     }
-    
-    document.getElementById('hcalDetailsModalOverlay').classList.add('active');
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('daySummaryModal')).show();
 }
 
-function closeHcalDetailsModal() {
-    const overlay = document.getElementById('hcalDetailsModalOverlay');
-    if (overlay) overlay.classList.remove('active');
-}
+/* ── Init ───────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', function () {
+    document.body.appendChild(document.getElementById('eventDetailModal'));
+    document.body.appendChild(document.getElementById('daySummaryModal'));
+    scalLoadAndRender();
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-document.getElementById('hcalDetailsModalOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeHcalDetailsModal();
-});
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeHcalDetailsModal();
-    }
+    // Touch swipe for mobile
+    let tx = 0, ty = 0;
+    const card = document.querySelector('.scal-card');
+    card.addEventListener('touchstart', e => { tx = e.changedTouches[0].screenX; ty = e.changedTouches[0].screenY; }, { passive: true });
+    card.addEventListener('touchend', e => {
+        const dx = tx - e.changedTouches[0].screenX;
+        const dy = Math.abs(ty - e.changedTouches[0].screenY);
+        if (Math.abs(dx) > 70 && dy < 60) { dx > 0 ? scalNextMonth() : scalPrevMonth(); }
+    }, { passive: true });
 });
 </script>
-</div>
 @endsection
