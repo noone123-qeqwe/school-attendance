@@ -298,9 +298,9 @@
             </a>
         </div>
 
-        {{-- Weekdays Header Pill (S M T W T F S) --}}
+        {{-- Weekdays Header Pill --}}
         <div class="hcal-weekdays-pill">
-            @foreach(['S', 'M', 'T', 'W', 'T', 'F', 'S'] as $dayLbl)
+            @foreach(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as $dayLbl)
                 <div class="hcal-weekday-item">{{ $dayLbl }}</div>
             @endforeach
         </div>
@@ -341,13 +341,13 @@
             @endfor
         </div>
 
-        {{-- Bottom Legend Badges (Pill Boxes matching Screenshot) --}}
-        <div class="hcal-bottom-legend" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 6px 14px; font-size: 0.76rem; font-weight: 700; color: #f3ede4;"><div style="width: 8px; height: 8px; border-radius: 50%; background:#ef4444; box-shadow: 0 0 6px #ef4444;"></div> National</div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 6px 14px; font-size: 0.76rem; font-weight: 700; color: #f3ede4;"><div style="width: 8px; height: 8px; border-radius: 50%; background:#f59e0b; box-shadow: 0 0 6px #f59e0b;"></div> Local</div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 6px 14px; font-size: 0.76rem; font-weight: 700; color: #f3ede4;"><div style="width: 8px; height: 8px; border-radius: 50%; background:#b91c1c; box-shadow: 0 0 6px #b91c1c;"></div> School</div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 6px 14px; font-size: 0.76rem; font-weight: 700; color: #f3ede4;"><div style="width: 8px; height: 8px; border-radius: 50%; background:#6366f1; box-shadow: 0 0 6px #6366f1;"></div> No Class</div>
-            <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 6px 14px; font-size: 0.76rem; font-weight: 700; color: #f3ede4;"><div style="width: 8px; height: 8px; border-radius: 50%; background:#38bdf8; box-shadow: 0 0 6px #38bdf8;"></div> Announcement</div>
+        {{-- Legend --}}
+        <div class="hcal-bottom-legend">
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#dc2626;"></div> National</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#d97706;"></div> Local</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#7c2d12;"></div> School</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#6366f1;"></div> No Class</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#60a5fa;"></div> Announcement</div>
         </div>
     </div>
 </div>
