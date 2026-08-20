@@ -244,6 +244,16 @@ class AnalyticsService
     }
 
     /**
+     * Alias for getHolidayCalendarData or dashboard data retrieval.
+     */
+    public function getDashboardData(?int $calYear = null, ?int $calMonth = null): array
+    {
+        $year = $calYear ?? now()->year;
+        $month = $calMonth ?? now()->month;
+        return $this->getHolidayCalendarData($year, $month);
+    }
+
+    /**
      * Get Holiday and Event calendar map and upcoming events for any year/month.
      */
     public function getHolidayCalendarData(int $calYear, int $calMonth): array
