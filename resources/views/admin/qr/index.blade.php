@@ -42,7 +42,7 @@
         </div>
     </div>
     
-    <form id="bulkPrintForm" action="{{ route('qr.bulk-print') }}" method="POST" target="_blank">
+    <form id="bulkPrintForm" action="{{ route('admin.qr.bulk-print') }}" method="POST" target="_blank">
         @csrf
         <div style="padding:24px;">
             <div style="margin-bottom: 16px; padding: 0 4px;">

@@ -20,9 +20,17 @@ class Holiday extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
         'is_active' => 'boolean'
     ];
+
+    /**
+     * Always store date strictly as Y-m-d string.
+     */
+    public function setDateAttribute($value)
+    {
+        $this->attributes['date'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
 
     // Relationships
     public function creator()
@@ -38,7 +46,8 @@ class Holiday extends Model
 
     public function scopeForDate($query, $date)
     {
-        return $query->whereDate('date', $date);
+        $dateStr = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : Carbon::parse($date)->format('Y-m-d');
+        return $query->whereDate('date', $dateStr);
     }
 
     public function scopeForMonth($query, $year, $month)
@@ -49,16 +58,18 @@ class Holiday extends Model
     // Helper methods
     public static function isHoliday($date)
     {
-        return self::active()->forDate($date)->exists() || 
-               \App\Models\Event::where('type', 'holiday')->where('status', '!=', 'cancelled')->whereDate('date', $date)->exists();
+        $dateStr = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : Carbon::parse($date)->format('Y-m-d');
+        return self::active()->forDate($dateStr)->exists() || 
+               \App\Models\Event::where('type', 'holiday')->where('status', '!=', 'cancelled')->whereDate('date', $dateStr)->exists();
     }
 
     public static function getHoliday($date)
     {
-        $holiday = self::active()->forDate($date)->first();
+        $dateStr = $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : Carbon::parse($date)->format('Y-m-d');
+        $holiday = self::active()->forDate($dateStr)->first();
         if ($holiday) return $holiday;
 
-        $event = \App\Models\Event::where('type', 'holiday')->where('status', '!=', 'cancelled')->whereDate('date', $date)->first();
+        $event = \App\Models\Event::where('type', 'holiday')->where('status', '!=', 'cancelled')->whereDate('date', $dateStr)->first();
         if ($event) {
             $h = new static([
                 'name' => $event->name,
@@ -74,15 +85,20 @@ class Holiday extends Model
 
     public static function getUpcoming($startDate, $endDate)
     {
+        $startStr = $startDate instanceof \DateTimeInterface ? $startDate->format('Y-m-d') : Carbon::parse($startDate)->format('Y-m-d');
+        $endStr = $endDate instanceof \DateTimeInterface ? $endDate->format('Y-m-d') : Carbon::parse($endDate)->format('Y-m-d');
+
         $holidays = self::active()
-            ->where('date', '>=', $startDate)
-            ->where('date', '<=', $endDate)
+            ->whereDate('date', '>=', $startStr)
+            ->whereDate('date', '<=', $endStr)
+            ->orderBy('date')
             ->get();
             
         $events = \App\Models\Event::where('type', 'holiday')
             ->where('status', '!=', 'cancelled')
-            ->where('date', '>=', $startDate)
-            ->where('date', '<=', $endDate)
+            ->whereDate('date', '>=', $startStr)
+            ->whereDate('date', '<=', $endStr)
+            ->orderBy('date')
             ->get()
             ->map(function($e) {
                 $h = new static([
@@ -95,7 +111,13 @@ class Holiday extends Model
                 return $h;
             });
             
-        return $holidays->concat($events)->sortBy('date')->values();
+        return $holidays->concat($events)
+            ->unique(function ($item) {
+                $d = $item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d');
+                return $d . '_' . strtolower(trim($item->name));
+            })
+            ->sortBy('date')
+            ->values();
     }
 
     public function getTypeColorAttribute()

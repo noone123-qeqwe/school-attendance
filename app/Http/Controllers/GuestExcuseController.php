@@ -25,8 +25,10 @@ class GuestExcuseController extends Controller
     {
         // Check if an excuse already exists
         if (ExcuseSubmission::where('attendance_id', $attendance->id)->exists()) {
-            return redirect()->route('guest.excuse', $attendance->id)
-                ->with('error', 'An excuse has already been submitted.');
+            return view('parent.guest-excuse-result', [
+                'status' => 'info',
+                'message' => 'An excuse has already been submitted.'
+            ]);
         }
 
         $request->validate([
@@ -47,13 +49,10 @@ class GuestExcuseController extends Controller
 
         ExcuseSubmission::create([
             'attendance_id' => $attendance->id,
-            'student_id' => $attendance->user_id,
+            'user_id' => $attendance->user_id,
             'reason' => $request->reason,
-            'attachment_path' => $filePath,
+            'attachments' => $filePath ? [$filePath] : null,
             'status' => 'pending',
-            // Since it's a guest route, we don't know the exact parent user ID,
-            // so we'll leave it null or map it if we can
-            'parent_id' => null, 
         ]);
 
         // Automatically set the attendance record to excused status pending teacher review

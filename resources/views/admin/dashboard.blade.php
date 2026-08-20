@@ -118,43 +118,43 @@
 
 {{-- ─── CORE ENTITY METRICS ─── --}}
 <div class="stat-grid stat-grid-4 dash-animate" style="margin-bottom: 24px;">
-    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
         <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
             <i class="bi bi-people-fill"></i>
         </div>
-        <div>
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Total Students</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalStudents) }}</div>
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Total Students</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalStudents) }}</div>
         </div>
     </div>
     
-    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
         <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
             <i class="bi bi-person-workspace"></i>
         </div>
-        <div>
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Instructors</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalTeachers) }}</div>
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Instructors</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalTeachers) }}</div>
         </div>
     </div>
 
-    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
         <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
             <i class="bi bi-building"></i>
         </div>
-        <div>
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Departments</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalDepartments) }}</div>
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Departments</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalDepartments) }}</div>
         </div>
     </div>
 
-    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
         <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
             <i class="bi bi-diagram-3"></i>
         </div>
-        <div>
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Sections</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalSections) }}</div>
+        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Sections</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalSections) }}</div>
         </div>
     </div>
 </div>
@@ -297,84 +297,66 @@
     </x-card>
 </div>
 
-{{-- ─── CHARTS & AT-RISK STUDENTS ─── --}}
-<div class="row g-4 dash-animate" style="margin-bottom: 28px;">
-    {{-- Weekly Chart --}}
-    <div class="col-lg-7 col-12">
-        <x-card type="section" class="adm-card" style="min-width:0; height: 100%;" icon="bi bi-bar-chart-line-fill" title="Weekly Attendance Trend">
-            <x-slot:headerActions>
-                <div style="display:flex;gap:6px;">
-                    <span class="ent-badge ent-badge-success"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Present</span>
-                    <span class="ent-badge ent-badge-warning"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Late</span>
-                    <span class="ent-badge ent-badge-danger"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Absent</span>
-                </div>
-            </x-slot:headerActions>
-            
-            <div id="weeklyChart" class="ent-chart-container" style="min-height:260px;"></div>
-        </x-card>
-    </div>
-
-    {{-- At-Risk Students --}}
-    <div class="col-lg-5 col-12">
-        <x-card type="section" class="adm-card" style="min-width:0; height: 100%;">
-            <x-slot:title>
-                <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                </div>
-                At-Risk Students
-            </x-slot:title>
-            <x-slot:headerActions>
-                <a href="{{ route('admin.students') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View All <i class="bi bi-arrow-right"></i></a>
-            </x-slot:headerActions>
-            
-            <div class="table-responsive" style="margin: -20px;">
-                <table class="adm-table table" style="margin-bottom: 0;">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Course</th>
-                            <th>Rate</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($atRiskStudents->take(5) as $student)
-                        <tr>
-                            <td data-label="Student">
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <div class="ent-avatar ent-avatar-round" style="width:28px;height:28px;font-size:0.65rem;">
-                                        <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=28' }}" alt="">
-                                    </div>
-                                    <span class="ent-truncate" style="font-weight:600;font-size:0.8rem;max-width:120px;">{{ $student->name }}</span>
-                                </div>
-                            </td>
-                            <td data-label="Course"><span style="font-size:0.75rem;" class="ent-text-muted">{{ $student->course }}</span></td>
-                            <td data-label="Rate">
-                                <span class="risk-badge {{ $student->attendance_rate >= 70 ? 'watch' : 'critical' }}">
-                                    {{ $student->attendance_rate }}%
-                                </span>
-                            </td>
-                            <td data-label="Action">
-                                <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="4">
-                                <div class="ent-empty" style="padding:32px 16px; border: none;">
-                                    <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
-                                        <i class="bi bi-shield-check"></i>
-                                    </div>
-                                    <div class="ent-empty-text">All students are performing well.</div>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+{{-- ─── AT-RISK STUDENTS ─── --}}
+<div class="dash-animate" style="margin-bottom: 28px;">
+    <x-card type="section" class="adm-card" style="min-width:0;">
+        <x-slot:title>
+            <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
+                <i class="bi bi-exclamation-triangle-fill"></i>
             </div>
-        </x-card>
-    </div>
+            At-Risk Students
+        </x-slot:title>
+        <x-slot:headerActions>
+            <a href="{{ route('admin.students') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View All <i class="bi bi-arrow-right"></i></a>
+        </x-slot:headerActions>
+        
+        <div class="table-responsive" style="margin: -20px; padding: 12px 20px;">
+            <table class="adm-table" style="margin-bottom: 0; width: 100%;">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>Rate</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($atRiskStudents->take(5) as $student)
+                    <tr>
+                        <td data-label="Student">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div class="ent-avatar ent-avatar-round" style="width:30px;height:30px;font-size:0.7rem;flex-shrink:0;">
+                                    <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=30' }}" alt="">
+                                </div>
+                                <span class="ent-truncate" style="font-weight:600;font-size:0.82rem;color:#f3ede4;max-width:130px;">{{ $student->name }}</span>
+                            </div>
+                        </td>
+                        <td data-label="Course"><span style="font-size:0.75rem;color:#b39b82;" class="ent-text-muted">{{ $student->course }}</span></td>
+                        <td data-label="Rate">
+                            <span class="risk-badge {{ $student->attendance_rate >= 70 ? 'watch' : 'critical' }}">
+                                {{ $student->attendance_rate }}%
+                            </span>
+                        </td>
+                        <td data-label="Action">
+                            <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="4">
+                            <div class="ent-empty" style="padding:32px 16px; border: none;">
+                                <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
+                                    <i class="bi bi-shield-check"></i>
+                                </div>
+                                <div class="ent-empty-text">All students are performing well.</div>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </x-card>
 </div>
 
 {{-- ─── HOLIDAY & EVENTS CALENDAR ─── --}}
@@ -652,18 +634,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     progress.style.width = data.rate + '%';
                     progress.className = 'perf-bar-fill ' + (data.rate >= 80 ? 'high' : (data.rate >= 60 ? 'medium' : 'low'));
                 }
-                
-                // Update Chart
-                if (window.weeklyChartInstance) {
-                    window.weeklyChartInstance.updateOptions({
-                        xaxis: { categories: data.chart.labels }
-                    });
-                    window.weeklyChartInstance.updateSeries([
-                        { name: 'Present', data: data.chart.present },
-                        { name: 'Late', data: data.chart.late },
-                        { name: 'Absent', data: data.chart.absent }
-                    ]);
-                }
             })
             .catch(err => {
                 console.error('Error fetching dashboard stats:', err);
@@ -673,68 +643,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
     }
-
-    // ─── ApexCharts Trend Line Render ───
-    var chartOptions = {
-        series: [
-            { name: 'Present', data: {!! json_encode($weeklyPresent) !!} },
-            { name: 'Late', data: {!! json_encode($weeklyLate) !!} },
-            { name: 'Absent', data: {!! json_encode($weeklyAbsent) !!} }
-        ],
-        chart: {
-            type: 'bar',
-            height: 260,
-            stacked: true,
-            toolbar: { show: false },
-            fontFamily: 'Inter, sans-serif',
-            background: 'transparent',
-            animations: {
-                enabled: true,
-                easing: 'easeinout',
-                speed: 800,
-                animateGradually: { enabled: true, delay: 150 },
-                dynamicAnimation: { enabled: true, speed: 350 }
-            }
-        },
-        colors: ['#4ade80', '#fbbf24', '#f87171'],
-        plotOptions: {
-            bar: {
-                borderRadius: 6,
-                borderRadiusApplication: 'end',
-                horizontal: false,
-                columnWidth: '50%',
-            },
-        },
-        dataLabels: { enabled: false },
-        xaxis: {
-            categories: {!! json_encode($weeklyLabels) !!},
-            axisBorder: { show: false },
-            axisTicks: { show: false },
-            labels: { style: { colors: '#8f826f', fontSize: '11px', fontWeight: 500 } }
-        },
-        yaxis: {
-            labels: { style: { colors: '#8f826f', fontSize: '11px' } }
-        },
-        grid: {
-            borderColor: 'rgba(255,255,255,0.04)',
-            strokeDashArray: 4,
-            xaxis: { lines: { show: false } },
-            yaxis: { lines: { show: true } },
-            padding: { left: 8, right: 8 }
-        },
-        legend: { show: false },
-        fill: { opacity: 0.9 },
-        theme: { mode: 'dark' },
-        tooltip: {
-            theme: 'dark',
-            style: { fontSize: '12px' },
-            y: { formatter: function (val) { return val + " students" } }
-        }
-    };
-
-    var chart = new ApexCharts(document.querySelector("#weeklyChart"), chartOptions);
-    chart.render();
-    window.weeklyChartInstance = chart; // Store globally for AJAX updates
 });
 
 // ─── HOLIDAY CALENDAR MODALS ───

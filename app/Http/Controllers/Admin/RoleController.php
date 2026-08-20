@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RoleController extends Controller
 {
@@ -31,12 +32,21 @@ class RoleController extends Controller
 
     public function update(Request $request, \App\Models\User $role)
     {
+        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403, 'Unauthorized. Only super_admin can change roles.');
+
         $user = $role; // Route model binding uses 'role' as the parameter name
 
         $request->validate([
             'role' => 'required|in:admin,teacher,student,parent,department_head',
             'admin_sub_role' => 'nullable|in:super_admin,data_entry,auditor'
         ]);
+
+        abort_if(
+            $user->id === Auth::id() && 
+            ($request->role !== $user->role || $request->admin_sub_role !== $user->admin_sub_role), 
+            403, 
+            'Unauthorized. You cannot change your own role or sub-role.'
+        );
 
         $data = ['role' => $request->role];
         

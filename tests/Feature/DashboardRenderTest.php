@@ -15,7 +15,7 @@ class DashboardRenderTest extends TestCase
                          ->withSession(['user_role' => 'teacher'])
                          ->get('/teacher/dashboard');
         
+        $response->assertStatus(200);
         file_put_contents(base_path('test_response.html'), $response->getContent());
-        echo "Status: " . $response->getStatusCode() . "\n";
     }
 }

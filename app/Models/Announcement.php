@@ -59,7 +59,7 @@ class Announcement extends Model
               })
               ->orWhere(function ($q2) use ($user) {
                   $q2->where('target_audience', 'Subject')
-                     ->whereIn('target_id', $user->enrolledSubjects()->pluck('subjects.id')->toArray() ?? []);
+                     ->whereIn('target_id', $user->getAllSubjects()->pluck('id')->toArray() ?? []);
               });
         });
     }

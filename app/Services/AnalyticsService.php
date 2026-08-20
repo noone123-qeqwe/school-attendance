@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\User;
 use App\Models\Subject;
 use App\Models\Holiday;
+use App\Models\Event;
 use App\Models\Announcement;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -224,12 +225,18 @@ class AnalyticsService
         $calYear = (int) $request->get('hcal_year', now()->year);
         $calMonth = (int) $request->get('hcal_month', now()->month);
         $calStart = Carbon::create($calYear, $calMonth, 1);
+        $rangeStart = $calStart->copy()->subMonth()->startOfMonth()->toDateString();
+        $rangeEnd = $calStart->copy()->addMonth()->endOfMonth()->toDateString();
+        $todayStr = now()->toDateString();
 
         $calendarHolidays = Holiday::active()
-            ->whereBetween('date', [
-                $calStart->copy()->subMonth()->startOfMonth()->toDateString(),
-                $calStart->copy()->addMonth()->endOfMonth()->toDateString()
-            ])
+            ->whereBetween('date', [$rangeStart, $rangeEnd])
+            ->orderBy('date')
+            ->get()
+            ->unique(fn($h) => $h->date->format('Y-m-d') . '_' . strtolower(trim($h->name)));
+
+        $calendarEvents = Event::where('status', '!=', 'cancelled')
+            ->whereBetween('date', [$rangeStart, $rangeEnd])
             ->orderBy('date')
             ->get();
 
@@ -253,6 +260,22 @@ class AnalyticsService
                 'source' => 'holiday',
             ];
         }
+
+        foreach ($calendarEvents as $evt) {
+            $dateKey = $evt->date->format('Y-m-d');
+            $hcalEventsMap[$dateKey][] = [
+                'id'    => $evt->id,
+                'type'  => $evt->type,
+                'name'  => $evt->name,
+                'description' => $evt->description,
+                'date'  => $dateKey,
+                'date_formatted' => $evt->date->format('M j, Y'),
+                'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
+                'source' => 'event',
+                'location' => $evt->location,
+            ];
+        }
+
         foreach ($calendarAnnouncements as $ann) {
             $dateKey = $ann->scheduled_for ? $ann->scheduled_for->format('Y-m-d') : $ann->created_at->format('Y-m-d');
             $hcalEventsMap[$dateKey][] = [
@@ -269,27 +292,77 @@ class AnalyticsService
             ];
         }
 
+        // Build Upcoming Events list (>= today, deduplicated, sorted ascending)
         $hcalUpcoming = collect();
-        foreach ($calendarHolidays->where('date', '>=', now()->toDateString())->take(10) as $hol) {
+
+        // Upcoming Holidays
+        $upcomingHolidays = Holiday::active()
+            ->whereDate('date', '>=', $todayStr)
+            ->orderBy('date')
+            ->take(15)
+            ->get();
+
+        foreach ($upcomingHolidays as $hol) {
             $hcalUpcoming->push((object)[
-                'id' => $hol->id, 'type' => $hol->type, 'name' => $hol->name,
-                'description' => $hol->description, 'date' => $hol->date,
+                'id' => $hol->id,
+                'type' => $hol->type,
+                'name' => $hol->name,
+                'description' => $hol->description,
+                'date' => $hol->date,
                 'date_formatted' => $hol->date->format('M j, Y'),
-                'type_label' => $hol->type_label, 'source' => 'holiday',
+                'type_label' => $hol->type_label,
+                'source' => 'holiday',
             ]);
         }
+
+        // Upcoming Custom Events
+        $upcomingCustomEvents = Event::where('status', '!=', 'cancelled')
+            ->whereDate('date', '>=', $todayStr)
+            ->orderBy('date')
+            ->take(15)
+            ->get();
+
+        foreach ($upcomingCustomEvents as $evt) {
+            $hcalUpcoming->push((object)[
+                'id' => $evt->id,
+                'type' => $evt->type,
+                'name' => $evt->name,
+                'description' => $evt->description,
+                'date' => $evt->date,
+                'date_formatted' => $evt->date->format('M j, Y'),
+                'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
+                'source' => 'event',
+                'location' => $evt->location,
+            ]);
+        }
+
+        // Announcements
         foreach ($calendarAnnouncements->take(5) as $ann) {
             $annDate = $ann->scheduled_for ?? $ann->created_at;
-            $hcalUpcoming->push((object)[
-                'id' => $ann->id, 'type' => 'announcement', 'name' => $ann->title,
-                'description' => \Illuminate\Support\Str::limit($ann->content, 100),
-                'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
-                'type_label' => 'Announcement', 'source' => 'announcement',
-                'author' => $ann->author->name ?? 'Admin',
-                'author_role' => $ann->author->role ?? 'admin',
-            ]);
+            if ($annDate->toDateString() >= $todayStr) {
+                $hcalUpcoming->push((object)[
+                    'id' => $ann->id,
+                    'type' => 'announcement',
+                    'name' => $ann->title,
+                    'description' => \Illuminate\Support\Str::limit($ann->content, 100),
+                    'date' => $annDate,
+                    'date_formatted' => $annDate->format('M j, Y'),
+                    'type_label' => 'Announcement',
+                    'source' => 'announcement',
+                    'author' => $ann->author->name ?? 'Admin',
+                    'author_role' => $ann->author->role ?? 'admin',
+                ]);
+            }
         }
-        $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();
+
+        $hcalUpcoming = $hcalUpcoming
+            ->unique(function ($item) {
+                $d = $item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d');
+                return $d . '_' . strtolower(trim($item->name));
+            })
+            ->sortBy('date')
+            ->values()
+            ->take(10);
 
         return compact(
             'totalStudents', 'totalTeachers', 'totalSubjects', 'totalParents',

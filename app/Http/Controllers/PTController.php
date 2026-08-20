@@ -124,8 +124,8 @@ class PTController extends Controller
             if ($user->isAdmin()) {
                 Log::info('Admin login successful', ['user_id' => $user->id, 'session_id' => $request->session()->getId()]);
                 
-                // Bypass 2FA in local development
-                if (config('app.env') === 'local' || config('app.debug') === true) {
+                // Bypass 2FA in local and testing environments
+                if (app()->environment('local', 'testing')) {
                     $request->session()->put('admin_2fa_verified', true);
                     $request->session()->save(); // Force session save
                     
@@ -147,19 +147,16 @@ class PTController extends Controller
                     Log::error('Failed to send admin 2FA OTP: ' . $e->getMessage());
                 }
                 return redirect()->route('admin.2fa.form')->with('info', 'Please check your email for the verification code.');
-            } elseif ($user->isTeacher()) {
+            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
                 return redirect()->route('teacher.dashboard');
             } elseif ($user->isParent()) {
                 return redirect()->route('parent.dashboard');
             } else {
                 // Student logging in with email
-                Log::info('Student login successful via email', ['user_id' => Auth::id(), 'email' => $identifier]);
-                
-                app(DeviceBindingService::class)->bind($user, $request);
-                if ($request->filled('qr_token')) {
-                    return redirect()->route('qr.scan', ['token' => $request->qr_token]);
-                }
-                return redirect()->intended('/home');
+                Auth::logout();
+                $request->session()->flush();
+                return back()->withInput($request->only('identifier'))
+                    ->withErrors(['identifier' => 'Students must log in using their student number.']);
             }
         }
     }
@@ -216,13 +213,8 @@ public function updateImage(Request $request)
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-    $subjects = $user->enrolledSubjects()->with('schedules')->get();
-
-    if ($subjects->isEmpty()) {
-        $subjects = Subject::where('year_level', $user->year_level)
-                           ->where('semester', $user->semester)
-                           ->with('schedules')->get();
-    }
+    $subjects = $user->getAllSubjects();
+    $subjects->load('schedules');
 
     return view('student.classes', compact('subjects'));
 }
@@ -232,13 +224,9 @@ public function updateImage(Request $request)
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-    $subjects = $user->enrolledSubjects()->with('schedules')->orderBy('code')->get();
-
-    if ($subjects->isEmpty()) {
-        $subjects = Subject::where('year_level', $user->year_level)
-                           ->where('semester', $user->semester)
-                           ->with('schedules')->orderBy('code')->get();
-    }
+    $subjects = $user->getAllSubjects();
+    $subjects->load('schedules');
+    $subjects = $subjects->sortBy('code')->values();
 
     $pdf = Pdf::loadView('student.classes-pdf', compact('user', 'subjects'))
         ->setPaper('a4', 'landscape');

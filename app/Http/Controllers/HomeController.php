@@ -35,6 +35,14 @@ class HomeController extends Controller
         $user->must_change_password = false;
         $user->save();
 
+        // Redirect to the appropriate dashboard based on role
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard')->with('success', 'Password updated successfully. Welcome!');
+        } elseif ($user->isTeacher()) {
+            return redirect()->route('teacher.dashboard')->with('success', 'Password updated successfully. Welcome!');
+        } elseif ($user->isParent()) {
+            return redirect()->route('parent.dashboard')->with('success', 'Password updated successfully. Welcome!');
+        }
         return redirect()->route('home')->with('success', 'Password updated successfully. Welcome!');
     }
    public function index()
@@ -248,27 +256,29 @@ class HomeController extends Controller
         ->take(10)
         ->get();
 
-    // 12. Build events calendar data (announcements + holidays)
+    // 12. Build events calendar data (announcements + holidays + custom events)
     $calendarEvents = collect();
 
-    // Add announcements as events
+    // Add announcements as events (upcoming/recent)
     foreach ($announcements as $ann) {
         $eventDate = $ann->scheduled_for ? $ann->scheduled_for->toDateString() : $ann->created_at->toDateString();
-        $calendarEvents->push((object) [
-            'type'  => 'announcement',
-            'title' => $ann->title,
-            'content' => \Illuminate\Support\Str::limit($ann->content, 120),
-            'date'  => $eventDate,
-            'author' => $ann->author->name ?? 'Admin',
-            'author_role' => $ann->author->role ?? 'admin',
-            'audience' => $ann->target_audience,
-            'created_at' => $ann->created_at,
-        ]);
+        if ($eventDate >= $todayDate) {
+            $calendarEvents->push((object) [
+                'type'  => 'announcement',
+                'title' => $ann->title,
+                'content' => \Illuminate\Support\Str::limit($ann->content, 120),
+                'date'  => $eventDate,
+                'author' => $ann->author->name ?? 'Admin',
+                'author_role' => $ann->author->role ?? 'admin',
+                'audience' => $ann->target_audience,
+                'created_at' => $ann->created_at,
+            ]);
+        }
     }
 
-    // Add holidays as events
+    // Add holidays as events (upcoming next 60 days)
     $allHolidays = Holiday::getUpcoming(
-        $now->copy()->subDays(30)->toDateString(),
+        $todayDate,
         $now->copy()->addDays(60)->toDateString()
     );
 
@@ -277,14 +287,38 @@ class HomeController extends Controller
             'type'  => 'holiday',
             'title' => $hol->name,
             'content' => $hol->description ?? 'No classes',
-            'date'  => $hol->date->toDateString(),
+            'date'  => $hol->date instanceof \DateTimeInterface ? $hol->date->toDateString() : Carbon::parse($hol->date)->toDateString(),
             'author' => null,
             'audience' => 'All',
             'created_at' => $hol->created_at,
         ]);
     }
 
-    $calendarEvents = $calendarEvents->sortByDesc('date')->values();
+    // Add school events visible to student
+    $studentEvents = Event::visibleTo($user)
+        ->where('status', '!=', 'cancelled')
+        ->whereDate('date', '>=', $todayDate)
+        ->whereDate('date', '<=', $now->copy()->addDays(60)->toDateString())
+        ->orderBy('date')
+        ->get();
+
+    foreach ($studentEvents as $evt) {
+        $calendarEvents->push((object) [
+            'type'  => $evt->type,
+            'title' => $evt->name,
+            'content' => $evt->description ?? $evt->location ?? '',
+            'date'  => $evt->date->toDateString(),
+            'author' => null,
+            'audience' => 'Students',
+            'created_at' => $evt->created_at,
+        ]);
+    }
+
+    // Deduplicate by date + title and sort ascending by date
+    $calendarEvents = $calendarEvents
+        ->unique(fn($evt) => $evt->date . '_' . strtolower(trim($evt->title)))
+        ->sortBy('date')
+        ->values();
 
     // Build events map for calendar dots
     $eventsMap = [];
@@ -590,7 +624,7 @@ class HomeController extends Controller
                     'title' => 'New Leave Request',
                     'message' => "{$user->name} submitted a leave request for {$subject->name} on " . \Carbon\Carbon::parse($request->date)->format('M d, Y'),
                     'type' => 'custom',
-                    'link' => route('admin.excuses')
+                    'link' => route('teacher.excuse.reviews')
                 ]);
             }
         }

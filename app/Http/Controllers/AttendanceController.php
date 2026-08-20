@@ -19,8 +19,6 @@ class AttendanceController extends Controller
     {
         $user = Auth::user();
 
-        // Debug: Log user info and query
-        Log::info('AttendanceController@index - User ID: ' . $user->id . ', Role: ' . $user->role);
         
         // Get all records with subject and excuse submission relationships, newest first
         $records = Attendance::with(['subject', 'excuseSubmission'])
@@ -29,8 +27,6 @@ class AttendanceController extends Controller
             ->orderBy('time_in', 'desc')
             ->get();
 
-        // Debug: Log records count
-        Log::info('AttendanceController@index - Records found: ' . $records->count());
 
         return view('attendance.records', compact('records'));
     }
@@ -55,18 +51,16 @@ class AttendanceController extends Controller
         return redirect()->back()->with('error', 'Subject not found.');
     }
 
-    $isEnrolled = \App\Models\Enrollment::where('user_id', $user->id)
-        ->where('subject_id', $subject->id)
-        ->exists();
+    $isEnrolled = $user->getAllSubjects()->contains('id', $subject->id);
 
     if (!$isEnrolled) {
         return redirect()->back()->with('error', 'You are not enrolled in this subject.');
     }
 
     // SCHOOL LOCATION — Read dynamically from admin settings
-    $schoolLat    = (float) \App\Models\Setting::get('school_lat', 12.316);
-    $schoolLng    = (float) \App\Models\Setting::get('school_lng', 123.673);
-    $radiusMeters = (int) \App\Models\Setting::get('school_radius', 100);
+    $schoolLat    = (float) \App\Models\Setting::get('gps_lat', 12.316);
+    $schoolLng    = (float) \App\Models\Setting::get('gps_lng', 123.673);
+    $radiusMeters = (int) \App\Models\Setting::get('gps_radius', 100);
 
     // GPS VALIDATION — use is_null() so 0.0 is accepted
     if (is_null($request->latitude) || is_null($request->longitude)) {

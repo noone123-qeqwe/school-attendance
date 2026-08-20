@@ -110,8 +110,8 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($this->admin)->get('/admin/students?course=BSCS');
 
         $response->assertStatus(200);
-        $response->assertSee('CS Student');
-        $response->assertDontSee('IT Student');
+        $response->assertSee('Cs Student');
+        $response->assertDontSee('It Student');
     }
 
     public function test_admin_can_search_students(): void

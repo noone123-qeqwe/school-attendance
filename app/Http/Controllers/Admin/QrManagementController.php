@@ -17,10 +17,10 @@ class QrManagementController extends Controller
     {
         $request->validate([
             'student_ids' => 'required|array|min:1',
-            'student_ids.*' => 'exists:users,id'
+            'student_ids.*' => 'exists:users,id,role,student'
         ]);
 
-        $students = \App\Models\User::whereIn('id', $request->student_ids)->get();
+        $students = \App\Models\User::where('role', 'student')->whereIn('id', $request->student_ids)->get();
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.qr.pdf', compact('students'));
         return $pdf->stream('bulk-qr-codes.pdf');

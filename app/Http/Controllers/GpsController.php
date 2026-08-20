@@ -9,9 +9,9 @@ class GpsController extends Controller
 {
     public function showConfig()
     {
-        $currentLat = \App\Models\Setting::get('school_lat', '14.6507');
-        $currentLng = \App\Models\Setting::get('school_lng', '121.0689');
-        $currentRadius = \App\Models\Setting::get('school_radius', '50');
+        $currentLat = \App\Models\Setting::get('gps_lat', '14.6507');
+        $currentLng = \App\Models\Setting::get('gps_lng', '121.0689');
+        $currentRadius = \App\Models\Setting::get('gps_radius', '50');
         
         return view('admin.gps-config', compact('currentLat', 'currentLng', 'currentRadius'));
     }
@@ -28,9 +28,9 @@ class GpsController extends Controller
         $lng = $request->longitude;
         $radius = $request->radius;
         
-        \App\Models\Setting::updateOrCreate(['key' => 'school_lat'], ['value' => $lat]);
-        \App\Models\Setting::updateOrCreate(['key' => 'school_lng'], ['value' => $lng]);
-        \App\Models\Setting::updateOrCreate(['key' => 'school_radius'], ['value' => $radius]);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_lat'], ['value' => $lat]);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_lng'], ['value' => $lng]);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_radius'], ['value' => $radius]);
         
         return redirect()->back()->with('success', 'GPS coordinates updated successfully!');
     }
@@ -46,9 +46,9 @@ class GpsController extends Controller
         $lng = $request->longitude;
         $radius = 50; // Reset to normal radius
         
-        \App\Models\Setting::updateOrCreate(['key' => 'school_lat'], ['value' => $lat]);
-        \App\Models\Setting::updateOrCreate(['key' => 'school_lng'], ['value' => $lng]);
-        \App\Models\Setting::updateOrCreate(['key' => 'school_radius'], ['value' => $radius]);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_lat'], ['value' => $lat]);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_lng'], ['value' => $lng]);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_radius'], ['value' => $radius]);
         
         return response()->json(['success' => true, 'message' => 'Coordinates updated successfully!']);
     }

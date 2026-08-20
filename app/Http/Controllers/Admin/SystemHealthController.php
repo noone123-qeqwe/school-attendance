@@ -31,8 +31,8 @@ class SystemHealthController extends Controller
         // 4. Backups count
         // For now just simulate or read a backups directory
         $backupCount = 0;
-        if (\Illuminate\Support\Facades\Storage::disk('local')->exists('Laravel')) {
-            $backupCount = count(\Illuminate\Support\Facades\Storage::disk('local')->files('Laravel'));
+        if (\Illuminate\Support\Facades\Storage::disk('local')->exists('backups')) {
+            $backupCount = count(\Illuminate\Support\Facades\Storage::disk('local')->files('backups'));
         }
 
         return view('admin.system_health.index', compact('dbStatus', 'failedJobs', 'queueSize', 'mailConfigured', 'backupCount'));

@@ -16,11 +16,14 @@ class StudentMiddleware
 
         $user = auth()->user();
         
-        // Allow access if user is a student, regardless of session role
-        // (session role might not be set immediately after login)
         if (!$user->isStudent()) {
-            auth()->logout();
-            $request->session()->flush();
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard');
+            } elseif ($user->isTeacher()) {
+                return redirect()->route('teacher.dashboard');
+            } elseif ($user->isParent()) {
+                return redirect()->route('parent.dashboard');
+            }
             return redirect()->route('login')->with('error', 'Please login with student credentials.');
         }
 

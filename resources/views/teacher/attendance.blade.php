@@ -136,6 +136,7 @@
         </div>
     @endif
 </x-card>
+@endsection
 
 @section('scripts')
 <script>

@@ -3,39 +3,25 @@
 namespace App\Exports;
 
 use App\Models\Attendance;
-use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class AttendanceExport implements FromQuery, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
+class AttendanceExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
-    protected $filters;
+    protected $logs;
 
-    public function __construct(array $filters = [])
+    public function __construct($logs)
     {
-        $this->filters = $filters;
+        $this->logs = $logs;
     }
 
-    public function query()
+    public function collection()
     {
-        $query = Attendance::with(['user', 'subject']);
-
-        if (!empty($this->filters['subject_code'])) {
-            $query->where('subject_code', $this->filters['subject_code']);
-        }
-
-        if (!empty($this->filters['date'])) {
-            $query->whereDate('date', $this->filters['date']);
-        }
-
-        if (!empty($this->filters['status'])) {
-            $query->where('status', $this->filters['status']);
-        }
-
-        return $query->orderBy('date', 'desc');
+        return $this->logs;
     }
 
     public function headings(): array

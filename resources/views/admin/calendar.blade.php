@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('page-title', 'Holiday & Events Calendar')
+@section('page-title', 'School Events Calendar')
 
 @section('content')
 <div id="holidayCalendarPage" class="holiday-dashboard">
@@ -546,7 +546,6 @@
                         <div class="col-12">
                             <label class="form-label">Type</label>
                             <select name="type" class="adm-input" required id="addEventType" onchange="toggleTimeLocation(this.value, 'add')">
-                                <option value="holiday">Holiday</option>
                                 <option value="class">Class</option>
                                 <option value="exam">Exam</option>
                                 <option value="meeting">Meeting</option>
@@ -558,7 +557,7 @@
                             <input type="date" name="date" class="adm-input" required min="{{ now()->format('Y-m-d') }}">
                         </div>
                         
-                        <div class="col-12" id="addTimeLocContainer" style="display: none;">
+                        <div class="col-12" id="addTimeLocContainer" style="display: block;">
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
                                     <label class="form-label">Start Time</label>
@@ -613,7 +612,6 @@
                         <div class="col-12">
                             <label class="form-label">Type</label>
                             <select name="type" id="editType" class="adm-input" required onchange="toggleTimeLocation(this.value, 'edit')">
-                                <option value="holiday">Holiday</option>
                                 <option value="class">Class</option>
                                 <option value="exam">Exam</option>
                                 <option value="meeting">Meeting</option>
@@ -692,8 +690,8 @@
                 </div>
             </div>
             <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.06); padding: 16px 32px; display: flex; justify-content: space-between;">
-                <button type="button" class="adm-btn adm-btn-ghost" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="triggerDelete()">Delete Event</button>
-                <button type="button" class="adm-btn adm-btn-primary" onclick="triggerEdit()">Edit Event</button>
+                <button type="button" id="btnDeleteEvent" class="adm-btn adm-btn-ghost" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" onclick="triggerDelete()">Delete Event</button>
+                <button type="button" id="btnEditEvent" class="adm-btn adm-btn-primary" onclick="triggerEdit()">Edit Event</button>
             </div>
             
             <form id="deleteEventForm" method="POST" style="display:none;">
@@ -771,19 +769,20 @@ document.addEventListener('DOMContentLoaded', function() {
         eventClick: function(info) {
             activeEvent = info.event;
             const props = info.event.extendedProps;
+            const isAutoHoliday = info.event.id && info.event.id.startsWith('hol_');
             
             document.getElementById('eventTitle').textContent = info.event.title;
             
             const badge = document.getElementById('eventTypeBadge');
-            badge.textContent = props.type.replace('_', ' ');
+            badge.textContent = props.type ? props.type.replace('_', ' ') : 'holiday';
             badge.style.backgroundColor = info.event.backgroundColor;
             
             const start = info.event.start;
             const end = info.event.end;
             
-            let timeStr = start.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            let timeStr = start ? start.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }) : '';
             if (props.type !== 'holiday' && !info.event.allDay) {
-                timeStr += ` • ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                if (start) timeStr += ` • ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 if (end) {
                     timeStr += ` - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 }
@@ -802,6 +801,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('eventDescriptionContainer').style.display = 'block';
             } else {
                 document.getElementById('eventDescriptionContainer').style.display = 'none';
+            }
+            
+            // Hide Edit/Delete buttons for auto-seeded holidays (read-only)
+            const btnEdit = document.getElementById('btnEditEvent');
+            const btnDelete = document.getElementById('btnDeleteEvent');
+            if (isAutoHoliday) {
+                if (btnEdit) btnEdit.style.display = 'none';
+                if (btnDelete) btnDelete.style.display = 'none';
+            } else {
+                if (btnEdit) btnEdit.style.display = '';
+                if (btnDelete) btnDelete.style.display = '';
             }
             
             new bootstrap.Modal(document.getElementById('eventDetailModal')).show();

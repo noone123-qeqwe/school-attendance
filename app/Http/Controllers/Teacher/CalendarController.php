@@ -138,7 +138,7 @@ class CalendarController extends Controller
                     // Resolve users for the group right away (can also be done via Job)
                     $subject = \App\Models\Subject::find($classId);
                     if ($subject) {
-                        $students = $subject->enrolledStudents;
+                        $students = $subject->getAllStudents();
                         
                         if ($type === 'class_students') {
                             $userIdsToInvite = array_merge($userIdsToInvite, $students->pluck('id')->toArray());

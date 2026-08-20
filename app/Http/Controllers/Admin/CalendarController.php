@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\Holiday;
 use App\Models\EventRescheduleLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -52,41 +53,88 @@ class CalendarController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'type' => 'required|in:class,exam,meeting,school_event,holiday',
+            'type' => 'required|in:class,exam,meeting,school_event,holiday,national,local,school,no_class',
             'date' => 'required|date',
-            'start_time' => 'required_unless:type,holiday',
-            'end_time' => 'required_unless:type,holiday|after:start_time',
+            'start_time' => 'required_unless:type,holiday,national,local,school,no_class',
+            'end_time' => 'required_unless:type,holiday,national,local,school,no_class|after:start_time',
             'location' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
 
+        if (in_array($request->type, ['national', 'local', 'school', 'no_class'])) {
+            $cleanDate = Carbon::parse($request->date)->format('Y-m-d');
+            $holiday = Holiday::updateOrCreate(
+                ['date' => $cleanDate],
+                [
+                    'name' => $request->name,
+                    'description' => $request->description,
+                    'type' => $request->type,
+                    'is_active' => true,
+                    'created_by' => Auth::id(),
+                ]
+            );
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'holiday' => $holiday]);
+            }
+            return back()->with('success', 'Holiday saved successfully!');
+        }
+
+        $cleanDate = Carbon::parse($request->date)->format('Y-m-d');
         $event = Event::create([
             'name' => $request->name,
             'description' => $request->description,
             'type' => $request->type,
-            'date' => $request->date,
+            'date' => $cleanDate,
             'start_time' => $request->type === 'holiday' ? '00:00:00' : $request->start_time,
             'end_time' => $request->type === 'holiday' ? '23:59:59' : $request->end_time,
             'location' => $request->type === 'holiday' ? null : $request->location,
             'status' => 'scheduled',
             'created_by' => Auth::id(),
-            // For admin created events, organizer is null unless specified, but for meetings it might be them
             'organizer_id' => $request->type === 'meeting' ? Auth::id() : null,
         ]);
 
-        return response()->json(['success' => true, 'event' => $event]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'event' => $event]);
+        }
+        return back()->with('success', 'Event saved successfully!');
     }
 
     /**
-     * Edit/reschedule any event.
+     * Edit/reschedule any event or holiday.
      */
-    public function update(Request $request, Event $event)
+    public function update(Request $request, $id)
     {
+        $event = Event::find($id);
+
+        if (!$event) {
+            $holiday = Holiday::findOrFail($id);
+            $request->validate([
+                'name' => 'sometimes|required|string|max:255',
+                'type' => 'sometimes|required|in:national,local,school,no_class,holiday',
+                'date' => 'sometimes|required|date',
+                'description' => 'nullable|string',
+            ]);
+
+            $holidayType = in_array($request->type, ['national', 'local', 'school', 'no_class']) ? $request->type : $holiday->type;
+            $holiday->update([
+                'name' => $request->name ?? $holiday->name,
+                'description' => $request->has('description') ? $request->description : $holiday->description,
+                'type' => $holidayType,
+                'date' => $request->date ? Carbon::parse($request->date)->format('Y-m-d') : $holiday->date,
+            ]);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'holiday' => $holiday]);
+            }
+            return back()->with('success', 'Holiday updated successfully!');
+        }
+
         $this->authorize('update', $event);
 
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'type' => 'sometimes|required|in:class,exam,meeting,school_event,holiday',
+            'type' => 'sometimes|required|in:class,exam,meeting,school_event,holiday,national,local,school,no_class',
             'date' => 'sometimes|required|date',
             'start_time' => 'sometimes|required',
             'end_time' => 'sometimes|required|after:start_time',
@@ -105,7 +153,7 @@ class CalendarController extends Controller
                        ($newEnd !== $event->end_time->format('H:i:s'));
                        
         $locationChanged = $newLocation !== $event->location;
-        $isReschedule = ($timeChanged || $locationChanged) && $request->has('reschedule_reason');
+        $isReschedule = $timeChanged || $locationChanged;
 
         DB::beginTransaction();
         try {
@@ -168,18 +216,41 @@ class CalendarController extends Controller
                 }
             }
 
-            return response()->json(['success' => true, 'event' => $event]);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'event' => $event]);
+            }
+            return back()->with('success', 'Event updated successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            return back()->with('error', $e->getMessage());
         }
     }
 
     /**
-     * Soft cancel an event.
+     * Delete/cancel an event or holiday.
      */
-    public function destroy(Event $event)
+    public function destroy(Request $request, $id)
     {
+        $event = Event::find($id);
+
+        if (!$event) {
+            $holiday = Holiday::find($id);
+            if ($holiday) {
+                $holiday->delete();
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json(['success' => true]);
+                }
+                return back()->with('success', 'Holiday deleted successfully!');
+            }
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Event not found.'], 404);
+            }
+            return back()->with('error', 'Event not found.');
+        }
+
         $this->authorize('delete', $event);
 
         $event->status = 'cancelled';
@@ -198,6 +269,9 @@ class CalendarController extends Controller
             }
         }
 
-        return response()->json(['success' => true]);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['success' => true]);
+        }
+        return back()->with('success', 'Event cancelled successfully!');
     }
 }

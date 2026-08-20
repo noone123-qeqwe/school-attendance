@@ -77,14 +77,20 @@ class HolidaySeeder extends Seeder
             }
 
             foreach ($yearHolidays as $holiday) {
-                \App\Models\Holiday::updateOrCreate(
-                    ['date' => $holiday['date']],
+                $cleanDate = \Carbon\Carbon::parse($holiday['date'])->format('Y-m-d');
+                \Illuminate\Support\Facades\DB::table('holidays')->upsert(
                     [
-                        'name' => $holiday['name'],
+                        'date'        => $cleanDate,
+                        'name'        => $holiday['name'],
                         'description' => $holiday['description'],
-                        'type' => $holiday['type'],
-                        'created_by' => $admin->id
-                    ]
+                        'type'        => $holiday['type'],
+                        'is_active'   => 1,
+                        'created_by'  => $admin->id,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ],
+                    ['date'], // unique key
+                    ['name', 'description', 'type', 'updated_at'] // columns to update on conflict
                 );
             }
         }

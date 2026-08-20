@@ -44,7 +44,8 @@ class LiveAttendanceController extends Controller
         ]);
 
         // Ensure student is enrolled
-        if (!$subject->enrolledStudents()->where('users.id', $request->student_id)->exists()) {
+        $studentExists = $subject->getAllStudents()->contains('id', $request->student_id);
+        if (!$studentExists) {
             return back()->with('error', 'Student is not enrolled in this subject.');
         }
 

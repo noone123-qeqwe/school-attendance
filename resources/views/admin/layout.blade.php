@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('portal-title', 'Admin Panel')
 
@@ -64,7 +64,7 @@
     </div>
 
     <div class="sidebar-footer text-center">
-        <small>Â© {{ date('Y') }} {{ config('app.name') }}</small>
+        <small>&copy; {{ date('Y') }} {{ config('app.name') }}</small>
     </div>
 @endsection
 

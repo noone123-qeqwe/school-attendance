@@ -144,6 +144,22 @@ class StudentDashboardTest extends TestCase
         $response->assertDontSee('Thesis Writing');
     }
 
+    public function test_my_classes_does_not_show_other_course_subjects(): void
+    {
+        Subject::create([
+            'code' => 'IT201',
+            'name' => 'Information Tech Basic',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSIT',
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/my-classes');
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Information Tech Basic');
+    }
+
     // ─────────────────────────────────────────
     // SETTINGS
     // ─────────────────────────────────────────

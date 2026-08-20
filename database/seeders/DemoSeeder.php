@@ -57,7 +57,7 @@ class DemoSeeder extends Seeder
                 'password' => Hash::make('teacher123'),
                 'role' => 'teacher',
                 'employee_id' => 'T-2024-004',
-                'department' => 'Education',
+                'department' => 'Information System',
                 'position' => 'Teacher',
                 'specialization' => 'Attendance Management'
             ]
@@ -183,43 +183,55 @@ class DemoSeeder extends Seeder
             );
         }
 
-        // Create Demo Attendance Records (last 7 days)
+        // Create Demo Attendance Records (last 5 days) for student subjects
         $studentUsers = User::where('role', 'student')->get();
-        $subjectCodes = Subject::pluck('code');
 
         foreach ($studentUsers as $student) {
-            for ($i = 6; $i >= 0; $i--) {
+            $studentSubjects = $student->getAllSubjects();
+            if ($studentSubjects->isEmpty()) {
+                $studentSubjects = Subject::limit(3)->get();
+            }
+
+            for ($i = 4; $i >= 0; $i--) {
                 $date = Carbon::today()->subDays($i);
                 
                 // Skip weekends for demo
                 if ($date->isWeekend()) continue;
 
-                foreach ($subjectCodes as $subjectCode) {
-                    // Random attendance pattern for demo
-                    $statuses = ['Present', 'Present', 'Present', 'Late', 'Absent']; // Mostly present
+                foreach ($studentSubjects as $subject) {
+                    $statuses = ['Present', 'Present', 'Present', 'Late', 'Absent'];
                     $status = $statuses[array_rand($statuses)];
                     
                     $timeIn = null;
                     if ($status !== 'Absent') {
-                        $baseTime = $date->copy()->setTime(8, 0, 0); // 8:00 AM base
+                        $baseTime = $date->copy()->setTime(8, 0, 0);
                         if ($status === 'Late') {
-                            $baseTime->addMinutes(rand(10, 30)); // 10-30 minutes late
+                            $baseTime->addMinutes(rand(10, 30));
                         } else {
-                            $baseTime->addMinutes(rand(-5, 10)); // On time or slightly early/late
+                            $baseTime->addMinutes(rand(-5, 10));
                         }
                         $timeIn = $baseTime;
                     }
 
-                    Attendance::firstOrCreate([
-                        'user_id' => $student->id,
-                        'subject_code' => $subjectCode,
-                        'date' => $date->format('Y-m-d')
-                    ], [
-                        'status' => $status,
-                        'time_in' => $timeIn,
-                        'created_at' => $date,
-                        'updated_at' => $date
-                    ]);
+                    $dateStr = $date->format('Y-m-d');
+
+                    $exists = Attendance::where('user_id', $student->id)
+                        ->where('subject_id', $subject->id)
+                        ->whereDate('date', $dateStr)
+                        ->exists();
+
+                    if (!$exists) {
+                        Attendance::create([
+                            'user_id'      => $student->id,
+                            'subject_id'   => $subject->id,
+                            'subject_code' => $subject->code,
+                            'date'         => $dateStr,
+                            'status'       => $status,
+                            'time_in'      => $timeIn,
+                            'created_at'   => $date,
+                            'updated_at'   => $date,
+                        ]);
+                    }
                 }
             }
         }
@@ -247,16 +259,19 @@ class DemoSeeder extends Seeder
         ];
 
         foreach ($holidays as $holidayData) {
-            Holiday::firstOrCreate(
-                ['date' => $holidayData['date']->format('Y-m-d')],
-                [
-                    'name' => $holidayData['name'],
-                    'type' => $holidayData['type'],
+            $holidayDateStr = $holidayData['date']->format('Y-m-d');
+            $existingHoliday = Holiday::whereDate('date', $holidayDateStr)->first();
+
+            if (!$existingHoliday) {
+                Holiday::create([
+                    'date'        => $holidayDateStr,
+                    'name'        => $holidayData['name'],
+                    'type'        => $holidayData['type'],
                     'description' => $holidayData['description'],
-                    'is_active' => true,
-                    'created_by' => $admin->id
-                ]
-            );
+                    'is_active'   => true,
+                    'created_by'  => $admin->id
+                ]);
+            }
         }
 
         $this->command->info('Demo data seeded successfully!');

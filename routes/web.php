@@ -15,55 +15,58 @@ Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 
 // Intro page should always show, even to authenticated users
 Route::get('/', function () { return view('intro'); })->name('intro');
 
-// Debug route (remove in production) - NO AUTH REQUIRED
-Route::get('/debug-session', function() {
-    return response()->json([
-        'authenticated' => auth()->check(),
-        'user_id' => auth()->id(),
-        'user_role' => auth()->user()?->role,
-        'user_email' => auth()->user()?->email,
-        'session_id' => session()->getId(),
-        'session_data' => session()->all(),
-        'cookie_name' => config('session.cookie'),
-        'session_lifetime' => config('session.lifetime'),
-        'session_driver' => config('session.driver'),
-        'app_env' => config('app.env'),
-        'app_debug' => config('app.debug'),
-        'cookies' => request()->cookies->all(),
-        'headers' => request()->headers->all(),
-    ]);
-});
+// Debug routes — only available in local development
+if (app()->environment('local')) {
+    // Debug route (remove in production) - NO AUTH REQUIRED
+    Route::get('/debug-session', function() {
+        return response()->json([
+            'authenticated' => auth()->check(),
+            'user_id' => auth()->id(),
+            'user_role' => auth()->user()?->role,
+            'user_email' => auth()->user()?->email,
+            'session_id' => session()->getId(),
+            'session_data' => session()->all(),
+            'cookie_name' => config('session.cookie'),
+            'session_lifetime' => config('session.lifetime'),
+            'session_driver' => config('session.driver'),
+            'app_env' => config('app.env'),
+            'app_debug' => config('app.debug'),
+            'cookies' => request()->cookies->all(),
+            'headers' => request()->headers->all(),
+        ]);
+    });
 
-// Test classroom route without middleware
-Route::get('/test-classroom/{code}', function($code) {
-    return response()->json([
-        'message' => 'Route reached successfully',
-        'code' => $code,
-        'auth_check' => auth()->check(),
-        'user' => auth()->user(),
-        'subject_exists' => \App\Models\Subject::where('code', $code)->exists(),
-    ]);
-});
+    // Test classroom route without middleware
+    Route::get('/test-classroom/{code}', function($code) {
+        return response()->json([
+            'message' => 'Route reached successfully',
+            'code' => $code,
+            'auth_check' => auth()->check(),
+            'user' => auth()->user(),
+            'subject_exists' => \App\Models\Subject::where('code', $code)->exists(),
+        ]);
+    });
 
-// Test route WITH auth middleware
-Route::get('/test-classroom-auth/{code}', function($code) {
-    return response()->json([
-        'message' => 'Auth route reached',
-        'code' => $code,
-        'user' => auth()->user(),
-        'session_id' => session()->getId(),
-    ]);
-})->middleware('auth');
+    // Test route WITH auth middleware
+    Route::get('/test-classroom-auth/{code}', function($code) {
+        return response()->json([
+            'message' => 'Auth route reached',
+            'code' => $code,
+            'user' => auth()->user(),
+            'session_id' => session()->getId(),
+        ]);
+    })->middleware('auth');
 
-Route::get('/test-session-set', function() {
-    session(['test_key' => 'test_value_' . time()]);
-    session()->save();
-    return response('Session set: ' . session('test_key') . ' | Session ID: ' . session()->getId());
-});
+    Route::get('/test-session-set', function() {
+        session(['test_key' => 'test_value_' . time()]);
+        session()->save();
+        return response('Session set: ' . session('test_key') . ' | Session ID: ' . session()->getId());
+    });
 
-Route::get('/test-session-get', function() {
-    return response('Session get: ' . session('test_key') . ' | Session ID: ' . session()->getId() . ' | Authenticated: ' . (auth()->check() ? 'YES' : 'NO'));
-});
+    Route::get('/test-session-get', function() {
+        return response('Session get: ' . session('test_key') . ' | Session ID: ' . session()->getId() . ' | Authenticated: ' . (auth()->check() ? 'YES' : 'NO'));
+    });
+}
 
 // Guest Routes (Public)
 Route::middleware('guest')->group(function () {
@@ -199,25 +202,6 @@ Route::middleware(['auth', 'student'])->group(function () {
     // WebAuthn QR verification
     Route::post('/qr/verify-options', [App\Http\Controllers\QrAttendanceController::class, 'verificationOptions'])->name('qr.verify.options');
     Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->name('qr.verify.complete');
-});
-
-// Parent Routes (Parents only)
-Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\ParentController::class, 'dashboard'])->name('dashboard');
-    Route::get('/link-child', [App\Http\Controllers\ParentController::class, 'linkChildForm'])->name('link-child.form');
-    Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->name('link-child.send-otp');
-    Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->name('link-child.verify-otp');
-    
-    Route::get('/child/{child}', [App\Http\Controllers\ParentController::class, 'childDetail'])->name('child.detail');
-    Route::get('/child/{child}/warnings', [App\Http\Controllers\ParentController::class, 'childWarnings'])->name('child.warnings');
-    Route::get('/child/{child}/excuses', [App\Http\Controllers\ParentController::class, 'childExcuses'])->name('child.excuses');
-    
-    // Calendar
-    Route::get('/calendar', [App\Http\Controllers\ParentController::class, 'calendar'])->name('calendar');
-    Route::get('/calendar/data', [App\Http\Controllers\ParentController::class, 'calendarData'])->name('calendar.data');
-    Route::get('/calendar/search-invitees', [App\Http\Controllers\ParentController::class, 'searchInvitees'])->name('calendar.search-invitees');
-    Route::post('/calendar/meetings', [App\Http\Controllers\ParentController::class, 'storeMeeting'])->name('calendar.meetings.store');
-    
 });
 
 // Teacher Routes (Teachers only)
@@ -358,11 +342,11 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
 });
 
 // Admin Routes (Admins only)
-Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->prefix('admin')->name('admin.')->group(function () {
     // 2FA Routes
     Route::get('/2fa', [App\Http\Controllers\AdminController::class, 'twoFactorForm'])->name('2fa.form')->withoutMiddleware('admin.2fa');
-    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware('admin.2fa');
-    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware('admin.2fa');
+    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware('admin.2fa')->middleware('throttle:5,1');
+    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware('admin.2fa')->middleware('throttle:3,1');
 
     // Reset Password
     Route::post('/user/{user}/reset-password', [App\Http\Controllers\AdminController::class, 'resetPassword'])->name('user.reset_password');
@@ -375,16 +359,25 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
     // Attendance Management
     Route::get('/attendance', [App\Http\Controllers\AdminController::class, 'attendanceLogs'])->name('attendance');
     Route::get('/attendance/export-pdf', [App\Http\Controllers\AdminController::class, 'exportAttendancePdf'])->name('attendance.pdf');
-    Route::get('/attendance/export-csv', [App\Http\Controllers\AdminController::class, 'exportAttendanceCsv'])->name('attendance.csv');
+    Route::get('/attendance/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewAttendancePdf'])->name('attendance.preview');
+    Route::get('/attendance/export-csv', [App\Http\Controllers\AdminController::class, 'exportAttendanceCsv'])->name('attendance.export');
     
     // QR Management
     Route::get('/qr', [App\Http\Controllers\Admin\QrManagementController::class, 'index'])->name('qr');
+    Route::post('/qr/bulk-print', [App\Http\Controllers\Admin\QrManagementController::class, 'bulkPrint'])->name('qr.bulk-print');
 
     // Student management
     Route::get('/students', [App\Http\Controllers\AdminController::class, 'students'])->name('students');
+    Route::get('/student/create', [App\Http\Controllers\AdminController::class, 'createStudent'])->name('student.create');
+    Route::post('/student', [App\Http\Controllers\AdminController::class, 'storeStudent'])->name('student.store');
+    Route::post('/student/otp/send', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->name('otp.register.send');
+    Route::post('/student/otp/verify', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->name('otp.register.verify');
+    Route::get('/students/search', [App\Http\Controllers\AdminController::class, 'searchStudents'])->name('students.search');
     Route::get('/students/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewStudentsPdf'])->name('students.preview');
     Route::get('/students/export-pdf', [App\Http\Controllers\AdminController::class, 'exportStudentsPdf'])->name('students.pdf');
     Route::get('/students/export-csv', [App\Http\Controllers\AdminController::class, 'exportStudentsCsv'])->name('students.csv');
+    Route::post('/students/import-csv', [App\Http\Controllers\AdminController::class, 'importStudentsCsv'])->name('students.import');
+    Route::get('/students/template', [App\Http\Controllers\AdminController::class, 'downloadStudentTemplate'])->name('students.template');
     Route::get('/student/{student}', [App\Http\Controllers\AdminController::class, 'studentDetail'])->name('student');
     Route::post('/student/{student}/warn', [App\Http\Controllers\AdminController::class, 'sendWarning'])->name('student.warn');
     Route::get('/student/{student}/edit', [App\Http\Controllers\AdminController::class, 'editStudent'])->name('student.edit');
@@ -435,9 +428,15 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
 
     // Activity Log
     Route::get('/activity-log', [App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity.log');
+    Route::get('/activity-log/export', [App\Http\Controllers\Admin\ActivityLogController::class, 'export'])->name('activity.log.export');
 
     // Teacher Management
     Route::get('/teachers', [App\Http\Controllers\AdminController::class, 'teachers'])->name('teachers');
+    Route::get('/teachers/search', [App\Http\Controllers\AdminController::class, 'searchTeachers'])->name('teachers.search');
+    Route::get('/teachers/export-pdf', [App\Http\Controllers\AdminController::class, 'exportTeachersPdf'])->name('teachers.pdf');
+    Route::get('/teachers/export-csv', [App\Http\Controllers\AdminController::class, 'exportTeachersCsv'])->name('teachers.csv');
+    Route::post('/teachers/import-csv', [App\Http\Controllers\AdminController::class, 'importTeachersCsv'])->name('teachers.import');
+    Route::get('/teachers/template', [App\Http\Controllers\AdminController::class, 'downloadTeacherTemplate'])->name('teachers.template');
     Route::get('/teacher/create', [App\Http\Controllers\AdminController::class, 'createTeacher'])->name('teacher.create');
     Route::post('/teacher', [App\Http\Controllers\AdminController::class, 'storeTeacher'])->name('teacher.store');
     Route::get('/teacher/{teacher}/edit', [App\Http\Controllers\AdminController::class, 'editTeacher'])->name('teacher.edit');

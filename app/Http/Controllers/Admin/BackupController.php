@@ -9,12 +9,14 @@ class BackupController extends Controller
 {
     public function index()
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
         $backups = \App\Models\BackupLog::latest()->paginate(10);
         return view('admin.backups.index', compact('backups'));
     }
 
     public function create()
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
         try {
             $filename = 'backup_' . date('Y_m_d_His') . '.sql';
             $path = storage_path('app/backups');
@@ -22,34 +24,47 @@ class BackupController extends Controller
                 mkdir($path, 0755, true);
             }
             $filepath = $path . '/' . $filename;
+            
+            $handle = fopen($filepath, 'w');
+            if (!$handle) throw new \Exception('Cannot open file for writing');
 
-            $tables = \DB::select('SHOW TABLES');
-            $sql = "";
+            \Illuminate\Support\Facades\DB::statement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
+            $pdo = \Illuminate\Support\Facades\DB::connection()->getPdo();
+            $tables = \Illuminate\Support\Facades\DB::select('SHOW TABLES');
+            
             foreach ($tables as $table) {
                 $tableName = array_values((array)$table)[0];
                 
-                $createTable = \DB::select("SHOW CREATE TABLE `$tableName`")[0];
-                $sql .= "-- Table structure for `$tableName`\n\n";
-                $sql .= "DROP TABLE IF EXISTS `$tableName`;\n";
-                $sql .= array_values((array)$createTable)[1] . ";\n\n";
+                $createTable = \Illuminate\Support\Facades\DB::select("SHOW CREATE TABLE `$tableName`")[0];
+                fwrite($handle, "-- Table structure for `$tableName`\n\n");
+                fwrite($handle, "DROP TABLE IF EXISTS `$tableName`;\n");
+                fwrite($handle, array_values((array)$createTable)[1] . ";\n\n");
                 
-                $rows = \DB::table($tableName)->get();
-                if ($rows->count() > 0) {
-                    $sql .= "-- Dumping data for table `$tableName`\n\n";
-                    foreach ($rows as $row) {
-                        $rowArr = (array)$row;
-                        $keys = array_map(function($key) { return "`$key`"; }, array_keys($rowArr));
-                        $values = array_map(function($val) {
-                            if (is_null($val)) return "NULL";
-                            return "'" . addslashes($val) . "'";
-                        }, array_values($rowArr));
-                        $sql .= "INSERT INTO `$tableName` (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ");\n";
+                $cursor = \Illuminate\Support\Facades\DB::table($tableName)->cursor();
+                $hasRows = false;
+                
+                foreach ($cursor as $row) {
+                    if (!$hasRows) {
+                        fwrite($handle, "-- Dumping data for table `$tableName`\n\n");
+                        $hasRows = true;
                     }
-                    $sql .= "\n";
+                    $rowArr = (array)$row;
+                    $keys = array_map(function($key) { return "`$key`"; }, array_keys($rowArr));
+                    $values = array_map(function($val) use ($pdo) {
+                        if (is_null($val)) return "NULL";
+                        return $pdo->quote($val);
+                    }, array_values($rowArr));
+                    fwrite($handle, "INSERT INTO `$tableName` (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ");\n");
+                }
+                if ($hasRows) {
+                    fwrite($handle, "\n");
                 }
             }
 
-            file_put_contents($filepath, $sql);
+            \Illuminate\Support\Facades\DB::commit();
+            fclose($handle);
 
             \App\Models\BackupLog::create([
                 'filename' => $filename,
@@ -59,6 +74,12 @@ class BackupController extends Controller
 
             return back()->with('success', 'Backup created successfully!');
         } catch (\Exception $e) {
+            if (\Illuminate\Support\Facades\DB::transactionLevel() > 0) {
+                \Illuminate\Support\Facades\DB::rollBack();
+            }
+            if (isset($handle) && is_resource($handle)) {
+                fclose($handle);
+            }
             return back()->with('error', 'Failed to create backup: ' . $e->getMessage());
         }
     }
@@ -74,6 +95,7 @@ class BackupController extends Controller
 
     public function destroy(\App\Models\BackupLog $backup)
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
         $filepath = storage_path('app/' . $backup->path);
         if (file_exists($filepath)) {
             unlink($filepath);

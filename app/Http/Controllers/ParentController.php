@@ -223,9 +223,9 @@ class ParentController extends Controller
         // Stats
         $stats = Attendance::where('user_id', $child->id)
             ->selectRaw('COUNT(*) as total')
-            ->selectRaw('SUM(CASE WHEN status = "Present" THEN 1 ELSE 0 END) as present')
-            ->selectRaw('SUM(CASE WHEN status = "Late" THEN 1 ELSE 0 END) as late')
-            ->selectRaw('SUM(CASE WHEN status = "Absent" THEN 1 ELSE 0 END) as absent')
+            ->selectRaw('SUM(CASE WHEN status = \'Present\' THEN 1 ELSE 0 END) as present')
+            ->selectRaw('SUM(CASE WHEN status = \'Late\' THEN 1 ELSE 0 END) as late')
+            ->selectRaw('SUM(CASE WHEN status = \'Absent\' THEN 1 ELSE 0 END) as absent')
             ->first();
 
         $total = $stats->total ?? 0;
@@ -546,15 +546,8 @@ class ParentController extends Controller
             $selectedChild = $children->first();
         }
 
-        // Get student's enrolled subjects (fallback to year/semester if explicit enrollments are empty)
-        $subjects = $selectedChild->enrolledSubjects()->with(['schedules', 'instructorUser'])->get();
-        
-        if ($subjects->isEmpty()) {
-            $subjects = Subject::where('year_level', $selectedChild->year_level)
-                               ->where('semester', $selectedChild->semester)
-                               ->with(['schedules', 'instructorUser'])
-                               ->get();
-        }
+        $subjects = $selectedChild->getAllSubjects();
+        $subjects->load(['schedules', 'instructorUser']);
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         
@@ -648,6 +641,8 @@ class ParentController extends Controller
         $preferences = $user->notification_preferences ?? [];
         $preferences['email_notifications'] = $request->has('email_notifications');
         $preferences['push_notifications'] = $request->has('push_notifications');
+        $preferences['email'] = $request->has('email_notifications');
+        $preferences['in_app'] = $request->has('push_notifications');
         $user->notification_preferences = $preferences;
 
         $user->save();

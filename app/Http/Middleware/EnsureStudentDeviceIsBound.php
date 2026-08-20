@@ -21,7 +21,7 @@ class EnsureStudentDeviceIsBound
     {
         $user = $request->user();
 
-        if (!$user || $user->isAdmin() || $user->isTeacher() || $user->isParent()) {
+        if (!$user || !$user->isStudent()) {
             return $next($request);
         }
 

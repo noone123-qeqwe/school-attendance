@@ -28,19 +28,26 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     public function index(Request $request, AnalyticsService $analyticsService)
     {
-        \Log::info("TeacherController@index START");
+
         $teacher = Auth::user();
         
-        // ── Holiday Calendar Data ──
+        // ── Holiday & Events Calendar Data ──
         $calYear = (int) $request->input('hcal_year', now()->year);
         $calMonth = (int) $request->input('hcal_month', now()->month);
         $calStart = Carbon::create($calYear, $calMonth, 1);
+        $rangeStart = $calStart->copy()->subMonth()->startOfMonth()->toDateString();
+        $rangeEnd = $calStart->copy()->addMonth()->endOfMonth()->toDateString();
+        $todayStr = now()->toDateString();
 
         $calendarHolidays = \App\Models\Holiday::active()
-            ->whereBetween('date', [
-                $calStart->copy()->subMonth()->startOfMonth()->toDateString(),
-                $calStart->copy()->addMonth()->endOfMonth()->toDateString()
-            ])
+            ->whereBetween('date', [$rangeStart, $rangeEnd])
+            ->orderBy('date')
+            ->get()
+            ->unique(fn($h) => $h->date->format('Y-m-d') . '_' . strtolower(trim($h->name)));
+
+        $calendarEvents = \App\Models\Event::visibleTo($teacher)
+            ->where('status', '!=', 'cancelled')
+            ->whereBetween('date', [$rangeStart, $rangeEnd])
             ->orderBy('date')
             ->get();
 
@@ -61,6 +68,19 @@ class TeacherController extends Controller
                 'type_label' => $hol->type_label, 'source' => 'holiday',
             ];
         }
+
+        foreach ($calendarEvents as $evt) {
+            $dateKey = $evt->date->format('Y-m-d');
+            $hcalEventsMap[$dateKey][] = [
+                'id' => $evt->id, 'type' => $evt->type, 'name' => $evt->name,
+                'description' => $evt->description, 'date' => $dateKey,
+                'date_formatted' => $evt->date->format('M j, Y'),
+                'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
+                'source' => 'event',
+                'location' => $evt->location,
+            ];
+        }
+
         foreach ($calendarAnnouncements as $ann) {
             $dateKey = $ann->scheduled_for ? $ann->scheduled_for->format('Y-m-d') : $ann->created_at->format('Y-m-d');
             $hcalEventsMap[$dateKey][] = [
@@ -73,9 +93,16 @@ class TeacherController extends Controller
             ];
         }
 
-        // Build flat list for sidebar
+        // Build flat list for sidebar (>= today, deduplicated, sorted ascending)
         $hcalUpcoming = collect();
-        foreach ($calendarHolidays->where('date', '>=', now()->toDateString())->take(10) as $hol) {
+
+        $upcomingHolidays = \App\Models\Holiday::active()
+            ->whereDate('date', '>=', $todayStr)
+            ->orderBy('date')
+            ->take(15)
+            ->get();
+
+        foreach ($upcomingHolidays as $hol) {
             $hcalUpcoming->push((object)[
                 'id' => $hol->id, 'type' => $hol->type, 'name' => $hol->name,
                 'description' => $hol->description, 'date' => $hol->date,
@@ -83,20 +110,49 @@ class TeacherController extends Controller
                 'type_label' => $hol->type_label, 'source' => 'holiday',
             ]);
         }
-        foreach ($calendarAnnouncements->take(5) as $ann) {
-            $annDate = $ann->scheduled_for ?? $ann->created_at;
+
+        $upcomingCustomEvents = \App\Models\Event::visibleTo($teacher)
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('date', '>=', $todayStr)
+            ->orderBy('date')
+            ->take(15)
+            ->get();
+
+        foreach ($upcomingCustomEvents as $evt) {
             $hcalUpcoming->push((object)[
-                'id' => $ann->id, 'type' => 'announcement', 'name' => $ann->title,
-                'description' => \Illuminate\Support\Str::limit($ann->content, 100),
-                'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
-                'type_label' => 'Announcement', 'source' => 'announcement',
-                'author' => $ann->author->name ?? 'Admin',
-                'author_role' => $ann->author->role ?? 'admin',
+                'id' => $evt->id, 'type' => $evt->type, 'name' => $evt->name,
+                'description' => $evt->description, 'date' => $evt->date,
+                'date_formatted' => $evt->date->format('M j, Y'),
+                'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
+                'source' => 'event',
+                'location' => $evt->location,
             ]);
         }
-        $hcalUpcoming = $hcalUpcoming->sortBy('date')->values();
 
-        \Log::info("TeacherController@index END");
+        foreach ($calendarAnnouncements->take(5) as $ann) {
+            $annDate = $ann->scheduled_for ?? $ann->created_at;
+            if ($annDate->toDateString() >= $todayStr) {
+                $hcalUpcoming->push((object)[
+                    'id' => $ann->id, 'type' => 'announcement', 'name' => $ann->title,
+                    'description' => \Illuminate\Support\Str::limit($ann->content, 100),
+                    'date' => $annDate, 'date_formatted' => $annDate->format('M j, Y'),
+                    'type_label' => 'Announcement', 'source' => 'announcement',
+                    'author' => $ann->author->name ?? 'Admin',
+                    'author_role' => $ann->author->role ?? 'admin',
+                ]);
+            }
+        }
+
+        $hcalUpcoming = $hcalUpcoming
+            ->unique(function ($item) {
+                $d = $item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d');
+                return $d . '_' . strtolower(trim($item->name));
+            })
+            ->sortBy('date')
+            ->values()
+            ->take(10);
+
+
         
         $data = $analyticsService->getTeacherDashboardData($request, $teacher);
         $data['calYear'] = $calYear;
@@ -340,12 +396,11 @@ class TeacherController extends Controller
             ->firstOrFail();
 
         // Get students enrolled in this subject
-        $students = $subject->enrolledStudents()
-            ->with(['attendances' => function($q) use ($subjectCode) {
-                $q->where('subject_code', $subjectCode);
-            }])
-            ->orderBy('name')
-            ->get();
+        $students = $subject->getAllStudents();
+        $students->load(['attendances' => function($q) use ($subjectCode) {
+            $q->where('subject_code', $subjectCode);
+        }]);
+        $students = $students->sortBy('name');
 
         return view('teacher.subject-students', compact('subject', 'students'));
     }
@@ -638,12 +693,10 @@ class TeacherController extends Controller
         
         $subjectCodes = $teacherSubjects->pluck('code');
         
-        // Verify teacher has access to this student (student must match year/semester of teacher's subjects)
-        $hasAccess = $teacherSubjects->filter(function($subject) use ($student) {
-            return $subject->year_level == $student->year_level && 
-                   $subject->semester == $student->semester &&
-                   ($subject->course == null || $subject->course == $student->course);
-        })->isNotEmpty();
+        // Verify teacher has access to this student (student must match cohort criteria or be explicitly enrolled in one of the teacher's subjects)
+        $hasAccess = $teacherSubjects->contains(function ($subject) use ($student) {
+            return $subject->getAllStudents()->contains('id', $student->id);
+        });
             
         if (!$hasAccess) {
             abort(403, 'You do not have access to this student\'s records.');
@@ -1098,12 +1151,10 @@ class TeacherController extends Controller
             abort(403, 'You do not have permission to send warnings for this subject.');
         }
 
-        // Verify student has attendance in this subject
-        $hasAttendance = Attendance::where('user_id', $student->id)
-            ->where('subject_code', $request->subject_code)
-            ->exists();
+        // Verify student is enrolled in this subject
+        $isEnrolled = $student->getAllSubjects()->contains('code', $request->subject_code);
             
-        if (!$hasAttendance) {
+        if (!$isEnrolled) {
             return back()->with('error', 'This student is not enrolled in your subject.');
         }
 
@@ -1183,7 +1234,7 @@ class TeacherController extends Controller
             $recentAttendance->every(fn($record) => $record->status === 'Absent')) {
             
             // Check if dates are consecutive (allowing for weekends/holidays)
-            $dates = $recentAttendance->pluck('date')->sort();
+            $dates = $recentAttendance->pluck('date')->sort()->values();
             $isConsecutive = true;
             
             for ($i = 1; $i < $dates->count(); $i++) {
@@ -1347,6 +1398,15 @@ class TeacherController extends Controller
     public function approveExcuse(Request $request, ExcuseSubmission $excuseSubmission)
     {
         try {
+            // Verify teacher has access to this excuse submission
+            $teacher = Auth::user();
+            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
+                ->pluck('code');
+
+            if ($excuseSubmission->attendance && !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
+                abort(403, 'Unauthorized access to this excuse submission.');
+            }
+
             // Step 1: Update excuse status
             $excuseSubmission->status = 'approved';
             $excuseSubmission->reviewed_at = now();
@@ -1587,14 +1647,15 @@ class TeacherController extends Controller
         ]);
 
         // Check if holiday already exists for this date
-        $existingHoliday = Holiday::where('date', $request->date)->first();
+        $cleanDate = Carbon::parse($request->date)->format('Y-m-d');
+        $existingHoliday = Holiday::forDate($cleanDate)->first();
         
         if ($existingHoliday) {
             return back()->with('error', 'A holiday is already marked for this date: ' . $existingHoliday->name);
         }
 
         Holiday::create([
-            'date' => $request->date,
+            'date' => $cleanDate,
             'name' => $request->name,
             'description' => $request->description,
             'type' => $request->type,
@@ -1772,15 +1833,11 @@ class TeacherController extends Controller
             ->firstOrFail();
 
         // 1. Get Enrolled Students
-        $students = User::where('role', 'student')
-            ->where('year_level', $subject->year_level)
-            ->where('semester', $subject->semester)
-            ->when($subject->course, fn($q) => $q->where('course', $subject->course))
-            ->with(['attendances' => function($q) use ($subjectCode) {
-                $q->where('subject_code', $subjectCode);
-            }])
-            ->orderBy('name')
-            ->get();
+        $students = $subject->getAllStudents();
+        $students->load(['attendances' => function($q) use ($subjectCode) {
+            $q->where('subject_code', $subjectCode);
+        }]);
+        $students = $students->sortBy('name');
 
         // 2. Get Attendance History for this subject
         $attendanceRecords = Attendance::with('user')
@@ -1848,11 +1905,7 @@ class TeacherController extends Controller
             'date' => 'required|date',
         ]);
 
-        $students = User::where('role', 'student')
-            ->where('year_level', $subject->year_level)
-            ->where('semester', $subject->semester)
-            ->when($subject->course, fn($q) => $q->where('course', $subject->course))
-            ->get();
+        $students = $subject->getAllStudents();
 
         $count = 0;
         foreach ($students as $student) {
@@ -1877,7 +1930,7 @@ class TeacherController extends Controller
     public function exportStudentsCsv(Request $request)
     {
         $teacher = Auth::user();
-        $mySubjectCodes = $teacher->taughtSubjects()->pluck('code')->toArray();
+        $mySubjectCodes = $teacher->subjects()->pluck('code')->toArray();
         $query = User::where('role', 'student')
             ->whereHas('attendances', function ($q) use ($mySubjectCodes) {
                 $q->whereIn('subject_code', $mySubjectCodes);
@@ -1898,7 +1951,7 @@ class TeacherController extends Controller
     public function exportAttendanceCsv(Request $request)
     {
         $teacher = Auth::user();
-        $mySubjectCodes = $teacher->taughtSubjects()->pluck('code')->toArray();
+        $mySubjectCodes = $teacher->subjects()->pluck('code')->toArray();
 
         $filters = $request->only(['subject_code', 'date', 'status']);
         
@@ -1908,6 +1961,13 @@ class TeacherController extends Controller
             $filters['subject_code'] = $mySubjectCodes[0] ?? null;
         }
 
-        return Excel::download(new AttendanceExport($filters), 'attendance.csv', \Maatwebsite\Excel\Excel::CSV);
+        $query = Attendance::with(['user', 'subject']);
+        if (!empty($filters['subject_code'])) $query->where('subject_code', $filters['subject_code']);
+        if (!empty($filters['date'])) $query->whereDate('date', $filters['date']);
+        if (!empty($filters['status'])) $query->where('status', $filters['status']);
+        
+        $logs = $query->orderBy('date', 'desc')->get();
+
+        return Excel::download(new AttendanceExport($logs), 'attendance.csv', \Maatwebsite\Excel\Excel::CSV);
     }
 }

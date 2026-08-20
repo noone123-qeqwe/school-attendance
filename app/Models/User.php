@@ -59,9 +59,11 @@ class User extends Authenticatable
     'section',
     'guardian_email',
     'email',
+    'email_verified_at',
     'password',
     'must_change_password',
     'role',
+    'admin_sub_role',
     'profile_image',
     'phone',
     'notification_preferences',
@@ -122,7 +124,6 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
             'notification_preferences' => 'array',
         ];
     }

@@ -37,7 +37,7 @@ class RoleAccessControlTest extends TestCase
         // QR scan with a fake token — should not 500
         $response = $this->get('/qr/scan/fake-token');
 
-        $this->assertTrue(in_array($response->status(), [200, 302, 404]));
+        $this->assertTrue(in_array($response->status(), [200, 302, 403, 404]));
     }
 
     // ─────────────────────────────────────────

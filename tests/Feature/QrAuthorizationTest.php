@@ -24,7 +24,7 @@ class QrAuthorizationTest extends TestCase
         ]);
 
         // Teacher 2 tries to start session for Teacher 1's subject
-        $response = $this->actingAs($teacher2)->postJson('/attendance/qr/start', [
+        $response = $this->actingAs($teacher2)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code
         ]);
 
@@ -48,7 +48,7 @@ class QrAuthorizationTest extends TestCase
         ]);
 
         // Teacher 2 tries to stop session
-        $response = $this->actingAs($teacher2)->postJson('/attendance/qr/stop', [
+        $response = $this->actingAs($teacher2)->postJson('/teacher/qr/stop', [
             'session_id' => $session->id
         ]);
 
@@ -60,10 +60,40 @@ class QrAuthorizationTest extends TestCase
         $teacher = User::factory()->create(['role' => 'teacher']);
 
         // Try to stop non-existent session
-        $response = $this->actingAs($teacher)->postJson('/attendance/qr/stop', [
+        $response = $this->actingAs($teacher)->postJson('/teacher/qr/stop', [
             'session_id' => 9999
         ]);
 
         $response->assertStatus(404);
+    }
+
+    public function test_explicitly_enrolled_student_bypasses_mismatch_checks()
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'code' => 'CS201',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSCS'
+        ]);
+
+        // Explicitly enroll the student
+        $student->enrolledSubjects()->attach($subject->id);
+
+        $this->assertTrue($student->getAllSubjects()->contains('id', $subject->id));
+
+        $controller = new \App\Http\Controllers\QrAttendanceController(new \App\Services\QrSessionService());
+        $reflector = new \ReflectionClass($controller);
+        $method = $reflector->getMethod('scheduleMismatchReason');
+        $method->setAccessible(true);
+
+        $reason = $method->invokeArgs($controller, [$subject, $student]);
+        $this->assertNull($reason);
     }
 }

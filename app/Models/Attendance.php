@@ -18,16 +18,25 @@ class Attendance extends Model
         'excused',
         'excuse_note',
         'time_in',
+        'time_out',
         'date',
         'latitude',
         'longitude',
+        'gps_accuracy',
+        'method',
+        'device_id',
         'academic_year_id',
     ];
 
     protected $casts = [
-        'date' => 'date',
+        'date' => 'date:Y-m-d',
         'excused' => 'boolean',
     ];
+
+    public function setDateAttribute($value)
+    {
+        $this->attributes['date'] = $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : null;
+    }
 
     protected static function booted()
     {

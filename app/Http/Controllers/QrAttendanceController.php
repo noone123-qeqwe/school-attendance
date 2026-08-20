@@ -28,17 +28,17 @@ class QrAttendanceController extends Controller
 
     private function getSchoolLat(): float
     {
-        return (float) \App\Models\Setting::get('school_lat', 14.538800);
+        return (float) \App\Models\Setting::get('gps_lat', 14.538800);
     }
 
     private function getSchoolLng(): float
     {
-        return (float) \App\Models\Setting::get('school_lng', 121.022300);
+        return (float) \App\Models\Setting::get('gps_lng', 121.022300);
     }
 
     private function getRadiusMeters(): int
     {
-        return (int) \App\Models\Setting::get('school_radius', 500);
+        return (int) \App\Models\Setting::get('gps_radius', 500);
     }
 
     private function getRpId(Request $request): string
@@ -207,14 +207,19 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     public function startTeacherSession(Request $request)
     {
-        try {
-            $teacherId = Auth::id();
-            $request->validate([
-                'subject_code'   => 'required|string|exists:subjects,code',
-                'classroom_lat'  => 'nullable|numeric|between:-90,90',
-                'classroom_lng'  => 'nullable|numeric|between:-180,180',
-            ]);
+        $teacherId = Auth::id();
+        $request->validate([
+            'subject_code'   => 'required|string|exists:subjects,code',
+            'classroom_lat'  => 'nullable|numeric|between:-90,90',
+            'classroom_lng'  => 'nullable|numeric|between:-180,180',
+        ]);
 
+        $subject = Subject::where('code', $request->subject_code)->first();
+        if ($subject && $subject->instructor_id !== $teacherId) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        try {
             $session = $this->qrSessionService->startSession(
                 $teacherId, 
                 $request->subject_code, 
@@ -259,6 +264,10 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
         }
 
+        if ($session->created_by !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
         try {
             $session = $this->qrSessionService->refreshToken($session);
 
@@ -283,6 +292,10 @@ class QrAttendanceController extends Controller
 
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
+        }
+
+        if ($session->created_by !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $session->update(['active' => false]);
@@ -968,6 +981,12 @@ class QrAttendanceController extends Controller
 
     private function scheduleMismatchReason(Subject $subject, User $student): ?string
     {
+        // If explicitly enrolled, bypass all implicit schedule mismatch checks
+        $isExplicitlyEnrolled = $student->enrolledSubjects()->where('subject_id', $subject->id)->exists();
+        if ($isExplicitlyEnrolled) {
+            return null;
+        }
+
         if ($student->year_level != $subject->year_level) {
             return "Year mismatch: you are year {$student->year_level}, but this class is year {$subject->year_level}.";
         }

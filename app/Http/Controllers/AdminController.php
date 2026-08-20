@@ -130,20 +130,81 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     public function students(Request $request)
     {
-        $query = User::where('role', 'student')->with('attendances');
+        $query = User::where('role', 'student')->with(['attendances', 'deviceBinding']);
 
         if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
         if ($request->filled('semester'))   $query->where('semester', $request->semester);
         if ($request->filled('course'))     $query->where('course', $request->course);
         if ($request->filled('search')) {
-            $query->where(fn($q) => $q
-                ->where('name', 'like', '%'.$request->search.'%')
-                ->orWhere('student_number', 'like', '%'.$request->search.'%')
+            $q = $request->search;
+            $query->where(fn($q2) => $q2
+                ->where('name', 'like', "%{$q}%")
+                ->orWhere('student_number', 'like', "%{$q}%")
+                ->orWhere('email', 'like', "%{$q}%")
             );
         }
 
-        $students = $query->orderBy('year_level')->orderBy('name')->paginate(20)->withQueryString();
+        $students = $query->orderBy('year_level')->orderBy('name')->paginate(100)->withQueryString();
         return view('admin.students.index', compact('students'));
+     }
+
+     public function createStudent()
+     {
+         return view('admin.students.create');
+     }
+
+     public function storeStudent(RegisterUserRequest $request)
+     {
+         // Verify OTP email (scoped for admin_student registration)
+         $verifiedEmail = session('admin_reg_email_verified');
+         if (!$verifiedEmail || strtolower($verifiedEmail) !== strtolower($request->email)) {
+             return back()->withInput()->withErrors(['email' => 'Please verify the student\'s email address using the OTP sent to their email.']);
+         }
+         
+         // Clear the session so it cannot be reused
+         session()->forget('admin_reg_email_verified');
+
+         $student = User::create([
+             'name'           => trim($request->name),
+             'student_number' => $request->student_number,
+             'email'          => strtolower(trim($request->email)),
+             'course'         => $request->course,
+             'year_level'     => $request->year_level,
+             'semester'       => $request->semester,
+             'password'       => Hash::make($request->password),
+             'role'           => 'student',
+             'email_verified_at' => now(),
+         ]);
+
+         return redirect()->route('admin.students')
+             ->with('success', "Student '{$student->name}' added successfully.");
+     }
+
+     public function searchStudents(Request $request)
+    {
+        $query = User::where('role', 'student')->with(['attendances', 'deviceBinding']);
+
+        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
+        if ($request->filled('semester'))   $query->where('semester', $request->semester);
+        if ($request->filled('course'))     $query->where('course', $request->course);
+        if ($request->filled('search')) {
+            $q = $request->search;
+            $query->where(fn($q2) => $q2
+                ->where('name', 'like', "%{$q}%")
+                ->orWhere('student_number', 'like', "%{$q}%")
+                ->orWhere('email', 'like', "%{$q}%")
+            );
+        }
+
+        $students = $query->orderBy('year_level')->orderBy('name')->paginate(100)->withQueryString();
+
+        return response()->json([
+            'html'       => view('admin.students._rows', compact('students'))->render(),
+            'total'      => $students->total(),
+            'pagination' => $students->hasPages()
+                ? view('pagination::bootstrap-4', ['paginator' => $students])->render()
+                : null,
+        ]);
     }
 
     public function previewStudentsPdf(Request $request)
@@ -209,10 +270,134 @@ class AdminController extends Controller
         return Excel::download(new \App\Exports\StudentsExport($students), $filename);
     }
 
+    /**
+     * Download a blank CSV template for student import.
+     */
+    public function downloadStudentTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="students_import_template.csv"',
+        ];
+
+        $callback = function () {
+            $handle = fopen('php://output', 'w');
+            // Write column headers
+            fputcsv($handle, ['Name', 'Student Number', 'Email', 'Course', 'Year Level', 'Semester', 'Section', 'Password']);
+            // Sample row
+            fputcsv($handle, ['Juan Dela Cruz', '2024100', 'juan.delacruz@student.edu', 'BSCS', '1', '1', 'A', 'student123']);
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Bulk import students from a CSV file.
+     */
+    public function importStudentsCsv(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('csv_file');
+        $path = $file->getRealPath();
+
+        $rows = array_map('str_getcsv', file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+        if (empty($rows) || count($rows) < 2) {
+            return back()->with('error', 'The uploaded CSV file is empty or missing data rows.');
+        }
+
+        // Normalize headers
+        $rawHeaders = array_shift($rows);
+        $headerMap = [];
+        foreach ($rawHeaders as $idx => $headerName) {
+            $clean = strtolower(trim(str_replace([' ', '_', '-'], '', $headerName)));
+            $headerMap[$clean] = $idx;
+        }
+
+        // Expected keys matching variations
+        $nameIdx     = $headerMap['name'] ?? null;
+        $idIdx       = $headerMap['studentnumber'] ?? ($headerMap['studentid'] ?? ($headerMap['studentno'] ?? ($headerMap['id'] ?? null)));
+        $emailIdx    = $headerMap['email'] ?? ($headerMap['emailaddress'] ?? null);
+        $courseIdx   = $headerMap['course'] ?? ($headerMap['program'] ?? null);
+        $yearIdx     = $headerMap['yearlevel'] ?? ($headerMap['year'] ?? null);
+        $semIdx      = $headerMap['semester'] ?? ($headerMap['sem'] ?? null);
+        $sectionIdx  = $headerMap['section'] ?? null;
+        $passIdx     = $headerMap['password'] ?? null;
+
+        if ($nameIdx === null || $emailIdx === null) {
+            return back()->with('error', 'CSV header must include at least "Name" and "Email" columns.');
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($rows as $row) {
+            $name  = isset($row[$nameIdx]) ? trim($row[$nameIdx]) : '';
+            $email = isset($row[$emailIdx]) ? strtolower(trim($row[$emailIdx])) : '';
+
+            if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $skipped++;
+                continue;
+            }
+
+            $studentNumber = ($idIdx !== null && isset($row[$idIdx])) ? trim($row[$idIdx]) : null;
+            $course        = ($courseIdx !== null && isset($row[$courseIdx])) ? trim($row[$courseIdx]) : null;
+            $yearLevel     = ($yearIdx !== null && isset($row[$yearIdx]) && is_numeric(trim($row[$yearIdx]))) ? (int)trim($row[$yearIdx]) : null;
+            $semester      = ($semIdx !== null && isset($row[$semIdx]) && is_numeric(trim($row[$semIdx]))) ? (int)trim($row[$semIdx]) : null;
+            $section       = ($sectionIdx !== null && isset($row[$sectionIdx])) ? trim($row[$sectionIdx]) : 'A';
+            $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && !empty(trim($row[$passIdx]))) ? trim($row[$passIdx]) : 'student123';
+
+            $existing = User::withTrashed()
+                ->where(function ($q) use ($studentNumber, $email) {
+                    if (!empty($studentNumber)) {
+                        $q->where('student_number', $studentNumber);
+                    }
+                    $q->orWhere('email', $email);
+                })
+                ->first();
+
+            $attributes = [
+                'name'              => $name,
+                'email'             => $email,
+                'student_number'    => $studentNumber ?: null,
+                'course'            => $course ?: null,
+                'year_level'        => $yearLevel,
+                'semester'          => $semester,
+                'section'           => $section ?: 'A',
+                'role'              => 'student',
+                'email_verified_at' => now(),
+            ];
+
+            if ($existing) {
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+                $existing->update($attributes);
+                $updated++;
+            } else {
+                $attributes['password'] = Hash::make($plainPassword);
+                User::create($attributes);
+                $created++;
+            }
+        }
+
+        $message = "Import completed: {$created} new students added, {$updated} updated.";
+        if ($skipped > 0) {
+            $message .= " ({$skipped} invalid rows skipped).";
+        }
+
+        return redirect()->route('admin.students')->with('success', $message);
+    }
+
 
 
     public function studentDetail(User $student)
     {
+        abort_unless($student->role === 'student', 404);
         $records = Attendance::with('subject')
             ->where('user_id', $student->id)
             ->orderBy('date', 'desc')->get();
@@ -228,6 +413,7 @@ class AdminController extends Controller
 
     public function resetDevice(User $student)
     {
+        abort_unless($student->role === 'student', 404);
         if ($student->deviceBinding) {
             $student->deviceBinding()->delete();
         }
@@ -239,14 +425,13 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     public function sendWarning(SendWarningRequest $request, User $student)
     {
+        abort_unless($student->role === 'student', 404);
         $admin = Auth::user();
 
-        // Verify student has attendance in this subject
-        $hasAttendance = Attendance::where('user_id', $student->id)
-            ->where('subject_code', $request->subject_code)
-            ->exists();
+        // Verify student is enrolled in this subject
+        $isEnrolled = $student->getAllSubjects()->contains('code', $request->subject_code);
 
-        if (!$hasAttendance) {
+        if (!$isEnrolled) {
             return back()->with('error', 'This student is not enrolled in the selected subject.');
         }
 
@@ -301,17 +486,20 @@ class AdminController extends Controller
 
     public function editStudent(User $student)
     {
+        abort_unless($student->role === 'student', 404);
         return view('admin.students.edit', compact('student'));
     }
 
     public function updateStudent(UpdateStudentRequest $request, User $student)
     {
+        abort_unless($student->role === 'student', 404);
         $student->update($request->only('name','course','year_level','semester','email'));
         return redirect()->route('admin.students')->with('success', 'Student updated successfully.');
     }
 
     public function destroyStudent(User $student)
     {
+        abort_unless($student->role === 'student', 404);
         $student->delete();
         return redirect()->route('admin.students')->with('success', 'Student deleted.');
     }
@@ -491,9 +679,9 @@ class AdminController extends Controller
             date, 
             subject_code, 
             COUNT(id) as total,
-            SUM(CASE WHEN status = "Present" THEN 1 ELSE 0 END) as present_count,
-            SUM(CASE WHEN status = "Late" THEN 1 ELSE 0 END) as late_count,
-            SUM(CASE WHEN status = "Absent" AND excused = 0 THEN 1 ELSE 0 END) as absent_count,
+            SUM(CASE WHEN status = \'Present\' THEN 1 ELSE 0 END) as present_count,
+            SUM(CASE WHEN status = \'Late\' THEN 1 ELSE 0 END) as late_count,
+            SUM(CASE WHEN status = \'Absent\' AND excused = 0 THEN 1 ELSE 0 END) as absent_count,
             SUM(CASE WHEN excused = 1 THEN 1 ELSE 0 END) as excused_count
         ')
         ->with('subject')
@@ -656,18 +844,22 @@ class AdminController extends Controller
 
     public function archiveNotification(Notification $notification)
     {
+        // Verify the notification exists in the system (admin has system-wide access)
+        abort_unless(auth()->user()->isAdmin(), 403);
         $notification->archive();
         return response()->json(['success' => true]);
     }
 
     public function unarchiveNotification(Notification $notification)
     {
+        abort_unless(auth()->user()->isAdmin(), 403);
         $notification->unarchive();
         return response()->json(['success' => true]);
     }
 
     public function deleteNotification(Notification $notification)
     {
+        abort_unless(auth()->user()->isAdmin(), 403);
         $notification->delete();
         return response()->json(['success' => true]);
     }
@@ -757,6 +949,11 @@ class AdminController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        // Prevent non-super-admins from resetting super_admin passwords
+        if ($user->admin_sub_role === 'super_admin' && Auth::user()->admin_sub_role !== 'super_admin') {
+            return back()->with('error', 'Only super admins can reset another super admin\'s password.');
+        }
+
         $user->update([
             'password' => Hash::make($request->password),
             'must_change_password' => true,
@@ -772,14 +969,21 @@ class AdminController extends Controller
     {
         $user = Auth::user();
         
-        // Generate and send OTP
-        $otp = \App\Models\Otp::generate($user->id, 'admin_login');
-        
-        try {
-            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
-        } catch (\Exception $e) {
-            // Log error but don't fail - admin can request resend
-            \Illuminate\Support\Facades\Log::error('Failed to send 2FA OTP: ' . $e->getMessage());
+        // Only send a new OTP if no valid unexpired one exists (prevents spam on page refresh)
+        $hasValidOtp = \App\Models\Otp::where('user_id', $user->id)
+            ->where('purpose', 'admin_login')
+            ->where('used', false)
+            ->where('expires_at', '>', now())
+            ->exists();
+
+        if (!$hasValidOtp) {
+            $otp = \App\Models\Otp::generate($user->id, 'admin_login');
+            
+            try {
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send 2FA OTP: ' . $e->getMessage());
+            }
         }
         
         return view('auth.admin_2fa');
@@ -823,105 +1027,6 @@ class AdminController extends Controller
         }
     }
 
-    // ─────────────────────────────────────────
-    // HOLIDAY CALENDAR MANAGEMENT
-    // ─────────────────────────────────────────
-    public function calendar(Request $request)
-    {
-        $admin = Auth::user();
-        $year = $request->get('year', now()->year);
-        $month = $request->get('month', now()->month);
-
-        // Get holidays for the current month
-        $holidays = Holiday::active()
-            ->forMonth($year, $month)
-            ->orderBy('date')
-            ->get();
-
-        return view('admin.calendar', compact('holidays', 'year', 'month'));
-    }
-
-    public function storeHoliday(Request $request)
-    {
-        $request->validate([
-            'date' => 'required|date|after_or_equal:today',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:500',
-            'type' => 'required|in:national,local,school,no_class'
-        ]);
-
-        Holiday::create([
-            'date' => $request->date,
-            'name' => $request->name,
-            'description' => $request->description,
-            'type' => $request->type,
-            'is_active' => true,
-            'created_by' => Auth::id()
-        ]);
-
-        return redirect()->route('admin.calendar')->with('success', 'Holiday added successfully.');
-    }
-
-    public function updateHoliday(Request $request, Holiday $holiday)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:500',
-            'type' => 'required|in:national,local,school,no_class'
-        ]);
-
-        $holiday->update([
-            'name' => $request->name,
-            'description' => $request->description,
-            'type' => $request->type
-        ]);
-
-        return redirect()->route('admin.calendar')->with('success', 'Holiday updated successfully.');
-    }
-
-    public function destroyHoliday(Holiday $holiday)
-    {
-        $holiday->delete();
-        return redirect()->route('admin.calendar')->with('success', 'Holiday removed successfully.');
-    }
-
-    public function getCalendarData(Request $request)
-    {
-        $year = $request->get('year', now()->year);
-        $month = $request->get('month', now()->month);
-
-        $holidays = Holiday::active()
-            ->forMonth($year, $month)
-            ->get()
-            ->map(function($holiday) {
-                return [
-                    'id' => $holiday->id,
-                    'date' => $holiday->date->format('Y-m-d'),
-                    'name' => $holiday->name,
-                    'description' => $holiday->description,
-                    'type_label' => $holiday->type_label,
-                    'color' => $holiday->type_color
-                ];
-            });
-
-        return response()->json($holidays);
-    }
-
-    /**
-     * Export attendance logs as Excel/CSV.
-     */
-    public function exportAttendance(Request $request)
-    {
-        $filters = [
-            'subject_code' => $request->subject_code,
-            'date'         => $request->date,
-            'status'       => $request->status,
-        ];
-
-        $filename = 'attendance_' . now()->format('Y-m-d_His') . '.xlsx';
-        return Excel::download(new AttendanceExport($filters), $filename);
-    }
-
 
 
     // ─────────────────────────────────────────
@@ -945,11 +1050,14 @@ class AdminController extends Controller
 
     public function createAdmin()
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
         return view('admin.admins.create');
     }
 
     public function storeAdmin(Request $request)
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
+        
         $request->validate([
             'name'        => 'required|string|max:255',
             'email'       => 'required|email|unique:users,email',
@@ -966,6 +1074,7 @@ class AdminController extends Controller
             'phone'       => $request->phone,
             'department'  => $request->department,
             'must_change_password' => true,
+            'email_verified_at' => now(),
         ]);
 
         return redirect()->route('admin.admins')->with('success', 'Admin created successfully.');
@@ -973,6 +1082,7 @@ class AdminController extends Controller
 
     public function editAdmin(User $admin)
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
         if ($admin->role !== 'admin') {
             abort(404);
         }
@@ -981,6 +1091,7 @@ class AdminController extends Controller
 
     public function updateAdmin(Request $request, User $admin)
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
         if ($admin->role !== 'admin') {
             abort(404);
         }
@@ -1001,6 +1112,7 @@ class AdminController extends Controller
 
     public function destroyAdmin(User $admin)
     {
+        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
         if ($admin->role !== 'admin') {
             abort(404);
         }
@@ -1030,8 +1142,223 @@ class AdminController extends Controller
             );
         }
 
+        if ($request->filled('department')) {
+            $query->where('department', 'like', "%{$request->department}%");
+        }
+
         $teachers = $query->orderBy('name')->get();
         return view('admin.teachers.index', compact('teachers'));
+    }
+
+    public function searchTeachers(Request $request)
+    {
+        $query = User::where('role', 'teacher');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(fn($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('employee_id', 'like', "%{$search}%")
+            );
+        }
+
+        if ($request->filled('department')) {
+            $query->where('department', 'like', "%{$request->department}%");
+        }
+
+        $teachers = $query->orderBy('name')->get();
+
+        return response()->json([
+            'html'  => view('admin.teachers._rows', compact('teachers'))->render(),
+            'total' => $teachers->count(),
+        ]);
+    }
+
+    /**
+     * Download a blank CSV template for instructor import.
+     */
+    public function downloadTeacherTemplate()
+    {
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="teachers_import_template.csv"',
+        ];
+
+        $callback = function () {
+            $handle = fopen('php://output', 'w');
+            // Write column headers
+            fputcsv($handle, ['Name', 'Employee ID', 'Email', 'Department', 'Position', 'Specialization', 'Password']);
+            // Sample row
+            fputcsv($handle, ['Prof. Maria Santos', 'T-2024-005', 'maria.santos@school.edu', 'Computer Science', 'Instructor', 'Database Systems', 'teacher123']);
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Bulk import teachers from CSV file.
+     */
+    public function importTeachersCsv(Request $request)
+    {
+        $request->validate([
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
+        ]);
+
+        $file = $request->file('csv_file');
+        $path = $file->getRealPath();
+
+        $rows = array_map('str_getcsv', file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
+        if (empty($rows) || count($rows) < 2) {
+            return back()->with('error', 'The uploaded CSV file is empty or missing data rows.');
+        }
+
+        // Normalize headers
+        $rawHeaders = array_shift($rows);
+        $headerMap = [];
+        foreach ($rawHeaders as $idx => $headerName) {
+            $clean = strtolower(trim(str_replace([' ', '_', '-'], '', $headerName)));
+            $headerMap[$clean] = $idx;
+        }
+
+        $nameIdx     = $headerMap['name'] ?? null;
+        $idIdx       = $headerMap['employeeid'] ?? ($headerMap['employee_id'] ?? ($headerMap['id'] ?? null));
+        $emailIdx    = $headerMap['email'] ?? ($headerMap['emailaddress'] ?? null);
+        $deptIdx     = $headerMap['department'] ?? ($headerMap['dept'] ?? null);
+        $posIdx      = $headerMap['position'] ?? ($headerMap['pos'] ?? ($headerMap['title'] ?? null));
+        $specIdx     = $headerMap['specialization'] ?? ($headerMap['spec'] ?? null);
+        $passIdx     = $headerMap['password'] ?? null;
+
+        if ($nameIdx === null || $emailIdx === null) {
+            return back()->with('error', 'CSV header must include at least "Name" and "Email" columns.');
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($rows as $row) {
+            $name  = isset($row[$nameIdx]) ? trim($row[$nameIdx]) : '';
+            $email = isset($row[$emailIdx]) ? strtolower(trim($row[$emailIdx])) : '';
+
+            if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $skipped++;
+                continue;
+            }
+
+            $employeeId    = ($idIdx !== null && isset($row[$idIdx])) ? trim($row[$idIdx]) : null;
+            $department    = ($deptIdx !== null && isset($row[$deptIdx])) ? trim($row[$deptIdx]) : null;
+            $position      = ($posIdx !== null && isset($row[$posIdx])) ? trim($row[$posIdx]) : 'Instructor';
+            $specialization= ($specIdx !== null && isset($row[$specIdx])) ? trim($row[$specIdx]) : null;
+            $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && !empty(trim($row[$passIdx]))) ? trim($row[$passIdx]) : 'teacher123';
+
+            $existing = User::withTrashed()
+                ->where(function ($q) use ($employeeId, $email) {
+                    if (!empty($employeeId)) {
+                        $q->where('employee_id', $employeeId);
+                    }
+                    $q->orWhere('email', $email);
+                })
+                ->first();
+
+            $attributes = [
+                'name'              => $name,
+                'email'             => $email,
+                'employee_id'       => $employeeId ?: null,
+                'department'        => $department ?: null,
+                'position'          => $position ?: 'Instructor',
+                'specialization'    => $specialization ?: null,
+                'role'              => 'teacher',
+                'email_verified_at' => now(),
+            ];
+
+            if ($existing) {
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+                $existing->update($attributes);
+                $updated++;
+            } else {
+                $attributes['password'] = Hash::make($plainPassword);
+                User::create($attributes);
+                $created++;
+            }
+        }
+
+        $message = "Import completed: {$created} new instructors added, {$updated} updated.";
+        if ($skipped > 0) {
+            $message .= " ({$skipped} invalid rows skipped).";
+        }
+
+        return redirect()->route('admin.teachers')->with('success', $message);
+    }
+
+    public function exportTeachersCsv(Request $request)
+    {
+        $query = User::where('role', 'teacher');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(fn($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('employee_id', 'like', "%{$search}%")
+            );
+        }
+
+        if ($request->filled('department')) {
+            $query->where('department', 'like', "%{$request->department}%");
+        }
+
+        $teachers = $query->orderBy('name')->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="teachers-' . now()->format('Y-m-d-H-i-s') . '.csv"',
+        ];
+
+        $callback = function () use ($teachers) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Name', 'Employee ID', 'Email', 'Department', 'Position', 'Specialization']);
+            foreach ($teachers as $teacher) {
+                fputcsv($handle, [
+                    $teacher->name,
+                    $teacher->employee_id ?? 'N/A',
+                    $teacher->email,
+                    $teacher->department ?? 'General',
+                    $teacher->position ?? 'Instructor',
+                    $teacher->specialization ?? 'N/A',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    public function exportTeachersPdf(Request $request)
+    {
+        $query = User::where('role', 'teacher');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(fn($q) => $q
+                ->where('name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")
+                ->orWhere('employee_id', 'like', "%{$search}%")
+            );
+        }
+
+        if ($request->filled('department')) {
+            $query->where('department', 'like', "%{$request->department}%");
+        }
+
+        $teachers = $query->orderBy('name')->get();
+        $pdf = Pdf::loadView('admin.teachers.pdf', compact('teachers'));
+
+        $filename = 'teachers-' . now()->format('Y-m-d-H-i-s') . '.pdf';
+        return $pdf->download($filename);
     }
 
     public function createTeacher()
@@ -1111,9 +1438,11 @@ class AdminController extends Controller
     public function approveCorrection(\App\Models\AttendanceCorrection $correction)
     {
         try {
+            \Illuminate\Support\Facades\DB::beginTransaction();
+
             $correction->update([
                 'status' => 'approved',
-                'reviewed_by' => Auth::id(),
+                'reviewed_by' => \Illuminate\Support\Facades\Auth::id(),
                 'reviewed_at' => now(),
             ]);
 
@@ -1124,9 +1453,11 @@ class AdminController extends Controller
                 $attendance->save();
             }
 
+            \Illuminate\Support\Facades\DB::commit();
             return back()->with('success', 'Correction request approved.');
         } catch (\Exception $e) {
-            \Log::error('Correction approval error: ' . $e->getMessage());
+            \Illuminate\Support\Facades\DB::rollBack();
+            \Illuminate\Support\Facades\Log::error('Correction approval error: ' . $e->getMessage());
             return back()->with('error', 'Error approving correction.');
         }
     }
@@ -1165,6 +1496,11 @@ class AdminController extends Controller
 
     public function approveExcuse(\App\Models\ExcuseSubmission $excuseSubmission)
     {
+        // Guard against re-processing already-handled excuses
+        if ($excuseSubmission->status !== 'pending') {
+            return back()->with('error', 'This excuse has already been ' . $excuseSubmission->status . '.');
+        }
+
         $excuseSubmission->update([
             'status'      => 'approved',
             'reviewed_at' => now(),
@@ -1180,6 +1516,11 @@ class AdminController extends Controller
 
     public function rejectExcuse(\App\Models\ExcuseSubmission $excuseSubmission)
     {
+        // Guard against re-processing already-handled excuses
+        if ($excuseSubmission->status !== 'pending') {
+            return back()->with('error', 'This excuse has already been ' . $excuseSubmission->status . '.');
+        }
+
         $excuseSubmission->update([
             'status'      => 'rejected',
             'reviewed_at' => now(),
