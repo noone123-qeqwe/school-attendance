@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', 'Edit Subject')
 
 @section('content')
@@ -113,9 +113,14 @@
 
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Instructor</label>
-                    <input type="text" name="instructor" class="adm-input"
-                        value="{{ old('instructor', $subject->instructor) }}"
-                        style="width:100%;">
+                    <select name="instructor_id" class="adm-input" style="width:100%;">
+                        <option value="">Select Instructor</option>
+                        @foreach($teachers as $teacher)
+                            <option value="{{ $teacher->id }}" {{ old('instructor_id', $subject->instructor_id) == $teacher->id ? 'selected' : '' }}>
+                                {{ $teacher->name }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="col-md-6">

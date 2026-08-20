@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
     <link rel="manifest" href="/manifest.json">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('styles')
 </head>
 
 <body>
@@ -830,5 +831,7 @@
         window.onkeydown = resetIdleTimer;
     </script>
     @endauth
+    
+    @stack('scripts')
 </body>
 </html>

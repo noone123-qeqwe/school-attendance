@@ -15,6 +15,56 @@ Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 
 // Intro page should always show, even to authenticated users
 Route::get('/', function () { return view('intro'); })->name('intro');
 
+// Debug route (remove in production) - NO AUTH REQUIRED
+Route::get('/debug-session', function() {
+    return response()->json([
+        'authenticated' => auth()->check(),
+        'user_id' => auth()->id(),
+        'user_role' => auth()->user()?->role,
+        'user_email' => auth()->user()?->email,
+        'session_id' => session()->getId(),
+        'session_data' => session()->all(),
+        'cookie_name' => config('session.cookie'),
+        'session_lifetime' => config('session.lifetime'),
+        'session_driver' => config('session.driver'),
+        'app_env' => config('app.env'),
+        'app_debug' => config('app.debug'),
+        'cookies' => request()->cookies->all(),
+        'headers' => request()->headers->all(),
+    ]);
+});
+
+// Test classroom route without middleware
+Route::get('/test-classroom/{code}', function($code) {
+    return response()->json([
+        'message' => 'Route reached successfully',
+        'code' => $code,
+        'auth_check' => auth()->check(),
+        'user' => auth()->user(),
+        'subject_exists' => \App\Models\Subject::where('code', $code)->exists(),
+    ]);
+});
+
+// Test route WITH auth middleware
+Route::get('/test-classroom-auth/{code}', function($code) {
+    return response()->json([
+        'message' => 'Auth route reached',
+        'code' => $code,
+        'user' => auth()->user(),
+        'session_id' => session()->getId(),
+    ]);
+})->middleware('auth');
+
+Route::get('/test-session-set', function() {
+    session(['test_key' => 'test_value_' . time()]);
+    session()->save();
+    return response('Session set: ' . session('test_key') . ' | Session ID: ' . session()->getId());
+});
+
+Route::get('/test-session-get', function() {
+    return response('Session get: ' . session('test_key') . ' | Session ID: ' . session()->getId() . ' | Authenticated: ' . (auth()->check() ? 'YES' : 'NO'));
+});
+
 // Guest Routes (Public)
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () { return view('auth.login'); })->name('login');
@@ -322,8 +372,19 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa'])->prefix('admin')->
     // Early Warnings
     Route::get('/early-warnings', [App\Http\Controllers\AdminController::class, 'earlyWarnings'])->name('early-warnings');
 
+    // Attendance Management
+    Route::get('/attendance', [App\Http\Controllers\AdminController::class, 'attendanceLogs'])->name('attendance');
+    Route::get('/attendance/export-pdf', [App\Http\Controllers\AdminController::class, 'exportAttendancePdf'])->name('attendance.pdf');
+    Route::get('/attendance/export-csv', [App\Http\Controllers\AdminController::class, 'exportAttendanceCsv'])->name('attendance.csv');
+    
+    // QR Management
+    Route::get('/qr', [App\Http\Controllers\Admin\QrManagementController::class, 'index'])->name('qr');
+
     // Student management
     Route::get('/students', [App\Http\Controllers\AdminController::class, 'students'])->name('students');
+    Route::get('/students/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewStudentsPdf'])->name('students.preview');
+    Route::get('/students/export-pdf', [App\Http\Controllers\AdminController::class, 'exportStudentsPdf'])->name('students.pdf');
+    Route::get('/students/export-csv', [App\Http\Controllers\AdminController::class, 'exportStudentsCsv'])->name('students.csv');
     Route::get('/student/{student}', [App\Http\Controllers\AdminController::class, 'studentDetail'])->name('student');
     Route::post('/student/{student}/warn', [App\Http\Controllers\AdminController::class, 'sendWarning'])->name('student.warn');
     Route::get('/student/{student}/edit', [App\Http\Controllers\AdminController::class, 'editStudent'])->name('student.edit');

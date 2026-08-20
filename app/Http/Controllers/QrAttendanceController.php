@@ -193,8 +193,11 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     public function showTeacherQrPage(string $subjectCode)
     {
+        $teacher = auth()->user();
+        
         $subject = Subject::with('schedules')
             ->where('code', $subjectCode)
+            ->where('instructor_id', $teacher->id)
             ->firstOrFail();
 
         return view('teacher.qr', compact('subject'));

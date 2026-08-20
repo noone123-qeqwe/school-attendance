@@ -50,7 +50,7 @@
             <div class="col-md-3">
                 <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Search</label>
                 <input type="text" name="search" value="{{ request('search') }}" 
-                       placeholder="Name or ID..." class="form-control" autocomplete="off" oninput="window.liveSearchTimer && clearTimeout(window.liveSearchTimer); window.liveSearchTimer = setTimeout(() => this.form.submit(), 0);">
+                       placeholder="Name or ID..." class="form-control" autocomplete="off">
             </div>
             <div class="col-md-2">
                 <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Course</label>

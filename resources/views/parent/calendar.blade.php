@@ -85,6 +85,17 @@
 
 <style>
 /* FullCalendar Overrides for Enterprise Design */
+.ent-section {
+    background: rgba(22, 22, 30, 0.5) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5) !important;
+}
+.ent-section-header {
+    background: rgba(0,0,0,0.2) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
 .fc {
     color: var(--ent-text-secondary);
     font-family: 'Inter', sans-serif;
@@ -93,22 +104,22 @@
     border-color: rgba(255,255,255,0.06) !important;
 }
 .fc .fc-col-header-cell {
-    background: rgba(0,0,0,0.2) !important;
-    padding: 12px 0;
+    background: rgba(0,0,0,0.3) !important;
+    padding: 16px 0;
 }
 .fc .fc-col-header-cell-cushion {
-    color: var(--ent-text-muted);
+    color: var(--ent-gold);
     text-transform: uppercase;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.1em;
     text-decoration: none !important;
 }
 .fc .fc-daygrid-day-number {
     color: var(--ent-text);
-    font-weight: 600;
-    font-size: 0.9rem;
-    padding: 10px !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 12px !important;
     text-decoration: none !important;
 }
 .fc .fc-day-other .fc-daygrid-day-number {
@@ -119,32 +130,51 @@
     text-decoration: none !important;
 }
 .fc .fc-day-today {
-    background: rgba(207, 164, 111, 0.03) !important;
-    box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.2) !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+.fc .fc-day-today .fc-daygrid-day-number {
+    color: var(--ent-bg) !important;
+    font-weight: 800 !important;
+    background: var(--ent-gold) !important;
+    border-radius: 50% !important;
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    padding: 0 !important;
+    margin: 6px auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 6px 16px rgba(207, 164, 111, 0.4) !important;
 }
 .fc .fc-daygrid-event {
     border: none !important;
     box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
     border-radius: var(--ent-radius-xs) !important;
-    padding: 2px 6px;
-    font-size: 0.72rem;
+    padding: 3px 8px;
+    font-size: 0.75rem;
     font-weight: 700;
     color: #ffffff !important;
     text-shadow: 0 1px 1px rgba(0,0,0,0.3);
-    margin: 2px 4px !important;
-    transition: var(--ent-transition);
+    margin: 3px 6px !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .fc .fc-daygrid-event:hover {
-    transform: translateY(-1px) scale(1.02);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
-    filter: brightness(1.15);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.5) !important;
+    filter: brightness(1.2);
     z-index: 5;
 }
 .fc .fc-daygrid-day-frame {
-    transition: background var(--ent-transition-fast);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fc .fc-daygrid-day-frame:hover {
-    background: rgba(255,255,255,0.02);
+    background: rgba(255,255,255,0.03);
+    transform: scale(1.01);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+    z-index: 2;
+    position: relative;
 }
 /* Force Saturday/Sunday displays */
 .fc-day-sat, th.fc-day-sat, td.fc-day-sat { display: table-cell !important; }

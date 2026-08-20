@@ -1,269 +1,464 @@
 @extends('layouts.app')
-@section('page-title', 'Classroom - ' . $subject->name)
+@section('portal-title', 'Manage Class - ' . $subject->name)
 
-@section('content')
-
-@if(session('success'))
-<div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:12px;padding:12px 16px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
-    <i class="bi bi-check-circle-fill"></i><span>{{ session('success') }}</span>
-</div>
-@endif
-
-<!-- Class Header -->
-<div class="mb-4" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-    <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
-    <div class="d-flex justify-content-between align-items-start flex-wrap gap-4">
-        <div>
-            <div style="font-family: monospace; color: var(--gold); font-weight: 700; margin-bottom: 6px;">{{ $subject->code }}</div>
-            <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 8px 0; font-size: 2rem;">{{ $subject->name }}</h1>
-            <div style="color: #b39b82; font-size: 0.95rem; display: flex; gap: 16px; flex-wrap: wrap;">
-                <span><i class="bi bi-mortarboard me-1"></i> Year {{ $subject->year_level }} - Sem {{ $subject->semester }}</span>
-                <span><i class="bi bi-clock me-1"></i> {{ $subject->days ?: 'TBA' }} ({{ $subject->start_time ? \Carbon\Carbon::parse($subject->start_time)->format('h:i A') : 'TBA' }})</span>
-                @if($subject->room)<span><i class="bi bi-geo-alt me-1"></i> Room {{ $subject->room }}</span>@endif
-            </div>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <a href="{{ route('teacher.qr', $subject->code) }}" class="btn btn-primary" style="background: var(--gold); color: #fff; border: none; font-weight: 600;">
-                <i class="bi bi-qr-code-scan"></i> Start QR Attendance
-            </a>
-            <form action="{{ route('teacher.classroom.markAllPresent', $subject->code) }}" method="POST" style="display:inline;" onsubmit="return confirm('Mark all students present for today?');">
-                @csrf
-                <button type="submit" class="btn btn-primary" style="background: #10b981; color: #fff; border: none; font-weight: 600;">
-                    <i class="bi bi-check2-all"></i> Mark All Present (Today)
-                </button>
-            </form>
-            <a href="{{ route('teacher.subjects.edit', $subject->id) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
-                <i class="bi bi-pencil-square"></i> Edit
-            </a>
-            <form action="{{ route('teacher.subjects.destroy', $subject->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this subject? All associated data will be removed.');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-outline" style="color: #f87171; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.1);">
-                    <i class="bi bi-trash"></i> Delete
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<ul class="nav nav-pills mb-4" id="classroom-tabs" role="tablist" style="gap: 10px; border-bottom: 1px solid rgba(207,164,111,0.15); padding-bottom: 10px;">
-    <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="students-tab" data-bs-toggle="pill" data-bs-target="#students" type="button" role="tab" style="color: #b39b82; font-weight: 700;">
-            <i class="bi bi-people-fill me-2"></i> Enrolled Students ({{ $students->count() }})
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="history-tab" data-bs-toggle="pill" data-bs-target="#history" type="button" role="tab" style="color: #b39b82; font-weight: 700;">
-            <i class="bi bi-clock-history me-2"></i> Attendance History
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="manual-tab" data-bs-toggle="pill" data-bs-target="#manual" type="button" role="tab" style="color: #b39b82; font-weight: 700;">
-            <i class="bi bi-journal-check me-2"></i> Manual Entry
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="materials-tab" data-bs-toggle="pill" data-bs-target="#materials" type="button" role="tab" style="color: #b39b82; font-weight: 700;">
-            <i class="bi bi-folder-fill me-2"></i> Materials
-        </button>
-    </li>
-</ul>
-
-<div class="tab-content">
-    <!-- Tab 1: Students Roster -->
-    <div class="tab-pane fade show active" id="students" role="tabpanel">
-        <x-card title="Enrolled Students" icon="bi bi-people">
-            <x-data-table :headers="['#', 'Student Name', 'Course / Year', 'Present', 'Absent', 'Rate']">
-                @forelse($students as $i => $student)
-                    @php
-                        $total = $student->attendances->count();
-                        $present = $student->attendances->whereIn('status', ['Present', 'Late'])->count();
-                        $absent = $student->attendances->where('status', 'Absent')->count();
-                        $rate = $total > 0 ? round(($present / $total) * 100) : 0;
-                    @endphp
-                    <tr>
-                        <td data-label="#">{{ $i + 1 }}</td>
-                        <td data-label="Student Name">
-                            <div style="font-weight: 700; color: #f3e7cd;">{{ $student->name }}</div>
-                            <div style="font-size: 0.75rem; color: #b39b82;">{{ $student->student_number }}</div>
-                        </td>
-                        <td data-label="Course / Year">{{ $student->course }} - Y{{ $student->year_level }}</td>
-                        <td data-label="Present" style="color: #4ade80; font-weight: 600;">{{ $present }}</td>
-                        <td data-label="Absent" style="color: #f87171; font-weight: 600;">{{ $absent }}</td>
-                        <td data-label="Rate">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <div style="flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 10px; width: 60px;">
-                                    <div style="height: 100%; border-radius: 10px; width: {{ $rate }}%; background: {{ $rate >= 75 ? 'var(--gold)' : '#f87171' }}"></div>
-                                </div>
-                                <span style="font-weight: 700; font-size: 0.8rem; color: {{ $rate >= 75 ? 'var(--gold)' : '#f87171' }}">{{ $rate }}%</span>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="6" class="text-center" style="padding: 40px; color: #b39b82;">No students enrolled yet.</td></tr>
-                @endforelse
-            </x-data-table>
-        </x-card>
-    </div>
-
-    <!-- Tab 2: Attendance History -->
-    <div class="tab-pane fade" id="history" role="tabpanel">
-        <x-card title="Attendance History" icon="bi bi-clock-history">
-            <x-data-table :headers="['Date', 'Student Name', 'Status', 'Recorded At']">
-                @forelse($attendanceRecords as $record)
-                    <tr>
-                        <td data-label="Date" style="font-weight: 600;">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</td>
-                        <td data-label="Student Name">{{ $record->user->name ?? 'Unknown' }}</td>
-                        <td data-label="Status">
-                            @php $recordStatus = strtolower($record->status ?? ''); @endphp
-                            @if($recordStatus === 'present') <x-badge type="present">Present</x-badge>
-                            @elseif($recordStatus === 'late')  <x-badge type="late">Late</x-badge>
-                            @else <x-badge type="absent">Absent</x-badge>
-                            @endif
-                        </td>
-                        <td data-label="Recorded At" style="color:#b39b82; font-size: 0.8rem;">
-                            {{ $record->created_at->format('h:i A') }}
-                        </td>
-                    </tr>
-                @empty
-                    <tr><td colspan="4" class="text-center" style="padding: 40px; color: #b39b82;">No attendance records found for this class.</td></tr>
-                @endforelse
-            </x-data-table>
-        </x-card>
-    </div>
-
-    <!-- Tab 3: Manual Entry -->
-    <div class="tab-pane fade" id="manual" role="tabpanel">
-        <x-card title="Manual Entry" icon="bi bi-journal-check">
-            <form action="{{ route('teacher.classroom.attendance.store', $subject->code) }}" method="POST">
-                @csrf
-                <div style="margin-bottom: 24px; max-width: 300px;">
-                    <label style="display: block; color: #b39b82; font-weight: 700; margin-bottom: 8px; font-size: 0.85rem; text-transform: uppercase;">Select Date</label>
-                    <input type="date" name="date" value="{{ date('Y-m-d') }}" required class="form-control" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(207,164,111,0.3); color: #f3e7cd; padding: 12px; border-radius: 12px;">
-                </div>
-
-                <x-data-table :headers="['Student', 'Mark Attendance']">
-                    <style>
-                        /* Custom Radio for Manual Attendance */
-                        .att-radio-group { display: flex; gap: 10px; }
-                        .att-radio { display: none; }
-                        .att-label {
-                            padding: 6px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);
-                            cursor: pointer; font-size: 0.8rem; font-weight: 600; color: #b39b82; transition: all 0.2s;
-                        }
-                        .att-radio[value="Present"]:checked + .att-label { background: rgba(34,197,94,0.2); border-color: #4ade80; color: #4ade80; }
-                        .att-radio[value="Absent"]:checked + .att-label { background: rgba(239,68,68,0.2); border-color: #f87171; color: #f87171; }
-                        .att-radio[value="Late"]:checked + .att-label { background: rgba(245,158,11,0.2); border-color: #fbbf24; color: #fbbf24; }
-                    </style>
-                    @foreach($students as $student)
-                    <tr>
-                        <td data-label="Student">
-                            <div style="font-weight: 700; color: #f3e7cd;">{{ $student->name }}</div>
-                        </td>
-                        <td data-label="Mark Attendance">
-                            <div class="att-radio-group">
-                                <input type="radio" name="attendance[{{ $student->id }}]" value="Present" id="p_{{ $student->id }}" class="att-radio" checked>
-                                <label for="p_{{ $student->id }}" class="att-label">Present</label>
-                                
-                                <input type="radio" name="attendance[{{ $student->id }}]" value="Late" id="l_{{ $student->id }}" class="att-radio">
-                                <label for="l_{{ $student->id }}" class="att-label">Late</label>
-
-                                <input type="radio" name="attendance[{{ $student->id }}]" value="Absent" id="a_{{ $student->id }}" class="att-radio">
-                                <label for="a_{{ $student->id }}" class="att-label">Absent</label>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforeach
-                </x-data-table>
-
-                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                    <button type="submit" class="btn btn-primary" style="background: var(--gold); border: none; padding: 10px 24px; font-weight: 600; color: #fff;">
-                        <i class="bi bi-save"></i> Save Attendance
-                    </button>
-                </div>
-            </form>
-        </x-card>
-    </div>
-
-    <!-- Tab 4: Materials -->
-    <div class="tab-pane fade" id="materials" role="tabpanel">
-        <div class="row g-4">
-            <div class="col-lg-8">
-                <x-card title="Course Materials" icon="bi bi-folder2-open">
-                    <div class="d-flex flex-column gap-3">
-                        @forelse($subject->materials as $material)
-                            <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(207,164,111,0.1); display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 1.2rem;">
-                                        @if(in_array(strtolower($material->file_type), ['pdf']))
-                                            <i class="bi bi-file-earmark-pdf-fill" style="color: #ef4444;"></i>
-                                        @elseif(in_array(strtolower($material->file_type), ['doc', 'docx']))
-                                            <i class="bi bi-file-earmark-word-fill" style="color: #3b82f6;"></i>
-                                        @elseif(in_array(strtolower($material->file_type), ['xls', 'xlsx']))
-                                            <i class="bi bi-file-earmark-excel-fill" style="color: #10b981;"></i>
-                                        @else
-                                            <i class="bi bi-file-earmark-text-fill"></i>
-                                        @endif
-                                    </div>
-                                    <div>
-                                        <div style="font-weight: 700; color: #f3e7cd;">{{ $material->title }}</div>
-                                        <div style="font-size: 0.8rem; color: #b39b82;">{{ $material->original_filename }} &bull; {{ $material->file_size }} &bull; Uploaded {{ $material->created_at->format('M d, Y') }}</div>
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <a href="{{ Storage::url($material->file_path) }}" target="_blank" class="btn btn-sm btn-outline" style="border-color: rgba(255,255,255,0.1); color: #f3e7cd;">
-                                        <i class="bi bi-download"></i>
-                                    </a>
-                                    <form action="{{ route('teacher.materials.destroy', [$subject->code, $material->id]) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this material?');">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-outline" style="border-color: rgba(239,68,68,0.2); color: #f87171;">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        @empty
-                            <div class="text-center p-4" style="color: #b39b82;">
-                                <i class="bi bi-folder-x" style="font-size: 2rem; opacity: 0.5;"></i>
-                                <div class="mt-2" style="font-weight: 600;">No materials uploaded yet</div>
-                            </div>
-                        @endforelse
-                    </div>
-                </x-card>
-            </div>
-            <div class="col-lg-4">
-                <x-card title="Upload Material" icon="bi bi-cloud-upload">
-                    <form action="{{ route('teacher.materials.store', $subject->code) }}" method="POST" enctype="multipart/form-data">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label" style="font-weight: 600; color: #b39b82;">Title *</label>
-                            <input type="text" name="title" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label" style="font-weight: 600; color: #b39b82;">Description</label>
-                            <textarea name="description" class="form-control" rows="2" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;"></textarea>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label" style="font-weight: 600; color: #b39b82;">File *</label>
-                            <input type="file" name="file" class="form-control" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff;" required>
-                            <div class="form-text" style="color: rgba(179,155,130,0.7); font-size: 0.75rem;">Max 10MB</div>
-                        </div>
-                        <button type="submit" class="btn btn-primary w-100" style="background: var(--gold); border: none; font-weight: 600; color: #fff;">
-                            <i class="bi bi-upload"></i> Upload
-                        </button>
-                    </form>
-                </x-card>
-            </div>
-        </div>
-    </div>
-</div>
-
+@push('styles')
 <style>
-    .nav-pills .nav-link.active, .nav-pills .show>.nav-link {
-        background-color: rgba(207,164,111,0.15) !important;
-        border: 1px solid rgba(207,164,111,0.3) !important;
-        color: #f3e7cd !important;
+    .classroom-header {
+        background: linear-gradient(145deg, rgba(32,20,15,0.8) 0%, rgba(20,10,5,0.9) 100%);
+        border: 1px solid rgba(207,164,111,0.2);
+        border-radius: 20px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .subject-badge {
+        background: rgba(207,164,111,0.15);
+        color: #d6b67b;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        font-family: monospace;
+        display: inline-block;
+        margin-bottom: 12px;
+    }
+    
+    .subject-title {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #f3e7cd;
+        margin-bottom: 20px;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .info-card {
+        background: rgba(207,164,111,0.05);
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(207,164,111,0.1);
+    }
+    
+    .info-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: rgba(179,155,130,0.7);
+        font-weight: 700;
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        color: #f3e7cd;
+        font-weight: 600;
+    }
+    
+    .tab-nav {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 30px;
+        border-bottom: 2px solid rgba(207,164,111,0.2);
+        padding-bottom: 0;
+    }
+    
+    .tab-btn {
+        padding: 12px 24px;
+        background: transparent;
+        border: none;
+        color: #b39b82;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+    }
+    
+    .tab-btn.active {
+        color: #f3e7cd;
+        border-bottom-color: #cfa46f;
+    }
+    
+    .tab-content {
+        display: none;
+    }
+    
+    .tab-content.active {
+        display: block;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: linear-gradient(145deg, rgba(32,20,15,0.8) 0%, rgba(20,10,5,0.9) 100%);
+        border: 1px solid rgba(207,164,111,0.2);
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(207,164,111,0.15);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: #cfa46f;
+        margin-bottom: 16px;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #f3e7cd;
+        margin-bottom: 4px;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #b39b82;
+        font-weight: 500;
+    }
+    
+    .students-table {
+        background: linear-gradient(145deg, rgba(32,20,15,0.8) 0%, rgba(20,10,5,0.9) 100%);
+        border: 1px solid rgba(207,164,111,0.2);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    
+    .students-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .students-table thead {
+        background: rgba(207,164,111,0.1);
+    }
+    
+    .students-table th {
+        padding: 16px;
+        text-align: left;
+        color: #d6b67b;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid rgba(207,164,111,0.15);
+    }
+    
+    .students-table td {
+        padding: 16px;
+        color: #f3e7cd;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    
+    .students-table tbody tr:hover {
+        background: rgba(207,164,111,0.05);
+    }
+    
+    .badge-present { background: #28a745; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    .badge-late { background: #ffc107; color: #000; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    .badge-absent { background: #dc3545; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    .badge-excused { background: #6c757d; color: white; padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    
+    .btn-action {
+        background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-action:hover {
+        background: linear-gradient(135deg, #dfb987 0%, #a8845c 100%);
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: rgba(207,164,111,0.15);
+        border: 1px solid rgba(207,164,111,0.3);
+        color: #f3e7cd;
+    }
+    
+    .btn-secondary:hover {
+        background: rgba(207,164,111,0.25);
+        color: #f3e7cd;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: rgba(30,20,15,0.4);
+        border-radius: 16px;
+        border: 1px dashed rgba(207,164,111,0.2);
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        color: #8f6e4a;
+        margin-bottom: 16px;
     }
 </style>
+@endpush
 
+@section('content')
+<div class="classroom-header">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <a href="{{ route('teacher.classroom.index') }}" class="btn-secondary btn-action mb-3" style="font-size: 0.9rem;">
+                <i class="bi bi-arrow-left"></i> Back to My Classes
+            </a>
+            <div class="subject-badge">{{ $subject->code }}</div>
+            <h1 class="subject-title">{{ $subject->name }}</h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{{ route('teacher.qr', $subject->code) }}" class="btn-action">
+                <i class="bi bi-qr-code"></i> Start QR Session
+            </a>
+            <a href="{{ route('teacher.subjects.edit', $subject->id) }}" class="btn-secondary btn-action">
+                <i class="bi bi-gear"></i> Edit Subject
+            </a>
+        </div>
+    </div>
+    
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-label">Schedule</div>
+            <div class="info-value">
+                @php
+                    $days = $subject->schedules->pluck('day')->map(function($day) {
+                        return ['Monday'=>'Mon','Tuesday'=>'Tue','Wednesday'=>'Wed','Thursday'=>'Thu','Friday'=>'Fri','Saturday'=>'Sat'][$day] ?? $day;
+                    })->join(', ');
+                @endphp
+                {{ $days ?: 'No schedule set' }}
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Time</div>
+            <div class="info-value">
+                @if($subject->schedules->first())
+                    {{ \Carbon\Carbon::parse($subject->schedules->first()->start_time)->format('h:i A') }} - 
+                    {{ \Carbon\Carbon::parse($subject->schedules->first()->end_time)->format('h:i A') }}
+                @else
+                    TBA
+                @endif
+            </div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Year Level / Semester</div>
+            <div class="info-value">Year {{ $subject->year_level }} - Semester {{ $subject->semester }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-label">Section</div>
+            <div class="info-value">{{ $subject->section ?: 'All Sections' }}</div>
+        </div>
+    </div>
+</div>
+
+@php
+    // Calculate statistics
+    $totalStudents = $students->count();
+    $totalRecords = $attendanceRecords->count();
+    $presentCount = $attendanceRecords->where('status', 'Present')->count();
+    $lateCount = $attendanceRecords->where('status', 'Late')->count();
+    $absentCount = $attendanceRecords->where('status', 'Absent')->where('excused', false)->count();
+    $excusedCount = $attendanceRecords->where('excused', true)->count();
+    $attendanceRate = $totalRecords > 0 ? round((($presentCount + $lateCount) / $totalRecords) * 100) : 0;
+@endphp
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+        <div class="stat-value">{{ $totalStudents }}</div>
+        <div class="stat-label">Total Students</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+        <div class="stat-value">{{ $presentCount }}</div>
+        <div class="stat-label">Present Records</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-clock-fill"></i></div>
+        <div class="stat-value">{{ $lateCount }}</div>
+        <div class="stat-label">Late Records</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-x-circle-fill"></i></div>
+        <div class="stat-value">{{ $absentCount }}</div>
+        <div class="stat-label">Absent Records</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon"><i class="bi bi-percent"></i></div>
+        <div class="stat-value">{{ $attendanceRate }}%</div>
+        <div class="stat-label">Attendance Rate</div>
+    </div>
+</div>
+
+<div class="tab-nav">
+    <button class="tab-btn active" data-tab="students">
+        <i class="bi bi-people"></i> Students ({{ $totalStudents }})
+    </button>
+    <button class="tab-btn" data-tab="attendance">
+        <i class="bi bi-list-check"></i> Attendance History ({{ $totalRecords }})
+    </button>
+</div>
+
+<div class="tab-content active" id="students-tab">
+    @if($students->isEmpty())
+        <div class="empty-state">
+            <i class="bi bi-people"></i>
+            <h3 style="color: #f3e7cd; font-weight: 700;">No Students Found</h3>
+            <p style="color: #b39b82;">No students match this class's year level and semester.</p>
+        </div>
+    @else
+        <div class="students-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Student Number</th>
+                        <th>Name</th>
+                        <th>Year Level</th>
+                        <th>Section</th>
+                        <th class="text-center">Total Records</th>
+                        <th class="text-center">Present</th>
+                        <th class="text-center">Late</th>
+                        <th class="text-center">Absent</th>
+                        <th class="text-center">Attendance Rate</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($students as $student)
+                        @php
+                            $studRecords = $student->attendances;
+                            $studTotal = $studRecords->count();
+                            $studPresent = $studRecords->where('status', 'Present')->count();
+                            $studLate = $studRecords->where('status', 'Late')->count();
+                            $studAbsent = $studRecords->where('status', 'Absent')->count();
+                            $studRate = $studTotal > 0 ? round((($studPresent + $studLate) / $studTotal) * 100) : 0;
+                        @endphp
+                        <tr>
+                            <td><span style="font-family: monospace; font-weight: 600;">{{ $student->student_number }}</span></td>
+                            <td>{{ $student->name }}</td>
+                            <td>Year {{ $student->year_level }}</td>
+                            <td>{{ $student->section ?: '-' }}</td>
+                            <td class="text-center">{{ $studTotal }}</td>
+                            <td class="text-center"><span class="badge-present">{{ $studPresent }}</span></td>
+                            <td class="text-center"><span class="badge-late">{{ $studLate }}</span></td>
+                            <td class="text-center"><span class="badge-absent">{{ $studAbsent }}</span></td>
+                            <td class="text-center"><strong>{{ $studRate }}%</strong></td>
+                            <td class="text-center">
+                                <a href="{{ route('teacher.student', $student->id) }}" class="btn-action btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</div>
+
+<div class="tab-content" id="attendance-tab">
+    @if($attendanceRecords->isEmpty())
+        <div class="empty-state">
+            <i class="bi bi-list-check"></i>
+            <h3 style="color: #f3e7cd; font-weight: 700;">No Attendance Records</h3>
+            <p style="color: #b39b82;">No attendance has been recorded for this class yet.</p>
+        </div>
+    @else
+        <div class="students-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student</th>
+                        <th>Student Number</th>
+                        <th>Time In</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($attendanceRecords as $record)
+                        <tr>
+                            <td>{{ $record->date->format('M d, Y') }}</td>
+                            <td>{{ $record->user->name }}</td>
+                            <td><span style="font-family: monospace; font-weight: 600;">{{ $record->user->student_number }}</span></td>
+                            <td>{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '-' }}</td>
+                            <td class="text-center">
+                                @if($record->excused)
+                                    <span class="badge-excused">Excused</span>
+                                @elseif($record->status === 'Present')
+                                    <span class="badge-present">Present</span>
+                                @elseif($record->status === 'Late')
+                                    <span class="badge-late">Late</span>
+                                @else
+                                    <span class="badge-absent">Absent</span>
+                                @endif
+                            </td>
+                            <td class="text-center">
+                                <button class="btn-action btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;" onclick="showEditModal({{ $record->id }}, '{{ $record->status }}', {{ $record->excused ? 'true' : 'false' }})">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            this.classList.add('active');
+            const tabId = this.dataset.tab + '-tab';
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    function showEditModal(recordId, status, excused) {
+        // TODO: Implement edit attendance modal
+        alert('Edit functionality - Record ID: ' + recordId);
+    }
+</script>
+@endpush

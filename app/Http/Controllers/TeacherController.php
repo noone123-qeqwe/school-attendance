@@ -1752,7 +1752,20 @@ class TeacherController extends Controller
 
     public function classroomShow(Request $request, $subjectCode)
     {
+        \Log::info('classroomShow called', [
+            'subject_code' => $subjectCode,
+            'auth_check' => auth()->check(),
+            'user_id' => auth()->id(),
+            'user_role' => auth()->user()?->role
+        ]);
+
         $teacher = Auth::user();
+        
+        if (!$teacher) {
+            \Log::error('classroomShow: No authenticated user');
+            abort(401, 'Unauthorized');
+        }
+        
         $subject = Subject::where('code', $subjectCode)
             ->where('instructor_id', $teacher->id)
             ->with('schedules')

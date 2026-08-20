@@ -17,6 +17,11 @@ class EnsureAdminIpWhitelisted
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Skip IP whitelist check in local development
+        if (config('app.env') === 'local') {
+            return $next($request);
+        }
+
         if (Auth::check() && Auth::user()->role === 'admin') {
             $whitelistString = Setting::get('admin_ip_whitelist');
             

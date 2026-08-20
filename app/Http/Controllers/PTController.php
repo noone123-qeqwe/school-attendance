@@ -68,12 +68,14 @@ class PTController extends Controller
 
     $identifier = trim($request->identifier);
     $password   = $request->password;
+    
+    Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
 
     // Auto-detect: if no '@' symbol, treat as student number
     if (!str_contains($identifier, '@')) {
         // Student login via student_number
         $credentials = ['student_number' => $identifier, 'password' => $password];
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             /** @var \App\Models\User $user */
             $user = Auth::user();
             if (!$user->isStudent()) {
@@ -102,19 +104,49 @@ class PTController extends Controller
     } else {
         // Email login for admin/teacher
         $credentials = ['email' => $identifier, 'password' => $password];
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             /** @var \App\Models\User $user */
             $user = Auth::user();
+            
+            Log::info('Email login successful', [
+                'user_id' => $user->id,
+                'role' => $user->role,
+                'email' => $user->email,
+                'session_id' => $request->session()->getId()
+            ]);
             
             // Set role-specific session
             $request->session()->regenerate();
             $request->session()->put('user_role', $user->role);
-            $request->session()->put('login_timestamp', now());
-            $request->session()->save(); // Ensure session is saved
+            $request->session()->put('login_timestamp', now()->toString());
             
             // Redirect based on role
             if ($user->isAdmin()) {
-                return redirect()->route('admin.dashboard');
+                Log::info('Admin login successful', ['user_id' => $user->id, 'session_id' => $request->session()->getId()]);
+                
+                // Bypass 2FA in local development
+                if (config('app.env') === 'local' || config('app.debug') === true) {
+                    $request->session()->put('admin_2fa_verified', true);
+                    $request->session()->save(); // Force session save
+                    
+                    Log::info('Admin 2FA bypassed (local env)', [
+                        'user_id' => $user->id,
+                        'session_id' => $request->session()->getId(),
+                        'session_verified' => $request->session()->get('admin_2fa_verified'),
+                        'all_session_data' => $request->session()->all()
+                    ]);
+                    
+                    return redirect()->route('admin.dashboard');
+                }
+                
+                // Generate 2FA OTP for admin in production
+                $otp = \App\Models\Otp::generate($user->id, 'admin_login');
+                try {
+                    \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
+                } catch (\Exception $e) {
+                    Log::error('Failed to send admin 2FA OTP: ' . $e->getMessage());
+                }
+                return redirect()->route('admin.2fa.form')->with('info', 'Please check your email for the verification code.');
             } elseif ($user->isTeacher()) {
                 return redirect()->route('teacher.dashboard');
             } elseif ($user->isParent()) {

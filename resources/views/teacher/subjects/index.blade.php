@@ -127,7 +127,7 @@
 
     <!-- Filters -->
     <form method="GET" action="{{ route('teacher.subjects') }}" data-live-search style="padding:14px 22px;border-bottom:1px solid rgba(207,164,111,0.18);display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
-        <input type="text" name="search" class="tch-input" placeholder="Code or name" value="{{ request('search') }}" style="width:220px;" autocomplete="off" oninput="window.liveSearchTimer && clearTimeout(window.liveSearchTimer); window.liveSearchTimer = setTimeout(() => this.form.submit(), 0);">
+        <input type="text" name="search" class="tch-input" placeholder="Code or name" value="{{ request('search') }}" style="width:220px;" autocomplete="off">
         <select name="year_level" class="tch-input">
             <option value="">All Years</option>
             @foreach([1,2,3,4] as $y)

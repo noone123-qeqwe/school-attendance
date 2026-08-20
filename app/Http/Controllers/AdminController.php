@@ -146,6 +146,69 @@ class AdminController extends Controller
         return view('admin.students.index', compact('students'));
     }
 
+    public function previewStudentsPdf(Request $request)
+    {
+        $query = User::where('role', 'student')->with('attendances');
+
+        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
+        if ($request->filled('semester'))   $query->where('semester', $request->semester);
+        if ($request->filled('course'))     $query->where('course', $request->course);
+        if ($request->filled('search')) {
+            $query->where(fn($q) => $q
+                ->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('student_number', 'like', '%'.$request->search.'%')
+            );
+        }
+
+        $students = $query->orderBy('year_level')->orderBy('name')->get();
+        $filters = $request->only(['year_level', 'semester', 'course', 'search']);
+        
+        return view('admin.students.preview', compact('students', 'filters'));
+    }
+
+    public function exportStudentsPdf(Request $request)
+    {
+        $query = User::where('role', 'student')->with('attendances');
+
+        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
+        if ($request->filled('semester'))   $query->where('semester', $request->semester);
+        if ($request->filled('course'))     $query->where('course', $request->course);
+        if ($request->filled('search')) {
+            $query->where(fn($q) => $q
+                ->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('student_number', 'like', '%'.$request->search.'%')
+            );
+        }
+
+        $students = $query->orderBy('year_level')->orderBy('name')->get();
+        $filters = $request->only(['year_level', 'semester', 'course', 'search']);
+        
+        $pdf = Pdf::loadView('admin.students.pdf', compact('students', 'filters'));
+        
+        $filename = 'students-' . now()->format('Y-m-d-H-i-s') . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function exportStudentsCsv(Request $request)
+    {
+        $query = User::where('role', 'student')->with('attendances');
+
+        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
+        if ($request->filled('semester'))   $query->where('semester', $request->semester);
+        if ($request->filled('course'))     $query->where('course', $request->course);
+        if ($request->filled('search')) {
+            $query->where(fn($q) => $q
+                ->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('student_number', 'like', '%'.$request->search.'%')
+            );
+        }
+
+        $students = $query->orderBy('year_level')->orderBy('name')->get();
+        
+        $filename = 'students-' . now()->format('Y-m-d-H-i-s') . '.csv';
+        return Excel::download(new \App\Exports\StudentsExport($students), $filename);
+    }
+
 
 
     public function studentDetail(User $student)
@@ -282,13 +345,13 @@ class AdminController extends Controller
 
     public function createSubject()
     {
-        return view('admin.subjects.create');
+        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
+        return view('admin.subjects.create', compact('teachers'));
     }
 
     public function storeSubject(\App\Http\Requests\StoreSubjectRequest $request)
     {
-
-        $subject = Subject::create($request->only([
+        $data = $request->only([
             'code',
             'name',
             'year_level',
@@ -296,16 +359,17 @@ class AdminController extends Controller
             'course',
             'units',
             'instructor_id',
-            'section',
-            'activeSessionCount',
-            'scheduledToday',
-            'classesCompleted',
-            'classesPending',
-            'systemAlerts',
-            'totalDepartments',
-            'totalCourses',
-            'totalSections'
-        ]));
+            'section'
+        ]);
+
+        if (!empty($data['instructor_id'])) {
+            $teacher = User::find($data['instructor_id']);
+            if ($teacher) {
+                $data['instructor'] = $teacher->name;
+            }
+        }
+
+        $subject = Subject::create($data);
 
         $this->saveSubjectSchedules($subject, $request);
 
@@ -315,7 +379,8 @@ class AdminController extends Controller
     public function editSubject(Subject $subject)
     {
         $subject->load('schedules');
-        return view('admin.subjects.edit', compact('subject'));
+        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
+        return view('admin.subjects.edit', compact('subject', 'teachers'));
     }
 
 
@@ -325,9 +390,16 @@ class AdminController extends Controller
   public function updateSubject(\App\Http\Requests\UpdateSubjectRequest $request, Subject $subject)
 {
 
-    $subject->update($request->only([
+    $data = $request->only([
         'code', 'name', 'year_level', 'semester', 'course', 'units', 'instructor_id', 'section',
-    ]));
+    ]);
+    if (!empty($data['instructor_id'])) {
+        $teacher = User::find($data['instructor_id']);
+        if ($teacher) {
+            $data['instructor'] = $teacher->name;
+        }
+    }
+    $subject->update($data);
 
     $this->saveSubjectSchedules($subject, $request);
 
@@ -507,6 +579,38 @@ class AdminController extends Controller
         return view('admin.attendance.preview', compact('logs', 'filters'));
     }
 
+    public function exportAttendanceCsv(Request $request)
+    {
+        $query = Attendance::with(['user','subject'])->orderBy('date','desc');
+
+        // Apply same filters as attendanceLogs
+        if ($request->filled('date'))         $query->whereDate('date', $request->date);
+        if ($request->filled('status')) {
+            if ($request->status === 'Excused') {
+                $query->where('excused', true);
+            } else {
+                $query->where('status', $request->status)->where('excused', false);
+            }
+        }
+        if ($request->filled('year_level'))   $query->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
+        if ($request->filled('semester'))     $query->whereHas('user', fn($q) => $q->where('semester', $request->semester));
+        if ($request->filled('course'))       $query->whereHas('user', fn($q) => $q->where('course', $request->course));
+        if ($request->filled('subject'))      $query->where('subject_code', $request->subject);
+        
+        if ($request->filled('student_name')) {
+            $search = $request->student_name;
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('student_number', 'like', "%{$search}%");
+            });
+        }
+
+        $logs = $query->get();
+        $filename = 'attendance-logs-' . now()->format('Y-m-d-H-i-s') . '.csv';
+        
+        return Excel::download(new AttendanceExport($logs), $filename);
+    }
+
 
 
     // ─────────────────────────────────────────
@@ -666,7 +770,19 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     public function twoFactorForm()
     {
-        return redirect()->route('admin.dashboard');
+        $user = Auth::user();
+        
+        // Generate and send OTP
+        $otp = \App\Models\Otp::generate($user->id, 'admin_login');
+        
+        try {
+            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
+        } catch (\Exception $e) {
+            // Log error but don't fail - admin can request resend
+            \Illuminate\Support\Facades\Log::error('Failed to send 2FA OTP: ' . $e->getMessage());
+        }
+        
+        return view('auth.admin_2fa');
     }
 
     public function verifyTwoFactor(Request $request)

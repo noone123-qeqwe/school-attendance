@@ -436,11 +436,15 @@
     });
 
     // Wire existing search bars to open palette
-    var saasSearch = document.querySelector('.saas-search-input');
+    var saasSearch = document.querySelector('.saas-search-input:not(#studentSearchInput)');
     if (saasSearch) {
+        // Only open palette if it's NOT inside a form
         saasSearch.addEventListener('focus', function(e) {
-            e.target.blur();
-            openPalette();
+            var isInForm = e.target.closest('form');
+            if (!isInForm) {
+                e.target.blur();
+                openPalette();
+            }
         });
     }
 

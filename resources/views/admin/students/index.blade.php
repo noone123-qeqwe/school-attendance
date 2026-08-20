@@ -18,7 +18,7 @@
 
 <x-card title="Student Directory" icon="bi bi-people">
     <x-slot name="headerActions">
-        <form method="GET" action="{{ route('admin.students') }}" class="d-flex gap-3 align-items-center flex-wrap m-0">
+        <form method="GET" action="{{ url('/admin/students') }}" class="d-flex gap-3 align-items-center flex-wrap m-0" id="studentSearchForm">
             <div class="saas-search" style="width:250px;">
                 <i class="bi bi-search"></i>
                 <input type="text" name="search" class="saas-search-input" placeholder="Name or Student ID" value="{{ request('search') }}">
@@ -48,15 +48,8 @@
                 <i class="bi bi-funnel"></i> Filter
             </button>
             
-            <select name="bulk_action" class="form-select" style="width:140px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd;">
-                <option value="">Bulk Actions</option>
-                <option value="delete">Delete Selected</option>
-                <option value="export">Export Selected</option>
-            </select>
-            <button type="submit" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">Apply</button>
-            
             @if(request()->hasAny(['search','course','year_level','semester']))
-            <a href="{{ route('admin.students') }}" class="btn btn-outline" style="color: #f87171; border-color: rgba(239,68,68,0.3);">
+            <a href="{{ url('/admin/students') }}" class="btn btn-outline" style="color: #f87171; border-color: rgba(239,68,68,0.3);">
                 Clear
             </a>
             @endif

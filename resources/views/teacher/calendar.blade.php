@@ -7,10 +7,11 @@
 <style>
     #schoolCalendarPage { padding-bottom: 18px; }
     .holiday-dashboard .glass-card {
-        background: rgba(26, 26, 46, 0.4);
-        border: 1px solid rgba(255,255,255,0.06);
-        backdrop-filter: blur(20px);
-        box-shadow: 0 32px 80px rgba(0,0,0,0.4);
+        background: rgba(26, 26, 46, 0.5);
+        border: 1px solid rgba(255,255,255,0.08);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         border-radius: 28px;
     }
     .holiday-dashboard .glass-card .adm-card-head {
@@ -93,10 +94,10 @@
         padding: 12px 0;
     }
     .fc .fc-col-header-cell-cushion {
-        color: #b39b82;
+        color: #d4a574;
         text-transform: uppercase;
-        font-size: 0.75rem;
-        font-weight: 700;
+        font-size: 0.8rem;
+        font-weight: 800;
         letter-spacing: 1px;
         text-decoration: none !important;
     }
@@ -114,30 +115,50 @@
         text-decoration: none !important;
     }
     .fc .fc-day-today {
-        background: rgba(207, 164, 111, 0.05) !important;
-        box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.3) !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+    .fc .fc-day-today .fc-daygrid-day-number {
+        color: #1a1a2e !important;
+        font-weight: 800 !important;
+        background: #d4a574 !important;
+        border-radius: 50% !important;
+        width: 36px !important;
+        height: 36px !important;
+        line-height: 36px !important;
+        padding: 0 !important;
+        margin: 6px auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 6px 16px rgba(207, 164, 111, 0.4) !important;
     }
     .fc .fc-daygrid-event {
         border: none !important;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
         border-radius: 6px !important;
-        padding: 3px 6px;
+        padding: 4px 8px;
         font-size: 0.75rem;
         font-weight: 700;
         color: #1a1a2e !important;
-        margin: 2px 6px !important;
-        transition: all 0.2s;
+        margin: 3px 6px !important;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
     .fc .fc-daygrid-event:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
-        filter: brightness(1.1);
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.5) !important;
+        filter: brightness(1.2);
+        z-index: 5;
     }
     .fc .fc-daygrid-day-frame {
-        transition: background 0.2s;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .fc .fc-daygrid-day-frame:hover {
-        background: rgba(255,255,255,0.02);
+        background: rgba(255,255,255,0.03);
+        transform: scale(1.01);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+        z-index: 2;
+        position: relative;
     }
     
     /* Force Saturday to display in case it is hidden by CSS */
