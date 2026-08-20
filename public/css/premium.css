@@ -139,22 +139,11 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 8px 12px 60px;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(207, 164, 111, 0.25) transparent;
+    scrollbar-width: none; /* Firefox */
 }
 
 .sidebar-nav::-webkit-scrollbar {
-    width: 4px;
-}
-.sidebar-nav::-webkit-scrollbar-track {
-    background: transparent;
-}
-.sidebar-nav::-webkit-scrollbar-thumb {
-    background: rgba(207, 164, 111, 0.25);
-    border-radius: 99px;
-}
-.sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: rgba(207, 164, 111, 0.45);
+    display: none; /* Safari and Chrome */
 }
 
 .sidebar .nav-link {
