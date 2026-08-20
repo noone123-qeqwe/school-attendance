@@ -50,112 +50,125 @@
 @endphp
 
 <style>
-    /* ── UNIFIED ATTENDANCE CALENDAR ── */
+    /* ── UNIFIED ATTENDANCE CALENDAR (Dark Squircle Theme) ── */
     .att-cal-wrap {
-        background: rgba(0,0,0,0.15);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 20px;
+        background: #0f0a08;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 28px;
         overflow: hidden;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+        padding: 12px;
     }
     .att-cal-nav {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 20px 24px 16px;
+        padding: 16px 20px 20px;
     }
     .att-cal-nav-btn {
-        width: 36px; height: 36px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.1);
-        background: rgba(255,255,255,0.04);
+        width: 44px; height: 44px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
         color: #cfa46f;
         display: flex; align-items: center; justify-content: center;
-        cursor: pointer; font-size: 0.85rem;
-        transition: all 0.2s;
+        cursor: pointer; font-size: 1.15rem;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         text-decoration: none;
     }
     .att-cal-nav-btn:hover {
-        background: rgba(207,164,111,0.12);
-        border-color: rgba(207,164,111,0.3);
-        color: #cfa46f;
+        background: rgba(207, 164, 111, 0.15);
+        border-color: rgba(207, 164, 111, 0.4);
+        color: #ffffff;
+        transform: translateY(-1px);
     }
     .att-cal-month {
-        font-size: 1.15rem;
+        font-size: 1.35rem;
         font-weight: 800;
-        color: #f3e7cd;
-        letter-spacing: -0.3px;
+        color: #fdfbf7;
+        letter-spacing: -0.02em;
     }
     .att-cal-header {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
         text-align: center;
-        padding: 0 16px;
-        margin-bottom: 6px;
+        padding: 10px 0;
+        margin: 0 10px 14px;
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 14px;
     }
     .att-cal-header span {
-        font-size: 0.7rem;
+        font-size: 0.78rem;
         font-weight: 800;
-        color: #8f826f;
+        color: #cfa46f;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 6px 0;
+        letter-spacing: 0.08em;
+        padding: 0;
     }
     .att-cal-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        gap: 4px;
-        padding: 0 16px 16px;
+        gap: 10px;
+        padding: 0 10px 16px;
     }
     .att-cal-cell {
-        aspect-ratio: 1;
+        height: 60px;
+        min-height: 60px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border-radius: 10px;
-        font-size: 0.85rem;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.025);
+        font-size: 1.05rem;
         font-weight: 700;
-        color: rgba(248,231,211,0.35);
-        background: transparent;
+        color: #f3ede4;
         position: relative;
         cursor: default;
-        transition: all 0.2s;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         gap: 3px;
     }
     .att-cal-cell.has-records {
         cursor: pointer;
     }
     .att-cal-cell.has-records:hover {
-        transform: scale(1.08);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+        border-color: rgba(207, 164, 111, 0.3);
         z-index: 2;
     }
     .att-cal-cell.is-today {
-        box-shadow: inset 0 0 0 2px rgba(207,164,111,0.4);
+        background: rgba(255, 209, 102, 0.08) !important;
+        border: 2px solid #ffd166 !important;
+        box-shadow: 0 0 20px rgba(255, 209, 102, 0.25), inset 0 0 12px rgba(255, 209, 102, 0.08) !important;
+        color: #ffffff !important;
     }
     .att-cal-cell.is-sunday {
-        color: rgba(248,231,211,0.2);
+        color: #f87171 !important;
     }
 
     /* Status colors */
     .att-cal-cell.status-present {
-        background: rgba(74,222,128,0.15);
-        color: #4ade80;
-        border: 1px solid rgba(74,222,128,0.25);
+        background: rgba(74, 222, 128, 0.14);
+        color: #86efac;
+        border: 1.5px solid rgba(74, 222, 128, 0.4);
     }
     .att-cal-cell.status-late {
-        background: rgba(251,191,36,0.15);
-        color: #fbbf24;
-        border: 1px solid rgba(251,191,36,0.25);
+        background: rgba(251, 191, 36, 0.14);
+        color: #fde047;
+        border: 1.5px solid rgba(251, 191, 36, 0.4);
     }
     .att-cal-cell.status-absent {
-        background: rgba(248,113,113,0.15);
-        color: #f87171;
-        border: 1px solid rgba(248,113,113,0.25);
+        background: rgba(220, 38, 38, 0.14);
+        color: #fca5a5;
+        border: 1.5px solid rgba(220, 38, 38, 0.45);
     }
     .att-cal-cell.status-mixed {
-        background: rgba(96,165,250,0.12);
-        color: #60a5fa;
-        border: 1px solid rgba(96,165,250,0.2);
+        background: rgba(96, 165, 250, 0.14);
+        color: #93c5fd;
+        border: 1.5px solid rgba(96, 165, 250, 0.4);
     }
 
     /* Status dots row inside the cell */

@@ -284,47 +284,81 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <style>
+    .fc {
+        color: #f3ede4;
+        font-family: inherit;
+    }
     .fc-theme-standard td, .fc-theme-standard th {
-        border-color: rgba(255,255,255,0.06) !important;
+        border-color: rgba(255,255,255,0.04) !important;
     }
     .fc .fc-toolbar-title {
-        font-size: 1.1rem !important;
-        font-weight: 700;
-        color: var(--ent-text);
+        font-size: 1.25rem !important;
+        font-weight: 800;
+        color: #fdfbf7;
+    }
+    .fc .fc-col-header-cell {
+        background: rgba(255,255,255,0.025) !important;
+        padding: 12px 0 !important;
+        border: none !important;
     }
     .fc .fc-col-header-cell-cushion {
-        color: #b39b82;
-        font-weight: 600;
-        padding: 8px 0 !important;
+        color: #cfa46f;
+        font-weight: 800;
         text-transform: uppercase;
-        font-size: 0.75rem;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+    }
+    .fc .fc-daygrid-day-frame {
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.03) !important;
+        margin: 3px !important;
+        min-height: 90px !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .fc .fc-daygrid-day-frame:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(207, 164, 111, 0.3) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
     }
     .fc .fc-daygrid-day-number {
-        color: var(--ent-text);
-        font-size: 0.85rem;
-        font-weight: 600;
-        padding: 8px !important;
+        color: #f3ede4;
+        font-size: 1.05rem;
+        font-weight: 700;
+        padding: 8px 12px !important;
+        text-decoration: none !important;
     }
-    .fc .fc-day-today {
-        background: rgba(251,191,36,0.05) !important;
+    .fc .fc-day-sun .fc-daygrid-day-number {
+        color: #f87171 !important;
+    }
+    .fc .fc-day-other .fc-daygrid-day-number {
+        color: #5c4e40;
+        opacity: 0.5;
+    }
+    .fc .fc-day-today .fc-daygrid-day-frame {
+        background: rgba(255, 209, 102, 0.08) !important;
+        border: 2px solid #ffd166 !important;
+        box-shadow: 0 0 20px rgba(255, 209, 102, 0.25), inset 0 0 12px rgba(255, 209, 102, 0.08) !important;
+    }
+    .fc .fc-day-today .fc-daygrid-day-number {
+        color: #ffffff !important;
+        font-weight: 800 !important;
     }
     .fc .fc-daygrid-event {
-        border-radius: 6px !important;
-        padding: 3px 6px;
-        font-size: 0.75rem;
+        border-radius: 8px !important;
+        padding: 4px 8px;
+        font-size: 0.78rem;
         font-weight: 700;
-        color: #1a1a2e !important;
-        margin: 2px 6px !important;
-        transition: all 0.2s;
+        color: #ffffff !important;
+        margin: 2px 4px !important;
+        transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         border: none !important;
     }
     .fc .fc-daygrid-event:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.4) !important;
-        filter: brightness(1.1);
-    }
-    .fc .fc-daygrid-day-frame:hover {
-        background: rgba(255,255,255,0.02);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.5) !important;
+        filter: brightness(1.15);
     }
 </style>
 

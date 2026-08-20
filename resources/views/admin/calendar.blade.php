@@ -4,25 +4,255 @@
 
 @section('content')
 <div id="holidayCalendarPage" class="holiday-dashboard">
+<style>
+    .hcal-pro-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 860px;
+        margin: 0 auto;
+        padding-bottom: 30px;
+    }
+    
+    .hcal-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    
+    .hcal-top-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: #f3ede4;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .hcal-card-box {
+        background: #0f0a08;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 28px;
+        padding: 32px 36px;
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+    }
+    
+    .hcal-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+    }
+    
+    .hcal-btn-arrow {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #cfa46f;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        text-decoration: none;
+    }
+    
+    .hcal-btn-arrow:hover {
+        background: rgba(207, 164, 111, 0.15);
+        border-color: rgba(207, 164, 111, 0.4);
+        color: #ffffff;
+        transform: translateY(-2px);
+    }
+    
+    .hcal-current-title {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #fdfbf7;
+        letter-spacing: -0.02em;
+    }
+    
+    .hcal-weekdays-pill {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 16px;
+        padding: 14px 0;
+    }
+    
+    .hcal-weekday-item {
+        text-align: center;
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #cfa46f;
+    }
+    
+    .hcal-days-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 12px;
+    }
+    
+    .hcal-tile {
+        height: 68px;
+        min-height: 68px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        background: rgba(255, 255, 255, 0.025);
+        position: relative;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: pointer;
+        padding: 6px 0;
+    }
+    
+    .hcal-tile:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(207, 164, 111, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    .hcal-tile.empty {
+        visibility: hidden;
+        background: transparent;
+        border-color: transparent;
+        cursor: default;
+    }
+    
+    .hcal-tile-num {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #f3ede4;
+        line-height: 1;
+    }
+    
+    /* Sunday Red Tint */
+    .hcal-tile.sunday .hcal-tile-num {
+        color: #f87171 !important;
+    }
+    
+    /* Today Cell - Illuminated Glowing Border */
+    .hcal-tile.today {
+        background: rgba(255, 209, 102, 0.08) !important;
+        border: 2px solid #ffd166 !important;
+        box-shadow: 0 0 24px rgba(255, 209, 102, 0.28), inset 0 0 14px rgba(255, 209, 102, 0.1) !important;
+    }
+    
+    .hcal-tile.today .hcal-tile-num {
+        color: #ffffff !important;
+        font-weight: 800;
+    }
+    
+    /* Holiday / Event Days - Crimson Squircle with Centered Red Dot */
+    .hcal-tile.holiday-day,
+    .hcal-tile.has-event {
+        background: rgba(220, 38, 38, 0.15) !important;
+        border: 1.5px solid rgba(220, 38, 38, 0.5) !important;
+    }
+    
+    .hcal-tile.holiday-day .hcal-tile-num,
+    .hcal-tile.has-event .hcal-tile-num {
+        color: #fca5a5 !important;
+        font-weight: 800;
+    }
+    
+    .hcal-tile-dots {
+        display: flex;
+        gap: 4px;
+        margin-top: 5px;
+        height: 6px;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .hcal-tile-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ef4444;
+        box-shadow: 0 0 8px #ef4444;
+        flex-shrink: 0;
+    }
+    
+    .hcal-bottom-legend {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .hcal-bottom-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.78rem;
+        color: #b39b82;
+        font-weight: 600;
+        letter-spacing: 0.03em;
+    }
+    
+    .hcal-bottom-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
 
-{{-- ─── TOP HEADER ─── --}}
-<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px;">
-    <div>
-        <h1 style="font-size: 1.45rem; font-weight: 800; color: #f3ede4; margin: 0; display: flex; align-items: center; gap: 12px;">
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(220, 38, 38, 0.12); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.25); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-                <i class="bi bi-calendar-heart-fill"></i>
-            </div>
-            Holiday & Events Calendar
-        </h1>
-        <p style="font-size: 0.84rem; color: #b39b82; margin: 6px 0 0 0;">Manage national & school holidays, suspensions, event schedules, and campus announcements.</p>
-    </div>
+    @media (max-width: 768px) {
+        .hcal-card-box {
+            padding: 20px 16px;
+            border-radius: 20px;
+        }
+        .hcal-current-title {
+            font-size: 1.2rem;
+        }
+        .hcal-btn-arrow {
+            width: 38px;
+            height: 38px;
+            font-size: 1rem;
+        }
+        .hcal-weekdays-pill {
+            padding: 10px 0;
+            gap: 4px;
+        }
+        .hcal-weekday-item {
+            font-size: 0.7rem;
+        }
+        .hcal-days-grid {
+            gap: 6px;
+        }
+        .hcal-tile {
+            height: 50px;
+            min-height: 50px;
+            border-radius: 12px;
+        }
+        .hcal-tile-num {
+            font-size: 0.92rem;
+        }
+    }
+</style>
 
-    <button type="button" class="adm-btn adm-btn-primary" onclick="openHcalModal()" style="background: linear-gradient(135deg, #cfa46f, #b8893e); color: #1a0e0b; border: none; border-radius: 12px; padding: 10px 22px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 16px rgba(207, 164, 111, 0.25); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
-        <i class="bi bi-plus-lg"></i> Add Holiday / Event
-    </button>
-</div>
-
-{{-- ─── CALENDAR CONTAINER ─── --}}
 @php
     $hcalStart = \Carbon\Carbon::create($calYear, $calMonth, 1);
     $hcalEnd = $hcalStart->copy()->endOfMonth();
@@ -33,34 +263,55 @@
     $hcalToday = now()->day;
 @endphp
 
-<div class="hcal-container">
-    <div class="hcal-calendar-pane">
-        {{-- Month Navigation Header (Matches Screenshot) --}}
-        <div class="hcal-nav">
-            <a href="?hcal_year={{ $hcalPrev->year }}&hcal_month={{ $hcalPrev->month }}" class="hcal-nav-btn" title="Previous Month">
+<div class="hcal-pro-wrapper">
+    {{-- Top Action Bar --}}
+    <div class="hcal-top-bar">
+        <div>
+            <h1 class="hcal-top-title">
+                <i class="bi bi-calendar-heart-fill" style="color: #f87171;"></i> Holiday & Events Calendar
+            </h1>
+            <p style="font-size: 0.82rem; color: #b39b82; margin: 4px 0 0 0;">Manage academic holidays, declarations, campus events, and schedules.</p>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <a href="?hcal_year={{ now()->year }}&hcal_month={{ now()->month }}" class="adm-btn adm-btn-ghost">
+                Today
+            </a>
+            <button type="button" class="adm-btn adm-btn-primary" onclick="openHcalModal()">
+                <i class="bi bi-plus-lg"></i> Add Holiday / Event
+            </button>
+        </div>
+    </div>
+
+    {{-- Main Squircle Calendar Card (Exact Visual Style) --}}
+    <div class="hcal-card-box">
+        {{-- Navigation Row --}}
+        <div class="hcal-header-row">
+            <a href="?hcal_year={{ $hcalPrev->year }}&hcal_month={{ $hcalPrev->month }}" class="hcal-btn-arrow" title="Previous Month">
                 <i class="bi bi-chevron-left"></i>
             </a>
-            <div class="hcal-month-label">{{ $hcalStart->format('F Y') }}</div>
-            <a href="?hcal_year={{ $hcalNext->year }}&hcal_month={{ $hcalNext->month }}" class="hcal-nav-btn" title="Next Month">
+            <div class="hcal-current-title">
+                {{ $hcalStart->format('F Y') }}
+            </div>
+            <a href="?hcal_year={{ $hcalNext->year }}&hcal_month={{ $hcalNext->month }}" class="hcal-btn-arrow" title="Next Month">
                 <i class="bi bi-chevron-right"></i>
             </a>
         </div>
 
-        {{-- Weekdays Header Bar --}}
-        <div class="hcal-day-labels">
-            @foreach(['SUN','MON','TUE','WED','THU','FRI','SAT'] as $lbl)
-                <div class="hcal-day-label">{{ $lbl }}</div>
+        {{-- Weekdays Header Pill --}}
+        <div class="hcal-weekdays-pill">
+            @foreach(['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as $dayLbl)
+                <div class="hcal-weekday-item">{{ $dayLbl }}</div>
             @endforeach
         </div>
 
-        {{-- 7-Column Days Grid --}}
-        <div class="hcal-grid">
-            {{-- Empty leading cells --}}
+        {{-- Days Grid (Squircles) --}}
+        <div class="hcal-days-grid">
+            {{-- Empty cells before month start --}}
             @for($i = 0; $i < $hcalStartDow; $i++)
-                <div class="hcal-day empty"></div>
+                <div class="hcal-tile empty"></div>
             @endfor
 
-            {{-- Day cells --}}
             @for($d = 1; $d <= $hcalEnd->day; $d++)
                 @php
                     $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
@@ -77,12 +328,12 @@
                     if ($hasEvents) $cls .= ' has-event';
                     if ($isHoliday) $cls .= ' holiday-day';
                 @endphp
-                <div class="hcal-day{{ $cls }}" onclick="openHcalDateDetails('{{ $dateKey }}', '{{ $formattedDate }}')" title="{{ $hasEvents ? collect($dayEvents)->pluck('name')->join(', ') : 'Click to view or add events' }}">
-                    <div class="hcal-day-num">{{ $d }}</div>
+                <div class="hcal-tile{{ $cls }}" onclick="openHcalDateDetails('{{ $dateKey }}', '{{ $formattedDate }}')" title="{{ $hasEvents ? collect($dayEvents)->pluck('name')->join(', ') : 'Click to view or add events' }}">
+                    <div class="hcal-tile-num">{{ $d }}</div>
                     @if($hasEvents)
-                        <div class="hcal-dots">
+                        <div class="hcal-tile-dots">
                             @foreach(collect($dayEvents)->unique('type')->take(3) as $evt)
-                                <div class="hcal-dot {{ $evt['type'] }}"></div>
+                                <div class="hcal-tile-dot"></div>
                             @endforeach
                         </div>
                     @endif
@@ -91,12 +342,12 @@
         </div>
 
         {{-- Legend --}}
-        <div class="hcal-legend">
-            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#dc2626;"></div> National</div>
-            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#d97706;"></div> Local</div>
-            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#ea580c;"></div> School</div>
-            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#6366f1;"></div> No Class</div>
-            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#60a5fa;"></div> Announcement</div>
+        <div class="hcal-bottom-legend">
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#dc2626;"></div> National</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#d97706;"></div> Local</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#7c2d12;"></div> School</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#6366f1;"></div> No Class</div>
+            <div class="hcal-bottom-item"><div class="hcal-bottom-dot" style="background:#60a5fa;"></div> Announcement</div>
         </div>
     </div>
 </div>
@@ -205,7 +456,7 @@ function openHcalDateDetails(dateKey, formattedDate) {
             const typeColorMap = {
                 national: '#dc2626',
                 local: '#d97706',
-                school: '#ea580c',
+                school: '#7c2d12',
                 no_class: '#6366f1',
                 announcement: '#60a5fa',
                 event: '#a78bfa',

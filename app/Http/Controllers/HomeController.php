@@ -697,19 +697,12 @@ class HomeController extends Controller
     /**
      * Student calendar view.
      */
-    public function calendar(Request $request, \App\Services\AnalyticsService $analyticsService)
+    public function calendar()
     {
-        $calYear = (int)$request->input('hcal_year', $request->input('year', now()->year));
-        $calMonth = (int)$request->input('hcal_month', $request->input('month', now()->month));
-
-        $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
-        $hcalEventsMap = $dashData['hcalEventsMap'] ?? [];
-        $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
-
-        $year = $calYear;
-        $month = $calMonth;
-
-        return view('student.calendar', compact('calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming', 'year', 'month'));
+        $year = request('year', now()->year);
+        $month = request('month', now()->month);
+        
+        return view('student.calendar', compact('year', 'month'));
     }
 
     public function calendarData(Request $request, \App\Services\CalendarService $calendarService)
