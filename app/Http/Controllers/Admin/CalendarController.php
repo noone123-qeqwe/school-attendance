@@ -14,22 +14,12 @@ use Carbon\Carbon;
 class CalendarController extends Controller
 {
     /**
-     * Admin calendar view.
+     * Admin calendar view (Holiday & Events Calendar).
      */
     public function index(Request $request, \App\Services\AnalyticsService $analyticsService)
     {
-        $year = (int)$request->input('year', now()->year);
-        $month = (int)$request->input('month', now()->month);
-        
-        $calYear = (int)$request->input('hcal_year', $year);
-        $calMonth = (int)$request->input('hcal_month', $month);
-        $activeTab = $request->input('view', 'school');
-
-        // Fetch events for the view
-        $events = Event::whereYear('date', $year)
-                       ->whereMonth('date', $month)
-                       ->where('status', '!=', 'cancelled')
-                       ->get();
+        $calYear = (int)$request->input('hcal_year', $request->input('year', now()->year));
+        $calMonth = (int)$request->input('hcal_month', $request->input('month', now()->month));
 
         // Get Holiday & Events calendar data
         $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
@@ -37,7 +27,7 @@ class CalendarController extends Controller
         $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
 
         return view('admin.calendar', compact(
-            'year', 'month', 'events', 'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming', 'activeTab'
+            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
         ));
     }
 
