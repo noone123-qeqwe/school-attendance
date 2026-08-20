@@ -49,6 +49,8 @@ class LiveAttendanceController extends Controller
             return back()->with('error', 'Student is not enrolled in this subject.');
         }
 
+        $normalizedStatus = ucfirst(strtolower($request->status));
+
         // Update or create the attendance record
         Attendance::updateOrCreate(
             [
@@ -58,8 +60,8 @@ class LiveAttendanceController extends Controller
                 'date' => $session->created_at->toDateString(),
             ],
             [
-                'status' => $request->status,
-                'time_in' => in_array($request->status, ['present', 'late']) ? now()->toTimeString() : null,
+                'status' => $normalizedStatus,
+                'time_in' => in_array($normalizedStatus, ['Present', 'Late']) ? now()->toTimeString() : null,
                 'method' => 'manual', // indicates teacher override
             ]
         );

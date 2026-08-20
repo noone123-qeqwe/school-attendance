@@ -38,6 +38,16 @@ class Attendance extends Model
         $this->attributes['date'] = $value ? \Carbon\Carbon::parse($value)->format('Y-m-d') : null;
     }
 
+    public function setStatusAttribute($value)
+    {
+        $this->attributes['status'] = $value ? ucfirst(strtolower(trim($value))) : 'Absent';
+    }
+
+    public function getStatusAttribute($value)
+    {
+        return $value ? ucfirst(strtolower(trim($value))) : 'Absent';
+    }
+
     protected static function booted()
     {
         static::saved(function ($attendance) {

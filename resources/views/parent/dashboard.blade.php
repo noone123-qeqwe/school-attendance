@@ -191,11 +191,14 @@
                     <td data-label="Date" style="font-weight: 600;">{{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</td>
                     <td data-label="Subject" style="color: #b39b82;">{{ $attendance->subject->name ?? $attendance->subject_code }}</td>
                     <td data-label="Status">
+                        @php
+                            $st = strtolower($attendance->status ?? 'absent');
+                        @endphp
                         @if($attendance->excused)
                             <x-badge type="excused">Excused</x-badge>
-                        @elseif($attendance->status === 'Present')
+                        @elseif($st === 'present')
                             <x-badge type="present">Present</x-badge>
-                        @elseif($attendance->status === 'Late')
+                        @elseif($st === 'late')
                             <x-badge type="late">Late</x-badge>
                         @else
                             <x-badge type="absent">Absent</x-badge>
@@ -209,7 +212,7 @@
                         @endif
                     </td>
                     <td data-label="Action">
-                        @if($attendance->status === 'Absent' && !$attendance->excused)
+                        @if(strtolower($attendance->status ?? '') === 'absent' && !$attendance->excused)
                             <a href="{{ route('parent.child.excuse', [$data->child, $attendance]) }}" class="ent-btn ent-btn-sm ent-btn-ghost">
                                 <i class="bi bi-pencil-square"></i> Excuse
                             </a>

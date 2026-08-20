@@ -49,9 +49,9 @@ class ParentController extends Controller
         ])
         ->withCount([
             'attendances as total_attendances',
-            'attendances as present_count' => fn($q) => $q->where('status', 'Present'),
-            'attendances as late_count' => fn($q) => $q->where('status', 'Late'),
-            'attendances as absent_count' => fn($q) => $q->where('status', 'Absent'),
+            'attendances as present_count' => fn($q) => $q->whereRaw('LOWER(status) = ?', ['present']),
+            'attendances as late_count' => fn($q) => $q->whereRaw('LOWER(status) = ?', ['late']),
+            'attendances as absent_count' => fn($q) => $q->whereRaw('LOWER(status) = ?', ['absent']),
         ])->get();
 
         // Fetch related data in bulk for all children to prevent N+1 queries
@@ -62,7 +62,6 @@ class ParentController extends Controller
             ->orderBy('date', 'desc')
             ->get()
             ->groupBy('user_id');
-
 
         $allWarnings = Warning::whereIn('user_id', $childIds)
             ->with('subject')
@@ -82,12 +81,41 @@ class ParentController extends Controller
             ->groupBy('user_id')
             ->pluck('count', 'user_id');
 
+        $now = now('Asia/Manila');
+        $todayDate = $now->toDateString();
+        $currentDayName = $now->format('l');
+        $currentTime = $now->format('H:i:s');
+
         // Calculate stats per child
-        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allWarnings, $allPendingExcuses, $allApprovedExcuses) {
-            $total = $child->total_attendances;
-            $present = $child->present_count;
-            $late = $child->late_count;
-            $absent = $child->absent_count;
+        $childrenData = $children->map(function ($child) use ($allStreakRecords, $allWarnings, $allPendingExcuses, $allApprovedExcuses, $now, $todayDate, $currentDayName, $currentTime) {
+            $total = (int) $child->total_attendances;
+            $present = (int) $child->present_count;
+            $late = (int) $child->late_count;
+            $absent = (int) $child->absent_count;
+
+            // Check if there are scheduled classes today that have ended with no attendance record
+            $dynamicMisses = 0;
+            if ($child->year_level && $child->semester) {
+                $endedSubjectsToday = \App\Models\Subject::where('year_level', $child->year_level)
+                    ->where('semester', $child->semester)
+                    ->whereHas('schedules', function ($query) use ($currentDayName, $currentTime) {
+                        $query->where('day', $currentDayName)->where('end_time', '<', $currentTime);
+                    })
+                    ->get();
+
+                foreach ($endedSubjectsToday as $subj) {
+                    $hasAttendance = Attendance::where('user_id', $child->id)
+                        ->where('subject_code', $subj->code)
+                        ->whereDate('date', $todayDate)
+                        ->exists();
+                    if (!$hasAttendance) {
+                        $dynamicMisses++;
+                    }
+                }
+            }
+
+            $absent += $dynamicMisses;
+            $total += $dynamicMisses;
             $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;
 
             // Attendance streak
@@ -97,7 +125,7 @@ class ParentController extends Controller
                 ->groupBy(fn($r) => \Carbon\Carbon::parse($r->date)->toDateString());
 
             foreach ($streakRecords as $dayRecords) {
-                $allOnTime = $dayRecords->every(fn($r) => in_array($r->status, ['Present', 'Late']));
+                $allOnTime = $dayRecords->every(fn($r) => in_array(strtolower($r->status), ['present', 'late']));
                 if ($allOnTime) {
                     $streakCount++;
                 } else {
