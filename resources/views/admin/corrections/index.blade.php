@@ -2,90 +2,140 @@
 @section('page-title', 'Correction Requests')
 
 @section('content')
-<div style="max-width:1100px;margin:0 auto;">
-    <div style="margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+<div class="animate-fade-up" style="max-width:1100px; margin:0 auto;">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
-            <div style="font-size:1.5rem;font-weight:800;color:#f3e7cd;">Correction Requests</div>
-            <div style="font-size:0.88rem;color:#b39b82;margin-top:2px;">Review and bulk-manage student correction requests</div>
+            <h1 class="saas-heading saas-heading-lg mb-1" style="font-weight: 800; color: #f3e7cd; font-size: clamp(1.4rem, 2.5vw, 1.85rem);">
+                Correction Requests
+            </h1>
+            <p class="saas-text-muted m-0" style="color: #b39b82; font-size: 0.95rem;">
+                Review and bulk-manage student attendance correction requests
+            </p>
         </div>
     </div>
 
     @if(session('success'))
-    <div style="background:rgba(34,197,94,0.14);border:1px solid rgba(34,197,94,0.3);color:#bbf7d0;border-radius:12px;padding:12px 16px;margin-bottom:18px;font-size:0.88rem;">
-        <i class="bi bi-check-circle-fill me-2"></i>{{ session('success') }}
+    <div class="alert alert-success d-flex align-items-center mb-4" style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#4ade80; border-radius:12px; padding:12px 16px;">
+        <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+        <div>{{ session('success') }}</div>
     </div>
     @endif
 
-    <!-- Filter -->
-    <form method="GET" style="margin-bottom:20px;display:flex;gap:10px;flex-wrap:wrap;">
-        <select name="status" style="padding:10px 14px;border-radius:10px;border:1.5px solid rgba(255,215,145,0.15);background:rgba(255,235,190,0.04);color:#f3e7cd;font-size:0.875rem;" onchange="this.form.submit()">
-            <option value="">All Statuses</option>
-            <option value="pending"  {{ request('status')=='pending'  ? 'selected' : '' }}>Pending</option>
-            <option value="approved" {{ request('status')=='approved' ? 'selected' : '' }}>Approved</option>
-            <option value="rejected" {{ request('status')=='rejected' ? 'selected' : '' }}>Rejected</option>
-        </select>
-    </form>
+    <x-card title="Correction Requests" icon="bi bi-pencil-square">
+        <x-slot name="headerActions">
+            <form method="GET" class="d-flex gap-2 align-items-center m-0">
+                <select name="status" class="form-select form-select-sm" style="background:#140d07; border:1px solid rgba(207,164,111,0.3); color:#f3ede4; border-radius:8px; padding:6px 28px 6px 12px; font-weight:600; cursor:pointer;" onchange="this.form.submit()">
+                    <option value="">All Statuses</option>
+                    <option value="pending"  {{ request('status')=='pending'  ? 'selected' : '' }}>Pending</option>
+                    <option value="approved" {{ request('status')=='approved' ? 'selected' : '' }}>Approved</option>
+                    <option value="rejected" {{ request('status')=='rejected' ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </form>
+        </x-slot>
 
-    <div style="background:rgba(255,235,190,0.04);border:1px solid rgba(255,215,145,0.1);border-radius:14px;overflow:hidden;">
-            <table style="width:100%;border-collapse:collapse;">
-                <thead>
-                    <tr style="border-bottom:1px solid rgba(255,215,145,0.12);">
-                        <th style="padding:12px 16px;width:40px;"></th>
-                        <th style="padding:12px 16px;text-align:left;font-size:0.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;">Student</th>
-                        <th style="padding:12px 16px;text-align:left;font-size:0.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;">Subject</th>
-                        <th style="padding:12px 16px;text-align:left;font-size:0.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;">Date</th>
-                        <th style="padding:12px 16px;text-align:left;font-size:0.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;">Requested Status</th>
-                        <th style="padding:12px 16px;text-align:center;font-size:0.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;">Status</th>
-                        <th style="padding:12px 16px;text-align:center;font-size:0.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($corrections as $correction)
-                    <tr style="border-bottom:1px solid rgba(255,215,145,0.06);" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background=''">
-                        <td style="padding:12px 16px;">
-                            @if($correction->status === 'pending')
-                            <input type="checkbox" name="ids[]" value="{{ $correction->id }}" class="correction-cb" style="accent-color:#cfa46f;">
-                            @endif
-                        </td>
-                        <td style="padding:12px 16px;font-size:0.875rem;color:#f3e7cd;">{{ $correction->user->name ?? '—' }}</td>
-                        <td style="padding:12px 16px;font-size:0.875rem;color:#d4c5a9;">{{ $correction->attendance->subject->name ?? $correction->attendance->subject_code ?? '—' }}</td>
-                        <td style="padding:12px 16px;font-size:0.875rem;color:#d4c5a9;">{{ $correction->attendance ? $correction->attendance->date->format('M d, Y') : '—' }}</td>
-                        <td style="padding:12px 16px;font-size:0.82rem;color:#b39b82;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $correction->Requested Status }}">{{ $correction->Requested Status }}</td>
-                        <td style="padding:12px 16px;text-align:center;">
-                            @if($correction->status === 'pending')
-                                <span style="background:rgba(245,158,11,0.15);color:#fde68a;padding:3px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;">Pending</span>
-                            @elseif($correction->status === 'approved')
-                                <span style="background:rgba(34,197,94,0.14);color:#bbf7d0;padding:3px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;">Approved</span>
-                            @else
-                                <span style="background:rgba(220,38,38,0.14);color:#fca5a5;padding:3px 10px;border-radius:999px;font-size:0.72rem;font-weight:700;">Rejected</span>
-                            @endif
-                        </td>
-                        <td style="padding:12px 16px;text-align:center;">
-                            @if($correction->status === 'pending')
-                            <div style="display:flex;justify-content:center;gap:6px;">
-                                <form method="POST" action="{{ route('admin.correction.approve', $correction) }}" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" style="padding:5px 12px;background:rgba(34,197,94,0.15);color:#bbf7d0;border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:0.75rem;font-weight:600;cursor:pointer;">✓ Approve</button>
-                                </form>
-                                <form method="POST" action="{{ route('admin.correction.reject', $correction) }}" style="display:inline;">
-                                    @csrf
-                                    <button type="submit" style="padding:5px 12px;background:rgba(220,38,38,0.14);color:#fca5a5;border:1px solid rgba(220,38,38,0.2);border-radius:8px;font-size:0.75rem;font-weight:600;cursor:pointer;">✕ Reject</button>
-                                </form>
-                            </div>
-                            @else
-                                <span style="font-size:0.78rem;color:#b39b82;">Reviewed</span>
-                            @endif
-                        </td>
-                    </tr>
-                    @empty
-                    <tr><td colspan="7" style="padding:32px;text-align:center;color:#b39b82;font-size:0.875rem;">No correction requests found.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+        <!-- Bulk Actions Form -->
+        <form method="POST" id="bulkForm">
+            @csrf
+            <div class="d-flex gap-2 align-items-center mb-3 flex-wrap">
+                <button type="button" onclick="submitBulk('{{ route('admin.corrections.bulk.approve') }}')" class="btn btn-sm btn-press" style="padding:7px 16px; background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3); border-radius:10px; font-size:0.82rem; font-weight:600; cursor:pointer;">
+                    <i class="bi bi-check2-all me-1"></i> Bulk Approve
+                </button>
+                <button type="button" onclick="submitBulk('{{ route('admin.corrections.bulk.reject') }}')" class="btn btn-sm btn-press" style="padding:7px 16px; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); border-radius:10px; font-size:0.82rem; font-weight:600; cursor:pointer;">
+                    <i class="bi bi-x-lg me-1"></i> Bulk Reject
+                </button>
+                <label class="ms-2 d-flex align-items-center gap-2" style="font-size:0.85rem; color:#b39b82; cursor:pointer; user-select:none;">
+                    <input type="checkbox" id="selectAll" onchange="toggleAll(this)" style="accent-color:var(--gold);"> Select All
+                </label>
+            </div>
 
-        {{ $corrections->links() }}
-    </form>
+            <div class="table-responsive">
+                <table class="adm-table table-responsive-card w-100" style="margin:0;">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;"></th>
+                            <th>Student</th>
+                            <th>Subject</th>
+                            <th>Date</th>
+                            <th>Requested Status</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($corrections as $correction)
+                        <tr>
+                            <td>
+                                @if($correction->status === 'pending')
+                                <input type="checkbox" name="ids[]" value="{{ $correction->id }}" class="correction-cb" style="accent-color:var(--gold);">
+                                @endif
+                            </td>
+                            <td data-label="Student">
+                                <div style="font-weight:600; color:#f3e7cd;">{{ $correction->user->name ?? '—' }}</div>
+                                <div style="font-size:0.75rem; color:#b39b82; font-family:monospace;">{{ $correction->user->student_number ?? '' }}</div>
+                            </td>
+                            <td data-label="Subject" style="color:#d4c5a9; font-weight:500;">
+                                {{ $correction->attendance->subject->name ?? $correction->attendance->subject_code ?? '—' }}
+                            </td>
+                            <td data-label="Date" style="color:#d4c5a9;">
+                                {{ $correction->attendance ? $correction->attendance->date->format('M d, Y') : '—' }}
+                            </td>
+                            <td data-label="Requested Status">
+                                <span class="badge" style="background:rgba(207,164,111,0.12); color:var(--gold); border:1px solid rgba(207,164,111,0.25); padding:4px 10px; border-radius:8px; font-weight:600; font-size:0.78rem;">
+                                    {{ $correction->requested_status ?? $correction->reason ?? 'Correction' }}
+                                </span>
+                            </td>
+                            <td data-label="Status" style="text-align:center;">
+                                @if($correction->status === 'pending')
+                                    <span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:1px solid rgba(245,158,11,0.3); padding:4px 10px; border-radius:99px; font-weight:600; font-size:0.75rem;">Pending</span>
+                                @elseif($correction->status === 'approved')
+                                    <span class="badge" style="background:rgba(34,197,94,0.15); color:#4ade80; border:1px solid rgba(34,197,94,0.3); padding:4px 10px; border-radius:99px; font-weight:600; font-size:0.75rem;">Approved</span>
+                                @else
+                                    <span class="badge" style="background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); padding:4px 10px; border-radius:99px; font-weight:600; font-size:0.75rem;">Rejected</span>
+                                @endif
+                            </td>
+                            <td data-label="Actions" style="text-align:center;">
+                                @if($correction->status === 'pending')
+                                <div class="d-flex justify-content-center gap-2">
+                                    <form method="POST" action="{{ route('admin.correction.approve', $correction) }}" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-press" style="padding:4px 12px; background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3); border-radius:8px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Approve Correction">
+                                            ✓ Approve
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('admin.correction.reject', $correction) }}" style="display:inline;">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-press" style="padding:4px 12px; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); border-radius:8px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Reject Correction">
+                                            ✕ Reject
+                                        </button>
+                                    </form>
+                                </div>
+                                @else
+                                    <span style="font-size:0.8rem; color:#8f826f;">Reviewed</span>
+                                @endif
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="p-0 border-0">
+                                <x-empty-state 
+                                    icon="pencil-square"
+                                    title="No Correction Requests Found"
+                                    message="There are currently no attendance correction requests matching your filter."
+                                />
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if(method_exists($corrections, 'hasPages') && $corrections->hasPages())
+            <div class="p-3 border-top" style="border-color:rgba(255,255,255,0.06) !important;">
+                {{ $corrections->links() }}
+            </div>
+            @endif
+        </form>
+    </x-card>
 </div>
 
 <script>
@@ -101,5 +151,3 @@ function submitBulk(url) {
 }
 </script>
 @endsection
-
-
