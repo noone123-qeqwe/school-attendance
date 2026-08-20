@@ -26,6 +26,11 @@
 
 <body>
 
+    <!-- Skip to main content link for keyboard/screen readers -->
+    <a href="#mainContent" class="visually-hidden-focusable" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
+        Skip to main content
+    </a>
+
     @auth
     <!-- Mobile overlay -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -289,20 +294,46 @@
         const sidebarOverlay = document.getElementById('sidebarOverlay');
 
         // ── TOAST HELPER ──
-        function showToast(message, type) {
+        function showToast(message, type = 'success', duration = 4500) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
-            const iconMap = { warning_3: 'bi-exclamation-octagon-fill', warning_2: 'bi-exclamation-triangle-fill', custom: 'bi-info-circle-fill', success: 'bi-check-circle-fill' };
-            const colorMap = { warning_3: 'background:rgba(239,68,68,0.15);color:#f87171;', warning_2: 'background:rgba(245,158,11,0.15);color:#fbbf24;', custom: 'background:rgba(59,130,246,0.15);color:#60a5fa;', success: 'background:rgba(34,197,94,0.16);color:#4ade80;' };
+            
+            const colors = {
+                success:   { border: '#4ade80', icon: 'check-circle-fill', bg: 'rgba(34,197,94,0.12)' },
+                error:     { border: '#f87171', icon: 'x-circle-fill', bg: 'rgba(239,68,68,0.12)' },
+                warning:   { border: '#fbbf24', icon: 'exclamation-triangle-fill', bg: 'rgba(245,158,11,0.12)' },
+                info:      { border: '#60a5fa', icon: 'info-circle-fill', bg: 'rgba(59,130,246,0.12)' },
+                warning_3: { border: '#f87171', icon: 'exclamation-octagon-fill', bg: 'rgba(239,68,68,0.15)' },
+                warning_2: { border: '#fbbf24', icon: 'exclamation-triangle-fill', bg: 'rgba(245,158,11,0.15)' },
+                custom:    { border: '#cfa46f', icon: 'bell-fill', bg: 'rgba(207,164,111,0.15)' }
+            };
+            
+            const style = colors[type] || colors.success;
             const toast = document.createElement('div');
-            toast.className = 'toast-item';
-            toast.innerHTML = '<div class="toast-icon" style="' + (colorMap[type] || colorMap.custom) + '"><i class="bi ' + (iconMap[type] || 'bi-bell-fill') + '"></i></div><div style="flex:1;min-width:0;">' + message + '</div>';
+            toast.className = 'modern-toast';
+            toast.style.borderLeft = `4px solid ${style.border}`;
+            toast.innerHTML = `
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: ${style.bg}; display: flex; align-items: center; justify-content: center; color: ${style.border}; flex-shrink: 0;">
+                    <i class="bi bi-${style.icon}"></i>
+                </div>
+                <div class="modern-toast-content">${message}</div>
+                <button class="modern-toast-close" onclick="this.parentElement.remove()" aria-label="Close notification">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
             container.appendChild(toast);
-            setTimeout(function() {
-                toast.classList.add('toast-out');
-                setTimeout(function() { toast.remove(); }, 300);
-            }, 2000);
+            setTimeout(() => {
+                toast.style.animation = 'toastSlideOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         }
+
+        // Auto-show Laravel flash messages
+        @if(session('success')) showToast(@json(session('success')), 'success'); @endif
+        @if(session('error')) showToast(@json(session('error')), 'error'); @endif
+        @if(session('warning')) showToast(@json(session('warning')), 'warning'); @endif
+        @if(session('info')) showToast(@json(session('info')), 'info'); @endif
+        @if(session('status')) showToast(@json(session('status')), 'info'); @endif
 
         // Check if mobile
         const isMobile = window.innerWidth <= 768;
@@ -837,6 +868,25 @@
     </script>
     @endauth
     
+    <!-- Global Loading Overlay -->
+    <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(17,10,10,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
+        <div style="width: 56px; height: 56px; border: 3px solid rgba(212,175,55,0.15); border-top-color: #cfa46f; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        <p style="color: #cfa46f; margin-top: 16px; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.02em;">Processing...</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('form:not([data-no-loader])').forEach(form => {
+                form.addEventListener('submit', function() {
+                    if (this.checkValidity() && !this.getAttribute('target') && this.method.toUpperCase() === 'POST') {
+                        const loader = document.getElementById('global-loader');
+                        if (loader) loader.style.display = 'flex';
+                    }
+                });
+            });
+        });
+    </script>
+
     @stack('scripts')
 </body>
 </html>

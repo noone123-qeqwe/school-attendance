@@ -1657,3 +1657,270 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
     display: flex; justify-content: flex-end; gap: 14px;
     background: rgba(0,0,0,0.2);
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   GLOBAL COMPONENT IMPROVEMENTS & ANIMATIONS (Parts 6 & 7)
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* ── 6.1 Pagination Redesign ── */
+.pagination {
+    gap: 6px;
+    margin-bottom: 0;
+}
+.page-link {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #D1C5B4;
+    border-radius: 10px !important;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.page-link:hover {
+    background: rgba(212,175,55,0.1);
+    border-color: rgba(212,175,55,0.3);
+    color: #cfa46f;
+    transform: translateY(-1px);
+}
+.page-item.active .page-link {
+    background: linear-gradient(135deg, #7A1A1A, #9c2727) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 4px 12px rgba(122,26,26,0.3);
+}
+.page-item.disabled .page-link {
+    background: rgba(255,255,255,0.02);
+    color: #5a5246;
+    border-color: rgba(255,255,255,0.04);
+}
+
+/* ── 6.3 Loading Skeleton Screens ── */
+.skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+}
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.skeleton-text { height: 16px; margin-bottom: 8px; border-radius: 6px; }
+.skeleton-title { height: 24px; width: 60%; margin-bottom: 16px; border-radius: 8px; }
+.skeleton-circle { width: 40px; height: 40px; border-radius: 50%; }
+.skeleton-card { height: 120px; border-radius: 16px; margin-bottom: 16px; }
+
+/* ── 6.5 Form Validation Visual Feedback ── */
+.form-control.is-valid {
+    border-color: #4ade80 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%234ade80' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+.form-control.is-invalid {
+    border-color: #f87171 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23f87171'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23f87171' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
+.invalid-feedback {
+    color: #f87171;
+    font-size: 0.8rem;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.invalid-feedback::before {
+    content: '\F332';
+    font-family: 'bootstrap-icons';
+    font-size: 0.75rem;
+}
+
+/* ── 6.6 Toast Notification System ── */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    pointer-events: none;
+}
+.modern-toast {
+    background: rgba(30, 21, 21, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+    min-width: 320px;
+    max-width: 440px;
+    pointer-events: auto;
+    animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.3s ease;
+}
+@keyframes toastSlideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@keyframes toastSlideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+}
+.modern-toast-content {
+    flex: 1;
+    color: #f3ede4;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+.modern-toast-close {
+    background: none;
+    border: none;
+    color: #a39683;
+    font-size: 1.15rem;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s;
+}
+.modern-toast-close:hover {
+    color: #fff;
+}
+
+/* ── 6.7 Global Loading Overlay ── */
+#global-loader {
+    position: fixed;
+    inset: 0;
+    background: rgba(17,10,10,0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 6.8 Mobile-First Responsive Utilities ── */
+.d-mobile-none { display: none !important; }
+@media (min-width: 768px) {
+    .d-mobile-none { display: block !important; }
+    .d-desktop-none { display: none !important; }
+}
+
+/* Mobile card tables */
+@media (max-width: 767px) {
+    .table-responsive-card thead { display: none; }
+    .table-responsive-card tbody tr {
+        display: block;
+        background: rgba(30,21,21,0.6);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        margin-bottom: 12px;
+        padding: 4px 0;
+    }
+    .table-responsive-card tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .table-responsive-card tbody td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: #8f826f;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+    .table-responsive-card tbody td:last-child { border-bottom: none; }
+    
+    /* Stack stats on mobile */
+    .stat-grid-4, .stat-grid-5, .stat-grid-3 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .stat-rate { grid-column: span 2; }
+    
+    /* Full-width buttons on mobile */
+    .action-buttons .action-btn,
+    .qa-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
+
+/* ── Part 7: Animations & Micro-Interactions ── */
+.animate-fade-up {
+    animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+}
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.1s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.2s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.3s; }
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hover lift effect for cards */
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+.hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+/* Button press effect */
+.btn-press:active {
+    transform: scale(0.96);
+}
+
+/* Smooth page transitions */
+.main-content {
+    animation: pageEnter 0.4s ease;
+}
+@keyframes pageEnter {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Focus rings */
+input:focus, select:focus, textarea:focus, button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(212,175,55,0.2);
+}
+
+/* Status indicator pulse */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+.status-dot.pulse {
+    animation: statusPulse 2s infinite;
+}
+@keyframes statusPulse {
+    0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+    50% { box-shadow: 0 0 0 6px transparent; }
+}
+
