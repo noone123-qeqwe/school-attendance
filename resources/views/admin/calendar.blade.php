@@ -4,109 +4,25 @@
 
 @section('content')
 <div id="holidayCalendarPage" class="holiday-dashboard">
-<style>
-    .holiday-dashboard .glass-card {
-        background: rgba(26, 16, 14, 0.65);
-        border: 1px solid rgba(255, 215, 145, 0.08);
-        backdrop-filter: blur(20px);
-        box-shadow: 0 32px 80px rgba(0,0,0,0.5);
-        border-radius: 24px;
-        overflow: hidden;
-    }
-    .holiday-dashboard .glass-card .adm-card-head {
-        padding: 22px 28px;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-    .holiday-dashboard .glass-card .adm-card-title {
-        font-size: 1.2rem;
-        font-weight: 800;
-        color: #f3ede4;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .holiday-dashboard .glass-card .adm-card-icon {
-        background: rgba(220, 38, 38, 0.12);
-        color: #f87171;
-        box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.25);
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 12px;
-        font-size: 1.15rem;
-    }
-
-    .holiday-dashboard .calendar-controls {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-        justify-content: flex-end;
-    }
-    .holiday-dashboard .adm-btn-ghost {
-        background: rgba(255,255,255,0.04);
-        color: #b39b82;
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 10px;
-        padding: 8px 14px;
-        font-weight: 600;
-        font-size: 0.82rem;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-    }
-    .holiday-dashboard .adm-btn-ghost:hover {
-        background: rgba(255,255,255,0.08);
-        color: #cfa46f;
-        border-color: rgba(207, 164, 111, 0.3);
-        transform: translateY(-1px);
-    }
-    .holiday-dashboard .adm-btn-primary {
-        background: linear-gradient(135deg, #cfa46f, #b8893e);
-        color: #1a0e0b;
-        border: none;
-        border-radius: 10px;
-        padding: 9px 20px;
-        font-weight: 700;
-        font-size: 0.84rem;
-        box-shadow: 0 4px 16px rgba(207, 164, 111, 0.25);
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-    .holiday-dashboard .adm-btn-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(207, 164, 111, 0.35);
-    }
-</style>
 
 {{-- ─── TOP HEADER ─── --}}
-<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 28px;">
     <div>
-        <h1 style="font-size: 1.4rem; font-weight: 800; color: #f3ede4; margin: 0; display: flex; align-items: center; gap: 10px;">
-            <i class="bi bi-calendar-heart-fill" style="color: #f87171;"></i> Holiday & Events Calendar
+        <h1 style="font-size: 1.45rem; font-weight: 800; color: #f3ede4; margin: 0; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(220, 38, 38, 0.12); color: #f87171; border: 1px solid rgba(220, 38, 38, 0.25); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                <i class="bi bi-calendar-heart-fill"></i>
+            </div>
+            Holiday & Events Calendar
         </h1>
-        <p style="font-size: 0.82rem; color: #b39b82; margin: 4px 0 0 0;">Manage national & school holidays, suspensions, event schedules, and announcements.</p>
+        <p style="font-size: 0.84rem; color: #b39b82; margin: 6px 0 0 0;">Manage national & school holidays, suspensions, event schedules, and campus announcements.</p>
     </div>
 
-    <button type="button" class="adm-btn adm-btn-primary" onclick="openHcalModal()">
+    <button type="button" class="adm-btn adm-btn-primary" onclick="openHcalModal()" style="background: linear-gradient(135deg, #cfa46f, #b8893e); color: #1a0e0b; border: none; border-radius: 12px; padding: 10px 22px; font-weight: 700; font-size: 0.85rem; box-shadow: 0 4px 16px rgba(207, 164, 111, 0.25); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
         <i class="bi bi-plus-lg"></i> Add Holiday / Event
     </button>
 </div>
 
-{{-- ─── MAIN CALENDAR CARD ─── --}}
+{{-- ─── CALENDAR CONTAINER ─── --}}
 @php
     $hcalStart = \Carbon\Carbon::create($calYear, $calMonth, 1);
     $hcalEnd = $hcalStart->copy()->endOfMonth();
@@ -117,92 +33,70 @@
     $hcalToday = now()->day;
 @endphp
 
-<div class="adm-card glass-card">
-    <div class="adm-card-head">
-        <div class="adm-card-title">
-            <div class="adm-card-icon">
-                <i class="bi bi-calendar-check-fill"></i>
-            </div>
-            Monthly Schedule
-        </div>
-        <div class="calendar-controls">
-            <a href="?hcal_year={{ now()->year }}&hcal_month={{ now()->month }}" class="adm-btn adm-btn-ghost">
-                Today
-            </a>
-            <a href="?hcal_year={{ $hcalPrev->year }}&hcal_month={{ $hcalPrev->month }}" class="adm-btn adm-btn-ghost" style="padding: 8px 12px;" title="Previous Month">
+<div class="hcal-container">
+    <div class="hcal-calendar-pane">
+        {{-- Month Navigation Header (Matches Screenshot) --}}
+        <div class="hcal-nav">
+            <a href="?hcal_year={{ $hcalPrev->year }}&hcal_month={{ $hcalPrev->month }}" class="hcal-nav-btn" title="Previous Month">
                 <i class="bi bi-chevron-left"></i>
             </a>
-            <span style="font-weight: 700; color: #f3ede4; min-width: 140px; text-align: center; font-size: 1.05rem;">
-                {{ $hcalStart->format('F Y') }}
-            </span>
-            <a href="?hcal_year={{ $hcalNext->year }}&hcal_month={{ $hcalNext->month }}" class="adm-btn adm-btn-ghost" style="padding: 8px 12px;" title="Next Month">
+            <div class="hcal-month-label">{{ $hcalStart->format('F Y') }}</div>
+            <a href="?hcal_year={{ $hcalNext->year }}&hcal_month={{ $hcalNext->month }}" class="hcal-nav-btn" title="Next Month">
                 <i class="bi bi-chevron-right"></i>
             </a>
         </div>
-    </div>
-    
-    <div style="padding: 28px 24px;">
-        <div class="hcal-container" style="display: block; max-width: 640px; margin: 0 auto;">
-            <div class="hcal-calendar-pane" style="width: 100%;">
-                <div class="hcal-nav" style="margin-bottom: 16px;">
-                    <a href="?hcal_year={{ $hcalPrev->year }}&hcal_month={{ $hcalPrev->month }}" class="hcal-nav-btn">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                    <div class="hcal-month-label" style="font-size: 1.15rem; font-weight: 800;">{{ $hcalStart->format('F Y') }}</div>
-                    <a href="?hcal_year={{ $hcalNext->year }}&hcal_month={{ $hcalNext->month }}" class="hcal-nav-btn">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </div>
 
-                <div class="hcal-day-labels" style="gap: 8px; margin-bottom: 8px;">
-                    @foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $lbl)
-                        <div class="hcal-day-label" style="font-size: 0.76rem; font-weight: 700;">{{ $lbl }}</div>
-                    @endforeach
-                </div>
+        {{-- Weekdays Header Bar --}}
+        <div class="hcal-day-labels">
+            @foreach(['SUN','MON','TUE','WED','THU','FRI','SAT'] as $lbl)
+                <div class="hcal-day-label">{{ $lbl }}</div>
+            @endforeach
+        </div>
 
-                <div class="hcal-grid" style="gap: 8px;">
-                    {{-- Empty cells before first day --}}
-                    @for($i = 0; $i < $hcalStartDow; $i++)
-                        <div class="hcal-day empty"></div>
-                    @endfor
+        {{-- 7-Column Days Grid --}}
+        <div class="hcal-grid">
+            {{-- Empty leading cells --}}
+            @for($i = 0; $i < $hcalStartDow; $i++)
+                <div class="hcal-day empty"></div>
+            @endfor
 
-                    @for($d = 1; $d <= $hcalEnd->day; $d++)
-                        @php
-                            $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
-                            $formattedDate = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('l, F j, Y');
-                            $isToday = $hcalIsCurrentMonth && $d === $hcalToday;
-                            $isSunday = \Carbon\Carbon::create($calYear, $calMonth, $d)->dayOfWeek === 0;
-                            $dayEvents = $hcalEventsMap[$dateKey] ?? [];
-                            $hasEvents = count($dayEvents) > 0;
-                            $isHoliday = collect($dayEvents)->where('source', 'holiday')->isNotEmpty();
+            {{-- Day cells --}}
+            @for($d = 1; $d <= $hcalEnd->day; $d++)
+                @php
+                    $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
+                    $formattedDate = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('l, F j, Y');
+                    $isToday = $hcalIsCurrentMonth && $d === $hcalToday;
+                    $isSunday = \Carbon\Carbon::create($calYear, $calMonth, $d)->dayOfWeek === 0;
+                    $dayEvents = $hcalEventsMap[$dateKey] ?? [];
+                    $hasEvents = count($dayEvents) > 0;
+                    $isHoliday = collect($dayEvents)->where('source', 'holiday')->isNotEmpty();
 
-                            $cls = '';
-                            if ($isToday) $cls .= ' today';
-                            if ($isSunday) $cls .= ' sunday';
-                            if ($hasEvents) $cls .= ' has-event';
-                            if ($isHoliday) $cls .= ' holiday-day';
-                        @endphp
-                        <div class="hcal-day{{ $cls }}" style="height: 48px; border-radius: 10px;" onclick="openHcalDateDetails('{{ $dateKey }}', '{{ $formattedDate }}')" title="{{ $hasEvents ? collect($dayEvents)->pluck('name')->join(', ') : 'Click to view or add events' }}">
-                            <div class="hcal-day-num" style="font-size: 0.85rem;">{{ $d }}</div>
-                            @if($hasEvents)
-                                <div class="hcal-dots">
-                                    @foreach(collect($dayEvents)->unique('type')->take(3) as $evt)
-                                        <div class="hcal-dot {{ $evt['type'] }}"></div>
-                                    @endforeach
-                                </div>
-                            @endif
+                    $cls = '';
+                    if ($isToday) $cls .= ' today';
+                    if ($isSunday) $cls .= ' sunday';
+                    if ($hasEvents) $cls .= ' has-event';
+                    if ($isHoliday) $cls .= ' holiday-day';
+                @endphp
+                <div class="hcal-day{{ $cls }}" onclick="openHcalDateDetails('{{ $dateKey }}', '{{ $formattedDate }}')" title="{{ $hasEvents ? collect($dayEvents)->pluck('name')->join(', ') : 'Click to view or add events' }}">
+                    <div class="hcal-day-num">{{ $d }}</div>
+                    @if($hasEvents)
+                        <div class="hcal-dots">
+                            @foreach(collect($dayEvents)->unique('type')->take(3) as $evt)
+                                <div class="hcal-dot {{ $evt['type'] }}"></div>
+                            @endforeach
                         </div>
-                    @endfor
+                    @endif
                 </div>
+            @endfor
+        </div>
 
-                <div class="hcal-legend" style="margin-top: 24px; padding-top: 18px; gap: 16px; border-top: 1px solid rgba(255,255,255,0.06);">
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#dc2626;"></div> National</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#d97706;"></div> Local</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#7c2d12;"></div> School</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#6366f1;"></div> No Class</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#60a5fa;"></div> Announcement</div>
-                </div>
-            </div>
+        {{-- Legend --}}
+        <div class="hcal-legend">
+            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#dc2626;"></div> National</div>
+            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#d97706;"></div> Local</div>
+            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#ea580c;"></div> School</div>
+            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#6366f1;"></div> No Class</div>
+            <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#60a5fa;"></div> Announcement</div>
         </div>
     </div>
 </div>
@@ -311,7 +205,7 @@ function openHcalDateDetails(dateKey, formattedDate) {
             const typeColorMap = {
                 national: '#dc2626',
                 local: '#d97706',
-                school: '#7c2d12',
+                school: '#ea580c',
                 no_class: '#6366f1',
                 announcement: '#60a5fa',
                 event: '#a78bfa',

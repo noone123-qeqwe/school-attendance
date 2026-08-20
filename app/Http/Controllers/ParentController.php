@@ -511,11 +511,21 @@ class ParentController extends Controller
         return $pdf->download('Attendance_Report_' . $child->student_number . '.pdf');
     }
 
-    public function calendar()
+    public function calendar(Request $request, \App\Services\AnalyticsService $analyticsService)
     {
         $parent = Auth::user();
         $children = $parent->children()->get();
-        return view('parent.calendar', compact('children'));
+        $calYear = (int)$request->input('hcal_year', $request->input('year', now()->year));
+        $calMonth = (int)$request->input('hcal_month', $request->input('month', now()->month));
+
+        $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
+        $hcalEventsMap = $dashData['hcalEventsMap'] ?? [];
+        $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
+
+        $year = $calYear;
+        $month = $calMonth;
+
+        return view('parent.calendar', compact('children', 'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming', 'year', 'month'));
     }
 
     public function data(Request $request, \App\Services\CalendarService $calendarService)

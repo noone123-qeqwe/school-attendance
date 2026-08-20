@@ -1612,27 +1612,22 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     // HOLIDAY CALENDAR MANAGEMENT
     // ─────────────────────────────────────────
-    public function calendar(Request $request)
+    public function calendar(Request $request, \App\Services\AnalyticsService $analyticsService)
     {
         $teacher = Auth::user();
-        $year = $request->get('year', now()->year);
-        $month = $request->get('month', now()->month);
+        $calYear = (int)$request->input('hcal_year', $request->input('year', now()->year));
+        $calMonth = (int)$request->input('hcal_month', $request->input('month', now()->month));
 
-        // Get holidays for the current month
-        $holidays = Holiday::active()
-            ->forMonth($year, $month)
-            ->orderBy('date')
-            ->get();
+        $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
+        $hcalEventsMap = $dashData['hcalEventsMap'] ?? [];
+        $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
 
-        // Get all holidays for the year (for calendar display)
-        $yearHolidays = Holiday::active()
-            ->whereYear('date', $year)
-            ->get()
-            ->keyBy(function($holiday) {
-                return $holiday->date->format('Y-m-d');
-            });
+        // Also keep legacy variables in compact for backwards compatibility if needed
+        $year = $calYear;
+        $month = $calMonth;
+        $holidays = Holiday::active()->forMonth($year, $month)->orderBy('date')->get();
 
-        return view('teacher.calendar', compact('teacher', 'holidays', 'yearHolidays', 'year', 'month'));
+        return view('teacher.calendar', compact('teacher', 'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming', 'year', 'month', 'holidays'));
     }
 
     public function storeHoliday(Request $request)
