@@ -45,19 +45,19 @@ class HomeController extends Controller
         }
         return redirect()->route('home')->with('success', 'Password updated successfully. Welcome!');
     }
-    public function index(Request $request, \App\Services\AnalyticsService $analyticsService)
-    {
-        $user = Auth::user();
+   public function index()
+{
+    $user = Auth::user();
 
-        // Admins don't have a student dashboard — send them to admin panel
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
+    // Admins don't have a student dashboard — send them to admin panel
+    if ($user->isAdmin()) {
+        return redirect()->route('admin.dashboard');
+    }
 
-        // Teachers don't have a student dashboard — send them to teacher panel
-        if ($user->isTeacher()) {
-            return redirect()->route('teacher.dashboard');
-        }
+    // Teachers don't have a student dashboard — send them to teacher panel
+    if ($user->isTeacher()) {
+        return redirect()->route('teacher.dashboard');
+    }
 
     // Ensure we're dealing with a student
     if (!$user->isStudent()) {
@@ -370,13 +370,6 @@ class HomeController extends Controller
     }
     $subjectStats = $subjectStats->sortBy('rate')->values();
 
-    // 14. Holiday & Events Calendar Data
-    $calYear = (int)$request->input('cal_year', $request->input('hcal_year', now()->year));
-    $calMonth = (int)$request->input('cal_month', $request->input('hcal_month', now()->month));
-    $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
-    $hcalEventsMap = $dashData['hcalEventsMap'] ?? [];
-    $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
-
     return view('home', compact(
         'currentClass',
         'attendanceStatus',
@@ -397,11 +390,7 @@ class HomeController extends Controller
         'announcements',
         'calendarEvents',
         'eventsMap',
-        'subjectStats',
-        'calYear',
-        'calMonth',
-        'hcalEventsMap',
-        'hcalUpcoming'
+        'subjectStats'
     ));
 }
 
@@ -706,14 +695,21 @@ class HomeController extends Controller
     }
 
     /**
-     * Student calendar view.
+     * Student calendar view (Holiday & Events Calendar).
      */
-    public function calendar()
+    public function calendar(Request $request, \App\Services\AnalyticsService $analyticsService)
     {
-        $year = request('year', now()->year);
-        $month = request('month', now()->month);
-        
-        return view('student.calendar', compact('year', 'month'));
+        $calYear = (int)$request->input('year', $request->input('hcal_year', now()->year));
+        $calMonth = (int)$request->input('month', $request->input('hcal_month', now()->month));
+
+        $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
+        $hcalEventsMap = $dashData['hcalEventsMap'] ?? [];
+        $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
+
+        $year = $calYear;
+        $month = $calMonth;
+
+        return view('student.calendar', compact('year', 'month', 'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'));
     }
 
     public function calendarData(Request $request, \App\Services\CalendarService $calendarService)
