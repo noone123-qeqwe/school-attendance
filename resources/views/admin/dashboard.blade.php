@@ -388,12 +388,7 @@
     $hcalToday = now()->day;
 @endphp
 
-<x-card type="section" class="adm-card dash-animate" style="margin-bottom: 28px;" title="Holiday & Events Calendar">
-    <x-slot:icon>
-        <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:#f87171;">
-            <i class="bi bi-calendar-heart-fill"></i>
-        </div>
-    </x-slot:icon>
+<x-card type="section" class="adm-card dash-animate" style="margin-bottom: 28px;" title="Holiday & Events Calendar" icon="bi bi-calendar-heart-fill">
     <x-slot:headerActions>
         <button type="button" class="ent-btn ent-btn-sm ent-btn-primary" onclick="openHcalModal()">
             <i class="bi bi-plus-lg"></i> Add Event
