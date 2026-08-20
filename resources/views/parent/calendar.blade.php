@@ -369,6 +369,101 @@
 .subject-card-time    { font-size: 0.8rem; color: #8b7d70; margin-bottom: 1px; }
 .subject-card-teacher { font-size: 0.8rem; color: #a09080; }
 .subject-card-badge   { padding: 5px 11px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; }
+
+/* ── Monthly Stats Card ───────────────────────────────── */
+.scal-stats-card {
+    background: #0f0a08;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 22px;
+    padding: 20px 22px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+.scal-stats-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #cfa46f;
+    margin-bottom: 14px;
+}
+.scal-rate-wrap {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.scal-rate-ring {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    font-weight: 800;
+    transition: background 0.5s ease, color 0.3s ease;
+}
+.scal-stats-pills { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.scal-stat-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: #c0b5ad;
+}
+.scal-stat-pill-left { display: flex; align-items: center; gap: 7px; }
+.scal-stat-pill-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.scal-stat-pill-val  { font-weight: 700; font-size: 0.88rem; color: #f3ede4; }
+
+/* ── Today button ─────────────────────────────────────── */
+.scal-today-btn {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #cfa46f;
+    background: rgba(207,164,111,0.07);
+    border: 1px solid rgba(207,164,111,0.2);
+    border-radius: 6px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: block;
+    margin-top: 5px;
+}
+.scal-today-btn:hover {
+    background: rgba(207,164,111,0.18);
+    border-color: rgba(207,164,111,0.5);
+    color: #fff;
+}
+
+/* ── Multi-dot row on tiles ───────────────────────────── */
+.scal-dots-row {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+    justify-content: center;
+    min-height: 7px;
+}
+.scal-mdot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* ── Subject count chip ───────────────────────────────── */
+.scal-chip {
+    font-size: 0.54rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 1px 5px;
+    line-height: 1.5;
+    border: 1px solid rgba(255,255,255,0.06);
+}
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
@@ -381,9 +476,12 @@
             <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month">
                 <i class="bi bi-chevron-left"></i>
             </button>
-            <span class="scal-nav-title" id="scalMonthLabel">
-                {{ \Carbon\Carbon::now()->format('F Y') }}
-            </span>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                <span class="scal-nav-title" id="scalMonthLabel">
+                    {{ \Carbon\Carbon::now()->format('F Y') }}
+                </span>
+                <button class="scal-today-btn" onclick="scalGoToday()" id="scalTodayBtn">Today</button>
+            </div>
             <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month">
                 <i class="bi bi-chevron-right"></i>
             </button>
@@ -402,6 +500,34 @@
 
     {{-- SIDE PANEL --}}
     <div class="scal-side">
+        {{-- Monthly Stats --}}
+        <div class="scal-stats-card">
+            <div class="scal-stats-label" id="scalStatsMonth">Loading…</div>
+            <div class="scal-rate-wrap">
+                <div class="scal-rate-ring" id="scalRateRing" style="color:#8b7d70;background:rgba(255,255,255,0.04);">—</div>
+                <div class="scal-stats-pills">
+                    <div class="scal-stat-pill">
+                        <span class="scal-stat-pill-left">
+                            <span class="scal-stat-pill-dot" style="background:#10b981;"></span>Present
+                        </span>
+                        <span class="scal-stat-pill-val" id="scalStatPresent">—</span>
+                    </div>
+                    <div class="scal-stat-pill">
+                        <span class="scal-stat-pill-left">
+                            <span class="scal-stat-pill-dot" style="background:#f59e0b;"></span>Late
+                        </span>
+                        <span class="scal-stat-pill-val" id="scalStatLate">—</span>
+                    </div>
+                    <div class="scal-stat-pill">
+                        <span class="scal-stat-pill-left">
+                            <span class="scal-stat-pill-dot" style="background:#ef4444;"></span>Absent
+                        </span>
+                        <span class="scal-stat-pill-val" id="scalStatAbsent">—</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Legend --}}
         <div class="scal-legend-card">
             <div class="scal-legend-title">Legend</div>
@@ -547,6 +673,78 @@ function scalSwitchChild(childId) {
     scalLoadAndRender();
 }
 
+/* ── Go to today ─────────────────────────────────────────── */
+function scalGoToday() {
+    const now = new Date();
+    scalYear  = now.getFullYear();
+    scalMonth = now.getMonth() + 1;
+    scalLoadAndRender();
+}
+
+/* ── Get ordered statuses present on a day ───────────────── */
+function scalGetDayStatuses(dateStr) {
+    const evts = scalEventMap[dateStr];
+    if (!evts || evts.length === 0) return [];
+    let hasPresent = false, hasLate = false, hasAbsent = false,
+        hasEvent   = false, hasHoliday = false, hasExam = false;
+    evts.forEach(ev => {
+        const t = (ev.type || '').toLowerCase();
+        const s = (ev.status || '').toLowerCase();
+        if (t === 'attendance') {
+            if (s === 'absent')       hasAbsent  = true;
+            else if (s === 'late')    hasLate    = true;
+            else if (s === 'present') hasPresent = true;
+        } else if (t === 'exam')    hasExam    = true;
+          else if (t === 'holiday') hasHoliday = true;
+          else                      hasEvent   = true;
+    });
+    const result = [];
+    if (hasAbsent)  result.push('absent');
+    if (hasLate)    result.push('late');
+    if (hasPresent) result.push('present');
+    if (hasExam)    result.push('exam');
+    if (hasEvent)   result.push('event');
+    if (hasHoliday) result.push('holiday');
+    return result;
+}
+
+/* ── Compute & update the monthly stats card ─────────────── */
+function scalUpdateStats() {
+    let present = 0, late = 0, absent = 0;
+    Object.values(scalEventMap).forEach(evts => {
+        evts.forEach(ev => {
+            if ((ev.type || '').toLowerCase() === 'attendance') {
+                const s = (ev.status || '').toLowerCase();
+                if (s === 'present')      present++;
+                else if (s === 'late')    late++;
+                else if (s === 'absent')  absent++;
+            }
+        });
+    });
+    const total = present + late + absent;
+    const rate  = total > 0 ? Math.round(((present + late) / total) * 100) : null;
+
+    document.getElementById('scalStatsMonth').textContent =
+        `${MONTH_NAMES[scalMonth-1]} ${scalYear} — Monthly Summary`;
+    document.getElementById('scalStatPresent').textContent = present;
+    document.getElementById('scalStatLate').textContent    = late;
+    document.getElementById('scalStatAbsent').textContent  = absent;
+
+    const ring = document.getElementById('scalRateRing');
+    if (rate !== null) {
+        const rateColor = rate >= 90 ? '#10b981' : rate >= 75 ? '#f59e0b' : '#ef4444';
+        ring.textContent = rate + '%';
+        ring.style.color      = rateColor;
+        ring.style.background = `conic-gradient(${rateColor} ${rate}%, rgba(255,255,255,0.04) 0%)`;
+        ring.style.boxShadow  = `0 0 0 4px ${rateColor}18, inset 0 0 0 3px rgba(0,0,0,0.4)`;
+    } else {
+        ring.textContent = '—';
+        ring.style.color      = '#8b7d70';
+        ring.style.background = 'rgba(255,255,255,0.04)';
+        ring.style.boxShadow  = 'none';
+    }
+}
+
 /* ── Fetch events for a month range ─────────────────────── */
 function scalFetchEvents(year, month, cb) {
     const start   = `${year}-${String(month).padStart(2,'0')}-01`;
@@ -589,13 +787,27 @@ function scalDominantStatus(dateStr) {
 }
 
 /* ── Build & render the grid ────────────────────────────── */
+const DOT_COLORS = {
+    present : '#10b981',
+    late    : '#f59e0b',
+    absent  : '#ef4444',
+    exam    : '#ec4899',
+    event   : '#8b5cf6',
+    holiday : '#4ade80',
+};
+
 function scalRender() {
     document.getElementById('scalMonthLabel').textContent =
         `${MONTH_NAMES[scalMonth-1]} ${scalYear}`;
 
+    // Hide Today button if already on current month
+    const now = new Date();
+    const isCurrentMonth = (scalYear === now.getFullYear() && scalMonth === now.getMonth() + 1);
+    document.getElementById('scalTodayBtn').style.opacity = isCurrentMonth ? '0' : '1';
+    document.getElementById('scalTodayBtn').style.pointerEvents = isCurrentMonth ? 'none' : 'auto';
+
     const grid     = document.getElementById('scalGrid');
-    const today    = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 
     const firstDay    = new Date(scalYear, scalMonth - 1, 1).getDay();
     const daysInMonth = new Date(scalYear, scalMonth, 0).getDate();
@@ -612,22 +824,38 @@ function scalRender() {
         const isSun   = dow === 0;
         const isToday = dateStr === todayStr;
         const status  = scalDominantStatus(dateStr);
+        const statuses = scalGetDayStatuses(dateStr);
 
         let classes = 'scal-tile';
         if (isSun)   classes += ' sunday';
         if (isToday) classes += ' today';
         if (status)  classes += ' ' + STATUS_CLASS[status];
 
-        const dotStyle = status ? '' : 'opacity:0;';
+        // Multi-dot row (up to 3 statuses)
+        const dotsHtml = statuses.length > 0
+            ? statuses.slice(0, 3).map(s =>
+                `<span class="scal-mdot" style="background:${DOT_COLORS[s]|'#fff'};"></span>`
+              ).join('')
+            : '';
+
+        // Subject count chip for attendance days
+        const attCount = (scalEventMap[dateStr] || []).filter(e =>
+            (e.type || '').toLowerCase() === 'attendance'
+        ).length;
+        const chipHtml = attCount > 0
+            ? `<span class="scal-chip">${attCount} subj</span>`
+            : '';
 
         html += `
         <div class="${classes}" data-date="${dateStr}" onclick="scalDayClick('${dateStr}')">
             <span class="scal-num">${d}</span>
-            <span class="scal-dot" style="${dotStyle}"></span>
+            <div class="scal-dots-row">${dotsHtml}</div>
+            ${chipHtml}
         </div>`;
     }
 
     grid.innerHTML = html;
+    scalUpdateStats();
 }
 
 /* ── Navigate ───────────────────────────────────────────── */
