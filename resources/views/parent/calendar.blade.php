@@ -290,41 +290,162 @@
     .scal-nav-btn   { width: 40px; height: 40px; font-size: 1rem; border-radius: 11px; }
 }
 
-/* ── Student dropdown selector ──────────────────────── */
-.scal-student-select-row {
+/* ── Custom Luxury Student Picker ─────────────────────── */
+.scal-student-custom-picker {
+    background: linear-gradient(135deg, rgba(32, 20, 15, 0.7) 0%, rgba(20, 10, 5, 0.85) 100%);
+    border: 1px solid rgba(207, 164, 111, 0.25);
+    border-radius: 18px;
+    padding: 12px 18px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+    margin-bottom: 22px;
+}
+.scal-picker-title {
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #cfa46f;
+}
+.scal-picker-trigger {
+    width: 100%;
+    background: rgba(15, 10, 8, 0.95);
+    border: 1px solid rgba(207, 164, 111, 0.35);
+    border-radius: 14px;
+    padding: 8px 14px;
+    color: #f3ede4;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 20px;
-    padding: 12px 18px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(207, 164, 111, 0.2);
-    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
-.scal-student-select-label {
+.scal-picker-trigger:hover, .scal-picker-trigger[aria-expanded="true"] {
+    border-color: rgba(207, 164, 111, 0.65);
+    background: rgba(26, 18, 14, 0.98);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(207, 164, 111, 0.15);
+}
+.scal-picker-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7A1A1A, #3a1010);
+    border: 1.5px solid rgba(207, 164, 111, 0.5);
+    color: #f3ede4;
+    font-weight: 800;
     font-size: 0.78rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+.scal-picker-avatar.mini {
+    width: 30px;
+    height: 30px;
+    font-size: 0.72rem;
+}
+.scal-picker-name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: #f3ede4;
+    line-height: 1.2;
+}
+.scal-picker-sub {
+    font-size: 0.72rem;
+    color: #b39b82;
+    font-family: monospace;
+    margin-top: 1px;
+}
+.scal-picker-chevron {
+    color: #cfa46f;
+    font-size: 0.85rem;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+.scal-picker-trigger[aria-expanded="true"] .scal-picker-chevron {
+    transform: rotate(180deg);
+}
+.scal-picker-menu {
+    background: #140d07 !important;
+    border: 1px solid rgba(207, 164, 111, 0.35) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(207, 164, 111, 0.1) !important;
+    min-width: 280px;
+    z-index: 1050;
+    margin-top: 8px !important;
+}
+.scal-picker-item {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #f3ede4;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 2px;
+}
+.scal-picker-item:hover {
+    background: rgba(207, 164, 111, 0.1);
+    border-color: rgba(207, 164, 111, 0.25);
+    color: #fff;
+    transform: translateX(2px);
+}
+.scal-picker-item.active {
+    background: rgba(207, 164, 111, 0.15);
+    border-color: rgba(207, 164, 111, 0.4);
+    color: #fff;
+}
+.scal-picker-item-name {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: #f3ede4;
+}
+.scal-picker-item-sub {
+    font-size: 0.72rem;
+    color: #b39b82;
+    font-family: monospace;
+}
+.scal-picker-check {
+    color: #cfa46f;
+    font-size: 1.1rem;
+    font-weight: 800;
+}
+
+/* Single student banner */
+.scal-single-student-card {
+    background: linear-gradient(135deg, rgba(32, 20, 15, 0.6) 0%, rgba(20, 10, 5, 0.8) 100%);
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 16px;
+    padding: 12px 18px;
+    margin-bottom: 22px;
+}
+.scal-single-label {
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.08em;
     color: #cfa46f;
-    margin: 0;
 }
-.scal-select {
-    background: #140d07 !important;
-    border: 1px solid rgba(207, 164, 111, 0.3) !important;
-    color: #f3ede4 !important;
-    font-weight: 600;
-    border-radius: 10px;
-    padding: 6px 36px 6px 12px;
-    cursor: pointer;
-    outline: none;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-.scal-select option {
-    background: #140d07;
+.scal-single-name {
+    font-size: 0.95rem;
+    font-weight: 700;
     color: #f3ede4;
+}
+.scal-single-badge {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #cfa46f;
+    background: rgba(207, 164, 111, 0.1);
+    border: 1px solid rgba(207, 164, 111, 0.25);
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-family: monospace;
 }
 
 /* ─── Modal styles ───────────────────────────────────────── */
@@ -491,29 +612,76 @@
             </button>
         </div>
 
-        {{-- Student Dropdown Selector --}}
+        {{-- Custom Luxury Student Selector --}}
         @if($children->count() > 1)
-        <div class="scal-student-select-row">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-people-fill" style="color: #cfa46f; font-size: 1.05rem;"></i>
-                <label for="scalChildSelect" class="scal-student-select-label">Select Student:</label>
-            </div>
-            <div style="min-width: 240px; max-width: 440px; flex: 1;">
-                <select id="scalChildSelect" class="form-select form-select-sm scal-select" onchange="scalSwitchChild(this.value)">
-                    @foreach($children as $child)
-                        <option value="{{ $child->id }}" {{ $child->id == $selectedChildId ? 'selected' : '' }}>
-                            {{ $child->name }} — {{ $child->student_number ?? 'Student' }}
-                        </option>
-                    @endforeach
-                </select>
+        <div class="scal-student-custom-picker">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="scal-picker-title">
+                        <i class="bi bi-person-badge-fill me-1" style="color: #cfa46f;"></i> Viewing Calendar for:
+                    </span>
+                </div>
+                
+                <div class="dropdown position-relative flex-grow-1" style="max-width: 380px; min-width: 250px;">
+                    <button class="scal-picker-trigger" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="scalPickerBtn">
+                        <div class="d-flex align-items-center gap-3 overflow-hidden">
+                            <div class="scal-picker-avatar" id="activeStudentAvatar">
+                                {{ strtoupper(substr($selectedChild->name ?? $firstChild->name, 0, 2)) }}
+                            </div>
+                            <div class="text-start overflow-hidden">
+                                <div class="scal-picker-name text-truncate" id="activeStudentName">
+                                    {{ $selectedChild->name ?? $firstChild->name }}
+                                </div>
+                                <div class="scal-picker-sub text-truncate" id="activeStudentSub">
+                                    ID: {{ $selectedChild->student_number ?? $firstChild->student_number ?? 'Student' }}
+                                </div>
+                            </div>
+                        </div>
+                        <i class="bi bi-chevron-down scal-picker-chevron"></i>
+                    </button>
+                    
+                    <ul class="dropdown-menu dropdown-menu-end scal-picker-menu p-2">
+                        @foreach($children as $child)
+                        @php
+                            $isSel = ($child->id == $selectedChildId || ($loop->first && !$selectedChildId));
+                        @endphp
+                        <li>
+                            <button type="button" class="scal-picker-item {{ $isSel ? 'active' : '' }}" 
+                                    data-child-id="{{ $child->id }}"
+                                    data-name="{{ $child->name }}"
+                                    data-initials="{{ strtoupper(substr($child->name, 0, 2)) }}"
+                                    data-number="{{ $child->student_number ?? 'Student' }}"
+                                    onclick="scalSelectChild(this, {{ $child->id }})">
+                                <div class="scal-picker-avatar mini">
+                                    {{ strtoupper(substr($child->name, 0, 2)) }}
+                                </div>
+                                <div class="flex-grow-1 text-start overflow-hidden">
+                                    <div class="scal-picker-item-name text-truncate">{{ $child->name }}</div>
+                                    <div class="scal-picker-item-sub text-truncate">ID: {{ $child->student_number ?? 'Student' }}</div>
+                                </div>
+                                <i class="bi bi-check2 scal-picker-check {{ $isSel ? 'd-block' : 'd-none' }}"></i>
+                            </button>
+                        </li>
+                        @endforeach
+                    </ul>
+                </div>
             </div>
         </div>
         @elseif($children->count() === 1)
-        <div class="scal-student-select-row">
-            <div class="d-flex align-items-center gap-2">
-                <i class="bi bi-person-fill" style="color: #cfa46f; font-size: 1rem;"></i>
-                <span class="scal-student-select-label">Student:</span>
-                <span style="font-weight: 700; color: #f3ede4; font-size: 0.9rem;">{{ $firstChild->name }}</span>
+        <div class="scal-single-student-card">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="scal-picker-avatar">
+                        {{ strtoupper(substr($firstChild->name, 0, 2)) }}
+                    </div>
+                    <div>
+                        <div class="scal-single-label">Student Calendar</div>
+                        <div class="scal-single-name">{{ $firstChild->name }}</div>
+                    </div>
+                </div>
+                <div class="scal-single-badge">
+                    <i class="bi bi-mortarboard-fill me-1"></i> ID: {{ $firstChild->student_number ?? 'Student' }}
+                </div>
             </div>
         </div>
         @endif
@@ -698,14 +866,45 @@ const STATUS_CLASS = {
     exam    : 'status-exam',
 };
 
-/* ── Switch active child ────────────────────────────────── */
+/* ── Switch active child & select item ──────────────────── */
+function scalSelectChild(btn, childId) {
+    scalChildId = parseInt(childId);
+    
+    // Update active trigger text & avatar
+    const name = btn.getAttribute('data-name');
+    const initials = btn.getAttribute('data-initials');
+    const number = btn.getAttribute('data-number');
+    
+    const activeName = document.getElementById('activeStudentName');
+    const activeAvatar = document.getElementById('activeStudentAvatar');
+    const activeSub = document.getElementById('activeStudentSub');
+    
+    if (activeName) activeName.textContent = name;
+    if (activeAvatar) activeAvatar.textContent = initials;
+    if (activeSub) activeSub.textContent = 'ID: ' + number;
+    
+    // Update menu items
+    document.querySelectorAll('.scal-picker-item').forEach(item => {
+        const isItem = parseInt(item.getAttribute('data-child-id')) === scalChildId;
+        item.classList.toggle('active', isItem);
+        const check = item.querySelector('.scal-picker-check');
+        if (check) {
+            check.classList.toggle('d-block', isItem);
+            check.classList.toggle('d-none', !isItem);
+        }
+    });
+    
+    scalLoadAndRender();
+}
+
 function scalSwitchChild(childId) {
     scalChildId = parseInt(childId);
-    const select = document.getElementById('scalChildSelect');
-    if (select && select.value !== childId.toString()) {
-        select.value = childId;
+    const targetBtn = document.querySelector(`.scal-picker-item[data-child-id="${childId}"]`);
+    if (targetBtn) {
+        scalSelectChild(targetBtn, childId);
+    } else {
+        scalLoadAndRender();
     }
-    scalLoadAndRender();
 }
 
 /* ── Go to today ─────────────────────────────────────────── */
