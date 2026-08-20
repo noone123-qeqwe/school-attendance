@@ -63,13 +63,18 @@
         </div>
     </div>
     
+    <!-- Calendar (Dedicated) -->
+    <a href="{{ route('admin.calendar') }}" class="nav-link {{ request()->routeIs('admin.calendar*') ? 'active' : '' }}" data-title="Calendar">
+        <i class="bi bi-calendar-event-fill"></i> <span class="nav-link-text">Calendar</span>
+    </a>
+    
     <!-- Operations Dropdown -->
     @php
-        $isOperationsActive = request()->routeIs('admin.early-warnings*') || request()->routeIs('admin.calendar*') || request()->routeIs('admin.announcements*') || request()->routeIs('admin.excuses*') || request()->routeIs('admin.attendance*');
+        $isOperationsActive = request()->routeIs('admin.early-warnings*') || request()->routeIs('admin.announcements*') || request()->routeIs('admin.excuses*') || request()->routeIs('admin.attendance*');
     @endphp
     <div class="sidebar-dropdown-group {{ $isOperationsActive ? 'open' : '' }}">
         <button class="nav-link dropdown-toggle-btn" onclick="toggleSidebarDropdown(this)" data-title="Operations">
-            <i class="bi bi-calendar-range"></i> 
+            <i class="bi bi-shield-check"></i> 
             <span class="nav-link-text">Operations</span> 
             <i class="bi bi-chevron-down ms-auto dropdown-chevron"></i>
         </button>
@@ -82,9 +87,6 @@
             </a>
             <a href="{{ route('admin.excuses') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.excuses*') ? 'active' : '' }}">
                 <span class="nav-link-text">Excuse Reviews</span>
-            </a>
-            <a href="{{ route('admin.calendar') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.calendar*') ? 'active' : '' }}">
-                <span class="nav-link-text">Calendar</span>
             </a>
             <a href="{{ route('admin.announcements.index') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
                 <span class="nav-link-text">Announcements</span>

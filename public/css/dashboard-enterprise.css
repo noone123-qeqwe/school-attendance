@@ -1529,6 +1529,47 @@
     box-shadow: 0 4px 16px rgba(207, 164, 111, 0.3);
 }
 
+/* ── Calendar Event Details Popup ── */
+.hcal-day:not(.empty) {
+    cursor: pointer !important;
+}
+.hcal-day:not(.empty):hover {
+    background: rgba(207, 164, 111, 0.12) !important;
+    border: 1px solid rgba(207, 164, 111, 0.4) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.hcal-day.has-event {
+    box-shadow: inset 0 0 0 1px rgba(207, 164, 111, 0.18);
+}
+.hcal-day.has-event:hover {
+    box-shadow: 0 4px 16px rgba(207, 164, 111, 0.25), inset 0 0 0 1px rgba(207, 164, 111, 0.5) !important;
+}
+
+.hcal-details-modal {
+    max-width: 520px;
+}
+.hcal-details-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 4px solid var(--ent-gold, #cfa46f);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+.hcal-details-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(207, 164, 111, 0.3);
+}
+.hcal-details-item[data-type="national"] { border-left-color: #dc2626; }
+.hcal-details-item[data-type="local"] { border-left-color: #d97706; }
+.hcal-details-item[data-type="school"] { border-left-color: #7c2d12; }
+.hcal-details-item[data-type="no_class"] { border-left-color: #6366f1; }
+.hcal-details-item[data-type="announcement"] { border-left-color: #60a5fa; }
+.hcal-details-item[data-type="event"] { border-left-color: #a78bfa; }
+
 /* ── Empty State ── */
 .hcal-empty {
     text-align: center;

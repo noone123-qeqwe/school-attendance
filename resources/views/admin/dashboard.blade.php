@@ -378,9 +378,9 @@
     </x-slot:headerActions>
     
     <div style="padding:16px 20px;">
-        <div class="hcal-container">
-            {{-- Calendar Pane --}}
-            <div class="hcal-calendar-pane">
+        <div class="hcal-container" style="display: block;">
+            {{-- Calendar Pane (Full Width) --}}
+            <div class="hcal-calendar-pane" style="width: 100%;">
                 <div class="hcal-nav">
                     <a href="?hcal_year={{ $hcalPrev->year }}&hcal_month={{ $hcalPrev->month }}" class="hcal-nav-btn">
                         <i class="bi bi-chevron-left"></i>
@@ -406,6 +406,7 @@
                     @for($d = 1; $d <= $hcalEnd->day; $d++)
                         @php
                             $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
+                            $formattedDate = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('l, F j, Y');
                             $isToday = $hcalIsCurrentMonth && $d === $hcalToday;
                             $isSunday = \Carbon\Carbon::create($calYear, $calMonth, $d)->dayOfWeek === 0;
                             $dayEvents = $hcalEventsMap[$dateKey] ?? [];
@@ -418,7 +419,7 @@
                             if ($hasEvents) $cls .= ' has-event';
                             if ($isHoliday) $cls .= ' holiday-day';
                         @endphp
-                        <div class="hcal-day{{ $cls }}" @if($hasEvents) onclick="scrollToEvent('{{ $dateKey }}')" title="{{ collect($dayEvents)->pluck('name')->join(', ') }}" @endif>
+                        <div class="hcal-day{{ $cls }}" onclick="openHcalDateDetails('{{ $dateKey }}', '{{ $formattedDate }}')" title="{{ $hasEvents ? collect($dayEvents)->pluck('name')->join(', ') : 'Click to view or add events' }}">
                             <div class="hcal-day-num">{{ $d }}</div>
                             @if($hasEvents)
                                 <div class="hcal-dots">
@@ -431,7 +432,7 @@
                     @endfor
                 </div>
 
-                <div class="hcal-legend">
+                <div class="hcal-legend" style="margin-top: 20px;">
                     <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#dc2626;"></div> National</div>
                     <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#d97706;"></div> Local</div>
                     <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#7c2d12;"></div> School</div>
@@ -439,70 +440,36 @@
                     <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#60a5fa;"></div> Announcement</div>
                 </div>
             </div>
-
-            {{-- Events Sidebar --}}
-            <div class="hcal-events-pane">
-                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--ent-text-muted);margin-bottom:12px;">
-                    <i class="bi bi-calendar-event"></i> Upcoming Events
-                </div>
-                @forelse($hcalUpcoming as $evt)
-                    <div class="hcal-event-card" data-type="{{ $evt->type }}" data-date="{{ is_object($evt->date) ? $evt->date->format('Y-m-d') : $evt->date }}" id="evt-{{ is_object($evt->date) ? $evt->date->format('Y-m-d') : $evt->date }}">
-                        <div class="hcal-event-type {{ $evt->type }}">
-                            <i class="bi {{ $evt->source === 'holiday' ? 'bi-calendar-heart' : 'bi-megaphone' }}"></i>
-                            {{ $evt->type_label }}
-                        </div>
-                        <div class="hcal-event-name">{{ $evt->name }}</div>
-                        <div class="hcal-event-date">
-                            <i class="bi bi-calendar3"></i> {{ $evt->date_formatted }}
-                            @if(isset($evt->author))
-                                @php
-                                    $evtRole = 'admin';
-                                    if (isset($evt->source) && $evt->source === 'announcement' && isset($evt->author_role)) {
-                                        $evtRole = $evt->author_role;
-                                    }
-                                    $evtIsAdminRole = $evtRole === 'admin';
-                                    $dashBadgeBg = $evtIsAdminRole ? 'rgba(207,164,111,0.15)' : 'rgba(139,90,43,0.15)';
-                                    $dashBadgeBorder = $evtIsAdminRole ? 'rgba(207,164,111,0.35)' : 'rgba(139,90,43,0.35)';
-                                    $dashBadgeColor = $evtIsAdminRole ? '#CFA46F' : '#8B5A2B';
-                                    $dashRoleLabel = $evtIsAdminRole ? 'Admin' : 'Instructor';
-                                @endphp
-                                · <i class="bi bi-person"></i> {{ $evt->author }}
-                                <span style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:99px;font-size:0.6rem;font-weight:700;background:{{ $dashBadgeBg }};border:1px solid {{ $dashBadgeBorder }};color:{{ $dashBadgeColor }};vertical-align:middle;">
-                                    <span style="width:4px;height:4px;border-radius:50%;background:{{ $dashBadgeColor }};display:inline-block;"></span>
-                                    {{ $dashRoleLabel }}
-                                </span>
-                            @endif
-                        </div>
-                        @if($evt->description)
-                            <div class="hcal-event-desc">{{ $evt->description }}</div>
-                        @endif
-
-                        @if($evt->source === 'holiday')
-                        <div class="hcal-event-actions">
-                            <button type="button" class="hcal-event-action-btn" onclick="openHcalEditModal({{ $evt->id }}, '{{ addslashes($evt->name) }}', '{{ $evt->description ? addslashes($evt->description) : '' }}', '{{ $evt->type }}', '{{ is_object($evt->date) ? $evt->date->format('Y-m-d') : $evt->date }}')">
-                                <i class="bi bi-pencil"></i>
-                            </button>
-                            <form action="{{ route('admin.calendar.destroy', $evt->id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this holiday?');">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="hcal-event-action-btn danger"><i class="bi bi-trash3"></i></button>
-                            </form>
-                        </div>
-                        @endif
-                    </div>
-                @empty
-                    <div class="hcal-empty">
-                        <div class="hcal-empty-icon"><i class="bi bi-calendar-x"></i></div>
-                        <div class="hcal-empty-text">No upcoming events</div>
-                    </div>
-                @endforelse
-
-                <button type="button" class="hcal-add-btn" onclick="openHcalModal()" style="margin-top:8px;">
-                    <i class="bi bi-plus-circle"></i> Add Holiday / Event
-                </button>
-            </div>
         </div>
     </div>
 </x-card>
+
+{{-- ─── CALENDAR EVENT DETAILS POPUP MODAL ─── --}}
+<div class="hcal-modal-overlay" id="hcalDetailsModalOverlay">
+    <div class="hcal-modal hcal-details-modal" style="max-width: 540px;">
+        <div class="hcal-modal-header" style="padding: 20px 24px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 12px; background: rgba(207, 164, 111, 0.12); border: 1px solid rgba(207, 164, 111, 0.25); display: flex; align-items: center; justify-content: center; color: #cfa46f; font-size: 1.15rem; flex-shrink: 0;">
+                    <i class="bi bi-calendar-event"></i>
+                </div>
+                <div>
+                    <div class="hcal-modal-title" style="font-size: 1.1rem; line-height: 1.2;">Calendar Event Details</div>
+                    <div id="hcalDetailsDateLabel" style="font-size: 0.78rem; color: #b39b82; font-weight: 600; margin-top: 2px;"></div>
+                </div>
+            </div>
+            <button type="button" class="hcal-modal-close" onclick="closeHcalDetailsModal()">×</button>
+        </div>
+        <div class="hcal-modal-body" id="hcalDetailsBody" style="padding: 20px 24px; max-height: 460px; overflow-y: auto;">
+            {{-- Dynamically populated --}}
+        </div>
+        <div class="hcal-modal-footer" id="hcalDetailsFooter" style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0, 0, 0, 0.25);">
+            <button type="button" class="hcal-btn-cancel" onclick="closeHcalDetailsModal()">Close</button>
+            <button type="button" class="hcal-btn-submit" id="hcalDetailsAddBtn" onclick="addEventForCurrentDate()" style="padding: 8px 18px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;">
+                <i class="bi bi-plus-lg"></i> Add Event
+            </button>
+        </div>
+    </div>
+</div>
 
 {{-- ─── ADD/EDIT HOLIDAY MODAL ─── --}}
 <div class="hcal-modal-overlay" id="hcalModalOverlay">
@@ -550,8 +517,11 @@
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
+window.hcalEventsMap = @json($hcalEventsMap ?? []);
+let selectedHcalDate = null;
+let selectedHcalDateFormatted = '';
+
 document.addEventListener('DOMContentLoaded', function() {
     // ─── Ticking Live Clock ───
     function updateClock() {
@@ -591,7 +561,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ─── AJAX Fetch Dashboard Stats ───
     function fetchDashboardStats(range) {
-        // Apply slight loading opacity
         const statsToFade = ['presentVal', 'lateVal', 'absentVal', 'rateVal'];
         statsToFade.forEach(id => {
             const el = document.getElementById(id);
@@ -601,25 +570,21 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`{{ route('admin.dashboard.stats') }}?range=${range}`)
             .then(response => response.json())
             .then(data => {
-                // Restore opacity
                 statsToFade.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.style.opacity = '1';
                 });
 
-                // Update counts
                 document.getElementById('presentVal').textContent = Number(data.present).toLocaleString();
                 document.getElementById('lateVal').textContent = Number(data.late).toLocaleString();
                 document.getElementById('absentVal').textContent = Number(data.absent).toLocaleString();
                 document.getElementById('rateVal').textContent = data.rate + '%';
                 
-                // Update labels
                 const labelSuffix = range === 'today' ? 'Today' : (range === 'yesterday' ? 'Yesterday' : (range === 'this_week' ? 'This Week' : 'This Month'));
                 document.getElementById('presentLabel').textContent = 'Present ' + labelSuffix;
                 document.getElementById('lateLabel').textContent = 'Late ' + labelSuffix;
                 document.getElementById('absentLabel').textContent = 'Absent ' + labelSuffix;
                 
-                // Show/Hide comparison trends (only relevant for Today)
                 const trends = ['presentTrendContainer', 'lateTrendContainer', 'absentTrendContainer'];
                 trends.forEach(id => {
                     const el = document.getElementById(id);
@@ -628,7 +593,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
                 
-                // Update Progress Bar color and width
                 const progress = document.getElementById('rateProgressFill');
                 if (progress) {
                     progress.style.width = data.rate + '%';
@@ -645,13 +609,121 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ─── HOLIDAY CALENDAR MODALS ───
-function openHcalModal() {
+// ─── CALENDAR EVENT DETAILS POPUP ───
+function openHcalDateDetails(dateKey, formattedDate) {
+    selectedHcalDate = dateKey;
+    selectedHcalDateFormatted = formattedDate;
+    
+    document.getElementById('hcalDetailsDateLabel').textContent = formattedDate;
+    const body = document.getElementById('hcalDetailsBody');
+    const events = window.hcalEventsMap[dateKey] || [];
+    
+    if (events.length === 0) {
+        body.innerHTML = `
+            <div style="text-align: center; padding: 36px 16px;">
+                <div style="width: 58px; height: 58px; border-radius: 16px; background: rgba(207, 164, 111, 0.08); border: 1px solid rgba(207, 164, 111, 0.2); color: #cfa46f; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; margin: 0 auto 16px;">
+                    <i class="bi bi-calendar2-plus"></i>
+                </div>
+                <h4 style="font-size: 1.05rem; font-weight: 700; color: #f3ede4; margin-bottom: 6px;">No Scheduled Events</h4>
+                <p style="font-size: 0.82rem; color: #8f826f; margin-bottom: 20px;">There are no holidays or announcements scheduled for this date.</p>
+                <button type="button" class="hcal-btn-submit" onclick="addEventForCurrentDate()" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; font-size: 0.82rem;">
+                    <i class="bi bi-plus-lg"></i> Add Event for this Date
+                </button>
+            </div>
+        `;
+    } else {
+        let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+        events.forEach(evt => {
+            const isHoliday = evt.source === 'holiday';
+            const typeColorMap = {
+                national: '#dc2626',
+                local: '#d97706',
+                school: '#7c2d12',
+                no_class: '#6366f1',
+                announcement: '#60a5fa',
+                event: '#a78bfa'
+            };
+            const borderColor = typeColorMap[evt.type] || '#cfa46f';
+            const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
+            
+            html += `
+                <div class="hcal-details-item" data-type="${evt.type}" style="border-left: 4px solid ${borderColor};">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <span class="hcal-event-type ${evt.type}" style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="bi ${isHoliday ? 'bi-calendar-heart' : 'bi-megaphone'}"></i>
+                            ${evt.type_label || evt.type}
+                        </span>
+                        ${isHoliday ? `
+                            <div style="display: flex; gap: 6px;">
+                                <button type="button" class="hcal-event-action-btn" title="Edit Holiday" onclick="editFromDetails(${evt.id}, '${escapeHtml(evt.name)}', '${escapeHtml(evt.description || '')}', '${evt.type}', '${evt.date}')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form action="/admin/calendar/${evt.id}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this holiday?');">
+                                    <input type="hidden" name="_token" value="${csrfToken}">
+                                    <input type="hidden" name="_method" value="DELETE">
+                                    <button type="submit" class="hcal-event-action-btn danger" title="Delete Holiday"><i class="bi bi-trash3"></i></button>
+                                </form>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div style="font-size: 1.05rem; font-weight: 700; color: #f3ede4; margin-bottom: 4px;">${escapeHtml(evt.name)}</div>
+                    ${evt.author ? `
+                        <div style="font-size: 0.75rem; color: #b39b82; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+                            <i class="bi bi-person"></i> Posted by <strong>${escapeHtml(evt.author)}</strong>
+                        </div>
+                    ` : ''}
+                    ${evt.location ? `
+                        <div style="font-size: 0.75rem; color: #b39b82; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
+                            <i class="bi bi-geo-alt"></i> ${escapeHtml(evt.location)}
+                        </div>
+                    ` : ''}
+                    ${evt.description ? `
+                        <div style="font-size: 0.82rem; color: #d4c8b8; line-height: 1.45; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
+                            ${escapeHtml(evt.description)}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+        body.innerHTML = html;
+    }
+    
+    document.getElementById('hcalDetailsModalOverlay').classList.add('active');
+}
+
+function closeHcalDetailsModal() {
+    const overlay = document.getElementById('hcalDetailsModalOverlay');
+    if (overlay) overlay.classList.remove('active');
+}
+
+function addEventForCurrentDate() {
+    closeHcalDetailsModal();
+    openHcalModal(selectedHcalDate);
+}
+
+function editFromDetails(id, name, desc, type, date) {
+    closeHcalDetailsModal();
+    openHcalEditModal(id, name, desc, type, date);
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// ─── ADD/EDIT HOLIDAY MODALS ───
+function openHcalModal(prefillDate = null) {
     document.getElementById('hcalModalTitle').textContent = 'Add Holiday / Event';
     document.getElementById('hcalForm').action = '{{ route("admin.calendar.store") }}';
     document.getElementById('hcalMethodField').innerHTML = '';
     document.getElementById('hcalName').value = '';
-    document.getElementById('hcalDate').value = '';
+    document.getElementById('hcalDate').value = prefillDate || selectedHcalDate || '';
     document.getElementById('hcalType').value = 'national';
     document.getElementById('hcalDesc').value = '';
     document.getElementById('hcalSubmitBtn').innerHTML = '<i class="bi bi-check-lg"></i> Save Event';
@@ -671,23 +743,21 @@ function openHcalEditModal(id, name, desc, type, date) {
 }
 
 function closeHcalModal() {
-    document.getElementById('hcalModalOverlay').classList.remove('active');
+    const overlay = document.getElementById('hcalModalOverlay');
+    if (overlay) overlay.classList.remove('active');
 }
 
 document.getElementById('hcalModalOverlay').addEventListener('click', function(e) {
     if (e.target === this) closeHcalModal();
 });
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeHcalModal();
+document.getElementById('hcalDetailsModalOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeHcalDetailsModal();
 });
-
-function scrollToEvent(dateKey) {
-    const el = document.getElementById('evt-' + dateKey);
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.style.boxShadow = '0 0 0 2px rgba(207,164,111,0.5)';
-        setTimeout(() => { el.style.boxShadow = ''; }, 2000);
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeHcalModal();
+        closeHcalDetailsModal();
     }
-}
+});
 </script>
 @endpush
