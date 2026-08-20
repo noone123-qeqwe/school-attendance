@@ -395,11 +395,31 @@ class HomeController extends Controller
 }
 
     /**
-     * Dedicated Attendance Calendar page.
+     * Student Holiday & Events Calendar page (replaces old attendance calendar).
      */
-    public function attendanceCalendar()
+    public function attendanceCalendar(Request $request, \App\Services\AnalyticsService $analyticsService)
     {
-        return redirect()->route('student.calendar');
+        $user = Auth::user();
+
+        if (!$user->isStudent()) {
+            return redirect()->route('home');
+        }
+
+        $calYear = (int)$request->input('cal_year', $request->input('hcal_year', now()->year));
+        $calMonth = (int)$request->input('cal_month', $request->input('hcal_month', now()->month));
+
+        // Get Holiday & Events calendar data
+        $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
+        $hcalEventsMap = $dashData['hcalEventsMap'] ?? [];
+        $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
+
+        // Also fetch attendance records
+        $records = Attendance::with('subject')
+            ->where('user_id', $user->id)
+            ->orderBy('date', 'desc')
+            ->get();
+
+        return view('student.attendance-calendar', compact('calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming', 'records'));
     }
 
     public function settings()
