@@ -39,26 +39,26 @@ body::before {
     box-shadow: 10px 0 30px rgba(0,0,0,0.5);
 }
 
-.sidebar .nav-link {
+.sidebar .nav-link:not(.sub-nav-link) {
     border-radius: 12px;
-    margin: 4px 12px;
-    padding: 12px 14px;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin: 3px 12px;
+    padding: 11px 14px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
-    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .sidebar .nav-link::before {
     display: none !important; /* hide default portal line */
 }
 
-.sidebar .nav-link:hover {
+.sidebar .nav-link:not(.sub-nav-link):hover {
     background: rgba(207, 164, 111, 0.1) !important;
     color: var(--admin-gold) !important;
-    transform: translateX(4px);
+    transform: translateX(3px);
 }
 
-.sidebar .nav-link.active {
+.sidebar .nav-link:not(.sub-nav-link).active {
     background: linear-gradient(90deg, rgba(128, 0, 0, 0.4) 0%, rgba(128, 0, 0, 0) 100%) !important;
     color: #fff !important;
     border-left: 3px solid var(--admin-gold);
@@ -107,7 +107,7 @@ body::before {
     background: transparent !important;
     border-collapse: separate !important;
     border-spacing: 0 8px !important;
-    padding: 0 22px;
+    width: 100% !important;
 }
 .adm-table thead th {
     background: transparent !important;
@@ -116,7 +116,9 @@ body::before {
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-size: 0.75rem !important;
-    padding-bottom: 4px !important;
+    font-weight: 700;
+    padding: 8px 16px !important;
+    vertical-align: middle;
 }
 .adm-table tbody tr {
     background: rgba(255, 255, 255, 0.03) !important;
@@ -137,6 +139,7 @@ body::before {
     color: #f3ede4 !important;
     border-bottom: none !important;
     padding: 14px 16px !important;
+    vertical-align: middle;
 }
 .adm-table tbody td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
 .adm-table tbody td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }

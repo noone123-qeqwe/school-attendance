@@ -119,48 +119,135 @@
 </div>
 
 <style>
-.sidebar-submenu {
-    padding-left: 28px;
-    margin-top: 2px;
-    margin-bottom: 8px;
-    display: none;
+.sidebar {
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+.sidebar-head {
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 10 !important;
+    background: transparent !important;
+}
+.sidebar-divider {
+    height: 1px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    margin: 0 16px 6px !important;
+    flex-shrink: 0 !important;
+}
+.sidebar-nav {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(207, 164, 111, 0.25) transparent;
+    padding: 6px 0 80px 0 !important;
+    display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
-.sidebar-submenu .sub-nav-link {
-    padding: 8px 14px;
-    font-size: 0.85rem;
-    margin-bottom: 0;
-    border-left: 2px solid rgba(255, 255, 255, 0.05);
-    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+.sidebar-nav::-webkit-scrollbar {
+    width: 4px;
 }
-.sidebar-submenu .sub-nav-link:hover {
-    border-left-color: var(--gold-soft);
-    background: rgba(255, 255, 255, 0.02);
+.sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
 }
-.sidebar-submenu .sub-nav-link.active {
-    border-left-color: var(--gold);
-    background: rgba(212, 175, 55, 0.05) !important;
-    color: var(--gold-soft) !important;
-    font-weight: 600;
+.sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(207, 164, 111, 0.2);
+    border-radius: 99px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(207, 164, 111, 0.4);
+}
+
+/* Nav Links & Dropdown Toggle Buttons */
+.sidebar .nav-link,
+.dropdown-toggle-btn {
+    box-sizing: border-box !important;
+    width: calc(100% - 24px) !important;
+    margin: 2px 12px !important;
+    padding: 11px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    border-radius: 12px !important;
+    position: relative;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--text-secondary, #b39b82);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dropdown-toggle-btn {
+    justify-content: flex-start;
 }
 .dropdown-chevron {
-    transition: transform 0.2s ease;
-    font-size: 0.8rem;
+    margin-left: auto;
+    font-size: 0.75rem;
+    transition: transform 0.25s ease;
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
 }
 .sidebar-dropdown-group.open .dropdown-chevron {
     transform: rotate(180deg);
+    color: var(--admin-gold, #cfa46f);
+}
+
+/* Submenu Container */
+.sidebar-submenu {
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    margin: 2px 12px 8px 24px !important;
+    padding: 4px 0 4px 12px !important;
+    border-left: 2px solid rgba(207, 164, 111, 0.18);
+    box-sizing: border-box !important;
 }
 .sidebar-dropdown-group.open .sidebar-submenu {
     display: flex !important;
+    animation: submenuFadeIn 0.2s ease;
 }
-.dropdown-toggle-btn {
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    cursor: pointer;
+@keyframes submenuFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
+
+/* Submenu Links */
+.sidebar-submenu .sub-nav-link {
+    margin: 1px 0 !important;
+    padding: 8px 12px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    font-size: 0.84rem !important;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-radius: 8px !important;
+    border: none !important;
+    background: transparent !important;
+    display: flex !important;
+    align-items: center !important;
+    transform: none !important;
+    text-decoration: none;
+}
+.sidebar-submenu .sub-nav-link:hover {
+    background: rgba(207, 164, 111, 0.1) !important;
+    color: var(--admin-gold, #cfa46f) !important;
+    transform: translateX(2px) !important;
+}
+.sidebar-submenu .sub-nav-link.active {
+    background: linear-gradient(90deg, rgba(207, 164, 111, 0.2) 0%, rgba(207, 164, 111, 0.04) 100%) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    border-left: 2px solid var(--admin-gold, #cfa46f) !important;
+}
+.sidebar-submenu .sub-nav-link .nav-link-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .sidebar.collapsed .dropdown-chevron {
     display: none !important;
 }

@@ -16,18 +16,29 @@ class CalendarController extends Controller
     /**
      * Admin calendar view.
      */
-    public function index()
+    public function index(Request $request, \App\Services\AnalyticsService $analyticsService)
     {
-        $year = request('year', now()->year);
-        $month = request('month', now()->month);
+        $year = (int)$request->input('year', now()->year);
+        $month = (int)$request->input('month', now()->month);
         
-        // Optionally fetch stats for the view
+        $calYear = (int)$request->input('hcal_year', $year);
+        $calMonth = (int)$request->input('hcal_month', $month);
+        $activeTab = $request->input('view', 'school');
+
+        // Fetch events for the view
         $events = Event::whereYear('date', $year)
                        ->whereMonth('date', $month)
                        ->where('status', '!=', 'cancelled')
                        ->get();
-                       
-        return view('admin.calendar', compact('year', 'month', 'events'));
+
+        // Get Holiday & Events calendar data
+        $dashData = $analyticsService->getHolidayCalendarData($calYear, $calMonth);
+        $hcalEventsMap = $dashData['hcalEventsMap'] ?? [];
+        $hcalUpcoming = $dashData['hcalUpcoming'] ?? collect();
+
+        return view('admin.calendar', compact(
+            'year', 'month', 'events', 'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming', 'activeTab'
+        ));
     }
 
     /**

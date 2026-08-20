@@ -224,6 +224,30 @@ class AnalyticsService
         // ── Holiday Calendar Data ──
         $calYear = (int) $request->get('hcal_year', now()->year);
         $calMonth = (int) $request->get('hcal_month', now()->month);
+        $hcalData = $this->getHolidayCalendarData($calYear, $calMonth);
+        $hcalEventsMap = $hcalData['hcalEventsMap'];
+        $hcalUpcoming = $hcalData['hcalUpcoming'];
+
+        return compact(
+            'totalStudents', 'totalTeachers', 'totalSubjects', 'totalParents',
+            'totalDepartments', 'totalCourses', 'totalSections',
+            'totalPresent', 'totalLate', 'totalAbsent', 'attendanceRate', 'totalToday',
+            'yesterdayPresent', 'yesterdayLate', 'yesterdayAbsent', 'yesterdayRate', 'yesterdayTotal',
+            'activeSessions', 'activeSessionCount', 'classesCompleted', 'classesPending',
+            'weeklyLabels', 'weeklyPresent', 'weeklyLate', 'weeklyAbsent',
+            'teacherActivity', 'atRiskStudents',
+            'topClasses', 'bottomClasses',
+            'recentActivity', 'systemAlerts', 'pendingExcuses',
+            'recentStudents',
+            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
+        );
+    }
+
+    /**
+     * Get Holiday and Event calendar map and upcoming events for any year/month.
+     */
+    public function getHolidayCalendarData(int $calYear, int $calMonth): array
+    {
         $calStart = Carbon::create($calYear, $calMonth, 1);
         $rangeStart = $calStart->copy()->subMonth()->startOfMonth()->toDateString();
         $rangeEnd = $calStart->copy()->addMonth()->endOfMonth()->toDateString();
@@ -315,14 +339,14 @@ class AnalyticsService
             ]);
         }
 
-        // Upcoming Custom Events
-        $upcomingCustomEvents = Event::where('status', '!=', 'cancelled')
+        // Upcoming Events
+        $upcomingSchoolEvents = Event::where('status', '!=', 'cancelled')
             ->whereDate('date', '>=', $todayStr)
             ->orderBy('date')
             ->take(15)
             ->get();
 
-        foreach ($upcomingCustomEvents as $evt) {
+        foreach ($upcomingSchoolEvents as $evt) {
             $hcalUpcoming->push((object)[
                 'id' => $evt->id,
                 'type' => $evt->type,
@@ -336,47 +360,39 @@ class AnalyticsService
             ]);
         }
 
-        // Announcements
-        foreach ($calendarAnnouncements->take(5) as $ann) {
+        // Recent Announcements
+        $upcomingAnnouncements = Announcement::published()
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+        foreach ($upcomingAnnouncements as $ann) {
             $annDate = $ann->scheduled_for ?? $ann->created_at;
-            if ($annDate->toDateString() >= $todayStr) {
-                $hcalUpcoming->push((object)[
-                    'id' => $ann->id,
-                    'type' => 'announcement',
-                    'name' => $ann->title,
-                    'description' => \Illuminate\Support\Str::limit($ann->content, 100),
-                    'date' => $annDate,
-                    'date_formatted' => $annDate->format('M j, Y'),
-                    'type_label' => 'Announcement',
-                    'source' => 'announcement',
-                    'author' => $ann->author->name ?? 'Admin',
-                    'author_role' => $ann->author->role ?? 'admin',
-                ]);
-            }
+            $hcalUpcoming->push((object)[
+                'id' => $ann->id,
+                'type' => 'announcement',
+                'name' => $ann->title,
+                'description' => \Illuminate\Support\Str::limit($ann->content, 150),
+                'date' => $annDate,
+                'date_formatted' => $annDate->format('M j, Y'),
+                'type_label' => 'Announcement',
+                'source' => 'announcement',
+            ]);
         }
 
+        // Deduplicate and sort by date ascending
         $hcalUpcoming = $hcalUpcoming
-            ->unique(function ($item) {
-                $d = $item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d');
-                return $d . '_' . strtolower(trim($item->name));
-            })
+            ->unique(fn($item) => ($item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d')) . '_' . strtolower(trim($item->name)))
             ->sortBy('date')
             ->values()
             ->take(10);
 
-        return compact(
-            'totalStudents', 'totalTeachers', 'totalSubjects', 'totalParents',
-            'totalDepartments', 'totalCourses', 'totalSections',
-            'totalPresent', 'totalLate', 'totalAbsent', 'attendanceRate', 'totalToday',
-            'yesterdayPresent', 'yesterdayLate', 'yesterdayAbsent', 'yesterdayRate', 'yesterdayTotal',
-            'activeSessions', 'activeSessionCount', 'classesCompleted', 'classesPending',
-            'weeklyLabels', 'weeklyPresent', 'weeklyLate', 'weeklyAbsent',
-            'teacherActivity', 'atRiskStudents',
-            'topClasses', 'bottomClasses',
-            'recentActivity', 'systemAlerts', 'pendingExcuses',
-            'recentStudents',
-            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
-        );
+        return [
+            'calYear' => $calYear,
+            'calMonth' => $calMonth,
+            'hcalEventsMap' => $hcalEventsMap,
+            'hcalUpcoming' => $hcalUpcoming,
+        ];
     }
 
     /**

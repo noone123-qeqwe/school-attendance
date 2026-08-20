@@ -253,27 +253,27 @@
             @endif
         </x-slot:title>
 
-        <div class="table-responsive" style="margin: -20px;">
-            <table class="adm-table table" style="margin-bottom: 0;">
+        <div class="table-responsive" style="margin: -20px; padding: 12px 20px;">
+            <table class="adm-table" style="margin-bottom: 0; width: 100%;">
                 <thead>
                     <tr>
-                        <th>Subject & Teacher</th>
-                        <th>Checked In</th>
-                        <th>Status</th>
+                        <th style="width: 50%; text-align: left;">Subject & Teacher</th>
+                        <th style="width: 25%; text-align: center;">Checked In</th>
+                        <th style="width: 25%; text-align: right;">Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($activeSessions->take(5) as $session)
                     <tr>
-                        <td data-label="Subject">
+                        <td data-label="Subject" style="text-align: left;">
                             <div style="font-weight:600;font-size:0.82rem;">{{ $session->subject?->name ?? $session->subject_code }}</div>
                             <div class="ent-text-muted" style="font-size:0.72rem;">{{ $session->creator?->name ?? 'Unknown' }}</div>
                         </td>
-                        <td data-label="Checked In">
+                        <td data-label="Checked In" style="text-align: center;">
                             <span class="ent-badge ent-badge-neutral">{{ $session->checked_in_count }}</span>
                         </td>
-                        <td data-label="Status">
-                            <span class="session-status-badge active">
+                        <td data-label="Status" style="text-align: right;">
+                            <span class="session-status-badge active" style="margin-left: auto;">
                                 <span class="pulse-dot active"></span>
                                 {{ $session->qr_status }}
                             </span>
@@ -314,30 +314,30 @@
             <table class="adm-table" style="margin-bottom: 0; width: 100%;">
                 <thead>
                     <tr>
-                        <th>Student</th>
-                        <th>Course</th>
-                        <th>Rate</th>
-                        <th></th>
+                        <th style="width: 42%; text-align: left;">Student</th>
+                        <th style="width: 28%; text-align: left;">Course</th>
+                        <th style="width: 15%; text-align: center;">Rate</th>
+                        <th style="width: 15%; text-align: right;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($atRiskStudents->take(5) as $student)
                     <tr>
-                        <td data-label="Student">
+                        <td data-label="Student" style="text-align: left;">
                             <div style="display:flex;align-items:center;gap:10px;">
                                 <div class="ent-avatar ent-avatar-round" style="width:30px;height:30px;font-size:0.7rem;flex-shrink:0;">
                                     <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=30' }}" alt="">
                                 </div>
-                                <span class="ent-truncate" style="font-weight:600;font-size:0.82rem;color:#f3ede4;max-width:130px;">{{ $student->name }}</span>
+                                <span class="ent-truncate" style="font-weight:600;font-size:0.82rem;color:#f3ede4;max-width:180px;">{{ $student->name }}</span>
                             </div>
                         </td>
-                        <td data-label="Course"><span style="font-size:0.75rem;color:#b39b82;" class="ent-text-muted">{{ $student->course }}</span></td>
-                        <td data-label="Rate">
+                        <td data-label="Course" style="text-align: left;"><span style="font-size:0.75rem;color:#b39b82;" class="ent-text-muted">{{ $student->course }}</span></td>
+                        <td data-label="Rate" style="text-align: center;">
                             <span class="risk-badge {{ $student->attendance_rate >= 70 ? 'watch' : 'critical' }}">
                                 {{ $student->attendance_rate }}%
                             </span>
                         </td>
-                        <td data-label="Action">
+                        <td data-label="Action" style="text-align: right;">
                             <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
                         </td>
                     </tr>
@@ -359,169 +359,10 @@
     </x-card>
 </div>
 
-{{-- ─── HOLIDAY & EVENTS CALENDAR ─── --}}
-@php
-    $hcalStart = \Carbon\Carbon::create($calYear, $calMonth, 1);
-    $hcalEnd = $hcalStart->copy()->endOfMonth();
-    $hcalPrev = $hcalStart->copy()->subMonth();
-    $hcalNext = $hcalStart->copy()->addMonth();
-    $hcalStartDow = $hcalStart->dayOfWeek;
-    $hcalIsCurrentMonth = (now()->year == $calYear && now()->month == $calMonth);
-    $hcalToday = now()->day;
-@endphp
-
-<x-card type="section" class="adm-card dash-animate" style="margin-bottom: 28px;" title="Holiday & Events Calendar" icon="bi bi-calendar-heart-fill">
-    <x-slot:headerActions>
-        <button type="button" class="ent-btn ent-btn-sm ent-btn-primary" onclick="openHcalModal()">
-            <i class="bi bi-plus-lg"></i> Add Event
-        </button>
-    </x-slot:headerActions>
-    
-    <div style="padding:16px 20px;">
-        <div class="hcal-container" style="display: block;">
-            {{-- Calendar Pane (Full Width) --}}
-            <div class="hcal-calendar-pane" style="width: 100%;">
-                <div class="hcal-nav">
-                    <a href="?hcal_year={{ $hcalPrev->year }}&hcal_month={{ $hcalPrev->month }}" class="hcal-nav-btn">
-                        <i class="bi bi-chevron-left"></i>
-                    </a>
-                    <div class="hcal-month-label">{{ $hcalStart->format('F Y') }}</div>
-                    <a href="?hcal_year={{ $hcalNext->year }}&hcal_month={{ $hcalNext->month }}" class="hcal-nav-btn">
-                        <i class="bi bi-chevron-right"></i>
-                    </a>
-                </div>
-
-                <div class="hcal-day-labels">
-                    @foreach(['S','M','T','W','T','F','S'] as $lbl)
-                        <div class="hcal-day-label">{{ $lbl }}</div>
-                    @endforeach
-                </div>
-
-                <div class="hcal-grid">
-                    {{-- Empty cells before first day --}}
-                    @for($i = 0; $i < $hcalStartDow; $i++)
-                        <div class="hcal-day empty"></div>
-                    @endfor
-
-                    @for($d = 1; $d <= $hcalEnd->day; $d++)
-                        @php
-                            $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
-                            $formattedDate = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('l, F j, Y');
-                            $isToday = $hcalIsCurrentMonth && $d === $hcalToday;
-                            $isSunday = \Carbon\Carbon::create($calYear, $calMonth, $d)->dayOfWeek === 0;
-                            $dayEvents = $hcalEventsMap[$dateKey] ?? [];
-                            $hasEvents = count($dayEvents) > 0;
-                            $isHoliday = collect($dayEvents)->where('source', 'holiday')->isNotEmpty();
-
-                            $cls = '';
-                            if ($isToday) $cls .= ' today';
-                            if ($isSunday) $cls .= ' sunday';
-                            if ($hasEvents) $cls .= ' has-event';
-                            if ($isHoliday) $cls .= ' holiday-day';
-                        @endphp
-                        <div class="hcal-day{{ $cls }}" onclick="openHcalDateDetails('{{ $dateKey }}', '{{ $formattedDate }}')" title="{{ $hasEvents ? collect($dayEvents)->pluck('name')->join(', ') : 'Click to view or add events' }}">
-                            <div class="hcal-day-num">{{ $d }}</div>
-                            @if($hasEvents)
-                                <div class="hcal-dots">
-                                    @foreach(collect($dayEvents)->unique('type')->take(3) as $evt)
-                                        <div class="hcal-dot {{ $evt['type'] }}"></div>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    @endfor
-                </div>
-
-                <div class="hcal-legend" style="margin-top: 20px;">
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#dc2626;"></div> National</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#d97706;"></div> Local</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#7c2d12;"></div> School</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#6366f1;"></div> No Class</div>
-                    <div class="hcal-legend-item"><div class="hcal-legend-dot" style="background:#60a5fa;"></div> Announcement</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</x-card>
-
-{{-- ─── CALENDAR EVENT DETAILS POPUP MODAL ─── --}}
-<div class="hcal-modal-overlay" id="hcalDetailsModalOverlay">
-    <div class="hcal-modal hcal-details-modal" style="max-width: 540px;">
-        <div class="hcal-modal-header" style="padding: 20px 24px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 38px; height: 38px; border-radius: 12px; background: rgba(207, 164, 111, 0.12); border: 1px solid rgba(207, 164, 111, 0.25); display: flex; align-items: center; justify-content: center; color: #cfa46f; font-size: 1.15rem; flex-shrink: 0;">
-                    <i class="bi bi-calendar-event"></i>
-                </div>
-                <div>
-                    <div class="hcal-modal-title" style="font-size: 1.1rem; line-height: 1.2;">Calendar Event Details</div>
-                    <div id="hcalDetailsDateLabel" style="font-size: 0.78rem; color: #b39b82; font-weight: 600; margin-top: 2px;"></div>
-                </div>
-            </div>
-            <button type="button" class="hcal-modal-close" onclick="closeHcalDetailsModal()">×</button>
-        </div>
-        <div class="hcal-modal-body" id="hcalDetailsBody" style="padding: 20px 24px; max-height: 460px; overflow-y: auto;">
-            {{-- Dynamically populated --}}
-        </div>
-        <div class="hcal-modal-footer" id="hcalDetailsFooter" style="padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0, 0, 0, 0.25);">
-            <button type="button" class="hcal-btn-cancel" onclick="closeHcalDetailsModal()">Close</button>
-            <button type="button" class="hcal-btn-submit" id="hcalDetailsAddBtn" onclick="addEventForCurrentDate()" style="padding: 8px 18px; font-size: 0.82rem; display: inline-flex; align-items: center; gap: 6px;">
-                <i class="bi bi-plus-lg"></i> Add Event
-            </button>
-        </div>
-    </div>
-</div>
-
-{{-- ─── ADD/EDIT HOLIDAY MODAL ─── --}}
-<div class="hcal-modal-overlay" id="hcalModalOverlay">
-    <div class="hcal-modal">
-        <div class="hcal-modal-header">
-            <div class="hcal-modal-title" id="hcalModalTitle">Add Holiday / Event</div>
-            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">×</button>
-        </div>
-        <form id="hcalForm" method="POST" action="{{ route('admin.calendar.store') }}">
-            @csrf
-            <div id="hcalMethodField"></div>
-            <div class="hcal-modal-body">
-                <div class="hcal-form-group">
-                    <label class="hcal-form-label">Event Name *</label>
-                    <input type="text" name="name" class="hcal-form-input" id="hcalName" required placeholder="e.g. Independence Day">
-                </div>
-                <div class="hcal-form-group">
-                    <label class="hcal-form-label">Date *</label>
-                    <input type="date" name="date" class="hcal-form-input" id="hcalDate" required>
-                </div>
-                <div class="hcal-form-group">
-                    <label class="hcal-form-label">Type *</label>
-                    <select name="type" class="hcal-form-select" id="hcalType" required>
-                        <option value="national">National Holiday</option>
-                        <option value="local">Local Holiday</option>
-                        <option value="school">School Holiday</option>
-                        <option value="no_class">No Classes</option>
-                    </select>
-                </div>
-                <div class="hcal-form-group" style="margin-bottom:0;">
-                    <label class="hcal-form-label">Description</label>
-                    <textarea name="description" class="hcal-form-textarea" id="hcalDesc" placeholder="Optional description..."></textarea>
-                </div>
-            </div>
-            <div class="hcal-modal-footer">
-                <button type="button" class="hcal-btn-cancel" onclick="closeHcalModal()">Cancel</button>
-                <button type="submit" class="hcal-btn-submit" id="hcalSubmitBtn">
-                    <i class="bi bi-check-lg"></i> Save Event
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
 @endsection
 
 @push('scripts')
 <script>
-window.hcalEventsMap = @json($hcalEventsMap ?? []);
-let selectedHcalDate = null;
-let selectedHcalDateFormatted = '';
-
 document.addEventListener('DOMContentLoaded', function() {
     // ─── Ticking Live Clock ───
     function updateClock() {
@@ -606,157 +447,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (el) el.style.opacity = '1';
                 });
             });
-    }
-});
-
-// ─── CALENDAR EVENT DETAILS POPUP ───
-function openHcalDateDetails(dateKey, formattedDate) {
-    selectedHcalDate = dateKey;
-    selectedHcalDateFormatted = formattedDate;
-    
-    document.getElementById('hcalDetailsDateLabel').textContent = formattedDate;
-    const body = document.getElementById('hcalDetailsBody');
-    const events = window.hcalEventsMap[dateKey] || [];
-    
-    if (events.length === 0) {
-        body.innerHTML = `
-            <div style="text-align: center; padding: 36px 16px;">
-                <div style="width: 58px; height: 58px; border-radius: 16px; background: rgba(207, 164, 111, 0.08); border: 1px solid rgba(207, 164, 111, 0.2); color: #cfa46f; display: flex; align-items: center; justify-content: center; font-size: 1.7rem; margin: 0 auto 16px;">
-                    <i class="bi bi-calendar2-plus"></i>
-                </div>
-                <h4 style="font-size: 1.05rem; font-weight: 700; color: #f3ede4; margin-bottom: 6px;">No Scheduled Events</h4>
-                <p style="font-size: 0.82rem; color: #8f826f; margin-bottom: 20px;">There are no holidays or announcements scheduled for this date.</p>
-                <button type="button" class="hcal-btn-submit" onclick="addEventForCurrentDate()" style="margin: 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 9px 20px; font-size: 0.82rem;">
-                    <i class="bi bi-plus-lg"></i> Add Event for this Date
-                </button>
-            </div>
-        `;
-    } else {
-        let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
-        events.forEach(evt => {
-            const isHoliday = evt.source === 'holiday';
-            const typeColorMap = {
-                national: '#dc2626',
-                local: '#d97706',
-                school: '#7c2d12',
-                no_class: '#6366f1',
-                announcement: '#60a5fa',
-                event: '#a78bfa'
-            };
-            const borderColor = typeColorMap[evt.type] || '#cfa46f';
-            const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
-            
-            html += `
-                <div class="hcal-details-item" data-type="${evt.type}" style="border-left: 4px solid ${borderColor};">
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                        <span class="hcal-event-type ${evt.type}" style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-flex; align-items: center; gap: 5px;">
-                            <i class="bi ${isHoliday ? 'bi-calendar-heart' : 'bi-megaphone'}"></i>
-                            ${evt.type_label || evt.type}
-                        </span>
-                        ${isHoliday ? `
-                            <div style="display: flex; gap: 6px;">
-                                <button type="button" class="hcal-event-action-btn" title="Edit Holiday" onclick="editFromDetails(${evt.id}, '${escapeHtml(evt.name)}', '${escapeHtml(evt.description || '')}', '${evt.type}', '${evt.date}')">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <form action="/admin/calendar/${evt.id}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this holiday?');">
-                                    <input type="hidden" name="_token" value="${csrfToken}">
-                                    <input type="hidden" name="_method" value="DELETE">
-                                    <button type="submit" class="hcal-event-action-btn danger" title="Delete Holiday"><i class="bi bi-trash3"></i></button>
-                                </form>
-                            </div>
-                        ` : ''}
-                    </div>
-                    <div style="font-size: 1.05rem; font-weight: 700; color: #f3ede4; margin-bottom: 4px;">${escapeHtml(evt.name)}</div>
-                    ${evt.author ? `
-                        <div style="font-size: 0.75rem; color: #b39b82; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-                            <i class="bi bi-person"></i> Posted by <strong>${escapeHtml(evt.author)}</strong>
-                        </div>
-                    ` : ''}
-                    ${evt.location ? `
-                        <div style="font-size: 0.75rem; color: #b39b82; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-                            <i class="bi bi-geo-alt"></i> ${escapeHtml(evt.location)}
-                        </div>
-                    ` : ''}
-                    ${evt.description ? `
-                        <div style="font-size: 0.82rem; color: #d4c8b8; line-height: 1.45; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
-                            ${escapeHtml(evt.description)}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        });
-        html += '</div>';
-        body.innerHTML = html;
-    }
-    
-    document.getElementById('hcalDetailsModalOverlay').classList.add('active');
-}
-
-function closeHcalDetailsModal() {
-    const overlay = document.getElementById('hcalDetailsModalOverlay');
-    if (overlay) overlay.classList.remove('active');
-}
-
-function addEventForCurrentDate() {
-    closeHcalDetailsModal();
-    openHcalModal(selectedHcalDate);
-}
-
-function editFromDetails(id, name, desc, type, date) {
-    closeHcalDetailsModal();
-    openHcalEditModal(id, name, desc, type, date);
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-// ─── ADD/EDIT HOLIDAY MODALS ───
-function openHcalModal(prefillDate = null) {
-    document.getElementById('hcalModalTitle').textContent = 'Add Holiday / Event';
-    document.getElementById('hcalForm').action = '{{ route("admin.calendar.store") }}';
-    document.getElementById('hcalMethodField').innerHTML = '';
-    document.getElementById('hcalName').value = '';
-    document.getElementById('hcalDate').value = prefillDate || selectedHcalDate || '';
-    document.getElementById('hcalType').value = 'national';
-    document.getElementById('hcalDesc').value = '';
-    document.getElementById('hcalSubmitBtn').innerHTML = '<i class="bi bi-check-lg"></i> Save Event';
-    document.getElementById('hcalModalOverlay').classList.add('active');
-}
-
-function openHcalEditModal(id, name, desc, type, date) {
-    document.getElementById('hcalModalTitle').textContent = 'Edit Holiday';
-    document.getElementById('hcalForm').action = '/admin/calendar/' + id;
-    document.getElementById('hcalMethodField').innerHTML = '<input type="hidden" name="_method" value="PUT">';
-    document.getElementById('hcalName').value = name;
-    document.getElementById('hcalDate').value = date;
-    document.getElementById('hcalType').value = type;
-    document.getElementById('hcalDesc').value = desc;
-    document.getElementById('hcalSubmitBtn').innerHTML = '<i class="bi bi-check-lg"></i> Update Event';
-    document.getElementById('hcalModalOverlay').classList.add('active');
-}
-
-function closeHcalModal() {
-    const overlay = document.getElementById('hcalModalOverlay');
-    if (overlay) overlay.classList.remove('active');
-}
-
-document.getElementById('hcalModalOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeHcalModal();
-});
-document.getElementById('hcalDetailsModalOverlay').addEventListener('click', function(e) {
-    if (e.target === this) closeHcalDetailsModal();
-});
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeHcalModal();
-        closeHcalDetailsModal();
     }
 });
 </script>
