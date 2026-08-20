@@ -14,6 +14,11 @@
     <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
+    @auth
+        @if(Auth::user()->isAdmin())
+            <link rel="stylesheet" href="{{ asset('css/admin-theme.css') }}?v={{ filemtime(public_path('css/admin-theme.css')) }}">
+        @endif
+    @endauth
     <link rel="manifest" href="/manifest.json">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
@@ -802,25 +807,25 @@
         }
 
         // Increment idle time every second
-        const idleInterval = setInterval(() => {
-            idleTime += 1000;
-            if (idleTime >= IDLE_TIMEOUT_MS) {
-                clearInterval(idleInterval);
-                // Trigger logout
-                const logoutForm = document.createElement('form');
-                logoutForm.method = 'POST';
-                logoutForm.action = '{{ route("logout") }}';
-                
-                const csrfInput = document.createElement('input');
-                csrfInput.type = 'hidden';
-                csrfInput.name = '_token';
-                csrfInput.value = '{{ csrf_token() }}';
-                
-                logoutForm.appendChild(csrfInput);
-                document.body.appendChild(logoutForm);
-                logoutForm.submit();
-            }
-        }, 1000);
+        // const idleInterval = setInterval(() => {
+        //     idleTime += 1000;
+        //     if (idleTime >= IDLE_TIMEOUT_MS) {
+        //         clearInterval(idleInterval);
+        //         // Trigger logout
+        //         const logoutForm = document.createElement('form');
+        //         logoutForm.method = 'POST';
+        //         logoutForm.action = '{{ route("logout") }}';
+        //         
+        //         const csrfInput = document.createElement('input');
+        //         csrfInput.type = 'hidden';
+        //         csrfInput.name = '_token';
+        //         csrfInput.value = '{{ csrf_token() }}';
+        //         
+        //         logoutForm.appendChild(csrfInput);
+        //         document.body.appendChild(logoutForm);
+        //         logoutForm.submit();
+        //     }
+        // }, 1000);
 
         // Reset timer on any interaction
         window.onload = resetIdleTimer;

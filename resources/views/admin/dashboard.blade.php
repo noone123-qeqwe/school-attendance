@@ -2,111 +2,259 @@
 
 @section('title', 'Admin Dashboard')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/admin-theme.css') }}?v={{ filemtime(public_path('css/admin-theme.css')) }}">
+@endpush
+
 @section('content')
 
-{{-- â”€â”€â”€ MOBILE DASHBOARD HEADER â”€â”€â”€ --}}
-<div class="ent-mobile-header ent-fade-up">
-    <div>
-        <div class="ent-mobile-header-title">Command Center</div>
-        <div class="ent-mobile-header-sub">Attendance & Academic Overview</div>
-    </div>
-    <div class="ent-mobile-header-date">
-        <div class="ent-mobile-header-day">{{ now()->format('d') }}</div>
-        <div>{{ now()->format('M Y') }}</div>
-        <div>{{ now()->format('D') }}</div>
-    </div>
-</div>
+@php
+    $presentDiff = $totalPresent - $yesterdayPresent;
+    $lateDiff = $totalLate - $yesterdayLate;
+    $absentDiff = $totalAbsent - $yesterdayAbsent;
+    $rateDiff = $attendanceRate - $yesterdayRate;
+@endphp
 
-{{-- â”€â”€â”€ DESKTOP HEADER â”€â”€â”€ --}}
-<div class="ent-dash-header ent-fade-up ent-desktop-only">
-    <div>
-        <h1 class="ent-dash-title">Command Center</h1>
-        <p class="ent-dash-subtitle">Overview of academic and attendance operations &mdash; {{ now()->format('l, F j, Y') }}</p>
+{{-- ─── MODERNIZED DASHBOARD HEADER ─── --}}
+<div class="dash-header-bar dash-animate">
+    <div class="dash-header-left">
+        <h1 class="dash-title">Command Center</h1>
+        <div class="dash-subtitle">
+            <i class="bi bi-clock"></i> <span id="dashLiveClock" class="dash-live-clock">{{ now()->format('h:i:s A') }}</span> &mdash; <span id="dashLiveDate">{{ now()->format('l, F j, Y') }}</span>
+        </div>
     </div>
-    <div class="ent-dash-actions">
-        <span class="ent-btn ent-btn-secondary">
-            <i class="bi bi-calendar"></i> Today: {{ now()->format('M d, Y') }}
-        </span>
-        <a href="{{ route('admin.attendance.pdf') }}" class="ent-btn ent-btn-primary">
-            <i class="bi bi-cloud-arrow-down"></i> Generate Report
+    <div class="dash-header-right">
+        <!-- Date Range Picker -->
+        <div class="date-range-picker">
+            <button type="button" class="date-range-btn" id="dateRangeBtn">
+                <i class="bi bi-calendar-event"></i>
+                <span id="dateRangeLabel">Today</span>
+                <i class="bi bi-chevron-down" style="font-size:0.6rem; margin-left: 4px;"></i>
+            </button>
+            <div class="date-range-dropdown" id="dateRangeDropdown">
+                <button type="button" class="date-range-option active" data-range="today">Today</button>
+                <button type="button" class="date-range-option" data-range="yesterday">Yesterday</button>
+                <button type="button" class="date-range-option" data-range="this_week">This Week</button>
+                <button type="button" class="date-range-option" data-range="this_month">This Month</button>
+            </div>
+        </div>
+        
+        <a href="{{ route('admin.attendance.pdf') }}" class="adm-btn-primary ent-btn" style="border-radius: 12px; padding: 10px 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="bi bi-cloud-arrow-down-fill"></i> Generate Report
         </a>
     </div>
 </div>
 
-{{-- ─── LIVE TODAY REGION ─── --}}
-<div class="ent-fade-up" style="margin-bottom: 24px;">
-    <h2 style="font-size: 1.2rem; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px;">
-        <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--ent-success); display: inline-block; box-shadow: 0 0 8px var(--ent-success);"></span>
-        Live Today
-    </h2>
+{{-- ─── QUICK ACTIONS PANEL ─── --}}
+<div class="quick-actions-grid dash-animate">
+    <a href="{{ route('admin.students') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(34, 197, 94, 0.12); color: #4ade80;">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <span>Students</span>
+    </a>
+    <a href="{{ route('admin.teachers') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(59, 130, 246, 0.12); color: #60a5fa;">
+            <i class="bi bi-person-workspace"></i>
+        </div>
+        <span>Instructors</span>
+    </a>
+    <a href="{{ route('admin.attendance') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(239, 68, 68, 0.12); color: #f87171;">
+            <i class="bi bi-calendar-check-fill"></i>
+        </div>
+        <span>Attendance Logs</span>
+    </a>
+    <a href="{{ route('admin.calendar') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(168, 85, 247, 0.12); color: #c084fc;">
+            <i class="bi bi-calendar3-fill"></i>
+        </div>
+        <span>Holiday Calendar</span>
+    </a>
+    <a href="{{ route('admin.announcements.index') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(236, 72, 153, 0.12); color: #f472b6;">
+            <i class="bi bi-megaphone-fill"></i>
+        </div>
+        <span>Announcements</span>
+    </a>
+    <a href="{{ route('admin.activity.log') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(245, 158, 11, 0.12); color: #fbbf24;">
+            <i class="bi bi-journal-text"></i>
+        </div>
+        <span>Activity Logs</span>
+    </a>
+    @if(Auth::user()->admin_sub_role === 'super_admin' || is_null(Auth::user()->admin_sub_role))
+    <a href="{{ route('admin.system-health.index') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(20, 184, 166, 0.12); color: #2dd4bf;">
+            <i class="bi bi-heart-pulse-fill"></i>
+        </div>
+        <span>System Health</span>
+    </a>
+    <a href="{{ route('admin.settings') }}" class="quick-action-btn">
+        <div class="qa-icon" style="background: rgba(148, 163, 184, 0.12); color: #94a3b8;">
+            <i class="bi bi-sliders"></i>
+        </div>
+        <span>Settings</span>
+    </a>
+    @endif
 </div>
 
 {{-- ─── SYSTEM ALERTS ─── --}}
 @if($systemAlerts->count() > 0)
-<div class="ent-fade-up ent-delay-1 ent-mb-md" aria-live="polite">
+<div class="dash-animate" style="margin-bottom: 24px;" aria-live="polite">
     @foreach($systemAlerts as $alert)
-    <div class="ent-alert {{ $alert->severity === 'critical' ? 'danger' : ($alert->severity === 'warning' ? 'warning' : 'info') }}">
-        <div class="ent-alert-icon">
+    <div class="alert-card {{ $alert->severity }}">
+        <div class="alert-icon">
             <i class="bi {{ $alert->icon }}"></i>
         </div>
-        <div class="ent-alert-body">
-            <div class="ent-alert-text">{{ $alert->message }}</div>
-        </div>
+        <div class="alert-message">{{ $alert->message }}</div>
         @if($alert->action)
-            <a href="{{ $alert->action }}" class="ent-btn ent-btn-sm ent-btn-ghost" style="flex-shrink:0;">View <i class="bi bi-arrow-right"></i></a>
+            <a href="{{ $alert->action }}" class="alert-action">View <i class="bi bi-arrow-right"></i></a>
         @endif
     </div>
     @endforeach
 </div>
 @endif
 
-{{-- ─── SKELETON KPIs (shown briefly while page paints) ─── --}}
-<div class="ent-grid ent-grid-4 ent-mb-md skel-kpi-placeholder" id="skelKpis">
-    <x-skeleton type="kpi" :count="4" />
-</div>
-
-{{-- ─── PRIMARY KPIs: Entity Counts ─── --}}
-<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-1" id="realKpis" style="display:none;" aria-live="polite">
-    <x-card type="kpi" icon="bi bi-people-fill" label="Total Students" value="{{ number_format($totalStudents) }}" />
-    <x-card type="kpi" icon="bi bi-person-workspace" label="Instructors" value="{{ number_format($totalTeachers) }}" />
-    <x-card type="kpi" icon="bi bi-building" label="Departments" value="{{ number_format($totalDepartments) }}" />
-    <x-card type="kpi" icon="bi bi-diagram-3" label="Sections" value="{{ number_format($totalSections) }}" />
-</div>
-
-{{-- ─── ATTENDANCE KPIs ─── --}}
-<div class="ent-grid ent-grid-4 ent-mb-md ent-fade-up ent-delay-2" aria-live="polite">
-    @php
-        $presentDiff = $totalPresent - $yesterdayPresent;
-        $lateDiff = $totalLate - $yesterdayLate;
-        $absentDiff = $totalAbsent - $yesterdayAbsent;
-        $rateDiff = $attendanceRate - $yesterdayRate;
-    @endphp
-    <x-card type="kpi" accent="success" icon="bi bi-check-circle-fill" label="Present Today" value="{{ number_format($totalPresent) }}" trend="{{ abs($presentDiff) }} vs yesterday" trendDir="{{ $presentDiff >= 0 ? 'up' : 'down' }}" />
-    <x-card type="kpi" accent="warning" icon="bi bi-clock-fill" label="Late Today" value="{{ number_format($totalLate) }}" trend="{{ abs($lateDiff) }} vs yesterday" trendDir="{{ $lateDiff <= 0 ? 'up' : 'down' }}" />
-    <x-card type="kpi" accent="danger" icon="bi bi-x-circle-fill" label="Absent Today" value="{{ number_format($totalAbsent) }}" trend="{{ abs($absentDiff) }} vs yesterday" trendDir="{{ $absentDiff <= 0 ? 'up' : 'down' }}" />
-    
-    <x-card type="kpi" accent="{{ $attendanceRate >= 80 ? 'success' : 'danger' }}" icon="bi bi-speedometer2" label="Overall Rate" value="{{ $attendanceRate }}%" trend="{{ abs($rateDiff) }}% vs yesterday" trendDir="{{ $rateDiff >= 0 ? 'up' : 'down' }}">
-        <div class="ent-progress" style="margin-top:8px;">
-            <div class="ent-progress-fill {{ $attendanceRate >= 80 ? 'success' : 'danger' }}" style="width:{{ $attendanceRate }}%"></div>
+{{-- ─── CORE ENTITY METRICS ─── --}}
+<div class="stat-grid stat-grid-4 dash-animate" style="margin-bottom: 24px;">
+    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
+            <i class="bi bi-people-fill"></i>
         </div>
-    </x-card>
+        <div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Total Students</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalStudents) }}</div>
+        </div>
+    </div>
+    
+    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
+            <i class="bi bi-person-workspace"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Instructors</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalTeachers) }}</div>
+        </div>
+    </div>
+
+    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
+            <i class="bi bi-building"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Departments</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalDepartments) }}</div>
+        </div>
+    </div>
+
+    <div class="adm-stat" style="padding: 20px; display: flex; align-items: center; gap: 16px;">
+        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
+            <i class="bi bi-diagram-3"></i>
+        </div>
+        <div>
+            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Sections</div>
+            <div class="adm-stat-val" style="font-size: 1.8rem !important;">{{ number_format($totalSections) }}</div>
+        </div>
+    </div>
 </div>
 
-{{-- ─── LIVE SESSIONS (Full Width in Live Today) ─── --}}
-<div class="ent-mb-md ent-fade-up ent-delay-3">
-    <x-card type="section" style="min-width:0;" aria-live="polite">
+{{-- ─── ATTENDANCE STATS & REAL-TIME TRENDS ─── --}}
+<div class="stat-grid stat-grid-4 dash-animate" style="margin-bottom: 28px;">
+    <!-- Present Card -->
+    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;" id="presentLabel">Present Today</div>
+                <div class="adm-stat-val" id="presentVal" style="font-size: 2rem !important;">{{ number_format($totalPresent) }}</div>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.2); display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 1.2rem;">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;" id="presentTrendContainer">
+            <span class="stat-trend {{ $presentDiff >= 0 ? 'up' : 'down' }}">
+                <i class="bi {{ $presentDiff >= 0 ? 'bi-caret-up-fill' : 'bi-caret-down-fill' }}"></i>
+                {{ abs($presentDiff) }}
+            </span>
+            <span class="stat-comparison">vs yesterday</span>
+        </div>
+    </div>
+
+    <!-- Late Card -->
+    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;" id="lateLabel">Late Today</div>
+                <div class="adm-stat-val" id="lateVal" style="font-size: 2rem !important;">{{ number_format($totalLate) }}</div>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); display: flex; align-items: center; justify-content: center; color: #fbbf24; font-size: 1.2rem;">
+                <i class="bi bi-clock-fill"></i>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;" id="lateTrendContainer">
+            <span class="stat-trend {{ $lateDiff <= 0 ? 'up' : 'down' }}">
+                <i class="bi {{ $lateDiff <= 0 ? 'bi-caret-down-fill' : 'bi-caret-up-fill' }}"></i>
+                {{ abs($lateDiff) }}
+            </span>
+            <span class="stat-comparison">vs yesterday</span>
+        </div>
+    </div>
+
+    <!-- Absent Card -->
+    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;" id="absentLabel">Absent Today</div>
+                <div class="adm-stat-val" id="absentVal" style="font-size: 2rem !important;">{{ number_format($totalAbsent) }}</div>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.2); display: flex; align-items: center; justify-content: center; color: #f87171; font-size: 1.2rem;">
+                <i class="bi bi-x-circle-fill"></i>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;" id="absentTrendContainer">
+            <span class="stat-trend {{ $absentDiff <= 0 ? 'up' : 'down' }}">
+                <i class="bi {{ $absentDiff <= 0 ? 'bi-caret-down-fill' : 'bi-caret-up-fill' }}"></i>
+                {{ abs($absentDiff) }}
+            </span>
+            <span class="stat-comparison">vs yesterday</span>
+        </div>
+    </div>
+
+    <!-- Overall Rate Card -->
+    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Overall Rate</div>
+                <div class="adm-stat-val" id="rateVal" style="font-size: 2rem !important;">{{ $attendanceRate }}%</div>
+            </div>
+            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.2rem;">
+                <i class="bi bi-speedometer2"></i>
+            </div>
+        </div>
+        <div style="margin-top: 10px;">
+            <div class="perf-bar" style="margin-top:8px;">
+                <div id="rateProgressFill" class="perf-bar-fill {{ $attendanceRate >= 80 ? 'high' : ($attendanceRate >= 60 ? 'medium' : 'low') }}" style="width:{{ $attendanceRate }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- ─── LIVE ATTENDANCE QR SESSIONS ─── --}}
+<div class="dash-animate" style="margin-bottom: 28px;">
+    <x-card type="section" class="adm-card" style="min-width:0;" aria-live="polite">
         <x-slot:title>
             <div class="ent-section-title-icon" style="background:rgba(74,222,128,0.12);color:var(--ent-success);">
                 <i class="bi bi-broadcast"></i>
             </div>
             Live QR Sessions
             @if($activeSessionCount > 0)
-                <span class="ent-badge ent-badge-success">{{ $activeSessionCount }} active</span>
+                <span class="ent-badge ent-badge-success" id="activeSessionBadge">{{ $activeSessionCount }} active</span>
             @endif
         </x-slot:title>
 
-        <div class="ent-scroll-x" style="margin: -20px;">
-            <table class="ent-table" style="min-width:400px; margin-bottom: 0;">
+        <div class="table-responsive" style="margin: -20px;">
+            <table class="adm-table table" style="margin-bottom: 0;">
                 <thead>
                     <tr>
                         <th>Subject & Teacher</th>
@@ -125,8 +273,8 @@
                             <span class="ent-badge ent-badge-neutral">{{ $session->checked_in_count }}</span>
                         </td>
                         <td data-label="Status">
-                            <span class="ent-badge {{ strtolower($session->qr_status) == 'active' ? 'ent-badge-success' : 'ent-badge-warning' }}">
-                                <span class="ent-status-dot {{ strtolower($session->qr_status) == 'active' ? 'active' : 'warning' }}" style="width:6px;height:6px;"></span>
+                            <span class="session-status-badge active">
+                                <span class="pulse-dot active"></span>
                                 {{ $session->qr_status }}
                             </span>
                         </td>
@@ -149,92 +297,87 @@
     </x-card>
 </div>
 
-{{-- ─── PAST RECORDS REGION ─── --}}
-<div class="ent-fade-up" style="margin-top: 40px; margin-bottom: 24px;">
-    <h2 style="font-size: 1.2rem; font-weight: 700; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 10px;">
-        <i class="bi bi-clock-history"></i>
-        Past Records & Analytics
-    </h2>
-</div>
-
-{{-- ─── WEEKLY CHART & AT-RISK (Two Column) ─── --}}
-<div class="ent-grid ent-grid-7-5 ent-mb-md ent-fade-up ent-delay-3">
-
+{{-- ─── CHARTS & AT-RISK STUDENTS ─── --}}
+<div class="row g-4 dash-animate" style="margin-bottom: 28px;">
     {{-- Weekly Chart --}}
-    <x-card type="section" style="min-width:0;" icon="bi bi-bar-chart-line-fill" title="Weekly Attendance Trend">
-        <x-slot:headerActions>
-            <div style="display:flex;gap:6px;">
-                <span class="ent-badge ent-badge-success"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Present</span>
-                <span class="ent-badge ent-badge-warning"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Late</span>
-                <span class="ent-badge ent-badge-danger"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Absent</span>
-            </div>
-        </x-slot:headerActions>
-        
-        <div id="weeklyChart" class="ent-chart-container" style="min-height:260px;"></div>
-    </x-card>
+    <div class="col-lg-7 col-12">
+        <x-card type="section" class="adm-card" style="min-width:0; height: 100%;" icon="bi bi-bar-chart-line-fill" title="Weekly Attendance Trend">
+            <x-slot:headerActions>
+                <div style="display:flex;gap:6px;">
+                    <span class="ent-badge ent-badge-success"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Present</span>
+                    <span class="ent-badge ent-badge-warning"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Late</span>
+                    <span class="ent-badge ent-badge-danger"><i class="bi bi-circle-fill" style="font-size:0.45rem;"></i> Absent</span>
+                </div>
+            </x-slot:headerActions>
+            
+            <div id="weeklyChart" class="ent-chart-container" style="min-height:260px;"></div>
+        </x-card>
+    </div>
 
     {{-- At-Risk Students --}}
-    <x-card type="section" style="min-width:0;">
-        <x-slot:title>
-            <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
-                <i class="bi bi-exclamation-triangle-fill"></i>
+    <div class="col-lg-5 col-12">
+        <x-card type="section" class="adm-card" style="min-width:0; height: 100%;">
+            <x-slot:title>
+                <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                At-Risk Students
+            </x-slot:title>
+            <x-slot:headerActions>
+                <a href="{{ route('admin.students') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View All <i class="bi bi-arrow-right"></i></a>
+            </x-slot:headerActions>
+            
+            <div class="table-responsive" style="margin: -20px;">
+                <table class="adm-table table" style="margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Course</th>
+                            <th>Rate</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($atRiskStudents->take(5) as $student)
+                        <tr>
+                            <td data-label="Student">
+                                <div style="display:flex;align-items:center;gap:8px;">
+                                    <div class="ent-avatar ent-avatar-round" style="width:28px;height:28px;font-size:0.65rem;">
+                                        <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=28' }}" alt="">
+                                    </div>
+                                    <span class="ent-truncate" style="font-weight:600;font-size:0.8rem;max-width:120px;">{{ $student->name }}</span>
+                                </div>
+                            </td>
+                            <td data-label="Course"><span style="font-size:0.75rem;" class="ent-text-muted">{{ $student->course }}</span></td>
+                            <td data-label="Rate">
+                                <span class="risk-badge {{ $student->attendance_rate >= 70 ? 'watch' : 'critical' }}">
+                                    {{ $student->attendance_rate }}%
+                                </span>
+                            </td>
+                            <td data-label="Action">
+                                <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4">
+                                <div class="ent-empty" style="padding:32px 16px; border: none;">
+                                    <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
+                                    <div class="ent-empty-text">All students are performing well.</div>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-            At-Risk Students
-        </x-slot:title>
-        <x-slot:headerActions>
-            <a href="{{ route('admin.students') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View All <i class="bi bi-arrow-right"></i></a>
-        </x-slot:headerActions>
-        
-        <div class="ent-scroll-x" style="margin: -20px;">
-            <table class="ent-table" style="min-width:320px; margin-bottom: 0;">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Course</th>
-                        <th>Rate</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($atRiskStudents->take(5) as $student)
-                    <tr>
-                        <td data-label="Student">
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <div class="ent-avatar ent-avatar-round" style="width:28px;height:28px;font-size:0.65rem;">
-                                    <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff&size=28' }}" alt="">
-                                </div>
-                                <span class="ent-truncate" style="font-weight:600;font-size:0.8rem;max-width:120px;">{{ $student->name }}</span>
-                            </div>
-                        </td>
-                        <td data-label="Course"><span style="font-size:0.75rem;" class="ent-text-muted">{{ $student->course }}</span></td>
-                        <td data-label="Rate">
-                            <span class="ent-badge {{ $student->attendance_rate >= 70 ? 'ent-badge-warning' : 'ent-badge-danger' }}">
-                                {{ $student->attendance_rate }}%
-                            </span>
-                        </td>
-                        <td data-label="Action">
-                            <a href="{{ route('admin.student', $student->id) }}" class="ent-btn ent-btn-xs ent-btn-ghost">View</a>
-                        </td>
-                    </tr>
-                    @empty
-                    <tr>
-                        <td colspan="4">
-                            <div class="ent-empty" style="padding:32px 16px; border: none;">
-                                <div class="ent-empty-icon" style="width:48px;height:48px;font-size:1.25rem;background:rgba(74,222,128,0.08);color:var(--ent-success);">
-                                    <i class="bi bi-shield-check"></i>
-                                </div>
-                                <div class="ent-empty-text">All students are performing well.</div>
-                            </div>
-                        </td>
-                    </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </x-card>
+        </x-card>
+    </div>
 </div>
 
-{{-- â”€â”€â”€ HOLIDAY CALENDAR â”€â”€â”€ --}}
+{{-- ─── HOLIDAY & EVENTS CALENDAR ─── --}}
 @php
     $hcalStart = \Carbon\Carbon::create($calYear, $calMonth, 1);
     $hcalEnd = $hcalStart->copy()->endOfMonth();
@@ -245,7 +388,7 @@
     $hcalToday = now()->day;
 @endphp
 
-<x-card type="section" class="ent-mb-md ent-fade-up ent-delay-4" title="Holiday & Events Calendar">
+<x-card type="section" class="adm-card dash-animate" style="margin-bottom: 28px;" title="Holiday & Events Calendar">
     <x-slot:icon>
         <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:#f87171;">
             <i class="bi bi-calendar-heart-fill"></i>
@@ -346,7 +489,7 @@
                                     $dashBadgeColor = $evtIsAdminRole ? '#CFA46F' : '#8B5A2B';
                                     $dashRoleLabel = $evtIsAdminRole ? 'Admin' : 'Instructor';
                                 @endphp
-                                Â· <i class="bi bi-person"></i> {{ $evt->author }}
+                                · <i class="bi bi-person"></i> {{ $evt->author }}
                                 <span style="display:inline-flex;align-items:center;gap:3px;margin-left:4px;padding:1px 7px;border-radius:99px;font-size:0.6rem;font-weight:700;background:{{ $dashBadgeBg }};border:1px solid {{ $dashBadgeBorder }};color:{{ $dashBadgeColor }};vertical-align:middle;">
                                     <span style="width:4px;height:4px;border-radius:50%;background:{{ $dashBadgeColor }};display:inline-block;"></span>
                                     {{ $dashRoleLabel }}
@@ -384,12 +527,12 @@
     </div>
 </x-card>
 
-{{-- â”€â”€â”€ ADD/EDIT HOLIDAY MODAL â”€â”€â”€ --}}
+{{-- ─── ADD/EDIT HOLIDAY MODAL ─── --}}
 <div class="hcal-modal-overlay" id="hcalModalOverlay">
     <div class="hcal-modal">
         <div class="hcal-modal-header">
             <div class="hcal-modal-title" id="hcalModalTitle">Add Holiday / Event</div>
-            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">âœ•</button>
+            <button type="button" class="hcal-modal-close" onclick="closeHcalModal()">×</button>
         </div>
         <form id="hcalForm" method="POST" action="{{ route('admin.calendar.store') }}">
             @csrf
@@ -427,41 +570,117 @@
     </div>
 </div>
 
-{{-- â”€â”€â”€ MOBILE QUICK ACTIONS â”€â”€â”€ --}}
-<div class="ent-mobile-actions ent-fade-up ent-delay-3">
-    <a href="{{ route('admin.attendance.pdf') }}" class="ent-mobile-action-btn" style="background:rgba(207,164,111,0.1); border-color:var(--ent-gold); grid-column: span 2;">
-        <i class="bi bi-cloud-arrow-down-fill"></i> Generate Report
-    </a>
-    <a href="{{ route('admin.students') }}" class="ent-mobile-action-btn">
-        <i class="bi bi-people-fill"></i> Students
-    </a>
-    <a href="{{ route('admin.attendance') }}" class="ent-mobile-action-btn">
-        <i class="bi bi-calendar-check-fill"></i> Attendance
-    </a>
-    <a href="{{ route('admin.subjects') }}" class="ent-mobile-action-btn">
-        <i class="bi bi-book-fill"></i> Subjects
-    </a>
-    <a href="{{ route('admin.calendar') }}" class="ent-mobile-action-btn">
-        <i class="bi bi-calendar3-fill"></i> Calendar
-    </a>
-</div>
-
 @endsection
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // â”€â”€ Skeleton â†’ Content Reveal â”€â”€
-    var skelKpis = document.getElementById('skelKpis');
-    var realKpis = document.getElementById('realKpis');
-    if (skelKpis && realKpis) {
-        skelKpis.style.display = 'none';
-        realKpis.style.display = '';
+    // ─── Ticking Live Clock ───
+    function updateClock() {
+        const clockEl = document.getElementById('dashLiveClock');
+        if (!clockEl) return;
+        const now = new Date();
+        clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: true });
+    }
+    setInterval(updateClock, 1000);
+
+    // ─── Date Range Dropdown Toggle ───
+    const dateRangeBtn = document.getElementById('dateRangeBtn');
+    const dateRangeDropdown = document.getElementById('dateRangeDropdown');
+    
+    if (dateRangeBtn && dateRangeDropdown) {
+        dateRangeBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dateRangeDropdown.classList.toggle('show');
+        });
+        
+        document.addEventListener('click', function() {
+            dateRangeDropdown.classList.remove('show');
+        });
     }
 
+    // ─── Date Range Change Handler ───
+    const options = document.querySelectorAll('.date-range-option');
+    options.forEach(opt => {
+        opt.addEventListener('click', function() {
+            options.forEach(o => o.classList.remove('active'));
+            this.classList.add('active');
+            const range = this.getAttribute('data-range');
+            document.getElementById('dateRangeLabel').textContent = this.textContent;
+            fetchDashboardStats(range);
+        });
+    });
 
-    var options = {
+    // ─── AJAX Fetch Dashboard Stats ───
+    function fetchDashboardStats(range) {
+        // Apply slight loading opacity
+        const statsToFade = ['presentVal', 'lateVal', 'absentVal', 'rateVal'];
+        statsToFade.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.opacity = '0.5';
+        });
+
+        fetch(`{{ route('admin.dashboard.stats') }}?range=${range}`)
+            .then(response => response.json())
+            .then(data => {
+                // Restore opacity
+                statsToFade.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.opacity = '1';
+                });
+
+                // Update counts
+                document.getElementById('presentVal').textContent = Number(data.present).toLocaleString();
+                document.getElementById('lateVal').textContent = Number(data.late).toLocaleString();
+                document.getElementById('absentVal').textContent = Number(data.absent).toLocaleString();
+                document.getElementById('rateVal').textContent = data.rate + '%';
+                
+                // Update labels
+                const labelSuffix = range === 'today' ? 'Today' : (range === 'yesterday' ? 'Yesterday' : (range === 'this_week' ? 'This Week' : 'This Month'));
+                document.getElementById('presentLabel').textContent = 'Present ' + labelSuffix;
+                document.getElementById('lateLabel').textContent = 'Late ' + labelSuffix;
+                document.getElementById('absentLabel').textContent = 'Absent ' + labelSuffix;
+                
+                // Show/Hide comparison trends (only relevant for Today)
+                const trends = ['presentTrendContainer', 'lateTrendContainer', 'absentTrendContainer'];
+                trends.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = range === 'today' ? '' : 'none';
+                    }
+                });
+                
+                // Update Progress Bar color and width
+                const progress = document.getElementById('rateProgressFill');
+                if (progress) {
+                    progress.style.width = data.rate + '%';
+                    progress.className = 'perf-bar-fill ' + (data.rate >= 80 ? 'high' : (data.rate >= 60 ? 'medium' : 'low'));
+                }
+                
+                // Update Chart
+                if (window.weeklyChartInstance) {
+                    window.weeklyChartInstance.updateOptions({
+                        xaxis: { categories: data.chart.labels }
+                    });
+                    window.weeklyChartInstance.updateSeries([
+                        { name: 'Present', data: data.chart.present },
+                        { name: 'Late', data: data.chart.late },
+                        { name: 'Absent', data: data.chart.absent }
+                    ]);
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching dashboard stats:', err);
+                statsToFade.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.opacity = '1';
+                });
+            });
+    }
+
+    // ─── ApexCharts Trend Line Render ───
+    var chartOptions = {
         series: [
             { name: 'Present', data: {!! json_encode($weeklyPresent) !!} },
             { name: 'Late', data: {!! json_encode($weeklyLate) !!} },
@@ -518,11 +737,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    var chart = new ApexCharts(document.querySelector("#weeklyChart"), options);
+    var chart = new ApexCharts(document.querySelector("#weeklyChart"), chartOptions);
     chart.render();
+    window.weeklyChartInstance = chart; // Store globally for AJAX updates
 });
 
-// â”€â”€ HOLIDAY CALENDAR MODAL â”€â”€
+// ─── HOLIDAY CALENDAR MODALS ───
 function openHcalModal() {
     document.getElementById('hcalModalTitle').textContent = 'Add Holiday / Event';
     document.getElementById('hcalForm').action = '{{ route("admin.calendar.store") }}';
