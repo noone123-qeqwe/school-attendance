@@ -64,10 +64,14 @@
 </tr>
 @empty
 <tr>
-    <td colspan="7" class="text-center" style="padding: 48px 20px;">
-        <i class="bi bi-people" style="font-size:3rem; margin-bottom:16px; display:block; opacity:0.5; color:#b39b82;"></i>
-        <div style="font-size:1.1rem; margin-bottom:8px; color:#f3e7cd; font-weight: 600;">No students found</div>
-        <p style="margin-bottom:20px; color:#b39b82;">There are no students matching your criteria.</p>
+    <td colspan="7" class="p-0 border-0">
+        <x-empty-state 
+            icon="people"
+            title="No students found"
+            message="No students match your search criteria. Try adjusting your filters or add a new student."
+            :action-url="route('admin.student.create')"
+            action-text="Add Student"
+        />
     </td>
 </tr>
 @endforelse

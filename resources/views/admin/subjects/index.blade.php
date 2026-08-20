@@ -99,17 +99,18 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6">
-                        <div class="ent-empty" style="padding:48px 20px;">
-                            <div class="ent-empty-icon" style="width:64px;height:64px;font-size:2rem; margin-bottom:16px;">
-                                <i class="bi bi-book-half"></i>
-                            </div>
-                            <div class="ent-empty-title">No subjects found</div>
-                            <div class="ent-empty-text">There are no subjects matching your filters.</div>
-                            <button class="ent-btn ent-btn-primary" onclick="openModal('addSubjectModal')" style="margin-top:16px;">
-                                <i class="bi bi-plus-lg"></i> Add Subject
-                            </button>
-                        </div>
+                    <td colspan="6" class="p-0 border-0">
+                        <x-empty-state 
+                            icon="journal-bookmark"
+                            title="No subjects found"
+                            message="There are no subjects matching your filters. Get started by adding your first subject."
+                        >
+                            <x-slot:action>
+                                <button class="btn btn-primary" onclick="openModal('addSubjectModal')" style="background: linear-gradient(135deg, #7A1A1A, #9c2727); border: none; border-radius: 12px; padding: 10px 24px; font-weight: 600; font-size: 0.9rem; color: #fff;">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Subject
+                                </button>
+                            </x-slot:action>
+                        </x-empty-state>
                     </td>
                 </tr>
                 @endforelse

@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Attendance Logs')
 
@@ -109,10 +109,12 @@
         </tr>
         @empty
         <tr>
-            <td colspan="7" class="text-center" style="padding:48px 20px;">
-                <i class="bi bi-calendar-x" style="font-size:3rem; margin-bottom:16px; display:block; opacity:0.5; color: #b39b82;"></i>
-                <div style="font-size:1.1rem; margin-bottom:8px; color: #f3e7cd; font-weight: 600;">No records found</div>
-                <p style="margin-bottom:20px; color: #b39b82;">There are no attendance records matching your filters.</p>
+            <td colspan="7" class="p-0 border-0">
+                <x-empty-state 
+                    icon="calendar-x"
+                    title="No Attendance Records Found"
+                    message="There are no attendance records matching your search or filters."
+                />
             </td>
         </tr>
         @endforelse

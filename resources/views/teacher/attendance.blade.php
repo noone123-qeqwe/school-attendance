@@ -114,11 +114,12 @@
         </tr>
         @empty
         <tr>
-            <td colspan="7">
-                <div class="empty-state">
-                    <i class="bi bi-calendar-x"></i>
-                    <p>No records found.</p>
-                </div>
+            <td colspan="7" class="p-0 border-0">
+                <x-empty-state 
+                    icon="calendar-x"
+                    title="No Attendance Records Found"
+                    message="There are no attendance records matching your selected filter criteria."
+                />
             </td>
         </tr>
         @endforelse
