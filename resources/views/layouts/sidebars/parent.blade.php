@@ -14,10 +14,8 @@
         <i class="bi bi-grid-fill"></i>
         <span class="nav-link-text">Dashboard</span>
     </a>
-    <a href="{{ route('parent.attendance.calendar') }}" class="nav-link {{ request()->routeIs('parent.attendance.calendar') ? 'active' : '' }}">
-        <i class="bi bi-calendar-check-fill"></i>
-        <span class="nav-link-text">Attendance Calendar</span>
-    </a>
+
+
     <a href="{{ route('parent.calendar') }}" class="nav-link {{ request()->routeIs('parent.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-event"></i>
         <span class="nav-link-text">Calendar</span>
