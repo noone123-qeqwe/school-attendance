@@ -317,7 +317,7 @@
     color: #f3ede4 !important;
     font-weight: 600;
     border-radius: 10px;
-    padding: 6px 14px;
+    padding: 6px 36px 6px 12px;
     cursor: pointer;
     outline: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
@@ -498,7 +498,7 @@
                 <i class="bi bi-people-fill" style="color: #cfa46f; font-size: 1.05rem;"></i>
                 <label for="scalChildSelect" class="scal-student-select-label">Select Student:</label>
             </div>
-            <div style="min-width: 220px; max-width: 360px; flex-grow: 1;">
+            <div style="min-width: 240px; max-width: 440px; flex: 1;">
                 <select id="scalChildSelect" class="form-select form-select-sm scal-select" onchange="scalSwitchChild(this.value)">
                     @foreach($children as $child)
                         <option value="{{ $child->id }}" {{ $child->id == $selectedChildId ? 'selected' : '' }}>

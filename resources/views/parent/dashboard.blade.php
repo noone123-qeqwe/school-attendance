@@ -85,16 +85,16 @@
 <div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: linear-gradient(135deg, rgba(32,20,15,0.7) 0%, rgba(20,10,5,0.85) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 18px; padding: 14px 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
     <div class="d-flex align-items-center gap-2">
         <i class="bi bi-people-fill" style="color: var(--gold); font-size: 1.15rem;"></i>
-        <label for="dashboardChildSelect" style="font-weight: 700; color: #f3e7cd; margin: 0; font-size: 0.95rem;">
+        <label for="dashboardChildSelect" style="font-weight: 700; color: #f3e7cd; margin: 0; font-size: 0.95rem; white-space: nowrap;">
             Select Student:
         </label>
     </div>
-    <div style="min-width: 240px; flex-grow: 1; max-width: 380px;">
+    <div style="min-width: 260px; flex: 1; max-width: 480px;">
         <select id="dashboardChildSelect" class="form-select" onchange="switchDashboardChild(this.value)"
-            style="background: rgba(15,10,8,0.9); border: 1px solid rgba(207,164,111,0.35); color: #f3e7cd; font-weight: 600; border-radius: 12px; padding: 8px 16px; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+            style="background-color: #140d07; border: 1px solid rgba(207,164,111,0.35); color: #f3e7cd; font-weight: 600; font-size: 0.9rem; border-radius: 12px; padding: 8px 36px 8px 14px; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 100%;">
             @foreach($childrenData as $index => $data)
                 <option value="{{ $data->child->id }}" {{ $index === 0 ? 'selected' : '' }} style="background: #140d07; color: #f3e7cd;">
-                    {{ $data->child->name }} — {{ $data->child->student_number ?? 'Student' }} ({{ $data->rate }}% Attendance)
+                    {{ $data->child->name }} — {{ $data->child->student_number ?? 'Student' }} ({{ $data->rate }}%)
                 </option>
             @endforeach
         </select>
