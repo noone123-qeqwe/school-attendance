@@ -552,6 +552,27 @@
             </button>
         </div>
 
+        {{-- Student chips strip --}}
+        @if($children->count() > 0)
+        <div class="scal-students-row">
+            <span class="scal-students-label">
+                <i class="bi bi-people-fill" style="margin-right:4px;"></i>Students
+            </span>
+            @foreach($children as $child)
+            @php
+                $isActive = $child->id == $selectedChildId || ($loop->first && !$selectedChildId);
+                $initials = strtoupper(substr($child->name, 0, 2));
+            @endphp
+            <div class="scal-child-chip {{ $isActive ? 'active' : '' }} {{ $children->count() === 1 ? 'single' : '' }}"
+                 data-child-id="{{ $child->id }}"
+                 onclick="scalSwitchChild({{ $child->id }})">
+                <div class="scal-child-avatar">{{ $initials }}</div>
+                <span>{{ $child->name }}</span>
+            </div>
+            @endforeach
+        </div>
+        @endif
+
         {{-- Weekday headers --}}
         <div class="scal-weekdays">
             @foreach(['S','M','T','W','T','F','S'] as $d)
