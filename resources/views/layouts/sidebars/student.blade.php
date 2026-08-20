@@ -18,12 +18,7 @@
         <i class="bi bi-calendar2-week-fill"></i>
         <span class="nav-link-text">My Schedule</span>
     </a>
-    <a href="{{ route('student.attendance.calendar') }}" class="nav-link {{ request()->routeIs('student.attendance.calendar') ? 'active' : '' }}">
-        <i class="bi bi-calendar-check-fill"></i>
-        <span class="nav-link-text">Attendance Calendar</span>
-    </a>
-
-    <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar') ? 'active' : '' }}">
+    <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar*') || request()->routeIs('student.attendance.calendar*') ? 'active' : '' }}">
         <i class="bi bi-calendar-event-fill"></i>
         <span class="nav-link-text">School Calendar</span>
     </a>

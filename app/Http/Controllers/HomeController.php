@@ -399,19 +399,7 @@ class HomeController extends Controller
      */
     public function attendanceCalendar()
     {
-        $user = Auth::user();
-
-        if (!$user->isStudent()) {
-            return redirect()->route('home');
-        }
-
-        // Fetch all attendance records with subject relation
-        $records = Attendance::with('subject')
-            ->where('user_id', $user->id)
-            ->orderBy('date', 'desc')
-            ->get();
-
-        return view('student.attendance-calendar', compact('records'));
+        return redirect()->route('student.calendar');
     }
 
     public function settings()
