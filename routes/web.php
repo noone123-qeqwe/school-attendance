@@ -8,15 +8,24 @@ use App\Http\Controllers\HomeController;
 
 
 // WebAuthn login — works for both guests and authenticated users
-Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->name('webauthn.login.options');
-Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->name('webauthn.login');
+Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->middleware('throttle:10,1')->name('webauthn.login.options');
+Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:10,1')->name('webauthn.login');
+
+// Web Push Notification Subscriptions & Testing
+Route::get('/push/public-key', [App\Http\Controllers\PushSubscriptionController::class, 'getPublicKey'])->name('push.public_key');
+Route::post('/push/subscribe', [App\Http\Controllers\PushSubscriptionController::class, 'subscribe'])->name('push.subscribe');
+Route::post('/push/unsubscribe', [App\Http\Controllers\PushSubscriptionController::class, 'unsubscribe'])->name('push.unsubscribe');
+Route::post('/push/test', [App\Http\Controllers\PushSubscriptionController::class, 'sendTest'])->middleware('auth')->name('push.test');
 
 
 // Intro page should always show, even to authenticated users
 Route::get('/', function () { return view('intro'); })->name('intro');
 
+// Offline page for PWA
+Route::get('/offline', function () { return view('offline'); })->name('offline');
+
 // Debug routes — only available in local development
-if (app()->environment('local')) {
+if (app()->environment('local', 'testing')) {
     // Debug route (remove in production) - NO AUTH REQUIRED
     Route::get('/debug-session', function() {
         return response()->json([
@@ -71,25 +80,23 @@ if (app()->environment('local')) {
 // Guest Routes (Public)
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () { return view('auth.login'); })->name('login');
-    Route::post('/login', [PTController::class, 'login'])->name('login.submit');
+    Route::post('/login', [PTController::class, 'login'])->middleware('throttle:5,1')->name('login.submit');
     Route::get('/csrf-token', function () { return response()->json(['token' => csrf_token()]); })->name('csrf.token');
-    
-    Route::get('/offline', function () { return view('offline'); })->name('offline');
 
     Route::get('/register', function () { return view('auth.register'); })->name('register');
-    Route::post('/register', [PTController::class, 'register'])->name('register.submit');
+    Route::post('/register', [PTController::class, 'register'])->middleware('throttle:5,1')->name('register.submit');
 
     // Forgot Password (OTP flow)
     Route::get('/forgot-password', [App\Http\Controllers\OtpController::class, 'forgotForm'])->name('otp.forgot.form');
     Route::post('/forgot-password', [App\Http\Controllers\OtpController::class, 'sendForgotOtp'])->middleware('throttle:3,1')->name('otp.forgot.send');
     Route::get('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyForm'])->name('otp.verify.form');
-    Route::post('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->name('otp.verify');
+    Route::post('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->middleware('throttle:5,1')->name('otp.verify');
     Route::get('/reset-password', [App\Http\Controllers\OtpController::class, 'resetForm'])->name('otp.reset.form');
-    Route::post('/reset-password', [App\Http\Controllers\OtpController::class, 'resetPassword'])->name('otp.reset');
+    Route::post('/reset-password', [App\Http\Controllers\OtpController::class, 'resetPassword'])->middleware('throttle:5,1')->name('otp.reset');
 
     // Registration email OTP
     Route::post('/otp/send-register', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->middleware('throttle:3,1')->name('otp.register.send');
-    Route::post('/otp/verify-register', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->name('otp.register.verify');
+    Route::post('/otp/verify-register', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->middleware('throttle:5,1')->name('otp.register.verify');
 
     // Recovery code login
     Route::post('/recovery/login', [App\Http\Controllers\RecoveryCodeController::class, 'login'])->middleware('throttle:5,1')->name('recovery.login');
@@ -103,11 +110,11 @@ Route::middleware('auth')->group(function () {
 
     // Change Password via OTP (all authenticated roles)
     Route::post('/otp/send-change', [App\Http\Controllers\OtpController::class, 'sendChangeOtp'])->middleware('throttle:3,1')->name('otp.change.send');
-    Route::post('/otp/change-password', [App\Http\Controllers\OtpController::class, 'changePassword'])->name('otp.change');
+    Route::post('/otp/change-password', [App\Http\Controllers\OtpController::class, 'changePassword'])->middleware('throttle:5,1')->name('otp.change');
 
     // Change Email via Email OTP (all authenticated roles)
     Route::post('/otp/send-email-change', [App\Http\Controllers\OtpController::class, 'sendEmailChangeOtp'])->middleware('throttle:3,1')->name('otp.email.send');
-    Route::post('/otp/change-email', [App\Http\Controllers\OtpController::class, 'changeEmail'])->name('otp.email.change');
+    Route::post('/otp/change-email', [App\Http\Controllers\OtpController::class, 'changeEmail'])->middleware('throttle:5,1')->name('otp.email.change');
 
     // Generate Recovery Codes
     Route::post('/recovery/generate', [App\Http\Controllers\RecoveryCodeController::class, 'generate'])->name('recovery.generate');
@@ -151,7 +158,7 @@ Route::middleware(['auth', 'student'])->group(function () {
 });
 
 // Local debug helper: generate students PDF as the first teacher (development only)
-if (app()->environment('local') || config('app.debug')) {
+if (app()->environment('local', 'testing')) {
     Route::get('/_debug/generate-students-pdf', function () {
         $teacher = \App\Models\User::where('role', 'teacher')->first();
         if (! $teacher) {
@@ -319,7 +326,7 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     // Parent-Child Linking
     Route::get('/link-child', [App\Http\Controllers\ParentController::class, 'linkChildForm'])->name('link.form');
     Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->middleware('throttle:3,1')->name('link.send-otp');
-    Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->name('link.verify-otp');
+    Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->middleware('throttle:5,1')->name('link.verify-otp');
     
     Route::get('/child/{child}', [App\Http\Controllers\ParentController::class, 'childDetail'])->name('child');
     Route::get('/child/{child}/report', [App\Http\Controllers\ParentController::class, 'downloadReport'])->name('child.report');
@@ -470,14 +477,26 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     
     // System & Communication Modules
     Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class);
-    // Super Admin Routes (Health, Backups, RBAC)
+    // Super Admin Routes (Health, Backups, Updates, RBAC)
     Route::middleware('admin.super')->group(function () {
         Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
         Route::get('/backups', [App\Http\Controllers\Admin\BackupController::class, 'index'])->name('backups.index');
         Route::post('/backups/create', [App\Http\Controllers\Admin\BackupController::class, 'create'])->name('backups.create');
+        Route::post('/backups/{backup}/restore', [App\Http\Controllers\Admin\BackupController::class, 'restore'])->name('backups.restore');
+        Route::post('/backups/upload-restore', [App\Http\Controllers\Admin\BackupController::class, 'uploadRestore'])->name('backups.upload-restore');
         Route::get('/backups/{backup}/download', [App\Http\Controllers\Admin\BackupController::class, 'download'])->name('backups.download');
         Route::delete('/backups/{backup}', [App\Http\Controllers\Admin\BackupController::class, 'destroy'])->name('backups.destroy');
         
+        // 1-Click System Update & Maintenance
+        Route::get('/system-update', [App\Http\Controllers\Admin\SystemUpdateController::class, 'index'])->name('system-update.index');
+        Route::post('/system-update/run', [App\Http\Controllers\Admin\SystemUpdateController::class, 'runFullUpdate'])->name('system-update.run');
+        Route::post('/system-update/migrate', [App\Http\Controllers\Admin\SystemUpdateController::class, 'runMigrations'])->name('system-update.migrate');
+        Route::post('/system-update/migrate-status', [App\Http\Controllers\Admin\SystemUpdateController::class, 'checkMigrations'])->name('system-update.migrate-status');
+        Route::post('/system-update/cache-clear', [App\Http\Controllers\Admin\SystemUpdateController::class, 'clearCaches'])->name('system-update.cache-clear');
+        Route::post('/system-update/pwa-bump', [App\Http\Controllers\Admin\SystemUpdateController::class, 'bumpPwaVersion'])->name('system-update.pwa-bump');
+        Route::post('/system-update/maintenance-toggle', [App\Http\Controllers\Admin\SystemUpdateController::class, 'toggleMaintenance'])->name('system-update.maintenance-toggle');
+        Route::post('/system-update/health-check', [App\Http\Controllers\Admin\SystemUpdateController::class, 'runHealthCheck'])->name('system-update.health-check');
+
         Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
     });
     

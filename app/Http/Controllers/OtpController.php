@@ -288,8 +288,6 @@ class OtpController extends Controller
 
         $otp = Otp::generate($user->id, 'change_password');
 
-        \Illuminate\Support\Facades\Log::info("Teacher Change Password OTP for {$user->email}: {$otp->code}");
-
         try {
             Mail::to($user->email)->send(new OtpMail($otp->code, 'change_password', $user->name));
             return response()->json(['success' => true, 'message' => 'OTP sent to ' . $user->email]);

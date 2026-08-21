@@ -205,8 +205,84 @@ class HomeController extends Controller
         $todaySchedule = $todaySchedule->sortBy('start_time')->values();
     }
 
-    $totalAbsent += $dynamicMissesTotal;
-    $totalRecords = array_sum($stats) + $dynamicMissesTotal;
+    // ── Historical missed classes calculation ──
+    // Count all expected classes from start of tracking to today,
+    // then subtract actual attendance records to find unrecorded absences.
+    $historicalMissesTotal = 0;
+    $historicalMissesPerSubject = [];
+    if ($subjects->isNotEmpty()) {
+        $subjects->load('schedules');
+
+        // Determine the reference start date
+        $earliestRecord = Attendance::where('user_id', $user->id)->min('date');
+        $academicYear = \App\Models\AcademicYear::where('is_current', true)->first();
+        $semesterStart = $academicYear ? $academicYear->start_date : null;
+
+        $startDate = $now->copy()->subDays(90);
+        if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
+            $startDate = Carbon::parse($semesterStart);
+        }
+        if ($earliestRecord) {
+            $earliest = Carbon::parse($earliestRecord);
+            if ($earliest->lt($startDate)) {
+                $startDate = $earliest;
+            }
+        }
+
+        // Get all holiday dates to exclude
+        $holidays = \App\Models\Holiday::active()
+            ->whereDate('date', '>=', $startDate->toDateString())
+            ->whereDate('date', '<=', $todayDate)
+            ->pluck('date')
+            ->map(fn($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        foreach ($subjects as $subjectModel) {
+            $scheduledDays = $subjectModel->schedules->pluck('day')->unique()->values();
+            if ($scheduledDays->isEmpty()) {
+                $historicalMissesPerSubject[$subjectModel->code] = 0;
+                continue;
+            }
+
+            // Count expected class sessions between startDate and today
+            $expectedSessions = 0;
+            $cursor = $startDate->copy();
+            while ($cursor->lte($now)) {
+                $cursorDayName = $cursor->format('l');
+                $cursorDateStr = $cursor->toDateString();
+
+                if (!in_array($cursorDateStr, $holidays) && $cursorDayName !== 'Sunday') {
+                    if ($scheduledDays->contains($cursorDayName)) {
+                        if ($cursorDateStr === $todayDate) {
+                            $todayScheds = $subjectModel->schedules->where('day', $cursorDayName);
+                            foreach ($todayScheds as $sched) {
+                                if ($sched->end_time < $currentTime) {
+                                    $expectedSessions++;
+                                }
+                            }
+                        } else {
+                            $expectedSessions += $subjectModel->schedules->where('day', $cursorDayName)->count();
+                        }
+                    }
+                }
+                $cursor->addDay();
+            }
+
+            // Count actual attendance records for this subject
+            $actualRecords = Attendance::where('user_id', $user->id)
+                ->where('subject_code', $subjectModel->code)
+                ->whereDate('date', '>=', $startDate->toDateString())
+                ->whereDate('date', '<=', $todayDate)
+                ->count();
+
+            $misses = max(0, $expectedSessions - $actualRecords);
+            $historicalMissesPerSubject[$subjectModel->code] = $misses;
+            $historicalMissesTotal += $misses;
+        }
+    }
+
+    $totalAbsent += $historicalMissesTotal;
+    $totalRecords = $totalPresent + $totalLate + $totalAbsent;
     $presentRecords = $totalPresent + $totalLate;
 
     $attendanceRate = $totalRecords > 0
@@ -338,22 +414,17 @@ class HomeController extends Controller
     foreach ($subjects as $subjectModel) {
         $subjectRecords = $grouped->get($subjectModel->code, collect());
         
-        $total = $subjectRecords->count();
         $present = $subjectRecords->where('status', 'Present')->count();
         $late = $subjectRecords->where('status', 'Late')->count();
         $absent = $subjectRecords->where('status', 'Absent')->count();
         $excused = $subjectRecords->where('excused', true)->count();
         
-        // Include dynamically missed classes today (where time has passed but no DB record exists yet)
-        $dynamicMiss = $todaySchedule->where('subject.code', $subjectModel->code)
-                                     ->where('status', 'missed')
-                                     ->whereNull('attendance')
-                                     ->count();
+        // Add historical missed classes (unrecorded absences from past days)
+        $historicalMiss = $historicalMissesPerSubject[$subjectModel->code] ?? 0;
+        $absent += $historicalMiss;
 
-        $total += $dynamicMiss;
-        $absent += $dynamicMiss;
+        $total = $present + $late + $absent;
 
-        // If no records exist or all are excused, we assume 100% since they haven't been unexcusedly absent
         $effectiveTotal = $total - $excused;
         $rate = $effectiveTotal > 0 ? round((($present + $late) / $effectiveTotal) * 100) : 0;
 

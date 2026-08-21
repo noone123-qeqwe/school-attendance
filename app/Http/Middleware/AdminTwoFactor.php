@@ -21,8 +21,8 @@ class AdminTwoFactor
         }
 
         if ($request->user() && $request->user()->isAdmin()) {
-            // Bypass 2FA in local development
-            if (config('app.env') === 'local' || config('app.debug') === true) {
+            // Bypass 2FA in local and testing environments only
+            if (app()->environment('local', 'testing')) {
                 $request->session()->put('admin_2fa_verified', true);
                 return $next($request);
             }

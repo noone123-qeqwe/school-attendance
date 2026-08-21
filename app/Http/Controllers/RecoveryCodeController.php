@@ -25,7 +25,7 @@ class RecoveryCodeController extends Controller
             : User::where('student_number', $identifier)->first();
 
         if (!$user) {
-            return back()->withErrors(['identifier' => 'User not found.'])->withInput();
+            return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput();
         }
 
         // Fetch unused recovery codes for this user
@@ -42,7 +42,7 @@ class RecoveryCodeController extends Controller
         }
 
         if (!$validCode) {
-            return back()->withErrors(['recovery_code' => 'Invalid or already used recovery code.'])->withInput();
+            return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput();
         }
 
         // Mark code as used
@@ -52,8 +52,10 @@ class RecoveryCodeController extends Controller
         ]);
 
         // Log the user in
-        Auth::login($user);
+        Auth::login($user, true);
         $request->session()->regenerate();
+        $request->session()->put('user_role', $user->role);
+        $request->session()->put('login_timestamp', now()->toString());
 
         // Bind device on recovery login (same as password login)
         if ($user->isStudent()) {
@@ -62,7 +64,7 @@ class RecoveryCodeController extends Controller
 
         // Redirect based on role
         if ($user->isAdmin()) return redirect()->route('admin.dashboard');
-        if ($user->isTeacher()) return redirect()->route('teacher.dashboard');
+        if ($user->isTeacher() || $user->isDepartmentHead()) return redirect()->route('teacher.dashboard');
         if ($user->isParent()) return redirect()->route('parent.dashboard');
         return redirect()->route('home');
     }

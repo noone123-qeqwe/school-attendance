@@ -303,12 +303,12 @@ class TeacherController extends Controller
 
         $request->validate([
             'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'file' => 'required|file|max:10240', // Max 10MB
+            'description' => 'nullable|string|max:1000',
+            'file' => 'required|file|mimes:pdf,doc,docx,ppt,pptx,xls,xlsx,txt,zip,rar,jpeg,png,jpg|max:10240', // Max 10MB
         ]);
 
         $file = $request->file('file');
-        $originalName = $file->getClientOriginalName();
+        $originalName = strip_tags(basename($file->getClientOriginalName()));
         $fileSize = $file->getSize();
         
         // Convert to KB/MB
@@ -324,7 +324,7 @@ class TeacherController extends Controller
             'title' => $request->title,
             'description' => $request->description,
             'file_path' => $path,
-            'file_type' => $file->getClientOriginalExtension(),
+            'file_type' => strtolower($file->getClientOriginalExtension()),
             'original_filename' => $originalName,
             'file_size' => $formattedSize,
         ]);
@@ -1421,6 +1421,21 @@ class TeacherController extends Controller
                 $attendance->save();
             }
 
+            // Step 3: Web Push Notification
+            try {
+                app(\App\Services\WebPushService::class)->sendToUser(
+                    $excuseSubmission->user_id,
+                    '✅ Excuse Request Approved',
+                    'Your excuse request for ' . ($attendance->subject->name ?? $attendance->subject_code ?? 'class') . ' on ' . ($attendance ? \Carbon\Carbon::parse($attendance->date)->format('M j, Y') : 'session') . ' has been approved.',
+                    [
+                        'url' => route('excuses'),
+                        'tag' => 'excuse-approved-' . $excuseSubmission->id,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                \Log::warning('WebPush approve error: ' . $e->getMessage());
+            }
+
             return response()->json([
                 'success' => true, 
                 'message' => 'Excuse approved successfully!'
@@ -1492,8 +1507,19 @@ class TeacherController extends Controller
                          " has been rejected. Reason: " . $request->admin_notes,
                 type: 'warning_2'
             ))->toOthers();
+
+            // Real-Time Web Push Notification
+            app(\App\Services\WebPushService::class)->sendToUser(
+                $excuseSubmission->user_id,
+                '❌ Excuse Request Rejected',
+                "Your excuse for {$excuseSubmission->attendance->subject_code} was declined: " . $request->admin_notes,
+                [
+                    'url' => route('excuses'),
+                    'tag' => 'excuse-rejected-' . $excuseSubmission->id,
+                ]
+            );
         } catch (\Exception $e) {
-            // Broadcasting not available
+            // Broadcasting or push not available
         }
 
         return response()->json([

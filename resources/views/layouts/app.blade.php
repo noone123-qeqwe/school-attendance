@@ -19,7 +19,7 @@
             <link rel="stylesheet" href="{{ asset('css/admin-theme.css') }}?v={{ filemtime(public_path('css/admin-theme.css')) }}">
         @endif
     @endauth
-    <link rel="manifest" href="/manifest.json">
+    @include('partials.pwa-tags')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
 </head>
@@ -56,6 +56,13 @@
             @endif
         @endauth
         @show
+
+        <div style="padding: 12px 16px; margin-top: auto;">
+            <button class="pwa-install-trigger" style="display: none; width: 100%; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.3); border-radius: 12px; padding: 10px 14px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                <i class="bi bi-phone-fill"></i>
+                <span class="nav-link-text">Install App</span>
+            </button>
+        </div>
     </aside>
     @endauth
 
@@ -779,6 +786,7 @@
                     sheet.style.transition = 'none';
                 }
             }, { passive: true });
+
             sheet.addEventListener('touchend', function() {
                 if (!isDragging) return;
                 isDragging = false;
@@ -797,6 +805,7 @@
     @auth
         <x-command-palette />
         <script src="{{ asset('js/pull-refresh.js') }}?v={{ filemtime(public_path('js/pull-refresh.js')) }}"></script>
+        <script src="{{ asset('js/web-push.js') }}?v={{ filemtime(public_path('js/web-push.js')) }}"></script>
     @endauth
 
     @yield('scripts')
@@ -817,15 +826,6 @@
                 }, 1000);
             }
         });
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js').then(function(registration) {
-                    console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                }, function(err) {
-                    console.log('ServiceWorker registration failed: ', err);
-                });
-            });
-        }
     </script>
     @auth
     <script>

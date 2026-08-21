@@ -1,25 +1,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-    /* Base Colors - Retained from original scheme */
-    --saas-bg: #110907; /* Very dark brown/black */
-    --saas-surface: #1a0e0b; /* Surface */
-    --saas-surface-hover: #261611;
-    --saas-surface-raised: rgba(26, 14, 11, 0.7);
+    /* Base Colors - Aligned with Student Maroon & Gold Theme */
+    --saas-bg: #110A0A; /* Dark rich maroon-black */
+    --saas-surface: #1E1515; /* Surface */
+    --saas-surface-hover: rgba(255, 255, 255, 0.06);
+    --saas-surface-raised: rgba(30, 21, 21, 0.7);
     
-    --saas-border: rgba(207, 164, 111, 0.15); /* Gold tinted border */
-    --saas-border-hover: rgba(207, 164, 111, 0.3);
+    --saas-border: rgba(212, 175, 55, 0.15); /* Gold tinted border */
+    --saas-border-hover: rgba(212, 175, 55, 0.3);
     
-    --saas-text-primary: #e7d4b8;
-    --saas-text-muted: #8f826f;
+    --saas-text-primary: #FCF8F2;
+    --saas-text-muted: #A39683;
     
     /* Accents */
-    --saas-primary: #900000; /* Maroon */
-    --saas-primary-hover: #a50000;
-    --saas-primary-alpha: rgba(144, 0, 0, 0.15);
+    --saas-primary: #7A1A1A; /* Student Maroon */
+    --saas-primary-hover: #9c2727;
+    --saas-primary-alpha: rgba(122, 26, 26, 0.2);
     
-    --saas-gold: #d4b77d;
-    --saas-gold-glow: rgba(207, 164, 111, 0.15);
+    --saas-gold: #D4AF37;
+    --saas-gold-glow: rgba(212, 175, 55, 0.15);
     
     /* Status Colors */
     --saas-success: #4ade80;

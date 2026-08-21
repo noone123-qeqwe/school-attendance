@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
@@ -89,7 +91,7 @@ class Attendance extends Model
             ->logOnlyDirty();
     }
 
-    public function subject()
+    public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'subject_id');
     }
@@ -105,17 +107,17 @@ class Attendance extends Model
         }
     }
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function excuseSubmission()
+    public function excuseSubmission(): HasOne
     {
         return $this->hasOne(ExcuseSubmission::class);
     }
 
-    public function academicYear()
+    public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);
     }

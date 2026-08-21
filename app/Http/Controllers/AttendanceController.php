@@ -191,6 +191,32 @@ event(new \App\Events\AttendanceMarked($attendance));
                 ))->toOthers();
             }
         }
+
+        // Real-Time Web Push Alerts
+        try {
+            $pushTitle = $status === 'Present' ? "✓ Checked in: {$subject->name}" : ($status === 'Late' ? "⚠️ Marked Late: {$subject->name}" : "❌ Attendance Alert: {$subject->name}");
+            $pushBody = "{$user->name} was marked as {$status} on " . $now->format('h:i A');
+
+            // Push to linked parents
+            app(\App\Services\WebPushService::class)->sendToParentsOfStudent(
+                $user,
+                $pushTitle,
+                $pushBody,
+                ['url' => route('parent.attendance.records', ['child' => $user->id])]
+            );
+
+            // Push to student if marked Late
+            if ($status === 'Late') {
+                app(\App\Services\WebPushService::class)->sendToUser(
+                    $user,
+                    "⚠️ Marked Late in {$subject->name}",
+                    "You clocked in at {$now->format('h:i A')}, after the grace threshold.",
+                    ['url' => route('attendance.records')]
+                );
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Attendance WebPush dispatch error: ' . $e->getMessage());
+        }
     } catch (\Exception $e) {
         // Broadcasting not available — skip, app continues normally
     }

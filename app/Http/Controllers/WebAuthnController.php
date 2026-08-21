@@ -155,7 +155,7 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "message" => "WebAuthn verification failed: " . $e->getMessage()], 401);
         }
         
-        Auth::login($user);
+        Auth::login($user, true);
         $request->session()->regenerate();
         session()->forget(["webauthn_login_user_id"]);
 

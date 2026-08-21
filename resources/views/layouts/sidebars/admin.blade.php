@@ -96,7 +96,7 @@
     
     <!-- System Dropdown -->
     @php
-        $isSystemActive = request()->routeIs('admin.system-health.index') || request()->routeIs('admin.settings') || request()->routeIs('admin.activity.log');
+        $isSystemActive = request()->routeIs('admin.system-update*') || request()->routeIs('admin.backups*') || request()->routeIs('admin.system-health*') || request()->routeIs('admin.activity.log');
     @endphp
     <div class="sidebar-dropdown-group {{ $isSystemActive ? 'open' : '' }}">
         <button class="nav-link dropdown-toggle-btn" onclick="toggleSidebarDropdown(this)" data-title="System">
@@ -105,12 +105,11 @@
             <i class="bi bi-chevron-down ms-auto dropdown-chevron"></i>
         </button>
         <div class="sidebar-submenu">
-            <a href="{{ route('admin.system-health.index') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.system-health.index') ? 'active' : '' }}">
-                <span class="nav-link-text">System Health</span>
+            @if(Auth::user()->admin_sub_role === 'super_admin')
+            <a href="{{ route('admin.system-update.index') }}" class="nav-link sub-nav-link {{ (request()->routeIs('admin.system-update*') || request()->routeIs('admin.backups*') || request()->routeIs('admin.system-health*')) ? 'active' : '' }}">
+                <span class="nav-link-text">System Maintenance</span>
             </a>
-            <a href="{{ route('admin.settings') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
-                <span class="nav-link-text">Settings</span>
-            </a>
+            @endif
             <a href="{{ route('admin.activity.log') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.activity.log') ? 'active' : '' }}">
                 <span class="nav-link-text">Audit Logs</span>
             </a>
@@ -124,29 +123,36 @@
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
+    background: rgba(74, 12, 12, 0.95) !important;
 }
 .sidebar-head {
     flex-shrink: 0 !important;
     position: relative !important;
-    z-index: 10 !important;
-    background: transparent !important;
+    z-index: 20 !important;
+    background: rgba(74, 12, 12, 0.98) !important;
+    padding: 24px 16px 16px !important;
 }
 .sidebar-divider {
     height: 1px !important;
     background: rgba(255, 255, 255, 0.08) !important;
     margin: 0 16px 6px !important;
     flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 20 !important;
 }
 .sidebar-nav {
     flex: 1 1 auto !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
+    overscroll-behavior: contain !important;
     scrollbar-width: thin;
-    scrollbar-color: rgba(207, 164, 111, 0.25) transparent;
+    scrollbar-color: rgba(212, 175, 55, 0.25) transparent;
     padding: 6px 0 80px 0 !important;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    position: relative !important;
+    z-index: 5 !important;
 }
 .sidebar-nav::-webkit-scrollbar {
     width: 4px;
@@ -155,11 +161,11 @@
     background: transparent;
 }
 .sidebar-nav::-webkit-scrollbar-thumb {
-    background: rgba(207, 164, 111, 0.2);
+    background: rgba(212, 175, 55, 0.2);
     border-radius: 99px;
 }
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-    background: rgba(207, 164, 111, 0.4);
+    background: rgba(212, 175, 55, 0.4);
 }
 
 /* Nav Links & Dropdown Toggle Buttons */
@@ -177,7 +183,7 @@
     background: transparent;
     cursor: pointer;
     text-decoration: none;
-    color: var(--text-secondary, #b39b82);
+    color: var(--text-secondary, #D1C5B4);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .dropdown-toggle-btn {
@@ -192,7 +198,7 @@
 }
 .sidebar-dropdown-group.open .dropdown-chevron {
     transform: rotate(180deg);
-    color: var(--admin-gold, #cfa46f);
+    color: var(--admin-gold, #D4AF37);
 }
 
 /* Submenu Container */
@@ -202,7 +208,7 @@
     gap: 2px;
     margin: 2px 12px 8px 24px !important;
     padding: 4px 0 4px 12px !important;
-    border-left: 2px solid rgba(207, 164, 111, 0.18);
+    border-left: 2px solid rgba(212, 175, 55, 0.25);
     box-sizing: border-box !important;
 }
 .sidebar-dropdown-group.open .sidebar-submenu {
@@ -222,7 +228,7 @@
     box-sizing: border-box !important;
     font-size: 0.84rem !important;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.7) !important;
+    color: rgba(255, 255, 255, 0.75) !important;
     border-radius: 8px !important;
     border: none !important;
     background: transparent !important;
@@ -232,15 +238,15 @@
     text-decoration: none;
 }
 .sidebar-submenu .sub-nav-link:hover {
-    background: rgba(207, 164, 111, 0.1) !important;
-    color: var(--admin-gold, #cfa46f) !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    color: #fff !important;
     transform: translateX(2px) !important;
 }
 .sidebar-submenu .sub-nav-link.active {
-    background: linear-gradient(90deg, rgba(207, 164, 111, 0.2) 0%, rgba(207, 164, 111, 0.04) 100%) !important;
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.04) 100%) !important;
     color: #fff !important;
     font-weight: 700 !important;
-    border-left: 2px solid var(--admin-gold, #cfa46f) !important;
+    border-left: 2px solid var(--admin-gold, #D4AF37) !important;
 }
 .sidebar-submenu .sub-nav-link .nav-link-text {
     white-space: nowrap;

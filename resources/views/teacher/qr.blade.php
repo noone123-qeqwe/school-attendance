@@ -354,12 +354,25 @@
                 <div class="main-card-header">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div>
-                <h4 class="mb-1">{{ $subject->name }} ({{ $subject->code }})</h4>
-                <small class="opacity-75">Year {{ $subject->year_level }} â€¢ Semester {{ $subject->semester }}</small>
+                <h4 class="mb-1" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-qr-code-scan"></i> {{ $subject->name }} ({{ $subject->code }})
+                </h4>
+                <small class="opacity-75">Year {{ $subject->year_level }} • Semester {{ $subject->semester }} • <span class="badge" style="background: rgba(255,255,255,0.2); font-weight: 600;">Geofence: 50m Proximity</span></small>
             </div>
-            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn" style="background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);">
-                <i class="bi bi-arrow-left me-2"></i> Back to Subjects
-            </a>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button type="button" id="soundToggleBtn" class="btn modern-btn" style="padding: 10px 16px !important; background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);" title="Toggle Clock-in Sound" onclick="toggleClockInSound()">
+                    <i class="bi bi-volume-up-fill" id="soundIcon"></i>
+                </button>
+                <button type="button" id="copyLinkBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);" onclick="copyScanLink()">
+                    <i class="bi bi-link-45deg me-1"></i> Copy Link
+                </button>
+                <button type="button" id="projectorBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important; color: white;" onclick="openProjectorMode()">
+                    <i class="bi bi-display me-1"></i> Projector Mode
+                </button>
+                <a href="{{ route('teacher.subjects') }}" class="btn modern-btn" style="padding: 10px 18px !important; background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);">
+                    <i class="bi bi-arrow-left me-1"></i> Subjects
+                </a>
+            </div>
         </div>
                 <div class="card-body text-center" style="min-height: 500px; padding: 3rem 2rem;">
                     
@@ -453,7 +466,13 @@
                     <h5><i class="bi bi-people-fill me-2"></i>Live Clock-ins</h5>
                     <div class="live-dot"></div>
                 </div>
-                <div style="max-height: 450px; overflow-y: auto; padding: 1.5rem;">
+                <div style="padding: 1rem 1.25rem 0.5rem;">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text" style="background: rgba(255,255,255,0.3); border-color: rgba(124,45,18,0.2); color: var(--tch-primary);"><i class="bi bi-search"></i></span>
+                        <input type="text" id="rosterSearch" class="form-control" placeholder="Search student name or ID..." style="background: rgba(255,255,255,0.4); border-color: rgba(124,45,18,0.2);" oninput="filterClockins()">
+                    </div>
+                </div>
+                <div style="max-height: 450px; overflow-y: auto; padding: 1rem 1.25rem 1.5rem;">
                     <div id="clockinsList">
                         <div class="text-center text-muted py-5">
                             <i class="bi bi-clock-history" style="font-size: 3.5rem; opacity: 0.3; color: var(--tch-primary);"></i>
@@ -462,6 +481,39 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Projector Mode Fullscreen Overlay Modal -->
+<div id="projectorModal" style="display: none; position: fixed; inset: 0; background: #0f172a; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; color: white;">
+    <div style="position: absolute; top: 24px; right: 24px; display: flex; gap: 12px;">
+        <button type="button" class="btn btn-outline-light btn-lg rounded-pill" onclick="closeProjectorMode()">
+            <i class="bi bi-x-lg me-1"></i> Exit Fullscreen
+        </button>
+    </div>
+    <div style="max-width: 600px; width: 100%;">
+        <div class="mb-3">
+            <span class="badge" style="background: linear-gradient(135deg, var(--tch-primary), var(--tch-light)); font-size: 1rem; padding: 8px 20px; border-radius: 99px;">
+                <i class="bi bi-broadcast me-1"></i> Live QR Attendance Session
+            </span>
+        </div>
+        <h2 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 6px; color: #f8fafc;">{{ $subject->name }}</h2>
+        <p style="color: #94a3b8; font-size: 1.1rem; margin-bottom: 24px;">{{ $subject->code }} • Scan with your smartphone to mark attendance</p>
+
+        <div id="projectorQrWrapper" style="background: white; border-radius: 28px; padding: 24px; display: inline-block; box-shadow: 0 20px 60px rgba(0,0,0,0.6); margin-bottom: 24px;">
+            <div id="projectorQrCode"></div>
+        </div>
+
+        <div class="d-flex justify-content-center align-items-center gap-4 mt-2">
+            <div style="background: rgba(255,255,255,0.06); padding: 12px 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Attendance Progress</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #34d399;" id="projectorCount">0 Present</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.06); padding: 12px 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Code Refresh</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;" id="projectorCountdown">--s</div>
             </div>
         </div>
     </div>
@@ -702,6 +754,72 @@ startBtn.addEventListener('click', async () => {
     }
 });
 
+// Additional state & audio support
+let clockInSoundEnabled = true;
+let cachedClockins = [];
+
+function toggleClockInSound() {
+    clockInSoundEnabled = !clockInSoundEnabled;
+    const icon = document.getElementById('soundIcon');
+    if (clockInSoundEnabled) {
+        icon.className = 'bi bi-volume-up-fill';
+        showTeacherToast('Clock-in audio chimes enabled', 'info');
+    } else {
+        icon.className = 'bi bi-volume-mute-fill';
+        showTeacherToast('Clock-in audio chimes muted', 'info');
+    }
+}
+
+function playClockInChime() {
+    if (!clockInSoundEnabled) return;
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+    } catch (e) {
+        // AudioContext restricted or unsupported
+    }
+}
+
+function copyScanLink() {
+    if (!currentSession || !currentSession.scan_url) {
+        showTeacherToast('No active session URL to copy', 'error');
+        return;
+    }
+    navigator.clipboard.writeText(currentSession.scan_url).then(() => {
+        showTeacherToast('Attendance scan URL copied to clipboard!', 'success');
+    }).catch(() => {
+        prompt('Copy this attendance scan URL:', currentSession.scan_url);
+    });
+}
+
+function openProjectorMode() {
+    const modal = document.getElementById('projectorModal');
+    modal.style.display = 'flex';
+    if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+    }
+}
+
+function closeProjectorMode() {
+    const modal = document.getElementById('projectorModal');
+    modal.style.display = 'none';
+    if (document.fullscreenElement && document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+    }
+}
+
 // Additional functions
 function updateUIForActiveSession() {
     startBtn.style.display = 'none';
@@ -709,6 +827,8 @@ function updateUIForActiveSession() {
     stopBtn.style.display = 'inline-block';
     sidebar.style.display = 'block';
     document.getElementById('sessionTimer').style.display = 'block';
+    document.getElementById('projectorBtn').style.display = 'inline-block';
+    document.getElementById('copyLinkBtn').style.display = 'inline-block';
 }
 
 function getRefreshIntervalSeconds() {
@@ -720,6 +840,8 @@ function resetRefreshTimers() {
     const ttl = Number(currentSession?.ttl) || 20;
     refreshCountdownSeconds = ttl;
     document.getElementById('refreshCountdownText').textContent = refreshCountdownSeconds;
+    const projCountdown = document.getElementById('projectorCountdown');
+    if (projCountdown) projCountdown.textContent = refreshCountdownSeconds + 's';
     
     const progressIndicator = document.getElementById('qrProgressIndicator');
     if (progressIndicator) {
@@ -732,6 +854,8 @@ function resetRefreshTimers() {
     if (refreshCountdownInterval) clearInterval(refreshCountdownInterval);
     refreshCountdownInterval = setInterval(() => {
         refreshCountdownSeconds--;
+        const pCd = document.getElementById('projectorCountdown');
+        if (pCd) pCd.textContent = refreshCountdownSeconds + 's';
         if (refreshCountdownSeconds <= 0) {
             refreshCountdownSeconds = ttl;
             if (progressIndicator) {
@@ -756,7 +880,6 @@ function resetRefreshTimers() {
 function startIntervals() {
     document.getElementById('qrRefreshCountdown').style.display = 'block';
     resetRefreshTimers();
-    // Removed polling interval - relying on WebSockets via subscribeToTeacherAttendanceUpdates()
     startSessionTimer(currentSession.session_end);
     updateClockIns(); // Initial fetch
 }
@@ -779,9 +902,10 @@ refreshBtn.addEventListener('click', async () => {
 
         const data = await response.json();
         if (data.success) {
-            showQRCode(data.scan_url);
             currentSession.token = data.token;
-            currentSession.ttl = data.ttl || currentSession.ttl || 25;
+            currentSession.scan_url = data.scan_url;
+            currentSession.ttl = data.ttl || currentSession.ttl || 20;
+            showQRCode(data.scan_url);
             resetRefreshTimers();
         }
     } catch (error) {
@@ -823,6 +947,9 @@ function enterGracePeriod() {
     stopBtn.style.display = 'none';
     document.getElementById('sessionTimer').style.display = 'none';
     document.getElementById('qrRefreshCountdown').style.display = 'none';
+    document.getElementById('projectorBtn').style.display = 'none';
+    document.getElementById('copyLinkBtn').style.display = 'none';
+    closeProjectorMode();
     
     qrContainer.classList.remove('active');
     qrContainer.innerHTML = `
@@ -838,7 +965,7 @@ function enterGracePeriod() {
         <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
             <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
             <div>
-                <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ•’ Session Closed</h6>
+                <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">⏱ Session Closed</h6>
                 <p class="mb-0 small" style="color: #1e40af;">Students can no longer clock in. You can still make manual adjustments in the sidebar.</p>
             </div>
         </div>
@@ -846,34 +973,45 @@ function enterGracePeriod() {
 }
 
 function showQRCode(url) {
-    // Use reliable online QR service with better error handling
     const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+    const projQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=' + encodeURIComponent(url);
     
     qrContainer.innerHTML = `
         <div class="text-center">
-            <img src="${qrUrl}" 
-                 alt="Attendance QR Code" 
-                 class="img-fluid mb-3" 
-                 style="max-width: 300px; width: 100%; height: auto;"
-                 onload="this.style.opacity='1'"
-                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIExvYWRpbmcgUVI8L3RleHQ+PC9zdmc+'"
-                 style="opacity: 0; transition: opacity 0.3s ease;">
-            <h5 style="color: var(--tch-primary); font-weight: 700;">
+            <div style="background: white; padding: 16px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 30px rgba(124, 45, 18, 0.15); margin-bottom: 1rem;">
+                <img src="${qrUrl}" 
+                     alt="Attendance QR Code" 
+                     class="img-fluid" 
+                     style="max-width: 260px; width: 100%; height: auto; display: block; border-radius: 10px;"
+                     onload="this.style.opacity='1'"
+                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIExvYWRpbmcgUVI8L3RleHQ+PC9zdmc+'"
+                     style="opacity: 0; transition: opacity 0.3s ease;">
+            </div>
+            <h5 style="color: var(--tch-primary); font-weight: 700; margin-bottom: 4px;">
                 <i class="bi bi-qr-code-scan me-2"></i>Scan to Clock In
             </h5>
-            <p class="text-muted">Students scan this code to mark their attendance</p>
-            <small class="badge" style="background: linear-gradient(135deg, var(--tch-primary), var(--tch-light)); color: white; padding: 8px 16px; border-radius: 20px;">
-                Session Active
-            </small>
+            <p class="text-muted small mb-2">Students must be within 50m of this laptop to scan</p>
+            <div class="d-flex justify-content-center gap-2">
+                <span class="badge" style="background: linear-gradient(135deg, var(--tch-primary), var(--tch-light)); color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.78rem;">
+                    <i class="bi bi-shield-check me-1"></i> Active Session
+                </span>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 0.78rem;">
+                    <i class="bi bi-geo-alt-fill me-1"></i> 50m Geofence
+                </span>
+            </div>
         </div>
     `;
     qrContainer.classList.add('active');
     
-    // Add loading animation
-    qrContainer.style.transform = 'scale(0.95)';
-    setTimeout(() => {
-        qrContainer.style.transform = 'scale(1)';
-    }, 100);
+    // Update projector QR
+    const projContainer = document.getElementById('projectorQrCode');
+    if (projContainer) {
+        projContainer.innerHTML = `<img src="${projQrUrl}" alt="Projector QR" style="width: 320px; height: 320px; display: block; border-radius: 12px;">`;
+    }
+    
+    // Animation
+    qrContainer.style.transform = 'scale(0.96)';
+    setTimeout(() => { qrContainer.style.transform = 'scale(1)'; }, 100);
 }
 
 function startSessionTimer(sessionEndTimestamp) {
@@ -884,13 +1022,12 @@ function startSessionTimer(sessionEndTimestamp) {
         if (remaining <= 0) {
             document.getElementById('timeRemaining').textContent = '00:00';
             
-            // Show auto-closure message
             const statusMessages = document.getElementById('statusMessages');
             statusMessages.innerHTML = `
                 <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
                     <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ•’ Session Auto-Closed</h6>
+                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">⏱ Session Auto-Closed</h6>
                         <p class="mb-0 small" style="color: #1e40af;">20-minute attendance window has ended. You can still make manual adjustments.</p>
                     </div>
                 </div>
@@ -905,13 +1042,70 @@ function startSessionTimer(sessionEndTimestamp) {
         const timeDisplay = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         document.getElementById('timeRemaining').textContent = timeDisplay;
         
-        // Show warning when less than 2 minutes remaining
         if (remaining <= 120 && remaining > 60) {
             document.getElementById('sessionTimer').style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.8) 100%)';
         } else if (remaining <= 60) {
             document.getElementById('sessionTimer').style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.8) 100%)';
         }
     }, 1000);
+}
+
+function filterClockins() {
+    const query = (document.getElementById('rosterSearch')?.value || '').toLowerCase().trim();
+    renderClockinsList(query);
+}
+
+function renderClockinsList(query = '') {
+    const clockinsList = document.getElementById('clockinsList');
+    if (!clockinsList) return;
+
+    let items = cachedClockins;
+    if (query) {
+        items = cachedClockins.filter(c => 
+            (c.name && c.name.toLowerCase().includes(query)) || 
+            (c.student_number && c.student_number.toLowerCase().includes(query)) ||
+            (c.status && c.status.toLowerCase().includes(query))
+        );
+    }
+
+    if (items.length === 0) {
+        clockinsList.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="bi bi-search" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                <h6 class="mt-2 text-muted">${query ? 'No matching students' : 'Waiting for students...'}</h6>
+                <p class="small mb-0">${query ? 'Try a different search term' : 'Clock-ins will appear here in real-time'}</p>
+            </div>
+        `;
+        return;
+    }
+
+    clockinsList.innerHTML = items.map(clockin => `
+        <div class="clockin-item ${clockin.status === 'Missing' ? 'missing' : ''}">
+            <div class="clockin-avatar">
+                <div class="avatar-circle">${clockin.name.substring(0, 2).toUpperCase()}</div>
+            </div>
+            <div class="clockin-info flex-grow-1">
+                <div class="fw-bold text-dark" style="font-size: 0.9rem;">${clockin.name}</div>
+                <div class="text-muted" style="font-size: 0.75rem; font-family: monospace;">${clockin.student_number}</div>
+            </div>
+            <div class="clockin-status text-end d-flex align-items-center gap-2">
+                <div style="text-align: right; min-width: 70px;">
+                    <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
+                    <div class="text-muted" style="font-size: 0.7rem;">${clockin.time}</div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; box-shadow:none;" data-bs-toggle="dropdown">
+                        <i class="bi bi-three-dots-vertical"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius:12px; border:1px solid rgba(0,0,0,0.08); font-size: 0.85rem; padding: 8px;">
+                        <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
+                        <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
+                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 8px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `).join('');
 }
 
 async function updateClockIns() {
@@ -939,45 +1133,11 @@ async function updateClockIns() {
         document.getElementById('progressPercent').textContent = data.stats.progress + '%';
         document.getElementById('progressBar').style.width = data.stats.progress + '%';
 
-        const clockinsList = document.getElementById('clockinsList');
-        
-        if (data.clockins.length === 0) {
-            clockinsList.innerHTML = `
-                <div class="text-center text-muted py-5">
-                    <i class="bi bi-clock-history" style="font-size: 3rem; opacity: 0.3;"></i>
-                    <h6 class="mt-3">Waiting for students...</h6>
-                    <p class="small mb-0">Clock-ins will appear here</p>
-                </div>
-            `;
-        } else {
-            clockinsList.innerHTML = data.clockins.map(clockin => `
-                <div class="clockin-item ${clockin.status === 'Missing' ? 'missing' : ''}">
-                    <div class="clockin-avatar">
-                        <div class="avatar-circle">${clockin.name.substring(0, 2).toUpperCase()}</div>
-                    </div>
-                    <div class="clockin-info flex-grow-1">
-                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">${clockin.name}</div>
-                        <div class="text-muted" style="font-size: 0.75rem; font-family: monospace;">${clockin.student_number}</div>
-                    </div>
-                    <div class="clockin-status text-end d-flex align-items-center gap-2">
-                        <div style="text-align: right; min-width: 70px;">
-                            <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
-                            <div class="text-muted" style="font-size: 0.7rem;">${clockin.time}</div>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; box-shadow:none;" data-bs-toggle="dropdown">
-                                <i class="bi bi-three-dots-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius:12px; border:1px solid rgba(0,0,0,0.08); font-size: 0.85rem; padding: 8px;">
-                                <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
-                                <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
-                                <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 8px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
+        const projCount = document.getElementById('projectorCount');
+        if (projCount) projCount.textContent = `${data.stats.clocked_in} / ${data.stats.total_students} Present`;
+
+        cachedClockins = data.clockins || [];
+        filterClockins();
     } catch (error) {
         console.error('Error updating clock-ins:', error);
     }
@@ -1002,6 +1162,7 @@ function subscribeToTeacherAttendanceUpdates() {
             }
 
             if (payload.type === 'clock_in') {
+                playClockInChime();
                 updateClockIns();
                 showTeacherToast(`${payload.student_name} clocked in for ${payload.subject_code} (${payload.status})`, 'success');
             }
@@ -1031,7 +1192,7 @@ async function overrideStatus(studentId, newStatus, event) {
         const data = await response.json();
         if (data.success) {
             updateClockIns();
-            showTeacherToast(\`Student marked as \${newStatus}\`, 'success');
+            showTeacherToast(`Student marked as ${newStatus}`, 'success');
         } else {
             showTeacherToast(data.message || 'Failed to update status', 'error');
         }
@@ -1250,6 +1411,9 @@ function resetUI() {
     stopBtn.style.display = 'none';
     document.getElementById('sessionTimer').style.display = 'none';
     document.getElementById('qrRefreshCountdown').style.display = 'none';
+    document.getElementById('projectorBtn').style.display = 'none';
+    document.getElementById('copyLinkBtn').style.display = 'none';
+    closeProjectorMode();
     
     qrContainer.classList.remove('active');
     sidebar.style.display = 'none';

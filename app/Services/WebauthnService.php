@@ -269,18 +269,13 @@ class WebauthnService
         }
     }
 
-    private function normalizeBase64UrlString(string $value): string
-    {
-        $value = strtr($value, '+/', '-_');
-        $value = rtrim($value, '=');
-        return $value;
-    }
+
 
     private function rpId(): string
     {
         $host = '';
 
-        if (function_exists('request') && request()) {
+        if (function_exists('request')) {
             // Try x-forwarded-host first (set by proxies like ngrok)
             $host = trim((string) request()->header('x-forwarded-host'));
             
@@ -301,7 +296,7 @@ class WebauthnService
         // Fallback to config if still empty
         if (!$host || $host === 'localhost') {
             $configHost = parse_url(config('app.url'), PHP_URL_HOST);
-            if ($configHost && $configHost !== 'localhost' && $configHost !== '') {
+            if ($configHost && $configHost !== 'localhost') {
                 $host = $configHost;
             }
         }

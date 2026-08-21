@@ -14,31 +14,31 @@
     --ds-maroon-light:  #9c2727;
     --ds-maroon-alpha:  rgba(144, 0, 0, 0.15);
 
-    --ds-gold:          #cfa46f;
+    --ds-gold:          #D4AF37;
     --ds-gold-bright:   #D4AF37;
-    --ds-gold-soft:     #d4b77d;
+    --ds-gold-soft:     #F9E596;
     --ds-gold-dark:     #A68822;
-    --ds-gold-glow:     rgba(207, 164, 111, 0.15);
+    --ds-gold-glow:     rgba(212, 175, 55, 0.15);
 
     /* ── SURFACE & BACKGROUND ── */
-    --ds-bg:            #0f0b08;
-    --ds-surface:       #1a0e0b;
+    --ds-bg:            #110A0A;
+    --ds-surface:       #1E1515;
     --ds-surface-soft:  rgba(255, 255, 255, 0.03);
     --ds-surface-hover: rgba(255, 255, 255, 0.06);
-    --ds-surface-raised: rgba(255, 255, 255, 0.03);
+    --ds-surface-raised: rgba(30, 21, 21, 0.7);
     --ds-surface-glass: rgba(30, 21, 21, 0.65);
 
     /* ── BORDERS ── */
-    --ds-border:        rgba(207, 164, 111, 0.12);
-    --ds-border-hover:  rgba(207, 164, 111, 0.25);
-    --ds-border-strong: rgba(207, 164, 111, 0.3);
-    --ds-border-subtle: rgba(255, 255, 255, 0.06);
+    --ds-border:        rgba(212, 175, 55, 0.15);
+    --ds-border-hover:  rgba(212, 175, 55, 0.3);
+    --ds-border-strong: rgba(212, 175, 55, 0.45);
+    --ds-border-subtle: rgba(255, 255, 255, 0.08);
 
     /* ── TYPOGRAPHY ── */
     --ds-font-family:   'Inter', system-ui, -apple-system, sans-serif;
-    --ds-text-primary:  #f3e7cd;
-    --ds-text-secondary:#b39b82;
-    --ds-text-muted:    #8f826f;
+    --ds-text-primary:  #FCF8F2;
+    --ds-text-secondary:#D1C5B4;
+    --ds-text-muted:    #A39683;
     --ds-text-on-dark:  #ffffff;
 
     /* ── STATUS / SEMANTIC COLORS ── */

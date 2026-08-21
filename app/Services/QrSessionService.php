@@ -36,7 +36,7 @@ class QrSessionService
         $sessionEnd = $startTime->copy()->addMinutes(20);
 
         if ($now->lt($sessionOpenTime)) {
-            $waitTime = $sessionOpenTime->diffForHumans($now, true);
+            $waitTime = $sessionOpenTime->diffForHumans($now, \Carbon\CarbonInterface::DIFF_ABSOLUTE);
             throw new \Exception("⏰ Too early! QR session opens 5 minutes before class starts.\n\nClass time: {$startTime->format('h:i A')} - {$endTime->format('h:i A')}\nWait time: {$waitTime}");
         }
 

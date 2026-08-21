@@ -8,6 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ asset('css/premium.css') }}">
+    @include('partials.pwa-tags')
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -50,7 +51,9 @@
         .glass-alert { animation: shakeError 0.5s ease; }
         .btn-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,0,0,0.2); border-top-color: #800000; border-radius: 50%; animation: spinLoader 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
 
-        body {
+        html, body {
+            background-color: #110A0A;
+            color: #F3E7CD;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
             overflow-y: auto;
@@ -512,6 +515,12 @@
         </div>
         <div class="glass-link-row anim-fade-up anim-d7">
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
+        </div>
+
+        <div style="text-align: center; margin-top: 18px;">
+            <button class="pwa-install-trigger" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.3); border-radius: 99px; padding: 8px 18px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+                <i class="bi bi-phone"></i> Install Attendance App
+            </button>
         </div>
 
     </div>

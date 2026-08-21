@@ -26,23 +26,23 @@
     --ent-transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 
     /* Surface colors with fallbacks */
-    --ent-bg: var(--saas-bg, var(--bg, #110907));
-    --ent-surface: var(--saas-surface, var(--surface, #1a0e0b));
-    --ent-surface-raised: rgba(255, 255, 255, 0.03);
+    --ent-bg: var(--saas-bg, var(--bg, #110A0A));
+    --ent-surface: var(--saas-surface, var(--surface, #1E1515));
+    --ent-surface-raised: rgba(30, 21, 21, 0.7);
     --ent-surface-hover: rgba(255, 255, 255, 0.06);
-    --ent-border: rgba(207, 164, 111, 0.12);
-    --ent-border-hover: rgba(207, 164, 111, 0.25);
+    --ent-border: rgba(212, 175, 55, 0.15);
+    --ent-border-hover: rgba(212, 175, 55, 0.3);
 
-    --ent-text: var(--saas-text-primary, var(--text-primary, #e7d4b8));
-    --ent-text-muted: var(--saas-text-muted, var(--muted, #8f826f));
-    --ent-text-secondary: #b39b82;
+    --ent-text: var(--saas-text-primary, var(--text-primary, #FCF8F2));
+    --ent-text-muted: var(--saas-text-muted, var(--muted, #A39683));
+    --ent-text-secondary: #D1C5B4;
 
-    --ent-gold: var(--saas-gold, var(--gold, #cfa46f));
+    --ent-gold: var(--saas-gold, var(--gold, #D4AF37));
     --ent-success: var(--saas-success, #4ade80);
     --ent-warning: var(--saas-warning, #fbbf24);
     --ent-danger: var(--saas-danger, #f87171);
     --ent-info: var(--saas-info, #60a5fa);
-    --ent-primary: var(--saas-primary, var(--maroon, #900000));
+    --ent-primary: var(--saas-primary, var(--maroon, #7A1A1A));
 }
 
 /* ══════════════════════════════════════════

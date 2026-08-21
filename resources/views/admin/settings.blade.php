@@ -167,7 +167,7 @@
             <h4 class="saas-heading saas-heading-sm" style="margin-bottom:12px;">System Information</h4>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                 <span class="saas-text-muted" style="font-size:0.85rem;">Version</span>
-                <span style="font-size:0.85rem; font-weight:600;">v2.0.0 (SaaS Edition)</span>
+                <span style="font-size:0.85rem; font-weight:600; color:var(--saas-gold);">v2.1.0 (SaaS Edition)</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                 <span class="saas-text-muted" style="font-size:0.85rem;">Laravel</span>
@@ -177,10 +177,15 @@
                 <span class="saas-text-muted" style="font-size:0.85rem;">PHP</span>
                 <span style="font-size:0.85rem; font-weight:600;">v{{ phpversion() }}</span>
             </div>
-            <div style="display:flex; justify-content:space-between;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
                 <span class="saas-text-muted" style="font-size:0.85rem;">Timezone</span>
                 <span style="font-size:0.85rem; font-weight:600;">{{ config('app.timezone') }}</span>
             </div>
+
+            <button type="button" id="adminCheckUpdateBtn" onclick="checkAdminUpdates()" class="saas-btn saas-btn-secondary" style="width:100%; justify-content:center; font-size:0.82rem; padding:8px 12px;">
+                <i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates
+            </button>
+            <div id="adminUpdateFeedback" style="display:none; margin-top:10px; padding:10px 12px; border-radius:8px; font-size:0.8rem; line-height:1.4;"></div>
         </div>
         
         <div class="saas-card" style="padding:20px; border-color:rgba(239,68,68,0.2);">
@@ -192,4 +197,68 @@
         </div>
     </div>
 </div>
+
+<script>
+async function checkAdminUpdates() {
+    const btn = document.getElementById('adminCheckUpdateBtn');
+    const feedback = document.getElementById('adminUpdateFeedback');
+    if (!btn || !feedback) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span> Checking...';
+    feedback.style.display = 'block';
+    feedback.style.background = 'rgba(59, 130, 246, 0.1)';
+    feedback.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+    feedback.style.color = '#93c5fd';
+    feedback.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Checking service worker & server version...';
+
+    if (!navigator.onLine) {
+        feedback.style.background = 'rgba(239, 68, 68, 0.1)';
+        feedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        feedback.style.color = '#fca5a5';
+        feedback.innerHTML = '<i class="bi bi-wifi-off me-1"></i> Offline. Connect to the internet to check.';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates';
+        return;
+    }
+
+    try {
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+                await reg.update();
+                if (reg.waiting) {
+                    feedback.style.background = 'rgba(34, 197, 94, 0.15)';
+                    feedback.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+                    feedback.style.color = '#86efac';
+                    feedback.innerHTML = `
+                        <div style="margin-bottom:6px;"><strong>Update Available!</strong></div>
+                        <button type="button" class="saas-btn saas-btn-primary" onclick="if(navigator.serviceWorker.controller){navigator.serviceWorker.getRegistration().then(r=>r?.waiting?.postMessage({action:'skipWaiting'})); setTimeout(()=>location.reload(), 300);}" style="width:100%; justify-content:center; padding:6px; font-size:0.75rem;">
+                            Reload & Apply
+                        </button>
+                    `;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Update Ready';
+                    return;
+                }
+            }
+        }
+
+        await new Promise(r => setTimeout(r, 700));
+
+        feedback.style.background = 'rgba(16, 185, 129, 0.1)';
+        feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        feedback.style.color = '#6ee7b7';
+        feedback.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> System & App are fully up to date (v2.1.0).';
+    } catch (e) {
+        feedback.style.background = 'rgba(239, 68, 68, 0.1)';
+        feedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        feedback.style.color = '#fca5a5';
+        feedback.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i> Check failed: ' + (e.message || 'Error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates';
+    }
+}
+</script>
 @endsection

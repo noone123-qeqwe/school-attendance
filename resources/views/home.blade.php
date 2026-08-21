@@ -103,8 +103,23 @@
 </div>
 @endif
 
+<style>
+    @media (max-width: 768px) {
+        .hero-banner { padding: 16px !important; border-radius: 16px !important; box-shadow: none !important; }
+        .hero-banner h1 { font-size: 1.5rem !important; margin-bottom: 4px !important; }
+        .subject-stat-card { padding: 16px !important; box-shadow: none !important; border-radius: 12px !important; }
+        .subject-stat-card .rate-text { font-size: 1.4rem !important; }
+        .subject-stat-card .bg-glow { display: none !important; }
+        .att-cal-wrap { border-radius: 12px !important; border: 1px solid rgba(255,255,255,0.03) !important; background: rgba(0,0,0,0.08) !important; }
+        .att-cal-grid { padding: 0 8px 12px !important; gap: 2px !important; }
+        .att-cal-cell { border-radius: 6px !important; }
+        .att-cal-stats { padding: 10px 8px !important; }
+        .att-cal-stat { border: none !important; padding: 4px 8px !important; background: transparent !important; }
+    }
+</style>
+
 <!-- Hero Banner -->
-<div class="mb-4" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+<div class="mb-4 hero-banner" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
     <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
         <div class="d-flex align-items-center gap-3">
@@ -125,22 +140,28 @@
                     </div>
                 @endif
                 <!-- Mobile-only compact CTA -->
-                <div class="d-md-none mt-3">
-                    <a href="{{ route('excuses') }}" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(207,164,111,0.12); color: #cfa46f; border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 8px 16px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
-                        <i class="bi bi-envelope-paper-fill"></i> Submit Excuse
+                <div class="d-md-none mt-3 d-flex gap-2">
+                    <button type="button" onclick="openStudentScanner()" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #800000, #991b1b); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; box-shadow: 0 4px 12px rgba(128,0,0,0.3);">
+                        <i class="bi bi-qr-code-scan"></i> Scan QR
+                    </button>
+                    <a href="{{ route('excuses') }}" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(207,164,111,0.12); color: #cfa46f; border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
+                        <i class="bi bi-envelope-paper-fill"></i> Excuse
                     </a>
                 </div>
             </div>
         </div>
         <!-- Desktop: Clock + CTA (hidden on mobile) -->
-        <div class="d-none d-md-flex flex-column gap-3" style="min-width: 250px;">
-            <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <div style="color: var(--gold); font-size: 1.6rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; font-variant-numeric: tabular-nums;">
+        <div class="d-none d-md-flex flex-column gap-2" style="min-width: 250px;">
+            <div style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+                <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; font-variant-numeric: tabular-nums;">
                     <i class="bi bi-clock"></i> <span id="studentClock">{{ now()->format('h:i A') }}</span>
                 </div>
-                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 4px; font-weight: 500;">{{ now()->format('l, F j, Y') }}</div>
+                <div style="color: #b39b82; font-size: 0.82rem; margin-top: 2px; font-weight: 500;">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <a href="{{ route('excuses') }}" class="ent-btn w-100 d-flex justify-content-center align-items-center" style="background: rgba(255,255,255,0.05); color: var(--gold); border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 12px; border-radius: 14px; transition: all 0.2s;">
+            <button type="button" onclick="openStudentScanner()" class="ent-btn w-100 d-flex justify-content-center align-items-center" style="background: linear-gradient(135deg, #800000, #991b1b); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 12px; border-radius: 14px; font-weight: 700; box-shadow: 0 4px 14px rgba(128,0,0,0.35); cursor: pointer;">
+                <i class="bi bi-qr-code-scan me-2"></i> Scan Attendance QR
+            </button>
+            <a href="{{ route('excuses') }}" class="ent-btn w-100 d-flex justify-content-center align-items-center" style="background: rgba(255,255,255,0.05); color: var(--gold); border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 9px; border-radius: 14px; font-size: 0.88rem; transition: all 0.2s;">
                 <i class="bi bi-envelope-paper-fill me-2"></i> Submit Excuse / Leave
             </a>
         </div>
@@ -188,7 +209,7 @@
                 @endphp
                 <div class="subject-stat-card" style="background: rgba(17, 9, 6, 0.7); border: 1px solid rgba(207,164,111,0.15); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
                     <!-- Background Glow -->
-                    <div style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: {{ $rateColor }}; border-radius: 50%; filter: blur(50px); opacity: 0.15; pointer-events: none;"></div>
+                    <div class="bg-glow" style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: {{ $rateColor }}; border-radius: 50%; filter: blur(50px); opacity: 0.15; pointer-events: none;"></div>
 
                     <div class="d-flex justify-content-between align-items-start mb-3" style="position: relative; z-index: 2;">
                         <div>
@@ -200,7 +221,7 @@
                             </div>
                         </div>
                         <div style="text-align: right;">
-                            <div style="font-size: 1.7rem; font-weight: 900; color: {{ $rateColor }}; line-height: 1; text-shadow: 0 0 20px {{ $rateBg }};">{{ $stat->rate }}<span style="font-size: 1.1rem; opacity: 0.8;">%</span></div>
+                            <div class="rate-text" style="font-size: 1.7rem; font-weight: 900; color: {{ $rateColor }}; line-height: 1; text-shadow: 0 0 20px {{ $rateBg }};">{{ $stat->rate }}<span style="font-size: 1.1rem; opacity: 0.8;">%</span></div>
                             @if(!$isNew && $stat->rate < 75)
                                 <div style="font-size: 0.7rem; color: #f87171; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(248,113,113,0.15); padding: 3px 10px; border-radius: 99px;">
                                     <i class="bi bi-exclamation-triangle-fill"></i> At Risk
@@ -210,8 +231,8 @@
                     </div>
 
                     <!-- Progress Bar -->
-                    <div style="position: relative; z-index: 2; height: 8px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 16px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);">
-                        <div style="height: 100%; width: 0%; background: linear-gradient(90deg, {{ $rateColor }}, {{ $rateColor }}dd); border-radius: 99px; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: 0 0 10px {{ $rateColor }};" class="animated-progress" data-width="{{ $stat->rate }}%"></div>
+                    <div style="position: relative; z-index: 2; height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 16px;">
+                        <div style="height: 100%; width: 0%; background: {{ $rateColor }}; border-radius: 99px; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);" class="animated-progress" data-width="{{ $stat->rate }}%"></div>
                     </div>
 
                     <!-- Status Pills -->
@@ -784,6 +805,95 @@ function showAttDetail(dateKey, day) {
 
 function hideAttDetail() {
     document.getElementById('attDetailPanel').classList.remove('active');
+}
+</script>
+
+<!-- QR Camera Scanner Modal -->
+<div id="studentScannerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; max-width: 460px; width: 100%; padding: 28px 24px; color: white; box-shadow: 0 25px 60px rgba(0,0,0,0.5); text-align: center; position: relative;">
+        <button type="button" onclick="closeStudentScanner()" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <div style="width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #800000, #991b1b); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 14px; box-shadow: 0 6px 18px rgba(128,0,0,0.4);">
+            <i class="bi bi-qr-code-scan"></i>
+        </div>
+        <h4 style="font-weight: 800; font-size: 1.25rem; margin-bottom: 4px;">Scan Attendance QR</h4>
+        <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 18px;">Point your camera at the teacher's classroom QR code</p>
+
+        <div id="scannerVideoContainer" style="border-radius: 16px; overflow: hidden; background: #000; position: relative; min-height: 250px; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(207,164,111,0.4);">
+            <div id="reader" style="width: 100%;"></div>
+            <div id="scannerFallbackNotice" style="display: none; padding: 20px; color: #94a3b8; font-size: 0.85rem;">
+                <i class="bi bi-camera-video-off" style="font-size: 2rem; display: block; margin-bottom: 8px; color: #f87171;"></i>
+                Camera access unavailable. Paste the QR link or token below.
+            </div>
+        </div>
+
+        <div class="mt-3 text-start">
+            <label style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Or Enter Token / URL Manually</label>
+            <div class="input-group mt-1">
+                <input type="text" id="manualQrInput" class="form-control" placeholder="Paste scan URL or token..." style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.12); color: white; border-radius: 12px 0 0 12px; font-size: 0.85rem;">
+                <button type="button" class="btn" style="background: #800000; color: white; border-radius: 0 12px 12px 0; font-weight: 700; padding: 0 16px;" onclick="submitManualQr()">
+                    Go
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+let html5QrScanner = null;
+
+function openStudentScanner() {
+    const modal = document.getElementById('studentScannerModal');
+    modal.style.display = 'flex';
+    document.getElementById('scannerFallbackNotice').style.display = 'none';
+
+    try {
+        if (typeof Html5Qrcode !== 'undefined') {
+            html5QrScanner = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 220, height: 220 } };
+            html5QrScanner.start({ facingMode: "environment" }, config, onQrScanSuccess)
+                .catch(err => {
+                    console.warn("Camera start failed, showing manual input fallback:", err);
+                    document.getElementById('scannerFallbackNotice').style.display = 'block';
+                });
+        } else {
+            document.getElementById('scannerFallbackNotice').style.display = 'block';
+        }
+    } catch (e) {
+        document.getElementById('scannerFallbackNotice').style.display = 'block';
+    }
+}
+
+function closeStudentScanner() {
+    const modal = document.getElementById('studentScannerModal');
+    modal.style.display = 'none';
+    if (html5QrScanner) {
+        html5QrScanner.stop().then(() => {
+            html5QrScanner.clear();
+        }).catch(() => {});
+        html5QrScanner = null;
+    }
+}
+
+function onQrScanSuccess(decodedText) {
+    if (html5QrScanner) {
+        html5QrScanner.stop().catch(() => {});
+    }
+    
+    // Check if decoded text is a full URL or just a token
+    if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
+        window.location.href = decodedText;
+    } else {
+        window.location.href = '/qr/scan/' + encodeURIComponent(decodedText.trim());
+    }
+}
+
+function submitManualQr() {
+    const val = (document.getElementById('manualQrInput')?.value || '').trim();
+    if (!val) return;
+    onQrScanSuccess(val);
 }
 </script>
 

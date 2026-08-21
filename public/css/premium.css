@@ -53,6 +53,7 @@
 
 html {
     zoom: 1.15;
+    background-color: #110a0a;
 }
 @media (max-width: 768px) {
     html { zoom: 1; }
@@ -81,12 +82,11 @@ body {
     height: 100vh;
     position: fixed;
     left: 0; top: 0;
-    background: rgba(74, 12, 12, 0.7); /* Maroon Dark Glass */
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    background: #110A0A;
+    background: rgba(45, 10, 10, 0.98); /* Solid dark maroon */
     z-index: 1200;
-    border-right: 1px solid var(--surface-glass-border);
-    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+    border-right: 1px solid var(--surface-border);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
     transition: width 0.4s var(--spring-easing), transform 0.4s var(--spring-easing);
     display: flex;
     flex-direction: column;
@@ -101,16 +101,18 @@ body {
     flex-direction: column;
     align-items: center;
     flex-shrink: 0;
-    background: transparent;
-    z-index: 5;
+    background: rgba(74, 12, 12, 0.98);
+    position: relative;
+    z-index: 20;
 }
 
 .sidebar-logo {
     width: 48px; height: 48px;
     border-radius: 50%;
     border: 2px solid var(--gold);
-    padding: 3px; background: white;
-    box-shadow: var(--shadow-sm);
+    padding: 2px; 
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
 }
 .sidebar-logo:hover { transform: scale(1.08) rotate(5deg); }
@@ -132,14 +134,19 @@ body {
     background: rgba(255, 255, 255, 0.08);
     margin: 0 16px 4px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 20;
 }
 
 .sidebar-nav {
     flex: 1 1 auto;
     overflow-y: auto;
     overflow-x: hidden;
+    overscroll-behavior: contain;
     padding: 8px 12px 60px;
     scrollbar-width: none; /* Firefox */
+    position: relative;
+    z-index: 5;
 }
 
 .sidebar-nav::-webkit-scrollbar {
@@ -210,17 +217,17 @@ body {
     .sidebar.open { transform: translateX(0); }
 }
 
-/* ── 2. TOP HEADER (Sticky & Glass) ── */
+/* ── 2. TOP HEADER (Solid & Opaque) ── */
 .top-header {
     height: var(--header-height);
-    background: rgba(18, 11, 11, 0.75);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    background: #110A0A;
+    background: rgba(17, 10, 10, 0.98);
     position: fixed; top: 0; right: 0; left: var(--sidebar-width);
     z-index: 1000;
     display: flex; align-items: center; justify-content: space-between;
     padding: 0 24px;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .top-header.mini { left: var(--sidebar-mini); }

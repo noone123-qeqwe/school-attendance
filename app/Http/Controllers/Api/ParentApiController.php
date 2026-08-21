@@ -32,10 +32,87 @@ class ParentApiController extends Controller
 
         $childrenData = $children->map(function ($child) {
             $allAttendance = Attendance::where('user_id', $child->id)->get();
-            $total = $allAttendance->count();
             $present = $allAttendance->where('status', 'Present')->count();
             $late = $allAttendance->where('status', 'Late')->count();
             $absent = $allAttendance->where('status', 'Absent')->count();
+
+            // Historical missed classes calculation
+            $now = now('Asia/Manila');
+            $todayDate = $now->toDateString();
+            $currentTime = $now->format('H:i:s');
+
+            if ($child->year_level && $child->semester) {
+                $childSubjects = \App\Models\Subject::where('year_level', $child->year_level)
+                    ->where('semester', $child->semester)
+                    ->where(function ($q) use ($child) {
+                        $q->whereNull('course')->orWhere('course', '')->orWhere('course', $child->course);
+                    })
+                    ->where(function ($q) use ($child) {
+                        $q->whereNull('section')->orWhere('section', '')->orWhere('section', $child->section);
+                    })
+                    ->with('schedules')
+                    ->get();
+
+                $earliestRecord = Attendance::where('user_id', $child->id)->min('date');
+                $academicYear = \App\Models\AcademicYear::where('is_current', true)->first();
+                $semesterStart = $academicYear ? $academicYear->start_date : null;
+
+                $startDate = $now->copy()->subDays(90);
+                if ($semesterStart && \Carbon\Carbon::parse($semesterStart)->lt($now)) {
+                    $startDate = \Carbon\Carbon::parse($semesterStart);
+                }
+                if ($earliestRecord) {
+                    $earliest = \Carbon\Carbon::parse($earliestRecord);
+                    if ($earliest->lt($startDate)) {
+                        $startDate = $earliest;
+                    }
+                }
+
+                $holidays = \App\Models\Holiday::active()
+                    ->whereDate('date', '>=', $startDate->toDateString())
+                    ->whereDate('date', '<=', $todayDate)
+                    ->pluck('date')
+                    ->map(fn($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : \Carbon\Carbon::parse($d)->format('Y-m-d'))
+                    ->toArray();
+
+                foreach ($childSubjects as $subj) {
+                    $scheduledDays = $subj->schedules->pluck('day')->unique()->values();
+                    if ($scheduledDays->isEmpty()) continue;
+
+                    $expectedSessions = 0;
+                    $cursor = $startDate->copy();
+                    while ($cursor->lte($now)) {
+                        $cursorDayName = $cursor->format('l');
+                        $cursorDateStr = $cursor->toDateString();
+
+                        if (!in_array($cursorDateStr, $holidays) && $cursorDayName !== 'Sunday') {
+                            if ($scheduledDays->contains($cursorDayName)) {
+                                if ($cursorDateStr === $todayDate) {
+                                    $todaySchedules = $subj->schedules->where('day', $cursorDayName);
+                                    foreach ($todaySchedules as $sched) {
+                                        if ($sched->end_time < $currentTime) {
+                                            $expectedSessions++;
+                                        }
+                                    }
+                                } else {
+                                    $expectedSessions += $subj->schedules->where('day', $cursorDayName)->count();
+                                }
+                            }
+                        }
+                        $cursor->addDay();
+                    }
+
+                    $actualRecords = Attendance::where('user_id', $child->id)
+                        ->where('subject_code', $subj->code)
+                        ->whereDate('date', '>=', $startDate->toDateString())
+                        ->whereDate('date', '<=', $todayDate)
+                        ->count();
+
+                    $absent += max(0, $expectedSessions - $actualRecords);
+                }
+            }
+
+            $total = $present + $late + $absent;
             $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;
 
             // Attendance streak

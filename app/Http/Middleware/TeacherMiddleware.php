@@ -21,8 +21,8 @@ class TeacherMiddleware
 
         $user = auth()->user();
 
-        // Check if user has teacher role
-        if (!$user->isTeacher()) {
+        // Check if user has teacher or department head role
+        if (!$user->isTeacher() && !$user->isDepartmentHead()) {
             return redirect()->route('login')->with('error', 'Access denied. Teacher access required.');
         }
 
@@ -35,7 +35,7 @@ class TeacherMiddleware
         $sessionRole = $request->session()->get('user_role');
 
         // Verify session role matches user role
-        if ($sessionRole !== 'teacher') {
+        if ($sessionRole !== $user->role) {
             // Fix session role mismatch
             $request->session()->put('user_role', $user->role);
             $request->session()->save();

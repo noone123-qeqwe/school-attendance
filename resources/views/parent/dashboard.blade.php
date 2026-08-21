@@ -57,6 +57,38 @@
         width: 80px; height: 80px; margin: 0 auto 20px; background: rgba(207,164,111,0.1); border-radius: 50%;
         display: flex; align-items: center; justify-content: center; border: 1px solid rgba(207,164,111,0.2);
     }
+    
+    @media (max-width: 768px) {
+        .parent-header-card {
+            background: rgba(26, 17, 16, 0.6);
+            border: 1px solid rgba(207, 164, 111, 0.1);
+            box-shadow: none;
+            padding: 16px;
+            border-radius: 16px;
+        }
+        .parent-header-card::before { width: 4px; }
+        .parent-header-title { font-size: 1.25rem; }
+        
+        .ent-grid-5 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .ent-grid-5 > div:first-child {
+            grid-column: 1 / -1;
+        }
+        
+        .mobile-attendance-card {
+            background: rgba(20,10,5,0.4);
+            border: 1px solid rgba(207,164,111,0.15);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+    }
 </style>
 
 <!-- Desktop Header -->
@@ -72,7 +104,7 @@
             </div>
         </div>
         <div class="w-100 d-md-block" style="max-width: 280px; flex-grow: 1;">
-            <a href="{{ route('parent.link.form') }}" class="ent-btn w-100" style="background: var(--gold); border: none; font-weight: 600; color: #1a1d24;">
+            <a href="{{ route('parent.link.form') }}" class="ent-btn w-100" style="background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.3); color: var(--gold); border-radius: 12px;">
                 <i class="bi bi-link-45deg"></i> Link Another Child
             </a>
         </div>
@@ -185,44 +217,95 @@
     <!-- Recent Attendance -->
     <x-card type="section" icon="bi bi-clock-history" title="Recent Attendance">
         @if($data->child->attendances->count() > 0)
-            <x-data-table :headers="['Date', 'Subject', 'Status', 'Time In', 'Action']">
+            <!-- Desktop Table -->
+            <div class="d-none d-md-block">
+                <x-data-table :headers="['Date', 'Subject', 'Status', 'Time In', 'Action']">
+                    @foreach($data->child->attendances as $attendance)
+                    <tr>
+                        <td style="font-weight: 600;">{{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</td>
+                        <td style="color: #b39b82;">{{ $attendance->subject->name ?? $attendance->subject_code }}</td>
+                        <td>
+                            @php
+                                $st = strtolower($attendance->status ?? 'absent');
+                            @endphp
+                            @if($attendance->excused)
+                                <x-badge type="excused">Excused</x-badge>
+                            @elseif($st === 'present')
+                                <x-badge type="present">Present</x-badge>
+                            @elseif($st === 'late')
+                                <x-badge type="late">Late</x-badge>
+                            @else
+                                <x-badge type="absent">Absent</x-badge>
+                            @endif
+                        </td>
+                        <td style="color: #b39b82;">
+                            @if($attendance->time_in)
+                                <i class="bi bi-stopwatch me-1" style="font-size: 0.8rem;"></i>{{ \Carbon\Carbon::parse($attendance->time_in)->format('h:i A') }}
+                            @else
+                                --
+                            @endif
+                        </td>
+                        <td>
+                            @if(strtolower($attendance->status ?? '') === 'absent' && !$attendance->excused)
+                                <a href="{{ route('parent.child.excuse', [$data->child, $attendance]) }}" class="ent-btn ent-btn-sm ent-btn-ghost">
+                                    <i class="bi bi-pencil-square"></i> Excuse
+                                </a>
+                            @else
+                                <span style="color: rgba(179,155,130,0.5); font-size: 0.75rem;">—</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @endforeach
+                </x-data-table>
+            </div>
+            
+            <!-- Mobile Cards -->
+            <div class="d-block d-md-none">
                 @foreach($data->child->attendances as $attendance)
-                <tr>
-                    <td data-label="Date" style="font-weight: 600;">{{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}</td>
-                    <td data-label="Subject" style="color: #b39b82;">{{ $attendance->subject->name ?? $attendance->subject_code }}</td>
-                    <td data-label="Status">
-                        @php
-                            $st = strtolower($attendance->status ?? 'absent');
-                        @endphp
-                        @if($attendance->excused)
-                            <x-badge type="excused">Excused</x-badge>
-                        @elseif($st === 'present')
-                            <x-badge type="present">Present</x-badge>
-                        @elseif($st === 'late')
-                            <x-badge type="late">Late</x-badge>
-                        @else
-                            <x-badge type="absent">Absent</x-badge>
-                        @endif
-                    </td>
-                    <td data-label="Time In" style="color: #b39b82;">
-                        @if($attendance->time_in)
-                            <i class="bi bi-stopwatch me-1" style="font-size: 0.8rem;"></i>{{ \Carbon\Carbon::parse($attendance->time_in)->format('h:i A') }}
-                        @else
-                            --
-                        @endif
-                    </td>
-                    <td data-label="Action">
-                        @if(strtolower($attendance->status ?? '') === 'absent' && !$attendance->excused)
-                            <a href="{{ route('parent.child.excuse', [$data->child, $attendance]) }}" class="ent-btn ent-btn-sm ent-btn-ghost">
-                                <i class="bi bi-pencil-square"></i> Excuse
-                            </a>
-                        @else
-                            <span style="color: rgba(179,155,130,0.5); font-size: 0.75rem;">—</span>
-                        @endif
-                    </td>
-                </tr>
+                <div class="mobile-attendance-card">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div style="color: #b39b82; font-size: 0.75rem; font-weight: 600; margin-bottom: 2px;">
+                                {{ \Carbon\Carbon::parse($attendance->date)->format('M d, Y') }}
+                            </div>
+                            <div style="font-weight: 700; color: #f3e7cd; font-size: 0.95rem;">
+                                {{ $attendance->subject->name ?? $attendance->subject_code }}
+                            </div>
+                        </div>
+                        <div>
+                            @php
+                                $st = strtolower($attendance->status ?? 'absent');
+                            @endphp
+                            @if($attendance->excused)
+                                <x-badge type="excused">Excused</x-badge>
+                            @elseif($st === 'present')
+                                <x-badge type="present">Present</x-badge>
+                            @elseif($st === 'late')
+                                <x-badge type="late">Late</x-badge>
+                            @else
+                                <x-badge type="absent">Absent</x-badge>
+                            @endif
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px;">
+                        <div style="color: rgba(179,155,130,0.8); font-size: 0.8rem;">
+                            @if($attendance->time_in)
+                                <i class="bi bi-stopwatch me-1"></i>{{ \Carbon\Carbon::parse($attendance->time_in)->format('h:i A') }}
+                            @else
+                                <i class="bi bi-dash"></i> No time
+                            @endif
+                        </div>
+                        <div>
+                            @if(strtolower($attendance->status ?? '') === 'absent' && !$attendance->excused)
+                                <a href="{{ route('parent.child.excuse', [$data->child, $attendance]) }}" style="color: var(--gold); font-size: 0.8rem; font-weight: 600; text-decoration: none;">
+                                    <i class="bi bi-pencil-square"></i> Excuse
+                                </a>
+                            @endif
+                        </div>
+                    </div>
+                </div>
                 @endforeach
-            </x-data-table>
+            </div>
         @else
             <x-empty-state icon="bi bi-calendar-x" title="No Records" description="No attendance records yet for this student." />
         @endif

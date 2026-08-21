@@ -5,13 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ config('app.name') }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    @include('partials.pwa-tags')
+
+    @php
+        $destUrl = route('login');
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user->isAdmin()) {
+                $destUrl = route('admin.dashboard');
+            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+                $destUrl = route('teacher.dashboard');
+            } elseif ($user->isParent()) {
+                $destUrl = route('parent.dashboard');
+            } else {
+                $destUrl = route('home');
+            }
+        }
+    @endphp
+
+    <!-- Instant Preload Destination Page -->
+    <link rel="prefetch" href="{{ $destUrl }}">
+    <link rel="prerender" href="{{ $destUrl }}">
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            background: #000;
+        html, body {
+            background: #110A0A;
+            background-color: #110A0A;
             overflow: hidden;
             font-family: 'Inter', sans-serif;
+            height: 100%;
+            width: 100%;
         }
 
         /* ── VIDEO ── */
@@ -22,7 +47,7 @@
             height: 100%;
             object-fit: cover;
             z-index: 1;
-            filter: brightness(1.05) contrast(1.1) saturate(1.15); /* Enhance colors */
+            filter: brightness(1.05) contrast(1.1) saturate(1.15);
         }
 
         /* ── VIGNETTE OVERLAY ── */
@@ -41,8 +66,8 @@
             left: 40px;
             z-index: 5;
             color: white;
-            animation: slideUpFade 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            animation-delay: 0.5s;
+            animation: slideUpFade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation-delay: 0.3s;
             opacity: 0;
             transform: translateY(20px);
         }
@@ -77,7 +102,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ── OVERLAY (subtle dark gradient at bottom) ── */
+        /* ── OVERLAY ── */
         .overlay {
             position: fixed;
             inset: 0;
@@ -92,31 +117,31 @@
             bottom: 40px;
             right: 40px;
             z-index: 10;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.12);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             color: white;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.25);
             padding: 12px 26px;
             border-radius: 99px;
             font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
             display: flex;
             align-items: center;
             gap: 10px;
             letter-spacing: 0.5px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-            animation: fadeIn 1s ease forwards;
-            animation-delay: 1.5s;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: fadeIn 0.8s ease forwards;
+            animation-delay: 0.8s;
             opacity: 0;
         }
         .skip-btn:hover {
-            background: rgba(255,255,255,0.2);
-            border-color: rgba(255,255,255,0.4);
-            transform: scale(1.08);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            background: rgba(255,255,255,0.25);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.5);
         }
         @media (max-width: 768px) {
             .skip-btn {
@@ -144,7 +169,7 @@
             height: 100%;
             background: linear-gradient(90deg, #b91c1c, #f59e0b, #cfa46f);
             width: 0%;
-            transition: width 0.3s linear;
+            transition: width 0.15s linear;
             box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
             border-radius: 0 4px 4px 0;
         }
@@ -153,11 +178,11 @@
         .fade-out {
             position: fixed;
             inset: 0;
-            background: white;
+            background: #110A0A;
             z-index: 100;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.8s ease;
+            transition: opacity 0.2s ease-out;
         }
         .fade-out.active {
             opacity: 1;
@@ -168,7 +193,7 @@
 <body>
 
     <!-- Video -->
-    <video id="introVideo" autoplay muted playsinline>
+    <video id="introVideo" autoplay muted playsinline preload="auto">
         <source id="introSource" src="{{ asset('videos/intro.mp4') }}" type="video/mp4">
     </video>
 
@@ -188,7 +213,7 @@
     </div>
 
     <!-- Skip button -->
-    <button class="skip-btn" onclick="goToLogin()">
+    <button class="skip-btn" onclick="goToNext()">
         Skip Intro <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
     </button>
 
@@ -198,40 +223,42 @@
     <script>
         const video       = document.getElementById('introVideo');
         const introSource = document.getElementById('introSource');
+        const destUrl     = @json($destUrl);
 
         // Use mobile intro on small viewports
         if (window.innerWidth <= 768) {
             introSource.src = '{{ asset("videos/intro_mobile.mp4") }}';
-            // reload video with new source
             video.load();
         }
+        
         const progressBar = document.getElementById('progressBar');
         const fadeOut     = document.getElementById('fadeOut');
+        let hasTransitioned = false;
 
-        // Update progress bar as video plays
+        function goToNext() {
+            if (hasTransitioned) return;
+            hasTransitioned = true;
+            fadeOut.classList.add('active');
+            window.location.replace(destUrl);
+        }
+
+        // Instant transition as video concludes (no trailing lag or buffer pause)
         video.addEventListener('timeupdate', () => {
             if (video.duration) {
                 const pct = (video.currentTime / video.duration) * 100;
                 progressBar.style.width = pct + '%';
+
+                if (video.duration > 1 && video.currentTime >= (video.duration - 0.12)) {
+                    goToNext();
+                }
             }
         });
 
-        // Auto-redirect when video ends
-        video.addEventListener('ended', () => {
-            goToLogin();
-        });
+        video.addEventListener('ended', goToNext);
 
-        // If video fails to load, redirect immediately
         video.addEventListener('error', () => {
-            window.location.href = '{{ route("login") }}';
+            window.location.replace(destUrl);
         });
-
-        function goToLogin() {
-            fadeOut.classList.add('active');
-            setTimeout(() => {
-                window.location.href = '{{ route("login") }}';
-            }, 800);
-        }
     </script>
 </body>
 </html>

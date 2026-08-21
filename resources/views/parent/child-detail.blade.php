@@ -35,8 +35,31 @@
     .timeline-content .time-in { font-size: 0.8rem; color: #8f826f; font-family: monospace; }
     
     @media (max-width: 768px) {
-        .filter-group { flex-basis: 100%; min-width: 100%; }
-        .ent-grid-5 { grid-template-columns: 1fr 1fr; }
+        .child-header-glow {
+            background: rgba(26, 17, 16, 0.6);
+            border: 1px solid rgba(207, 164, 111, 0.1);
+            box-shadow: none;
+            padding: 16px;
+        }
+        
+        .filter-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            width: 100%;
+        }
+        .filter-form-grid .filter-group {
+            flex: unset;
+            min-width: unset;
+        }
+        .filter-form-grid > .filter-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .ent-grid-5 { grid-template-columns: 1fr 1fr; gap: 12px; }
         .ent-grid-5 > :last-child { grid-column: span 2; }
     }
 </style>
@@ -69,7 +92,7 @@
 
     {{-- Filters --}}
     <x-card type="section" class="ent-mb-lg">
-        <form method="GET" action="{{ route('parent.child', $child) }}" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
+        <form method="GET" action="{{ route('parent.child', $child) }}" class="filter-form-grid" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
             <div class="filter-group">
                 <label class="ent-label">Subject</label>
                 <select name="subject" class="ent-input">
@@ -97,7 +120,7 @@
                 <label class="ent-label">To</label>
                 <input type="date" name="date_to" value="{{ request('date_to') }}" class="ent-input">
             </div>
-            <div style="display: flex; gap: 8px;">
+            <div class="filter-actions" style="display: flex; gap: 8px;">
                 <button type="submit" class="ent-btn ent-btn-primary"><i class="bi bi-funnel"></i> Filter</button>
                 @if(request()->hasAny(['subject', 'status', 'date_from', 'date_to']))
                     <a href="{{ route('parent.child', $child) }}" class="ent-btn ent-btn-ghost text-danger">Clear</a>

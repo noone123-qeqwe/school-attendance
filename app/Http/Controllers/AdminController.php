@@ -380,6 +380,7 @@ class AdminController extends Controller
                 $updated++;
             } else {
                 $attributes['password'] = Hash::make($plainPassword);
+                $attributes['must_change_password'] = true;
                 User::create($attributes);
                 $created++;
             }
@@ -949,9 +950,9 @@ class AdminController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // Prevent non-super-admins from resetting super_admin passwords
-        if ($user->admin_sub_role === 'super_admin' && Auth::user()->admin_sub_role !== 'super_admin') {
-            return back()->with('error', 'Only super admins can reset another super admin\'s password.');
+        // Prevent non-super-admins from resetting admin accounts
+        if ($user->isAdmin() && Auth::user()->admin_sub_role !== 'super_admin') {
+            return back()->with('error', 'Only super admins can reset an administrator account\'s password.');
         }
 
         $user->update([
@@ -1281,6 +1282,7 @@ class AdminController extends Controller
                 $updated++;
             } else {
                 $attributes['password'] = Hash::make($plainPassword);
+                $attributes['must_change_password'] = true;
                 User::create($attributes);
                 $created++;
             }

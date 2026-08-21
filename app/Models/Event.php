@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -61,7 +62,7 @@ class Event extends Model
         return $this->hasMany(EventAttendance::class);
     }
     
-    public function attendees()
+    public function attendees(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'event_attendees', 'event_id', 'user_id')
                     ->withPivot('response', 'decline_reason')

@@ -514,6 +514,24 @@
                     </div>
 
                     <div class="trow">
+                        <div>
+                            <div class="tlabel d-flex align-items-center gap-2">
+                                <span>Web Push Notifications</span>
+                                <span class="push-status-badge badge-inactive" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(207,164,111,0.15); color: #cfa46f; border: 1px solid rgba(207,164,111,0.3); font-weight: 700;">Checking...</span>
+                            </div>
+                            <div class="tsub">Receive instant background alerts on this device for attendance, excuse updates, and announcements.</div>
+                            <div class="mt-2">
+                                <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn" style="display:none; padding: 5px 12px; font-size: 0.75rem; background: rgba(74,222,128,0.12)!important; border-color: rgba(74,222,128,0.3)!important; color: #4ade80!important;">
+                                    <i class="bi bi-bell-fill me-1"></i> Send Test Push Alert
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input push-toggle-input" type="checkbox" onchange="toggleWebPush(this)">
+                        </div>
+                    </div>
+
+                    <div class="trow">
                         <div><div class="tlabel">SMS Notifications</div><div class="tsub">Receive important alerts via SMS (charges may apply)</div></div>
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" name="prefs[sms]" value="1" {{ !empty($prefs['sms']) ? 'checked' : '' }}>
@@ -530,6 +548,26 @@
                         <button type="submit" class="sbtn"><i class="bi bi-save me-2"></i>Save Preferences</button>
                     </div>
                 </form>
+
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin: 28px 0 20px;">
+
+                <!-- App & System Updates -->
+                <div style="margin-bottom:10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">App & System Updates</div>
+                <div class="trow" style="align-items: flex-start; gap: 16px;">
+                    <div>
+                        <div class="tlabel" style="display:flex;align-items:center;gap:8px;">
+                            <i class="bi bi-arrow-repeat" style="color:var(--gold);"></i> Software Updates
+                            <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold);border:1px solid rgba(207,164,111,0.3);font-size:0.75rem;">v2.1.0</span>
+                        </div>
+                        <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
+                    </div>
+                    <div>
+                        <button type="button" id="checkUpdateBtn" onclick="checkForAppUpdates()" class="sbtn" style="padding:9px 18px;font-size:0.85rem;white-space:nowrap;">
+                            <i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates
+                        </button>
+                    </div>
+                </div>
+                <div id="updateFeedbackArea" style="display:none;margin-top:12px;padding:14px 18px;border-radius:12px;font-size:0.85rem;line-height:1.5;"></div>
             </div>
         </div>
     </div>
@@ -537,11 +575,100 @@
 </div>
 
 <script>
+async function checkForAppUpdates() {
+    const btn = document.getElementById('checkUpdateBtn');
+    const feedback = document.getElementById('updateFeedbackArea');
+    const statusText = document.getElementById('updateStatusText');
+
+    if (!btn || !feedback) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:14px;height:14px;"></span> Checking...';
+    feedback.style.display = 'block';
+    feedback.style.background = 'rgba(59, 130, 246, 0.1)';
+    feedback.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+    feedback.style.color = '#93c5fd';
+    feedback.innerHTML = '<i class="bi bi-arrow-repeat spin me-2"></i>Connecting to server and checking for updates...';
+
+    if (!navigator.onLine) {
+        feedback.style.background = 'rgba(239, 68, 68, 0.1)';
+        feedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        feedback.style.color = '#fca5a5';
+        feedback.innerHTML = '<i class="bi bi-wifi-off me-2"></i>You are currently offline. Please connect to the internet to check for updates.';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates';
+        return;
+    }
+
+    try {
+        if ('serviceWorker' in navigator) {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+                await reg.update();
+
+                if (reg.waiting) {
+                    feedback.style.background = 'rgba(34, 197, 94, 0.15)';
+                    feedback.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+                    feedback.style.color = '#86efac';
+                    feedback.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div><i class="bi bi-stars me-2"></i><strong>New update is ready to install!</strong></div>
+                            <button type="button" class="btn btn-sm btn-success fw-bold" onclick="applySwUpdate()" style="border-radius:8px; padding:6px 14px;">Update & Refresh</button>
+                        </div>
+                    `;
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Ready';
+                    return;
+                }
+            }
+        }
+
+        await new Promise(r => setTimeout(r, 800));
+
+        feedback.style.background = 'rgba(16, 185, 129, 0.1)';
+        feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        feedback.style.color = '#6ee7b7';
+        feedback.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Your application is up to date (v2.1.0). You have the latest version installed.';
+        if (statusText) statusText.textContent = 'Last checked: Just now';
+    } catch (e) {
+        feedback.style.background = 'rgba(239, 68, 68, 0.1)';
+        feedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+        feedback.style.color = '#fca5a5';
+        feedback.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Unable to complete update check: ' + (e.message || 'Network error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates';
+    }
+}
+
+function applySwUpdate() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(reg => {
+            if (reg && reg.waiting) {
+                reg.waiting.postMessage({ action: 'skipWaiting' });
+            } else {
+                window.location.reload();
+            }
+        });
+    } else {
+        window.location.reload();
+    }
+}
+
 function switchTab(id, btn) {
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
     document.getElementById('tab-' + id).classList.add('active');
     btn.classList.add('active');
+}
+
+async function toggleWebPush(input) {
+    if (input.checked) {
+        const ok = await WebPushManager.subscribe();
+        if (!ok) input.checked = false;
+    } else {
+        await WebPushManager.unsubscribe();
+    }
 }
 function togglePw(id, btn) {
     const i = document.getElementById(id);

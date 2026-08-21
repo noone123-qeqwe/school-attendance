@@ -1,42 +1,51 @@
 /* 
-    Admin Premium Theme (Maroon & Gold Glassmorphism) 
+    Admin Premium Theme (Aligned with Student Maroon & Gold Theme) 
     Overrides portal.blade.php defaults for the Admin Panel
 */
 
 :root {
-    --admin-bg-gradient: linear-gradient(135deg, #180b08 0%, #0d0604 100%);
-    --admin-card-bg: rgba(26, 14, 11, 0.65);
-    --admin-card-border: rgba(207, 164, 111, 0.15);
-    --admin-card-shadow: 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    --admin-gold: #d4b77d;
-    --admin-maroon: #800000;
-    --admin-maroon-glow: rgba(128, 0, 0, 0.4);
+    --admin-bg-gradient: radial-gradient(circle at top right, rgba(212, 175, 55, 0.04), transparent 30%),
+                         radial-gradient(circle at bottom left, rgba(122, 26, 26, 0.06), transparent 30%),
+                         #110A0A;
+    --admin-card-bg: rgba(30, 21, 21, 0.65);
+    --admin-card-border: rgba(212, 175, 55, 0.15);
+    --admin-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    --admin-gold: #D4AF37;
+    --admin-maroon: #7A1A1A;
+    --admin-maroon-dark: #4A0C0C;
+    --admin-maroon-glow: rgba(122, 26, 26, 0.4);
     --admin-gold-glow: rgba(212, 175, 55, 0.25);
-    --admin-glass: blur(16px);
+    --admin-glass: blur(24px);
 }
 
-/* Global Admin Background Adjustment */
+/* Global Admin Background Adjustment (Matches Student) */
 body {
     background: var(--admin-bg-gradient) !important;
+    background-color: #110A0A !important;
     background-attachment: fixed !important;
+    color: #FCF8F2 !important;
 }
 body::before {
-    content: '';
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle at 15% 50%, rgba(128, 0, 0, 0.08), transparent 25%),
-                radial-gradient(circle at 85% 30%, rgba(207, 164, 111, 0.06), transparent 25%);
-    pointer-events: none;
-    z-index: -1;
+    display: none !important;
 }
 
-/* Sidebar Enhancements */
+/* Sidebar Enhancements (Matches Student Maroon Dark Glass) */
 .sidebar {
-    background: rgba(35, 16, 12, 0.75) !important;
-    backdrop-filter: var(--admin-glass);
-    -webkit-backdrop-filter: var(--admin-glass);
-    border-right: 1px solid rgba(255, 215, 145, 0.08);
-    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    background: rgba(74, 12, 12, 0.95) !important; /* Maroon Dark Glass */
+    backdrop-filter: var(--admin-glass) !important;
+    -webkit-backdrop-filter: var(--admin-glass) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.3) !important;
+}
+
+.sidebar-head {
+    background: rgba(74, 12, 12, 0.98) !important;
+    z-index: 20 !important;
+}
+
+.sidebar-logo {
+    background: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
 }
 
 .sidebar .nav-link:not(.sub-nav-link) {
@@ -53,24 +62,24 @@ body::before {
 }
 
 .sidebar .nav-link:not(.sub-nav-link):hover {
-    background: rgba(207, 164, 111, 0.1) !important;
-    color: var(--admin-gold) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
     transform: translateX(3px);
 }
 
 .sidebar .nav-link:not(.sub-nav-link).active {
-    background: linear-gradient(90deg, rgba(128, 0, 0, 0.4) 0%, rgba(128, 0, 0, 0) 100%) !important;
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.2) 0%, rgba(212, 175, 55, 0.04) 100%) !important;
     color: #fff !important;
-    border-left: 3px solid var(--admin-gold);
-    box-shadow: inset 2px 0 10px rgba(128,0,0,0.2);
+    border-left: 3px solid var(--admin-gold, #D4AF37) !important;
+    box-shadow: inset 2px 0 10px rgba(212, 175, 55, 0.1) !important;
 }
 
-/* Header Enhancements */
+/* Header Enhancements (Solid & Opaque) */
 .top-header {
-    background: rgba(18, 9, 6, 0.75) !important;
-    backdrop-filter: var(--admin-glass);
-    -webkit-backdrop-filter: var(--admin-glass);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: #110A0A !important;
+    background: rgba(17, 10, 10, 0.98) !important;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.15) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Admin Cards (Glassmorphism) */

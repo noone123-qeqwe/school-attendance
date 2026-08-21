@@ -324,7 +324,7 @@
             <span class="subject-count" id="itemCount">{{ count($groupedSchedules) }} items</span>
         </div>
 
-        <div style="overflow-x:auto;">
+        <div style="overflow-x:auto;" class="d-none d-md-block">
             <table class="cls-table" id="scheduleTable">
                 <thead>
                     <tr>
@@ -379,6 +379,44 @@
                 </tbody>
             </table>
         </div>
+        
+        <!-- Mobile Cards -->
+        <div class="d-block d-md-none p-3">
+            @forelse($groupedSchedules as $sched)
+            <div class="schedule-card" data-days="{{ $sched->days }}" style="border-left: 3px solid var(--gold); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 0 12px 12px; margin-bottom: 8px;">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div>
+                        <div style="font-weight: 700; color: #f3e7cd; font-size: 1.05rem; line-height: 1.2;">{{ $sched->name }}</div>
+                        <div style="font-size: 0.75rem; color: #b39b82; margin-top: 2px;">{{ $sched->code }} &bull; Sec {{ $sched->section }}</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.08); color: #f8e7d3; font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px;">{{ $sched->units }}</div>
+                </div>
+                
+                <div class="d-flex flex-column gap-1 mt-2">
+                    <div style="color: #d6b67b; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-clock" style="opacity: 0.7;"></i> 
+                        @if($sched->start_time)
+                            {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i a') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i a') }}
+                        @else
+                            TBA
+                        @endif
+                        <span style="color: #d8b35c; font-weight: bold; margin-left: 4px;">{{ $sched->days }}</span>
+                    </div>
+                    <div style="color: #a3a3a3; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-geo-alt" style="opacity: 0.7;"></i> {{ $sched->room }}
+                    </div>
+                    <div style="color: #a3a3a3; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="bi bi-person" style="opacity: 0.7;"></i> {{ $sched->teacher }}
+                    </div>
+                </div>
+            </div>
+            @empty
+            <div class="empty-state">
+                <i class="bi bi-journal-x"></i>
+                <p>No classes found.</p>
+            </div>
+            @endforelse
+        </div>
     </div>
 </div>
 
@@ -386,7 +424,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('scheduleSearch');
     const dayFilter = document.getElementById('dayFilter');
-    const rows = document.querySelectorAll('.schedule-row');
+    const rows = document.querySelectorAll('.schedule-row, .schedule-card');
     const countDisplay = document.getElementById('itemCount');
 
     function filterTable() {
@@ -409,7 +447,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        countDisplay.textContent = visibleCount + (visibleCount === 1 ? ' item' : ' items');
+        const tableRows = document.querySelectorAll('.schedule-row');
+        let realCount = 0;
+        tableRows.forEach(row => {
+            if (row.style.display !== 'none') realCount++;
+        });
+        
+        countDisplay.textContent = realCount + (realCount === 1 ? ' item' : ' items');
     }
 
     searchInput.addEventListener('input', filterTable);

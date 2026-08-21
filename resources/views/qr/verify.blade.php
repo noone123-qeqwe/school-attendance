@@ -112,8 +112,22 @@
 var STUDENT_NUMBER = '{{ addslashes(Auth::user()->student_number) }}';
 var QR_TOKEN = '{{ addslashes($token) }}';
 var CSRF = '{{ csrf_token() }}';
+var CLASSROOM_LAT = {{ isset($classroomLat) && $classroomLat !== null ? (float) $classroomLat : 'null' }};
+var CLASSROOM_LNG = {{ isset($classroomLng) && $classroomLng !== null ? (float) $classroomLng : 'null' }};
+var RADIUS_METERS = {{ isset($radiusMeters) && $radiusMeters !== null ? (int) $radiusMeters : 50 }};
 
 var fingerprintInProgress = false; // Add guard against multiple simultaneous calls
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    var R = 6371000; // meters
+    var dLat = (lat2 - lat1) * Math.PI / 180;
+    var dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 
 function setIcon(bg, iconClass, iconColor) {
     var el = document.getElementById('vIcon');
@@ -223,16 +237,32 @@ function requestLocation(options) {
             locationTimeoutId = null;
         }
 
-        console.log('GPS Accepted:', pos.coords.latitude, pos.coords.longitude, 'Accuracy:', pos.coords.accuracy + 'm');
-        document.getElementById('latInput').value = pos.coords.latitude;
-        document.getElementById('lngInput').value = pos.coords.longitude;
-        document.getElementById('accuracyInput').value = pos.coords.accuracy || 0;
+        var lat = pos.coords.latitude;
+        var lng = pos.coords.longitude;
+        var accuracy = pos.coords.accuracy || 0;
+
+        console.log('GPS Accepted:', lat, lng, 'Accuracy:', accuracy + 'm');
+        document.getElementById('latInput').value = lat;
+        document.getElementById('lngInput').value = lng;
+        document.getElementById('accuracyInput').value = accuracy;
+
+        // Check if student is within classroom geofence
+        if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
+            var dist = calculateDistance(lat, lng, CLASSROOM_LAT, CLASSROOM_LNG);
+            console.log('Classroom distance check:', dist + 'm, limit:', RADIUS_METERS + 'm');
+            
+            if (dist > RADIUS_METERS) {
+                showOutsideClassroomError(dist, RADIUS_METERS);
+                return;
+            }
+        }
+
         setIcon('#f0fdf4', 'bi bi-geo-alt-fill', '#16a34a');
         setStep(3);
-        document.getElementById('vTitle').textContent = 'Location Verified';
-        document.getElementById('vSub').textContent = 'You are in range. Verifying identity...';
-        showMsg('ok', '<i class="bi bi-check-circle me-1"></i> ' + accuracyLabel + ' (±' + Math.round(pos.coords.accuracy) + 'm accuracy).');
-        setTimeout(function() { doFingerprint(); }, 900);
+        document.getElementById('vTitle').textContent = 'Inside Classroom';
+        document.getElementById('vSub').textContent = 'Location verified. Verifying fingerprint...';
+        showMsg('ok', '<i class="bi bi-check-circle me-1"></i> You are inside the classroom (' + accuracyLabel + ').');
+        setTimeout(function() { doFingerprint(); }, 800);
     };
 
     var onSuccess = function(pos) {
@@ -390,6 +420,11 @@ function submitAttendance(credentialData) {
             return;
         }
 
+        if (response.error_type === 'outside_classroom') {
+            showOutsideClassroomError(response.distance || 0, response.radius || RADIUS_METERS);
+            return;
+        }
+
         showFpError(response.message || 'Clock-in failed. Please try again.');
     };
     xhr2.onerror = function() {
@@ -521,6 +556,18 @@ function submitForm(msg) {
     document.getElementById('vTitle').textContent = 'Unable to Clock In';
     document.getElementById('vSub').textContent = msg;
     showMsg('err', '<i class="bi bi-exclamation-circle me-1"></i> ' + msg);
+}
+
+function showOutsideClassroomError(dist, limit) {
+    fingerprintInProgress = false;
+    setIcon('#fef2f2', 'bi bi-geo-alt-fill', '#dc2626');
+    document.getElementById('vTitle').textContent = 'Failed to Scan';
+    document.getElementById('vSub').textContent = 'You are outside the classroom (' + Math.round(dist) + 'm away).';
+    showMsg('err', '<i class="bi bi-x-circle-fill me-1"></i> <strong>Outside Classroom:</strong> Attendance can only be recorded while physically inside the classroom (within ' + limit + 'm).');
+    var btn = document.getElementById('retryFpBtn');
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
+    btn.onclick = function() { startGPS(); };
+    btn.style.display = 'flex';
 }
 
 function showFpError(msg) {

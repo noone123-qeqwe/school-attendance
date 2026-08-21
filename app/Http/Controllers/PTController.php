@@ -51,7 +51,7 @@ class PTController extends Controller
         $user = User::create($userData);
 
         // 4. Log them in and redirect based on role
-        Auth::login($user);
+        Auth::login($user, true);
         $request->session()->regenerate();
         
         if ($request->role === 'student') {
@@ -68,6 +68,7 @@ class PTController extends Controller
 
     $identifier = trim($request->identifier);
     $password   = $request->password;
+    $remember   = $request->has('remember') ? $request->boolean('remember') : true;
     
     Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
 
@@ -75,7 +76,7 @@ class PTController extends Controller
     if (!str_contains($identifier, '@')) {
         // Student login via student_number
         $credentials = ['student_number' => $identifier, 'password' => $password];
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attempt($credentials, $remember)) {
             /** @var \App\Models\User $user */
             $user = Auth::user();
             if (!$user->isStudent()) {
@@ -104,7 +105,7 @@ class PTController extends Controller
     } else {
         // Email login for admin/teacher
         $credentials = ['email' => $identifier, 'password' => $password];
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attempt($credentials, $remember)) {
             /** @var \App\Models\User $user */
             $user = Auth::user();
             

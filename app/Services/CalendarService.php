@@ -113,8 +113,7 @@ class CalendarService
             'exam' => '#ec4899', // pink
             'meeting' => '#f59e0b', // amber
             'school_event' => '#8b5cf6', // purple
-            'holiday' => '#10b981', // green
-            default => '#6b7280'
+            default => '#10b981', // green (holiday and others)
         };
 
         return [
@@ -141,8 +140,7 @@ class CalendarService
             'national' => '#10b981', // emerald green
             'local'    => '#34d399', // lighter green
             'school'   => '#6ee7b7', // very light green
-            'no_class' => '#a7f3d0', // mint green
-            default    => '#10b981',
+            default    => '#a7f3d0', // mint green (no_class and others)
         };
 
         return [

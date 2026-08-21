@@ -38,7 +38,7 @@ class QrAttendanceController extends Controller
 
     private function getRadiusMeters(): int
     {
-        return (int) \App\Models\Setting::get('gps_radius', 500);
+        return (int) \App\Models\Setting::get('gps_radius', 50);
     }
 
     private function getRpId(Request $request): string
@@ -544,11 +544,18 @@ class QrAttendanceController extends Controller
             return view('qr.result', ['status' => 'already', 'message' => 'You have already clocked in for this class.', 'subject' => $subject->name, 'status_val' => $existing->status]);
         }
 
+        $classroomLat = (float) ($session->classroom_lat ?? $this->getSchoolLat());
+        $classroomLng = (float) ($session->classroom_lng ?? $this->getSchoolLng());
+        $radiusMeters = $this->getRadiusMeters();
+
         return view('qr.verify', [
-            'status'  => 'ready',
-            'message' => 'Confirm GPS and fingerprint to finish clock-in.',
-            'token'   => $token,
-            'subject' => $subject,
+            'status'        => 'ready',
+            'message'       => 'Confirm GPS and fingerprint to finish clock-in.',
+            'token'         => $token,
+            'subject'       => $subject,
+            'classroomLat'  => $classroomLat,
+            'classroomLng'  => $classroomLng,
+            'radiusMeters'  => $radiusMeters,
         ]);
     }
     public function verificationOptions(Request $request, WebauthnService $webauthn)
@@ -822,7 +829,7 @@ class QrAttendanceController extends Controller
         ]);
 
         if ($distance > $radiusMeters) {
-            Log::warning('QR distance validation failed', [
+            Log::warning('QR distance validation failed: student outside classroom', [
                 'session_id' => $session->id,
                 'session_token' => $session->token,
                 'student_id' => $user->id,
@@ -837,7 +844,13 @@ class QrAttendanceController extends Controller
                 'radius_limit' => $radiusMeters,
             ]);
 
-            return response()->json(['success' => false, 'message' => 'You are too far from the classroom location. Distance: ' . round($distance) . 'm, allowed: ' . $radiusMeters . 'm.'], 422);
+            return response()->json([
+                'success'    => false,
+                'error_type' => 'outside_classroom',
+                'distance'   => round($distance),
+                'radius'     => $radiusMeters,
+                'message'    => 'Failed to scan: You are outside the classroom (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Attendance can only be marked while inside the classroom.'
+            ], 422);
         }
 
         $existing = Attendance::where('user_id', $user->id)
