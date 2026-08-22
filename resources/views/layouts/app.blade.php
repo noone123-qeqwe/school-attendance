@@ -868,6 +868,9 @@
     </script>
     @endauth
     
+    <!-- Native App Top Navigation Bar -->
+    <div id="native-app-progress" style="position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: linear-gradient(90deg, #cfa46f, #ffd166, #4ade80); z-index: 100000; transition: width 0.25s ease, opacity 0.3s ease; box-shadow: 0 0 10px rgba(207,164,111,0.8); pointer-events: none;"></div>
+
     <!-- Global Loading Overlay -->
     <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(17,10,10,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
         <div style="width: 56px; height: 56px; border: 3px solid rgba(212,175,55,0.15); border-top-color: #cfa46f; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
@@ -875,6 +878,51 @@
     </div>
 
     <script>
+        // ── Native Micro-Haptics Engine ──
+        window.triggerHaptic = function(type = 'light') {
+            if (!navigator.vibrate) return;
+            try {
+                if (type === 'light') navigator.vibrate(10);
+                else if (type === 'medium') navigator.vibrate(22);
+                else if (type === 'success') navigator.vibrate([10, 30, 15]);
+                else if (type === 'error') navigator.vibrate([30, 50, 30]);
+            } catch(e) {}
+        };
+
+        // Auto-bind micro-haptics on taps
+        document.addEventListener('click', function(e) {
+            const el = e.target.closest('button, .btn, .mbn-item, .scal-tile, .quick-action-btn, .nav-link, .pwa-btn-install, .stab, .dropdown-item');
+            if (el) {
+                window.triggerHaptic('light');
+            }
+        }, { passive: true });
+
+        // ── Native App Top Navigation Bar ──
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link) return;
+            const href = link.getAttribute('href');
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !link.hasAttribute('target') && !link.hasAttribute('download')) {
+                const bar = document.getElementById('native-app-progress');
+                if (bar) {
+                    bar.style.opacity = '1';
+                    bar.style.width = '35%';
+                    setTimeout(() => { if (bar) bar.style.width = '80%'; }, 150);
+                }
+            }
+        });
+
+        window.addEventListener('pageshow', function() {
+            const bar = document.getElementById('native-app-progress');
+            if (bar) {
+                bar.style.width = '100%';
+                setTimeout(() => {
+                    bar.style.opacity = '0';
+                    setTimeout(() => { bar.style.width = '0%'; }, 300);
+                }, 150);
+            }
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('form:not([data-no-loader])').forEach(form => {
                 form.addEventListener('submit', function() {
