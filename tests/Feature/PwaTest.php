@@ -85,9 +85,7 @@ class PwaTest extends TestCase
         $response->assertSee('/manifest.json');
         $response->assertSee('sw.js');
         $response->assertSee('apple-mobile-web-app-capable');
-        $response->assertSee('pwaInstallBanner', false);
         $response->assertSee('pwaIosModal', false);
-        $response->assertSee('pwaUpdateBanner', false);
         $response->assertSee('pwa-install-trigger', false);
         $response->assertSee('Install Attendance App', false);
     }

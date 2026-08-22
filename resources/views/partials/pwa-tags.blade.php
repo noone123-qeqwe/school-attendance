@@ -248,38 +248,6 @@
     }
 </style>
 
-<!-- In-App Install Prompt Banner -->
-<div class="pwa-install-banner" id="pwaInstallBanner">
-    <div class="pwa-banner-icon">
-        <img src="/images/icons/icon-192x192.png" alt="App Icon">
-    </div>
-    <div class="pwa-banner-content">
-        <div class="pwa-banner-title">Install Attendance App</div>
-        <div class="pwa-banner-subtitle">Fast access, offline attendance & alerts</div>
-    </div>
-    <div class="pwa-banner-actions">
-        <button class="pwa-btn-install" id="pwaInstallBtn">Install</button>
-        <button class="pwa-btn-close" id="pwaDismissBtn" aria-label="Dismiss">&times;</button>
-    </div>
-</div>
-
-<!-- In-App Update Notification Banner -->
-<div class="pwa-install-banner" id="pwaUpdateBanner" style="background: rgba(20, 15, 10, 0.98); border-color: rgba(74, 222, 128, 0.4);">
-    <div class="pwa-banner-icon" style="background: rgba(74, 222, 128, 0.15); border-color: rgba(74, 222, 128, 0.3);">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-        </svg>
-    </div>
-    <div class="pwa-banner-content">
-        <div class="pwa-banner-title">App Update Available</div>
-        <div class="pwa-banner-subtitle">A newer version is ready. Click to refresh.</div>
-    </div>
-    <div class="pwa-banner-actions">
-        <button class="pwa-btn-install" id="pwaUpdateBtn" style="background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%); color: #0F172A;">Update</button>
-        <button class="pwa-btn-close" id="pwaUpdateDismissBtn" aria-label="Dismiss">&times;</button>
-    </div>
-</div>
-
 <!-- Universal PWA Install Guide Modal (Android, iOS & In-App Browsers) -->
 <div class="pwa-ios-modal" id="pwaIosModal">
     <div class="pwa-ios-sheet">
@@ -304,56 +272,15 @@
 <div class="pwa-network-toast" id="pwaNetworkToast"></div>
 
 <script>
-    // ── 1. Register Service Worker & Handle Real-Time Updates ──
+    // ── 1. Register Service Worker Silently in Background ──
     let swRegistration = null;
     let deferredPrompt = null;
-
-    function showUpdateBannerOnce() {
-        const updateBanner = document.getElementById('pwaUpdateBanner');
-        if (!updateBanner) return;
-        sessionStorage.removeItem('pwa_update_shown');
-        localStorage.removeItem('pwa_update_dismissed');
-        updateBanner.style.display = 'flex';
-    }
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const swUrl = '/sw.js?v=11?v={{ preg_replace("/[^0-9]/", "", \Illuminate\Support\Facades\Cache::get("pwa_sw_version", "8")) }}';
-                const reg = await navigator.serviceWorker.register(swUrl, { scope: '/' });
+                const reg = await navigator.serviceWorker.register('/sw.js?v=13', { scope: '/' });
                 swRegistration = reg;
-
-                // Immediately check if a waiting worker is already present
-                if (reg.waiting) {
-                    showUpdateBannerOnce();
-                }
-
-                // Check for updates when a new worker starts installing
-                reg.addEventListener('updatefound', () => {
-                    const newWorker = reg.installing;
-                    if (newWorker) {
-                        newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                showUpdateBannerOnce();
-                            }
-                        });
-                    }
-                });
-
-                // Listen for real-time broadcast message sent from Service Worker activate event
-                navigator.serviceWorker.addEventListener('message', (event) => {
-                    if (event.data && (event.data.type === 'SW_UPDATED' || event.data.action === 'SW_UPDATED')) {
-                        showUpdateBannerOnce();
-                    }
-                });
-
-                // Poll for Service Worker updates periodically (every 30 seconds) on active tabs
-                setInterval(() => {
-                    try {
-                        reg.update();
-                    } catch (e) {}
-                }, 30000);
-
             } catch (err) {
                 console.warn('PWA service worker registration failed:', err);
             }
@@ -394,15 +321,6 @@
         e.preventDefault();
         deferredPrompt = e;
         syncPwaInstallVisibility();
-
-        const installBanner = document.getElementById('pwaInstallBanner');
-        if (!checkIsStandalone() && !localStorage.getItem('pwa_prompt_dismissed') && !sessionStorage.getItem('pwa_prompt_shown')) {
-            sessionStorage.setItem('pwa_prompt_shown', 'true');
-            setTimeout(() => {
-                const banner = document.getElementById('pwaInstallBanner');
-                if (banner && !checkIsStandalone()) banner.style.display = 'flex';
-            }, 3000);
-        }
     });
 
     // ── 4. Guide Modal Builder for iOS, Android & In-App Browsers ──
@@ -583,54 +501,6 @@
         const iosModal = document.getElementById('pwaIosModal');
         if (iosModal && target === iosModal) {
             closePwaGuideModal();
-            return;
-        }
-
-        // Dismiss install banner
-        const dismissBtn = target.closest('#pwaDismissBtn');
-        if (dismissBtn) {
-            e.preventDefault();
-            const banner = document.getElementById('pwaInstallBanner');
-            if (banner) banner.style.display = 'none';
-            localStorage.setItem('pwa_prompt_dismissed', 'true');
-            sessionStorage.setItem('pwa_prompt_shown', 'true');
-            return;
-        }
-
-        // Update button clicked
-        const updateBtn = target.closest('#pwaUpdateBtn');
-        if (updateBtn) {
-            e.preventDefault();
-            updateBtn.textContent = 'Updating...';
-            updateBtn.style.opacity = '0.7';
-
-            if (swRegistration && swRegistration.waiting) {
-                swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
-            }
-            if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({ action: 'clearCache', type: 'CLEAR_CACHE' });
-            }
-
-            if ('caches' in window) {
-                caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
-                    setTimeout(() => window.location.reload(true), 300);
-                }).catch(() => {
-                    window.location.reload(true);
-                });
-            } else {
-                window.location.reload(true);
-            }
-            return;
-        }
-
-        // Dismiss update banner
-        const updateDismissBtn = target.closest('#pwaUpdateDismissBtn');
-        if (updateDismissBtn) {
-            e.preventDefault();
-            const updateBanner = document.getElementById('pwaUpdateBanner');
-            if (updateBanner) updateBanner.style.display = 'none';
-            localStorage.setItem('pwa_update_dismissed', 'true');
-            sessionStorage.setItem('pwa_update_shown', 'true');
             return;
         }
     });
