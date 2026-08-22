@@ -384,175 +384,152 @@
 </div>
 
 <style>
-    /* ── UNIFIED ATTENDANCE CALENDAR ── */
-    .att-cal-wrap {
-        background: rgba(0,0,0,0.15);
-        border: 1px solid rgba(255,255,255,0.06);
-        border-radius: 20px;
-        overflow: hidden;
+    /* ─── Squircle Attendance Calendar ─────────────────────────── */
+    .scal-card {
+        background: #0f0a08;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 28px;
+        padding: 28px 30px;
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
     }
-    .att-cal-nav {
+    .scal-nav {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 20px 24px 16px;
+        margin-bottom: 20px;
     }
-    .att-cal-nav-btn {
-        width: 36px; height: 36px;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.1);
-        background: rgba(255,255,255,0.04);
+    .scal-nav-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
         color: #cfa46f;
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; font-size: 0.85rem;
-        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         text-decoration: none;
     }
-    .att-cal-nav-btn:hover {
-        background: rgba(207,164,111,0.12);
-        border-color: rgba(207,164,111,0.3);
+    .scal-nav-btn:hover {
+        background: rgba(207, 164, 111, 0.15);
+        border-color: rgba(207, 164, 111, 0.4);
+        color: #fff;
+        transform: translateY(-2px);
+    }
+    .scal-nav-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #fdfbf7;
+        letter-spacing: -0.02em;
+    }
+    .scal-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+        background: rgba(255, 255, 255, 0.025);
+        border: 1px solid rgba(255, 255, 255, 0.04);
+        border-radius: 14px;
+        padding: 12px 0;
+    }
+    .scal-wd {
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
         color: #cfa46f;
     }
-    .att-cal-month {
-        font-size: 1.15rem;
-        font-weight: 800;
-        color: #f3e7cd;
-        letter-spacing: -0.3px;
-    }
-    .att-cal-header {
+    .scal-grid {
         display: grid;
         grid-template-columns: repeat(7, 1fr);
-        text-align: center;
-        padding: 0 16px;
-        margin-bottom: 6px;
+        gap: 8px;
     }
-    .att-cal-header span {
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: #8f826f;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding: 6px 0;
-    }
-    .att-cal-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 4px;
-        padding: 0 16px 16px;
-    }
-    .att-cal-cell {
-        aspect-ratio: 1;
+    .scal-tile {
+        height: 56px;
+        min-height: 56px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border-radius: 10px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: rgba(248,231,211,0.35);
-        background: transparent;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.025);
         position: relative;
-        cursor: default;
-        transition: all 0.2s;
-        gap: 3px;
-    }
-    .att-cal-cell.has-records {
         cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        gap: 4px;
+        user-select: none;
     }
-    .att-cal-cell.has-records:hover {
-        transform: scale(1.08);
-        z-index: 2;
+    .scal-tile:hover {
+        background: rgba(255, 255, 255, 0.07);
+        border-color: rgba(207, 164, 111, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
     }
-    .att-cal-cell.is-today {
-        box-shadow: inset 0 0 0 2px rgba(207,164,111,0.4);
+    .scal-tile.empty {
+        visibility: hidden;
+        background: transparent !important;
+        border-color: transparent !important;
+        cursor: default;
+        pointer-events: none;
     }
-    .att-cal-cell.is-sunday {
-        color: rgba(248,231,211,0.2);
-    }
-
-    /* Status colors */
-    .att-cal-cell.status-present {
-        background: rgba(74,222,128,0.15);
-        color: #4ade80;
-        border: 1px solid rgba(74,222,128,0.25);
-    }
-    .att-cal-cell.status-late {
-        background: rgba(251,191,36,0.15);
-        color: #fbbf24;
-        border: 1px solid rgba(251,191,36,0.25);
-    }
-    .att-cal-cell.status-absent {
-        background: rgba(248,113,113,0.15);
-        color: #f87171;
-        border: 1px solid rgba(248,113,113,0.25);
-    }
-    .att-cal-cell.status-mixed {
-        background: rgba(96,165,250,0.12);
-        color: #60a5fa;
-        border: 1px solid rgba(96,165,250,0.2);
-    }
-
-    /* Status dots row inside the cell */
-    .att-cal-dots {
-        display: flex;
-        gap: 3px;
-        justify-content: center;
-    }
-    .att-cal-dot {
-        width: 5px; height: 5px;
-        border-radius: 50%;
-    }
-    .att-cal-dot.present { background: #4ade80; }
-    .att-cal-dot.late    { background: #fbbf24; }
-    .att-cal-dot.absent  { background: #f87171; }
-
-    /* Stats bar */
-    .att-cal-stats {
-        display: flex;
-        gap: 6px;
-        padding: 14px 20px;
-        border-top: 1px solid rgba(255,255,255,0.06);
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .att-cal-stat {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.75rem;
+    .scal-num {
+        font-size: 1.05rem;
         font-weight: 700;
-        padding: 5px 14px;
-        border-radius: 99px;
-        border: 1px solid;
+        color: #f3ede4;
+        line-height: 1;
     }
-    .att-cal-stat.present {
-        color: #4ade80;
-        background: rgba(74,222,128,0.08);
-        border-color: rgba(74,222,128,0.2);
-    }
-    .att-cal-stat.late {
-        color: #fbbf24;
-        background: rgba(251,191,36,0.08);
-        border-color: rgba(251,191,36,0.2);
-    }
-    .att-cal-stat.absent {
-        color: #f87171;
-        background: rgba(248,113,113,0.08);
-        border-color: rgba(248,113,113,0.2);
-    }
-    .att-cal-stat .stat-dot {
-        width: 7px; height: 7px;
+    .scal-tile.sunday .scal-num { color: #f87171; }
+    .scal-dot {
+        width: 5px;
+        height: 5px;
         border-radius: 50%;
+        opacity: 0.9;
     }
-    .att-cal-stat.present .stat-dot { background: #4ade80; }
-    .att-cal-stat.late .stat-dot    { background: #fbbf24; }
-    .att-cal-stat.absent .stat-dot  { background: #f87171; }
+    .scal-tile.today {
+        border: 2px solid #ffd166 !important;
+        box-shadow: 0 0 16px rgba(255, 209, 102, 0.3), inset 0 0 10px rgba(255, 209, 102, 0.07) !important;
+        background: rgba(255, 209, 102, 0.07) !important;
+    }
+    .scal-tile.today .scal-num {
+        color: #ffd166;
+    }
+    .scal-tile.status-present {
+        background: rgba(6, 78, 59, 0.5) !important;
+        border-color: rgba(16, 185, 129, 0.35) !important;
+    }
+    .scal-tile.status-late {
+        background: rgba(120, 80, 20, 0.5) !important;
+        border-color: rgba(245, 158, 11, 0.35) !important;
+    }
+    .scal-tile.status-absent {
+        background: rgba(100, 15, 15, 0.6) !important;
+        border-color: rgba(239, 68, 68, 0.4) !important;
+    }
+    .scal-tile.status-event {
+        background: rgba(60, 25, 120, 0.45) !important;
+        border-color: rgba(139, 92, 246, 0.35) !important;
+    }
+    .scal-tile.status-holiday {
+        background: rgba(5, 60, 50, 0.45) !important;
+        border-color: rgba(74, 222, 128, 0.35) !important;
+    }
+    .scal-tile.status-exam {
+        background: rgba(100, 20, 60, 0.5) !important;
+        border-color: rgba(236, 72, 153, 0.35) !important;
+    }
 
     /* Detail panel */
     .att-cal-detail {
         display: none;
         border-top: 1px solid rgba(255,255,255,0.06);
-        padding: 20px;
+        margin-top: 20px;
+        padding-top: 20px;
         animation: attDetailSlide 0.25s ease;
     }
     .att-cal-detail.active { display: block; }
@@ -578,13 +555,11 @@
         background: rgba(255,255,255,0.04);
         color: #8f826f;
         display: flex; align-items: center; justify-content: center;
-        cursor: pointer;
-        font-size: 0.75rem;
+        cursor: pointer; font-size: 0.75rem;
         transition: all 0.2s;
     }
     .att-detail-close:hover {
         background: rgba(248,113,113,0.15);
-        border-color: rgba(248,113,113,0.3);
         color: #f87171;
     }
     .att-detail-row {
@@ -592,50 +567,48 @@
         align-items: center;
         justify-content: space-between;
         padding: 10px 14px;
-        border-radius: 10px;
-        background: rgba(0,0,0,0.2);
+        background: rgba(255,255,255,0.03);
         border: 1px solid rgba(255,255,255,0.04);
-        margin-bottom: 6px;
+        border-radius: 12px;
+        margin-bottom: 8px;
     }
     .att-detail-subject {
-        font-weight: 700;
         font-size: 0.85rem;
-        color: #f3e7cd;
+        font-weight: 700;
+        color: #f3ede4;
     }
     .att-detail-code {
-        font-size: 0.72rem;
-        color: #8f826f;
-        margin-top: 2px;
+        font-size: 0.7rem;
+        color: #cfa46f;
+        font-weight: 600;
     }
     .att-detail-time {
         font-size: 0.72rem;
         color: #8f826f;
-        margin-top: 1px;
+        margin-top: 2px;
     }
     .att-detail-badge {
-        font-size: 0.7rem;
-        font-weight: 700;
-        padding: 4px 12px;
-        border-radius: 99px;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        flex-shrink: 0;
+        font-size: 0.72rem;
+        font-weight: 800;
+        padding: 4px 10px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     .att-detail-badge.present {
+        background: rgba(74,222,128,0.15);
         color: #4ade80;
-        background: rgba(74,222,128,0.12);
-        border: 1px solid rgba(74,222,128,0.25);
+        border: 1px solid rgba(74,222,128,0.3);
     }
     .att-detail-badge.late {
+        background: rgba(251,191,36,0.15);
         color: #fbbf24;
-        background: rgba(251,191,36,0.12);
-        border: 1px solid rgba(251,191,36,0.25);
+        border: 1px solid rgba(251,191,36,0.3);
     }
     .att-detail-badge.absent {
+        background: rgba(248,113,113,0.15);
         color: #f87171;
-        background: rgba(248,113,113,0.12);
-        border: 1px solid rgba(248,113,113,0.25);
+        border: 1px solid rgba(248,113,113,0.3);
     }
     .att-detail-empty {
         text-align: center;
@@ -646,130 +619,158 @@
     }
 
     @media (max-width: 576px) {
-        .att-cal-cell { font-size: 0.75rem; border-radius: 8px; }
-        .att-cal-dot { width: 4px; height: 4px; }
-        .att-cal-nav { padding: 16px 16px 12px; }
-        .att-cal-grid { padding: 0 10px 12px; gap: 3px; }
-        .att-cal-header { padding: 0 10px; }
-        .att-cal-stats { padding: 10px 12px; gap: 4px; }
-        .att-cal-stat { padding: 4px 10px; font-size: 0.7rem; }
+        .scal-card { padding: 18px 14px; border-radius: 20px; }
+        .scal-nav { margin-bottom: 14px; }
+        .scal-nav-btn { width: 38px; height: 38px; font-size: 1rem; border-radius: 10px; }
+        .scal-nav-title { font-size: 1.15rem; }
+        .scal-weekdays { gap: 4px; padding: 10px 0; border-radius: 10px; margin-bottom: 8px; }
+        .scal-wd { font-size: 0.72rem; }
+        .scal-grid { gap: 5px; }
+        .scal-tile { height: 48px; min-height: 48px; border-radius: 10px; }
+        .scal-num { font-size: 0.95rem; }
+        .scal-dot { width: 4px; height: 4px; }
     }
 </style>
 
 <div class="row g-4 mb-4">
     <div class="col-12">
-        <x-card title="Attendance Calendar" icon="bi bi-calendar-check-fill">
-            <x-slot name="headerActions">
-                <a href="{{ route('attendance.records') }}" class="btn btn-outline btn-sm">View Records</a>
-            </x-slot>
+        <div class="scal-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(207,164,111,0.15); display:flex; align-items:center; justify-content:center; color:#cfa46f; font-size:1.1rem;">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+                    <span style="font-size:1.15rem; font-weight:800; color:#f3e7cd;">Attendance Calendar</span>
+                </div>
+                <a href="{{ route('attendance.records') }}" class="btn btn-outline btn-sm" style="border-radius:10px; padding:6px 14px; font-weight:700; font-size:0.8rem;">View Records</a>
+            </div>
 
-            <div class="att-cal-wrap">
-                {{-- Month Navigation --}}
-                <div class="att-cal-nav">
-                    <a href="?cal_year={{ $prevMonth->year }}&cal_month={{ $prevMonth->month }}" class="att-cal-nav-btn">
-                        <i class="bi bi-chevron-left"></i>
+            {{-- Month Navigation --}}
+            <div class="scal-nav">
+                <a href="?cal_year={{ $prevMonth->year }}&cal_month={{ $prevMonth->month }}" class="scal-nav-btn">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <div class="scal-nav-title">{{ $calStart->format('F Y') }}</div>
+                @if(!$isLatestMonth)
+                    <a href="?cal_year={{ $nextMonth->year }}&cal_month={{ $nextMonth->month }}" class="scal-nav-btn">
+                        <i class="bi bi-chevron-right"></i>
                     </a>
-                    <div class="att-cal-month">{{ $calStart->format('F Y') }}</div>
-                    @if(!$isLatestMonth)
-                        <a href="?cal_year={{ $nextMonth->year }}&cal_month={{ $nextMonth->month }}" class="att-cal-nav-btn">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    @else
-                        <div style="width:36px;"></div>
-                    @endif
-                </div>
+                @else
+                    <div style="width:44px;"></div>
+                @endif
+            </div>
 
-                {{-- Day Labels --}}
-                <div class="att-cal-header">
-                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
-                </div>
+            {{-- Day Labels --}}
+            <div class="scal-weekdays">
+                <div class="scal-wd">S</div>
+                <div class="scal-wd">M</div>
+                <div class="scal-wd">T</div>
+                <div class="scal-wd">W</div>
+                <div class="scal-wd">T</div>
+                <div class="scal-wd">F</div>
+                <div class="scal-wd">S</div>
+            </div>
 
-                {{-- Calendar Grid --}}
-                <div class="att-cal-grid">
-                    {{-- Empty cells before the 1st --}}
-                    @for($i = 0; $i < $startDow; $i++)
-                        <div class="att-cal-cell"></div>
-                    @endfor
+            {{-- Calendar Grid --}}
+            <div class="scal-grid">
+                {{-- Empty cells before the 1st --}}
+                @for($i = 0; $i < $startDow; $i++)
+                    <div class="scal-tile empty"></div>
+                @endfor
 
-                    @for($d = 1; $d <= $calEnd->day; $d++)
-                        @php
-                            $dayDate = \Carbon\Carbon::create($calYear, $calMonth, $d);
-                            $dateKey = $dayDate->format('Y-m-d');
-                            $isSunday = $dayDate->dayOfWeek === 0;
-                            $isTodayCell = $isCurrentMonth && $d === $today;
-                            $dayStatuses = $dayDotsMap[$d] ?? [];
-                            $hasRecords = !empty($dayStatuses);
+                @for($d = 1; $d <= $calEnd->day; $d++)
+                    @php
+                        $dayDate = \Carbon\Carbon::create($calYear, $calMonth, $d);
+                        $dateKey = $dayDate->format('Y-m-d');
+                        $isSunday = $dayDate->dayOfWeek === 0;
+                        $isTodayCell = $isCurrentMonth && $d === $today;
+                        $dayStatuses = $dayDotsMap[$d] ?? [];
+                        $hasRecords = !empty($dayStatuses);
 
-                            // Determine the primary status for cell coloring
-                            $cellStatus = '';
-                            if ($hasRecords) {
-                                $statusCount = count($dayStatuses);
-                                if ($statusCount > 1) {
-                                    $cellStatus = 'status-mixed';
-                                } elseif (in_array('present', $dayStatuses)) {
-                                    $cellStatus = 'status-present';
-                                } elseif (in_array('late', $dayStatuses)) {
-                                    $cellStatus = 'status-late';
-                                } elseif (in_array('absent', $dayStatuses)) {
-                                    $cellStatus = 'status-absent';
-                                }
+                        $cellStatus = '';
+                        $dotColor = '';
+                        if ($hasRecords) {
+                            if (in_array('absent', $dayStatuses)) {
+                                $cellStatus = 'status-absent';
+                                $dotColor = '#ef4444';
+                            } elseif (in_array('late', $dayStatuses)) {
+                                $cellStatus = 'status-late';
+                                $dotColor = '#f59e0b';
+                            } elseif (in_array('present', $dayStatuses)) {
+                                $cellStatus = 'status-present';
+                                $dotColor = '#10b981';
                             }
+                        }
 
-                            $cellClasses = 'att-cal-cell';
-                            if ($hasRecords) $cellClasses .= ' has-records';
-                            if ($isTodayCell) $cellClasses .= ' is-today';
-                            if ($isSunday && !$hasRecords) $cellClasses .= ' is-sunday';
-                            if ($cellStatus) $cellClasses .= ' ' . $cellStatus;
-                        @endphp
-                        <div class="{{ $cellClasses }}"
-                             @if($hasRecords) onclick="showAttDetail('{{ $dateKey }}', {{ $d }})" @endif
-                             @if($hasRecords) title="Click to view details" @endif>
-                            <span>{{ $d }}</span>
-                            @if($hasRecords && count($dayStatuses) > 1)
-                                <div class="att-cal-dots">
-                                    @foreach($dayStatuses as $dot)
-                                        <div class="att-cal-dot {{ $dot }}"></div>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    @endfor
-                </div>
+                        $tileClasses = 'scal-tile';
+                        if ($hasRecords) $tileClasses .= ' has-records';
+                        if ($isTodayCell) $tileClasses .= ' today';
+                        if ($isSunday) $tileClasses .= ' sunday';
+                        if ($cellStatus) $tileClasses .= ' ' . $cellStatus;
+                    @endphp
+                    <div class="{{ $tileClasses }}"
+                         @if($hasRecords) onclick="showAttDetail('{{ $dateKey }}', {{ $d }})" @endif
+                         @if($hasRecords) title="Click to view details" @endif>
+                        <span class="scal-num">{{ $d }}</span>
+                        @if($hasRecords)
+                            <div class="scal-dot" style="background: {{ $dotColor }};"></div>
+                        @endif
+                    </div>
+                @endfor
+            </div>
 
-                {{-- Summary Stats Bar --}}
-                @php
-                    $calPresent = $monthRecords->where('status', 'Present')->count();
-                    $calLate    = $monthRecords->where('status', 'Late')->count();
-                    $calAbsent  = $monthRecords->where('status', 'Absent')->count();
-                @endphp
-                <div class="att-cal-stats">
-                    <div class="att-cal-stat present">
-                        <div class="stat-dot"></div>
-                        <i class="bi bi-check-circle-fill" style="font-size:0.7rem;"></i> {{ $calPresent }} Present
-                    </div>
-                    <div class="att-cal-stat late">
-                        <div class="stat-dot"></div>
-                        <i class="bi bi-clock-fill" style="font-size:0.7rem;"></i> {{ $calLate }} Late
-                    </div>
-                    <div class="att-cal-stat absent">
-                        <div class="stat-dot"></div>
-                        <i class="bi bi-x-circle-fill" style="font-size:0.7rem;"></i> {{ $calAbsent }} Absent
-                    </div>
-                </div>
-
-                {{-- Detail Panel (shown on day click) --}}
-                <div class="att-cal-detail" id="attDetailPanel">
-                    <div class="att-detail-header">
-                        <div class="att-detail-date" id="attDetailDate"></div>
-                        <div class="att-detail-close" onclick="hideAttDetail()">
-                            <i class="bi bi-x-lg"></i>
+            {{-- Legend and Tips --}}
+            <div class="row g-3 mt-3">
+                <div class="col-md-6 col-12">
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 16px 20px;">
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Legend</div>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block;"></span> Present
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#f59e0b; display:inline-block;"></span> Late
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#ef4444; display:inline-block;"></span> Absent
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#ec4899; display:inline-block;"></span> Exam
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#8b5cf6; display:inline-block;"></span> Event
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
+                                <span style="width:8px; height:8px; border-radius:50%; background:#4ade80; display:inline-block;"></span> Holiday
+                            </div>
                         </div>
                     </div>
-                    <div id="attDetailBody"></div>
+                </div>
+                <div class="col-md-6 col-12">
+                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 16px 20px;">
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-lightbulb-fill"></i> Calendar Tips
+                        </div>
+                        <ul style="margin: 0; padding-left: 18px; font-size: 0.78rem; color: #b39b82; line-height: 1.6;">
+                            <li>Tap any <strong>day tile</strong> to view your subjects and attendance for that day.</li>
+                            <li>Tile color shows your dominant attendance status for the day.</li>
+                            <li>The <strong>golden border</strong> marks today.</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
-        </x-card>
+            {{-- Detail Panel (shown on day click) --}}
+            <div class="att-cal-detail" id="attDetailPanel">
+                <div class="att-detail-header">
+                    <div class="att-detail-date" id="attDetailDate"></div>
+                    <div class="att-detail-close" onclick="hideAttDetail()">
+                        <i class="bi bi-x-lg"></i>
+                    </div>
+                </div>
+                <div id="attDetailBody"></div>
+            </div>
+        </div>
     </div>
 </div>
 
