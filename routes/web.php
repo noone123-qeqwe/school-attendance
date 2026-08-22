@@ -8,8 +8,8 @@ use App\Http\Controllers\HomeController;
 
 
 // WebAuthn login — works for both guests and authenticated users
-Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->middleware('throttle:10,1')->name('webauthn.login.options');
-Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:10,1')->name('webauthn.login');
+Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->middleware('throttle:login')->name('webauthn.login.options');
+Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:login')->name('webauthn.login');
 
 // Web Push Notification Subscriptions & Testing
 Route::get('/push/public-key', [App\Http\Controllers\PushSubscriptionController::class, 'getPublicKey'])->name('push.public_key');
@@ -114,26 +114,26 @@ if (app()->environment('local', 'testing')) {
 // Guest Routes (Public)
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () { return view('auth.login'); })->name('login');
-    Route::post('/login', [PTController::class, 'login'])->middleware('throttle:5,1')->name('login.submit');
+    Route::post('/login', [PTController::class, 'login'])->middleware('throttle:login')->name('login.submit');
     Route::get('/csrf-token', function () { return response()->json(['token' => csrf_token()]); })->name('csrf.token');
 
     Route::get('/register', function () { return view('auth.register'); })->name('register');
-    Route::post('/register', [PTController::class, 'register'])->middleware('throttle:5,1')->name('register.submit');
+    Route::post('/register', [PTController::class, 'register'])->middleware('throttle:login')->name('register.submit');
 
     // Forgot Password (OTP flow)
     Route::get('/forgot-password', [App\Http\Controllers\OtpController::class, 'forgotForm'])->name('otp.forgot.form');
-    Route::post('/forgot-password', [App\Http\Controllers\OtpController::class, 'sendForgotOtp'])->middleware('throttle:3,1')->name('otp.forgot.send');
+    Route::post('/forgot-password', [App\Http\Controllers\OtpController::class, 'sendForgotOtp'])->middleware('throttle:otp.send')->name('otp.forgot.send');
     Route::get('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyForm'])->name('otp.verify.form');
-    Route::post('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->middleware('throttle:5,1')->name('otp.verify');
+    Route::post('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->middleware('throttle:otp.verify')->name('otp.verify');
     Route::get('/reset-password', [App\Http\Controllers\OtpController::class, 'resetForm'])->name('otp.reset.form');
-    Route::post('/reset-password', [App\Http\Controllers\OtpController::class, 'resetPassword'])->middleware('throttle:5,1')->name('otp.reset');
+    Route::post('/reset-password', [App\Http\Controllers\OtpController::class, 'resetPassword'])->middleware('throttle:password.change')->name('otp.reset');
 
     // Registration email OTP
-    Route::post('/otp/send-register', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->middleware('throttle:3,1')->name('otp.register.send');
-    Route::post('/otp/verify-register', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->middleware('throttle:5,1')->name('otp.register.verify');
+    Route::post('/otp/send-register', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->middleware('throttle:otp.send')->name('otp.register.send');
+    Route::post('/otp/verify-register', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->middleware('throttle:otp.verify')->name('otp.register.verify');
 
     // Recovery code login
-    Route::post('/recovery/login', [App\Http\Controllers\RecoveryCodeController::class, 'login'])->middleware('throttle:5,1')->name('recovery.login');
+    Route::post('/recovery/login', [App\Http\Controllers\RecoveryCodeController::class, 'login'])->middleware('throttle:login')->name('recovery.login');
 });
 
 // Authenticated Routes (Protected) - Shared
@@ -143,12 +143,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/password/change', [App\Http\Controllers\HomeController::class, 'submitPasswordChange'])->name('password.change.submit');
 
     // Change Password via OTP (all authenticated roles)
-    Route::post('/otp/send-change', [App\Http\Controllers\OtpController::class, 'sendChangeOtp'])->middleware('throttle:3,1')->name('otp.change.send');
-    Route::post('/otp/change-password', [App\Http\Controllers\OtpController::class, 'changePassword'])->middleware('throttle:5,1')->name('otp.change');
+    Route::post('/otp/send-change', [App\Http\Controllers\OtpController::class, 'sendChangeOtp'])->middleware('throttle:otp.send')->name('otp.change.send');
+    Route::post('/otp/change-password', [App\Http\Controllers\OtpController::class, 'changePassword'])->middleware('throttle:password.change')->name('otp.change');
 
     // Change Email via Email OTP (all authenticated roles)
-    Route::post('/otp/send-email-change', [App\Http\Controllers\OtpController::class, 'sendEmailChangeOtp'])->middleware('throttle:3,1')->name('otp.email.send');
-    Route::post('/otp/change-email', [App\Http\Controllers\OtpController::class, 'changeEmail'])->middleware('throttle:5,1')->name('otp.email.change');
+    Route::post('/otp/send-email-change', [App\Http\Controllers\OtpController::class, 'sendEmailChangeOtp'])->middleware('throttle:otp.send')->name('otp.email.send');
+    Route::post('/otp/change-email', [App\Http\Controllers\OtpController::class, 'changeEmail'])->middleware('throttle:otp.verify')->name('otp.email.change');
 
     // Generate Recovery Codes
     Route::post('/recovery/generate', [App\Http\Controllers\RecoveryCodeController::class, 'generate'])->name('recovery.generate');
@@ -359,8 +359,8 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     
     // Parent-Child Linking
     Route::get('/link-child', [App\Http\Controllers\ParentController::class, 'linkChildForm'])->name('link.form');
-    Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->middleware('throttle:3,1')->name('link.send-otp');
-    Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->middleware('throttle:5,1')->name('link.verify-otp');
+    Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->middleware('throttle:otp.send')->name('link.send-otp');
+    Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->middleware('throttle:otp.verify')->name('link.verify-otp');
     
     Route::get('/child/{child}', [App\Http\Controllers\ParentController::class, 'childDetail'])->name('child');
     Route::get('/child/{child}/report', [App\Http\Controllers\ParentController::class, 'downloadReport'])->name('child.report');
@@ -386,8 +386,8 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
 Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->prefix('admin')->name('admin.')->group(function () {
     // 2FA Routes
     Route::get('/2fa', [App\Http\Controllers\AdminController::class, 'twoFactorForm'])->name('2fa.form')->withoutMiddleware('admin.2fa');
-    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware('admin.2fa')->middleware('throttle:5,1');
-    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware('admin.2fa')->middleware('throttle:3,1');
+    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware('admin.2fa')->middleware('throttle:otp.verify');
+    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware('admin.2fa')->middleware('throttle:otp.send');
 
     // Reset Password
     Route::post('/user/{user}/reset-password', [App\Http\Controllers\AdminController::class, 'resetPassword'])->name('user.reset_password');

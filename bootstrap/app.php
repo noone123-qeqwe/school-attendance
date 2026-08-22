@@ -31,6 +31,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\CheckPasswordChange::class,
         ]);
 
+        $middleware->api(prepend: [
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
+        ]);
+
         $middleware->api(append: [
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
