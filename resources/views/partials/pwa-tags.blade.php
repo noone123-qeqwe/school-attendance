@@ -242,6 +242,127 @@
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
+    /* System Update Banner Card */
+    .pwa-update-banner {
+        position: fixed;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        left: 16px;
+        right: 16px;
+        max-width: 400px;
+        margin: 0 auto;
+        background: rgba(18, 12, 10, 0.98);
+        border: 1px solid rgba(74, 222, 128, 0.4);
+        border-radius: 20px;
+        padding: 16px 18px;
+        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(74, 222, 128, 0.18);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        z-index: 100000;
+        display: none;
+        flex-direction: column;
+        gap: 12px;
+        animation: pwaSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .pwa-update-banner-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        position: relative;
+    }
+
+    .pwa-update-icon-wrapper {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: rgba(74, 222, 128, 0.12);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .pwa-update-text-area {
+        flex: 1;
+        min-width: 0;
+        padding-right: 22px; /* Space for close X */
+    }
+
+    .pwa-update-title {
+        font-size: 0.98rem;
+        font-weight: 700;
+        color: #F3E7CD;
+        line-height: 1.25;
+        margin-bottom: 4px;
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    .pwa-update-subtitle {
+        font-size: 0.8rem;
+        color: #B39B82;
+        line-height: 1.45;
+        white-space: normal;
+    }
+
+    .pwa-update-close-btn {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: transparent;
+        border: none;
+        color: #8F7D6D;
+        font-size: 1.35rem;
+        cursor: pointer;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        padding: 0;
+        transition: color 0.2s ease;
+    }
+
+    .pwa-update-close-btn:hover {
+        color: #F3E7CD;
+    }
+
+    .pwa-update-banner-actions {
+        display: flex;
+        width: 100%;
+    }
+
+    .pwa-btn-update-apply {
+        width: 100%;
+        background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
+        color: #062412;
+        font-weight: 700;
+        font-size: 0.88rem;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 4px 14px rgba(74, 222, 128, 0.35);
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+    }
+
+    .pwa-btn-update-apply:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+    }
+
+    .pwa-btn-update-apply:active {
+        transform: scale(0.97);
+    }
+
     @keyframes pwaFadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -269,19 +390,26 @@
 </div>
 
 <!-- System Update Available Popup Notification -->
-<div class="pwa-install-banner" id="pwaSystemUpdatePopup" style="display: none; background: rgba(20, 15, 10, 0.98); border: 1px solid rgba(74, 222, 128, 0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 25px rgba(74, 222, 128, 0.15); z-index: 99999;">
-    <div class="pwa-banner-icon" style="background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3);">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-        </svg>
+<div class="pwa-update-banner" id="pwaSystemUpdatePopup" style="display: none;">
+    <div class="pwa-update-banner-header">
+        <div class="pwa-update-icon-wrapper">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+        </div>
+        <div class="pwa-update-text-area">
+            <div class="pwa-update-title">System Update Ready</div>
+            <div class="pwa-update-subtitle">A new version is available. Tap Update to refresh and apply the latest changes.</div>
+        </div>
+        <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
     </div>
-    <div class="pwa-banner-content">
-        <div class="pwa-banner-title" style="color: #F3E7CD; font-weight: 700; font-size: 0.95rem;">System Update Ready</div>
-        <div class="pwa-banner-subtitle" style="color: #B39B82; font-size: 0.8rem;">A new version is available. Click Update to apply changes.</div>
-    </div>
-    <div class="pwa-banner-actions" style="display:flex; align-items:center; gap:8px;">
-        <button type="button" class="pwa-btn-install" id="pwaApplyUpdateBtn" style="background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%); color: #0F172A; font-weight: 700; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer;">Update</button>
-        <button type="button" class="pwa-btn-close" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss" style="background: none; border: none; color: #B39B82; font-size: 1.2rem; cursor: pointer; padding: 4px;">&times;</button>
+    <div class="pwa-update-banner-actions">
+        <button type="button" class="pwa-btn-update-apply" id="pwaApplyUpdateBtn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pwa-update-spin-icon" style="display:none; animation: ptr-spin 0.8s linear infinite;">
+                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span id="pwaApplyUpdateBtnText">Update Now</span>
+        </button>
     </div>
 </div>
 
@@ -334,7 +462,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=21', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=23', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });
@@ -611,8 +739,12 @@
         const applyUpdateBtn = target.closest('#pwaApplyUpdateBtn');
         if (applyUpdateBtn) {
             e.preventDefault();
-            applyUpdateBtn.textContent = 'Updating...';
-            applyUpdateBtn.style.opacity = '0.7';
+            const btnText = document.getElementById('pwaApplyUpdateBtnText');
+            if (btnText) btnText.textContent = 'Updating...';
+            const spinIcon = applyUpdateBtn.querySelector('.pwa-update-spin-icon');
+            if (spinIcon) spinIcon.style.display = 'inline-block';
+            applyUpdateBtn.style.opacity = '0.85';
+            applyUpdateBtn.style.pointerEvents = 'none';
 
             try {
                 fetch('/pwa/version', { cache: 'no-store' })
