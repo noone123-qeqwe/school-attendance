@@ -579,14 +579,13 @@
                 <input type="text" name="search" class="audit-search-input" placeholder="Search by causer, email, IP, description, resource..." value="{{ request('search') }}">
             </div>
 
-            <!-- Operator Filter -->
-            <select name="causer_id" class="audit-select" style="max-width: 180px;">
-                <option value="" style="background: #190f0f;">All Operators</option>
-                @foreach($causersList ?? [] as $causer)
-                    <option value="{{ $causer->id }}" style="background: #190f0f;" {{ request('causer_id') == $causer->id ? 'selected' : '' }}>
-                        {{ $causer->name }} ({{ ucfirst($causer->role) }})
-                    </option>
-                @endforeach
+            <!-- Role Filter -->
+            <select name="role" class="audit-select" style="max-width: 170px;">
+                <option value="" style="background: #190f0f;">All Roles</option>
+                <option value="parent" style="background: #190f0f;" {{ request('role') == 'parent' ? 'selected' : '' }}>Parent</option>
+                <option value="admin" style="background: #190f0f;" {{ request('role') == 'admin' ? 'selected' : '' }}>Admin</option>
+                <option value="student" style="background: #190f0f;" {{ in_array(request('role'), ['student', 'students']) ? 'selected' : '' }}>Students</option>
+                <option value="teacher" style="background: #190f0f;" {{ in_array(request('role'), ['teacher', 'teachers']) ? 'selected' : '' }}>Teacher</option>
             </select>
 
             <!-- Date Preset -->
@@ -605,7 +604,7 @@
                 <i class="bi bi-funnel-fill me-1"></i> Apply
             </button>
 
-            @if(request()->hasAny(['search', 'date', 'date_preset', 'action', 'log_name', 'causer_id']))
+            @if(request()->hasAny(['search', 'date', 'date_preset', 'action', 'log_name', 'causer_id', 'role']))
                 <a href="{{ route('admin.activity.log') }}" class="saas-btn saas-btn-secondary" style="padding: 9px 14px; font-size: 0.85rem; color: #F87171; border-color: rgba(239,68,68,0.3); text-decoration: none;">
                     <i class="bi bi-x-circle me-1"></i> Clear
                 </a>

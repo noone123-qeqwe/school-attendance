@@ -112,6 +112,27 @@ class ActivityLogController extends Controller
             $query->where('log_name', $request->log_name);
         }
 
+        if ($request->filled('role')) {
+            $role = strtolower(trim($request->role));
+            if ($role === 'students' || $role === 'student') {
+                $query->whereHas('causer', function($q) {
+                    $q->where('role', 'student');
+                });
+            } elseif ($role === 'teachers' || $role === 'teacher') {
+                $query->whereHas('causer', function($q) {
+                    $q->whereIn('role', ['teacher', 'department_head']);
+                });
+            } elseif ($role === 'admins' || $role === 'admin') {
+                $query->whereHas('causer', function($q) {
+                    $q->where('role', 'admin');
+                });
+            } elseif ($role === 'parents' || $role === 'parent') {
+                $query->whereHas('causer', function($q) {
+                    $q->where('role', 'parent');
+                });
+            }
+        }
+
         if ($request->filled('causer_id')) {
             $query->where('causer_id', $request->causer_id);
         }
