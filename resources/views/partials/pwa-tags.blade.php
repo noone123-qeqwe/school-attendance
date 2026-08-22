@@ -268,19 +268,80 @@
     </div>
 </div>
 
+<!-- System Update Available Popup Notification -->
+<div class="pwa-install-banner" id="pwaSystemUpdatePopup" style="display: none; background: rgba(20, 15, 10, 0.98); border: 1px solid rgba(74, 222, 128, 0.4); box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 25px rgba(74, 222, 128, 0.15); z-index: 99999;">
+    <div class="pwa-banner-icon" style="background: rgba(74, 222, 128, 0.15); border: 1px solid rgba(74, 222, 128, 0.3);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+    </div>
+    <div class="pwa-banner-content">
+        <div class="pwa-banner-title" style="color: #F3E7CD; font-weight: 700; font-size: 0.95rem;">System Update Ready</div>
+        <div class="pwa-banner-subtitle" style="color: #B39B82; font-size: 0.8rem;">A new version is available. Click Update to apply changes.</div>
+    </div>
+    <div class="pwa-banner-actions" style="display:flex; align-items:center; gap:8px;">
+        <button type="button" class="pwa-btn-install" id="pwaApplyUpdateBtn" style="background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%); color: #0F172A; font-weight: 700; border: none; padding: 7px 14px; border-radius: 8px; cursor: pointer;">Update</button>
+        <button type="button" class="pwa-btn-close" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss" style="background: none; border: none; color: #B39B82; font-size: 1.2rem; cursor: pointer; padding: 4px;">&times;</button>
+    </div>
+</div>
+
 <!-- Real-time Connectivity Toast -->
 <div class="pwa-network-toast" id="pwaNetworkToast"></div>
 
 <script>
-    // ── 1. Register Service Worker Silently in Background ──
+    // ── 1. Register Service Worker & Handle Real-Time Update Notifications ──
     let swRegistration = null;
     let deferredPrompt = null;
+
+    function showAppUpdatePopup() {
+        if (sessionStorage.getItem('pwa_update_popup_dismissed')) return;
+        const popup = document.getElementById('pwaSystemUpdatePopup');
+        if (popup) {
+            popup.style.display = 'flex';
+        }
+    }
+
+    function hideAppUpdatePopup(dismissSession = true) {
+        const popup = document.getElementById('pwaSystemUpdatePopup');
+        if (popup) popup.style.display = 'none';
+        if (dismissSession) {
+            sessionStorage.setItem('pwa_update_popup_dismissed', 'true');
+        }
+    }
 
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=15', { scope: '/' });
+                const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
                 swRegistration = reg;
+
+                // 1. If an update is already downloaded and waiting, show the update popup
+                if (reg.waiting && navigator.serviceWorker.controller) {
+                    showAppUpdatePopup();
+                }
+
+                // 2. When a new update is found and finishes installing in the background
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    if (newWorker) {
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New system change detected! Notify user via popup
+                                sessionStorage.removeItem('pwa_update_popup_dismissed');
+                                showAppUpdatePopup();
+                            }
+                        });
+                    }
+                });
+
+                // 3. Listen for broadcast message from push or system broadcast
+                navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
+                        sessionStorage.removeItem('pwa_update_popup_dismissed');
+                        showAppUpdatePopup();
+                    }
+                });
+
             } catch (err) {
                 console.warn('PWA service worker registration failed:', err);
             }
@@ -501,6 +562,40 @@
         const iosModal = document.getElementById('pwaIosModal');
         if (iosModal && target === iosModal) {
             closePwaGuideModal();
+            return;
+        }
+
+        // Apply Update button clicked
+        const applyUpdateBtn = target.closest('#pwaApplyUpdateBtn');
+        if (applyUpdateBtn) {
+            e.preventDefault();
+            applyUpdateBtn.textContent = 'Updating...';
+            applyUpdateBtn.style.opacity = '0.7';
+
+            if (swRegistration && swRegistration.waiting) {
+                swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
+            }
+            if (navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ action: 'clearCache', type: 'CLEAR_CACHE' });
+            }
+
+            if ('caches' in window) {
+                caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+                    setTimeout(() => window.location.reload(true), 300);
+                }).catch(() => {
+                    window.location.reload(true);
+                });
+            } else {
+                window.location.reload(true);
+            }
+            return;
+        }
+
+        // Dismiss Update popup
+        const dismissUpdateBtn = target.closest('#pwaDismissUpdatePopupBtn');
+        if (dismissUpdateBtn) {
+            e.preventDefault();
+            hideAppUpdatePopup(true);
             return;
         }
     });
