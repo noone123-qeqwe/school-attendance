@@ -24,6 +24,35 @@ Route::get('/', function () { return view('intro'); })->name('intro');
 // Offline page for PWA
 Route::get('/offline', function () { return view('offline'); })->name('offline');
 
+// Service Worker with strict no-cache headers for instant mobile updates
+Route::get('/sw.js', function () {
+    $swPath = public_path('sw.js');
+    if (!file_exists($swPath)) {
+        abort(404);
+    }
+    $content = file_get_contents($swPath);
+    return response($content, 200, [
+        'Content-Type' => 'application/javascript; charset=utf-8',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+        'Service-Worker-Allowed' => '/',
+    ]);
+})->name('pwa.sw');
+
+// Real-time PWA Version Checker
+Route::get('/pwa/version', function () {
+    $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '15');
+    return response()->json([
+        'version' => 'v' . preg_replace('/[^0-9]/', '', $ver),
+        'timestamp' => now()->timestamp
+    ], 200, [
+        'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+    ]);
+})->name('pwa.version');
+
 // Debug routes — only available in local development
 if (app()->environment('local', 'testing')) {
     // Debug route (remove in production) - NO AUTH REQUIRED

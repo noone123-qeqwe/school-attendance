@@ -309,24 +309,47 @@
         }
     }
 
+    async function checkServerVersion() {
+        try {
+            const res = await fetch('/pwa/version', { cache: 'no-store' });
+            const data = await res.json();
+            if (data && data.version) {
+                const currentVer = localStorage.getItem('pwa_app_version');
+                if (!currentVer) {
+                    localStorage.setItem('pwa_app_version', data.version);
+                } else if (currentVer !== data.version) {
+                    if (swRegistration) {
+                        try { swRegistration.update(); } catch(e) {}
+                    }
+                    showAppUpdatePopup();
+                }
+            }
+        } catch (e) {}
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                const reg = await navigator.serviceWorker.register('/sw.js', { 
+                    scope: '/',
+                    updateViaCache: 'none'
+                });
                 swRegistration = reg;
 
-                // 1. If an update is already downloaded and waiting, show the update popup
+                // 1. Check server version on launch
+                checkServerVersion();
+
+                // 2. If an update is already downloaded and waiting, show update popup
                 if (reg.waiting && navigator.serviceWorker.controller) {
                     showAppUpdatePopup();
                 }
 
-                // 2. When a new update is found and finishes installing in the background
+                // 3. When a new update is found and finishes installing in the background
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New system change detected! Notify user via popup
                                 sessionStorage.removeItem('pwa_update_popup_dismissed');
                                 showAppUpdatePopup();
                             }
@@ -334,11 +357,23 @@
                     }
                 });
 
-                // 3. Listen for broadcast message from push or system broadcast
+                // 4. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
                         sessionStorage.removeItem('pwa_update_popup_dismissed');
                         showAppUpdatePopup();
+                    }
+                });
+
+                // 5. On app focus or unlock, check for updates
+                window.addEventListener('focus', () => {
+                    checkServerVersion();
+                    try { reg.update(); } catch(e) {}
+                });
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        checkServerVersion();
+                        try { reg.update(); } catch(e) {}
                     }
                 });
 
@@ -571,6 +606,13 @@
             e.preventDefault();
             applyUpdateBtn.textContent = 'Updating...';
             applyUpdateBtn.style.opacity = '0.7';
+
+            try {
+                fetch('/pwa/version', { cache: 'no-store' })
+                    .then(r => r.json())
+                    .then(d => { if (d?.version) localStorage.setItem('pwa_app_version', d.version); })
+                    .catch(() => {});
+            } catch(e) {}
 
             if (swRegistration && swRegistration.waiting) {
                 swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });

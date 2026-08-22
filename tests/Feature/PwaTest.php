@@ -91,4 +91,22 @@ class PwaTest extends TestCase
         $response->assertSee('pwa-install-trigger', false);
         $response->assertSee('Install Attendance App', false);
     }
+
+    public function test_sw_file_is_served_with_no_cache_headers(): void
+    {
+        $response = $this->get('/sw.js');
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/javascript; charset=utf-8');
+        $this->assertStringContainsString('no-cache', (string)$response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', (string)$response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('must-revalidate', (string)$response->headers->get('Cache-Control'));
+        $response->assertHeader('Service-Worker-Allowed', '/');
+    }
+
+    public function test_pwa_version_endpoint_returns_json(): void
+    {
+        $response = $this->get('/pwa/version');
+        $response->assertStatus(200);
+        $response->assertJsonStructure(['version', 'timestamp']);
+    }
 }
