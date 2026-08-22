@@ -1,8 +1,8 @@
-/* BUMP_TIMESTAMP: 2026-08-22T18:08:31+08:00 */
-const CACHE_VERSION = 'v13';
-const CACHE_NAME = `attendance-v13`;
+/* BUMP_TIMESTAMP: 2026-08-22T18:13:34+08:00 */
+const CACHE_VERSION = 'v15';
+const CACHE_NAME = `attendance-v15`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v13`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v15`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
@@ -36,20 +36,18 @@ async function trimCache(cacheName, maxItems) {
     }
 }
 
-// Install: precache essential offline assets
+// Install: precache essential offline assets peacefully in background (no force skipWaiting)
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(STATIC_CACHE_NAME).then((cache) => {
             return cache.addAll(PRECACHE_ASSETS).catch((err) => {
                 console.warn('[PWA SW] Pre-cache partial warning:', err);
             });
-        }).then(() => {
-            return self.skipWaiting();
         })
     );
 });
 
-// Activate: clean up old caches & claim clients immediately
+// Activate: clean up old caches (seamless, no auto-reloading or claiming open windows)
 self.addEventListener('activate', (event) => {
     const validCaches = [STATIC_CACHE_NAME, RUNTIME_CACHE_NAME];
     event.waitUntil(
@@ -66,19 +64,6 @@ self.addEventListener('activate', (event) => {
             if (self.registration.navigationPreload) {
                 return self.registration.navigationPreload.enable();
             }
-        }).then(() => {
-            return self.clients.claim();
-        }).then(() => {
-            // Broadcast update event to all active desktop and mobile window clients
-            return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-                clients.forEach((client) => {
-                    client.postMessage({
-                        type: 'SW_UPDATED',
-                        version: CACHE_VERSION,
-                        timestamp: Date.now()
-                    });
-                });
-            });
         })
     );
 });
