@@ -1024,44 +1024,93 @@
 @keyframes mobilePageEnter {
     0% {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translate3d(0, 12px, 0) scale(0.99);
     }
     100% {
         opacity: 1;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+}
+
+@keyframes mobilePageExit {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(0, -8px, 0) scale(0.99);
     }
 }
 
 @keyframes mobileSheetUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from {
+        opacity: 0.7;
+        transform: translate3d(0, 100%, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes nativePopIn {
+    0% {
+        transform: scale(0.92);
+        opacity: 0;
+    }
+    70% {
+        transform: scale(1.03);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 }
 
 @media (max-width: 768px) {
     .page-enter {
-        animation: mobilePageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        animation: mobilePageEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
     }
     
-    .page-enter > * {
-        animation: mobilePageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+    .page-exit {
+        animation: mobilePageExit 0.16s cubic-bezier(0.4, 0, 0.9, 1) forwards !important;
+        pointer-events: none !important;
     }
-    
-    .page-enter > *:nth-child(1) { animation-delay: 0.03s !important; }
-    .page-enter > *:nth-child(2) { animation-delay: 0.06s !important; }
-    .page-enter > *:nth-child(3) { animation-delay: 0.09s !important; }
-    .page-enter > *:nth-child(4) { animation-delay: 0.12s !important; }
-    .page-enter > *:nth-child(5) { animation-delay: 0.15s !important; }
-    .page-enter > *:nth-child(n+6) { animation-delay: 0.18s !important; }
 
-    /* Active states for cards and rows */
-    .stat-card:active, .ent-kpi-card:active, .child-card:active, .hero-banner:active, .ent-section:active, .saas-card:active {
-        transform: scale(0.97) !important;
-        transition: transform 0.12s ease-out !important;
+    /* Tactile native spring scaling for cards, tiles, and sections */
+    .stat-card, .ent-kpi-card, .child-card, .hero-banner, .ent-section, .saas-card, .scal-tile, .adm-stat, .subject-card {
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease !important;
+        will-change: transform;
+        -webkit-user-select: none;
+        user-select: none;
     }
     
-    /* Global touch transition */
-    .stat-card, .ent-kpi-card, .child-card, .hero-banner, .ent-section, .saas-card {
-        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    .stat-card:active, .ent-kpi-card:active, .child-card:active, .hero-banner:active, .ent-section:active, .saas-card:active, .scal-tile:active, .adm-stat:active, .subject-card:active {
+        transform: scale(0.96) translate3d(0, 0, 0) !important;
+        transition: transform 0.08s ease-out !important;
+    }
+
+    /* Native button spring */
+    button:active, .btn:active, .quick-action-btn:active, .action-btn:active, .pwa-btn-install:active, .pwa-btn-update-apply:active {
+        transform: scale(0.94) translate3d(0, 0, 0) !important;
+        transition: transform 0.08s ease-out !important;
+    }
+
+    /* Native Modal Bottom Sheet transition */
+    .modal.fade .modal-dialog {
+        transform: translate3d(0, 100%, 0) !important;
+        transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1) !important;
+        will-change: transform;
+    }
+    .modal.show .modal-dialog {
+        transform: translate3d(0, 0, 0) !important;
+    }
+    .modal-backdrop.fade {
+        transition: opacity 0.25s ease-out !important;
     }
 
     /* GLOBAL RESPONSIVE TABLES (.ent-table) */

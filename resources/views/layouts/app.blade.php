@@ -882,34 +882,48 @@
         window.triggerHaptic = function(type = 'light') {
             if (!navigator.vibrate) return;
             try {
-                if (type === 'light') navigator.vibrate(10);
-                else if (type === 'medium') navigator.vibrate(22);
-                else if (type === 'success') navigator.vibrate([10, 30, 15]);
-                else if (type === 'error') navigator.vibrate([30, 50, 30]);
+                if (type === 'light') navigator.vibrate(8);
+                else if (type === 'medium') navigator.vibrate(18);
+                else if (type === 'success') navigator.vibrate([8, 25, 12]);
+                else if (type === 'error') navigator.vibrate([25, 40, 25]);
             } catch(e) {}
         };
 
         // Auto-bind micro-haptics on taps
         document.addEventListener('click', function(e) {
-            const el = e.target.closest('button, .btn, .mbn-item, .scal-tile, .quick-action-btn, .nav-link, .pwa-btn-install, .stab, .dropdown-item');
+            const el = e.target.closest('button, .btn, .mbn-item, .scal-tile, .quick-action-btn, .nav-link, .pwa-btn-install, .pwa-btn-update-apply, .stab, .dropdown-item, .more-sheet-item');
             if (el) {
                 window.triggerHaptic('light');
             }
         }, { passive: true });
 
-        // ── Native App Top Navigation Bar ──
+        // ── Seamless Page Transitions & Instant Navigation Bar ──
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a');
             if (!link) return;
             const href = link.getAttribute('href');
-            if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !link.hasAttribute('target') && !link.hasAttribute('download')) {
-                const bar = document.getElementById('native-app-progress');
-                if (bar) {
-                    bar.style.opacity = '1';
-                    bar.style.width = '35%';
-                    setTimeout(() => { if (bar) bar.style.width = '80%'; }, 150);
-                }
+            if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.hasAttribute('target') || link.hasAttribute('download')) {
+                return;
             }
+
+            // Check if same origin navigation
+            try {
+                const targetUrl = new URL(href, window.location.origin);
+                if (targetUrl.origin === window.location.origin && targetUrl.pathname !== window.location.pathname) {
+                    const bar = document.getElementById('native-app-progress');
+                    if (bar) {
+                        bar.style.opacity = '1';
+                        bar.style.width = '40%';
+                        setTimeout(() => { if (bar) bar.style.width = '85%'; }, 100);
+                    }
+
+                    // Apply smooth page exit animation
+                    const pageEnterEl = document.querySelector('.page-enter');
+                    if (pageEnterEl && window.innerWidth <= 768) {
+                        pageEnterEl.classList.add('page-exit');
+                    }
+                }
+            } catch (err) {}
         });
 
         window.addEventListener('pageshow', function() {
@@ -918,8 +932,12 @@
                 bar.style.width = '100%';
                 setTimeout(() => {
                     bar.style.opacity = '0';
-                    setTimeout(() => { bar.style.width = '0%'; }, 300);
-                }, 150);
+                    setTimeout(() => { bar.style.width = '0%'; }, 250);
+                }, 100);
+            }
+            const pageEnterEl = document.querySelector('.page-enter');
+            if (pageEnterEl) {
+                pageEnterEl.classList.remove('page-exit');
             }
         });
 
