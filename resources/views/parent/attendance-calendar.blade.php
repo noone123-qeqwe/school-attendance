@@ -481,69 +481,110 @@
                     </div>
                 </div>
 
-                {{-- Detail Panel (shown on day click) --}}
-                <div class="att-cal-detail" id="attDetailPanel">
-                    <div class="att-detail-header">
-                        <div class="att-detail-date" id="attDetailDate"></div>
-                        <div class="att-detail-close" onclick="hideAttDetail()">
-                            <i class="bi bi-x-lg"></i>
-                        </div>
-                    </div>
-                    <div id="attDetailBody"></div>
                 </div>
             </div>
-
         </x-card>
     </div>
 </div>
 @endif
 
+{{-- ── Day Summary Inspector Modal ───────────────────────────────────────────────── --}}
+<div class="modal fade" id="daySummaryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.8);">
+            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
+                <div>
+                    <h3 style="font-weight:800;font-size:1.25rem;color:#f3ede4;margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
+                    <div style="font-size:0.85rem;color:#b39b82;display:flex;align-items:center;gap:8px;margin-top:6px;" id="daySummarySubtitle">
+                        <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
+                        <span id="daySummaryStatusText" style="font-weight:600;">Status</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
+            </div>
+            <div class="px-4 pb-4 pt-2">
+                <div style="font-size:0.75rem;font-weight:800;color:#cfa46f;text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 12px 0;" id="daySummarySectionTitle">Subjects Breakdown</div>
+                <div id="daySummaryContent" class="d-flex flex-column gap-2">
+                    <!-- dynamically populated -->
+                </div>
+                <div style="font-size:0.75rem;color:#8f826f;text-align:center;margin-top:18px;">
+                    <i class="bi bi-info-circle me-1"></i> All classes & attendance entries for this day are listed above.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 var attCalendarData = @json($calendarJson);
+let dayModalInstance = null;
 
 function showAttDetail(dateKey, day) {
-    var panel = document.getElementById('attDetailPanel');
-    var dateEl = document.getElementById('attDetailDate');
-    var bodyEl = document.getElementById('attDetailBody');
+    const titleEl = document.getElementById('daySummaryTitle');
+    const subText = document.getElementById('daySummaryStatusText');
+    const subDot = document.getElementById('daySummaryStatusDot');
+    const contentEl = document.getElementById('daySummaryContent');
 
-    // Format the date nicely
-    var dt = new Date(dateKey + 'T00:00:00');
-    var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-    dateEl.textContent = dt.toLocaleDateString('en-US', options);
+    const dt = new Date(dateKey + 'T00:00:00');
+    titleEl.textContent = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
-    var records = attCalendarData[dateKey] || [];
+    const records = attCalendarData[dateKey] || [];
     if (records.length === 0) {
-        bodyEl.innerHTML = '<div class="att-detail-empty"><i class="bi bi-calendar-x" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:0.5;"></i>No attendance records for this day.</div>';
+        subDot.style.background = '#8f826f';
+        subText.textContent = 'No attendance recorded';
+        contentEl.innerHTML = `
+            <div style="text-align:center; padding: 32px 16px; color:#8f826f; background:rgba(255,255,255,0.02); border-radius:14px; border:1px dashed rgba(255,255,255,0.06);">
+                <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:8px; opacity:0.5; color:#cfa46f;"></i>
+                <div style="font-weight:600; font-size:0.9rem; color:#f3ede4;">No records for this date</div>
+                <div style="font-size:0.78rem; margin-top:4px;">Enjoy your free time or check schedule!</div>
+            </div>`;
     } else {
-        var html = '';
-        records.forEach(function(r) {
-            var statusClass = r.status === 'Present' ? 'present' : (r.status === 'Late' ? 'late' : 'absent');
-            var statusIcon = r.status === 'Present' ? 'bi-check-circle-fill' : (r.status === 'Late' ? 'bi-clock-fill' : 'bi-x-circle-fill');
-            html += '<div class="att-detail-row">';
-            html += '  <div>';
-            html += '    <div class="att-detail-subject">' + r.subject + '</div>';
-            html += '    <div class="att-detail-code">' + r.code + '</div>';
-            if (r.time_in) {
-                html += '    <div class="att-detail-time"><i class="bi bi-clock" style="font-size:0.65rem;"></i> ' + r.time_in + '</div>';
-            }
-            html += '  </div>';
-            html += '  <span class="att-detail-badge ' + statusClass + '"><i class="bi ' + statusIcon + '" style="font-size:0.65rem;"></i> ' + r.status + '</span>';
-            html += '</div>';
+        const hasAbsent = records.some(r => r.status === 'Absent');
+        const hasLate = records.some(r => r.status === 'Late');
+        const allPresent = records.every(r => r.status === 'Present');
+
+        if (hasAbsent) {
+            subDot.style.background = '#ef4444';
+            subText.textContent = 'Absent in ' + records.filter(r => r.status === 'Absent').length + ' class(es)';
+        } else if (hasLate) {
+            subDot.style.background = '#f59e0b';
+            subText.textContent = 'Late in ' + records.filter(r => r.status === 'Late').length + ' class(es)';
+        } else if (allPresent) {
+            subDot.style.background = '#10b981';
+            subText.textContent = '100% Present (' + records.length + ' class' + (records.length > 1 ? 'es' : '') + ')';
+        } else {
+            subDot.style.background = '#3b82f6';
+            subText.textContent = records.length + ' classes attended';
+        }
+
+        let html = '';
+        records.forEach(r => {
+            const statusClass = (r.status || 'Present').toLowerCase();
+            const statusIcon = statusClass === 'present' ? 'bi-check-circle-fill' : (statusClass === 'late' ? 'bi-clock-fill' : 'bi-x-circle-fill');
+            html += `
+                <div class="subject-card">
+                    <div class="subject-card-icon">
+                        <i class="bi bi-journal-bookmark-fill"></i>
+                    </div>
+                    <div class="subject-card-info">
+                        <div class="subject-card-title">${r.subject || 'Subject'}</div>
+                        <div style="font-size:0.75rem; color:#cfa46f; font-weight:700; margin-bottom:4px;">${r.code || ''}</div>
+                        ${r.time_in ? `<div class="subject-card-time"><i class="bi bi-clock"></i> Clock-in: <strong>${r.time_in}</strong></div>` : ''}
+                    </div>
+                    <span class="subject-card-badge ${statusClass}">
+                        <i class="bi ${statusIcon} me-1"></i>${r.status}
+                    </span>
+                </div>
+            `;
         });
-        bodyEl.innerHTML = html;
+        contentEl.innerHTML = html;
     }
 
-    panel.classList.add('active');
-    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-    // Highlight the selected cell
-    document.querySelectorAll('.att-cal-cell.selected').forEach(function(el) {
-        el.classList.remove('selected');
-    });
-}
-
-function hideAttDetail() {
-    document.getElementById('attDetailPanel').classList.remove('active');
+    if (!dayModalInstance) {
+        dayModalInstance = new bootstrap.Modal(document.getElementById('daySummaryModal'));
+    }
+    dayModalInstance.show();
+    if (window.triggerHaptic) window.triggerHaptic('light');
 }
 </script>
 
