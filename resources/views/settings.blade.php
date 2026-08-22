@@ -658,8 +658,13 @@ function applySwUpdate() {
 function switchTab(id, btn) {
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + id).classList.add('active');
-    btn.classList.add('active');
+    const targetPanel = document.getElementById('tab-' + id);
+    if (targetPanel) targetPanel.classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (id === 'fingerprint') {
+        loadDevices();
+        prefetchWebAuthn();
+    }
 }
 
 async function toggleWebPush(input) {
@@ -1132,5 +1137,22 @@ function generateRecoveryCodes() {
         alert('Network error. Please try again.');
     });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadDevices();
+    prefetchWebAuthn();
+
+    // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint)
+    const hash = window.location.hash.replace('#tab-', '').replace('#', '');
+    const storedTab = localStorage.getItem('active_settings_tab');
+    const targetTab = hash || storedTab;
+    if (targetTab) {
+        localStorage.removeItem('active_settings_tab');
+        const tabBtn = Array.from(document.querySelectorAll('.stab')).find(b => b.getAttribute('onclick')?.includes(targetTab));
+        if (tabBtn) {
+            switchTab(targetTab, tabBtn);
+        }
+    }
+});
 </script>
 @endsection

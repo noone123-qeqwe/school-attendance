@@ -264,8 +264,8 @@
     line-height: 1.65;
 }
 
-/* Responsive: side-by-side on desktop, identical luxury dark squircle on all viewports */
-@media (min-width: 992px) {
+/* Responsive: desktop side-by-side */
+@media (min-width: 860px) {
     .scal-outer {
         flex-direction: row;
         align-items: flex-start;
@@ -276,71 +276,20 @@
         min-width: 0;
     }
     .scal-side {
-        width: 280px;
+        width: 260px;
         flex-shrink: 0;
     }
 }
 
-/* Mobile & Tablet optimizations - keeps exact desktop squircle styling and clear proportions */
-@media (max-width: 768px) {
-    .scal-card {
-        padding: 24px 18px;
-        border-radius: 24px;
-    }
-    .scal-grid {
-        gap: 8px;
-    }
-    .scal-weekdays {
-        gap: 8px;
-        padding: 12px 0;
-    }
-    .scal-tile {
-        height: 56px;
-        min-height: 56px;
-        border-radius: 13px;
-    }
-    .scal-num {
-        font-size: 1rem;
-        font-weight: 700;
-    }
-    .scal-dot {
-        width: 5px;
-        height: 5px;
-    }
-    .scal-nav-title {
-        font-size: 1.25rem;
-    }
-    .scal-nav-btn {
-        width: 44px;
-        height: 44px;
-        font-size: 1.1rem;
-        border-radius: 12px;
-    }
-    .scal-side {
-        width: 100%;
-    }
-}
-
-@media (max-width: 420px) {
-    .scal-card {
-        padding: 18px 12px;
-        border-radius: 20px;
-    }
-    .scal-grid {
-        gap: 6px;
-    }
-    .scal-weekdays {
-        gap: 6px;
-        padding: 10px 0;
-    }
-    .scal-tile {
-        height: 52px;
-        min-height: 52px;
-        border-radius: 11px;
-    }
-    .scal-num {
-        font-size: 0.95rem;
-    }
+/* Mobile tweaks */
+@media (max-width: 640px) {
+    .scal-card { padding: 20px 16px; border-radius: 20px; }
+    .scal-tile { height: 50px; min-height: 50px; border-radius: 11px; }
+    .scal-num  { font-size: 0.9rem; }
+    .scal-grid { gap: 7px; }
+    .scal-weekdays { gap: 7px; padding: 10px 0; }
+    .scal-nav-title { font-size: 1.15rem; }
+    .scal-nav-btn   { width: 40px; height: 40px; font-size: 1rem; border-radius: 11px; }
 }
 
 /* ─── Modal styles ───────────────────────────────────────── */
@@ -370,6 +319,22 @@
 .ent-modal-row:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
 .ent-modal-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; color: #8b7d70; margin-bottom: 6px; }
 .ent-modal-value { font-size: 0.95rem; color: #f3ede4; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+
+/* Bottom sheet */
+.modal-dialog-bottom { display: flex; align-items: flex-end; min-height: 100%; margin: 0; padding: 0; }
+@media (min-width: 576px) {
+    .modal-dialog-bottom { align-items: center; margin: 1.75rem auto; max-width: 500px; min-height: calc(100% - 3.5rem); }
+}
+.bottom-sheet-content {
+    background: #0f0a08;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px 24px 0 0;
+    width: 100%;
+    padding-bottom: env(safe-area-inset-bottom);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
+}
+@media (min-width: 576px) { .bottom-sheet-content { border-radius: 24px; } }
+.bottom-sheet-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 12px auto; }
 
 /* Subject cards */
 .subject-card {
@@ -501,11 +466,12 @@
 
 {{-- ── Day Summary Modal ───────────────────────────────────────────────── --}}
 <div class="modal fade" id="daySummaryModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 520px; margin: 1.75rem auto;">
-        <div class="modal-content ent-modal-content w-100">
-            <div class="ent-modal-header position-relative">
+    <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
+        <div class="modal-content bottom-sheet-content">
+            <div class="bottom-sheet-handle d-none"></div>
+            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
                 <div>
-                    <h5 class="ent-modal-title" id="daySummaryTitle">Date</h5>
+                    <h3 style="font-weight:700;font-size:1.2rem;color:#f3ede4;margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
                     <div style="font-size:0.85rem;color:#8b7d70;display:flex;align-items:center;gap:6px;margin-top:4px;" id="daySummarySubtitle">
                         <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
                         <span id="daySummaryStatusText">Status</span>
@@ -513,13 +479,13 @@
                 </div>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
             </div>
-            <div class="ent-modal-body">
-                <h6 style="font-size:0.78rem;font-weight:700;color:#cfa46f;text-transform:uppercase;letter-spacing:0.06em;margin:0 0 14px 0;" id="daySummarySectionTitle">Subjects &amp; Activities</h6>
+            <div class="px-4 pb-4">
+                <h6 style="font-size:0.78rem;font-weight:700;color:#8b7d70;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
                 <div id="daySummaryContent" class="d-flex flex-column gap-2">
                     <!-- dynamically populated -->
                 </div>
                 <div style="font-size:0.78rem;color:rgba(255,255,255,0.4);text-align:center;margin-top:18px;">
-                    <i class="bi bi-info-circle"></i> All activities and subject sessions for this day are shown above.
+                    <i class="bi bi-info-circle"></i> All subjects for this day are shown above.
                 </div>
             </div>
         </div>

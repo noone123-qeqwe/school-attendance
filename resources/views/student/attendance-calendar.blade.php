@@ -324,29 +324,14 @@
         font-weight: 600;
     }
 
-    @media (max-width: 768px) {
-        .att-cal-wrap { border-radius: 24px; padding: 14px; }
-        .att-cal-nav { padding: 16px 18px 16px; }
-        .att-cal-month { font-size: 1.25rem; }
-        .att-cal-nav-btn { width: 44px; height: 44px; font-size: 1.1rem; border-radius: 12px; }
-        .att-cal-cell { height: 56px; min-height: 56px; font-size: 1rem; border-radius: 12px; gap: 4px; }
-        .att-cal-grid { gap: 8px; padding: 0 8px 14px; }
-        .att-cal-header { margin: 0 8px 12px; }
-        .att-cal-stats { padding: 12px 14px; gap: 6px; }
-        .att-cal-stat { padding: 5px 12px; font-size: 0.75rem; }
-    }
-
-    @media (max-width: 420px) {
-        .att-cal-wrap { border-radius: 20px; padding: 10px; }
-        .att-cal-nav { padding: 12px 14px; }
-        .att-cal-month { font-size: 1.15rem; }
-        .att-cal-nav-btn { width: 40px; height: 40px; font-size: 1rem; border-radius: 10px; }
-        .att-cal-cell { height: 50px; min-height: 50px; font-size: 0.95rem; border-radius: 10px; gap: 3px; }
-        .att-cal-grid { gap: 6px; padding: 0 4px 12px; }
-        .att-cal-header { margin: 0 4px 10px; padding: 8px 0; }
-        .att-cal-header span { font-size: 0.72rem; }
-        .att-cal-stats { padding: 10px 8px; gap: 4px; }
-        .att-cal-stat { padding: 4px 10px; font-size: 0.72rem; }
+    @media (max-width: 576px) {
+        .att-cal-cell { font-size: 0.75rem; border-radius: 8px; }
+        .att-cal-dot { width: 4px; height: 4px; }
+        .att-cal-nav { padding: 16px 16px 12px; }
+        .att-cal-grid { padding: 0 10px 12px; gap: 3px; }
+        .att-cal-header { padding: 0 10px; }
+        .att-cal-stats { padding: 10px 12px; gap: 4px; }
+        .att-cal-stat { padding: 4px 10px; font-size: 0.7rem; }
     }
 </style>
 
