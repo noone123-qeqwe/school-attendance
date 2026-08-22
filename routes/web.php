@@ -43,9 +43,14 @@ Route::get('/sw.js', function () {
 // Real-time PWA Version Checker
 Route::get('/pwa/version', function () {
     $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '15');
+    $swPath = public_path('sw.js');
+    $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
+    $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
+
     return response()->json([
-        'version' => 'v' . preg_replace('/[^0-9]/', '', $ver),
-        'timestamp' => now()->timestamp
+        'version' => $versionTag,
+        'sw_version' => (string)$ver,
+        'timestamp' => $swMtime
     ], 200, [
         'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
         'Pragma' => 'no-cache',

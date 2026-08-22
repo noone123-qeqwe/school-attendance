@@ -1,8 +1,8 @@
-/* BUMP_TIMESTAMP: 2026-08-22T18:13:34+08:00 */
-const CACHE_VERSION = 'v15';
-const CACHE_NAME = `attendance-v15`;
+/* BUMP_TIMESTAMP: 2026-08-22T18:32:35+08:00 */
+const CACHE_VERSION = 'v17';
+const CACHE_NAME = `attendance-v17`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v15`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v17`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
@@ -183,7 +183,8 @@ self.addEventListener('push', (event) => {
             icon: payload.icon || '/images/icons/icon-192x192.png',
             badge: '/images/icons/icon-72x72.png',
             data: {
-                url: payload.url || '/home'
+                url: payload.url || '/home',
+                tag: payload.tag || ''
             },
             vibrate: [100, 50, 100],
             actions: payload.actions || [
@@ -191,7 +192,24 @@ self.addEventListener('push', (event) => {
             ]
         };
 
-        event.waitUntil(self.registration.showNotification(title, options));
+        // Instantly notify all open desktop/mobile browser windows
+        const notifyClientsPromise = clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            windowClients.forEach((client) => {
+                client.postMessage({
+                    type: 'UPDATE_AVAILABLE',
+                    title: title,
+                    body: payload.body,
+                    timestamp: Date.now()
+                });
+            });
+        });
+
+        event.waitUntil(
+            Promise.all([
+                self.registration.showNotification(title, options),
+                notifyClientsPromise
+            ])
+        );
     } catch (e) {
         const title = 'Attendance Notification';
         const options = {

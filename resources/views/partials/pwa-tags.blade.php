@@ -321,30 +321,37 @@
                     if (swRegistration) {
                         try { swRegistration.update(); } catch(e) {}
                     }
+                    sessionStorage.removeItem('pwa_update_popup_dismissed');
                     showAppUpdatePopup();
                 }
             }
         } catch (e) {}
     }
 
+    // Run check immediately on script evaluation
+    checkServerVersion();
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=17', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });
                 swRegistration = reg;
 
-                // 1. Check server version on launch
+                // 1. Immediate version check on page ready
                 checkServerVersion();
 
-                // 2. If an update is already downloaded and waiting, show update popup
+                // 2. Continuous real-time check every 10 seconds
+                setInterval(checkServerVersion, 10000);
+
+                // 3. If an update is already downloaded and waiting, show update popup
                 if (reg.waiting && navigator.serviceWorker.controller) {
                     showAppUpdatePopup();
                 }
 
-                // 3. When a new update is found and finishes installing in the background
+                // 4. When a new update is found and finishes installing in the background
                 reg.addEventListener('updatefound', () => {
                     const newWorker = reg.installing;
                     if (newWorker) {
@@ -357,7 +364,7 @@
                     }
                 });
 
-                // 4. Listen for broadcast message from push or system broadcast
+                // 5. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
                         sessionStorage.removeItem('pwa_update_popup_dismissed');
@@ -365,7 +372,7 @@
                     }
                 });
 
-                // 5. On app focus or unlock, check for updates
+                // 6. On app focus or unlock, check for updates immediately
                 window.addEventListener('focus', () => {
                     checkServerVersion();
                     try { reg.update(); } catch(e) {}
