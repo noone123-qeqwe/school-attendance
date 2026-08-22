@@ -373,6 +373,13 @@ class AdminController extends Controller
             ];
 
             if ($existing) {
+                // Security check: Refuse to downgrade or overwrite existing non-student accounts (e.g. admins, teachers)
+                if ($existing->role !== 'student') {
+                    $skipped++;
+                    \Illuminate\Support\Facades\Log::warning("CSV Student Import skipped row for '{$email}': Account exists with elevated role '{$existing->role}'.");
+                    continue;
+                }
+
                 if ($existing->trashed()) {
                     $existing->restore();
                 }

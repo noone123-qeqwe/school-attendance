@@ -63,21 +63,30 @@ class AnalyticsService
         $yesterdayTotal   = $yesterdayPresent + $yesterdayLate + $yesterdayAbsent;
         $yesterdayRate    = $yesterdayTotal > 0 ? round((($yesterdayPresent + $yesterdayLate) / $yesterdayTotal) * 100) : 0;
 
-        // ── Active attendance sessions ──
+        // ── Active attendance sessions (batch-optimized, zero N+1) ──
+        $todayStr = today()->toDateString();
         $activeSessions = \App\Models\AttendanceSession::where('active', true)
+            ->where(function($q) {
+                $q->whereNull('session_ends_at')->orWhere('session_ends_at', '>', now());
+            })
             ->with(['creator', 'subject.schedules'])
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($session) {
-                $session->markInactiveIfExpired();
-                $checkedIn = Attendance::where('subject_code', $session->subject_code)
-                    ->whereDate('date', today())
-                    ->count();
-                $session->checked_in_count = $checkedIn;
+            ->get();
+
+        if ($activeSessions->isNotEmpty()) {
+            $sessionSubjectCodes = $activeSessions->pluck('subject_code')->unique()->filter();
+            $checkInCounts = Attendance::whereIn('subject_code', $sessionSubjectCodes)
+                ->whereDate('date', $todayStr)
+                ->selectRaw('subject_code, count(*) as count')
+                ->groupBy('subject_code')
+                ->pluck('count', 'subject_code');
+
+            $activeSessions->each(function ($session) use ($checkInCounts) {
+                $session->checked_in_count = $checkInCounts->get($session->subject_code, 0);
                 $session->qr_status = $session->isTokenValid() ? 'Active' : 'Expired';
                 $session->session_status = $session->isSessionActive() ? 'Active' : ($session->active ? 'Waiting' : 'Finished');
-                return $session;
-            })->filter(fn($s) => $s->active);
+            });
+        }
 
         $activeSessionCount = $activeSessions->count();
 
@@ -136,14 +145,16 @@ class AnalyticsService
             return $teacher;
         });
 
-        // ── At-risk students ──
+        // ── At-risk students (optimized eager loading) ──
         $studentStats = Attendance::select('user_id',
             \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
             \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_sessions'),
             \Illuminate\Support\Facades\DB::raw('max(date) as last_attendance')
         )
         ->groupBy('user_id')
-        ->with('user')
+        ->with(['user' => function($q) {
+            $q->select('id', 'name', 'student_number', 'role', 'course', 'year_level', 'section');
+        }])
         ->get();
 
         $atRiskStudents = $studentStats->map(function ($stat) {
@@ -162,19 +173,20 @@ class AnalyticsService
             return null;
         })->filter()->sortBy('attendance_rate')->take(15);
 
-        // ── Class performance ──
+        // ── Class performance (batch-optimized) ──
+        $subjectNames = Subject::pluck('name', 'code');
         $classPerformance = Attendance::selectRaw("subject_code, status, COUNT(*) as total")
             ->groupBy('subject_code', 'status')
             ->get()
             ->groupBy('subject_code')
-            ->map(function ($group, $code) {
+            ->map(function ($group, $code) use ($subjectNames) {
                 $present = $group->where('status', 'Present')->sum('total') + $group->where('status', 'Late')->sum('total');
                 $total = $group->sum('total');
                 $absent = $group->where('status', 'Absent')->sum('total');
-                $subject = Subject::where('code', $code)->first();
+                $name = $subjectNames->get($code, $code);
                 return (object)[
                     'code' => $code,
-                    'name' => $subject?->name ?? $code,
+                    'name' => $name,
                     'present' => $present,
                     'absent' => $absent,
                     'total' => $total,
@@ -254,155 +266,159 @@ class AnalyticsService
     }
 
     /**
-     * Get Holiday and Event calendar map and upcoming events for any year/month.
+     * Get Holiday and Event calendar map and upcoming events for any year/month (cached).
      */
     public function getHolidayCalendarData(int $calYear, int $calMonth): array
     {
-        $calStart = Carbon::create($calYear, $calMonth, 1);
-        $rangeStart = $calStart->copy()->subMonth()->startOfMonth()->toDateString();
-        $rangeEnd = $calStart->copy()->addMonth()->endOfMonth()->toDateString();
         $todayStr = now()->toDateString();
+        $cacheKey = "hcal_events_{$calYear}_{$calMonth}_{$todayStr}";
 
-        $calendarHolidays = Holiday::active()
-            ->whereBetween('date', [$rangeStart, $rangeEnd])
-            ->orderBy('date')
-            ->get()
-            ->unique(fn($h) => $h->date->format('Y-m-d') . '_' . strtolower(trim($h->name)));
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($calYear, $calMonth, $todayStr) {
+            $calStart = Carbon::create($calYear, $calMonth, 1);
+            $rangeStart = $calStart->copy()->subMonth()->startOfMonth()->toDateString();
+            $rangeEnd = $calStart->copy()->addMonth()->endOfMonth()->toDateString();
 
-        $calendarEvents = Event::where('status', '!=', 'cancelled')
-            ->whereBetween('date', [$rangeStart, $rangeEnd])
-            ->orderBy('date')
-            ->get();
+            $calendarHolidays = Holiday::active()
+                ->whereBetween('date', [$rangeStart, $rangeEnd])
+                ->orderBy('date')
+                ->get()
+                ->unique(fn($h) => $h->date->format('Y-m-d') . '_' . strtolower(trim($h->name)));
 
-        $calendarAnnouncements = Announcement::with('author')
-            ->published()
-            ->orderBy('created_at', 'desc')
-            ->take(20)
-            ->get();
+            $calendarEvents = Event::where('status', '!=', 'cancelled')
+                ->whereBetween('date', [$rangeStart, $rangeEnd])
+                ->orderBy('date')
+                ->get();
 
-        $hcalEventsMap = [];
-        foreach ($calendarHolidays as $hol) {
-            $dateKey = $hol->date->format('Y-m-d');
-            $hcalEventsMap[$dateKey][] = [
-                'id'    => $hol->id,
-                'type'  => $hol->type,
-                'name'  => $hol->name,
-                'description' => $hol->description,
-                'date'  => $dateKey,
-                'date_formatted' => $hol->date->format('M j, Y'),
-                'type_label' => $hol->type_label,
-                'source' => 'holiday',
+            $calendarAnnouncements = Announcement::with('author')
+                ->published()
+                ->orderBy('created_at', 'desc')
+                ->take(20)
+                ->get();
+
+            $hcalEventsMap = [];
+            foreach ($calendarHolidays as $hol) {
+                $dateKey = $hol->date->format('Y-m-d');
+                $hcalEventsMap[$dateKey][] = [
+                    'id'    => $hol->id,
+                    'type'  => $hol->type,
+                    'name'  => $hol->name,
+                    'description' => $hol->description,
+                    'date'  => $dateKey,
+                    'date_formatted' => $hol->date->format('M j, Y'),
+                    'type_label' => $hol->type_label,
+                    'source' => 'holiday',
+                ];
+            }
+
+            foreach ($calendarEvents as $evt) {
+                $dateKey = $evt->date->format('Y-m-d');
+                $hcalEventsMap[$dateKey][] = [
+                    'id'    => $evt->id,
+                    'type'  => $evt->type,
+                    'name'  => $evt->name,
+                    'description' => $evt->description,
+                    'date'  => $dateKey,
+                    'date_formatted' => $evt->date->format('M j, Y'),
+                    'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
+                    'source' => 'event',
+                    'location' => $evt->location,
+                ];
+            }
+
+            foreach ($calendarAnnouncements as $ann) {
+                $dateKey = $ann->scheduled_for ? $ann->scheduled_for->format('Y-m-d') : $ann->created_at->format('Y-m-d');
+                $hcalEventsMap[$dateKey][] = [
+                    'id'    => $ann->id,
+                    'type'  => 'announcement',
+                    'name'  => $ann->title,
+                    'description' => \Illuminate\Support\Str::limit($ann->content, 150),
+                    'date'  => $dateKey,
+                    'date_formatted' => Carbon::parse($dateKey)->format('M j, Y'),
+                    'type_label' => 'Announcement',
+                    'source' => 'announcement',
+                    'author' => $ann->author->name ?? 'Admin',
+                    'author_role' => $ann->author->role ?? 'admin',
+                ];
+            }
+
+            // Build Upcoming Events list (>= today, deduplicated, sorted ascending)
+            $hcalUpcoming = collect();
+
+            // Upcoming Holidays
+            $upcomingHolidays = Holiday::active()
+                ->whereDate('date', '>=', $todayStr)
+                ->orderBy('date')
+                ->take(15)
+                ->get();
+
+            foreach ($upcomingHolidays as $hol) {
+                $hcalUpcoming->push((object)[
+                    'id' => $hol->id,
+                    'type' => $hol->type,
+                    'name' => $hol->name,
+                    'description' => $hol->description,
+                    'date' => $hol->date,
+                    'date_formatted' => $hol->date->format('M j, Y'),
+                    'type_label' => $hol->type_label,
+                    'source' => 'holiday',
+                ]);
+            }
+
+            // Upcoming Events
+            $upcomingSchoolEvents = Event::where('status', '!=', 'cancelled')
+                ->whereDate('date', '>=', $todayStr)
+                ->orderBy('date')
+                ->take(15)
+                ->get();
+
+            foreach ($upcomingSchoolEvents as $evt) {
+                $hcalUpcoming->push((object)[
+                    'id' => $evt->id,
+                    'type' => $evt->type,
+                    'name' => $evt->name,
+                    'description' => $evt->description,
+                    'date' => $evt->date,
+                    'date_formatted' => $evt->date->format('M j, Y'),
+                    'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
+                    'source' => 'event',
+                    'location' => $evt->location,
+                ]);
+            }
+
+            // Recent Announcements
+            $upcomingAnnouncements = Announcement::published()
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+
+            foreach ($upcomingAnnouncements as $ann) {
+                $annDate = $ann->scheduled_for ?? $ann->created_at;
+                $hcalUpcoming->push((object)[
+                    'id' => $ann->id,
+                    'type' => 'announcement',
+                    'name' => $ann->title,
+                    'description' => \Illuminate\Support\Str::limit($ann->content, 150),
+                    'date' => $annDate,
+                    'date_formatted' => $annDate->format('M j, Y'),
+                    'type_label' => 'Announcement',
+                    'source' => 'announcement',
+                ]);
+            }
+
+            // Deduplicate and sort by date ascending
+            $hcalUpcoming = $hcalUpcoming
+                ->unique(fn($item) => ($item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d')) . '_' . strtolower(trim($item->name)))
+                ->sortBy('date')
+                ->values()
+                ->take(10);
+
+            return [
+                'calYear' => $calYear,
+                'calMonth' => $calMonth,
+                'hcalEventsMap' => $hcalEventsMap,
+                'hcalUpcoming' => $hcalUpcoming,
             ];
-        }
-
-        foreach ($calendarEvents as $evt) {
-            $dateKey = $evt->date->format('Y-m-d');
-            $hcalEventsMap[$dateKey][] = [
-                'id'    => $evt->id,
-                'type'  => $evt->type,
-                'name'  => $evt->name,
-                'description' => $evt->description,
-                'date'  => $dateKey,
-                'date_formatted' => $evt->date->format('M j, Y'),
-                'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
-                'source' => 'event',
-                'location' => $evt->location,
-            ];
-        }
-
-        foreach ($calendarAnnouncements as $ann) {
-            $dateKey = $ann->scheduled_for ? $ann->scheduled_for->format('Y-m-d') : $ann->created_at->format('Y-m-d');
-            $hcalEventsMap[$dateKey][] = [
-                'id'    => $ann->id,
-                'type'  => 'announcement',
-                'name'  => $ann->title,
-                'description' => \Illuminate\Support\Str::limit($ann->content, 150),
-                'date'  => $dateKey,
-                'date_formatted' => Carbon::parse($dateKey)->format('M j, Y'),
-                'type_label' => 'Announcement',
-                'source' => 'announcement',
-                'author' => $ann->author->name ?? 'Admin',
-                'author_role' => $ann->author->role ?? 'admin',
-            ];
-        }
-
-        // Build Upcoming Events list (>= today, deduplicated, sorted ascending)
-        $hcalUpcoming = collect();
-
-        // Upcoming Holidays
-        $upcomingHolidays = Holiday::active()
-            ->whereDate('date', '>=', $todayStr)
-            ->orderBy('date')
-            ->take(15)
-            ->get();
-
-        foreach ($upcomingHolidays as $hol) {
-            $hcalUpcoming->push((object)[
-                'id' => $hol->id,
-                'type' => $hol->type,
-                'name' => $hol->name,
-                'description' => $hol->description,
-                'date' => $hol->date,
-                'date_formatted' => $hol->date->format('M j, Y'),
-                'type_label' => $hol->type_label,
-                'source' => 'holiday',
-            ]);
-        }
-
-        // Upcoming Events
-        $upcomingSchoolEvents = Event::where('status', '!=', 'cancelled')
-            ->whereDate('date', '>=', $todayStr)
-            ->orderBy('date')
-            ->take(15)
-            ->get();
-
-        foreach ($upcomingSchoolEvents as $evt) {
-            $hcalUpcoming->push((object)[
-                'id' => $evt->id,
-                'type' => $evt->type,
-                'name' => $evt->name,
-                'description' => $evt->description,
-                'date' => $evt->date,
-                'date_formatted' => $evt->date->format('M j, Y'),
-                'type_label' => ucfirst(str_replace('_', ' ', $evt->type)),
-                'source' => 'event',
-                'location' => $evt->location,
-            ]);
-        }
-
-        // Recent Announcements
-        $upcomingAnnouncements = Announcement::published()
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
-        foreach ($upcomingAnnouncements as $ann) {
-            $annDate = $ann->scheduled_for ?? $ann->created_at;
-            $hcalUpcoming->push((object)[
-                'id' => $ann->id,
-                'type' => 'announcement',
-                'name' => $ann->title,
-                'description' => \Illuminate\Support\Str::limit($ann->content, 150),
-                'date' => $annDate,
-                'date_formatted' => $annDate->format('M j, Y'),
-                'type_label' => 'Announcement',
-                'source' => 'announcement',
-            ]);
-        }
-
-        // Deduplicate and sort by date ascending
-        $hcalUpcoming = $hcalUpcoming
-            ->unique(fn($item) => ($item->date instanceof \DateTimeInterface ? $item->date->format('Y-m-d') : Carbon::parse($item->date)->format('Y-m-d')) . '_' . strtolower(trim($item->name)))
-            ->sortBy('date')
-            ->values()
-            ->take(10);
-
-        return [
-            'calYear' => $calYear,
-            'calMonth' => $calMonth,
-            'hcalEventsMap' => $hcalEventsMap,
-            'hcalUpcoming' => $hcalUpcoming,
-        ];
+        });
     }
 
     /**
@@ -448,22 +464,22 @@ class AnalyticsService
             return $subject;
         });
 
-        // Get attendance statistics for teacher's subjects only
+        // Get attendance statistics for teacher's subjects only (DB aggregated count)
         $subjectCodes = $teacherSubjects->pluck('code');
         
-        // Get students who have attendance in teacher's subjects
-        $studentIds = Attendance::whereIn('subject_code', $subjectCodes)
-            ->distinct()
-            ->pluck('user_id');
-        $totalStudents = $studentIds->count();
+        $totalStudents = Attendance::whereIn('subject_code', $subjectCodes)
+            ->distinct('user_id')
+            ->count('user_id');
         
-        $todayAttendance = Attendance::whereIn('subject_code', $subjectCodes)
+        $todayStats = Attendance::whereIn('subject_code', $subjectCodes)
             ->whereDate('date', $targetDate)
-            ->get();
+            ->selectRaw("status, count(*) as count")
+            ->groupBy('status')
+            ->pluck('count', 'status');
 
-        $totalPresent = $todayAttendance->whereIn('status', ['Present', 'Late'])->count();
-        $totalAbsent = $todayAttendance->where('status', 'Absent')->count();
-        $totalLate = $todayAttendance->where('status', 'Late')->count();
+        $totalPresent = ($todayStats->get('Present', 0) + $todayStats->get('Late', 0));
+        $totalAbsent  = $todayStats->get('Absent', 0);
+        $totalLate    = $todayStats->get('Late', 0);
 
         // Weekly attendance chart data (for teacher's subjects only) — single query
         $weeklyRaw = Attendance::selectRaw("DATE(date) as day, status, COUNT(*) as total")
@@ -488,8 +504,11 @@ class AnalyticsService
             $weeklyAbsent[] = $dayData->firstWhere('status', 'Absent')->total ?? 0;
         }
 
-        // Recent attendance records (for teacher's subjects only)
-        $recentAttendance = Attendance::with(['user', 'subject'])
+        // Recent attendance records (for teacher's subjects only - constrained columns)
+        $recentAttendance = Attendance::with([
+                'user:id,name,student_number',
+                'subject:id,code,name'
+            ])
             ->whereIn('subject_code', $subjectCodes)
             ->orderBy('created_at', 'desc')
             ->take(10)
@@ -500,7 +519,7 @@ class AnalyticsService
             $q->whereIn('subject_code', $subjectCodes);
         })->where('status', 'pending')->count();
 
-        // "At-Risk" Students logic
+        // "At-Risk" Students logic (constrained columns)
         $atRiskStudents = collect();
         if ($subjectCodes->isNotEmpty()) {
             $studentStats = Attendance::select('user_id',
@@ -509,7 +528,7 @@ class AnalyticsService
             )
             ->whereIn('subject_code', $subjectCodes)
             ->groupBy('user_id')
-            ->with('user')
+            ->with(['user:id,name,student_number,role,course,year_level,section'])
             ->get();
 
             $atRiskStudents = $studentStats->map(function($stat) {

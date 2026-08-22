@@ -58,7 +58,7 @@
         @show
 
         <div style="padding: 12px 16px; margin-top: auto;">
-            <button class="pwa-install-trigger" style="display: none; width: 100%; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.3); border-radius: 12px; padding: 10px 14px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+            <button type="button" class="pwa-install-trigger" data-display="flex" style="display: none; width: 100%; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.3); border-radius: 12px; padding: 10px 14px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
                 <i class="bi bi-phone-fill"></i>
                 <span class="nav-link-text">Install App</span>
             </button>

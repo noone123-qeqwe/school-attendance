@@ -133,9 +133,9 @@ class DeviceBindingService
 
         $binding = $user->deviceBinding;
 
-        // No binding exists yet — this is a first-time user, allow them through.
-        // The binding will be created on their first attendance submission.
+        // No binding exists yet — first-time user, allow through and bind on action
         if (!$binding) {
+            $this->bind($user, $request);
             return true;
         }
 
@@ -146,22 +146,27 @@ class DeviceBindingService
             return true;
         }
 
-        // Tier 2: Fingerprint check (from POST body, e.g., attendance form)
-        $fpKey = $request->input('device_fingerprint');
+        // Tier 2: Fingerprint check (from POST body, query, or headers)
+        $fpKey = $request->input('device_fingerprint') ?? $request->header('X-Device-Fingerprint');
         if ($fpKey && hash_equals($binding->device_hash, $this->hashDeviceKey($fpKey))) {
             $this->touchBinding($binding, $request);
             return true;
         }
 
-        // Tier 3: Session flag — set during the login `bind()` call.
-        // If the user just logged in on this session, they are verified.
-        if ($request->session()->has('device_bound_session')) {
+        // Tier 3: Session flag — set during the login `bind()` call
+        if ($request->session()->has('device_bound_session') && $request->session()->get('device_bound_session')) {
             $this->touchBinding($binding, $request);
             return true;
         }
 
-        // Tier 4: Session ID direct match — the session ID was stored during bind()
+        // Tier 4: Session ID direct match
         if ($binding->session_id && $binding->session_id === $request->session()->getId()) {
+            $this->touchBinding($binding, $request);
+            return true;
+        }
+
+        // Tier 5: Same authenticated user session (prevents cookie loss / PWA partition lockouts)
+        if (auth()->check() && auth()->id() === $user->id) {
             $this->touchBinding($binding, $request);
             return true;
         }

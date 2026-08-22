@@ -211,4 +211,39 @@ class WebPushService
 
         return $sent;
     }
+
+    /**
+     * Asynchronously dispatch push notification to a user via Queue worker.
+     */
+    public function sendToUserAsync($user, string $title, string $body, array $options = []): void
+    {
+        $userId = $user instanceof User ? $user->id : $user;
+        \App\Jobs\SendWebPushJob::dispatch('user', $userId, $title, $body, $options);
+    }
+
+    /**
+     * Asynchronously dispatch push notification to parents of a student via Queue worker.
+     */
+    public function sendToParentsOfStudentAsync($student, string $title, string $body, array $options = []): void
+    {
+        $studentId = $student instanceof User ? $student->id : $student;
+        \App\Jobs\SendWebPushJob::dispatch('parents', $studentId, $title, $body, $options);
+    }
+
+    /**
+     * Asynchronously dispatch push notification to all users of a role via Queue worker.
+     */
+    public function sendToRoleAsync(string $role, string $title, string $body, array $options = []): void
+    {
+        \App\Jobs\SendWebPushJob::dispatch('role', $role, $title, $body, $options);
+    }
+
+    /**
+     * Asynchronously broadcast announcement via Queue worker.
+     */
+    public function broadcastAnnouncementAsync(string $title, string $body, array $options = [], ?string $role = null): void
+    {
+        \App\Jobs\SendWebPushJob::dispatch('broadcast', $role, $title, $body, $options);
+    }
 }
+

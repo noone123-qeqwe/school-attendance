@@ -79,6 +79,12 @@ class SystemUpdateAndBackupTest extends TestCase
         $response->assertJson([
             'success' => true
         ]);
+        $response->assertJsonStructure([
+            'success',
+            'version',
+            'pushed_count',
+            'message'
+        ]);
     }
 
     public function test_super_admin_can_check_migration_status(): void

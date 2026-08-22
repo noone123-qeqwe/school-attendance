@@ -184,4 +184,51 @@ class SecurityHardeningTest extends TestCase
         $response = $this->actingAs($regularAdmin)->get(route('admin.backups.download', $backup->id));
         $response->assertStatus(403);
     }
+
+    public function test_csv_export_sanitizes_dangerous_formula_characters()
+    {
+        $maliciousStudent = User::factory()->make([
+            'name' => '=cmd|\' /C calc\'!A0',
+            'student_number' => '+63912345678',
+            'email' => '@malicious@example.com',
+            'attendance_rate' => 100,
+        ]);
+
+        $export = new \App\Exports\StudentsExport(collect([$maliciousStudent]));
+        $mapped = $export->collection()->first();
+
+        // Ensure leading dangerous formula characters are prefixed with single quote
+        $this->assertStringStartsWith("'", $mapped['name']);
+        $this->assertStringStartsWith("'", $mapped['student_id']);
+        $this->assertStringStartsWith("'", $mapped['email']);
+    }
+
+    public function test_csv_student_import_does_not_demote_or_overwrite_admin_accounts()
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email' => 'head_admin@school.edu',
+            'name' => 'Head Admin',
+            'must_change_password' => false,
+        ]);
+
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+            'must_change_password' => false,
+        ]);
+
+        $csvContent = "Name,StudentNumber,Email,Course,YearLevel,Semester,Section\n";
+        $csvContent .= "Fake Student,9999999,head_admin@school.edu,BSCS,1,1,A\n";
+
+        $csvFile = UploadedFile::fake()->createWithContent('students.csv', $csvContent);
+
+        $response = $this->actingAs($superAdmin)->post(route('admin.students.import'), [
+            'csv_file' => $csvFile,
+        ]);
+
+        $admin->refresh();
+        $this->assertEquals('admin', $admin->role);
+        $this->assertEquals('Head Admin', $admin->name);
+    }
 }

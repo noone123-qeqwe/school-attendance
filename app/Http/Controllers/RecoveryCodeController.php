@@ -19,10 +19,22 @@ class RecoveryCodeController extends Controller
 
         $identifier = trim($request->identifier);
 
-        // Look up by student_number or email
-        $user = str_contains($identifier, '@')
-            ? User::where('email', $identifier)->first()
-            : User::where('student_number', $identifier)->first();
+        // Look up by student_number, email, or employee_id
+        $user = User::where('student_number', $identifier)
+            ->orWhere('email', $identifier)
+            ->orWhere('employee_id', $identifier)
+            ->orWhereRaw('LOWER(email) = ?', [strtolower($identifier)])
+            ->orWhereRaw('LOWER(student_number) = ?', [strtolower($identifier)])
+            ->first();
+
+        if (!$user) {
+            $clean = preg_replace('/[^a-zA-Z0-9]/', '', $identifier);
+            if ($clean !== '') {
+                $user = User::whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
+                    ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean])
+                    ->first();
+            }
+        }
 
         if (!$user) {
             return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput();

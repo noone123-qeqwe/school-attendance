@@ -17,7 +17,41 @@ class ActivityLogController extends Controller
         $query = $this->buildQuery($request);
         $logs = $query->paginate(20)->withQueryString();
 
-        return view('admin.activity_logs', compact('logs'));
+        // High-level KPI Telemetry Stats (Fast & Aggregated)
+        $totalLogsCount = Activity::count();
+        $todayLogsCount = Activity::whereDate('created_at', today())->count();
+        $authLogsCount = Activity::where(function($q) {
+            $q->where('description', 'like', '%login%')
+              ->orWhere('description', 'like', '%auth%')
+              ->orWhere('description', 'like', '%password%')
+              ->orWhere('log_name', 'auth');
+        })->count();
+        $mutationLogsCount = Activity::whereIn('description', ['created', 'updated', 'deleted'])->count();
+        $uniqueCausersCount = Activity::whereNotNull('causer_id')->distinct('causer_id')->count('causer_id');
+
+        // Distinct causers and actions for dynamic filter dropdowns
+        $causersList = \App\Models\User::whereIn('id', Activity::whereNotNull('causer_id')->select('causer_id')->distinct()->pluck('causer_id'))
+            ->select('id', 'name', 'email', 'role')
+            ->orderBy('name')
+            ->get();
+
+        $actionsList = Activity::select('description')
+            ->whereNotNull('description')
+            ->distinct()
+            ->pluck('description')
+            ->sort()
+            ->values();
+
+        return view('admin.activity_logs', compact(
+            'logs',
+            'totalLogsCount',
+            'todayLogsCount',
+            'authLogsCount',
+            'mutationLogsCount',
+            'uniqueCausersCount',
+            'causersList',
+            'actionsList'
+        ));
     }
 
     public function export(Request $request)
@@ -49,10 +83,29 @@ class ActivityLogController extends Controller
 
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
+        } elseif ($request->filled('date_preset')) {
+            if ($request->date_preset === 'today') {
+                $query->whereDate('created_at', today());
+            } elseif ($request->date_preset === 'yesterday') {
+                $query->whereDate('created_at', today()->subDay());
+            } elseif ($request->date_preset === '7days') {
+                $query->where('created_at', '>=', now()->subDays(7));
+            } elseif ($request->date_preset === '30days') {
+                $query->where('created_at', '>=', now()->subDays(30));
+            }
         }
 
         if ($request->filled('action')) {
-            $query->where('description', $request->action);
+            $action = $request->action;
+            if ($action === 'login' || $action === 'auth') {
+                $query->where(function($q) {
+                    $q->where('description', 'like', '%login%')
+                      ->orWhere('description', 'like', '%auth%')
+                      ->orWhere('log_name', 'auth');
+                });
+            } else {
+                $query->where('description', $action);
+            }
         }
 
         if ($request->filled('log_name')) {

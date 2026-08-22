@@ -58,6 +58,7 @@ class ParentController extends Controller
         $childIds = $children->pluck('id');
 
         $allStreakRecords = Attendance::whereIn('user_id', $childIds)
+            ->whereDate('date', '>=', now()->subDays(60))
             ->select('user_id', 'date', 'status')
             ->orderBy('date', 'desc')
             ->get()
@@ -93,90 +94,7 @@ class ParentController extends Controller
             $absent = (int) $child->absent_count;
 
             // ── Historical missed classes calculation ──
-            // Count all expected classes from the start of tracking to today,
-            // then subtract actual attendance records to find unrecorded absences.
-            $historicalMisses = 0;
-            if ($child->year_level && $child->semester) {
-                $childSubjects = \App\Models\Subject::where('year_level', $child->year_level)
-                    ->where('semester', $child->semester)
-                    ->where(function ($q) use ($child) {
-                        $q->whereNull('course')->orWhere('course', '')->orWhere('course', $child->course);
-                    })
-                    ->where(function ($q) use ($child) {
-                        $q->whereNull('section')->orWhere('section', '')->orWhere('section', $child->section);
-                    })
-                    ->with('schedules')
-                    ->get();
-
-                // Determine the reference start date: earliest attendance record or academic year start
-                $earliestRecord = Attendance::where('user_id', $child->id)->min('date');
-                $academicYear = \App\Models\AcademicYear::where('is_current', true)->first();
-                $semesterStart = $academicYear ? $academicYear->start_date : null;
-
-                // Use the earliest of: academic year start, earliest attendance, or 90 days ago
-                $startDate = $now->copy()->subDays(90);
-                if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
-                    $startDate = Carbon::parse($semesterStart);
-                }
-                if ($earliestRecord) {
-                    $earliest = Carbon::parse($earliestRecord);
-                    if ($earliest->lt($startDate)) {
-                        $startDate = $earliest;
-                    }
-                }
-
-                // Get all holiday dates to exclude
-                $holidays = \App\Models\Holiday::active()
-                    ->whereDate('date', '>=', $startDate->toDateString())
-                    ->whereDate('date', '<=', $todayDate)
-                    ->pluck('date')
-                    ->map(fn($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : Carbon::parse($d)->format('Y-m-d'))
-                    ->toArray();
-
-                foreach ($childSubjects as $subj) {
-                    $scheduledDays = $subj->schedules->pluck('day')->unique()->values();
-                    if ($scheduledDays->isEmpty()) continue;
-
-                    // Count expected class sessions between startDate and today
-                    $expectedSessions = 0;
-                    $cursor = $startDate->copy();
-                    while ($cursor->lte($now)) {
-                        $cursorDayName = $cursor->format('l');
-                        $cursorDateStr = $cursor->toDateString();
-
-                        // Skip holidays and Sundays
-                        if (!in_array($cursorDateStr, $holidays) && $cursorDayName !== 'Sunday') {
-                            if ($scheduledDays->contains($cursorDayName)) {
-                                // For today, only count classes whose end_time has passed
-                                if ($cursorDateStr === $todayDate) {
-                                    $todaySchedules = $subj->schedules->where('day', $cursorDayName);
-                                    foreach ($todaySchedules as $sched) {
-                                        if ($sched->end_time < $currentTime) {
-                                            $expectedSessions++;
-                                        }
-                                    }
-                                } else {
-                                    // Past day: count each scheduled session for that day
-                                    $expectedSessions += $subj->schedules->where('day', $cursorDayName)->count();
-                                }
-                            }
-                        }
-                        $cursor->addDay();
-                    }
-
-                    // Count actual attendance records for this subject
-                    $actualRecords = Attendance::where('user_id', $child->id)
-                        ->where('subject_code', $subj->code)
-                        ->whereDate('date', '>=', $startDate->toDateString())
-                        ->whereDate('date', '<=', $todayDate)
-                        ->count();
-
-                    // The difference is unrecorded absences
-                    $misses = max(0, $expectedSessions - $actualRecords);
-                    $historicalMisses += $misses;
-                }
-            }
-
+            $historicalMisses = app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->execute($child);
             $absent += $historicalMisses;
             $total = $present + $late + $absent;
             $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;
@@ -308,80 +226,7 @@ class ParentController extends Controller
         $absent = $stats->absent ?? 0;
 
         // Historical missed classes calculation
-        $now = now('Asia/Manila');
-        $todayDate = $now->toDateString();
-        $currentTime = $now->format('H:i:s');
-
-        if ($child->year_level && $child->semester) {
-            $childSubjects = \App\Models\Subject::where('year_level', $child->year_level)
-                ->where('semester', $child->semester)
-                ->where(function ($q) use ($child) {
-                    $q->whereNull('course')->orWhere('course', '')->orWhere('course', $child->course);
-                })
-                ->where(function ($q) use ($child) {
-                    $q->whereNull('section')->orWhere('section', '')->orWhere('section', $child->section);
-                })
-                ->with('schedules')
-                ->get();
-
-            $earliestRecord = Attendance::where('user_id', $child->id)->min('date');
-            $academicYear = \App\Models\AcademicYear::where('is_current', true)->first();
-            $semesterStart = $academicYear ? $academicYear->start_date : null;
-
-            $startDate = $now->copy()->subDays(90);
-            if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
-                $startDate = Carbon::parse($semesterStart);
-            }
-            if ($earliestRecord) {
-                $earliest = Carbon::parse($earliestRecord);
-                if ($earliest->lt($startDate)) {
-                    $startDate = $earliest;
-                }
-            }
-
-            $holidays = \App\Models\Holiday::active()
-                ->whereDate('date', '>=', $startDate->toDateString())
-                ->whereDate('date', '<=', $todayDate)
-                ->pluck('date')
-                ->map(fn($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : Carbon::parse($d)->format('Y-m-d'))
-                ->toArray();
-
-            foreach ($childSubjects as $subj) {
-                $scheduledDays = $subj->schedules->pluck('day')->unique()->values();
-                if ($scheduledDays->isEmpty()) continue;
-
-                $expectedSessions = 0;
-                $cursor = $startDate->copy();
-                while ($cursor->lte($now)) {
-                    $cursorDayName = $cursor->format('l');
-                    $cursorDateStr = $cursor->toDateString();
-
-                    if (!in_array($cursorDateStr, $holidays) && $cursorDayName !== 'Sunday') {
-                        if ($scheduledDays->contains($cursorDayName)) {
-                            if ($cursorDateStr === $todayDate) {
-                                $todaySchedules = $subj->schedules->where('day', $cursorDayName);
-                                foreach ($todaySchedules as $sched) {
-                                    if ($sched->end_time < $currentTime) {
-                                        $expectedSessions++;
-                                    }
-                                }
-                            } else {
-                                $expectedSessions += $subj->schedules->where('day', $cursorDayName)->count();
-                            }
-                        }
-                    }
-                    $cursor->addDay();
-                }
-
-                $actualRecords = Attendance::where('user_id', $child->id)
-                    ->where('subject_code', $subj->code)
-                    ->whereDate('date', '>=', $startDate->toDateString())
-                    ->whereDate('date', '<=', $todayDate)
-                    ->count();
-
-                $absent += max(0, $expectedSessions - $actualRecords);
-            }
-        }
+        $absent += app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->execute($child);
 
         $total = $present + $late + $absent;
         $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;
@@ -655,80 +500,7 @@ class ParentController extends Controller
         $absent = $attendances->where('status', 'Absent')->count();
 
         // Historical missed classes calculation
-        $now = now('Asia/Manila');
-        $todayDate = $now->toDateString();
-        $currentTime = $now->format('H:i:s');
-
-        if ($child->year_level && $child->semester) {
-            $childSubjects = \App\Models\Subject::where('year_level', $child->year_level)
-                ->where('semester', $child->semester)
-                ->where(function ($q) use ($child) {
-                    $q->whereNull('course')->orWhere('course', '')->orWhere('course', $child->course);
-                })
-                ->where(function ($q) use ($child) {
-                    $q->whereNull('section')->orWhere('section', '')->orWhere('section', $child->section);
-                })
-                ->with('schedules')
-                ->get();
-
-            $earliestRecord = Attendance::where('user_id', $child->id)->min('date');
-            $academicYear = \App\Models\AcademicYear::where('is_current', true)->first();
-            $semesterStart = $academicYear ? $academicYear->start_date : null;
-
-            $startDate = $now->copy()->subDays(90);
-            if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
-                $startDate = Carbon::parse($semesterStart);
-            }
-            if ($earliestRecord) {
-                $earliest = Carbon::parse($earliestRecord);
-                if ($earliest->lt($startDate)) {
-                    $startDate = $earliest;
-                }
-            }
-
-            $holidays = \App\Models\Holiday::active()
-                ->whereDate('date', '>=', $startDate->toDateString())
-                ->whereDate('date', '<=', $todayDate)
-                ->pluck('date')
-                ->map(fn($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : Carbon::parse($d)->format('Y-m-d'))
-                ->toArray();
-
-            foreach ($childSubjects as $subj) {
-                $scheduledDays = $subj->schedules->pluck('day')->unique()->values();
-                if ($scheduledDays->isEmpty()) continue;
-
-                $expectedSessions = 0;
-                $cursor = $startDate->copy();
-                while ($cursor->lte($now)) {
-                    $cursorDayName = $cursor->format('l');
-                    $cursorDateStr = $cursor->toDateString();
-
-                    if (!in_array($cursorDateStr, $holidays) && $cursorDayName !== 'Sunday') {
-                        if ($scheduledDays->contains($cursorDayName)) {
-                            if ($cursorDateStr === $todayDate) {
-                                $todaySchedules = $subj->schedules->where('day', $cursorDayName);
-                                foreach ($todaySchedules as $sched) {
-                                    if ($sched->end_time < $currentTime) {
-                                        $expectedSessions++;
-                                    }
-                                }
-                            } else {
-                                $expectedSessions += $subj->schedules->where('day', $cursorDayName)->count();
-                            }
-                        }
-                    }
-                    $cursor->addDay();
-                }
-
-                $actualRecords = Attendance::where('user_id', $child->id)
-                    ->where('subject_code', $subj->code)
-                    ->whereDate('date', '>=', $startDate->toDateString())
-                    ->whereDate('date', '<=', $todayDate)
-                    ->count();
-
-                $absent += max(0, $expectedSessions - $actualRecords);
-            }
-        }
+        $absent += app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->execute($child);
 
         $total = $present + $late + $absent;
         $rate = $total > 0 ? round((($present + $late) / $total) * 100) : 0;

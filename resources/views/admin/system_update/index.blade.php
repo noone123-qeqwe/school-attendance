@@ -178,27 +178,7 @@
                 </div>
             </div>
 
-            <!-- 5. Storage & Disk Capacity -->
-            <div class="telemetry-card card-glow-purple">
-                <div class="telemetry-header">
-                    <span class="telemetry-label">Disk Storage Health</span>
-                    <div class="telemetry-icon-box icon-storage">
-                        <i class="bi bi-hdd-network-fill"></i>
-                    </div>
-                </div>
-                <div class="telemetry-value-row">
-                    <div class="telemetry-value-md">
-                        {{ round($diskFreeBytes / 1024 / 1024 / 1024, 2) }} <span class="unit-text">GB Free</span>
-                    </div>
-                    <span class="storage-percent-chip">{{ $diskUsedPercent }}% used</span>
-                </div>
-                <div class="storage-progress-bar">
-                    <div class="storage-progress-fill" style="width: {{ min(100, max(5, $diskUsedPercent)) }}%;"></div>
-                </div>
-                <div class="telemetry-footer">
-                    <span class="telemetry-sub">storage/ <span class="{{ $storageWritable ? 'text-emerald' : 'text-danger' }}">{{ $storageWritable ? '✓' : '✗' }}</span> • cache/ <span class="{{ $bootstrapCacheWritable ? 'text-emerald' : 'text-danger' }}">{{ $bootstrapCacheWritable ? '✓' : '✗' }}</span></span>
-                </div>
-            </div>
+
 
             <!-- 6. Runtime Engine & OPcache -->
             <div class="telemetry-card card-glow-amber">

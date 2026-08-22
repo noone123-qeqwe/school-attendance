@@ -347,13 +347,22 @@
                             <i class="bi bi-chevron-right ms-auto" style="color:#cbd5e1;font-size:0.75rem;"></i>
                         </div>
                     </a>
+                    <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" style="text-decoration:none;">
+                        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid rgba(207,164,111,0.25);background:rgba(207,164,111,0.06);transition:all 0.2s;margin-bottom:8px;" onmouseover="this.style.background='rgba(207,164,111,0.12)';this.style.borderColor='var(--gold)';" onmouseout="this.style.background='rgba(207,164,111,0.06)';this.style.borderColor='rgba(207,164,111,0.25)';">
+                            <div style="width:32px;height:32px;border-radius:8px;background:rgba(207,164,111,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold,#CFA46F);font-size:1rem;">
+                                <i class="bi bi-fingerprint"></i>
+                            </div>
+                            <span style="font-size:0.875rem;font-weight:700;color:#f3e7cd;">Fingerprint / Biometrics</span>
+                            <i class="bi bi-chevron-right ms-auto" style="color:var(--gold,#CFA46F);font-size:0.75rem;"></i>
+                        </div>
+                    </a>
                     <a href="{{ route('settings') }}" style="text-decoration:none;">
-                        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid #f1f5f9;background:#fafafa;transition:all 0.2s;" onmouseover="this.style.background='#fff5f5';this.style.borderColor='#fecaca';" onmouseout="this.style.background='#fafafa';this.style.borderColor='#f1f5f9';">
-                            <div style="width:32px;height:32px;border-radius:8px;background:#f8fafc;display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.9rem;">
+                        <div style="display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)';" onmouseout="this.style.background='rgba(255,255,255,0.03)';">
+                            <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;color:#b39b82;font-size:0.9rem;">
                                 <i class="bi bi-gear-fill"></i>
                             </div>
-                            <span style="font-size:0.875rem;font-weight:600;color:#1e293b;">Account Settings</span>
-                            <i class="bi bi-chevron-right ms-auto" style="color:#cbd5e1;font-size:0.75rem;"></i>
+                            <span style="font-size:0.875rem;font-weight:600;color:#f3e7cd;">Account Settings</span>
+                            <i class="bi bi-chevron-right ms-auto" style="color:#b39b82;font-size:0.75rem;"></i>
                         </div>
                     </a>
                 </div>

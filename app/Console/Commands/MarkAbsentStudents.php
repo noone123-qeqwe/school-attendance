@@ -130,7 +130,7 @@ class MarkAbsentStudents extends Command
             // Check if dates are consecutive (allowing for weekends/holidays)
             $dates = $recentAttendance->pluck('date')->map(function($date) {
                 return $date instanceof \Carbon\Carbon ? $date : \Carbon\Carbon::parse($date);
-            })->sort();
+            })->sort()->values();
             $isConsecutive = true;
             
             for ($i = 1; $i < $dates->count(); $i++) {

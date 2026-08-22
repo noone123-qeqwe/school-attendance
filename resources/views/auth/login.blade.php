@@ -453,14 +453,14 @@
                 <div class="invalid-feedback-custom anim-fade-up anim-d4">{{ $message }}</div>
             @enderror
 
-            <!-- Fingerprint (student only, WebAuthn supported) -->
+            <!-- Fingerprint (WebAuthn biometric supported) -->
             <div id="fingerprintSection">
                 <div class="fp-row anim-fade-up anim-d5" onclick="fingerprintLogin()" id="fpRowBtn">
                     <div class="fp-row-left">
                         <i class="bi bi-fingerprint"></i>
                         <div>
                             <div class="fp-row-label">Sign in with Fingerprint</div>
-                            <div class="fp-row-hint"> -  no password needed</div>
+                            <div class="fp-row-hint">Touch sensor or Face ID — fast & secure</div>
                         </div>
                     </div>
                     <i class="bi bi-chevron-right fp-row-arrow"></i>
@@ -518,7 +518,7 @@
         </div>
 
         <div style="text-align: center; margin-top: 18px;">
-            <button class="pwa-install-trigger" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.3); border-radius: 99px; padding: 8px 18px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s;">
+            <button type="button" class="pwa-install-trigger" data-display="inline-flex" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.35); border-radius: 99px; padding: 9px 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
                 <i class="bi bi-phone"></i> Install Attendance App
             </button>
         </div>
@@ -614,11 +614,17 @@ function bufferToBase64Url(buffer) {
 }
 
 async function fingerprintLogin() {
+    if (!window.PublicKeyCredential) {
+        showFpError('Biometric authentication is not supported by your browser or device.');
+        return;
+    }
+
     var studentNumber = idInput.value.trim();
     if (!studentNumber) {
         idInput.focus();
         idInput.style.borderColor = 'rgba(252,165,165,0.8)';
         setTimeout(function() { idInput.style.borderColor = ''; }, 2000);
+        showFpError('Please enter your Student ID or Email first, then tap Fingerprint.');
         return;
     }
 
@@ -632,15 +638,22 @@ async function fingerprintLogin() {
         var optRes = await fetch('{{ route("webauthn.login.options") }}', {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ student_number: studentNumber })
+            body: JSON.stringify({ student_number: studentNumber, identifier: studentNumber })
         });
         var opts = await optRes.json();
         
         console.log('WebAuthn login options response:', opts);
 
         if (!opts.success) {
-            showFpError(opts.message || 'No fingerprint registered for this account.');
-            resetFpRow(); return;
+            showFpError(opts.message || 'No biometric key registered for this account. Please sign in with your password.');
+            var passInput = document.getElementById('loginPassword');
+            if (passInput) {
+                passInput.focus();
+                passInput.style.borderColor = '#d4af37';
+                setTimeout(function() { passInput.style.borderColor = ''; }, 3000);
+            }
+            resetFpRow();
+            return;
         }
 
         var challenge = base64ToUint8Array(opts.challenge);
@@ -648,12 +661,21 @@ async function fingerprintLogin() {
             return { type: c.type, id: base64ToUint8Array(c.id) };
         });
         var rpId = opts.rpId || window.location.hostname;
+        var hostname = window.location.hostname;
+        var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
         
-        console.log('Using rpId:', rpId);
-        console.log('Using challenge:', opts.challenge);
+        var getPublicKey = {
+            challenge: challenge,
+            allowCredentials: allowCredentials,
+            userVerification: 'preferred',
+            timeout: 60000
+        };
+        if (rpId && !isIp) {
+            getPublicKey.rpId = rpId;
+        }
 
         var assertion = await navigator.credentials.get({
-            publicKey: { challenge: challenge, rpId: rpId, allowCredentials: allowCredentials, userVerification: 'required', timeout: 60000 }
+            publicKey: getPublicKey
         });
 
         var credentialId = bufferToBase64Url(assertion.rawId);
@@ -682,18 +704,31 @@ async function fingerprintLogin() {
             window.location.href = result.redirect;
         } else {
             console.error('WebAuthn login failed:', result);
-            showFpError(result.message || 'Fingerprint not recognized.');
+            showFpError(result.message || 'Fingerprint not recognized on this account.');
+            var passInput = document.getElementById('loginPassword');
+            if (passInput) passInput.focus();
             resetFpRow();
         }
     } catch (err) {
         console.error('WebAuthn error:', err);
-        if (err.name !== 'NotAllowedError') showFpError('Fingerprint error: ' + err.message);
+        if (err.name === 'NotAllowedError' || err.name === 'InvalidStateError' || err.name === 'SecurityError' || err.name === 'NotSupportedError') {
+            showFpError('Biometric key not found on this browser. Please sign in with your password below to access your account and register this browser.');
+            var passInput = document.getElementById('loginPassword');
+            if (passInput) {
+                passInput.focus();
+                passInput.style.borderColor = '#d4af37';
+                setTimeout(function() { passInput.style.borderColor = ''; }, 3500);
+            }
+        } else {
+            showFpError('Fingerprint error: ' + (err.message || 'Verification failed. Please sign in with password.'));
+        }
         resetFpRow();
     }
 }
 
 function resetFpRow() {
     var row = document.getElementById('fpRowBtn');
+    if (!row) return;
     row.style.opacity = '1';
     row.style.pointerEvents = '';
     row.querySelector('.fp-row-label').textContent = 'Sign in with Fingerprint';
@@ -710,7 +745,7 @@ function showFpError(msg) {
         fpSec.prepend(err);
     }
     err.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i>' + msg;
-    setTimeout(function() { if (err && err.parentNode) err.remove(); }, 4000);
+    setTimeout(function() { if (err && err.parentNode) err.remove(); }, 6000);
 }
 </script>
 </body>

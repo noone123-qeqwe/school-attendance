@@ -505,27 +505,32 @@ async function registerFingerprint() {
     const btn = document.getElementById('registerFpBtn');
     const msg = document.getElementById('fpMessage');
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for fingerprint...';
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for biometric prompt...';
     msg.style.display = 'none';
 
     try {
-        let opts = prefetchOptions;
-        if (!opts) {
-            const optRes = await fetch('{{ route("webauthn.register.options") }}', {
-                headers: { 
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
-                    'Accept': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            opts = await optRes.json();
-        }
-        prefetchOptions = null;
+        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+            headers: { 
+                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                'Accept': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
+        const opts = await optRes.json();
 
         const challenge = base64ToUint8Array(opts.challenge);
         const userId    = base64ToUint8Array(opts.user.id);
-        const rpId = opts.rp?.id || window.location.hostname;
-        
+        const hostname = window.location.hostname;
+        const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
+        const rp = { name: opts.rp?.name || 'School Attendance' };
+        if (opts.rp?.id && !isIp) {
+            rp.id = opts.rp.id;
+        }
+
+        const excludeCredentials = (opts.excludeCredentials || []).map(function(c) {
+            return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
+        });
+
         const timeoutPromise = new Promise((_, reject) => {
             const err = new Error('Biometric prompt timed out. Please try again.');
             err.name = 'TimeoutError';
@@ -535,12 +540,20 @@ async function registerFingerprint() {
         const createPromise = navigator.credentials.create({
             publicKey: {
                 challenge: challenge,
-                rp: { ...opts.rp, id: rpId },
+                rp: rp,
                 user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-                pubKeyCredParams: opts.pubKeyCredParams,
-                authenticatorSelection: opts.authenticatorSelection,
-                timeout: opts.timeout,
-                attestation: opts.attestation
+                pubKeyCredParams: opts.pubKeyCredParams || [
+                    { type: 'public-key', alg: -7 },
+                    { type: 'public-key', alg: -257 }
+                ],
+                authenticatorSelection: opts.authenticatorSelection || {
+                    authenticatorAttachment: 'platform',
+                    userVerification: 'preferred',
+                    requireResidentKey: false
+                },
+                timeout: opts.timeout || 60000,
+                attestation: opts.attestation || 'none',
+                excludeCredentials: excludeCredentials
             }
         });
 

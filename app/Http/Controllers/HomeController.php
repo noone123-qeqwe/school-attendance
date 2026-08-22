@@ -206,81 +206,8 @@ class HomeController extends Controller
     }
 
     // ── Historical missed classes calculation ──
-    // Count all expected classes from start of tracking to today,
-    // then subtract actual attendance records to find unrecorded absences.
-    $historicalMissesTotal = 0;
-    $historicalMissesPerSubject = [];
-    if ($subjects->isNotEmpty()) {
-        $subjects->load('schedules');
-
-        // Determine the reference start date
-        $earliestRecord = Attendance::where('user_id', $user->id)->min('date');
-        $academicYear = \App\Models\AcademicYear::where('is_current', true)->first();
-        $semesterStart = $academicYear ? $academicYear->start_date : null;
-
-        $startDate = $now->copy()->subDays(90);
-        if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
-            $startDate = Carbon::parse($semesterStart);
-        }
-        if ($earliestRecord) {
-            $earliest = Carbon::parse($earliestRecord);
-            if ($earliest->lt($startDate)) {
-                $startDate = $earliest;
-            }
-        }
-
-        // Get all holiday dates to exclude
-        $holidays = \App\Models\Holiday::active()
-            ->whereDate('date', '>=', $startDate->toDateString())
-            ->whereDate('date', '<=', $todayDate)
-            ->pluck('date')
-            ->map(fn($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : Carbon::parse($d)->format('Y-m-d'))
-            ->toArray();
-
-        foreach ($subjects as $subjectModel) {
-            $scheduledDays = $subjectModel->schedules->pluck('day')->unique()->values();
-            if ($scheduledDays->isEmpty()) {
-                $historicalMissesPerSubject[$subjectModel->code] = 0;
-                continue;
-            }
-
-            // Count expected class sessions between startDate and today
-            $expectedSessions = 0;
-            $cursor = $startDate->copy();
-            while ($cursor->lte($now)) {
-                $cursorDayName = $cursor->format('l');
-                $cursorDateStr = $cursor->toDateString();
-
-                if (!in_array($cursorDateStr, $holidays) && $cursorDayName !== 'Sunday') {
-                    if ($scheduledDays->contains($cursorDayName)) {
-                        if ($cursorDateStr === $todayDate) {
-                            $todayScheds = $subjectModel->schedules->where('day', $cursorDayName);
-                            foreach ($todayScheds as $sched) {
-                                if ($sched->end_time < $currentTime) {
-                                    $expectedSessions++;
-                                }
-                            }
-                        } else {
-                            $expectedSessions += $subjectModel->schedules->where('day', $cursorDayName)->count();
-                        }
-                    }
-                }
-                $cursor->addDay();
-            }
-
-            // Count actual attendance records for this subject
-            $actualRecords = Attendance::where('user_id', $user->id)
-                ->where('subject_code', $subjectModel->code)
-                ->whereDate('date', '>=', $startDate->toDateString())
-                ->whereDate('date', '<=', $todayDate)
-                ->count();
-
-            $misses = max(0, $expectedSessions - $actualRecords);
-            $historicalMissesPerSubject[$subjectModel->code] = $misses;
-            $historicalMissesTotal += $misses;
-        }
-    }
-
+    $historicalMissesPerSubject = app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->executePerSubject($user, $subjects);
+    $historicalMissesTotal = array_sum($historicalMissesPerSubject);
     $totalAbsent += $historicalMissesTotal;
     $totalRecords = $totalPresent + $totalLate + $totalAbsent;
     $presentRecords = $totalPresent + $totalLate;
@@ -292,9 +219,11 @@ class HomeController extends Controller
     // 8b. Detailed stats for dashboard donut chart
     // (Already captured above)
 
-    // 8c. Attendance streak (consecutive days present/late, not absent)
+    // 8c. Attendance streak (consecutive days present/late, not absent - optimized query)
     $streakCount = 0;
     $streakRecords = Attendance::where('user_id', $user->id)
+        ->whereDate('date', '>=', now()->subDays(60))
+        ->select('date', 'status')
         ->orderBy('date', 'desc')
         ->get()
         ->groupBy(fn($r) => $r->date->toDateString());

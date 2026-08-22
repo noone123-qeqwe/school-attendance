@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use RuntimeException;
 use App\Services\QrSessionService;
 
@@ -593,61 +594,30 @@ class QrAttendanceController extends Controller
         // The challenge should persist until the user completes verification or it's very old
         // $session->cleanupExpiredChallenge();
 
-        if (!$request->user()->webauthnCredentials()->exists()) {
+        $user = $request->user();
+        if (!$user->webauthnCredentials()->exists()) {
             return response()->json(['success' => false, 'message' => 'Fingerprint verification is not set up on this phone.'], 422);
         }
 
-        // Check if there's already a recent challenge (within last 2 minutes)
-        // This prevents overwriting a challenge that the user is still trying to use
-        if ($session->webauthn_challenge && $session->updated_at && $session->updated_at->gt(now()->subMinutes(2))) {
-            Log::debug('QR verificationOptions - returning existing challenge', [
-                'session_id' => $session->id,
-                'existing_challenge_age' => $session->updated_at->diffInSeconds(now()) . ' seconds',
-                'challenge_length' => strlen($session->webauthn_challenge),
-            ]);
-
-            // Return the existing challenge instead of creating a new one
-            $rpId = $this->getRpId($request);
-            $options = [
-                'challenge' => $session->webauthn_challenge,
-                'rpId' => $rpId,
-                'allowCredentials' => $request->user()->webauthnCredentials
-                    ->map(fn ($credential) => [
-                        'type' => 'public-key',
-                        'id' => $credential->credential_id,
-                    ])
-                    ->values(),
-                'userVerification' => 'required',
-                'timeout' => 60000,
-            ];
-
-            return response()->json(array_merge(['success' => true], $options));
-        }
-
-        // Store challenge in database instead of session for cross-device compatibility
+        // Generate isolated per-student cryptographic challenge
         $challenge = $this->base64UrlEncode(random_bytes(32));
         
-        // Debug: Check if the column exists in the database
-        Log::debug('QR verificationOptions - before storing challenge', [
-            'attendance_session_id' => $session->id,
-            'session_columns' => array_keys($session->getAttributes()),
-            'challenge_to_store' => $challenge,
-            'challenge_length' => strlen($challenge),
-        ]);
+        // Store challenge in student-scoped cache with 3-minute TTL (avoids cross-student race condition)
+        $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
+        Cache::put($cacheKey, $challenge, now()->addMinutes(3));
         
-        $updateResult = $session->update(['webauthn_challenge' => $challenge]);
-        
-        Log::debug('QR verificationOptions - after storing challenge', [
-            'update_result' => $updateResult,
-            'stored_challenge' => $session->webauthn_challenge,
-            'fresh_challenge' => $session->fresh()->webauthn_challenge,
-        ]);
+        // Also update session model challenge for fallback/logging
+        try {
+            $session->update(['webauthn_challenge' => $challenge]);
+        } catch (\Throwable $e) {
+            // Non-critical if DB write fails; cache is primary
+        }
 
         $rpId = $this->getRpId($request);
         $options = [
             'challenge' => $challenge,
             'rpId' => $rpId,
-            'allowCredentials' => $request->user()->webauthnCredentials
+            'allowCredentials' => $user->webauthnCredentials
                 ->map(fn ($credential) => [
                     'type' => 'public-key',
                     'id' => $credential->credential_id,
@@ -657,16 +627,11 @@ class QrAttendanceController extends Controller
             'timeout' => 60000,
         ];
 
-        Log::debug('QR verification challenge generated and stored', [
-            'session_id' => session()->getId(),
-            'stored_challenge' => $challenge,
-            'rpId' => $rpId,
-            'allow_credentials_count' => count($options['allowCredentials']),
-            'attendance_session_id' => $session->id,
-            'challenge_length' => strlen($challenge),
-            'session_updated' => $session->refresh()->webauthn_challenge === $challenge,
-            'database_update_success' => $updateResult,
-            'fresh_session_challenge' => $session->fresh()->webauthn_challenge,
+        Log::debug('QR verification challenge generated and cached for student', [
+            'user_id' => $user->id,
+            'session_id' => $session->id,
+            'cache_key' => $cacheKey,
+            'challenge_preview' => substr($challenge, 0, 8) . '...',
         ]);
 
         return response()->json(array_merge(['success' => true], $options));
@@ -703,53 +668,33 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'This QR code is no longer active.'], 422);
         }
 
-        // Don't clean up expired challenges here either - let them persist until verification completes
-        // Clean up expired challenges
-        // $session->cleanupExpiredChallenge();
-
         // Only check if the entire session has expired, not individual token expiry
         if (!$session->active || now()->gt($session->session_ends_at)) {
             return response()->json(['success' => false, 'message' => 'The attendance session has ended. Please get a new QR code.'], 422);
         }
 
+        $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
+        $challenge = Cache::get($cacheKey) ?: $session->webauthn_challenge;
+
         Log::debug('QR completeVerification request', [
             'session_id' => session()->getId(),
-            'cookie' => $request->cookie(config('session.cookie')),
             'token' => $request->token,
-            'user_id' => optional($request->user())->id,
-            'stored_challenge' => $session->webauthn_challenge,
-            'fresh_challenge' => $session->fresh()->webauthn_challenge,
-            'session_attributes' => $session->getAttributes(),
+            'user_id' => optional($user)->id,
+            'has_cached_challenge' => !empty(Cache::get($cacheKey)),
         ]);
 
         try {
-            if (!$session->webauthn_challenge) {
-                Log::error('QR completeVerification - no challenge in session', [
-                    'session_id' => session()->getId(),
+            if (!$challenge) {
+                Log::error('QR completeVerification - no challenge in cache or session', [
                     'attendance_session_id' => $session->id,
                     'user_id' => $user->id,
-                    'session_updated_at' => $session->updated_at,
-                    'session_active' => $session->active,
-                    'all_session_attributes' => $session->getAttributes(),
+                    'cache_key' => $cacheKey,
                 ]);
-                throw new RuntimeException('No WebAuthn challenge found for this QR session. Please try scanning the QR code again.');
+                throw new RuntimeException('WebAuthn biometric challenge expired or not found. Please try scanning again.');
             }
 
-            Log::debug('QR completeVerification - challenge found', [
-                'challenge_length' => strlen($session->webauthn_challenge),
-                'challenge_preview' => substr($session->webauthn_challenge, 0, 10) . '...',
-                'session_updated_at' => $session->updated_at,
-            ]);
-
             // Store challenge in session for WebauthnService verification
-            session(['webauthn.auth_challenge' => $session->webauthn_challenge]);
-            
-            Log::debug('QR completeVerification - challenge set', [
-                'session_id' => session()->getId(),
-                'attendance_session_id' => $session->id,
-                'challenge_length' => strlen($session->webauthn_challenge),
-                'session_challenge_set' => session('webauthn.auth_challenge') === $session->webauthn_challenge,
-            ]);
+            session(['webauthn.auth_challenge' => $challenge]);
 
             try {
                 $webauthn->verifyAssertion($user, $credential);
@@ -761,14 +706,13 @@ class QrAttendanceController extends Controller
                 session()->forget('webauthn.auth_challenge');
             }
 
-            // Clear challenge from database after successful verification
-            $session->clearWebauthnChallenge();
+            // Clear student's specific challenge from cache
+            Cache::forget($cacheKey);
         } catch (RuntimeException $e) {
             Log::debug('QR completeVerification failure', [
                 'exception' => $e->getMessage(),
-                'session_id' => session()->getId(),
                 'attendance_session_id' => $session->id,
-                'stored_challenge' => $session->webauthn_challenge,
+                'user_id' => $user->id,
                 'credential' => $credential['id'] ?? null,
             ]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
@@ -870,15 +814,23 @@ class QrAttendanceController extends Controller
         $subject = $session->subject;
         $startTime = null;
         
-        // Try to get start time from schedules
+        // Try to get start time from schedules matching current time or active session
         if ($subject && $subject->schedules) {
             $todayName = $now->format('l');
-            $todaySchedule = $subject->schedules->first(function ($schedule) use ($todayName) {
+            $matchingSchedules = $subject->schedules->filter(function ($schedule) use ($todayName) {
                 return strcasecmp(trim($schedule->day ?? ''), $todayName) === 0;
             });
             
-            if ($todaySchedule) {
-                $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
+            if ($matchingSchedules->isNotEmpty()) {
+                $todaySchedule = $matchingSchedules->first(function ($sched) use ($now, $todayDate) {
+                    $slotStart = Carbon::parse($todayDate . ' ' . $sched->start_time)->subMinutes(30);
+                    $slotEnd = Carbon::parse($todayDate . ' ' . $sched->end_time)->addMinutes(30);
+                    return $now->between($slotStart, $slotEnd);
+                }) ?? $matchingSchedules->first();
+
+                if ($todaySchedule) {
+                    $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
+                }
             }
         }
         

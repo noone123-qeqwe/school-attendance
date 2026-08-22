@@ -47,18 +47,30 @@ class WebAuthnController extends Controller
     public function register(Request $request, WebauthnService $webauthn)
     {
         $user = Auth::user();
-        $request->validate([
-            "credential_id" => "required|string",
-            "credential" => "required|array",
-            "device_name" => "nullable|string|max:100",
-        ]);
+        
+        // Accept both nested credential format and flattened credential payload
+        $credentialId = $request->input('credential_id') ?? $request->input('id') ?? $request->input('rawId');
+        $credential = $request->input('credential') ?? [
+            'id' => $request->input('id') ?? $credentialId,
+            'type' => $request->input('type') ?? 'public-key',
+            'response' => $request->input('response') ?? [],
+        ];
+        $deviceName = $request->input('device_name') ?? 'My Device';
 
-        $normalizedCredentialId = rtrim(strtr($request->credential_id, '+/', '-_'), '=');
+        if (!$credentialId || !is_string($credentialId)) {
+            return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
+        }
+
+        if (!is_array($credential) || empty($credential['response'])) {
+            return response()->json(["success" => false, "message" => "Invalid credential data."], 422);
+        }
+
+        $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
 
         $exists = DB::table("webauthn_credentials")
             ->where("user_id", $user->id)
-            ->where(function ($query) use ($request, $normalizedCredentialId) {
-                $query->where('credential_id', $request->credential_id)
+            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                $query->where('credential_id', $credentialId)
                       ->orWhere('credential_id', $normalizedCredentialId);
             })
             ->exists();
@@ -67,14 +79,9 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "message" => "This device is already registered."]);
         }
 
-        $credential = $request->input('credential');
-        if (!is_array($credential)) {
-            return response()->json(["success" => false, "message" => "Invalid credential data."], 422);
-        }
-
         try {
             $stored = $webauthn->storeCredential($user, $credential);
-            $stored->forceFill(['device_name' => $request->device_name ?? 'My Device'])->save();
+            $stored->forceFill(['device_name' => $deviceName])->save();
 
             // Check if user already has recovery codes
             $hasRecoveryCodes = \App\Models\RecoveryCode::where('user_id', $user->id)->exists();
@@ -104,18 +111,38 @@ class WebAuthnController extends Controller
 
     public function loginOptions(Request $request, WebauthnService $webauthn)
     {
-        $request->validate(["student_number" => "required|string"]);
-        
-        $identifier = $request->student_number;
+        $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
+        if (!$raw || !is_string($raw)) {
+            return response()->json(["success" => false, "message" => "Please enter your Student ID or Email."], 422);
+        }
+
+        $identifier = trim($raw);
         $user = User::where("student_number", $identifier)
             ->orWhere("email", $identifier)
             ->orWhere("employee_id", $identifier)
+            ->orWhereRaw("LOWER(email) = ?", [strtolower($identifier)])
+            ->orWhereRaw("LOWER(student_number) = ?", [strtolower($identifier)])
+            ->orWhereRaw("LOWER(employee_id) = ?", [strtolower($identifier)])
             ->first();
 
-        if (!$user) return response()->json(["success" => false, "message" => "Account not found."], 404);
+        // Also check if hyphens/spaces were omitted or added
+        if (!$user) {
+            $clean = preg_replace('/[^a-zA-Z0-9]/', '', $identifier);
+            if ($clean !== '') {
+                $user = User::whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
+                    ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean])
+                    ->first();
+            }
+        }
+
+        if (!$user) {
+            return response()->json(["success" => false, "message" => "Account not found for \"{$identifier}\"."], 404);
+        }
         
-        $credentials = DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
-        if (!$credentials) return response()->json(["success" => false, "message" => "No fingerprint registered for this account."], 404);
+        $credentials = $user->webauthnCredentials()->exists() || DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
+        if (!$credentials) {
+            return response()->json(["success" => false, "message" => "No fingerprint registered for this account."], 404);
+        }
         
         session(["webauthn_login_user_id" => $user->id]);
         $options = $webauthn->authenticationOptions($user);
@@ -164,7 +191,16 @@ class WebAuthnController extends Controller
             app(\App\Services\DeviceBindingService::class)->bind($user, $request);
         }
         
-        return response()->json(["success" => true, "redirect" => $user->isAdmin() ? route("admin.dashboard") : route("home")]);
+        $redirectUrl = route('home');
+        if ($user->isAdmin()) {
+            $redirectUrl = route('admin.dashboard');
+        } elseif ($user->isTeacher()) {
+            $redirectUrl = route('teacher.dashboard');
+        } elseif ($user->isParent()) {
+            $redirectUrl = route('parent.dashboard');
+        }
+
+        return response()->json(["success" => true, "redirect" => $redirectUrl]);
     }
 
     public function removeDevice(Request $request)
@@ -176,7 +212,20 @@ class WebAuthnController extends Controller
 
     public function devices()
     {
-        return response()->json(DB::table("webauthn_credentials")->where("user_id", Auth::id())->select("credential_id", "name", "created_at")->get());
+        $devices = DB::table("webauthn_credentials")
+            ->where("user_id", Auth::id())
+            ->select(["credential_id", "device_name", "created_at"])
+            ->get()
+            ->map(function ($d) {
+                return [
+                    'credential_id' => $d->credential_id,
+                    'name' => $d->device_name ?? 'My Device',
+                    'device_name' => $d->device_name ?? 'My Device',
+                    'created_at' => $d->created_at,
+                ];
+            });
+
+        return response()->json($devices);
     }
 }
 

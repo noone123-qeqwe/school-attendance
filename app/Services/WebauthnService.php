@@ -255,28 +255,34 @@ class WebauthnService
             throw new RuntimeException('Invalid WebAuthn challenge - challenge values do not match.');
         }
 
-        $originHost = parse_url($clientData['origin'] ?? '', PHP_URL_HOST);
-        $rpId = $this->rpId();
+        $origin = $clientData['origin'] ?? '';
+        $originHost = strtolower((string) (parse_url($origin, PHP_URL_HOST) ?: ''));
+        $requestHost = strtolower((string) (request() ? request()->getHost() : ''));
+        $rpId = strtolower((string) $this->rpId());
 
-        if (!$originHost || $originHost !== $rpId) {
+        // Check if origin matches rpId, request host, loopback alias, or is an allowed subdomain
+        $isLoopback = in_array($originHost, ['localhost', '127.0.0.1', '::1']) && in_array($rpId, ['localhost', '127.0.0.1', '::1']);
+        $matchesHost = ($originHost !== '' && ($originHost === $rpId || $originHost === $requestHost || str_ends_with($originHost, '.' . $rpId)));
+        $isAndroidApp = str_starts_with($origin, 'android-app://');
+
+        if (!$matchesHost && !$isLoopback && !$isAndroidApp) {
             Log::warning('WebAuthn origin mismatch', [
                 'origin_host' => $originHost,
+                'request_host' => $requestHost,
                 'rp_id' => $rpId,
-                'full_origin' => $clientData['origin'] ?? null,
+                'full_origin' => $origin,
                 'client_data' => $clientData,
             ]);
             throw new RuntimeException('Invalid WebAuthn origin - host mismatch.');
         }
     }
 
-
-
-    private function rpId(): string
+    public function rpId(): string
     {
         $host = '';
 
-        if (function_exists('request')) {
-            // Try x-forwarded-host first (set by proxies like ngrok)
+        if (function_exists('request') && request()) {
+            // Try x-forwarded-host first (set by proxies like ngrok / tunnels)
             $host = trim((string) request()->header('x-forwarded-host'));
             
             // Fallback to x-forwarded-server
@@ -294,9 +300,9 @@ class WebauthnService
         $host = preg_replace('/:\d+$/', '', $host);
 
         // Fallback to config if still empty
-        if (!$host || $host === 'localhost') {
+        if (!$host) {
             $configHost = parse_url(config('app.url'), PHP_URL_HOST);
-            if ($configHost && $configHost !== 'localhost') {
+            if ($configHost) {
                 $host = $configHost;
             }
         }

@@ -815,33 +815,36 @@ async function registerFingerprint() {
     const btn = document.getElementById('registerFpBtn');
     const msg = document.getElementById('fpMessage');
     btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for fingerprint...';
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for biometric prompt...';
     msg.style.display = 'none';
 
     try {
-        let opts = prefetchOptions;
-        if (!opts) {
-            // Step 1: get challenge from server (fallback)
-            const optRes = await fetch('{{ route("webauthn.register.options") }}', {
-                headers: { 
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
-                    'Accept': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                }
-            });
-            opts = await optRes.json();
-        }
-        
-        // Reset prefetch for next time
-        prefetchOptions = null;
+        // Step 1: Always fetch fresh registration challenge directly from server
+        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+            headers: { 
+                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                'Accept': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            }
+        });
+        const opts = await optRes.json();
 
         // Decode challenge and userId from base64
         const challenge = base64ToUint8Array(opts.challenge);
         const userId    = base64ToUint8Array(opts.user.id);
 
-        // Step 2: prompt device biometric
-        const rpId = opts.rp?.id || window.location.hostname;
-        
+        // Sanitize RP configuration (IP addresses must not be sent as rp.id per WebAuthn spec)
+        const hostname = window.location.hostname;
+        const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
+        const rp = { name: opts.rp?.name || 'School Attendance' };
+        if (opts.rp?.id && !isIp) {
+            rp.id = opts.rp.id;
+        }
+
+        const excludeCredentials = (opts.excludeCredentials || []).map(function(c) {
+            return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
+        });
+
         const timeoutPromise = new Promise((_, reject) => {
             const err = new Error('Biometric prompt timed out. Please try again.');
             err.name = 'TimeoutError';
@@ -851,21 +854,27 @@ async function registerFingerprint() {
         const createPromise = navigator.credentials.create({
             publicKey: {
                 challenge: challenge,
-                rp: { ...opts.rp, id: rpId },
+                rp: rp,
                 user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-                pubKeyCredParams: opts.pubKeyCredParams,
-                authenticatorSelection: opts.authenticatorSelection,
-                timeout: opts.timeout,
-                attestation: opts.attestation
+                pubKeyCredParams: opts.pubKeyCredParams || [
+                    { type: 'public-key', alg: -7 },
+                    { type: 'public-key', alg: -257 }
+                ],
+                authenticatorSelection: opts.authenticatorSelection || {
+                    authenticatorAttachment: 'platform',
+                    userVerification: 'preferred',
+                    requireResidentKey: false
+                },
+                timeout: opts.timeout || 60000,
+                attestation: opts.attestation || 'none',
+                excludeCredentials: excludeCredentials
             }
         });
 
         const credential = await Promise.race([createPromise, timeoutPromise]);
 
         // Step 3: encode credential id and attestation object
-        var rawId = new Uint8Array(credential.rawId);
         var credentialId = bufferToBase64Url(credential.rawId);
-
         var attestationObject = bufferToBase64Url(credential.response.attestationObject);
         var clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
 
@@ -873,8 +882,9 @@ async function registerFingerprint() {
         var ua = navigator.userAgent;
         var deviceName = ua.indexOf('iPhone') !== -1 ? 'iPhone' :
                          ua.indexOf('iPad') !== -1 ? 'iPad' :
-                         ua.indexOf('Android') !== -1 ? 'Android Device' :
-                         ua.indexOf('Windows') !== -1 ? 'Windows Device' : 'My Device';
+                         ua.indexOf('Android') !== -1 ? 'Android Mobile' :
+                         ua.indexOf('Windows') !== -1 ? 'Windows PC' :
+                         ua.indexOf('Mac') !== -1 ? 'Mac Device' : 'Mobile Device';
 
         // Step 4: save to server
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
@@ -903,31 +913,29 @@ async function registerFingerprint() {
         msg.style.display = 'block';
         if (result.success) {
             msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:10px 14px;border-radius:10px;';
-            msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>' + result.message;
+            msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>' + (result.message || 'Fingerprint registered successfully!');
+            btn.innerHTML = '<i class="bi bi-check2 me-2"></i>Registered';
             setTimeout(function() { location.reload(); }, 1500);
         } else {
             msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:10px;';
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + result.message;
+            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (result.message || 'Registration failed.');
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
-            prefetchWebAuthn();
         }
     } catch(err) {
         msg.style.display = 'block';
         msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:10px;';
         if (err.name === 'NotAllowedError') {
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Fingerprint cancelled or not allowed.';
+            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Biometric prompt was cancelled.';
         } else if (err.name === 'InvalidStateError') {
             msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>This device is already registered.';
         } else if (err.name === 'NotReadableError') {
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Fingerprint cancelled or device is not configured for biometric login.';
+            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Device biometric sensor is unavailable or locked.';
         } else {
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + err.name + ': ' + err.message;
+            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (err.message || 'Registration failed.');
         }
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
-        
-        // Prefetch a new challenge for next attempt
         prefetchWebAuthn();
     }
 }
@@ -950,6 +958,19 @@ document.querySelectorAll('.stab').forEach(btn => {
             prefetchWebAuthn();
         }
     });
+});
+
+// Auto-switch to fingerprint tab if navigated from direct link
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.location.hash === '#tab-fingerprint' || localStorage.getItem('active_settings_tab') === 'fingerprint') {
+        localStorage.removeItem('active_settings_tab');
+        const fpTabBtn = Array.from(document.querySelectorAll('.stab')).find(b => b.textContent.trim() === 'Fingerprint');
+        if (fpTabBtn) {
+            switchTab('fingerprint', fpTabBtn);
+            loadDevices();
+            prefetchWebAuthn();
+        }
+    }
 });
 
 // OTP digit handling in settings

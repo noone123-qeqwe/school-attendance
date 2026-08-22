@@ -88,4 +88,33 @@ class WebPushNotificationTest extends TestCase
         $service = app(WebPushService::class);
         $this->assertInstanceOf(WebPushService::class, $service);
     }
+
+    public function test_async_web_push_job_dispatches_to_queue(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $user = User::factory()->create();
+        $service = app(WebPushService::class);
+
+        $service->sendToUserAsync($user, 'Test Title', 'Test Body', ['url' => '/home']);
+
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\SendWebPushJob::class, function ($job) use ($user) {
+            return $job->targetType === 'user' && $job->targetId === $user->id;
+        });
+    }
+
+    public function test_async_parents_push_job_dispatches_to_queue(): void
+    {
+        \Illuminate\Support\Facades\Queue::fake();
+
+        $student = User::factory()->create(['role' => 'student']);
+        $service = app(WebPushService::class);
+
+        $service->sendToParentsOfStudentAsync($student, 'Student Alert', 'Present in Class');
+
+        \Illuminate\Support\Facades\Queue::assertPushed(\App\Jobs\SendWebPushJob::class, function ($job) use ($student) {
+            return $job->targetType === 'parents' && $job->targetId === $student->id;
+        });
+    }
 }
+

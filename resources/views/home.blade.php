@@ -130,15 +130,29 @@
                 <div style="color: #b39b82; font-size: 0.85rem; font-weight: 500;">
                     {{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Sem {{ Auth::user()->semester }}
                 </div>
-                @if(isset($totalAbsent) && $totalAbsent === 0 && isset($totalPresent) && $totalPresent > 0)
-                    <div class="mt-2">
+                <div class="mt-2 d-flex gap-2 flex-wrap align-items-center">
+                    @if(isset($totalAbsent) && $totalAbsent === 0 && isset($totalPresent) && $totalPresent > 0)
                         <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);"><i class="bi bi-star-fill"></i> Perfect Attendance</span>
-                    </div>
-                @elseif(isset($totalPresent) && $totalPresent > 3)
-                    <div class="mt-2">
+                    @elseif(isset($totalPresent) && $totalPresent > 3)
                         <span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);"><i class="bi bi-fire"></i> {{ $totalPresent }} Class Streak</span>
-                    </div>
-                @endif
+                    @endif
+                    @php
+                        $hasFingerprint = Auth::user()->webauthnCredentials()->exists();
+                    @endphp
+                    @if($hasFingerprint)
+                        <a href="{{ route('settings') }}#tab-fingerprint" style="text-decoration:none;">
+                            <span style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #4ade80; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Biometric Authentication Enabled">
+                                <i class="bi bi-fingerprint"></i> Biometric Verified
+                            </span>
+                        </a>
+                    @else
+                        <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" style="text-decoration:none;">
+                            <span style="background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.25); color: var(--gold,#cfa46f); padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Click to register device fingerprint">
+                                <i class="bi bi-fingerprint"></i> Set up Fingerprint
+                            </span>
+                        </a>
+                    @endif
+                </div>
                 <!-- Mobile-only compact CTA -->
                 <div class="d-md-none mt-3 d-flex gap-2">
                     <button type="button" onclick="openStudentScanner()" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #800000, #991b1b); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; box-shadow: 0 4px 12px rgba(128,0,0,0.3);">

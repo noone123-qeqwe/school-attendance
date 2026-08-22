@@ -291,6 +291,34 @@
                     </div>
                 </div>
 
+                <!-- Fingerprint / Biometric Device -->
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.08);">
+                    <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Fingerprint / Biometric Login</div>
+                    
+                    <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:12px;padding:14px 18px;font-size:.85rem;margin-bottom:14px;">
+                        <div style="display:flex;align-items:flex-start;gap:10px;">
+                            <i class="bi bi-exclamation-triangle" style="font-size:1.1rem;flex-shrink:0;margin-top:2px;"></i>
+                            <div id="webauthnUnsupportedMsg" style="font-size:.8rem;line-height:1.4;">
+                                Biometric login is not supported on this browser or device.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                        <div id="deviceList">
+                            <div style="text-align:center;padding:16px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
+                                <i class="bi bi-fingerprint" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
+                                No fingerprint registered yet.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="tch-save-btn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);color:white;">
+                        <i class="bi bi-fingerprint me-2"></i>Register This Device
+                    </button>
+                    <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
+                </div>
+
                 <!-- Recovery Codes -->
                 <div>
                     <div style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Recovery Codes</div>
@@ -482,7 +510,7 @@ function generateRecoveryCodes() {
             container.innerHTML = '';
             data.codes.forEach(code => {
                 const codeEl = document.createElement('div');
-                codeEl.style.cssText = 'background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px;font-family:monospace;font-size:1.1rem;color:#1e293b;letter-spacing:1px;font-weight:700;';
+                codeEl.style.cssText = 'background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px;font-family:monospace;font-size:1.1rem;color:#f3e7cd;letter-spacing:1px;font-weight:700;';
                 codeEl.textContent = code;
                 container.appendChild(codeEl);
             });
@@ -498,5 +526,191 @@ function generateRecoveryCodes() {
         alert('Network error. Please try again.');
     });
 }
+
+// ── WebAuthn Fingerprint Registration ──
+async function loadDevices() {
+    if (!window.PublicKeyCredential) {
+        const btn = document.getElementById('registerFpBtn');
+        if (btn) btn.style.display = 'none';
+        const unsupported = document.getElementById('webauthnUnsupported');
+        if (unsupported) unsupported.style.display = 'block';
+        return;
+    }
+    try {
+        const res = await fetch('{{ route("webauthn.devices") }}');
+        const devices = await res.json();
+        const list = document.getElementById('deviceList');
+        const noDevices = document.getElementById('noDevices');
+        if (devices.length > 0) {
+            noDevices.style.display = 'none';
+            list.innerHTML = '';
+            
+            const registeredMsg = document.createElement('div');
+            registeredMsg.style.cssText = 'text-align:center;padding:12px;color:#4ade80;font-size:.85rem;background:rgba(74,222,128,0.1);border-radius:10px;border:1px solid rgba(74,222,128,0.2);margin-bottom:12px;font-weight:600;';
+            registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>You have registered a fingerprint.';
+            list.appendChild(registeredMsg);
+
+            devices.forEach(d => {
+                const div = document.createElement('div');
+                div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,215,145,0.06);';
+                div.innerHTML = `
+                    <div style="width:34px;height:34px;border-radius:9px;background:rgba(74,222,128,0.1);display:flex;align-items:center;justify-content:center;color:#4ade80;flex-shrink:0;">
+                        <i class="bi bi-fingerprint"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:.85rem;font-weight:600;color:#f3e7cd;">${d.name || d.device_name || "My Device"}</div>
+                        <div style="font-size:.7rem;color:#b39b82;">Registered ${new Date(d.created_at).toLocaleDateString()}</div>
+                    </div>
+                    <button type="button" onclick="removeDevice('${d.credential_id}', this)"
+                        style="padding:4px 10px;border-radius:6px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:.72rem;font-weight:600;cursor:pointer;">
+                        Remove
+                    </button>`;
+                list.appendChild(div);
+            });
+        }
+    } catch(e) {}
+}
+
+function normalizeBase64(base64) {
+    base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
+    var padding = base64.length % 4;
+    if (padding) base64 += '===='.slice(padding);
+    return base64;
+}
+
+function base64ToUint8Array(base64) {
+    base64 = normalizeBase64(base64);
+    var binary = atob(base64);
+    var bytes = new Uint8Array(binary.length);
+    for (var i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function bufferToBase64Url(buffer) {
+    var bytes = new Uint8Array(buffer);
+    var binary = '';
+    for (var i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+let prefetchOptions = null;
+async function prefetchWebAuthn() {
+    try {
+        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+        });
+        prefetchOptions = await optRes.json();
+    } catch(e) {}
+}
+
+async function registerFingerprint() {
+    const btn = document.getElementById('registerFpBtn');
+    const msg = document.getElementById('fpMessage');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for biometric prompt...';
+    msg.style.display = 'none';
+
+    try {
+        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }
+        });
+        const opts = await optRes.json();
+
+        const challenge = base64ToUint8Array(opts.challenge);
+        const userId = base64ToUint8Array(opts.user.id);
+        const hostname = window.location.hostname;
+        const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
+        const rp = { name: opts.rp?.name || 'School Attendance' };
+        if (opts.rp?.id && !isIp) {
+            rp.id = opts.rp.id;
+        }
+
+        const excludeCredentials = (opts.excludeCredentials || []).map(c => ({
+            type: c.type || 'public-key',
+            id: base64ToUint8Array(c.id)
+        }));
+
+        const credential = await navigator.credentials.create({
+            publicKey: {
+                challenge,
+                rp: rp,
+                user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
+                pubKeyCredParams: opts.pubKeyCredParams || [
+                    { type: 'public-key', alg: -7 },
+                    { type: 'public-key', alg: -257 }
+                ],
+                authenticatorSelection: opts.authenticatorSelection || {
+                    authenticatorAttachment: 'platform',
+                    userVerification: 'preferred',
+                    requireResidentKey: false
+                },
+                timeout: opts.timeout || 60000,
+                attestation: opts.attestation || 'none',
+                excludeCredentials
+            }
+        });
+
+        const rawId = bufferToBase64Url(credential.rawId);
+        const clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
+        const attestationObject = bufferToBase64Url(credential.response.attestationObject);
+
+        const saveRes = await fetch('{{ route("webauthn.register") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+            body: JSON.stringify({
+                credential_id: rawId,
+                credential: {
+                    id: credential.id,
+                    type: credential.type,
+                    response: {
+                        attestationObject: attestationObject,
+                        clientDataJSON: clientDataJSON
+                    }
+                },
+                device_name: navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser'
+            })
+        });
+        const result = await saveRes.json();
+
+        if (result.success) {
+            msg.style.display = 'block';
+            msg.style.color = '#4ade80';
+            msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>Fingerprint registered successfully!';
+            btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
+            btn.disabled = false;
+            loadDevices();
+        } else {
+            throw new Error(result.message || 'Registration failed');
+        }
+    } catch(err) {
+        msg.style.display = 'block';
+        msg.style.color = '#f87171';
+        msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (err.message || 'Fingerprint registration cancelled.');
+        btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
+        btn.disabled = false;
+    }
+}
+
+async function removeDevice(id, btn) {
+    if (!confirm('Remove this fingerprint device?')) return;
+    try {
+        await fetch('{{ route("webauthn.remove") }}', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+            body: JSON.stringify({ credential_id: id })
+        });
+        loadDevices();
+    } catch(e) {}
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadDevices();
+    prefetchWebAuthn();
+});
 </script>
 @endsection
+

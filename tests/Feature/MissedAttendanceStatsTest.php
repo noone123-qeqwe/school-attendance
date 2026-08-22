@@ -133,4 +133,98 @@ class MissedAttendanceStatsTest extends TestCase
 
         Carbon::setTestNow();
     }
+
+    public function test_calculate_missed_attendance_action_returns_correct_miss_count(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-20 18:00:00', 'Asia/Manila')); // Thursday evening
+
+        AcademicYear::create([
+            'name' => '2026-2027',
+            'start_date' => '2026-08-17', // Monday
+            'end_date' => '2026-12-18',
+            'is_current' => true,
+        ]);
+
+        $student = User::factory()->create([
+            'role' => 'student',
+            'student_number' => '2000004',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        $subject = Subject::create([
+            'code' => 'CS301',
+            'name' => 'Database Systems',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        Schedule::create([
+            'subject_id' => $subject->id,
+            'day' => 'Tuesday',
+            'start_time' => '10:00:00',
+            'end_time' => '12:00:00',
+        ]);
+
+        $action = new \App\Actions\Attendance\CalculateMissedAttendanceAction();
+        $misses = $action->execute($student);
+
+        // Tuesday session had no clock-in, so 1 miss expected
+        $this->assertEquals(1, $misses);
+
+        $perSubject = $action->executePerSubject($student);
+        $this->assertArrayHasKey('CS301', $perSubject);
+        $this->assertEquals(1, $perSubject['CS301']);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_student_dashboard_populates_subject_stats_with_historical_misses(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-20 18:00:00', 'Asia/Manila')); // Thursday evening
+
+        AcademicYear::create([
+            'name' => '2026-2027',
+            'start_date' => '2026-08-17', // Monday
+            'end_date' => '2026-12-18',
+            'is_current' => true,
+        ]);
+
+        $student = User::factory()->create([
+            'role' => 'student',
+            'student_number' => '2000005',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        $subject = Subject::create([
+            'code' => 'CS302',
+            'name' => 'Operating Systems',
+            'year_level' => 3,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        Schedule::create([
+            'subject_id' => $subject->id,
+            'day' => 'Monday',
+            'start_time' => '10:00:00',
+            'end_time' => '12:00:00',
+        ]);
+
+        $response = $this->actingAs($student)->get('/home');
+        $response->assertStatus(200);
+        $response->assertViewHas('subjectStats');
+
+        $subjectStats = $response->viewData('subjectStats');
+        $cs302Stat = $subjectStats->firstWhere('code', 'CS302');
+        $this->assertNotNull($cs302Stat);
+        $this->assertEquals(1, $cs302Stat->absent);
+
+        Carbon::setTestNow();
+    }
 }
+

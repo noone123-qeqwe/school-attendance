@@ -126,7 +126,7 @@ class AttendanceAutoCloseService
             // Check if dates are consecutive (allowing for weekends/holidays)
             $dates = $recentAttendance->pluck('date')->map(function($date) {
                 return $date instanceof Carbon ? $date : Carbon::parse($date);
-            })->sort();
+            })->sort()->values();
             
             $isConsecutive = true;
             for ($i = 1; $i < $dates->count(); $i++) {

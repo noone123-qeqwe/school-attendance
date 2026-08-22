@@ -88,5 +88,7 @@ class PwaTest extends TestCase
         $response->assertSee('pwaInstallBanner', false);
         $response->assertSee('pwaIosModal', false);
         $response->assertSee('pwaUpdateBanner', false);
+        $response->assertSee('pwa-install-trigger', false);
+        $response->assertSee('Install Attendance App', false);
     }
 }

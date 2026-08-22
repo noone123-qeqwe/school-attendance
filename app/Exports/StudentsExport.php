@@ -2,11 +2,14 @@
 
 namespace App\Exports;
 
+use App\Traits\SanitizesExport;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class StudentsExport implements FromCollection, WithHeadings
 {
+    use SanitizesExport;
+
     protected $students;
 
     public function __construct($students)
@@ -18,9 +21,9 @@ class StudentsExport implements FromCollection, WithHeadings
     {
         return $this->students->map(function ($student) {
             return [
-                'name' => $student->name,
-                'student_id' => $student->student_number ?? 'N/A',
-                'email' => $student->email,
+                'name' => $this->sanitizeField($student->name),
+                'student_id' => $this->sanitizeField($student->student_number ?? 'N/A'),
+                'email' => $this->sanitizeField($student->email),
                 'attendance_rate' => $student->attendance_rate . '%'
             ];
         });

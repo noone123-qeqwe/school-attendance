@@ -93,11 +93,20 @@ if (!$scheduledDays->contains($todayFull)) {
 }
 
     // 2. TIME & LOCKOUT VALIDATION
-    $todaySchedule = $subject->schedules->where('day', $todayFull)->first();
+    $todaySchedules = $subject->schedules->filter(function ($sched) use ($todayFull) {
+        return strcasecmp(trim($sched->day ?? ''), $todayFull) === 0;
+    });
     
-    if (!$todaySchedule) {
+    if ($todaySchedules->isEmpty()) {
         return redirect()->back()->with('error', 'No schedule found for this subject today.');
     }
+
+    // Match the specific schedule slot for the current time
+    $todaySchedule = $todaySchedules->first(function ($sched) use ($now, $todayDate) {
+        $slotStart = \Carbon\Carbon::parse($todayDate . ' ' . $sched->start_time)->subMinutes(15);
+        $slotEnd = \Carbon\Carbon::parse($todayDate . ' ' . $sched->end_time);
+        return $now->between($slotStart, $slotEnd);
+    }) ?? $todaySchedules->first();
     
     $startTime = \Carbon\Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
     $endTime = \Carbon\Carbon::parse($todayDate . ' ' . $todaySchedule->end_time);
@@ -202,7 +211,7 @@ event(new \App\Events\AttendanceMarked($attendance));
                 $user,
                 $pushTitle,
                 $pushBody,
-                ['url' => route('parent.attendance.records', ['child' => $user->id])]
+                ['url' => route('parent.child', ['child' => $user->id])]
             );
 
             // Push to student if marked Late

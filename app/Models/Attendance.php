@@ -99,7 +99,7 @@ class Attendance extends Model
     public function setSubjectCodeAttribute($value)
     {
         $this->attributes['subject_code'] = $value;
-        if ($value) {
+        if ($value && !isset($this->attributes['subject_id'])) {
             $subject = \App\Models\Subject::where('code', $value)->first();
             if ($subject) {
                 $this->attributes['subject_id'] = $subject->id;

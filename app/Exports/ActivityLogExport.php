@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Traits\SanitizesExport;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -11,6 +12,8 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
+    use SanitizesExport;
+
     protected $logs;
 
     public function __construct($logs)
@@ -56,12 +59,12 @@ class ActivityLogExport implements FromCollection, WithHeadings, WithMapping, Wi
 
         return [
             $row->created_at->format('Y-m-d H:i:s'),
-            $row->causer->name ?? 'System',
-            $row->causer->email ?? 'System Process',
-            ucfirst($row->description),
-            $row->subject_type ? (class_basename($row->subject_type) . ($row->subject_id ? " #{$row->subject_id}" : '')) : 'N/A',
-            $row->properties['ip'] ?? '127.0.0.1',
-            $changes
+            $this->sanitizeField($row->causer->name ?? 'System'),
+            $this->sanitizeField($row->causer->email ?? 'System Process'),
+            $this->sanitizeField(ucfirst($row->description)),
+            $this->sanitizeField($row->subject_type ? (class_basename($row->subject_type) . ($row->subject_id ? " #{$row->subject_id}" : '')) : 'N/A'),
+            $this->sanitizeField($row->properties['ip'] ?? '127.0.0.1'),
+            $this->sanitizeField($changes)
         ];
     }
 

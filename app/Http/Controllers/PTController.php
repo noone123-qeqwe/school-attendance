@@ -65,82 +65,80 @@ class PTController extends Controller
     public function login(LoginRequest $request)
     {
         // Validation is handled by LoginRequest
+        $identifier = trim($request->identifier);
+        $password   = $request->password;
+        $remember   = $request->has('remember') ? $request->boolean('remember') : true;
 
-    $identifier = trim($request->identifier);
-    $password   = $request->password;
-    $remember   = $request->has('remember') ? $request->boolean('remember') : true;
-    
-    Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
+        Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
 
-    // Auto-detect: if no '@' symbol, treat as student number
-    if (!str_contains($identifier, '@')) {
-        // Student login via student_number
-        $credentials = ['student_number' => $identifier, 'password' => $password];
-        if (Auth::attempt($credentials, $remember)) {
-            /** @var \App\Models\User $user */
-            $user = Auth::user();
-            if (!$user->isStudent()) {
-                Auth::logout();
-                $request->session()->flush();
-                return back()->withInput($request->only('identifier'))
-                    ->withErrors(['identifier' => 'Use your email address to sign in.']);
+        // Look up the user by student_number, email, or employee_id
+        $user = User::where('student_number', $identifier)
+            ->orWhere('email', $identifier)
+            ->orWhere('employee_id', $identifier)
+            ->orWhereRaw('LOWER(email) = ?', [strtolower($identifier)])
+            ->orWhereRaw('LOWER(student_number) = ?', [strtolower($identifier)])
+            ->orWhereRaw('LOWER(employee_id) = ?', [strtolower($identifier)])
+            ->first();
+
+        // Also check with non-alphanumeric stripped (in case of dashes/spaces)
+        if (!$user) {
+            $clean = preg_replace('/[^a-zA-Z0-9]/', '', $identifier);
+            if ($clean !== '') {
+                $user = User::whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
+                    ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean])
+                    ->first();
             }
-            
-            Log::info('Student login successful', ['user_id' => Auth::id(), 'student_number' => $identifier]);
-            
-            // Set role-specific session
-            $request->session()->regenerate();
-            $request->session()->put('user_role', 'student');
-            $request->session()->put('login_timestamp', now());
-            $request->session()->save(); // Ensure session is saved
-            
-            Log::info('Session set for student', ['session_role' => $request->session()->get('user_role')]);
-            
-            app(DeviceBindingService::class)->bind($user, $request);
-            if ($request->filled('qr_token')) {
-                return redirect()->route('qr.scan', ['token' => $request->qr_token]);
-            }
-            return redirect()->intended('/home');
         }
-    } else {
-        // Email login for admin/teacher
-        $credentials = ['email' => $identifier, 'password' => $password];
-        if (Auth::attempt($credentials, $remember)) {
-            /** @var \App\Models\User $user */
-            $user = Auth::user();
-            
-            Log::info('Email login successful', [
+
+        $authenticated = false;
+        if ($user) {
+            // Attempt login with the found user's email
+            $authenticated = Auth::attempt(['email' => $user->email, 'password' => $password], $remember);
+        } else {
+            // Fallback standard attempts
+            $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password], $remember)
+                || Auth::attempt(['email' => $identifier, 'password' => $password], $remember);
+            if ($authenticated) {
+                $user = Auth::user();
+            }
+        }
+
+        if ($authenticated && $user) {
+            Log::info('Login successful', [
                 'user_id' => $user->id,
                 'role' => $user->role,
-                'email' => $user->email,
+                'identifier' => $identifier,
                 'session_id' => $request->session()->getId()
             ]);
-            
-            // Set role-specific session
+
             $request->session()->regenerate();
             $request->session()->put('user_role', $user->role);
             $request->session()->put('login_timestamp', now()->toString());
-            
-            // Redirect based on role
+
+            // Handle student role
+            if ($user->isStudent()) {
+                $request->session()->put('user_role', 'student');
+                $request->session()->put('login_timestamp', now());
+                $request->session()->save();
+
+                app(DeviceBindingService::class)->bind($user, $request);
+
+                if ($request->filled('qr_token')) {
+                    return redirect()->route('qr.scan', ['token' => $request->qr_token]);
+                }
+                return redirect()->intended('/home');
+            }
+
+            // Handle admin role
             if ($user->isAdmin()) {
                 Log::info('Admin login successful', ['user_id' => $user->id, 'session_id' => $request->session()->getId()]);
-                
-                // Bypass 2FA in local and testing environments
+
                 if (app()->environment('local', 'testing')) {
                     $request->session()->put('admin_2fa_verified', true);
-                    $request->session()->save(); // Force session save
-                    
-                    Log::info('Admin 2FA bypassed (local env)', [
-                        'user_id' => $user->id,
-                        'session_id' => $request->session()->getId(),
-                        'session_verified' => $request->session()->get('admin_2fa_verified'),
-                        'all_session_data' => $request->session()->all()
-                    ]);
-                    
+                    $request->session()->save();
                     return redirect()->route('admin.dashboard');
                 }
-                
-                // Generate 2FA OTP for admin in production
+
                 $otp = \App\Models\Otp::generate($user->id, 'admin_login');
                 try {
                     \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
@@ -148,19 +146,20 @@ class PTController extends Controller
                     Log::error('Failed to send admin 2FA OTP: ' . $e->getMessage());
                 }
                 return redirect()->route('admin.2fa.form')->with('info', 'Please check your email for the verification code.');
-            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
-                return redirect()->route('teacher.dashboard');
-            } elseif ($user->isParent()) {
-                return redirect()->route('parent.dashboard');
-            } else {
-                // Student logging in with email
-                Auth::logout();
-                $request->session()->flush();
-                return back()->withInput($request->only('identifier'))
-                    ->withErrors(['identifier' => 'Students must log in using their student number.']);
             }
+
+            // Handle teacher / dept head role
+            if ($user->isTeacher() || $user->isDepartmentHead()) {
+                return redirect()->route('teacher.dashboard');
+            }
+
+            // Handle parent role
+            if ($user->isParent()) {
+                return redirect()->route('parent.dashboard');
+            }
+
+            return redirect()->intended('/home');
         }
-    }
 
         $response = back()->withInput($request->only('identifier'))
             ->withErrors(['identifier' => 'Incorrect ID/email or password.']);

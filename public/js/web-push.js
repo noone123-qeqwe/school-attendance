@@ -54,6 +54,11 @@ window.WebPushManager = (function() {
                 syncSubscription(subscription);
             } else {
                 console.log('[WebPush] User is not subscribed.');
+                if (Notification.permission === 'granted') {
+                    subscribe();
+                } else if (Notification.permission === 'default') {
+                    setTimeout(showPushPromptBanner, 3500);
+                }
             }
 
             updateUI(true, isSubscribed);
@@ -261,6 +266,68 @@ window.WebPushManager = (function() {
         }
     }
 
+    // Floating Push Notification Prompt Banner
+    function showPushPromptBanner() {
+        if (localStorage.getItem('push_prompt_dismissed_until')) {
+            const dismissedUntil = parseInt(localStorage.getItem('push_prompt_dismissed_until'), 10);
+            if (Date.now() < dismissedUntil) return;
+        }
+
+        if (document.getElementById('webPushPromptBanner')) return;
+
+        const banner = document.createElement('div');
+        banner.id = 'webPushPromptBanner';
+        banner.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            max-width: 380px;
+            background: rgba(26, 17, 16, 0.98);
+            border: 1px solid rgba(207, 164, 111, 0.4);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 25px rgba(207, 164, 111, 0.15);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 99998;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            animation: pwaSlideUp 0.4s ease;
+        `;
+
+        banner.innerHTML = `
+            <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,rgba(207,164,111,0.2),rgba(207,164,111,0.05));border:1px solid rgba(207,164,111,0.3);display:flex;align-items:center;justify-content:center;color:#CFA46F;font-size:1.1rem;flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="font-size:0.92rem;font-weight:700;color:#F3E7CD;margin-bottom:3px;">Enable Live Alerts</div>
+                <div style="font-size:0.8rem;color:#B39B82;line-height:1.4;margin-bottom:12px;">Get instant class announcements, clock-in confirmations, and system updates directly on this device.</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button type="button" id="enablePushBannerBtn" style="background:linear-gradient(135deg,#CFA46F,#8F6E4A);color:#110A0A;border:none;border-radius:8px;padding:7px 14px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.2s;">
+                        Enable Alerts
+                    </button>
+                    <button type="button" id="dismissPushBannerBtn" style="background:transparent;color:#B39B82;border:none;padding:7px 10px;font-size:0.8rem;cursor:pointer;">
+                        Not now
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(banner);
+
+        document.getElementById('enablePushBannerBtn')?.addEventListener('click', async () => {
+            banner.remove();
+            await subscribe();
+        });
+
+        document.getElementById('dismissPushBannerBtn')?.addEventListener('click', () => {
+            banner.remove();
+            // Suppress prompt for 3 days
+            localStorage.setItem('push_prompt_dismissed_until', (Date.now() + 3 * 24 * 60 * 60 * 1000).toString());
+        });
+    }
+
     // Auto-init on DOM ready
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -273,6 +340,7 @@ window.WebPushManager = (function() {
         subscribe: subscribe,
         unsubscribe: unsubscribe,
         sendTest: sendTest,
+        showPushPromptBanner: showPushPromptBanner,
         isSupported: isSupported,
         isSubscribed: () => isSubscribed
     };

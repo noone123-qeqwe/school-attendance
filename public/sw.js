@@ -1,7 +1,8 @@
-const CACHE_VERSION = 'v7';
-const CACHE_NAME = `attendance-v7`;
+/* BUMP_TIMESTAMP: 2026-08-22T18:03:54+08:00 */
+const CACHE_VERSION = 'v11';
+const CACHE_NAME = `attendance-v11`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v7`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v11`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
@@ -67,6 +68,17 @@ self.addEventListener('activate', (event) => {
             }
         }).then(() => {
             return self.clients.claim();
+        }).then(() => {
+            // Broadcast update event to all active desktop and mobile window clients
+            return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+                clients.forEach((client) => {
+                    client.postMessage({
+                        type: 'SW_UPDATED',
+                        version: CACHE_VERSION,
+                        timestamp: Date.now()
+                    });
+                });
+            });
         })
     );
 });
@@ -227,10 +239,11 @@ self.addEventListener('notificationclick', (event) => {
 // Message Listener (skipWaiting, clearCache)
 self.addEventListener('message', (event) => {
     if (!event.data) return;
-    if (event.data.action === 'skipWaiting') {
+    const action = event.data.action || event.data.type;
+    if (action === 'skipWaiting' || action === 'SKIP_WAITING') {
         self.skipWaiting();
     }
-    if (event.data.action === 'clearCache') {
+    if (action === 'clearCache' || action === 'CLEAR_CACHE') {
         caches.keys().then((keys) => {
             return Promise.all(keys.map((k) => caches.delete(k)));
         });

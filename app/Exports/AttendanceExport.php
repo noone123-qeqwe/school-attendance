@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Attendance;
+use App\Traits\SanitizesExport;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -12,6 +13,8 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class AttendanceExport implements FromCollection, WithHeadings, WithMapping, WithStyles, ShouldAutoSize
 {
+    use SanitizesExport;
+
     protected $logs;
 
     public function __construct($logs)
@@ -40,12 +43,12 @@ class AttendanceExport implements FromCollection, WithHeadings, WithMapping, Wit
     public function map($row): array
     {
         return [
-            $row->user?->name ?? 'N/A',
-            $row->user?->student_number ?? 'N/A',
-            $row->subject_code,
-            $row->subject?->name ?? 'N/A',
-            $row->date,
-            $row->status,
+            $this->sanitizeField($row->user?->name ?? 'N/A'),
+            $this->sanitizeField($row->user?->student_number ?? 'N/A'),
+            $this->sanitizeField($row->subject_code),
+            $this->sanitizeField($row->subject?->name ?? 'N/A'),
+            $this->sanitizeField($row->date),
+            $this->sanitizeField($row->status),
             $row->excused ? 'Yes' : 'No',
         ];
     }

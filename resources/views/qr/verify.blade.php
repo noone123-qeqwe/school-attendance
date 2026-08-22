@@ -537,10 +537,10 @@ function doFingerprint() {
             submitAttendance(credentialData);
         }).catch(function(err) {
             fingerprintInProgress = false;
-            if (err.name === 'NotAllowedError') {
-                showFpError('Fingerprint was cancelled. You must verify to clock in.');
+            if (err.name === 'NotAllowedError' || err.name === 'InvalidStateError') {
+                showFpError('Fingerprint was cancelled or not found on this browser. If you switched browsers, <a href="{{ route("settings") }}#tab-fingerprint" style="color:#2563eb;font-weight:700;text-decoration:underline;">register this browser in Settings</a>.');
             } else {
-                showFpError(err.name + ': ' + err.message);
+                showFpError((err.name || 'Error') + ': ' + (err.message || 'Verification failed.'));
             }
         });
     };

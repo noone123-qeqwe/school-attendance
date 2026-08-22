@@ -68,7 +68,9 @@ class SystemUpdateController extends Controller
         $swVersion = 'v8';
         if (File::exists($swPath)) {
             $content = File::get($swPath);
-            if (preg_match('/CACHE_NAME\s*=\s*[\'"][^\'"]*v(\d+)[\'"]/', $content, $matches)) {
+            if (preg_match('/CACHE_VERSION\s*=\s*[\'"]v?(\d+)[\'"]/', $content, $matches)) {
+                $swVersion = 'v' . $matches[1];
+            } elseif (preg_match('/CACHE_NAME\s*=\s*[`\'"][^`\'"]*v(\d+)[`\'"]/', $content, $matches)) {
                 $swVersion = 'v' . $matches[1];
             }
         }
@@ -335,9 +337,33 @@ class SystemUpdateController extends Controller
             ];
         }
 
+        // 5. Broadcast Push Announcement to All Registered User Devices
+        try {
+            $updateTitle = '🚀 System Update Complete';
+            $updateBody = 'A new system update was installed. All features and performance optimizations are now live!';
+            
+            app(\App\Services\WebPushService::class)->broadcastAnnouncement(
+                $updateTitle,
+                $updateBody,
+                ['url' => route('intro'), 'tag' => 'sys-update-' . time()]
+            );
+
+            $results[] = [
+                'step' => 'Live User Broadcast & Push Announcement',
+                'status' => 'success',
+                'message' => 'Instant push notification broadcast dispatched to all connected student, teacher, and parent devices.'
+            ];
+        } catch (\Throwable $e) {
+            $results[] = [
+                'step' => 'Live User Broadcast & Push Announcement',
+                'status' => 'warning',
+                'message' => 'Push broadcast notice: ' . $e->getMessage()
+            ];
+        }
+
         return response()->json([
             'success' => $overallSuccess,
-            'message' => $overallSuccess ? 'Full 1-click system update completed successfully!' : 'System update completed with warnings or migration errors.',
+            'message' => $overallSuccess ? 'Full 1-click system update completed and broadcasted to all users successfully!' : 'System update completed with warnings or migration errors.',
             'results' => $results,
             'timestamp' => now()->format('M d, Y h:i:s A')
         ]);
@@ -410,10 +436,31 @@ class SystemUpdateController extends Controller
         abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
         try {
             $newVer = $this->bumpPwaVersionInternal();
+
+            // Clear compiled view cache so new asset query hashes take effect immediately
+            try { Artisan::call('view:clear'); } catch (\Throwable $ex) {}
+
+            // Broadcast Web Push announcement to all registered user devices (mobile & desktop)
+            $pushedCount = 0;
+            try {
+                $pushedCount = app(\App\Services\WebPushService::class)->broadcastAnnouncement(
+                    '⚡ System Update Available (' . $newVer . ')',
+                    "A new application update ({$newVer}) is live! Tap to reload the latest features and optimizations.",
+                    [
+                        'url' => route('intro'),
+                        'tag' => 'pwa-broadcast-' . time(),
+                        'version' => $newVer
+                    ]
+                );
+            } catch (\Throwable $pushErr) {
+                Log::warning('PWA broadcast push error: ' . $pushErr->getMessage());
+            }
+
             return response()->json([
                 'success' => true,
                 'version' => $newVer,
-                'message' => "Client app version successfully bumped to {$newVer}! All connected devices will reload updated code on next navigation."
+                'pushed_count' => $pushedCount,
+                'message' => "Client app version successfully bumped to {$newVer}! Web Push notification dispatched to {$pushedCount} registered mobile and desktop devices. Connected devices will reload updated code immediately."
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -593,20 +640,49 @@ class SystemUpdateController extends Controller
 
         if (File::exists($swPath)) {
             $content = File::get($swPath);
-            if (preg_match('/CACHE_NAME\s*=\s*[\'"]school-attendance-v(\d+)[\'"]/', $content, $matches)) {
-                $nextNum = ((int)$matches[1]) + 1;
-                $newVersion = 'v' . $nextNum;
-                $updatedContent = preg_replace('/CACHE_NAME\s*=\s*[\'"]school-attendance-v\d+[\'"]/', "CACHE_NAME = 'school-attendance-{$newVersion}'", $content);
-                File::put($swPath, $updatedContent);
+            $currentNum = 7;
+            if (preg_match('/CACHE_VERSION\s*=\s*[\'"]v?(\d+)[\'"]/', $content, $matches)) {
+                $currentNum = (int)$matches[1];
+            } elseif (preg_match('/CACHE_NAME\s*=\s*[`\'"][^`\'"]*v(\d+)[`\'"]/', $content, $matches)) {
+                $currentNum = (int)$matches[1];
             }
+
+            $nextNum = $currentNum + 1;
+            $newVersion = 'v' . $nextNum;
+            $timestamp = now()->toIso8601String();
+
+            // Update CACHE_VERSION
+            if (preg_match('/const\s+CACHE_VERSION\s*=\s*[\'"][^\'"]+[\'"];/', $content)) {
+                $content = preg_replace('/const\s+CACHE_VERSION\s*=\s*[\'"][^\'"]+[\'"];/', "const CACHE_VERSION = '{$newVersion}';", $content);
+            } else {
+                $content = "const CACHE_VERSION = '{$newVersion}';\n" . $content;
+            }
+
+            // Update CACHE_NAME
+            $content = preg_replace('/const\s+CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/', "const CACHE_NAME = `attendance-{$newVersion}`;", $content);
+
+            // Update RUNTIME_CACHE_NAME
+            $content = preg_replace('/const\s+RUNTIME_CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/', "const RUNTIME_CACHE_NAME = `attendance-runtime-{$newVersion}`;", $content);
+
+            // Ensure timestamp header comment to guarantee byte-level modification
+            if (preg_match('/\/\* BUMP_TIMESTAMP:.*?\*\//s', $content)) {
+                $content = preg_replace('/\/\* BUMP_TIMESTAMP:.*?\*\//s', "/* BUMP_TIMESTAMP: {$timestamp} */", $content);
+            } else {
+                $content = "/* BUMP_TIMESTAMP: {$timestamp} */\n" . $content;
+            }
+
+            File::put($swPath, $content);
         }
 
         $tagsPath = resource_path('views/partials/pwa-tags.blade.php');
         if (File::exists($tagsPath)) {
             $tagsContent = File::get($tagsPath);
-            $tagsContent = preg_replace('/\/sw\.js\?v=\d+/', "/sw.js?v=" . filter_var($newVersion, FILTER_SANITIZE_NUMBER_INT), $tagsContent);
+            $numOnly = filter_var($newVersion, FILTER_SANITIZE_NUMBER_INT);
+            $tagsContent = preg_replace('/\/sw\.js(?:\?v=\d+)?/', "/sw.js?v=" . $numOnly, $tagsContent);
             File::put($tagsPath, $tagsContent);
         }
+
+        \Illuminate\Support\Facades\Cache::forever('pwa_sw_version', $newVersion);
 
         return $newVersion;
     }

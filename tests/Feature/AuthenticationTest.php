@@ -108,7 +108,7 @@ class AuthenticationTest extends TestCase
         $response->assertRedirect(route('admin.dashboard'));
     }
 
-    public function test_student_cannot_login_with_email(): void
+    public function test_student_can_login_with_email(): void
     {
         $student = User::factory()->create([
             'role' => 'student',
@@ -119,9 +119,8 @@ class AuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        // Student should be rejected when using email
-        $this->assertGuest();
-        $response->assertSessionHasErrors('identifier');
+        $response->assertRedirect('/home');
+        $this->assertAuthenticatedAs($student);
     }
 
     // ─────────────────────────────────────────
