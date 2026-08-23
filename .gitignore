@@ -17,6 +17,12 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/cache/*
+!/storage/framework/sessions/.gitignore
+!/storage/framework/views/.gitignore
+!/storage/framework/cache/.gitignore
 /vendor
 Homestead.json
 Homestead.yaml

@@ -273,7 +273,13 @@
             <p style="font-size: 0.82rem; color: #b39b82; margin: 4px 0 0 0;">Manage academic holidays, declarations, campus events, and schedules.</p>
         </div>
 
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <form action="{{ route('admin.calendar.syncHolidays') }}" method="POST" onsubmit="return confirm('Auto-populate official Philippine and school holidays into the calendar?');" style="margin: 0;">
+                @csrf
+                <button type="submit" class="adm-btn adm-btn-ghost" title="Auto-populate official national and school holidays">
+                    <i class="bi bi-magic" style="color: var(--gold,#cfa46f);"></i> Auto-Populate Holidays
+                </button>
+            </form>
             <a href="?hcal_year={{ now()->year }}&hcal_month={{ now()->month }}" class="adm-btn adm-btn-ghost">
                 Today
             </a>

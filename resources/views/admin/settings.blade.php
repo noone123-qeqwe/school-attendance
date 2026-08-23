@@ -89,14 +89,14 @@
             
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h3 class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
-                    <i class="bi bi-qr-code-scan saas-text-muted"></i> Attendance Rules
+                    <i class="bi bi-qr-code-scan saas-text-muted"></i> Attendance & Biometrics Rules
                 </h3>
                 <button type="button" class="saas-btn saas-btn-secondary" style="padding:4px 12px; font-size:0.8rem;" onclick="resetAttendanceRules()">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
                 </button>
             </div>
             
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
                 <div class="saas-form-group">
                     <label class="saas-label">QR Token Expiry (Seconds)</label>
                     <input type="number" name="qr_expiry" id="setting_qr_expiry" class="saas-input" value="{{ \App\Models\Setting::get('qr_expiry', 20) }}">
@@ -112,7 +112,24 @@
                         <input type="checkbox" name="require_biometric" id="setting_require_biometric" value="1" {{ \App\Models\Setting::get('require_biometric', 1) ? 'checked' : '' }} style="accent-color:var(--saas-primary); width:16px; height:16px;">
                         Require Biometrics
                     </label>
-                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Force fingerprint or face scan for clock-in.</p>
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Enforce fingerprint or face scan verification for attendance clock-in.</p>
+                </div>
+                <div class="saas-form-group">
+                    <label class="saas-label" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="auto_holiday" id="setting_auto_holiday" value="1" {{ \App\Models\Setting::get('auto_holiday', 1) ? 'checked' : '' }} style="accent-color:var(--saas-primary); width:16px; height:16px;">
+                        Auto Holiday
+                    </label>
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Automatically exempt attendance on official & declared holidays.</p>
+                </div>
+            </div>
+
+            <div style="background:rgba(207,164,111,0.05);border:1px solid rgba(207,164,111,0.15);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px;">
+                <i class="bi bi-fingerprint" style="color:var(--saas-gold,#cfa46f);font-size:1.3rem;margin-top:2px;"></i>
+                <div>
+                    <div style="font-weight:600;font-size:0.85rem;color:#f3e7cd;">Biometric Security (WebAuthn / Passkeys)</div>
+                    <div class="saas-text-muted" style="font-size:0.75rem;line-height:1.4;">
+                        Students and faculty can register their device biometric sensors in their personal <strong>Settings</strong> page. When biometric verification is required, students must confirm their identity using their stored fingerprint to complete QR attendance.
+                    </div>
                 </div>
             </div>
 
@@ -121,6 +138,7 @@
                     document.getElementById('setting_qr_expiry').value = 20;
                     document.getElementById('setting_gps_radius').value = 50;
                     document.getElementById('setting_require_biometric').checked = true;
+                    document.getElementById('setting_auto_holiday').checked = true;
                 }
             </script>
 

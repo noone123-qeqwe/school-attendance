@@ -24,11 +24,11 @@ class MarkAbsentStudents extends Command
         $dayName = $today->format('l'); // e.g. "Monday"
         $currentTime = $today->format('H:i:s');
 
-        // Check if today is a holiday
-        if (Holiday::isHoliday($today->toDateString())) {
+        // Check if today is a holiday (if auto holiday is enabled)
+        if (\App\Models\Setting::get('auto_holiday', 1) && Holiday::isHoliday($today->toDateString())) {
             $holiday = Holiday::getHoliday($today->toDateString());
             $this->info("Today is a holiday: {$holiday->name}");
-            $this->info("No students will be marked absent due to holiday.");
+            $this->info("No students will be marked absent due to auto holiday exemption.");
             return;
         }
 

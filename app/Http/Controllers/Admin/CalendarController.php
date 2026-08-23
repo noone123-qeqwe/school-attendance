@@ -275,4 +275,31 @@ class CalendarController extends Controller
         }
         return back()->with('success', 'Event cancelled successfully!');
     }
+
+    /**
+     * Auto-populate official Philippine national and school holidays.
+     */
+    public function syncHolidays(Request $request)
+    {
+        $this->authorize('create', Event::class);
+
+        try {
+            \Illuminate\Support\Facades\Artisan::call('db:seed', [
+                '--class' => 'Database\\Seeders\\HolidaySeeder',
+                '--force' => true,
+            ]);
+
+            \Illuminate\Support\Facades\Cache::flush();
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Official Philippine & school holidays auto-populated successfully!']);
+            }
+            return back()->with('success', 'Official Philippine & school holidays auto-populated successfully!');
+        } catch (\Exception $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+            }
+            return back()->with('error', 'Failed to auto-populate holidays: ' . $e->getMessage());
+        }
+    }
 }

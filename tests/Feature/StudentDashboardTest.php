@@ -172,13 +172,66 @@ class StudentDashboardTest extends TestCase
     }
 
     // ─────────────────────────────────────────
-    // NOTIFICATIONS
+    // EXCUSE SUBMISSION WITH SUBJECT SELECTION
     // ─────────────────────────────────────────
 
-    public function test_student_can_view_notifications_page(): void
+    public function test_student_can_view_excuse_submission_form_with_enrolled_subjects(): void
     {
-        $response = $this->actingAs($this->student)->get('/notifications');
+        $subject = Subject::create([
+            'code' => 'CS201',
+            'name' => 'Data Structures',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/excuses/general/new');
 
         $response->assertStatus(200);
+        $response->assertSee('Data Structures');
+        $response->assertSee('CS201');
+    }
+
+    public function test_student_can_submit_excuse_for_selected_subjects(): void
+    {
+        $sub1 = Subject::create([
+            'code' => 'CS201',
+            'name' => 'Data Structures',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        $sub2 = Subject::create([
+            'code' => 'CS202',
+            'name' => 'Algorithms',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        $response = $this->actingAs($this->student)->post('/excuses/general/store', [
+            'subject_codes' => ['CS201', 'CS202'],
+            'date' => '2026-08-24',
+            'reason' => 'Medical/Health Issues',
+            'description' => 'Had a severe fever and medical checkup.',
+        ]);
+
+        $response->assertRedirect('/excuses');
+        $response->assertSessionHas('success');
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $this->student->id,
+            'subject_code' => 'CS201',
+            'date' => '2026-08-24',
+        ]);
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $this->student->id,
+            'subject_code' => 'CS202',
+            'date' => '2026-08-24',
+        ]);
+
+        $this->assertEquals(2, \App\Models\ExcuseSubmission::where('user_id', $this->student->id)->count());
     }
 }

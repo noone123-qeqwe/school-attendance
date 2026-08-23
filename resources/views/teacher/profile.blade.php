@@ -529,22 +529,23 @@ function generateRecoveryCodes() {
 
 // ── WebAuthn Fingerprint Registration ──
 async function loadDevices() {
+    const list = document.getElementById('deviceList');
+    const btn = document.getElementById('registerFpBtn');
+    const unsupported = document.getElementById('webauthnUnsupported');
+
     if (!window.PublicKeyCredential) {
-        const btn = document.getElementById('registerFpBtn');
         if (btn) btn.style.display = 'none';
-        const unsupported = document.getElementById('webauthnUnsupported');
         if (unsupported) unsupported.style.display = 'block';
         return;
     }
     try {
         const res = await fetch('{{ route("webauthn.devices") }}');
         const devices = await res.json();
-        const list = document.getElementById('deviceList');
-        const noDevices = document.getElementById('noDevices');
-        if (devices.length > 0) {
-            noDevices.style.display = 'none';
-            list.innerHTML = '';
-            
+        if (!list) return;
+
+        list.innerHTML = '';
+
+        if (devices && devices.length > 0) {
             const registeredMsg = document.createElement('div');
             registeredMsg.style.cssText = 'text-align:center;padding:12px;color:#4ade80;font-size:.85rem;background:rgba(74,222,128,0.1);border-radius:10px;border:1px solid rgba(74,222,128,0.2);margin-bottom:12px;font-weight:600;';
             registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>You have registered a fingerprint.';
@@ -567,6 +568,15 @@ async function loadDevices() {
                     </button>`;
                 list.appendChild(div);
             });
+        } else {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.id = 'noDevices';
+            emptyDiv.style.cssText = 'text-align:center;padding:16px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed rgba(207,164,111,0.2);';
+            emptyDiv.innerHTML = `
+                <i class="bi bi-fingerprint" style="font-size:1.8rem;display:block;margin-bottom:6px;opacity:.4;color:var(--gold,#CFA46F);"></i>
+                No fingerprint registered yet.
+            `;
+            list.appendChild(emptyDiv);
         }
     } catch(e) {}
 }

@@ -673,18 +673,26 @@
     }
 
     /* ── SETTINGS TABS — Pill-style Scrollable ── */
+    .stabs-wrapper {
+        position: relative !important;
+        display: flex !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin-bottom: 20px !important;
+    }
+
     .stabs {
         display: flex !important;
         gap: 6px !important;
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch !important;
         scroll-snap-type: x mandatory !important;
-        padding: 4px 0 12px !important;
-        margin-bottom: 20px !important;
+        padding: 4px 44px 4px 4px !important;
+        margin-bottom: 0 !important;
         border-bottom: none !important;
         /* Gradient fade hint */
-        mask-image: linear-gradient(to right, black 90%, transparent 100%) !important;
-        -webkit-mask-image: linear-gradient(to right, black 90%, transparent 100%) !important;
+        mask-image: linear-gradient(to right, black 85%, transparent 100%) !important;
+        -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%) !important;
     }
     .stabs::-webkit-scrollbar { display: none !important; }
     
@@ -706,6 +714,29 @@
         background: rgba(207,164,111,0.12) !important;
         border-color: rgba(207,164,111,0.25) !important;
         color: #cfa46f !important;
+    }
+
+    .stabs-arrow {
+        position: absolute !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        z-index: 10 !important;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin: 0 !important;
+    }
+    .stabs-arrow-right {
+        right: 0 !important;
+    }
+    .stabs-arrow-left {
+        left: 0 !important;
+    }
+    .stabs-arrow-left:not(.visible) {
+        display: none !important;
     }
 
     /* ── STATUS PILLS — Horizontal Scroll ── */

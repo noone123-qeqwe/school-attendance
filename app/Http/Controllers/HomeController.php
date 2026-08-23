@@ -544,7 +544,18 @@ class HomeController extends Controller
             return redirect()->route('excuses')->with('error', 'Excuse already submitted for this absence.');
         }
 
-        return view('excuses.create', compact('attendance'));
+        $user = Auth::user();
+        $subjects = $user->getAllSubjects();
+        
+        // Find any other absent records on the same date that don't have excuse submissions yet
+        $sameDayAttendances = Attendance::where('user_id', $user->id)
+            ->whereDate('date', $attendance->date)
+            ->where('status', 'Absent')
+            ->whereDoesntHave('excuseSubmission')
+            ->get()
+            ->keyBy('subject_code');
+
+        return view('excuses.create', compact('attendance', 'subjects', 'sameDayAttendances'));
     }
 
     public function createGeneralExcuse()
@@ -557,7 +568,9 @@ class HomeController extends Controller
     public function storeGeneralExcuse(Request $request)
     {
         $request->validate([
-            'subject_code' => 'required',
+            'subject_code' => 'nullable|string',
+            'subject_codes' => 'nullable|array',
+            'subject_codes.*' => 'string|max:50',
             'date' => 'required|date',
             'reason' => 'required|string|max:255',
             'description' => 'required|string|max:1000',
@@ -565,22 +578,35 @@ class HomeController extends Controller
         ]);
 
         $user = Auth::user();
+        $enrolledSubjects = $user->getAllSubjects();
+        $allEnrolledCodes = $enrolledSubjects->pluck('code')->toArray();
 
-        if ($request->subject_code !== 'all_subjects') {
-            $request->validate(['subject_code' => 'exists:subjects,code']);
-            if (!$user->getAllSubjects()->where('code', $request->subject_code)->count()) {
-                abort(403, 'You are not enrolled in this subject.');
+        if (empty($allEnrolledCodes)) {
+            return redirect()->back()->with('error', 'You are not enrolled in any subjects.')->withInput();
+        }
+
+        $selectedCodes = [];
+
+        // Check if multiple subject_codes array was sent
+        if ($request->has('subject_codes') && is_array($request->subject_codes) && !empty($request->subject_codes)) {
+            if (in_array('all_subjects', $request->subject_codes)) {
+                $selectedCodes = $allEnrolledCodes;
+            } else {
+                $selectedCodes = array_values(array_intersect($request->subject_codes, $allEnrolledCodes));
             }
-            $subjectCodes = [$request->subject_code];
-        } else {
-            $subjectCodes = $user->getAllSubjects()->pluck('code')->toArray();
-            if (empty($subjectCodes)) {
-                return redirect()->back()->with('error', 'You are not enrolled in any subjects.');
+        } elseif ($request->filled('subject_code')) {
+            if ($request->subject_code === 'all_subjects') {
+                $selectedCodes = $allEnrolledCodes;
+            } elseif (in_array($request->subject_code, $allEnrolledCodes)) {
+                $selectedCodes = [$request->subject_code];
             }
         }
 
+        if (empty($selectedCodes)) {
+            return redirect()->back()->with('error', 'Please select at least one subject to submit your excuse letter for.')->withInput();
+        }
+
         $attachmentPaths = [];
-        
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 $path = $file->store('excuse_attachments', 'public');
@@ -588,17 +614,18 @@ class HomeController extends Controller
             }
         }
 
-        foreach ($subjectCodes as $code) {
+        $submittedCount = 0;
+        foreach ($selectedCodes as $code) {
+            $subModel = \App\Models\Subject::where('code', $code)->first();
             // Get or create the attendance record
             $attendance = Attendance::firstOrCreate([
                 'user_id' => $user->id,
                 'subject_code' => $code,
                 'date' => $request->date,
             ], [
-                'status' => 'Absent', // Mark as absent since they are submitting an excuse
+                'subject_id' => $subModel?->id,
+                'status' => 'Absent',
                 'time_in' => null,
-                'time_out' => null,
-                'device_id' => null,
                 'excused' => false
             ]);
 
@@ -607,7 +634,7 @@ class HomeController extends Controller
                 continue;
             }
 
-            ExcuseSubmission::create([
+            $excuseSubmission = ExcuseSubmission::create([
                 'user_id' => $user->id,
                 'attendance_id' => $attendance->id,
                 'reason' => $request->reason,
@@ -616,46 +643,110 @@ class HomeController extends Controller
                 'status' => 'pending'
             ]);
 
+            $submittedCount++;
+
             // Notify Teacher
-            $subject = \App\Models\Subject::where('code', $code)->first();
-            if ($subject && $subject->instructor_id) {
+            if ($subModel && $subModel->instructor_id) {
                 \App\Models\Notification::create([
-                    'user_id' => $subject->instructor_id,
-                    'title' => 'New Leave Request',
-                    'message' => "{$user->name} submitted a leave request for {$subject->name} on " . \Carbon\Carbon::parse($request->date)->format('M d, Y'),
+                    'user_id' => $subModel->instructor_id,
+                    'title' => 'New Excuse Letter',
+                    'message' => "{$user->name} submitted an excuse letter for {$subModel->name} ({$code}) on " . \Carbon\Carbon::parse($request->date)->format('M d, Y'),
                     'type' => 'custom',
                     'link' => route('teacher.excuse.reviews')
                 ]);
+
+                event(new \App\Events\ExcuseSubmitted(
+                    $excuseSubmission,
+                    $user->name,
+                    $code,
+                    $subModel->instructor_id
+                ));
             }
         }
 
-        return redirect()->route('excuses')->with('success', 'Excuse/Leave request submitted successfully.');
+        if ($submittedCount === 0) {
+            return redirect()->route('excuses')->with('error', 'Excuse letters have already been submitted for all selected subjects on this date.');
+        }
+
+        $msg = $submittedCount > 1 
+            ? "Excuse letters submitted successfully for {$submittedCount} subjects! They will be reviewed by your instructors."
+            : "Excuse letter submitted successfully! It will be reviewed by your instructor.";
+
+        return redirect()->route('excuses')->with('success', $msg);
     }
 
     public function storeExcuse(Request $request)
     {
         $request->validate([
-            'attendance_id' => 'required|exists:attendances,id',
+            'attendance_id' => 'nullable|exists:attendances,id',
+            'attendance_ids' => 'nullable|array',
+            'attendance_ids.*' => 'exists:attendances,id',
+            'subject_codes' => 'nullable|array',
+            'subject_codes.*' => 'string|max:50',
+            'date' => 'nullable|date',
             'reason' => 'required|string|max:255',
             'description' => 'required|string|max:1000',
-            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120', // 5MB max
+            'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
         ]);
 
-        $attendance = Attendance::findOrFail($request->attendance_id);
-        
-        // Verify ownership and status
-        if ($attendance->user_id !== Auth::id() || $attendance->status !== 'Absent') {
-            abort(403);
+        $user = Auth::user();
+        $targetAttendances = collect();
+
+        // 1. If explicit attendance_ids provided
+        if ($request->has('attendance_ids') && is_array($request->attendance_ids)) {
+            $records = Attendance::whereIn('id', $request->attendance_ids)
+                ->where('user_id', $user->id)
+                ->where('status', 'Absent')
+                ->whereDoesntHave('excuseSubmission')
+                ->get();
+            $targetAttendances = $targetAttendances->merge($records);
         }
 
-        // Check if excuse already submitted
-        if ($attendance->excuseSubmission) {
-            return redirect()->route('excuses')->with('error', 'Excuse already submitted for this absence.');
+        // 2. If single attendance_id provided
+        if ($request->filled('attendance_id')) {
+            $single = Attendance::where('id', $request->attendance_id)
+                ->where('user_id', $user->id)
+                ->where('status', 'Absent')
+                ->whereDoesntHave('excuseSubmission')
+                ->first();
+            if ($single) {
+                $targetAttendances->push($single);
+            }
+        }
+
+        // 3. If additional subject_codes provided for a date
+        if ($request->has('subject_codes') && is_array($request->subject_codes)) {
+            $refDate = $request->input('date') ?? ($targetAttendances->first() ? $targetAttendances->first()->date : now()->toDateString());
+            $enrolledCodes = $user->getAllSubjects()->pluck('code')->toArray();
+            
+            foreach ($request->subject_codes as $code) {
+                if (!in_array($code, $enrolledCodes)) continue;
+                $subModel = \App\Models\Subject::where('code', $code)->first();
+                
+                $att = Attendance::firstOrCreate([
+                    'user_id' => $user->id,
+                    'subject_code' => $code,
+                    'date' => $refDate,
+                ], [
+                    'subject_id' => $subModel?->id,
+                    'status' => 'Absent',
+                    'time_in' => null,
+                    'excused' => false
+                ]);
+
+                if (!$att->excuseSubmission) {
+                    $targetAttendances->push($att);
+                }
+            }
+        }
+
+        $targetAttendances = $targetAttendances->unique('id');
+
+        if ($targetAttendances->isEmpty()) {
+            return redirect()->route('excuses')->with('error', 'No eligible absence records found or excuse already submitted.');
         }
 
         $attachmentPaths = [];
-        
-        // Handle file uploads
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
                 $path = $file->store('excuse_attachments', 'public');
@@ -663,35 +754,45 @@ class HomeController extends Controller
             }
         }
 
-        $excuseSubmission = ExcuseSubmission::create([
-            'user_id' => Auth::id(),
-            'attendance_id' => $attendance->id,
-            'reason' => $request->reason,
-            'description' => $request->description,
-            'attachments' => $attachmentPaths,
-            'status' => 'pending'
-        ]);
-
-        // Find the teacher for this subject and broadcast the event
-        $subject = \App\Models\Subject::where('code', $attendance->subject_code)->first();
-        if ($subject && $subject->instructor_id) {
-            // Create notification for teacher
-            \App\Models\Notification::create([
-                'user_id' => $subject->instructor_id,
-                'message' => "New excuse letter submitted by " . Auth::user()->name . " for " . $attendance->subject_code . " (" . \Carbon\Carbon::parse($attendance->date)->format('M j, Y') . ")",
-                'type' => 'custom',
-                'is_read' => false
+        $count = 0;
+        foreach ($targetAttendances as $attendance) {
+            $excuseSubmission = ExcuseSubmission::create([
+                'user_id' => $user->id,
+                'attendance_id' => $attendance->id,
+                'reason' => $request->reason,
+                'description' => $request->description,
+                'attachments' => $attachmentPaths,
+                'status' => 'pending'
             ]);
 
-            event(new \App\Events\ExcuseSubmitted(
-                $excuseSubmission,
-                Auth::user()->name,
-                $attendance->subject_code,
-                $subject->instructor_id
-            ));
+            $count++;
+
+            // Find teacher and notify
+            $subject = \App\Models\Subject::where('code', $attendance->subject_code)->first();
+            if ($subject && $subject->instructor_id) {
+                \App\Models\Notification::create([
+                    'user_id' => $subject->instructor_id,
+                    'title' => 'New Excuse Letter',
+                    'message' => "New excuse letter submitted by {$user->name} for {$attendance->subject_code} (" . \Carbon\Carbon::parse($attendance->date)->format('M j, Y') . ")",
+                    'type' => 'custom',
+                    'is_read' => false,
+                    'link' => route('teacher.excuse.reviews')
+                ]);
+
+                event(new \App\Events\ExcuseSubmitted(
+                    $excuseSubmission,
+                    $user->name,
+                    $attendance->subject_code,
+                    $subject->instructor_id
+                ));
+            }
         }
 
-        return redirect()->route('excuses')->with('success', 'Excuse submitted successfully! It will be reviewed by the teacher.');
+        $msg = $count > 1 
+            ? "Excuse letters submitted successfully for {$count} subjects! They will be reviewed by your instructors."
+            : "Excuse letter submitted successfully! It will be reviewed by your instructor.";
+
+        return redirect()->route('excuses')->with('success', $msg);
     }
 
     /**

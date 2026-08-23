@@ -918,13 +918,15 @@ class AdminController extends Controller
             'gps_lat'                   => 'nullable|numeric|between:-90,90',
             'gps_lng'                   => 'nullable|numeric|between:-180,180',
             'gps_radius'                => 'nullable|integer|min:10|max:1000',
+            'qr_expiry'                 => 'nullable|integer|min:5|max:300',
+            'require_biometric'         => 'nullable|in:0,1',
             'admin_ip_whitelist'        => 'nullable|string',
         ]);
 
         $settingsToUpdate = [
             'school_name', 'school_short_name', 'school_subtitle', 'academic_year', 
             'current_semester', 'late_threshold', 'absent_threshold', 'warning_threshold', 
-            'attendance_rate_threshold', 'gps_lat', 'gps_lng', 'gps_radius', 'admin_ip_whitelist'
+            'attendance_rate_threshold', 'gps_lat', 'gps_lng', 'gps_radius', 'qr_expiry', 'admin_ip_whitelist'
         ];
 
         foreach ($settingsToUpdate as $key) {
@@ -932,6 +934,16 @@ class AdminController extends Controller
                 \App\Models\Setting::updateOrCreate(['key' => $key], ['value' => $request->$key]);
             }
         }
+
+        // Explicitly handle boolean toggles
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'require_biometric'],
+            ['value' => $request->has('require_biometric') ? 1 : 0]
+        );
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'auto_holiday'],
+            ['value' => $request->has('auto_holiday') ? 1 : 0]
+        );
 
         return back()->with('success', 'System settings updated successfully!');
     }

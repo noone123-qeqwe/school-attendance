@@ -68,8 +68,18 @@ class PTController extends Controller
         $identifier = trim($request->identifier);
         $password   = $request->password;
         $remember   = $request->has('remember') ? $request->boolean('remember') : true;
+        $lockoutService = app(\App\Services\AccountLockoutService::class);
 
         Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
+
+        // 1. Check account / IP lockout
+        if ($lockoutService->isLocked($identifier, $request->ip())) {
+            $remaining = $lockoutService->getRemainingSeconds($identifier, $request->ip());
+            $minutes = max(1, ceil($remaining / 60));
+
+            return back()->withInput($request->only('identifier'))
+                ->withErrors(['identifier' => "Account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes."]);
+        }
 
         // Look up the user by student_number, email, or employee_id
         $user = User::where('student_number', $identifier)
@@ -104,6 +114,8 @@ class PTController extends Controller
         }
 
         if ($authenticated && $user) {
+            $lockoutService->clear($identifier, $request->ip());
+
             Log::info('Login successful', [
                 'user_id' => $user->id,
                 'role' => $user->role,
@@ -161,8 +173,15 @@ class PTController extends Controller
             return redirect()->intended('/home');
         }
 
+        // Record failed attempt
+        $lockoutResult = $lockoutService->recordFailedAttempt($identifier, $request->ip());
+
+        $errorMessage = $lockoutResult['locked']
+            ? 'Account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.'
+            : 'Incorrect ID/email or password.';
+
         $response = back()->withInput($request->only('identifier'))
-            ->withErrors(['identifier' => 'Incorrect ID/email or password.']);
+            ->withErrors(['identifier' => $errorMessage]);
 
         if ($request->filled('qr_token')) {
             $response->with('qr_token', $request->qr_token);

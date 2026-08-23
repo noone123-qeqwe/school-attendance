@@ -9,7 +9,7 @@
             <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Manage and track your absence excuses</p>
         </div>
         <a href="{{ route('excuses.create_general') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; border: none; font-weight: 700;">
-            <i class="bi bi-plus-circle-fill" style="margin-right: 4px;"></i> New Leave Request
+            <i class="bi bi-plus-circle-fill" style="margin-right: 6px;"></i> Submit Excuse Letter
         </a>
     </div>
 

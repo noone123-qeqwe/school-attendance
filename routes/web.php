@@ -445,6 +445,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/calendar', [App\Http\Controllers\Admin\CalendarController::class, 'index'])->name('calendar');
     Route::get('/calendar/data', [App\Http\Controllers\Admin\CalendarController::class, 'data'])->name('calendar.data');
     Route::post('/calendar', [App\Http\Controllers\Admin\CalendarController::class, 'store'])->name('calendar.store');
+    Route::post('/calendar/sync-holidays', [App\Http\Controllers\Admin\CalendarController::class, 'syncHolidays'])->name('calendar.syncHolidays');
     Route::put('/calendar/{event}', [App\Http\Controllers\Admin\CalendarController::class, 'update'])->name('calendar.update');
     Route::delete('/calendar/{event}', [App\Http\Controllers\Admin\CalendarController::class, 'destroy'])->name('calendar.destroy');
 

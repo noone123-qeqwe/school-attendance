@@ -416,41 +416,62 @@
 <!-- Real-time Connectivity Toast -->
 <div class="pwa-network-toast" id="pwaNetworkToast"></div>
 
+@php
+    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '37');
+    $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
+    $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
+@endphp
+
 <script>
     // ── 1. Register Service Worker & Handle Real-Time Update Notifications ──
     let swRegistration = null;
     let deferredPrompt = null;
+    let latestDetectedVersion = null;
 
-    function showAppUpdatePopup() {
-        if (sessionStorage.getItem('pwa_update_popup_dismissed')) return;
+    function showAppUpdatePopup(version) {
+        if (!version) return;
+        
+        const currentVer = localStorage.getItem('pwa_app_version');
+        const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
+
+        if (currentVer === version || sessionDismissed === version) {
+            return;
+        }
+
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) {
             popup.style.display = 'flex';
         }
     }
 
-    function hideAppUpdatePopup(dismissSession = true) {
+    function hideAppUpdatePopup(version) {
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) popup.style.display = 'none';
-        if (dismissSession) {
-            sessionStorage.setItem('pwa_update_popup_dismissed', 'true');
+        
+        const targetVersion = version || latestDetectedVersion;
+        if (targetVersion) {
+            sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
         }
     }
 
     async function checkServerVersion() {
         try {
             const res = await fetch('/pwa/version', { cache: 'no-store' });
+            if (!res.ok) return;
             const data = await res.json();
             if (data && data.version) {
+                latestDetectedVersion = data.version;
                 const currentVer = localStorage.getItem('pwa_app_version');
+                const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
+
                 if (!currentVer) {
+                    // First time load: establish current version baseline
                     localStorage.setItem('pwa_app_version', data.version);
-                } else if (currentVer !== data.version) {
+                } else if (currentVer !== data.version && sessionDismissed !== data.version) {
                     if (swRegistration) {
                         try { swRegistration.update(); } catch(e) {}
                     }
-                    sessionStorage.removeItem('pwa_update_popup_dismissed');
-                    showAppUpdatePopup();
+                    showAppUpdatePopup(data.version);
                 }
             }
         } catch (e) {}
@@ -462,7 +483,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=29', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=44?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });
@@ -471,12 +492,12 @@
                 // 1. Immediate version check on page ready
                 checkServerVersion();
 
-                // 2. Continuous real-time check every 10 seconds
-                setInterval(checkServerVersion, 10000);
+                // 2. Periodic check every 25 seconds for real-time detection while using the app
+                setInterval(checkServerVersion, 25000);
 
-                // 3. If an update is already downloaded and waiting, show update popup
-                if (reg.waiting && navigator.serviceWorker.controller) {
-                    showAppUpdatePopup();
+                // 3. If an update is already downloaded and waiting, verify version
+                if (reg.waiting) {
+                    checkServerVersion();
                 }
 
                 // 4. When a new update is found and finishes installing in the background
@@ -484,9 +505,8 @@
                     const newWorker = reg.installing;
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
-                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                sessionStorage.removeItem('pwa_update_popup_dismissed');
-                                showAppUpdatePopup();
+                            if (newWorker.state === 'installed') {
+                                checkServerVersion();
                             }
                         });
                     }
@@ -495,12 +515,11 @@
                 // 5. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
-                        sessionStorage.removeItem('pwa_update_popup_dismissed');
-                        showAppUpdatePopup();
+                        checkServerVersion();
                     }
                 });
 
-                // 6. On app focus or unlock, check for updates immediately
+                // 6. On app focus or unlock, check for updates
                 window.addEventListener('focus', () => {
                     checkServerVersion();
                     try { reg.update(); } catch(e) {}
@@ -746,10 +765,24 @@
             applyUpdateBtn.style.opacity = '0.85';
             applyUpdateBtn.style.pointerEvents = 'none';
 
+            if (latestDetectedVersion) {
+                localStorage.setItem('pwa_app_version', latestDetectedVersion);
+                localStorage.removeItem('pwa_update_dismissed_ver');
+                localStorage.removeItem('pwa_update_prompted_ver');
+                sessionStorage.removeItem('pwa_update_dismissed_ver');
+            }
+
             try {
                 fetch('/pwa/version', { cache: 'no-store' })
                     .then(r => r.json())
-                    .then(d => { if (d?.version) localStorage.setItem('pwa_app_version', d.version); })
+                    .then(d => { 
+                        if (d?.version) {
+                            localStorage.setItem('pwa_app_version', d.version);
+                            localStorage.removeItem('pwa_update_dismissed_ver');
+                            localStorage.removeItem('pwa_update_prompted_ver');
+                            sessionStorage.removeItem('pwa_update_dismissed_ver');
+                        }
+                    })
                     .catch(() => {});
             } catch(e) {}
 
@@ -772,11 +805,11 @@
             return;
         }
 
-        // Dismiss Update popup
+        // Dismiss Update popup (Dismiss for current session)
         const dismissUpdateBtn = target.closest('#pwaDismissUpdatePopupBtn');
         if (dismissUpdateBtn) {
             e.preventDefault();
-            hideAppUpdatePopup(true);
+            hideAppUpdatePopup(latestDetectedVersion);
             return;
         }
     });

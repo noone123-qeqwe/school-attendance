@@ -4,166 +4,158 @@
 @push('styles')
 <style>
 :root {
-    --tch-primary: #7c2d12;
-    --tch-dark: #5c1a0b;
-    --tch-light: #9a3412;
+    --tch-primary: #cfa46f;
+    --tch-dark: #1e1515;
+    --tch-light: #e5be8a;
     --tch-accent: #f59e0b;
-    --glass-bg: rgba(255, 255, 255, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.18);
 }
 
-/* Glass Morphism Base */
-.glass {
-    background: rgba(255, 255, 255, 0.25);
+/* Main Card Glass Effect */
+.main-card {
+    background: rgba(30, 21, 21, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+.main-card-header {
+    background: rgba(0, 0, 0, 0.3);
+    color: #f3e7cd;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.main-card-header h4 {
+    margin-bottom: 4px;
+    font-weight: 800;
+    color: #f3e7cd;
+    letter-spacing: -0.02em;
 }
 
 /* QR Container with Glass Morphism */
 .qr-container { 
     min-height: 380px;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+    background: rgba(0, 0, 0, 0.25);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 2px solid rgba(124, 45, 18, 0.2);
-    border-radius: 24px;
-    display: flex; flex-direction: column; 
-    align-items: center; justify-content: center; 
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px dashed rgba(207, 164, 111, 0.25);
+    border-radius: 20px;
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-}
-
-.qr-container::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(124, 45, 18, 0.05) 50%, transparent 70%);
-    pointer-events: none;
+    padding: 28px;
 }
 
 .qr-container.active { 
-    background: linear-gradient(145deg, rgba(124, 45, 18, 0.1) 0%, rgba(92, 26, 11, 0.05) 100%);
-    border: 2px solid rgba(124, 45, 18, 0.4);
-    box-shadow: 0 16px 64px rgba(124, 45, 18, 0.2);
-    transform: translateY(-2px);
+    background: rgba(207, 164, 111, 0.04);
+    border: 2px solid rgba(207, 164, 111, 0.4);
+    box-shadow: 0 0 30px rgba(207, 164, 111, 0.15);
 }
 
 .qr-container img { 
-    border-radius: 20px; 
-    box-shadow: 0 12px 40px rgba(124, 45, 18, 0.3);
+    border-radius: 16px; 
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
     transition: all 0.3s ease;
-    border: 3px solid rgba(124, 45, 18, 0.6);
+    border: 4px solid #ffffff;
 }
 
-.qr-container img:hover { transform: scale(1.05); }
+.qr-container img:hover { transform: scale(1.03); }
 
-/* Modern Maroon Buttons */
+/* Buttons */
 .modern-btn { 
-    background: linear-gradient(135deg, var(--tch-primary) 0%, var(--tch-dark) 100%) !important;
+    background: linear-gradient(135deg, var(--gold), #b88a44) !important;
     border: none !important;
-    color: white !important;
-    padding: 16px 32px !important;
-    border-radius: 16px !important;
+    color: #1a1a2e !important;
+    padding: 14px 28px !important;
+    border-radius: 12px !important;
     font-weight: 700 !important;
     font-size: 0.95rem !important;
-    box-shadow: 0 8px 24px rgba(124, 45, 18, 0.4) !important;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 6px 20px rgba(207, 164, 111, 0.25) !important;
+    transition: all 0.2s ease !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    position: relative;
-    overflow: hidden;
-}
-
-.modern-btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%; width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
-}
-
-.modern-btn:hover::before {
-    left: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .modern-btn:hover { 
-    transform: translateY(-3px) !important;
-    box-shadow: 0 12px 36px rgba(124, 45, 18, 0.5) !important;
-    background: linear-gradient(135deg, var(--tch-light) 0%, var(--tch-primary) 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 10px 28px rgba(207, 164, 111, 0.35) !important;
+    filter: brightness(1.08);
+}
+
+.modern-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
 }
 
 .modern-btn.warning { 
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4) !important;
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #1a1a2e !important;
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.25) !important;
 }
 
 .modern-btn.danger { 
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
-    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4) !important;
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25) !important;
 }
 
 /* Glass Session Timer */
 .session-timer { 
-    background: linear-gradient(135deg, rgba(124, 45, 18, 0.9) 0%, rgba(92, 26, 11, 0.8) 100%) !important;
+    background: rgba(0, 0, 0, 0.4) !important;
     backdrop-filter: blur(20px) !important;
-    color: white !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    border-radius: 20px !important;
-    padding: 20px 28px !important;
+    color: #f3e7cd !important;
+    border: 1px solid rgba(212, 175, 55, 0.25) !important;
+    border-radius: 16px !important;
+    padding: 16px 24px !important;
     font-weight: 700 !important;
-    box-shadow: 0 8px 32px rgba(124, 45, 18, 0.3) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
 }
 
 .timer-display { 
     font-family: 'Courier New', monospace !important; 
     font-size: 1.4rem !important;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+    color: #f59e0b;
 }
 
 /* Glass Statistics Card */
 .stats-card { 
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
+    background: rgba(30, 21, 21, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 24px;
-    box-shadow: 0 12px 40px rgba(124, 45, 18, 0.15);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
     overflow: hidden;
     transition: all 0.3s ease;
-    position: relative;
-}
-
-.stats-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(124, 45, 18, 0.03) 50%, transparent 70%);
-    pointer-events: none;
-}
-
-.stats-card:hover { 
-    transform: translateY(-4px);
-    box-shadow: 0 16px 48px rgba(124, 45, 18, 0.2);
 }
 
 .stats-header { 
-    background: linear-gradient(135deg, var(--tch-primary) 0%, var(--tch-dark) 100%);
-    color: white;
-    padding: 24px;
+    background: rgba(0, 0, 0, 0.3);
+    color: #f3e7cd;
+    padding: 16px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
 }
 
 .stats-header h5 { 
     margin: 0; 
     font-weight: 700; 
-    font-size: 1.1rem;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    font-size: 1rem;
+    color: #f3e7cd;
 }
 
 .live-indicator { 
@@ -173,55 +165,45 @@
 }
 
 .live-dot { 
-    width: 10px; height: 10px; 
+    width: 9px; height: 9px; 
     background: #10b981; 
     border-radius: 50%; 
-    animation: pulse 2s infinite;
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulseDot 2s infinite;
 }
 
-@keyframes pulse {
+@keyframes pulseDot {
     0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
 .stats-grid { 
     display: grid; 
     grid-template-columns: 1fr 1fr; 
-    gap: 20px; 
-    padding: 28px; 
+    gap: 14px; 
+    padding: 20px; 
 }
 
 .stat-item { 
     text-align: center; 
-    padding: 20px; 
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
-    backdrop-filter: blur(10px);
-    border-radius: 16px; 
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
-}
-
-.stat-item:hover {
-    transform: translateY(-2px);
-    background: linear-gradient(145deg, rgba(124, 45, 18, 0.1) 0%, rgba(255, 255, 255, 0.2) 100%);
+    padding: 14px; 
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 12px; 
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.2s ease;
 }
 
 .stat-number { 
-    font-size: 2.2rem; 
+    font-size: 1.8rem; 
     font-weight: 800; 
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, var(--tch-primary), var(--tch-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 4px;
+    color: #f3e7cd;
 }
 
 .stat-label { 
     font-size: 0.75rem; 
     font-weight: 600; 
-    color: #64748b; 
+    color: #b39b82; 
     text-transform: uppercase; 
     letter-spacing: 0.5px; 
 }
@@ -230,111 +212,110 @@
 .clockin-item { 
     display: flex; 
     align-items: center; 
-    gap: 16px; 
-    padding: 20px; 
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 16px; 
-    margin-bottom: 16px; 
-    transition: all 0.3s ease;
-    animation: slideInRight 0.5s ease;
+    gap: 12px; 
+    padding: 12px 14px; 
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px; 
+    margin-bottom: 10px; 
+    transition: all 0.2s ease;
 }
 
 .clockin-item:hover { 
-    background: linear-gradient(145deg, rgba(124, 45, 18, 0.1) 0%, rgba(255, 255, 255, 0.2) 100%);
-    transform: translateX(8px);
-    box-shadow: 0 8px 24px rgba(124, 45, 18, 0.15);
-}
-
-@keyframes slideInRight {
-    from { opacity: 0; transform: translateX(-30px); }
-    to { opacity: 1; transform: translateX(0); }
+    background: rgba(207, 164, 111, 0.08);
+    border-color: rgba(207, 164, 111, 0.25);
 }
 
 .avatar-circle { 
-    width: 52px; height: 52px; 
-    background: linear-gradient(135deg, var(--tch-primary) 0%, var(--tch-light) 100%);
-    color: white; 
+    width: 40px; height: 40px; 
+    background: rgba(207, 164, 111, 0.15);
+    color: #cfa46f; 
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     font-weight: 700; 
-    font-size: 1rem;
-    box-shadow: 0 6px 20px rgba(124, 45, 18, 0.4);
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    font-size: 0.85rem;
+    border: 1px solid rgba(207, 164, 111, 0.3);
 }
 
 .status-badge { 
-    padding: 6px 14px; 
-    border-radius: 25px; 
+    padding: 4px 10px; 
+    border-radius: 20px; 
     font-size: 0.7rem; 
     font-weight: 700; 
     text-transform: uppercase; 
-    margin-bottom: 4px;
-    backdrop-filter: blur(10px);
+    display: inline-block;
 }
 
 .status-present { 
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-    color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    background: rgba(16, 185, 129, 0.15); 
+    color: #4ade80;
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .status-late { 
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
-    color: white;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.15); 
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 .status-absent { 
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); 
-    color: white;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.15); 
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
 .status-missing {
-    background: rgba(0,0,0,0.1);
-    color: #666;
-    border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #888;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.clockin-item.missing {
-    opacity: 0.6;
+/* Alert Boxes Dark Mode High Contrast */
+.qr-alert {
+    padding: 16px 20px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    width: 100%;
 }
 
-/* Main Card Glass Effect */
-.main-card {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 24px;
-    box-shadow: 0 12px 40px rgba(124, 45, 18, 0.15);
-    overflow: hidden;
+.qr-alert-success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #4ade80;
 }
+.qr-alert-success .qr-alert-title { color: #86efac; font-weight: 700; }
+.qr-alert-success .qr-alert-body { color: #dcfce7; font-size: 0.85rem; }
 
-.main-card-header {
-    background: linear-gradient(135deg, var(--tch-primary) 0%, var(--tch-dark) 100%);
-    color: white;
-    padding: 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.qr-alert-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #fbbf24;
 }
+.qr-alert-warning .qr-alert-title { color: #fde68a; font-weight: 700; }
+.qr-alert-warning .qr-alert-body { color: #fef3c7; font-size: 0.85rem; }
 
-.main-card-header h4 {
-    margin-bottom: 8px;
-    font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+.qr-alert-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
 }
+.qr-alert-danger .qr-alert-title { color: #fca5a5; font-weight: 700; }
+.qr-alert-danger .qr-alert-body { color: #fee2e2; font-size: 0.85rem; }
 
-/* Responsive adjustments */
+.qr-alert-info {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+}
+.qr-alert-info .qr-alert-title { color: #93c5fd; font-weight: 700; }
+.qr-alert-info .qr-alert-body { color: #dbeafe; font-size: 0.85rem; }
+
 @media (max-width: 768px) {
-    .row {
-        flex-direction: column !important;
-        gap: 20px !important;
-    }
-    
     #sidebar {
         width: 100% !important;
         min-width: auto !important;
@@ -346,66 +327,73 @@
 
 @section('content')
 
-<div class="container-fluid">
-    <div class="row" style="display: flex; gap: 24px;">
+<div class="container-fluid ent-fade-up">
+    <div class="row" style="display: flex; gap: 24px; flex-wrap: wrap;">
         <!-- Main QR Section -->
-        <div style="flex: 1; min-width: 0;" id="mainSection">
-            <div class="main-card shadow-sm">
+        <div style="flex: 1; min-width: 320px;" id="mainSection">
+            <div class="main-card">
                 <div class="main-card-header">
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-            <div>
-                <h4 class="mb-1" style="display: flex; align-items: center; gap: 8px;">
-                    <i class="bi bi-qr-code-scan"></i> {{ $subject->name }} ({{ $subject->code }})
-                </h4>
-                <small class="opacity-75">Year {{ $subject->year_level }} • Semester {{ $subject->semester }} • <span class="badge" style="background: rgba(255,255,255,0.2); font-weight: 600;">Geofence: 50m Proximity</span></small>
-            </div>
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <button type="button" id="soundToggleBtn" class="btn modern-btn" style="padding: 10px 16px !important; background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);" title="Toggle Clock-in Sound" onclick="toggleClockInSound()">
-                    <i class="bi bi-volume-up-fill" id="soundIcon"></i>
-                </button>
-                <button type="button" id="copyLinkBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);" onclick="copyScanLink()">
-                    <i class="bi bi-link-45deg me-1"></i> Copy Link
-                </button>
-                <button type="button" id="projectorBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important; color: white;" onclick="openProjectorMode()">
-                    <i class="bi bi-display me-1"></i> Projector Mode
-                </button>
-                <a href="{{ route('teacher.subjects') }}" class="btn modern-btn" style="padding: 10px 18px !important; background: rgba(255,255,255,0.16); color: white; border: 1px solid rgba(255,255,255,0.25);">
-                    <i class="bi bi-arrow-left me-1"></i> Subjects
-                </a>
-            </div>
-        </div>
-                <div class="card-body text-center" style="min-height: 500px; padding: 3rem 2rem;">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <h4 class="mb-1" style="display: flex; align-items: center; gap: 8px;">
+                                <i class="bi bi-qr-code-scan" style="color: #cfa46f;"></i> {{ $subject->name }} ({{ $subject->code }})
+                            </h4>
+                            <small style="color: #b39b82;">
+                                Year {{ $subject->year_level }} • Semester {{ $subject->semester }} • 
+                                <span class="badge" style="background: rgba(207,164,111,0.15); color: #cfa46f; border: 1px solid rgba(207,164,111,0.3); font-weight: 600;">
+                                    Geofence: 50m Proximity
+                                </span>
+                            </small>
+                        </div>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <button type="button" id="soundToggleBtn" class="btn modern-btn" style="padding: 10px 16px !important; background: rgba(255,255,255,0.06) !important; color: #f3e7cd !important; border: 1px solid rgba(255,255,255,0.15) !important;" title="Toggle Clock-in Sound" onclick="toggleClockInSound()">
+                                <i class="bi bi-volume-up-fill" id="soundIcon"></i>
+                            </button>
+                            <button type="button" id="copyLinkBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: rgba(255,255,255,0.06) !important; color: #f3e7cd !important; border: 1px solid rgba(255,255,255,0.15) !important;" onclick="copyScanLink()">
+                                <i class="bi bi-link-45deg me-1"></i> Copy Link
+                            </button>
+                            <button type="button" id="projectorBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: linear-gradient(135deg, #d97706, #b45309) !important; color: white !important;" onclick="openProjectorMode()">
+                                <i class="bi bi-display me-1"></i> Projector Mode
+                            </button>
+                            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn" style="padding: 10px 18px !important; background: rgba(255,255,255,0.06) !important; color: #f3e7cd !important; border: 1px solid rgba(255,255,255,0.15) !important;">
+                                <i class="bi bi-arrow-left me-1"></i> Subjects
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body text-center" style="min-height: 480px; padding: 2.5rem 1.5rem;">
                     
                     <!-- QR Code Display Area -->
-                    <div id="qrCodeContainer" class="qr-container" style="margin: 2rem auto;">
-                        <div style="color: #666;">
-                            <i class="bi bi-qr-code" style="font-size: 4.5rem; opacity: 0.4; margin-bottom: 1.5rem; color: var(--tch-primary);"></i>
-                            <h5 style="color: var(--tch-primary); font-weight: 700;">Click "Start Session" to generate QR code</h5>
-                            <p class="text-muted">Students will scan this code to mark attendance</p>
+                    <div id="qrCodeContainer" class="qr-container" style="margin: 1.5rem auto; max-width: 500px;">
+                        <div style="color: #b39b82;">
+                            <i class="bi bi-qr-code" style="font-size: 4rem; opacity: 0.4; margin-bottom: 1rem; color: #cfa46f; display: block;"></i>
+                            <h5 style="color: #f3e7cd; font-weight: 700; margin-bottom: 6px;">Click "Start Session" to generate QR code</h5>
+                            <p style="color: #b39b82; margin: 0; font-size: 0.9rem;">Students will scan this code to mark attendance</p>
                         </div>
                     </div>
                     
                     <!-- QR Refresh Countdown -->
-                    <div id="qrRefreshCountdown" style="display: none; text-align: center; margin: 2rem auto;">
-                        <div style="font-size: 3.5rem; font-weight: 800; font-family: monospace; color: var(--tch-primary); line-height: 1; text-shadow: 0 4px 12px rgba(124, 45, 18, 0.15);">
+                    <div id="qrRefreshCountdown" style="display: none; text-align: center; margin: 1.5rem auto;">
+                        <div style="font-size: 3.2rem; font-weight: 800; font-family: monospace; color: #cfa46f; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.4);">
                             <span id="refreshCountdownText">--</span><span style="font-size: 1.5rem; opacity: 0.5;">s</span>
                         </div>
-                        <div class="progress" style="height: 6px; border-radius: 3px; max-width: 200px; margin: 12px auto; background: rgba(0,0,0,0.05); overflow: hidden;">
-                            <div id="qrProgressIndicator" class="progress-bar" style="width: 100%; background: linear-gradient(90deg, var(--tch-primary), var(--tch-light)); transition: width 1s linear;"></div>
+                        <div class="progress" style="height: 6px; border-radius: 3px; max-width: 200px; margin: 10px auto; background: rgba(255,255,255,0.08); overflow: hidden;">
+                            <div id="qrProgressIndicator" class="progress-bar" style="width: 100%; background: linear-gradient(90deg, #cfa46f, #e5be8a); transition: width 1s linear;"></div>
                         </div>
-                        <small style="color: #666; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 0.75rem;">Code Expires In</small>
+                        <small style="color: #b39b82; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 0.75rem;">Code Expires In</small>
                     </div>
                     
                     <!-- Session Timer -->
-                    <div id="sessionTimer" class="session-timer" style="display: none; margin: 2rem auto; max-width: 350px;">
+                    <div id="sessionTimer" class="session-timer" style="display: none; margin: 1.5rem auto; max-width: 350px;">
                         <div class="d-flex align-items-center justify-content-center gap-3">
-                            <i class="bi bi-clock-fill" style="font-size: 1.2rem;"></i>
+                            <i class="bi bi-clock-fill" style="font-size: 1.2rem; color: #f59e0b;"></i>
                             <span>Session ends in: <span id="timeRemaining" class="timer-display">--:--</span></span>
                         </div>
                     </div>
                     
                     <!-- Action Buttons -->
-                    <div class="mt-5 d-flex flex-wrap justify-content-center gap-4">
+                    <div class="mt-4 d-flex flex-wrap justify-content-center gap-3">
                         <button id="startBtn" class="btn modern-btn btn-lg">
                             <i class="bi bi-play-fill me-2"></i> Start Session
                         </button>
@@ -417,21 +405,21 @@
                         </button>
                     </div>
                     
-                    <div id="locationStatus" class="mt-4"></div>
-                    <div id="statusMessages" class="mt-4"></div>
+                    <div id="locationStatus" class="mt-4" style="max-width: 600px; margin-left: auto; margin-right: auto;"></div>
+                    <div id="statusMessages" class="mt-3" style="max-width: 600px; margin-left: auto; margin-right: auto;"></div>
                 </div>
             </div>
         </div>
         
         <!-- Live Statistics Sidebar -->
-        <div id="sidebar" style="display: none; width: 350px; flex-shrink: 0; min-width: 350px;">
+        <div id="sidebar" style="display: none; width: 350px; flex-shrink: 0; min-width: 320px;">
             <!-- Real-time Stats Card -->
             <div class="stats-card mb-4">
                 <div class="stats-header">
-                    <h5><i class="bi bi-bar-chart-fill me-2"></i>Live Statistics</h5>
+                    <h5><i class="bi bi-bar-chart-fill me-2" style="color: #cfa46f;"></i>Live Statistics</h5>
                     <div class="live-indicator">
                         <span class="live-dot"></span>
-                        <small class="text-success fw-bold opacity-75">LIVE</small>
+                        <small style="color: #4ade80; font-weight: 700; font-size: 0.75rem;">LIVE</small>
                     </div>
                 </div>
                 <div class="stats-grid">
@@ -440,22 +428,22 @@
                         <div class="stat-label">Total Students</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number text-success" id="clockedIn">0</div>
+                        <div class="stat-number" style="color: #4ade80;" id="clockedIn">0</div>
                         <div class="stat-label">Present</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number text-warning" id="lateCount">0</div>
+                        <div class="stat-number" style="color: #fbbf24;" id="lateCount">0</div>
                         <div class="stat-label">Late</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number text-info" id="progressPercent">0%</div>
+                        <div class="stat-number" style="color: #60a5fa;" id="progressPercent">0%</div>
                         <div class="stat-label">Progress</div>
                     </div>
                 </div>
                 <div class="px-4 pb-4">
-                    <div class="progress" style="height: 12px; border-radius: 10px; background: rgba(255,255,255,0.3);">
+                    <div class="progress" style="height: 10px; border-radius: 10px; background: rgba(255,255,255,0.08);">
                         <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                             style="width: 0%; background: linear-gradient(135deg, var(--tch-primary) 0%, var(--tch-light) 100%); border-radius: 10px;"></div>
+                             style="width: 0%; background: linear-gradient(135deg, #cfa46f, #b88a44); border-radius: 10px;"></div>
                     </div>
                 </div>
             </div>
@@ -463,21 +451,21 @@
             <!-- Live Clock-ins Feed -->
             <div class="stats-card">
                 <div class="stats-header">
-                    <h5><i class="bi bi-people-fill me-2"></i>Live Clock-ins</h5>
+                    <h5><i class="bi bi-people-fill me-2" style="color: #cfa46f;"></i>Live Clock-ins</h5>
                     <div class="live-dot"></div>
                 </div>
                 <div style="padding: 1rem 1.25rem 0.5rem;">
                     <div class="input-group input-group-sm">
-                        <span class="input-group-text" style="background: rgba(255,255,255,0.3); border-color: rgba(124,45,18,0.2); color: var(--tch-primary);"><i class="bi bi-search"></i></span>
-                        <input type="text" id="rosterSearch" class="form-control" placeholder="Search student name or ID..." style="background: rgba(255,255,255,0.4); border-color: rgba(124,45,18,0.2);" oninput="filterClockins()">
+                        <span class="input-group-text" style="background: rgba(0,0,0,0.3); border-color: rgba(212,175,55,0.2); color: #cfa46f;"><i class="bi bi-search"></i></span>
+                        <input type="text" id="rosterSearch" class="form-control" placeholder="Search student name or ID..." style="background: rgba(0,0,0,0.3); border-color: rgba(212,175,55,0.2); color: #f3e7cd;" oninput="filterClockins()">
                     </div>
                 </div>
                 <div style="max-height: 450px; overflow-y: auto; padding: 1rem 1.25rem 1.5rem;">
                     <div id="clockinsList">
                         <div class="text-center text-muted py-5">
-                            <i class="bi bi-clock-history" style="font-size: 3.5rem; opacity: 0.3; color: var(--tch-primary);"></i>
-                            <h6 class="mt-3" style="color: var(--tch-primary);">Waiting for students...</h6>
-                            <p class="small mb-0">Clock-ins will appear here in real-time</p>
+                            <i class="bi bi-clock-history" style="font-size: 3.5rem; opacity: 0.3; color: #cfa46f;"></i>
+                            <h6 class="mt-3" style="color: #f3e7cd;">Waiting for students...</h6>
+                            <p class="small mb-0" style="color: #b39b82;">Clock-ins will appear here in real-time</p>
                         </div>
                     </div>
                 </div>
@@ -487,7 +475,7 @@
 </div>
 
 <!-- Projector Mode Fullscreen Overlay Modal -->
-<div id="projectorModal" style="display: none; position: fixed; inset: 0; background: #0f172a; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; color: white;">
+<div id="projectorModal" style="display: none; position: fixed; inset: 0; background: #0f0b08; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; color: white;">
     <div style="position: absolute; top: 24px; right: 24px; display: flex; gap: 12px;">
         <button type="button" class="btn btn-outline-light btn-lg rounded-pill" onclick="closeProjectorMode()">
             <i class="bi bi-x-lg me-1"></i> Exit Fullscreen
@@ -495,12 +483,12 @@
     </div>
     <div style="max-width: 600px; width: 100%;">
         <div class="mb-3">
-            <span class="badge" style="background: linear-gradient(135deg, var(--tch-primary), var(--tch-light)); font-size: 1rem; padding: 8px 20px; border-radius: 99px;">
+            <span class="badge" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; font-size: 1rem; padding: 8px 20px; border-radius: 99px; font-weight: 700;">
                 <i class="bi bi-broadcast me-1"></i> Live QR Attendance Session
             </span>
         </div>
-        <h2 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 6px; color: #f8fafc;">{{ $subject->name }}</h2>
-        <p style="color: #94a3b8; font-size: 1.1rem; margin-bottom: 24px;">{{ $subject->code }} • Scan with your smartphone to mark attendance</p>
+        <h2 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 6px; color: #f3e7cd;">{{ $subject->name }}</h2>
+        <p style="color: #b39b82; font-size: 1.1rem; margin-bottom: 24px;">{{ $subject->code }} • Scan with your smartphone to mark attendance</p>
 
         <div id="projectorQrWrapper" style="background: white; border-radius: 28px; padding: 24px; display: inline-block; box-shadow: 0 20px 60px rgba(0,0,0,0.6); margin-bottom: 24px;">
             <div id="projectorQrCode"></div>
@@ -508,11 +496,11 @@
 
         <div class="d-flex justify-content-center align-items-center gap-4 mt-2">
             <div style="background: rgba(255,255,255,0.06); padding: 12px 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Attendance Progress</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #34d399;" id="projectorCount">0 Present</div>
+                <div style="font-size: 0.8rem; color: #b39b82; text-transform: uppercase; font-weight: 600;">Attendance Progress</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #4ade80;" id="projectorCount">0 Present</div>
             </div>
             <div style="background: rgba(255,255,255,0.06); padding: 12px 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 0.8rem; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Code Refresh</div>
+                <div style="font-size: 0.8rem; color: #b39b82; text-transform: uppercase; font-weight: 600;">Code Refresh</div>
                 <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;" id="projectorCountdown">--s</div>
             </div>
         </div>
@@ -595,11 +583,11 @@ function updateScheduleUI(scheduleData) {
             startBtn.innerHTML = '<i class="bi bi-clock me-2"></i> Too Early';
             
             statusMessages.innerHTML = `
-                <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
+                <div class="qr-alert qr-alert-warning">
                     <i class="bi bi-clock-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #92400e; font-weight: 700;">â° Session Opens in ${scheduleData.schedule.session_opens}</h6>
-                        <p class="mb-0 small" style="color: #78350f;">
+                        <h6 class="qr-alert-title mb-1"><i class="bi bi-clock me-1"></i> Session Opens in ${scheduleData.schedule.session_opens}</h6>
+                        <p class="qr-alert-body mb-0">
                             <strong>Class Time:</strong> ${scheduleData.schedule.class_start} - ${scheduleData.schedule.class_end}<br>
                             <strong>Current Time:</strong> ${scheduleData.schedule.current_time}<br>
                             <strong>Wait Time:</strong> ${scheduleData.message}
@@ -615,15 +603,15 @@ function updateScheduleUI(scheduleData) {
             startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Start Session';
             
             statusMessages.innerHTML = `
-                <div class="alert alert-success d-flex align-items-center" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
+                <div class="qr-alert qr-alert-success">
                     <i class="bi bi-check-circle-fill mb-2" style="font-size: 1.5rem; color: #10b981;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #047857; font-weight: 700;">âœ… Ready to Start Session</h6>
-                        <p class="mb-0 small" style="color: #065f46;">
+                        <h6 class="qr-alert-title mb-1"><i class="bi bi-check2-circle me-1"></i> Ready to Start Session</h6>
+                        <p class="qr-alert-body mb-0">
                             <strong>Class Time:</strong> ${scheduleData.schedule.class_start} - ${scheduleData.schedule.class_end}<br>
                             <strong>Current Time:</strong> ${scheduleData.schedule.current_time}
                         </p>
-                        ${teacherLocation === null ? '<p class="mb-0 small" style="color: #1d4ed8;">Waiting for laptop location. Start will be enabled once location is captured.</p>' : ''}
+                        ${teacherLocation === null ? '<p class="qr-alert-body mb-0 mt-1" style="color: #60a5fa;">Waiting for laptop location. Start will be enabled once location is captured.</p>' : ''}
                     </div>
                 </div>
             `;
@@ -635,11 +623,11 @@ function updateScheduleUI(scheduleData) {
             startBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i> Class Ended';
             
             statusMessages.innerHTML = `
-                <div class="alert alert-danger d-flex align-items-center" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px;">
-                    <i class="bi bi-x-circle-fill me-3" style="font-size: 1.5rem; color: #ef4444;"></i>
+                <div class="qr-alert qr-alert-danger">
+                    <i class="bi bi-x-circle-fill mb-2" style="font-size: 1.5rem; color: #ef4444;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">âŒ Class Has Ended</h6>
-                        <p class="mb-0 small" style="color: #991b1b;">
+                        <h6 class="qr-alert-title mb-1"><i class="bi bi-x-circle me-1"></i> Class Has Ended</h6>
+                        <p class="qr-alert-body mb-0">
                             Class ended at ${scheduleData.schedule.class_end}. Cannot start new attendance session.
                         </p>
                     </div>
@@ -654,21 +642,21 @@ function showScheduleMessage(type, message) {
     
     if (type === 'no-schedule') {
         statusMessages.innerHTML = `
-            <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
-                <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
+            <div class="qr-alert qr-alert-warning">
+                <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">â„¹ï¸ No Class Today</h6>
-                    <p class="mb-0 small" style="color: #1e40af;">${message}</p>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-info-circle me-1"></i> Cannot Start Session</h6>
+                    <p class="qr-alert-body mb-0">${message}</p>
                 </div>
             </div>
         `;
     } else if (type === 'error') {
         statusMessages.innerHTML = `
-            <div class="alert alert-danger d-flex align-items-center" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px;">
-                <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem; color: #ef4444;"></i>
+            <div class="qr-alert qr-alert-danger">
+                <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #ef4444;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">âŒ Schedule Error</h6>
-                    <p class="mb-0 small" style="color: #991b1b;">${message}</p>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-x-circle me-1"></i> Schedule Error</h6>
+                    <p class="qr-alert-body mb-0">${message}</p>
                 </div>
             </div>
         `;
@@ -679,20 +667,18 @@ function showScheduleMessage(type, message) {
 startBtn.addEventListener('click', async () => {
     try {
         if (!teacherLocation) {
-            alert('âŒ Location not captured! Please wait for the location to be confirmed before starting the session.');
+            alert('Location not captured! Please wait for the location to be confirmed before starting the session.');
             return;
         }
 
         startBtn.disabled = true;
-        startBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Starting...';
+        startBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Starting...';
 
         const bodyPayload = {
             subject_code: '{{ $subject->code }}',
             classroom_lat: teacherLocation.latitude,
             classroom_lng: teacherLocation.longitude
         };
-
-        console.log('Starting session with coordinates:', bodyPayload);
 
         const response = await fetch('{{ route("teacher.qr.start") }}', {
             method: 'POST',
@@ -712,39 +698,33 @@ startBtn.addEventListener('click', async () => {
             updateUIForActiveSession();
             startIntervals();
             
-            // Clear schedule check since session is now active
             if (scheduleCheckInterval) {
                 clearInterval(scheduleCheckInterval);
                 scheduleCheckInterval = null;
             }
             
-            // Clear status messages
             document.getElementById('statusMessages').innerHTML = '';
-            
-            console.log('Session started successfully:', data);
         } else {
-            // Show detailed error message from backend
             const statusMessages = document.getElementById('statusMessages');
             statusMessages.innerHTML = `
-                <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
+                <div class="qr-alert qr-alert-warning">
                     <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #92400e; font-weight: 700;">âš ï¸ Cannot Start Session</h6>
-                        <p class="mb-0 small" style="color: #78350f; white-space: pre-line;">${data.message}</p>
+                        <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Cannot Start Session</h6>
+                        <p class="qr-alert-body mb-0" style="white-space: pre-line;">${data.message}</p>
                     </div>
                 </div>
             `;
-            console.error('Session start failed:', data);
         }
     } catch (error) {
         console.error('Error:', error);
         const statusMessages = document.getElementById('statusMessages');
         statusMessages.innerHTML = `
-            <div class="alert alert-danger d-flex align-items-center" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
+            <div class="qr-alert qr-alert-danger">
                 <i class="bi bi-wifi-off mb-2" style="font-size: 1.5rem; color: #ef4444;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #b91c1c; font-weight: 700;">ðŸŒ Network Error</h6>
-                    <p class="mb-0 small" style="color: #991b1b;">${error.message}</p>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-octagon me-1"></i> Network Error</h6>
+                    <p class="qr-alert-body mb-0">${error.message}</p>
                 </div>
             </div>
         `;
@@ -781,15 +761,13 @@ function playClockInChime() {
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
         gain.gain.setValueAtTime(0.12, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
         osc.start();
         osc.stop(ctx.currentTime + 0.35);
-    } catch (e) {
-        // AudioContext restricted or unsupported
-    }
+    } catch (e) {}
 }
 
 function copyScanLink() {
@@ -820,7 +798,6 @@ function closeProjectorMode() {
     }
 }
 
-// Additional functions
 function updateUIForActiveSession() {
     startBtn.style.display = 'none';
     refreshBtn.style.display = 'inline-block';
@@ -847,7 +824,7 @@ function resetRefreshTimers() {
     if (progressIndicator) {
         progressIndicator.style.transition = 'none';
         progressIndicator.style.width = '100%';
-        void progressIndicator.offsetWidth; // Force reflow
+        void progressIndicator.offsetWidth;
         progressIndicator.style.transition = 'width 1s linear';
     }
 
@@ -881,7 +858,7 @@ function startIntervals() {
     document.getElementById('qrRefreshCountdown').style.display = 'block';
     resetRefreshTimers();
     startSessionTimer(currentSession.session_end);
-    updateClockIns(); // Initial fetch
+    updateClockIns();
 }
 
 // Refresh QR
@@ -953,20 +930,20 @@ function enterGracePeriod() {
     
     qrContainer.classList.remove('active');
     qrContainer.innerHTML = `
-        <div style="color: #666; text-align: center;">
-            <i class="bi bi-clock-history" style="font-size: 4.5rem; opacity: 0.4; margin-bottom: 1.5rem; color: var(--tch-primary);"></i>
-            <h5 style="color: var(--tch-primary); font-weight: 700;">Session Closed — Grace Period Active</h5>
-            <p class="text-muted">You can review and edit the roster on the right. You can leave this page when done.</p>
+        <div style="color: #b39b82; text-align: center;">
+            <i class="bi bi-clock-history" style="font-size: 4rem; opacity: 0.4; margin-bottom: 1rem; color: #cfa46f; display: block;"></i>
+            <h5 style="color: #f3e7cd; font-weight: 700;">Session Closed — Grace Period Active</h5>
+            <p style="color: #b39b82;">You can review and edit the roster on the right. You can leave this page when done.</p>
             <a href="{{ route('teacher.subjects') }}" class="btn modern-btn mt-3">Finish & Exit</a>
         </div>
     `;
     
     document.getElementById('statusMessages').innerHTML = `
-        <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
-            <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
+        <div class="qr-alert qr-alert-info">
+            <i class="bi bi-info-circle-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
             <div>
-                <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">⏱ Session Closed</h6>
-                <p class="mb-0 small" style="color: #1e40af;">Students can no longer clock in. You can still make manual adjustments in the sidebar.</p>
+                <h6 class="qr-alert-title mb-1"><i class="bi bi-clock-history me-1"></i> Session Closed</h6>
+                <p class="qr-alert-body mb-0">Students can no longer clock in. You can still make manual adjustments in the sidebar.</p>
             </div>
         </div>
     `;
@@ -978,75 +955,45 @@ function showQRCode(url) {
     
     qrContainer.innerHTML = `
         <div class="text-center">
-            <div style="background: white; padding: 16px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 30px rgba(124, 45, 18, 0.15); margin-bottom: 1rem;">
-                <img src="${qrUrl}" 
-                     alt="Attendance QR Code" 
-                     class="img-fluid" 
-                     style="max-width: 260px; width: 100%; height: auto; display: block; border-radius: 10px;"
-                     onload="this.style.opacity='1'"
-                     onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkVycm9yIExvYWRpbmcgUVI8L3RleHQ+PC9zdmc+'"
-                     style="opacity: 0; transition: opacity 0.3s ease;">
-            </div>
-            <h5 style="color: var(--tch-primary); font-weight: 700; margin-bottom: 4px;">
-                <i class="bi bi-qr-code-scan me-2"></i>Scan to Clock In
-            </h5>
-            <p class="text-muted small mb-2">Students must be within 50m of this laptop to scan</p>
-            <div class="d-flex justify-content-center gap-2">
-                <span class="badge" style="background: linear-gradient(135deg, var(--tch-primary), var(--tch-light)); color: white; padding: 6px 14px; border-radius: 20px; font-size: 0.78rem;">
-                    <i class="bi bi-shield-check me-1"></i> Active Session
-                </span>
-                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.3); padding: 6px 14px; border-radius: 20px; font-size: 0.78rem;">
-                    <i class="bi bi-geo-alt-fill me-1"></i> 50m Geofence
-                </span>
-            </div>
+            <img src="${qrUrl}" alt="Attendance QR Code" style="width: 260px; height: 260px; display: block; margin: 0 auto;">
+            <p class="mt-3 mb-0" style="color: #f3e7cd; font-size: 0.9rem; font-weight: 600;">
+                <i class="bi bi-phone me-1" style="color: #cfa46f;"></i> Ask students to scan this code
+            </p>
         </div>
     `;
     qrContainer.classList.add('active');
-    
-    // Update projector QR
+
     const projContainer = document.getElementById('projectorQrCode');
     if (projContainer) {
-        projContainer.innerHTML = `<img src="${projQrUrl}" alt="Projector QR" style="width: 320px; height: 320px; display: block; border-radius: 12px;">`;
+        projContainer.innerHTML = `<img src="${projQrUrl}" alt="Projector QR Code" style="width: 400px; height: 400px; display: block; margin: 0 auto; border-radius: 12px;">`;
     }
-    
-    // Animation
-    qrContainer.style.transform = 'scale(0.96)';
-    setTimeout(() => { qrContainer.style.transform = 'scale(1)'; }, 100);
 }
 
-function startSessionTimer(sessionEndTimestamp) {
-    timerInterval = setInterval(() => {
-        const now = Math.floor(Date.now() / 1000);
-        const remaining = sessionEndTimestamp - now;
+function startSessionTimer(endTimeStr) {
+    const timerDisplay = document.getElementById('timeRemaining');
+    if (!timerDisplay) return;
 
-        if (remaining <= 0) {
-            document.getElementById('timeRemaining').textContent = '00:00';
-            
-            const statusMessages = document.getElementById('statusMessages');
-            statusMessages.innerHTML = `
-                <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
-                    <i class="bi bi-info-circle-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
-                    <div>
-                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">⏱ Session Auto-Closed</h6>
-                        <p class="mb-0 small" style="color: #1e40af;">20-minute attendance window has ended. You can still make manual adjustments.</p>
-                    </div>
-                </div>
-            `;
-            
-            enterGracePeriod();
+    if (timerInterval) clearInterval(timerInterval);
+
+    const targetTime = new Date(endTimeStr).getTime();
+
+    timerInterval = setInterval(() => {
+        const now = new Date().getTime();
+        const distance = targetTime - now;
+
+        if (distance < 0) {
+            clearInterval(timerInterval);
+            timerDisplay.textContent = '00:00';
+            stopBtn.click();
             return;
         }
 
-        const minutes = Math.floor(remaining / 60);
-        const seconds = remaining % 60;
-        const timeDisplay = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        document.getElementById('timeRemaining').textContent = timeDisplay;
-        
-        if (remaining <= 120 && remaining > 60) {
-            document.getElementById('sessionTimer').style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.8) 100%)';
-        } else if (remaining <= 60) {
-            document.getElementById('sessionTimer').style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.8) 100%)';
-        }
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        timerDisplay.textContent = 
+            (minutes < 10 ? '0' : '') + minutes + ':' + 
+            (seconds < 10 ? '0' : '') + seconds;
     }, 1000);
 }
 
@@ -1071,9 +1018,9 @@ function renderClockinsList(query = '') {
     if (items.length === 0) {
         clockinsList.innerHTML = `
             <div class="text-center text-muted py-4">
-                <i class="bi bi-search" style="font-size: 2.5rem; opacity: 0.3;"></i>
-                <h6 class="mt-2 text-muted">${query ? 'No matching students' : 'Waiting for students...'}</h6>
-                <p class="small mb-0">${query ? 'Try a different search term' : 'Clock-ins will appear here in real-time'}</p>
+                <i class="bi bi-search" style="font-size: 2.5rem; opacity: 0.3; color: #cfa46f;"></i>
+                <h6 class="mt-2" style="color: #f3e7cd;">${query ? 'No matching students' : 'Waiting for students...'}</h6>
+                <p class="small mb-0" style="color: #b39b82;">${query ? 'Try a different search term' : 'Clock-ins will appear here in real-time'}</p>
             </div>
         `;
         return;
@@ -1084,23 +1031,23 @@ function renderClockinsList(query = '') {
             <div class="clockin-avatar">
                 <div class="avatar-circle">${clockin.name.substring(0, 2).toUpperCase()}</div>
             </div>
-            <div class="clockin-info flex-grow-1">
-                <div class="fw-bold text-dark" style="font-size: 0.9rem;">${clockin.name}</div>
-                <div class="text-muted" style="font-size: 0.75rem; font-family: monospace;">${clockin.student_number}</div>
+            <div class="clockin-info flex-grow-1" style="min-width: 0;">
+                <div class="fw-bold" style="font-size: 0.88rem; color: #f3e7cd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${clockin.name}</div>
+                <div style="font-size: 0.75rem; font-family: monospace; color: #b39b82;">${clockin.student_number}</div>
             </div>
             <div class="clockin-status text-end d-flex align-items-center gap-2">
-                <div style="text-align: right; min-width: 70px;">
+                <div style="text-align: right; min-width: 65px;">
                     <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
-                    <div class="text-muted" style="font-size: 0.7rem;">${clockin.time}</div>
+                    <div style="font-size: 0.7rem; color: #b39b82; margin-top: 2px;">${clockin.time}</div>
                 </div>
                 <div class="dropdown">
-                    <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; box-shadow:none;" data-bs-toggle="dropdown">
+                    <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; color: #b39b82;" data-bs-toggle="dropdown">
                         <i class="bi bi-three-dots-vertical"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="border-radius:12px; border:1px solid rgba(0,0,0,0.08); font-size: 0.85rem; padding: 8px;">
-                        <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
-                        <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 8px; margin-bottom: 4px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
-                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 8px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="background: #1a1512; border: 1px solid rgba(212,175,55,0.2); font-size: 0.85rem; padding: 6px; border-radius: 10px;">
+                        <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 6px; padding: 6px 12px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
+                        <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 6px; padding: 6px 12px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
+                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 6px; padding: 6px 12px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
                     </ul>
                 </div>
             </div>
@@ -1109,23 +1056,14 @@ function renderClockinsList(query = '') {
 }
 
 async function updateClockIns() {
-    if (!currentSession) {
-        console.warn('updateClockIns skipped: no currentSession');
-        return;
-    }
+    if (!currentSession) return;
 
     try {
         const response = await fetch(`{{ route("teacher.qr.clockins") }}?session_id=${currentSession.session_id}`);
-        if (!response.ok) {
-            console.warn('Clockins fetch failed:', response.status, response.statusText);
-            return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
-        if (!data || !data.stats) {
-            console.warn('Clockins response missing stats:', data);
-            return;
-        }
+        if (!data || !data.stats) return;
 
         document.getElementById('totalStudents').textContent = data.stats.total_students;
         document.getElementById('clockedIn').textContent = data.stats.clocked_in;
@@ -1149,9 +1087,7 @@ function subscribeToTeacherAttendanceUpdates() {
         return;
     }
 
-    if (window.teacherAttendanceSubscribed) {
-        return;
-    }
+    if (window.teacherAttendanceSubscribed) return;
 
     window.teacherAttendanceSubscribed = true;
 
@@ -1203,10 +1139,10 @@ async function overrideStatus(studentId, newStatus, event) {
 
 function showTeacherToast(message, type = 'info') {
     const colors = {
-        success: { bg: 'rgba(16,185,129,0.9)', border: 'rgba(16,185,129,0.6)' },
-        warning: { bg: 'rgba(245,158,11,0.9)', border: 'rgba(245,158,11,0.6)' },
-        error:   { bg: 'rgba(239,68,68,0.9)',  border: 'rgba(239,68,68,0.6)' },
-        info:    { bg: 'rgba(59,130,246,0.9)',  border: 'rgba(59,130,246,0.6)' },
+        success: { bg: 'rgba(16,185,129,0.95)', border: 'rgba(16,185,129,0.6)' },
+        warning: { bg: 'rgba(245,158,11,0.95)', border: 'rgba(245,158,11,0.6)' },
+        error:   { bg: 'rgba(239,68,68,0.95)',  border: 'rgba(239,68,68,0.6)' },
+        info:    { bg: 'rgba(59,130,246,0.95)',  border: 'rgba(59,130,246,0.6)' },
     };
     const c = colors[type] || colors.info;
 
@@ -1216,13 +1152,12 @@ function showTeacherToast(message, type = 'info') {
         background: ${c.bg}; border: 1px solid ${c.border};
         color: white; padding: 14px 20px; border-radius: 14px;
         font-size: 0.85rem; font-weight: 600; max-width: 320px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         backdrop-filter: blur(12px);
         animation: slideInToast 0.35s ease;
         display: flex; align-items: center; gap: 10px;
     `;
 
-    // Add CSS animation if not already present
     if (!document.getElementById('toastStyle')) {
         const style = document.createElement('style');
         style.id = 'toastStyle';
@@ -1239,7 +1174,7 @@ function showTeacherToast(message, type = 'info') {
         document.head.appendChild(style);
     }
 
-    const icon = type === 'success' ? 'âœ…' : type === 'warning' ? 'âš ï¸' : type === 'error' ? 'âŒ' : 'â„¹ï¸';
+    const icon = type === 'success' ? '<i class="bi bi-check-circle-fill"></i>' : type === 'warning' ? '<i class="bi bi-exclamation-triangle-fill"></i>' : type === 'error' ? '<i class="bi bi-x-circle-fill"></i>' : '<i class="bi bi-info-circle-fill"></i>';
     toast.innerHTML = `<span style="font-size:1.1rem;">${icon}</span><span>${message}</span>`;
 
     document.body.appendChild(toast);
@@ -1252,11 +1187,11 @@ function showTeacherToast(message, type = 'info') {
 function captureTeacherLocation() {
     if (!navigator.geolocation) {
         locationStatus.innerHTML = `
-            <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
-                <i class="bi bi-geo-alt-fill me-3" style="font-size: 1.5rem; color: #f59e0b;"></i>
+            <div class="qr-alert qr-alert-warning">
+                <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #92400e; font-weight: 700;">ðŸ“ Location Not Available</h6>
-                    <p class="mb-0 small" style="color: #78350f;">Your browser does not support geolocation. Students will be validated against the default campus coordinates.</p>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-geo-alt me-1"></i> Location Not Available</h6>
+                    <p class="qr-alert-body mb-0">Your browser does not support geolocation. Students will be validated against the default campus coordinates.</p>
                 </div>
             </div>
         `;
@@ -1274,11 +1209,11 @@ function captureTeacherLocation() {
     locationDowngraded = false;
 
     locationStatus.innerHTML = `
-        <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
+        <div class="qr-alert qr-alert-info">
             <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
             <div>
-                <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ“ Capturing Laptop Location...</h6>
-                <p class="mb-0 small" style="color: #1e40af;">Please allow location access so the student scan area matches your laptop.</p>
+                <h6 class="qr-alert-title mb-1"><i class="bi bi-geo-alt me-1"></i> Capturing Laptop Location...</h6>
+                <p class="qr-alert-body mb-0">Please allow location access so the student scan area matches your laptop.</p>
             </div>
         </div>
     `;
@@ -1304,12 +1239,12 @@ function captureTeacherLocation() {
         startBtn.disabled = false;
 
         locationStatus.innerHTML = `
-            <div class="alert ${isReliable ? 'alert-success' : 'alert-warning'} d-flex align-items-center" style="background: linear-gradient(135deg, ${isReliable ? 'rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%' : 'rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%'}); border: 1px solid ${isReliable ? 'rgba(16, 185, 129, 0.3)' : 'rgba(249, 115, 22, 0.3)'}; border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
-                <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: ${isReliable ? '#10b981' : '#f97316'};"></i>
+            <div class="qr-alert ${isReliable ? 'qr-alert-success' : 'qr-alert-warning'}">
+                <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: ${isReliable ? '#10b981' : '#f59e0b'};"></i>
                 <div>
-                    <h6 class="mb-1" style="color: ${isReliable ? '#047857' : '#9a3412'}; font-weight: 700;">ðŸ“ Using Laptop Location</h6>
-                    <p class="mb-0 small" style="color: ${isReliable ? '#065f46' : '#7c2d12'};">Latitude: ${teacherLocation.latitude.toFixed(6)}, Longitude: ${teacherLocation.longitude.toFixed(6)}</p>
-                    <p class="mb-0 small" style="color: ${isReliable ? '#065f46' : '#7c2d12'};">Accuracy: ${Math.round(accuracy)}m${isReliable ? ' â€” this is acceptable for classroom location.' : ' â€” this is a weaker fix, but the session will still use it.'}</p>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-laptop me-1"></i> Using Laptop Location</h6>
+                    <p class="qr-alert-body mb-1">Latitude: ${teacherLocation.latitude.toFixed(6)}, Longitude: ${teacherLocation.longitude.toFixed(6)}</p>
+                    <p class="qr-alert-body mb-0">Accuracy: ${Math.round(accuracy)}m &mdash; ${isReliable ? '<i class="bi bi-check2 text-success me-1"></i> This is acceptable for classroom location.' : 'This is a weaker fix, but the session will still use it.'}</p>
                 </div>
             </div>
         `;
@@ -1328,11 +1263,11 @@ function captureTeacherLocation() {
         if (!locationDowngraded && (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE)) {
             locationDowngraded = true;
             locationStatus.innerHTML = `
-                <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
-                    <i class="bi bi-geo-alt-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
+                <div class="qr-alert qr-alert-info">
+                    <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
                     <div>
-                        <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ“ Retrying with lower accuracy...</h6>
-                        <p class="mb-0 small" style="color: #1e40af;">High accuracy did not respond. Trying a fallback request now.</p>
+                        <h6 class="qr-alert-title mb-1"><i class="bi bi-arrow-repeat me-1"></i> Retrying location capture...</h6>
+                        <p class="qr-alert-body mb-0">High accuracy did not respond. Trying a fallback request now.</p>
                     </div>
                 </div>
             `;
@@ -1348,12 +1283,12 @@ function captureTeacherLocation() {
         startBtn.disabled = true;
 
         locationStatus.innerHTML = `
-            <div class="alert alert-warning d-flex align-items-center" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 16px; flex-direction: column; justify-content: center; text-align: center;">
-                <i class="bi bi-exclamation-triangle-fill me-3" style="font-size: 1.5rem; color: #f59e0b;"></i>
+            <div class="qr-alert qr-alert-warning">
+                <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                 <div>
-                    <h6 class="mb-1" style="color: #92400e; font-weight: 700;">âš ï¸ Location Access Needed</h6>
-                    <p class="mb-0 small" style="color: #78350f;">${message}</p>
-                    <p class="mb-0 small"><strong>Please retry location capture before starting the session.</strong></p>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Location Access Needed</h6>
+                    <p class="qr-alert-body mb-1">${message}</p>
+                    <p class="qr-alert-body mb-0"><strong>Please retry location capture before starting the session.</strong></p>
                 </div>
             </div>
         `;
@@ -1380,11 +1315,11 @@ function captureTeacherLocation() {
             if (!locationDowngraded) {
                 locationDowngraded = true;
                 locationStatus.innerHTML = `
-                    <div class="alert alert-info d-flex align-items-center" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 16px;">
-                        <i class="bi bi-geo-alt-fill me-3" style="font-size: 1.5rem; color: #3b82f6;"></i>
+                    <div class="qr-alert qr-alert-info">
+                        <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
                         <div>
-                            <h6 class="mb-1" style="color: #1d4ed8; font-weight: 700;">ðŸ“ Trying low-accuracy fallback...</h6>
-                            <p class="mb-0 small" style="color: #1e40af;">If this still fails, default campus coordinates will be used.</p>
+                            <h6 class="qr-alert-title mb-1"><i class="bi bi-arrow-repeat me-1"></i> Trying fallback...</h6>
+                            <p class="qr-alert-body mb-0">If this still fails, default campus coordinates will be used.</p>
                         </div>
                     </div>
                 `;
@@ -1396,56 +1331,6 @@ function captureTeacherLocation() {
     };
 
     startLocationWatch(true);
-}
-
-function resetUI() {
-    currentSession = null;
-    
-    if (refreshInterval) clearInterval(refreshInterval);
-    if (clockinInterval) clearInterval(clockinInterval);
-    if (timerInterval) clearInterval(timerInterval);
-    if (refreshCountdownInterval) clearInterval(refreshCountdownInterval);
-
-    startBtn.style.display = 'inline-block';
-    refreshBtn.style.display = 'none';
-    stopBtn.style.display = 'none';
-    document.getElementById('sessionTimer').style.display = 'none';
-    document.getElementById('qrRefreshCountdown').style.display = 'none';
-    document.getElementById('projectorBtn').style.display = 'none';
-    document.getElementById('copyLinkBtn').style.display = 'none';
-    closeProjectorMode();
-    
-    qrContainer.classList.remove('active');
-    sidebar.style.display = 'none';
-
-    qrContainer.innerHTML = `
-        <div style="color: #666;">
-            <i class="bi bi-qr-code" style="font-size: 4.5rem; opacity: 0.4; margin-bottom: 1.5rem; color: var(--tch-primary);"></i>
-            <h5 style="color: var(--tch-primary); font-weight: 700;">Click "Start Session" to generate QR code</h5>
-            <p class="text-muted">Students will scan this code to mark attendance</p>
-        </div>
-    `;
-
-    document.getElementById('totalStudents').textContent = '0';
-    document.getElementById('clockedIn').textContent = '0';
-    document.getElementById('lateCount').textContent = '0';
-    document.getElementById('progressPercent').textContent = '0%';
-    document.getElementById('progressBar').style.width = '0%';
-    
-    // Reset clock-ins list
-    document.getElementById('clockinsList').innerHTML = `
-        <div class="text-center text-muted py-5">
-            <i class="bi bi-clock-history" style="font-size: 3.5rem; opacity: 0.3; color: var(--tch-primary);"></i>
-            <h6 class="mt-3" style="color: var(--tch-primary);">Waiting for students...</h6>
-            <p class="small mb-0">Clock-ins will appear here in real-time</p>
-        </div>
-    `;
-    
-    // Restart schedule checking when session ends
-    if (!scheduleCheckInterval) {
-        checkScheduleStatus();
-        scheduleCheckInterval = setInterval(checkScheduleStatus, 30000);
-    }
 }
 </script>
 @endsection

@@ -23,10 +23,121 @@
 .sp{max-width:1100px;margin:0 auto;}
 .pg-title{font-size:1.8rem;font-weight:800;color:#f3e7cd;letter-spacing:-.3px;}
 .pg-sub{font-size:.875rem;color:#b39b82;margin-top:2px;}
-.stabs{display:flex;gap:0;margin-bottom:24px;border-bottom:2px solid rgba(255,215,145,0.08);}
-.stab{padding:10px 20px;font-size:.875rem;font-weight:600;color:#8f826f;cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;}
-.stab.active{color:#cfa46f;border-bottom-color:#cfa46f;}
-.stab:hover{color:#f3e7cd;}
+.stabs-wrapper {
+    position: relative;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+.stabs {
+    display: flex;
+    gap: 0;
+    width: 100%;
+    border-bottom: 2px solid rgba(255,215,145,0.08);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 48px;
+    padding-left: 2px;
+}
+.stabs::-webkit-scrollbar {
+    display: none;
+}
+.stab {
+    white-space: nowrap;
+    padding: 10px 20px;
+    font-size: .875rem;
+    font-weight: 600;
+    color: #8f826f;
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all .2s;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+}
+.stab.active { color: #cfa46f; border-bottom-color: #cfa46f; }
+.stab:hover { color: #f3e7cd; }
+
+.stabs-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(30, 24, 20, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(207, 164, 111, 0.5);
+    color: #cfa46f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6), 0 0 10px rgba(207,164,111,0.3);
+    transition: all 0.25s ease;
+    padding: 0;
+}
+.stabs-arrow:hover {
+    background: rgba(45, 36, 30, 0.98);
+    border-color: #cfa46f;
+    color: #f3e7cd;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.7), 0 0 14px rgba(207,164,111,0.45);
+    transform: translateY(-50%) scale(1.08);
+}
+.stabs-arrow-left {
+    left: 0;
+    display: none;
+}
+.stabs-arrow-left.visible {
+    display: flex;
+}
+.stabs-arrow-right {
+    right: 0;
+    display: flex;
+    animation: stabsArrowPulse 2.5s infinite ease-in-out;
+}
+@keyframes stabsArrowPulse {
+    0%, 100% {
+        transform: translateY(-50%) scale(1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 8px rgba(207,164,111,0.25);
+    }
+    50% {
+        transform: translateY(-50%) scale(1.12);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.7), 0 0 16px rgba(207,164,111,0.5);
+    }
+}
+.stabs-wrapper.has-scroll-right::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 52px;
+    background: linear-gradient(to right, transparent, rgba(17, 14, 12, 0.9));
+    pointer-events: none;
+    z-index: 5;
+}
+.stabs-wrapper.has-scroll-left::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 52px;
+    background: linear-gradient(to left, transparent, rgba(17, 14, 12, 0.9));
+    pointer-events: none;
+    z-index: 5;
+}
 .spanel{display:none;}.spanel.active{display:block;}
 .sc{background:rgba(255,235,190,0.02);border-radius:16px;border:1px solid rgba(255,215,145,0.08);box-shadow:0 4px 15px rgba(0,0,0,.2);overflow:hidden;margin-bottom:20px;transition:all .25s;}
 .sc:hover{box-shadow:0 8px 25px rgba(0,0,0,.3);border-color:rgba(255,215,145,0.15);}
@@ -97,13 +208,17 @@
         .pg-title { font-size: 1.2rem; }
         .pg-sub { font-size: 0.8rem; }
 
+        .stabs-wrapper {
+            margin-bottom: 20px;
+        }
         .stabs {
             display: flex;
             flex-wrap: nowrap;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             gap: 8px;
-            padding-bottom: 2px;
+            padding: 4px 44px 4px 4px;
+            margin-bottom: 0;
         }
         .stabs::-webkit-scrollbar {
             display: none;
@@ -182,15 +297,23 @@
     @endif
 
     <!-- TABS -->
-    <div class="stabs">
-        <button class="stab active" onclick="switchTab('profile',this)">Profile</button>
-        <button class="stab" onclick="switchTab('security',this)">Security</button>
-        <button class="stab" onclick="switchTab('attendance',this)">Attendance</button>
-        <button class="stab" onclick="switchTab('fingerprint',this)">Fingerprint</button>
-        <button class="stab" onclick="switchTab('preferences',this)">Preferences</button>
+    <div class="stabs-wrapper">
+        <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll left">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <div class="stabs" id="stabsNav">
+            <button class="stab active" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
+            <button class="stab" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
+            <button class="stab" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Fingerprint</button>
+            <button class="stab" onclick="switchTab('attendance',this)"><i class="bi bi-bar-chart-fill me-1"></i> Attendance</button>
+            <button class="stab" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
+        </div>
+        <button type="button" class="stabs-arrow stabs-arrow-right" id="stabsArrowRight" onclick="scrollStabs('right')" aria-label="Scroll right">
+            <i class="bi bi-chevron-right"></i>
+        </button>
     </div>
 
-    <!-- â”€â”€ TAB: PROFILE â”€â”€ -->
+    <!-- ── TAB: PROFILE ── -->
     <div id="tab-profile" class="spanel active">
 
         <!-- Avatar -->
@@ -248,17 +371,17 @@
         </div>
     </div>
 
-    <!-- â”€â”€ TAB: SECURITY â”€â”€ -->
+    <!-- ── TAB: SECURITY ── -->
     <div id="tab-security" class="spanel">
         <div class="sc">
             <div class="sc-head">
                 <div class="sc-icon" style="background:#fff5f5;color:#800000;"><i class="bi bi-shield-lock-fill"></i></div>
-                <div><div class="sc-title">Security</div><div class="sc-sub">Change your email address or password</div></div>
+                <div><div class="sc-title">Security & Authentication</div><div class="sc-sub">Manage your email, password, biometrics, and recovery keys</div></div>
             </div>
             <div class="sc-body">
 
-                <!-- â”€â”€ Change Email via OTP to current email â”€â”€ -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid #f1f5f9;">
+                <!-- ── Change Email via OTP to current email ── -->
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
                     <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Email Address</div>
 
                     <div id="emailStep1">
@@ -297,8 +420,8 @@
                     </div>
                 </div>
 
-                <!-- â”€â”€ Change Password via OTP â”€â”€ -->
-                <div>
+                <!-- ── Change Password via OTP ── -->
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
                     <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Password</div>
 
                     <div id="otpStep1">
@@ -340,10 +463,28 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- ── Biometric & Fingerprint Authentication ── -->
+                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
+                    <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Biometric Authentication</div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:rgba(255,235,190,0.03);padding:16px 20px;border-radius:12px;border:1px solid rgba(255,215,145,0.08);">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(34,197,94,0.12);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">
+                                <i class="bi bi-fingerprint"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Fingerprint / Biometric Login</div>
+                                <div style="font-size:.78rem;color:#b39b82;">Use device biometrics (fingerprint / Face ID) for passwordless login and fast QR attendance</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="switchTab('fingerprint', document.querySelectorAll('.stab')[2])" class="sbtn" style="padding:9px 18px;font-size:.82rem;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
+                            <i class="bi bi-fingerprint me-1"></i> Manage Fingerprints
+                        </button>
+                    </div>
                 </div>
 
                 <!-- ── Recovery Codes ── -->
-                <div style="margin-top:32px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.06);">
+                <div>
                     <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Recovery Codes</div>
                     <p style="font-size:.85rem;color:#b39b82;margin-bottom:12px;">
                         Recovery codes can be used to log in if you lose access to your email or fingerprint. Generate new codes to invalidate old ones.
@@ -367,7 +508,80 @@
 
     </div>
 
-    <!-- â”€â”€ TAB: ATTENDANCE â”€â”€ -->
+    <!-- ── TAB: FINGERPRINT ── -->
+    <div id="tab-fingerprint" class="spanel">
+        <div class="sc">
+            <div class="sc-head">
+                <div class="sc-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
+                <div>
+                    <div class="sc-title">Fingerprint / Biometric Login</div>
+                    <div class="sc-sub">Register device biometrics (Touch ID, Windows Hello, Android Biometrics) for fast login and attendance</div>
+                </div>
+            </div>
+            <div class="sc-body">
+
+                <!-- In-app browser alert -->
+                <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
+                    <div style="display:flex;align-items:flex-start;gap:12px;">
+                        <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
+                        <div>
+                            <div style="font-weight:700;margin-bottom:4px;">Biometric login not available on this browser</div>
+                            <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
+                                You're using an in-app browser that doesn't support fingerprint/biometric login. Please open this page in <strong>Chrome</strong> or <strong>Safari</strong> to register your fingerprint.
+                            </div>
+                            <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
+                                <i class="bi bi-box-arrow-up-right"></i> Open in Browser
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Cards / How it works -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:24px;">
+                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:14px 16px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                            <div style="width:28px;height:28px;border-radius:8px;background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);display:flex;align-items:center;justify-content:center;font-size:.85rem;"><i class="bi bi-shield-lock"></i></div>
+                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">Passwordless Login</span>
+                        </div>
+                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Sign in instantly on this device using your fingerprint or Face ID without remembering passwords.</p>
+                    </div>
+                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:14px 16px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                            <div style="width:28px;height:28px;border-radius:8px;background:rgba(34,197,94,0.15);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:.85rem;"><i class="bi bi-qr-code-scan"></i></div>
+                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">QR Attendance Clock-In</span>
+                        </div>
+                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Verify your identity in seconds when scanning teacher classroom QR codes to record attendance.</p>
+                    </div>
+                </div>
+
+                <!-- Registered devices -->
+                <div style="margin-bottom:24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div style="font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Biometric Devices</div>
+                        <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:2px 8px;border-radius:99px;border:1px solid rgba(207,164,111,0.2);">Loading...</span>
+                    </div>
+                    <div id="deviceList">
+                        <div style="text-align:center;padding:28px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
+                            <i class="bi bi-fingerprint" style="font-size:2.4rem;display:block;margin-bottom:8px;opacity:.35;color:var(--gold,#CFA46F);"></i>
+                            <div style="font-weight:600;color:#f3e7cd;margin-bottom:4px;">No fingerprint registered yet</div>
+                            <div style="font-size:.78rem;color:#b39b82;">Register this device to enable fast fingerprint sign-in and QR clock-in.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Register button & Status -->
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="sbtn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
+                        <i class="bi bi-fingerprint me-2"></i>Register This Device
+                    </button>
+                    <span style="font-size:.78rem;color:#b39b82;"><i class="bi bi-shield-check me-1 text-success"></i>FIDO2 / WebAuthn standard security</span>
+                </div>
+                <div id="fpMessage" style="margin-top:14px;font-size:.82rem;display:none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── TAB: ATTENDANCE ── -->
     <div id="tab-attendance" class="spanel">
         <div class="sc">
             <div class="sc-head">
@@ -433,51 +647,7 @@
         </div>
     </div>
 
-    <!-- â”€â”€ TAB: FINGERPRINT â”€â”€ -->
-    <div id="tab-fingerprint" class="spanel">
-        <div class="sc">
-            <div class="sc-head">
-                <div class="sc-icon" style="background:#f0fdf4;color:#16a34a;"><i class="bi bi-fingerprint"></i></div>
-                <div><div class="sc-title">Fingerprint / Biometric Login</div><div class="sc-sub">Register your device fingerprint to log in without a password</div></div>
-            </div>
-            <div class="sc-body">
-
-                <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:16px;">
-                    <div style="display:flex;align-items:flex-start;gap:12px;">
-                        <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
-                        <div>
-                            <div style="font-weight:700;margin-bottom:4px;">Biometric login not available</div>
-                            <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
-                                You're using an in-app browser that doesn't support fingerprint/biometric login. Please open this page in <strong>Chrome</strong> or <strong>Safari</strong> to register your fingerprint.
-                            </div>
-                            <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
-                                <i class="bi bi-box-arrow-up-right"></i> Open in Browser
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Registered devices -->
-                <div style="margin-bottom:20px;">
-                    <div style="font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Registered Devices</div>
-                    <div id="deviceList">
-                        <div style="text-align:center;padding:20px;color:#b39b82;font-size:.85rem;" id="noDevices">
-                            <i class="bi bi-fingerprint" style="font-size:2rem;display:block;margin-bottom:8px;opacity:.3;"></i>
-                            No fingerprint registered yet.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Register button -->
-                <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="sbtn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
-                    <i class="bi bi-fingerprint me-2"></i>Register This Device
-                </button>
-                <div id="fpMessage" style="margin-top:12px;font-size:.82rem;display:none;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- â”€â”€ TAB: PREFERENCES â”€â”€ -->
+    <!-- ── TAB: PREFERENCES ── -->
     <div id="tab-preferences" class="spanel">
         <div class="sc">
             <div class="sc-head">
@@ -655,16 +825,76 @@ function applySwUpdate() {
     }
 }
 
+function updateStabsScrollArrows() {
+    const nav = document.getElementById('stabsNav');
+    const leftBtn = document.getElementById('stabsArrowLeft');
+    const rightBtn = document.getElementById('stabsArrowRight');
+    const wrapper = nav?.closest('.stabs-wrapper');
+    if (!nav || !leftBtn || !rightBtn) return;
+
+    const maxScrollLeft = nav.scrollWidth - nav.clientWidth;
+
+    if (maxScrollLeft <= 8) {
+        leftBtn.classList.remove('visible');
+        rightBtn.style.display = 'none';
+        wrapper?.classList.remove('has-scroll-left', 'has-scroll-right');
+        return;
+    }
+
+    rightBtn.style.display = '';
+
+    // Toggle left button visibility when scrolled right
+    if (nav.scrollLeft > 10) {
+        leftBtn.classList.add('visible');
+        wrapper?.classList.add('has-scroll-left');
+    } else {
+        leftBtn.classList.remove('visible');
+        wrapper?.classList.remove('has-scroll-left');
+    }
+
+    // Always keep right arrow clearly visible on mobile & desktop
+    if (nav.scrollLeft >= maxScrollLeft - 8) {
+        rightBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
+        rightBtn.setAttribute('title', 'Scroll to start');
+        wrapper?.classList.remove('has-scroll-right');
+    } else {
+        rightBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
+        rightBtn.setAttribute('title', 'Scroll tabs');
+        wrapper?.classList.add('has-scroll-right');
+    }
+}
+
+function scrollStabs(direction) {
+    const nav = document.getElementById('stabsNav');
+    if (!nav) return;
+    const maxScrollLeft = nav.scrollWidth - nav.clientWidth;
+
+    if (direction === 'right' && maxScrollLeft > 10 && nav.scrollLeft >= maxScrollLeft - 5) {
+        nav.scrollTo({ left: 0, behavior: 'smooth' });
+    } else {
+        const distance = 180;
+        nav.scrollBy({
+            left: direction === 'right' ? distance : -distance,
+            behavior: 'smooth'
+        });
+    }
+    setTimeout(updateStabsScrollArrows, 250);
+}
+
 function switchTab(id, btn) {
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
     const targetPanel = document.getElementById('tab-' + id);
     if (targetPanel) targetPanel.classList.add('active');
-    if (btn) btn.classList.add('active');
+    if (btn) {
+        btn.classList.add('active');
+        btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
     if (id === 'fingerprint') {
         loadDevices();
         prefetchWebAuthn();
     }
+    setTimeout(updateStabsScrollArrows, 300);
 }
 
 async function toggleWebPush(input) {
@@ -708,65 +938,97 @@ function openInSystemBrowser() {
         // Fallback after a short delay (if intent doesn't work)
         setTimeout(function() { window.open(url, '_system'); }, 500);
     } else {
-        // iOS and others: window.open usually opens Safari
-        window.open(url, '_blank');
-    }
-}
-
-// ── WebAuthn Fingerprint Registration ──
+     // ── WebAuthn Fingerprint Registration ──
 async function loadDevices() {
     var inApp = isInAppBrowser();
+    const list = document.getElementById('deviceList');
+    const badge = document.getElementById('deviceCountBadge');
+    const regBtn = document.getElementById('registerFpBtn');
+    const unsupported = document.getElementById('webauthnUnsupported');
 
     if (!window.PublicKeyCredential) {
-        document.getElementById('registerFpBtn').style.display = 'none';
-        var unsupported = document.getElementById('webauthnUnsupported');
+        if (regBtn) regBtn.style.display = 'none';
+        if (badge) { badge.textContent = 'Unsupported'; badge.style.color = '#f87171'; }
         if (unsupported) {
             unsupported.style.display = 'block';
-            // Customize message based on whether it's an in-app browser or truly unsupported
             var msgEl = document.getElementById('webauthnUnsupportedMsg');
             var openBtn = document.getElementById('openInBrowserBtn');
             if (inApp) {
                 msgEl.innerHTML = 'You\'re using an in-app browser (like Messenger or Facebook) that doesn\'t support fingerprint login. Tap the button below to open this page in <strong>Chrome</strong> or <strong>Safari</strong>.';
-                openBtn.style.display = 'inline-flex';
+                if (openBtn) openBtn.style.display = 'inline-flex';
             } else {
                 msgEl.innerHTML = 'Your browser or device doesn\'t support biometric login. Please try using <strong>Chrome</strong> or <strong>Safari</strong> on a device with a fingerprint sensor or Face ID.';
-                openBtn.style.display = 'none';
+                if (openBtn) openBtn.style.display = 'none';
             }
         }
         return;
     }
+
     try {
         const res = await fetch('{{ route("webauthn.devices") }}');
         const devices = await res.json();
-        const list = document.getElementById('deviceList');
-        const noDevices = document.getElementById('noDevices');
-        if (devices.length > 0) {
-            noDevices.style.display = 'none';
-            
+        if (!list) return;
+
+        list.innerHTML = '';
+
+        if (devices && devices.length > 0) {
+            if (badge) {
+                badge.textContent = `${devices.length} Registered`;
+                badge.style.color = '#4ade80';
+                badge.style.borderColor = 'rgba(74,222,128,0.3)';
+                badge.style.background = 'rgba(74,222,128,0.1)';
+            }
+
             const registeredMsg = document.createElement('div');
-            registeredMsg.style.cssText = 'text-align:center;padding:16px;color:#16a34a;font-size:.9rem;background:rgba(22,163,74,0.1);border-radius:12px;border:1px solid rgba(22,163,74,0.2);margin-bottom:16px;font-weight:600;';
-            registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill me-2" style="font-size:1.1rem;vertical-align:middle;"></i>You have registered a fingerprint.';
+            registeredMsg.style.cssText = 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
+            registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill" style="font-size:1.2rem;color:#22c55e;"></i> <span>Biometric authentication is <strong>active</strong> on your account.</span>';
             list.appendChild(registeredMsg);
 
             devices.forEach(d => {
                 const div = document.createElement('div');
-                div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,215,145,0.06);';
+                div.style.cssText = 'display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);margin-bottom:10px;transition:all .2s;';
+                div.onmouseover = function() { this.style.borderColor = 'rgba(255,215,145,0.2)'; this.style.background = 'rgba(255,235,190,0.06)'; };
+                div.onmouseout = function() { this.style.borderColor = 'rgba(255,215,145,0.08)'; this.style.background = 'rgba(255,235,190,0.03)'; };
+
                 div.innerHTML = `
-                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(74,222,128,0.1);display:flex;align-items:center;justify-content:center;color:#4ade80;flex-shrink:0;">
+                    <div style="width:42px;height:42px;border-radius:10px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:1.2rem;flex-shrink:0;">
                         <i class="bi bi-fingerprint"></i>
                     </div>
-                    <div style="flex:1;">
-                        <div style="font-size:.875rem;font-weight:600;color:#f3e7cd;">${d.name || d.device_name || "My Device"}</div>
-                        <div style="font-size:.72rem;color:#b39b82;">Registered ${new Date(d.created_at).toLocaleDateString()}</div>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-size:.9rem;font-weight:700;color:#f3e7cd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name || d.device_name || "Registered Device"}</div>
+                        <div style="font-size:.75rem;color:#b39b82;display:flex;align-items:center;gap:8px;margin-top:2px;">
+                            <span><i class="bi bi-shield-check text-success me-1"></i>Verified</span>
+                            <span>•</span>
+                            <span>Added ${new Date(d.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                        </div>
                     </div>
                     <button onclick="removeDevice('${d.credential_id}', this)"
-                        style="padding:5px 12px;border-radius:7px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:.75rem;font-weight:600;cursor:pointer;">
-                        Remove
+                        style="padding:6px 14px;border-radius:8px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.25);font-size:.78rem;font-weight:600;cursor:pointer;transition:all .2s;"
+                        onmouseover="this.style.background='rgba(248,113,113,0.2)'" onmouseout="this.style.background='rgba(248,113,113,0.1)'">
+                        <i class="bi bi-trash3 me-1"></i>Remove
                     </button>`;
                 list.appendChild(div);
             });
+        } else {
+            if (badge) {
+                badge.textContent = '0 Registered';
+                badge.style.color = '#b39b82';
+                badge.style.borderColor = 'rgba(207,164,111,0.2)';
+                badge.style.background = 'rgba(207,164,111,0.12)';
+            }
+            const emptyDiv = document.createElement('div');
+            emptyDiv.id = 'noDevices';
+            emptyDiv.style.cssText = 'text-align:center;padding:28px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);margin-bottom:16px;';
+            emptyDiv.innerHTML = `
+                <i class="bi bi-fingerprint" style="font-size:2.4rem;display:block;margin-bottom:8px;opacity:.35;color:var(--gold,#CFA46F);"></i>
+                <div style="font-weight:600;color:#f3e7cd;margin-bottom:4px;">No fingerprint registered yet</div>
+                <div style="font-size:.78rem;color:#b39b82;">Register this device to enable fast fingerprint sign-in and QR clock-in.</div>
+            `;
+            list.appendChild(emptyDiv);
         }
-    } catch(e) {}
+    } catch(e) {
+        console.error('Failed to load devices', e);
+    }
 }
 
 function normalizeBase64(base64) {
@@ -920,6 +1182,7 @@ async function registerFingerprint() {
             msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:10px 14px;border-radius:10px;';
             msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>' + (result.message || 'Fingerprint registered successfully!');
             btn.innerHTML = '<i class="bi bi-check2 me-2"></i>Registered';
+            loadDevices();
             setTimeout(function() { location.reload(); }, 1500);
         } else {
             msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:10px;';
@@ -952,31 +1215,8 @@ async function removeDevice(credentialId, btn) {
         headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential_id: credentialId })
     });
-    location.reload();
+    loadDevices();
 }
-
-// Load devices when fingerprint tab is opened
-document.querySelectorAll('.stab').forEach(btn => {
-    btn.addEventListener('click', () => {
-        if (btn.textContent.trim() === 'Fingerprint') {
-            loadDevices();
-            prefetchWebAuthn();
-        }
-    });
-});
-
-// Auto-switch to fingerprint tab if navigated from direct link
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.location.hash === '#tab-fingerprint' || localStorage.getItem('active_settings_tab') === 'fingerprint') {
-        localStorage.removeItem('active_settings_tab');
-        const fpTabBtn = Array.from(document.querySelectorAll('.stab')).find(b => b.textContent.trim() === 'Fingerprint');
-        if (fpTabBtn) {
-            switchTab('fingerprint', fpTabBtn);
-            loadDevices();
-            prefetchWebAuthn();
-        }
-    }
-});
 
 // OTP digit handling in settings
 const sDigits = document.querySelectorAll('.otp-digit-s');
@@ -1040,7 +1280,7 @@ function cancelOtp() {
     sDigits.forEach(d => d.value = '');
 }
 
-// â”€â”€ Email change via SMS OTP â”€â”€
+// ── Email change via SMS/Email OTP ──
 const eDigits = document.querySelectorAll('.email-otp-digit');
 eDigits.forEach((input, idx) => {
     input.addEventListener('input', (e) => {
@@ -1141,14 +1381,21 @@ function generateRecoveryCodes() {
 document.addEventListener('DOMContentLoaded', () => {
     loadDevices();
     prefetchWebAuthn();
+    updateStabsScrollArrows();
 
-    // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint)
-    const hash = window.location.hash.replace('#tab-', '').replace('#', '');
+    const nav = document.getElementById('stabsNav');
+    if (nav) {
+        nav.addEventListener('scroll', updateStabsScrollArrows, { passive: true });
+    }
+    window.addEventListener('resize', updateStabsScrollArrows, { passive: true });
+
+    // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint or #fingerprint)
+    const rawHash = window.location.hash.replace('#tab-', '').replace('#', '');
     const storedTab = localStorage.getItem('active_settings_tab');
-    const targetTab = hash || storedTab;
+    const targetTab = rawHash || storedTab;
     if (targetTab) {
         localStorage.removeItem('active_settings_tab');
-        const tabBtn = Array.from(document.querySelectorAll('.stab')).find(b => b.getAttribute('onclick')?.includes(targetTab));
+        const tabBtn = Array.from(document.querySelectorAll('.stab')).find(b => b.getAttribute('onclick')?.includes(`'${targetTab}'`));
         if (tabBtn) {
             switchTab(targetTab, tabBtn);
         }

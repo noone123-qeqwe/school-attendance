@@ -123,17 +123,6 @@
                 </div>
             </x-card>
         </div>
-        
-        <!-- Weekly Chart -->
-        @if(count($weeklyLabels ?? []) > 0)
-        <div class="mb-4">
-            <x-card title="Weekly Attendance Overview" icon="bi bi-bar-chart-fill">
-                <div class="ent-chart-container" style="height:250px;">
-                    <canvas id="weeklyChart"></canvas>
-                </div>
-            </x-card>
-        </div>
-        @endif
 
         <!-- Recent Logs -->
         <div class="mb-4">
@@ -361,79 +350,6 @@
         filter: brightness(1.15);
     }
 </style>
-
-@if(count($weeklyLabels ?? []) > 0)
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-const ctx = document.getElementById('weeklyChart').getContext('2d');
-Chart.defaults.color = '#b39b82';
-Chart.defaults.font.family = "'Inter', sans-serif";
-
-new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: @json($weeklyLabels),
-        datasets: [{
-            label: 'Present',
-            data: @json($weeklyPresent),
-            backgroundColor: 'rgba(74, 222, 128, 0.8)',
-            borderColor: 'rgba(74, 222, 128, 1)',
-            borderWidth: 1,
-            borderRadius: 6,
-        }, {
-            label: 'Late',
-            data: @json($weeklyLate),
-            backgroundColor: 'rgba(245, 158, 11, 0.8)',
-            borderColor: 'rgba(245, 158, 11, 1)',
-            borderWidth: 1,
-            borderRadius: 6,
-        }, {
-            label: 'Absent',
-            data: @json($weeklyAbsent),
-            backgroundColor: 'rgba(239, 68, 68, 0.8)',
-            borderColor: 'rgba(239, 68, 68, 1)',
-            borderWidth: 1,
-            borderRadius: 6,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
-                labels: {
-                    usePointStyle: true,
-                    boxWidth: 8,
-                    padding: 20,
-                    font: { weight: '600', size: 11 }
-                }
-            },
-            tooltip: {
-                backgroundColor: 'rgba(15, 11, 8, 0.95)',
-                titleColor: '#f3e7cd',
-                bodyColor: '#e7dcc8',
-                borderColor: 'rgba(207,164,111,0.2)',
-                borderWidth: 1,
-                padding: 12,
-                cornerRadius: 10
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                grid: { color: 'rgba(255, 225, 150, 0.04)', drawBorder: false },
-                ticks: { stepSize: 1, font: { weight: '500' } }
-            },
-            x: {
-                grid: { display: false, drawBorder: false },
-                ticks: { font: { weight: '600' } }
-            }
-        }
-    }
-});
-</script>
-@endif
 
 <script>
 // Skeleton -> Real Content
