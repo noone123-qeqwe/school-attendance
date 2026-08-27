@@ -80,6 +80,7 @@ class BackupDatabaseCommand extends Command
                 }
                 fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
             } else {
+                fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
                 $tables = DB::select('SHOW TABLES');
                 foreach ($tables as $table) {
                     $tableName = array_values((array)$table)[0];
@@ -102,6 +103,7 @@ class BackupDatabaseCommand extends Command
                     }
                     if ($hasRows) fwrite($handle, "\n");
                 }
+                fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
             }
 
             DB::commit();

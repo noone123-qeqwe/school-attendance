@@ -65,6 +65,7 @@ class BackupController extends Controller
                 }
                 fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
             } else {
+                fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
                 $tables = DB::select('SHOW TABLES');
                 foreach ($tables as $table) {
                     $tableName = array_values((array)$table)[0];
@@ -87,6 +88,7 @@ class BackupController extends Controller
                     }
                     if ($hasRows) fwrite($handle, "\n");
                 }
+                fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
             }
 
             DB::commit();
@@ -150,7 +152,7 @@ class BackupController extends Controller
         abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
 
         $request->validate([
-            'backup_file' => 'required|file|max:102400'
+            'backup_file' => 'required|file|max:10240'
         ]);
 
         $file = $request->file('backup_file');
@@ -207,12 +209,14 @@ class BackupController extends Controller
             }
         }
 
-        DB::unprepared($sql);
-
-        if ($driver === 'mysql') {
-            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-        } elseif ($driver === 'sqlite') {
-            DB::statement('PRAGMA foreign_keys = ON;');
+        try {
+            DB::unprepared($sql);
+        } finally {
+            if ($driver === 'mysql') {
+                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            } elseif ($driver === 'sqlite') {
+                DB::statement('PRAGMA foreign_keys = ON;');
+            }
         }
     }
 
