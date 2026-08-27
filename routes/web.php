@@ -18,8 +18,12 @@ Route::post('/push/unsubscribe', [App\Http\Controllers\PushSubscriptionControlle
 Route::post('/push/test', [App\Http\Controllers\PushSubscriptionController::class, 'sendTest'])->middleware('auth')->name('push.test');
 
 
-// Intro page should always show, even to authenticated users
-Route::get('/', function () { return view('intro'); })->name('intro');
+// Intro page should always show, even to authenticated users with high-concurrency caching
+Route::get('/', function () {
+    return response()
+        ->view('intro')
+        ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+})->name('intro');
 
 // Offline page for PWA
 Route::get('/offline', function () { return view('offline'); })->name('offline');
@@ -40,21 +44,23 @@ Route::get('/sw.js', function () {
     ]);
 })->name('pwa.sw');
 
-// Real-time PWA Version Checker
+// Real-time PWA Version Checker with memory cache
 Route::get('/pwa/version', function () {
-    $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '15');
-    $swPath = public_path('sw.js');
-    $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
-    $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
+    $versionData = \Illuminate\Support\Facades\Cache::remember('pwa_version_response', 60, function () {
+        $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '15');
+        $swPath = public_path('sw.js');
+        $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
+        $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
 
-    return response()->json([
-        'version' => $versionTag,
-        'sw_version' => (string)$ver,
-        'timestamp' => $swMtime
-    ], 200, [
-        'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
-        'Pragma' => 'no-cache',
-        'Expires' => '0',
+        return [
+            'version' => $versionTag,
+            'sw_version' => (string)$ver,
+            'timestamp' => $swMtime
+        ];
+    });
+
+    return response()->json($versionData, 200, [
+        'Cache-Control' => 'public, max-age=30, stale-while-revalidate=60',
     ]);
 })->name('pwa.version');
 
@@ -122,7 +128,7 @@ Route::middleware('guest')->group(function () {
 
     // Forgot Password (OTP flow)
     Route::get('/forgot-password', [App\Http\Controllers\OtpController::class, 'forgotForm'])->name('otp.forgot.form');
-    Route::post('/forgot-password', [App\Http\Controllers\OtpController::class, 'sendForgotOtp'])->middleware('throttle:otp.send')->name('otp.forgot.send');
+    Route::post('/forgot-password', [App\Http\Controllers\OtpController::class, 'sendForgotOtp'])->middleware('throttle:password.reset')->name('otp.forgot.send');
     Route::get('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyForm'])->name('otp.verify.form');
     Route::post('/verify-otp', [App\Http\Controllers\OtpController::class, 'verifyOtp'])->middleware('throttle:otp.verify')->name('otp.verify');
     Route::get('/reset-password', [App\Http\Controllers\OtpController::class, 'resetForm'])->name('otp.reset.form');
@@ -140,7 +146,7 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/password/change', [App\Http\Controllers\HomeController::class, 'showPasswordChangeForm'])->name('password.change.form');
-    Route::post('/password/change', [App\Http\Controllers\HomeController::class, 'submitPasswordChange'])->name('password.change.submit');
+    Route::post('/password/change', [App\Http\Controllers\HomeController::class, 'submitPasswordChange'])->middleware('throttle:password.change')->name('password.change.submit');
 
     // Change Password via OTP (all authenticated roles)
     Route::post('/otp/send-change', [App\Http\Controllers\OtpController::class, 'sendChangeOtp'])->middleware('throttle:otp.send')->name('otp.change.send');
@@ -411,8 +417,8 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/students', [App\Http\Controllers\AdminController::class, 'students'])->name('students');
     Route::get('/student/create', [App\Http\Controllers\AdminController::class, 'createStudent'])->name('student.create');
     Route::post('/student', [App\Http\Controllers\AdminController::class, 'storeStudent'])->name('student.store');
-    Route::post('/student/otp/send', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->name('otp.register.send');
-    Route::post('/student/otp/verify', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->name('otp.register.verify');
+    Route::post('/student/otp/send', [App\Http\Controllers\OtpController::class, 'sendRegisterOtp'])->middleware('throttle:otp.send')->name('otp.register.send');
+    Route::post('/student/otp/verify', [App\Http\Controllers\OtpController::class, 'verifyRegisterOtp'])->middleware('throttle:otp.verify')->name('otp.register.verify');
     Route::get('/students/search', [App\Http\Controllers\AdminController::class, 'searchStudents'])->name('students.search');
     Route::get('/students/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewStudentsPdf'])->name('students.preview');
     Route::get('/students/export-pdf', [App\Http\Controllers\AdminController::class, 'exportStudentsPdf'])->name('students.pdf');

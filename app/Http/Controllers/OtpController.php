@@ -36,8 +36,13 @@ class OtpController extends Controller
         $scope = $request->input('scope', 'register');
         $sessionPrefix = $scope === 'admin_student' ? 'admin_reg' : 'reg';
 
-        // Check cooldown
-        $cooldown = Otp::getCooldownRemaining($request->email, 'register');
+        $ip = $request->ip() ?: 'unknown';
+
+        // Check cooldown across email and client IP
+        $cooldown = max(
+            Otp::getCooldownRemaining($request->email, 'register'),
+            Otp::getCooldownRemaining($ip, 'register')
+        );
         if ($cooldown > 0) {
             return response()->json([
                 'success' => false,
@@ -56,6 +61,7 @@ class OtpController extends Controller
         ]);
 
         Otp::setCooldown($request->email, 'register');
+        Otp::setCooldown($ip, 'register');
 
         try {
             Mail::to($request->email)->send(new OtpMail($code, 'register', 'New User'));
@@ -115,9 +121,13 @@ class OtpController extends Controller
     public function sendForgotOtp(Request $request)
     {
         $request->validate(['email' => 'required|email']);
+        $ip = $request->ip() ?: 'unknown';
 
-        // Check cooldown
-        $cooldown = Otp::getCooldownRemaining($request->email, 'forgot_password');
+        // Check cooldown on both email and client IP
+        $cooldown = max(
+            Otp::getCooldownRemaining($request->email, 'forgot_password'),
+            Otp::getCooldownRemaining($ip, 'forgot_password')
+        );
         if ($cooldown > 0) {
             return back()->withInput()->withErrors([
                 'email' => "Please wait {$cooldown} seconds before requesting a new password reset code."
@@ -129,6 +139,7 @@ class OtpController extends Controller
         if ($user) {
             $otp  = Otp::generate($user->id, 'forgot_password');
             Otp::setCooldown($request->email, 'forgot_password');
+            Otp::setCooldown($ip, 'forgot_password');
 
             try {
                 Mail::to($user->email)->send(new OtpMail($otp->code, 'forgot_password', $user->name));
@@ -138,6 +149,7 @@ class OtpController extends Controller
         } else {
             // Set cooldown anyway to prevent email probing/enumeration
             Otp::setCooldown($request->email, 'forgot_password');
+            Otp::setCooldown($ip, 'forgot_password');
         }
 
         return redirect()->route('otp.verify.form', ['purpose' => 'forgot_password'])
@@ -234,18 +246,25 @@ class OtpController extends Controller
     public function sendEmailChangeOtp(Request $request)
     {
         $user = Auth::user();
+        $ip = $request->ip() ?: 'unknown';
 
         // Check cooldown
-        $cooldown = Otp::getCooldownRemaining($user->id, 'change_email');
+        $cooldown = max(
+            Otp::getCooldownRemaining($user->id, 'change_email'),
+            Otp::getCooldownRemaining($ip, 'change_email')
+        );
         if ($cooldown > 0) {
             return response()->json([
                 'success' => false,
+                'status' => 'error',
                 'message' => "Please wait {$cooldown} seconds before requesting a new code.",
                 'cooldown' => $cooldown,
             ], 429);
         }
 
         $otp  = Otp::generate($user->id, 'change_email');
+        Otp::setCooldown($user->id, 'change_email');
+        Otp::setCooldown($ip, 'change_email');
 
         try {
             Mail::to($user->email)->send(new OtpMail($otp->code, 'change_email', $user->name));
@@ -300,17 +319,24 @@ class OtpController extends Controller
     public function sendChangeOtp(Request $request)
     {
         $user = Auth::user();
+        $ip = $request->ip() ?: 'unknown';
 
-        $cooldown = Otp::getCooldownRemaining($user->id, 'change_password');
+        $cooldown = max(
+            Otp::getCooldownRemaining($user->id, 'change_password'),
+            Otp::getCooldownRemaining($ip, 'change_password')
+        );
         if ($cooldown > 0) {
             return response()->json([
                 'success' => false,
+                'status' => 'error',
                 'message' => "Please wait {$cooldown} seconds before requesting a new code.",
                 'cooldown' => $cooldown,
             ], 429);
         }
 
         $otp = Otp::generate($user->id, 'change_password');
+        Otp::setCooldown($user->id, 'change_password');
+        Otp::setCooldown($ip, 'change_password');
 
         try {
             Mail::to($user->email)->send(new OtpMail($otp->code, 'change_password', $user->name));
@@ -368,16 +394,23 @@ class OtpController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
-        $cooldown = Otp::getCooldownRemaining($user->id, 'change_password');
+        $ip = $request->ip() ?: 'unknown';
+        $cooldown = max(
+            Otp::getCooldownRemaining($user->id, 'change_password'),
+            Otp::getCooldownRemaining($ip, 'change_password')
+        );
         if ($cooldown > 0) {
             return response()->json([
                 'success' => false,
+                'status' => 'error',
                 'message' => "Please wait {$cooldown} seconds before requesting a new code.",
                 'cooldown' => $cooldown,
             ], 429);
         }
 
         $otp = Otp::generate($user->id, 'change_password');
+        Otp::setCooldown($user->id, 'change_password');
+        Otp::setCooldown($ip, 'change_password');
 
         try {
             Mail::to($user->email)->send(new OtpMail($otp->code, 'change_password', $user->name));

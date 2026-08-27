@@ -446,28 +446,32 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Student not found.']);
         }
 
-        $attendance = Attendance::updateOrCreate(
-            [
-                'user_id' => $student->id,
-                'subject_code' => $session->subject_code,
-                'date' => today()->toDateString(),
-            ],
-            [
-                'status' => $request->status,
-                'time_in' => $request->status === 'Absent' ? null : now(),
-                'latitude' => null,
-                'longitude' => null,
-                'device_id' => 'teacher-override',
-                'excused' => false
-            ]
-        );
+        $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $request) {
+            $att = Attendance::updateOrCreate(
+                [
+                    'user_id' => $student->id,
+                    'subject_code' => $session->subject_code,
+                    'date' => today()->toDateString(),
+                ],
+                [
+                    'status' => $request->status,
+                    'time_in' => $request->status === 'Absent' ? null : now(),
+                    'latitude' => null,
+                    'longitude' => null,
+                    'device_id' => 'teacher-override',
+                    'excused' => false
+                ]
+            );
 
-        event(new TeacherAttendanceUpdated($session->teacher_id, [
-            'type'         => 'clock_in',
-            'student_name' => $student->name,
-            'subject_code' => $session->subject_code,
-            'status'       => $attendance->status,
-        ]));
+            event(new TeacherAttendanceUpdated($session->teacher_id, [
+                'type'         => 'clock_in',
+                'student_name' => $student->name,
+                'subject_code' => $session->subject_code,
+                'status'       => $att->status,
+            ]));
+
+            return $att;
+        }, 3);
 
         return response()->json(['success' => true]);
     }

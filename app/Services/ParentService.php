@@ -24,8 +24,19 @@ class ParentService
             throw new Exception("Student not found with that Student ID.");
         }
 
+        $ip = request()->ip() ?: 'unknown';
+        $cooldown = max(
+            Otp::getCooldownRemaining($student->id, 'parent_link'),
+            Otp::getCooldownRemaining($ip, 'parent_link')
+        );
+        if ($cooldown > 0) {
+            throw new Exception("Please wait {$cooldown} seconds before requesting another linking code.");
+        }
+
         // Generate OTP for the student
         $otp = Otp::generate($student->id, 'parent_link');
+        Otp::setCooldown($student->id, 'parent_link');
+        Otp::setCooldown($ip, 'parent_link');
 
         // Send OTP to student email
         Mail::to($student->email)->send(new OtpMail($otp->code, 'parent_link', $student->name));

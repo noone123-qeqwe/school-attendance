@@ -15,38 +15,59 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
-            'email' => 'required',
-            'password' => 'required',
-        ]);
+        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', $request->input('student_number', $request->input('employee_id', $request->input('user', ''))))))));
+        $password = (string) $request->input('password', $request->input('pass', ''));
+        $ip = $request->ip() ?: 'unknown';
 
-        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', '')))));
-        $ip = $request->ip();
-
-        // 1. Check account / IP lockout
+        // 1. Check account / IP lockout FIRST before any database or hashing operations
         if ($this->lockoutService->isLocked($identifier, $ip)) {
             $remaining = $this->lockoutService->getRemainingSeconds($identifier, $ip);
             $minutes = max(1, ceil($remaining / 60));
 
             return response()->json([
                 'status' => 'error',
+                'success' => false,
                 'message' => "Account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes.",
                 'locked' => true,
                 'retry_after' => $remaining,
             ], 429);
         }
 
-        // 2. Attempt authentication
+        // 2. Validate presence of credentials
+        if (empty($identifier) || empty($password)) {
+            $result = $this->lockoutService->recordFailedAttempt($identifier, $ip);
+            if ($result['locked']) {
+                return response()->json([
+                    'status' => 'error',
+                    'success' => false,
+                    'message' => 'Account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.',
+                    'locked' => true,
+                    'retry_after' => $result['lockout_seconds'],
+                ], 429);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'The identifier and password fields are required.',
+                'errors' => [
+                    'email' => ['The email/identifier field is required.'],
+                    'password' => ['The password field is required.'],
+                ],
+                'remaining_attempts' => $result['remaining_attempts'],
+            ], 422);
+        }
+
+        // 3. Attempt authentication
         $credentials = filter_var($identifier, FILTER_VALIDATE_EMAIL)
-            ? ['email' => $identifier, 'password' => $request->password]
-            : ['student_number' => $identifier, 'password' => $request->password];
+            ? ['email' => $identifier, 'password' => $password]
+            : ['student_number' => $identifier, 'password' => $password];
 
         $authenticated = Auth::attempt($credentials);
 
-        if (!$authenticated && !filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            // Also try employee_id fallback
-            $authenticated = Auth::attempt(['employee_id' => $identifier, 'password' => $request->password])
-                || Auth::attempt(['email' => $identifier, 'password' => $request->password]);
+        if (!$authenticated) {
+            $authenticated = Auth::attempt(['employee_id' => $identifier, 'password' => $password])
+                || Auth::attempt(['email' => $identifier, 'password' => $password]);
         }
 
         if ($authenticated) {
@@ -57,18 +78,20 @@ class AuthController extends Controller
 
             return response()->json([
                 'status' => 'success',
+                'success' => true,
                 'user' => $user,
                 'token' => $token,
                 'role' => $user->role,
             ]);
         }
 
-        // 3. Record failed attempt & check if newly locked
+        // 4. Record failed attempt & check if newly locked
         $result = $this->lockoutService->recordFailedAttempt($identifier, $ip);
 
         if ($result['locked']) {
             return response()->json([
                 'status' => 'error',
+                'success' => false,
                 'message' => 'Account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.',
                 'locked' => true,
                 'retry_after' => $result['lockout_seconds'],
@@ -77,6 +100,7 @@ class AuthController extends Controller
 
         return response()->json([
             'status' => 'error',
+            'success' => false,
             'message' => 'Invalid credentials. (' . $result['remaining_attempts'] . ' attempts remaining before account lockout)',
             'remaining_attempts' => $result['remaining_attempts'],
         ], 401);

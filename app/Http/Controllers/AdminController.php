@@ -1038,7 +1038,24 @@ class AdminController extends Controller
         $user = Auth::user();
         if (!$user || !$user->isAdmin()) return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
 
+        $ip = $request->ip() ?: 'unknown';
+        $cooldown = max(
+            \App\Models\Otp::getCooldownRemaining($user->id, 'admin_login'),
+            \App\Models\Otp::getCooldownRemaining($ip, 'admin_login')
+        );
+        if ($cooldown > 0) {
+            return response()->json([
+                'success' => false,
+                'status' => 'error',
+                'message' => "Please wait {$cooldown} seconds before requesting a new verification code.",
+                'cooldown' => $cooldown,
+            ], 429);
+        }
+
         $otp = \App\Models\Otp::generate($user->id, 'admin_login');
+        \App\Models\Otp::setCooldown($user->id, 'admin_login');
+        \App\Models\Otp::setCooldown($ip, 'admin_login');
+
         try {
             \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
             return response()->json(['success' => true, 'message' => 'OTP has been resent to your email.']);

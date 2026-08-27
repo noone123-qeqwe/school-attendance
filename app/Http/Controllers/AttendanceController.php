@@ -133,27 +133,30 @@ if (!$scheduledDays->contains($todayFull)) {
     $lateThreshold = $startTime->copy()->addMinutes(15);
     $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
 
-    // 4. SAVE RECORD
-    $attendance = Attendance::updateOrCreate(
-    [
-        'user_id' => $user->id,
-        'subject_code' => $request->subject_code,
-        'date' => $todayDate
-    ],
-    [
-        // If attendance is marked Present/Late, it cannot also be "excused" (excused applies only to Absent).
-        'status' => $status,
-        'excused' => false,
-        'excuse_note' => null,
-        'time_in' => $now->format('H:i:s'),
-        'latitude' => $request->latitude,
-        'longitude' => $request->longitude,
-        'gps_accuracy' => $request->accuracy,
-        'method' => 'manual_gps',
-    ]
-);
+    // 4. SAVE RECORD (Atomic transaction with 3-attempt concurrency retry)
+    $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $request, $todayDate, $status, $now) {
+        $record = Attendance::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'subject_code' => $request->subject_code,
+                'date' => $todayDate
+            ],
+            [
+                // If attendance is marked Present/Late, it cannot also be "excused" (excused applies only to Absent).
+                'status' => $status,
+                'excused' => false,
+                'excuse_note' => null,
+                'time_in' => $now->format('H:i:s'),
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'gps_accuracy' => $request->accuracy,
+                'method' => 'manual_gps',
+            ]
+        );
 
-event(new \App\Events\AttendanceMarked($attendance));
+        event(new \App\Events\AttendanceMarked($record));
+        return $record;
+    }, 3);
 
     // 5. BROADCAST real-time events
     try {
@@ -165,40 +168,44 @@ event(new \App\Events\AttendanceMarked($attendance));
             time:        $now->format('h:i A')
         ))->toOthers();
 
-        // Broadcast to teacher if instructor exists
-        if ($subject->instructor_id) {
-            // Get updated stats for this teacher's subjects
-            $teacherSubjects = \App\Models\Subject::where('instructor_id', $subject->instructor_id)->pluck('code');
-            $todayAttendance = \App\Models\Attendance::where('date', $todayDate)
-                ->whereIn('subject_code', $teacherSubjects);
-            
-            $stats = [
-                'total_present' => $todayAttendance->clone()->where('status', 'Present')->count(),
-                'total_late' => $todayAttendance->clone()->where('status', 'Late')->count(),
-                'total_absent' => $todayAttendance->clone()->where('status', 'Absent')->count(),
-                'total_students' => $todayAttendance->clone()->count()
-            ];
+        // Broadcast to teacher and parents if real-time events enabled
+        try {
+            if ($subject->instructor_id) {
+                // Get updated stats for this teacher's subjects
+                $teacherSubjects = \App\Models\Subject::where('instructor_id', $subject->instructor_id)->pluck('code');
+                $todayAttendance = \App\Models\Attendance::where('date', $todayDate)
+                    ->whereIn('subject_code', $teacherSubjects);
+                
+                $stats = [
+                    'total_present' => $todayAttendance->clone()->where('status', 'Present')->count(),
+                    'total_late' => $todayAttendance->clone()->where('status', 'Late')->count(),
+                    'total_absent' => $todayAttendance->clone()->where('status', 'Absent')->count(),
+                    'total_students' => $todayAttendance->clone()->count()
+                ];
 
-            broadcast(new \App\Events\TeacherAttendanceUpdated(
-                teacherId: $subject->instructor_id,
-                studentName: $user->name,
-                subjectCode: $request->subject_code,
-                status: $status,
-                type: 'clock_in',
-                stats: $stats
-            ))->toOthers();
-        }
-
-        // Broadcast to parents
-        if ($user->parents) {
-            foreach ($user->parents as $parent) {
-                broadcast(new \App\Events\LiveNotification(
-                    userId: $parent->id,
-                    title: 'Attendance Update',
-                    message: "{$user->name} was marked as {$status} in {$subject->name}.",
-                    type: $status === 'Present' ? 'success' : ($status === 'Late' ? 'warning' : 'error')
+                broadcast(new \App\Events\TeacherAttendanceUpdated(
+                    teacherId: $subject->instructor_id,
+                    studentName: $user->name,
+                    subjectCode: $request->subject_code,
+                    status: $status,
+                    type: 'clock_in',
+                    stats: $stats
                 ))->toOthers();
             }
+
+            // Broadcast to parents
+            if ($user->parents) {
+                foreach ($user->parents as $parent) {
+                    broadcast(new \App\Events\LiveNotification(
+                        userId: $parent->id,
+                        title: 'Attendance Update',
+                        message: "{$user->name} was marked as {$status} in {$subject->name}.",
+                        type: $status === 'Present' ? 'success' : ($status === 'Late' ? 'warning' : 'error')
+                    ))->toOthers();
+                }
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Attendance broadcast non-blocking error: ' . $e->getMessage());
         }
 
         // Real-Time Web Push Alerts

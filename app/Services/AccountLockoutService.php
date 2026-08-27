@@ -9,7 +9,7 @@ class AccountLockoutService
 {
     public const MAX_ATTEMPTS = 5;
     public const LOCKOUT_SECONDS = 900; // 15 minutes
-    public const IP_MAX_ATTEMPTS = 15;
+    public const IP_MAX_ATTEMPTS = 10;
 
     /**
      * Normalize the account identifier (email, student_number, employee_id).
@@ -68,7 +68,7 @@ class AccountLockoutService
     }
 
     /**
-     * Record a failed login attempt.
+     * Record a failed login attempt with progressive delay.
      */
     public function recordFailedAttempt(?string $identifier, ?string $ip): array
     {
@@ -99,6 +99,13 @@ class AccountLockoutService
                 'acc_attempts' => $accAttempts,
                 'ip_attempts' => $ipAttempts,
             ]);
+        } else {
+            // Progressive delay on repeated failures (after 2 failed attempts)
+            $effectiveAttempts = max($accAttempts, $ipAttempts);
+            if ($effectiveAttempts >= 3 && !app()->environment('testing')) {
+                $delayMicroseconds = min(1000000, ($effectiveAttempts - 2) * 300000);
+                usleep($delayMicroseconds);
+            }
         }
 
         return [

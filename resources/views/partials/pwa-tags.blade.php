@@ -483,7 +483,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=44?v={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=58?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });
@@ -492,8 +492,12 @@
                 // 1. Immediate version check on page ready
                 checkServerVersion();
 
-                // 2. Periodic check every 25 seconds for real-time detection while using the app
-                setInterval(checkServerVersion, 25000);
+                // 2. Periodic check every 2 minutes for real-time detection while using the app
+                setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        checkServerVersion();
+                    }
+                }, 120000);
 
                 // 3. If an update is already downloaded and waiting, verify version
                 if (reg.waiting) {

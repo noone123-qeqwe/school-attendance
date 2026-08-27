@@ -217,6 +217,48 @@ class SecurityAuditComplianceTest extends TestCase
     }
 
     /**
+     * Finding-001: Global Rate Limiting on unmapped /api/* routes across all HTTP methods
+     */
+    public function test_global_rate_limiting_catches_unmapped_post_put_delete_routes()
+    {
+        // Unmapped POST should return 404, not 405 MethodNotAllowed
+        $response = $this->postJson('/api/unmapped-endpoint-test', ['data' => 123]);
+        $response->assertStatus(404);
+        $response->assertJsonFragment(['status' => 'error', 'message' => 'API endpoint not found.']);
+
+        // Rapid requests to unmapped route trigger 429 global rate limit
+        for ($i = 0; $i < 59; $i++) {
+            $this->postJson('/api/unmapped-endpoint-test', ['data' => $i]);
+        }
+
+        $throttled = $this->postJson('/api/unmapped-endpoint-test', ['data' => 999]);
+        $throttled->assertStatus(429);
+        $throttled->assertJsonFragment(['status' => 'error']);
+    }
+
+    /**
+     * Finding-004: Account lockout works with alternative field names (username, identifier)
+     */
+    public function test_api_login_locks_out_with_username_and_identifier_fields()
+    {
+        for ($i = 1; $i <= 4; $i++) {
+            $res = $this->postJson('/api/login', [
+                'username' => 'testuser@school.edu',
+                'password' => 'WrongPass123',
+            ]);
+            $this->assertTrue(in_array($res->getStatusCode(), [401, 422]));
+        }
+
+        // 5th attempt locks out
+        $res5 = $this->postJson('/api/login', [
+            'username' => 'testuser@school.edu',
+            'password' => 'WrongPass123',
+        ]);
+        $res5->assertStatus(429);
+        $res5->assertJsonFragment(['locked' => true]);
+    }
+
+    /**
      * Finding-002: Fast response times for throttled requests
      */
     public function test_throttled_burst_requests_return_immediately()
@@ -235,5 +277,49 @@ class SecurityAuditComplianceTest extends TestCase
         $response->assertStatus(429);
         // Throttled request should be processed in < 100ms (far below the 2000ms threshold)
         $this->assertLessThan(100, $elapsed, "Throttled request took {$elapsed}ms, should be <100ms");
+    }
+
+    /**
+     * Anti-Spam: Web Registration OTP IP cooldown & flood prevention
+     */
+    public function test_web_registration_otp_ip_flood_blocked()
+    {
+        $res1 = $this->postJson('/otp/send-register', ['email' => 'newstudent1@school.edu']);
+        $res1->assertStatus(200);
+
+        // Immediate second attempt with different email from same IP should be blocked by IP cooldown
+        $res2 = $this->postJson('/otp/send-register', ['email' => 'newstudent2@school.edu']);
+        $res2->assertStatus(429);
+        $res2->assertJsonFragment(['status' => 'error']);
+    }
+
+    /**
+     * Anti-Spam: Admin 2FA Resend Cooldown & Abuse Protection
+     */
+    public function test_admin_2fa_resend_cooldown_blocked()
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email' => 'admin_2fa_test@school.edu']);
+
+        $res1 = $this->actingAs($admin)->postJson('/admin/2fa/resend');
+        $res1->assertStatus(200);
+
+        // Second immediate resend triggers 429
+        $res2 = $this->actingAs($admin)->postJson('/admin/2fa/resend');
+        $res2->assertStatus(429);
+        $res2->assertJsonFragment(['status' => 'error']);
+    }
+
+    /**
+     * Anti-Spam: Multi-email cycling from single IP is blocked on /api/otp
+     */
+    public function test_api_otp_cycling_emails_from_single_ip_is_blocked()
+    {
+        $res1 = $this->postJson('/api/otp', ['email' => 'bot_user_1@domain.com']);
+        $res1->assertStatus(200);
+
+        // Immediate subsequent request with different email should be blocked by IP cooldown
+        $res2 = $this->postJson('/api/otp', ['email' => 'bot_user_2@domain.com']);
+        $res2->assertStatus(429);
+        $res2->assertJsonFragment(['status' => 'error']);
     }
 }

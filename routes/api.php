@@ -38,10 +38,11 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-// API Fallback: Catches any unmatched /api/* requests so global rate limiting applies
-Route::fallback(function () {
+// API Fallback: Catches any unmatched /api/* requests across all HTTP verbs so global rate limiting applies
+Route::any('/{any}', function () {
     return response()->json([
         'status' => 'error',
         'message' => 'API endpoint not found.'
     ], 404);
-});
+})->where('any', '.*');
+

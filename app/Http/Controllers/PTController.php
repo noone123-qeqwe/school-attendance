@@ -76,9 +76,20 @@ class PTController extends Controller
         if ($lockoutService->isLocked($identifier, $request->ip())) {
             $remaining = $lockoutService->getRemainingSeconds($identifier, $request->ip());
             $minutes = max(1, ceil($remaining / 60));
+            $errorMessage = "Account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes.";
+
+            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'locked' => true,
+                    'retry_after' => $remaining,
+                ], 429, ['Retry-After' => $remaining]);
+            }
 
             return back()->withInput($request->only('identifier'))
-                ->withErrors(['identifier' => "Account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes."]);
+                ->withErrors(['identifier' => $errorMessage]);
         }
 
         // Look up the user by student_number, email, or employee_id
@@ -176,9 +187,25 @@ class PTController extends Controller
         // Record failed attempt
         $lockoutResult = $lockoutService->recordFailedAttempt($identifier, $request->ip());
 
-        $errorMessage = $lockoutResult['locked']
-            ? 'Account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.'
-            : 'Incorrect ID/email or password.';
+        if ($lockoutResult['locked']) {
+            $remaining = $lockoutResult['lockout_seconds'] ?? 900;
+            $errorMessage = 'Account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.';
+
+            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                return response()->json([
+                    'status' => 'error',
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'locked' => true,
+                    'retry_after' => $remaining,
+                ], 429, ['Retry-After' => $remaining]);
+            }
+
+            return back()->withInput($request->only('identifier'))
+                ->withErrors(['identifier' => $errorMessage]);
+        }
+
+        $errorMessage = 'Incorrect ID/email or password.';
 
         $response = back()->withInput($request->only('identifier'))
             ->withErrors(['identifier' => $errorMessage]);

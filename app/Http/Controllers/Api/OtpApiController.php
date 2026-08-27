@@ -18,30 +18,48 @@ class OtpApiController extends Controller
      */
     public function sendOtp(Request $request)
     {
-        $request->validate([
-            'email' => 'required',
-            'purpose' => 'nullable|string',
-        ]);
-
-        $email = strtolower(trim((string) $request->input('email')));
+        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', $request->input('phone', ''))))));
         $purpose = $request->input('purpose', 'verification');
+        $ip = $request->ip() ?: 'unknown';
 
-        // 1. Enforce OTP Cooldown (60 seconds)
-        $cooldown = Otp::getCooldownRemaining($email, $purpose);
+        // 1. Enforce OTP Cooldown (60 seconds) by identifier and by IP
+        $cooldown = max(
+            $identifier !== '' ? Otp::getCooldownRemaining($identifier, $purpose) : 0,
+            Otp::getCooldownRemaining($ip, $purpose)
+        );
+
         if ($cooldown > 0) {
             return response()->json([
                 'status' => 'error',
                 'success' => false,
                 'message' => "Please wait {$cooldown} seconds before requesting another OTP.",
                 'cooldown' => $cooldown,
+                'retry_after' => $cooldown,
             ], 429);
         }
 
-        // 2. Look up user if exists, or generate guest/registration OTP
-        $user = User::where('email', $email)->first();
+        // 2. Validate presence of identifier
+        if (empty($identifier)) {
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'The email or identifier field is required.',
+                'errors' => ['email' => ['The email/identifier field is required.']],
+            ], 422);
+        }
+
+        // 3. Set cooldown timer immediately
+        Otp::setCooldown($identifier, $purpose);
+        Otp::setCooldown($ip, $purpose);
+
+        // 4. Look up user if exists, or generate guest/registration OTP
+        $user = User::where('email', $identifier)
+            ->orWhere('student_number', $identifier)
+            ->orWhere('employee_id', $identifier)
+            ->first();
+
         if ($user) {
             $otp = Otp::generate($user->id, $purpose);
-            Otp::setCooldown($email, $purpose);
 
             try {
                 Mail::to($user->email)->send(new OtpMail($otp->code, $purpose, $user->name));
@@ -51,10 +69,11 @@ class OtpApiController extends Controller
         } else {
             // Unregistered user / guest OTP
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            Otp::setCooldown($email, $purpose);
 
             try {
-                Mail::to($email)->send(new OtpMail($code, $purpose, 'User'));
+                if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+                    Mail::to($identifier)->send(new OtpMail($code, $purpose, 'User'));
+                }
             } catch (\Exception $e) {
                 Log::error("API Guest OTP Mail failed: " . $e->getMessage());
             }
@@ -63,7 +82,7 @@ class OtpApiController extends Controller
         return response()->json([
             'status' => 'success',
             'success' => true,
-            'message' => 'OTP sent successfully to ' . $email,
+            'message' => 'OTP sent successfully to ' . $identifier,
             'cooldown_seconds' => Otp::COOLDOWN_SECONDS,
         ]);
     }
@@ -133,28 +152,41 @@ class OtpApiController extends Controller
      */
     public function requestPasswordReset(Request $request)
     {
-        $request->validate([
-            'email' => 'required',
-        ]);
+        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', '')))));
+        $ip = $request->ip() ?: 'unknown';
 
-        $email = strtolower(trim((string) $request->input('email', $request->input('identifier', ''))));
+        // 1. Enforce 60s cooldown per email/identifier and per IP
+        $cooldown = max(
+            $identifier !== '' ? Otp::getCooldownRemaining($identifier, 'forgot_password') : 0,
+            Otp::getCooldownRemaining($ip, 'forgot_password')
+        );
 
-        // Enforce 60s cooldown per email
-        $cooldown = Otp::getCooldownRemaining($email, 'forgot_password');
         if ($cooldown > 0) {
             return response()->json([
                 'status' => 'error',
                 'success' => false,
                 'message' => "Please wait {$cooldown} seconds before requesting another password reset.",
                 'cooldown' => $cooldown,
+                'retry_after' => $cooldown,
             ], 429);
         }
 
-        Otp::setCooldown($email, 'forgot_password');
+        // 2. Validate identifier presence
+        if (empty($identifier)) {
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'The email or identifier field is required.',
+                'errors' => ['email' => ['The email/identifier field is required.']],
+            ], 422);
+        }
 
-        $user = User::where('email', $email)
-            ->orWhere('student_number', $email)
-            ->orWhere('employee_id', $email)
+        Otp::setCooldown($identifier, 'forgot_password');
+        Otp::setCooldown($ip, 'forgot_password');
+
+        $user = User::where('email', $identifier)
+            ->orWhere('student_number', $identifier)
+            ->orWhere('employee_id', $identifier)
             ->first();
 
         if ($user) {
@@ -238,24 +270,36 @@ class OtpApiController extends Controller
      */
     public function sendEmailVerification(Request $request)
     {
-        $request->validate([
-            'email' => 'required',
-        ]);
-
         $email = strtolower(trim((string) $request->input('email', $request->user()?->email ?? '')));
+        $ip = $request->ip() ?: 'unknown';
 
         // Enforce 60-second cooldown
-        $cooldown = Otp::getCooldownRemaining($email, 'email_verify');
+        $cooldown = max(
+            $email !== '' ? Otp::getCooldownRemaining($email, 'email_verify') : 0,
+            Otp::getCooldownRemaining($ip, 'email_verify')
+        );
+
         if ($cooldown > 0) {
             return response()->json([
                 'status' => 'error',
                 'success' => false,
                 'message' => "Please wait {$cooldown} seconds before requesting another verification email.",
                 'cooldown' => $cooldown,
+                'retry_after' => $cooldown,
             ], 429);
         }
 
+        if (empty($email)) {
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => 'The email field is required.',
+                'errors' => ['email' => ['The email field is required.']],
+            ], 422);
+        }
+
         Otp::setCooldown($email, 'email_verify');
+        Otp::setCooldown($ip, 'email_verify');
 
         $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         try {

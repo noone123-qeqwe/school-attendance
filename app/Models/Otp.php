@@ -29,9 +29,13 @@ class Otp extends Model
      * Check if a cooldown is currently active for this user or email + purpose.
      * Returns remaining seconds (0 if allowed).
      */
-    public static function getCooldownRemaining(int|string $userOrEmail, string $purpose, int $cooldown = self::COOLDOWN_SECONDS): int
+    public static function getCooldownRemaining(int|string|null $userOrEmail, string $purpose, int $cooldown = self::COOLDOWN_SECONDS): int
     {
-        $cacheKey = 'otp_cooldown:' . sha1(strtolower(trim((string) $userOrEmail)) . ':' . $purpose);
+        $clean = strtolower(trim((string) $userOrEmail));
+        if ($clean === '') {
+            return 0;
+        }
+        $cacheKey = 'otp_cooldown:' . sha1($clean . ':' . $purpose);
         $expiresAt = (int) Cache::get($cacheKey, 0);
 
         $now = now()->timestamp;
@@ -41,9 +45,13 @@ class Otp extends Model
     /**
      * Set the cooldown timer for this user or email + purpose.
      */
-    public static function setCooldown(int|string $userOrEmail, string $purpose, int $cooldown = self::COOLDOWN_SECONDS): void
+    public static function setCooldown(int|string|null $userOrEmail, string $purpose, int $cooldown = self::COOLDOWN_SECONDS): void
     {
-        $cacheKey = 'otp_cooldown:' . sha1(strtolower(trim((string) $userOrEmail)) . ':' . $purpose);
+        $clean = strtolower(trim((string) $userOrEmail));
+        if ($clean === '') {
+            return;
+        }
+        $cacheKey = 'otp_cooldown:' . sha1($clean . ':' . $purpose);
         Cache::put($cacheKey, now()->addSeconds($cooldown)->timestamp, $cooldown);
     }
 
