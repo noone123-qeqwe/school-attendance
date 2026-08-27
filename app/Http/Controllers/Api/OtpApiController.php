@@ -83,9 +83,9 @@ class OtpApiController extends Controller
         }
 
         return response()->json([
-            'status' => 'success',
-            'success' => true,
-            'message' => 'OTP sent successfully to ' . $identifier,
+            'status'           => 'success',
+            'success'          => true,
+            'message'          => 'If the account is registered, an OTP has been sent.',
             'cooldown_seconds' => Otp::COOLDOWN_SECONDS,
         ]);
     }
@@ -96,17 +96,21 @@ class OtpApiController extends Controller
     public function verifyOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required',
-            'otp' => 'required|digits:6',
+            'email'   => 'required',
+            'otp'     => 'required|digits:6',
             'purpose' => 'nullable|string',
         ]);
 
-        $email = strtolower(trim((string) $request->input('email')));
-        $purpose = $request->input('purpose', 'verification');
-        $code = trim((string) $request->input('otp'));
+        $identifier = strtolower(trim((string) $request->input('email')));
+        $purpose    = $request->input('purpose', 'verification');
+        $code       = trim((string) $request->input('otp'));
 
-        $user = User::where('email', $email)->first();
-        $userId = $user?->id ?? $email;
+        // Resolve user by email, student_number, or employee_id
+        $user   = User::where('email', $identifier)
+            ->orWhere('student_number', $identifier)
+            ->orWhere('employee_id', $identifier)
+            ->first();
+        $userId = $user?->id ?? $identifier;
 
         $otpRecord = null;
         if ($user) {
@@ -118,7 +122,7 @@ class OtpApiController extends Controller
                 ->latest()
                 ->first();
         } else {
-            $cacheKey = 'guest_otp:' . sha1($email . ':' . $purpose);
+            $cacheKey   = 'guest_otp:' . sha1($identifier . ':' . $purpose);
             $hashedCode = Cache::get($cacheKey);
             if ($hashedCode && hash_equals($hashedCode, hash('sha256', $code))) {
                 $otpRecord = (object) ['is_guest' => true, 'cacheKey' => $cacheKey];
@@ -133,7 +137,7 @@ class OtpApiController extends Controller
                         ->where('purpose', $purpose)
                         ->update(['used' => true]);
                 } else {
-                    Cache::forget('guest_otp:' . sha1($email . ':' . $purpose));
+                    Cache::forget('guest_otp:' . sha1($identifier . ':' . $purpose));
                 }
 
                 return response()->json([
@@ -340,6 +344,7 @@ class OtpApiController extends Controller
             Mail::to($email)->send(new OtpMail($code, 'email_verify', $user ? $user->name : 'User'));
         } catch (\Exception $e) {
             Log::error("Email verify mail failed: " . $e->getMessage());
+            // Do not reveal mail delivery failure to client
         }
 
         return response()->json([

@@ -109,7 +109,7 @@
             <div class="otp-icon"><i class="bi bi-lock-fill"></i></div>
             <div class="text-center mb-4">
                 <h2 class="reset-title">Forgot Password?</h2>
-                <p class="reset-subtitle">Enter your registered email and we'll send you an OTP.</p>
+                <p class="reset-subtitle">Enter your email address, student number, or employee ID and we'll send you a reset code.</p>
             </div>
 
         @if(session('info'))
@@ -122,8 +122,11 @@
         <form method="POST" action="{{ route('otp.forgot.send') }}">
             @csrf
             <div style="margin-bottom:20px;">
-                <label class="field-label">Email Address</label>
-                <input type="email" name="email" class="field-input" placeholder="your@email.com" value="{{ old('email') }}" required>
+                <label class="field-label">Email / Student Number / Employee ID</label>
+                <input type="text" name="identifier" class="field-input" placeholder="Email, student no., or employee ID" value="{{ old('identifier') }}" required autocomplete="username">
+                @if($errors->has('identifier'))
+                <p style="color:#f8c6c6;font-size:.82rem;margin-top:6px;">{{ $errors->first('identifier') }}</p>
+                @endif
             </div>
             <button type="submit" class="submit-btn">
                 <i class="bi bi-send-fill me-2"></i>Send OTP

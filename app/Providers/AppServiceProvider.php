@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use App\Http\Middleware\SecurityHeaders;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -14,16 +16,16 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Trust all proxies (ngrok, local reverse proxies)
-        \Illuminate\Http\Request::setTrustedProxies(
-            ['127.0.0.1', '::1'],
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
-            \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO
-        );
+        // ── CSP nonce Blade directive ─────────────────────────────────────────
+        // @cspNonce  → renders: nonce="<per-request-value>"
+        Blade::directive('cspNonce', function () {
+            return '<?php echo \'nonce="\' . e(request()->attributes->get(\App\Http\Middleware\SecurityHeaders::NONCE_KEY, \'\')) . \'"\'; ?>';
+        });
 
-        // Auto-detect ngrok URL from request headers and force HTTPS scheme
+        // ── Proxy / URL auto-detection for ngrok & local dev ──────────────────
+        // Proxy trust configuration is handled in bootstrap/app.php via
+        // Middleware::trustProxies() so X-Forwarded-* headers are applied early.
+        // The ngrok URL forcing below is an additional dev convenience.
         if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
             URL::forceScheme('https');
         }

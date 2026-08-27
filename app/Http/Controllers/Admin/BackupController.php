@@ -20,6 +20,10 @@ class BackupController extends Controller
     public function create()
     {
         abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        $handle = null;
+        $inTransaction = false;
+        $filepath = null;
+
         try {
             $filename = 'backup_' . date('Y_m_d_His') . '.sql';
             $path = storage_path('app/backups');
@@ -36,6 +40,7 @@ class BackupController extends Controller
                 DB::statement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
             }
             DB::beginTransaction();
+            $inTransaction = true;
 
             $pdo = DB::connection()->getPdo();
             
@@ -65,7 +70,7 @@ class BackupController extends Controller
                 }
                 fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
             } else {
-                fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+                fwrite($handle, "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
                 $tables = DB::select('SHOW TABLES');
                 foreach ($tables as $table) {
                     $tableName = array_values((array)$table)[0];
@@ -88,11 +93,13 @@ class BackupController extends Controller
                     }
                     if ($hasRows) fwrite($handle, "\n");
                 }
-                fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+                fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n");
             }
 
             DB::commit();
+            $inTransaction = false;
             fclose($handle);
+            $handle = null;
 
             $backup = BackupLog::create([
                 'filename' => $filename,
@@ -109,12 +116,12 @@ class BackupController extends Controller
             }
 
             return back()->with('success', 'Backup created successfully!');
-        } catch (\Exception $e) {
-            if (DB::transactionLevel() > 0) {
+        } catch (\Throwable $e) {
+            if ($inTransaction && DB::transactionLevel() > 0) {
                 DB::rollBack();
             }
-            if (isset($handle) && is_resource($handle)) {
-                fclose($handle);
+            if ($filepath && file_exists($filepath)) {
+                @unlink($filepath);
             }
 
             if (request()->wantsJson()) {
@@ -125,6 +132,10 @@ class BackupController extends Controller
             }
 
             return back()->with('error', 'Failed to create backup: ' . $e->getMessage());
+        } finally {
+            if ($handle && is_resource($handle)) {
+                fclose($handle);
+            }
         }
     }
 
@@ -142,7 +153,7 @@ class BackupController extends Controller
         try {
             $this->executeSqlFile($filepath);
             return back()->with('success', "Database successfully restored from {$safeFilename}!");
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return back()->with('error', 'Database restore failed: ' . $e->getMessage());
         }
     }
@@ -179,44 +190,106 @@ class BackupController extends Controller
             ]);
 
             return back()->with('success', 'Database successfully restored from uploaded file!');
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Restore failure cleanup: remove the uploaded file if execution failed
+            if (file_exists($targetPath)) {
+                @unlink($targetPath);
+            }
             return back()->with('error', 'Restore failed: ' . $e->getMessage());
         }
     }
 
     private function executeSqlFile(string $filepath): void
     {
+        if (!file_exists($filepath) || filesize($filepath) === 0) {
+            throw new \Exception('Backup file is empty or does not exist.');
+        }
+
+        // Enforce a safe maximum file size (50MB) for restore operations
+        if (filesize($filepath) > 50 * 1024 * 1024) {
+            throw new \Exception('Backup file exceeds the maximum allowed size of 50MB.');
+        }
+
         $driver = DB::connection()->getDriverName();
+        $pdo = DB::connection()->getPdo();
+
         if ($driver === 'mysql') {
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         } elseif ($driver === 'sqlite') {
             DB::statement('PRAGMA foreign_keys = OFF;');
         }
 
-        $sql = file_get_contents($filepath);
-        if (empty($sql)) {
-            throw new \Exception('Backup file is empty.');
+        $handle = fopen($filepath, 'r');
+        if (!$handle) {
+            throw new \Exception("Cannot open backup file for reading: {$filepath}");
         }
 
-        if ($driver === 'sqlite') {
-            if (DB::transactionLevel() > 0) {
-                $sql = preg_replace('/^\s*BEGIN\s+TRANSACTION\s*;/mi', '', $sql);
-                $sql = preg_replace('/^\s*COMMIT\s*;/mi', '', $sql);
-            } else {
-                if (stripos($sql, 'BEGIN TRANSACTION') === false) {
-                    $sql = "BEGIN TRANSACTION;\n" . $sql . "\nCOMMIT;";
-                }
-            }
-        }
+        $inTransaction = false;
 
         try {
-            DB::unprepared($sql);
-        } finally {
-            if ($driver === 'mysql') {
-                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-            } elseif ($driver === 'sqlite') {
-                DB::statement('PRAGMA foreign_keys = ON;');
+            if ($driver === 'sqlite' && !$pdo->inTransaction()) {
+                $pdo->beginTransaction();
+                $inTransaction = true;
             }
+
+            $query = '';
+            while (($line = fgets($handle)) !== false) {
+                $trimmed = trim($line);
+
+                // Skip comments and empty lines (unless conditional MySQL comment)
+                if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '/*')) {
+                    if (!str_starts_with($trimmed, '/*!')) {
+                        continue;
+                    }
+                }
+
+                // If on SQLite, skip any MySQL-specific directives or duplicate transaction statements
+                if ($driver === 'sqlite') {
+                    if (stripos($trimmed, 'SET FOREIGN_KEY_CHECKS') !== false ||
+                        stripos($trimmed, 'SET @OLD_') !== false ||
+                        stripos($trimmed, 'BEGIN TRANSACTION') !== false ||
+                        stripos($trimmed, 'COMMIT') !== false) {
+                        continue;
+                    }
+                }
+
+                $query .= $line;
+
+                // Check if query is complete (ends with semicolon)
+                if (preg_match('/;\s*$/', $trimmed)) {
+                    $stmt = trim($query);
+                    if ($stmt !== '') {
+                        $pdo->exec($stmt);
+                    }
+                    $query = '';
+                }
+            }
+
+            $stmt = trim($query);
+            if ($stmt !== '') {
+                $pdo->exec($stmt);
+            }
+
+            if ($inTransaction && $pdo->inTransaction()) {
+                $pdo->commit();
+                $inTransaction = false;
+            }
+        } catch (\Throwable $e) {
+            if ($inTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+            try {
+                if ($driver === 'mysql') {
+                    DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+                } elseif ($driver === 'sqlite') {
+                    DB::statement('PRAGMA foreign_keys = ON;');
+                }
+            } catch (\Throwable $ignored) {}
         }
     }
 

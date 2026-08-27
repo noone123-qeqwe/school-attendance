@@ -293,7 +293,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     @auth
-    <script>
+    <script @cspNonce>
         const sidebar     = document.getElementById('sidebar');
         const burgerBtn   = document.getElementById('burgerBtn');
         const topHeader   = document.getElementById('topHeader');
@@ -554,7 +554,7 @@
     
     <!-- Premium Toast Container (for session messages) -->
     <div class="premium-toast-container" id="premiumToastContainer"></div>
-    <script>
+    <script @cspNonce>
     function showPremiumToast(message, type = 'success') {
         const container = document.getElementById('premiumToastContainer');
         if (!container) return;
@@ -593,14 +593,14 @@
     </script>
 
     @if(session('success'))
-    <script>
+    <script @cspNonce>
         document.addEventListener('DOMContentLoaded', () => {
             showPremiumToast("{{ session('success') }}", 'success');
         });
     </script>
     @endif
     @if(session('error'))
-    <script>
+    <script @cspNonce>
         document.addEventListener('DOMContentLoaded', () => {
             showPremiumToast("{{ session('error') }}", 'error');
         });
@@ -620,7 +620,7 @@
             <button class="adm-btn adm-btn-primary" id="globalDrawerSaveBtn">Confirm</button>
         </div>
     </div>
-    <script>
+    <script @cspNonce>
     function openDrawer(title, contentHtml, saveCallback = null, saveText = 'Confirm') {
         document.getElementById('globalDrawerTitle').innerText = title;
         document.getElementById('globalDrawerBody').innerHTML = contentHtml;
@@ -756,7 +756,7 @@
                 @endif
             </div>
         </div>
-        <script>
+        <script @cspNonce>
         function openMoreSheet() {
             document.getElementById('moreSheetOverlay').classList.add('show');
             document.getElementById('moreSheet').classList.add('open');
@@ -809,7 +809,7 @@
     @endauth
 
     @yield('scripts')
-    <script>
+    <script @cspNonce>
         document.addEventListener('DOMContentLoaded', () => {
             const inlineFlashes = document.querySelectorAll('.flash-ok, .flash-error');
             if (inlineFlashes.length > 0) {
@@ -828,7 +828,7 @@
         });
     </script>
     @auth
-    <script>
+    <script @cspNonce>
         // Idle Timeout (15 minutes = 900,000 ms)
         let idleTime = 0;
         const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
@@ -877,7 +877,7 @@
         <p style="color: #cfa46f; margin-top: 16px; font-weight: 600; font-size: 0.9rem; letter-spacing: 0.02em;">Processing...</p>
     </div>
 
-    <script>
+    <script @cspNonce>
         // ── Native Micro-Haptics Engine ──
         window.triggerHaptic = function(type = 'light') {
             if (!navigator.vibrate) return;

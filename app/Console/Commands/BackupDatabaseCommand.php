@@ -30,6 +30,10 @@ class BackupDatabaseCommand extends Command
     {
         $this->info('Starting automated database backup snapshot...');
 
+        $handle = null;
+        $inTransaction = false;
+        $filepath = null;
+
         try {
             $filename = 'backup_auto_' . date('Y_m_d_His') . '.sql';
             $path = storage_path('app/backups');
@@ -51,6 +55,7 @@ class BackupDatabaseCommand extends Command
                 DB::statement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
             }
             DB::beginTransaction();
+            $inTransaction = true;
 
             $pdo = DB::connection()->getPdo();
 
@@ -80,7 +85,7 @@ class BackupDatabaseCommand extends Command
                 }
                 fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
             } else {
-                fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
+                fwrite($handle, "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
                 $tables = DB::select('SHOW TABLES');
                 foreach ($tables as $table) {
                     $tableName = array_values((array)$table)[0];
@@ -103,11 +108,13 @@ class BackupDatabaseCommand extends Command
                     }
                     if ($hasRows) fwrite($handle, "\n");
                 }
-                fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+                fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n");
             }
 
             DB::commit();
+            $inTransaction = false;
             fclose($handle);
+            $handle = null;
 
             $size = filesize($filepath);
             $backup = BackupLog::create([
@@ -140,9 +147,18 @@ class BackupDatabaseCommand extends Command
 
             return self::SUCCESS;
         } catch (\Throwable $e) {
-            DB::rollBack();
+            if ($inTransaction && DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            if ($filepath && file_exists($filepath)) {
+                @unlink($filepath);
+            }
             $this->error("Failed to create backup: " . $e->getMessage());
             return self::FAILURE;
+        } finally {
+            if ($handle && is_resource($handle)) {
+                fclose($handle);
+            }
         }
     }
 }

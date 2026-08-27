@@ -422,7 +422,7 @@
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
 @endphp
 
-<script>
+<script @cspNonce>
     // ── 1. Register Service Worker & Handle Real-Time Update Notifications ──
     let swRegistration = null;
     let deferredPrompt = null;
@@ -483,7 +483,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=58?v={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=68?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });

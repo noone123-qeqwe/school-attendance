@@ -131,13 +131,13 @@
         <form method="POST" action="{{ route('otp.verify') }}" id="otpForm">
             @csrf
             <input type="hidden" name="purpose" value="{{ $purpose }}">
-            <input type="hidden" name="email" id="emailInput" value="{{ session('otp_email') ?? old('email') }}">
+            <input type="hidden" name="identifier" id="identifierInput" value="{{ session('otp_identifier') ?? old('identifier', old('email')) }}">
             <input type="hidden" name="otp" id="otpHidden">
 
-            @if(!session('otp_email'))
+            @if(!session('otp_identifier'))
             <div style="margin-bottom:16px;">
-                <label class="field-label">Email Address</label>
-                <input type="email" class="field-input" id="emailVisible" placeholder="your@email.com" value="{{ old('email') }}" oninput="document.getElementById('emailInput').value=this.value">
+                <label class="field-label">Email / Student Number / Employee ID</label>
+                <input type="text" class="field-input" id="identifierVisible" placeholder="Email, student no., or employee ID" value="{{ old('identifier', old('email')) }}" oninput="document.getElementById('identifierInput').value=this.value" autocomplete="username">
             </div>
             @endif
 

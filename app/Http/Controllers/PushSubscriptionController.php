@@ -79,7 +79,7 @@ class PushSubscriptionController extends Controller
             Log::error('Failed storing push subscription: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Failed storing push subscription: ' . $e->getMessage(),
+                'message' => 'Failed to store push subscription. Please try again.',
             ], 500);
         }
     }
