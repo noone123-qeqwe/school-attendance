@@ -47,6 +47,14 @@ class PushSubscriptionController extends Controller
         $endpointHash = hash('sha256', $endpoint);
 
         try {
+            $existing = PushSubscription::where('endpoint_hash', $endpointHash)->first();
+            if ($existing && $existing->user_id !== Auth::id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Subscription belongs to another user.',
+                ], 403);
+            }
+
             $subscription = PushSubscription::updateOrCreate(
                 [
                     'endpoint_hash' => $endpointHash,
@@ -86,7 +94,9 @@ class PushSubscriptionController extends Controller
         ]);
 
         $endpointHash = hash('sha256', $request->input('endpoint'));
-        PushSubscription::where('endpoint_hash', $endpointHash)->delete();
+        PushSubscription::where('endpoint_hash', $endpointHash)
+            ->where('user_id', Auth::id())
+            ->delete();
 
         return response()->json([
             'success' => true,

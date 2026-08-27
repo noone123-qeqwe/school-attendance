@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\Cache;
 class OtpApiController extends Controller
 {
     /**
@@ -69,6 +69,9 @@ class OtpApiController extends Controller
         } else {
             // Unregistered user / guest OTP
             $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $hash = hash('sha256', $code);
+            $cacheKey = 'guest_otp:' . sha1($identifier . ':' . $purpose);
+            Cache::put($cacheKey, $hash, now()->addMinutes(10));
 
             try {
                 if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
@@ -105,13 +108,22 @@ class OtpApiController extends Controller
         $user = User::where('email', $email)->first();
         $userId = $user?->id ?? $email;
 
-        $otpRecord = $user ? Otp::where('user_id', $user->id)
-            ->where('code', $code)
-            ->where('purpose', $purpose)
-            ->where('used', false)
-            ->where('expires_at', '>', now())
-            ->latest()
-            ->first() : null;
+        $otpRecord = null;
+        if ($user) {
+            $otpRecord = Otp::where('user_id', $user->id)
+                ->where('code', $code)
+                ->where('purpose', $purpose)
+                ->where('used', false)
+                ->where('expires_at', '>', now())
+                ->latest()
+                ->first();
+        } else {
+            $cacheKey = 'guest_otp:' . sha1($email . ':' . $purpose);
+            $hashedCode = Cache::get($cacheKey);
+            if ($hashedCode && hash_equals($hashedCode, hash('sha256', $code))) {
+                $otpRecord = (object) ['is_guest' => true, 'cacheKey' => $cacheKey];
+            }
+        }
 
         if (!$otpRecord) {
             $fails = Otp::recordFailedVerify($userId, $purpose);
@@ -120,6 +132,8 @@ class OtpApiController extends Controller
                     Otp::where('user_id', $user->id)
                         ->where('purpose', $purpose)
                         ->update(['used' => true]);
+                } else {
+                    Cache::forget('guest_otp:' . sha1($email . ':' . $purpose));
                 }
 
                 return response()->json([
@@ -138,7 +152,11 @@ class OtpApiController extends Controller
         }
 
         Otp::clearFailedVerify($userId, $purpose);
-        $otpRecord->update(['used' => true]);
+        if (isset($otpRecord->is_guest)) {
+            Cache::forget($otpRecord->cacheKey);
+        } else {
+            $otpRecord->update(['used' => true]);
+        }
 
         return response()->json([
             'status' => 'success',
@@ -213,18 +231,24 @@ class OtpApiController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required',
+            'email' => 'required_without:identifier',
+            'identifier' => 'required_without:email',
             'otp' => 'required|digits:6',
             'password' => 'required|min:8|confirmed',
         ]);
 
-        $email = strtolower(trim((string) $request->input('email')));
-        $user = User::where('email', $email)->first();
+        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', '')))));
+        $user = User::where('email', $identifier)
+            ->orWhere('student_number', $identifier)
+            ->orWhere('employee_id', $identifier)
+            ->first();
 
         if (!$user) {
+            // Non-enumerating response
+            Otp::recordFailedVerify($identifier, 'forgot_password');
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid email or reset code.',
+                'message' => 'Invalid or expired reset code.',
             ], 422);
         }
 
@@ -301,9 +325,19 @@ class OtpApiController extends Controller
         Otp::setCooldown($email, 'email_verify');
         Otp::setCooldown($ip, 'email_verify');
 
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $user = User::where('email', $email)->first();
+
+        if ($user) {
+            $otp = Otp::generate($user->id, 'email_verify');
+            $code = $otp->code;
+        } else {
+            $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $hash = hash('sha256', $code);
+            Cache::put('guest_otp:' . sha1($email . ':email_verify'), $hash, now()->addMinutes(10));
+        }
+
         try {
-            Mail::to($email)->send(new OtpMail($code, 'register', 'User'));
+            Mail::to($email)->send(new OtpMail($code, 'email_verify', $user ? $user->name : 'User'));
         } catch (\Exception $e) {
             Log::error("Email verify mail failed: " . $e->getMessage());
         }

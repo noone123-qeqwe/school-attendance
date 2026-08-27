@@ -33,14 +33,10 @@ composerInstall.on('close', (code) => {
     if (code === 0) {
         console.log('✅ PHP dependencies installed');
         
-        // Generate application key
-        console.log('🔑 Generating application key...');
-        const keyGenerate = spawn('php', ['artisan', 'key:generate', '--force'], { stdio: 'inherit' });
-        
-        keyGenerate.on('close', (keyCode) => {
-            if (keyCode === 0) {
-                console.log('✅ Application key generated');
-            }
+        const envContent = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
+        const hasAppKey = envContent.includes('APP_KEY=base64:') || process.env.APP_KEY;
+
+        const onKeyReady = () => {
             
             // Create storage link
             console.log('🔗 Creating storage link...');
@@ -62,25 +58,44 @@ composerInstall.on('close', (code) => {
                         console.log('✅ Migrations completed');
                         
                         // Seed demo data
-                        console.log('🌱 Seeding demo data...');
-                        const seedData = spawn('php', ['artisan', 'db:seed', '--force'], { stdio: 'inherit' });
-                        
-                        seedData.on('close', (seedCode) => {
-                            if (seedCode === 0) {
-                                console.log('✅ Demo data seeded');
-                            } else {
-                                console.log('⚠️ Demo data seeding failed, continuing...');
-                            }
+                        if (process.env.SEED_DEMO_DATA === 'true') {
+                            console.log('🌱 Seeding demo data...');
+                            const seedData = spawn('php', ['artisan', 'db:seed', '--force'], { stdio: 'inherit' });
                             
+                            seedData.on('close', (seedCode) => {
+                                if (seedCode === 0) {
+                                    console.log('✅ Demo data seeded');
+                                } else {
+                                    console.log('⚠️ Demo data seeding failed, continuing...');
+                                }
+                                
+                                startServer();
+                            });
+                        } else {
                             startServer();
-                        });
+                        }
                     } else {
                         console.log('⚠️ Migrations failed, continuing...');
                         startServer();
                     }
                 });
             });
-        });
+        };
+
+        if (!hasAppKey) {
+            console.log('🔑 Generating application key...');
+            const keyGenerate = spawn('php', ['artisan', 'key:generate', '--force'], { stdio: 'inherit' });
+            
+            keyGenerate.on('close', (keyCode) => {
+                if (keyCode === 0) {
+                    console.log('✅ Application key generated');
+                }
+                onKeyReady();
+            });
+        } else {
+            console.log('✅ Application key already exists, skipping generation.');
+            onKeyReady();
+        }
     } else {
         console.error('❌ Failed to install PHP dependencies');
         process.exit(1);

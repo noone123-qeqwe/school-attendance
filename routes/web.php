@@ -13,8 +13,8 @@ Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 
 
 // Web Push Notification Subscriptions & Testing
 Route::get('/push/public-key', [App\Http\Controllers\PushSubscriptionController::class, 'getPublicKey'])->name('push.public_key');
-Route::post('/push/subscribe', [App\Http\Controllers\PushSubscriptionController::class, 'subscribe'])->name('push.subscribe');
-Route::post('/push/unsubscribe', [App\Http\Controllers\PushSubscriptionController::class, 'unsubscribe'])->name('push.unsubscribe');
+Route::post('/push/subscribe', [App\Http\Controllers\PushSubscriptionController::class, 'subscribe'])->middleware('auth')->name('push.subscribe');
+Route::post('/push/unsubscribe', [App\Http\Controllers\PushSubscriptionController::class, 'unsubscribe'])->middleware('auth')->name('push.unsubscribe');
 Route::post('/push/test', [App\Http\Controllers\PushSubscriptionController::class, 'sendTest'])->middleware('auth')->name('push.test');
 
 
