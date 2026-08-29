@@ -346,9 +346,6 @@
                             </small>
                         </div>
                         <div class="d-flex flex-wrap align-items-center gap-2">
-                            <button type="button" id="soundToggleBtn" class="btn modern-btn" style="padding: 10px 16px !important; background: rgba(255,255,255,0.06) !important; color: #f3e7cd !important; border: 1px solid rgba(255,255,255,0.15) !important;" title="Toggle Clock-in Sound" onclick="toggleClockInSound()">
-                                <i class="bi bi-volume-up-fill" id="soundIcon"></i>
-                            </button>
                             <button type="button" id="copyLinkBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: rgba(255,255,255,0.06) !important; color: #f3e7cd !important; border: 1px solid rgba(255,255,255,0.15) !important;" onclick="copyScanLink()">
                                 <i class="bi bi-link-45deg me-1"></i> Copy Link
                             </button>
