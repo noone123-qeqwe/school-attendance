@@ -59,45 +59,6 @@
             pointer-events: none;
         }
 
-        /* ── BRANDING OVERLAY ── */
-        .branding {
-            position: fixed;
-            bottom: 60px;
-            left: 40px;
-            z-index: 5;
-            color: white;
-            animation: slideUpFade 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-            animation-delay: 0.3s;
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        .branding h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-            margin-bottom: 8px;
-            text-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            background: linear-gradient(135deg, #fff, #f3e7cd);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .branding p {
-            font-size: 1rem;
-            color: rgba(255,255,255,0.7);
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        
-        @media (max-width: 768px) {
-            .branding {
-                bottom: 80px;
-                left: 24px;
-            }
-            .branding h1 { font-size: 2rem; }
-            .branding p { font-size: 0.85rem; }
-        }
-
         @keyframes slideUpFade {
             to { opacity: 1; transform: translateY(0); }
         }
@@ -210,12 +171,6 @@
     <!-- Cinematic Overlays -->
     <div class="vignette"></div>
     <div class="overlay"></div>
-
-    <!-- Animated Branding -->
-    <div class="branding">
-        <h1>{{ config('app.name', 'Smart Classroom') }}</h1>
-        <p>Intelligent Attendance</p>
-    </div>
 
     <!-- Progress bar -->
     <div class="progress-bar-container">

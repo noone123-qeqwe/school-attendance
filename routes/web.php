@@ -18,21 +18,11 @@ Route::post('/push/unsubscribe', [App\Http\Controllers\PushSubscriptionControlle
 Route::post('/push/test', [App\Http\Controllers\PushSubscriptionController::class, 'sendTest'])->middleware('auth')->name('push.test');
 
 
-// Direct navigation - skip intro and route directly to dashboard or login
+// Intro page should always show, with private no-cache to evaluate destination correctly
 Route::get('/', function () {
-    if (Illuminate\Support\Facades\Auth::check()) {
-        $user = Illuminate\Support\Facades\Auth::user();
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
-            return redirect()->route('teacher.dashboard');
-        } elseif ($user->isParent()) {
-            return redirect()->route('parent.dashboard');
-        } else {
-            return redirect()->route('home');
-        }
-    }
-    return redirect()->route('login');
+    return response()
+        ->view('intro')
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private');
 })->name('intro');
 
 // Offline page for PWA
