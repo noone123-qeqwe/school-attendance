@@ -271,6 +271,9 @@
         bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
+        margin: 0 auto !important;
+        max-width: 540px !important;
+        width: 100% !important;
         background: rgba(18, 11, 8, 0.98) !important;
         backdrop-filter: blur(32px) !important;
         -webkit-backdrop-filter: blur(32px) !important;
@@ -281,10 +284,11 @@
         transform: translateY(100%) !important;
         transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1) !important;
         padding: 0 0 env(safe-area-inset-bottom, 16px) 0 !important;
-        max-height: 70vh !important;
+        max-height: 75vh !important;
         overflow-y: auto !important;
         overscroll-behavior: contain !important;
-        box-shadow: 0 -10px 40px rgba(0,0,0,0.5) !important;
+        box-shadow: 0 -10px 40px rgba(0,0,0,0.6) !important;
+        touch-action: pan-y !important;
     }
     .more-sheet.open {
         transform: translateY(0) !important;

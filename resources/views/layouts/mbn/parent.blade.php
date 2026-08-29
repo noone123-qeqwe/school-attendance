@@ -21,8 +21,8 @@
         <i class="bi bi-bell-fill"></i>
         <span>Alerts</span>
     </a>
-    <a href="javascript:void(0)" class="mbn-item" onclick="openMoreSheet()">
+    <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" style="background:transparent;border:none;outline:none;cursor:pointer;">
         <i class="bi bi-grid-3x3-gap-fill"></i>
         <span>More</span>
-    </a>
+    </button>
 </nav>

@@ -680,9 +680,23 @@
             </div>
             <div class="more-sheet-grid" id="moreSheetContent">
                 @if(Auth::user()->isAdmin())
+                    <a href="{{ route('admin.qr') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <span class="more-sheet-item-label" style="color: #f3e7cd; font-weight: 700;">QR Center</span>
+                    </a>
                     <a href="{{ route('admin.teachers') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-person-workspace"></i></div>
                         <span class="more-sheet-item-label">Teachers</span>
+                    </a>
+                    <a href="{{ route('admin.students') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-people-fill"></i></div>
+                        <span class="more-sheet-item-label">Students</span>
+                    </a>
+                    <a href="{{ route('admin.attendance') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
+                        <span class="more-sheet-item-label">Attendance</span>
                     </a>
                     <a href="{{ route('admin.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
@@ -713,13 +727,27 @@
                         <span class="more-sheet-item-label">Notifications</span>
                     </a>
                 @elseif(Auth::user()->isTeacher())
+                    <a href="{{ route('teacher.subjects') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <span class="more-sheet-item-label" style="color: #f3e7cd; font-weight: 700;">QR Session</span>
+                    </a>
+                    <a href="{{ route('teacher.classroom.index') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-journal-album"></i></div>
+                        <span class="more-sheet-item-label">Classes</span>
+                    </a>
                     <a href="{{ route('teacher.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
                         <span class="more-sheet-item-label">Calendar</span>
                     </a>
-                    <a href="{{ route('teacher.subjects') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-qr-code-scan"></i></div>
-                        <span class="more-sheet-item-label">QR / Subjects</span>
+                    <a href="{{ route('teacher.absent') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-x-fill"></i></div>
+                        <span class="more-sheet-item-label">Absent</span>
+                    </a>
+                    <a href="{{ route('teacher.excuse.reviews') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-file-text-fill"></i></div>
+                        <span class="more-sheet-item-label">Excuses</span>
                     </a>
                     <a href="{{ route('teacher.reports') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-graph-up-arrow"></i></div>
@@ -737,6 +765,10 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
                         <span class="more-sheet-item-label">Attendance</span>
                     </a>
+                    <a href="{{ route('teacher.profile') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
+                        <span class="more-sheet-item-label">Profile</span>
+                    </a>
                 @elseif(Auth::user()->isParent())
                     <a href="{{ route('parent.link.form') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-link-45deg"></i></div>
@@ -746,26 +778,56 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
                         <span class="more-sheet-item-label">Excuses</span>
                     </a>
+                    <a href="{{ route('parent.schedule') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-clock-fill"></i></div>
+                        <span class="more-sheet-item-label">Schedule</span>
+                    </a>
+                    <a href="{{ route('parent.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
+                        <span class="more-sheet-item-label">Calendar</span>
+                    </a>
                     <a href="{{ route('parent.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
                     </a>
                     <a href="{{ route('parent.profile') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
-                        <span class="more-sheet-item-label">Settings</span>
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
+                        <span class="more-sheet-item-label">Profile</span>
                     </a>
                 @else
+                    <a href="javascript:void(0)" onclick="closeMoreSheet(); if(typeof openStudentScanner === 'function'){ openStudentScanner(); } else { window.location.href='{{ route('home') }}?open_scanner=1'; }" class="more-sheet-item" data-color="gold">
+                        <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
+                            <i class="bi bi-qr-code-scan"></i>
+                        </div>
+                        <span class="more-sheet-item-label" style="color: #f3e7cd; font-weight: 700;">Scan QR</span>
+                    </a>
+                    <a href="{{ route('student.classes') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-folder-fill"></i></div>
+                        <span class="more-sheet-item-label">Classes</span>
+                    </a>
+                    <a href="{{ route('student.schedule') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-range-fill"></i></div>
+                        <span class="more-sheet-item-label">Schedule</span>
+                    </a>
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
                         <span class="more-sheet-item-label">Calendar</span>
+                    </a>
+                    <a href="{{ route('excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-file-text-fill"></i></div>
+                        <span class="more-sheet-item-label">Excuses</span>
+                    </a>
+                    <a href="{{ route('attendance.records') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-data-fill"></i></div>
+                        <span class="more-sheet-item-label">Records</span>
                     </a>
                     <a href="{{ route('notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
                     </a>
-                    <a href="{{ route('attendance.records') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-data-fill"></i></div>
-                        <span class="more-sheet-item-label">Records</span>
+                    <a href="{{ route('profile') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
+                        <span class="more-sheet-item-label">Profile</span>
                     </a>
                     <a href="{{ route('settings') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
@@ -775,30 +837,56 @@
             </div>
         </div>
         <script @cspNonce>
-        function openMoreSheet() {
-            document.getElementById('moreSheetOverlay').classList.add('show');
-            document.getElementById('moreSheet').classList.add('open');
+        window.openMoreSheet = function() {
+            var overlay = document.getElementById('moreSheetOverlay');
+            var sheet = document.getElementById('moreSheet');
+            if (sheet) {
+                sheet.style.transform = '';
+                sheet.style.transition = '';
+                sheet.classList.add('open');
+            }
+            if (overlay) {
+                overlay.classList.add('show');
+            }
             document.body.style.overflow = 'hidden';
-        }
-        function closeMoreSheet() {
-            document.getElementById('moreSheetOverlay').classList.remove('show');
-            document.getElementById('moreSheet').classList.remove('open');
+        };
+
+        window.closeMoreSheet = function() {
+            var overlay = document.getElementById('moreSheetOverlay');
+            var sheet = document.getElementById('moreSheet');
+            if (overlay) {
+                overlay.classList.remove('show');
+            }
+            if (sheet) {
+                sheet.classList.remove('open');
+                sheet.style.transform = '';
+            }
             document.body.style.overflow = '';
-        }
-        // Swipe-down to dismiss
-        (function() {
-            const sheet = document.getElementById('moreSheet');
+        };
+
+        // Fallback listener for any more buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.mbn-item-more, [data-action="open-more-sheet"]').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.openMoreSheet();
+                });
+            });
+
+            // Swipe-down to dismiss
+            var sheet = document.getElementById('moreSheet');
             if (!sheet) return;
-            let startY = 0, currentY = 0, isDragging = false;
+            var startY = 0, currentY = 0, isDragging = false;
             sheet.addEventListener('touchstart', function(e) {
                 if (sheet.scrollTop > 0) return;
                 startY = e.touches[0].clientY;
                 isDragging = true;
             }, { passive: true });
+
             sheet.addEventListener('touchmove', function(e) {
                 if (!isDragging) return;
                 currentY = e.touches[0].clientY;
-                const diff = currentY - startY;
+                var diff = currentY - startY;
                 if (diff > 0) {
                     sheet.style.transform = 'translateY(' + diff + 'px)';
                     sheet.style.transition = 'none';
@@ -808,16 +896,15 @@
             sheet.addEventListener('touchend', function() {
                 if (!isDragging) return;
                 isDragging = false;
-                const diff = currentY - startY;
+                var diff = currentY - startY;
                 sheet.style.transition = '';
                 if (diff > 80) {
-                    closeMoreSheet();
+                    window.closeMoreSheet();
                 } else {
                     sheet.style.transform = '';
                 }
-                sheet.style.transform = '';
             });
-        })();
+        });
         </script>
     @endauth
     @auth
