@@ -25,7 +25,7 @@ class QrAttendanceController extends Controller
     {
         $this->qrSessionService = $qrSessionService;
     }
-    private const QR_TTL_SECONDS = 20; // QR refreshes every 20 seconds
+    private const QR_TTL_SECONDS = 60; // QR stays visible for 60 seconds before refresh
 
     private function getSchoolLat(): float
     {
@@ -234,6 +234,7 @@ class QrAttendanceController extends Controller
                 'token'          => $session->token,
                 'scan_url'       => $this->buildScanUrl($session->token, $session->session_ends_at),
                 'expires_at'     => $session->expires_at->timestamp,
+                'ttl'            => self::QR_TTL_SECONDS,
                 'session_end'    => $session->session_ends_at->timestamp,
                 'classroom_lat'  => $session->classroom_lat,
                 'classroom_lng'  => $session->classroom_lng,
@@ -270,6 +271,7 @@ class QrAttendanceController extends Controller
                 'token'      => $session->token,
                 'scan_url'   => $this->buildScanUrl($session->token, $session->session_ends_at),
                 'expires_at' => $session->expires_at->timestamp,
+                'ttl'        => self::QR_TTL_SECONDS,
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);

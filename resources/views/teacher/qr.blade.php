@@ -362,11 +362,11 @@
                 <div class="card-body text-center" style="min-height: 480px; padding: 2.5rem 1.5rem;">
                     
                     <!-- QR Code Display Area -->
-                    <div id="qrCodeContainer" class="qr-container" style="margin: 1.5rem auto; max-width: 500px;">
+                    <div id="qrCodeContainer" class="qr-container" style="margin: 1.5rem auto; max-width: 600px; min-height: 480px; padding: 24px;">
                         <div style="color: #b39b82;">
-                            <i class="bi bi-qr-code" style="font-size: 4rem; opacity: 0.4; margin-bottom: 1rem; color: #cfa46f; display: block;"></i>
-                            <h5 style="color: #f3e7cd; font-weight: 700; margin-bottom: 6px;">Click "Start Session" to generate QR code</h5>
-                            <p style="color: #b39b82; margin: 0; font-size: 0.9rem;">Students will scan this code to mark attendance</p>
+                            <i class="bi bi-qr-code" style="font-size: 5rem; opacity: 0.4; margin-bottom: 1rem; color: #cfa46f; display: block;"></i>
+                            <h5 style="color: #f3e7cd; font-weight: 700; margin-bottom: 6px; font-size: 1.25rem;">Click "Start Session" to generate QR code</h5>
+                            <p style="color: #b39b82; margin: 0; font-size: 0.95rem;">Students will scan this code to mark attendance</p>
                         </div>
                     </div>
                     
@@ -515,7 +515,7 @@ let teacherLocation = null;
 let locationWatchId = null;
 let locationTimeoutId = null;
 let locationDowngraded = false;
-let refreshCountdownSeconds = 25;
+let refreshCountdownSeconds = 60;
 
 const startBtn = document.getElementById('startBtn');
 const refreshBtn = document.getElementById('refreshBtn');
@@ -779,12 +779,12 @@ function updateUIForActiveSession() {
 }
 
 function getRefreshIntervalSeconds() {
-    const ttl = Number(currentSession?.ttl) || 20;
-    return Math.max(ttl - 5, 10);
+    const ttl = Number(currentSession?.ttl) || 60;
+    return Math.max(ttl - 5, 50);
 }
 
 function resetRefreshTimers() {
-    const ttl = Number(currentSession?.ttl) || 20;
+    const ttl = Number(currentSession?.ttl) || 60;
     refreshCountdownSeconds = ttl;
     document.getElementById('refreshCountdownText').textContent = refreshCountdownSeconds;
     const projCountdown = document.getElementById('projectorCountdown');
@@ -851,7 +851,7 @@ refreshBtn.addEventListener('click', async () => {
         if (data.success) {
             currentSession.token = data.token;
             currentSession.scan_url = data.scan_url;
-            currentSession.ttl = data.ttl || currentSession.ttl || 20;
+            currentSession.ttl = data.ttl || currentSession.ttl || 60;
             showQRCode(data.scan_url);
             resetRefreshTimers();
         }
@@ -920,14 +920,16 @@ function enterGracePeriod() {
 }
 
 function showQRCode(url) {
-    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
-    const projQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=450x450&data=' + encodeURIComponent(url);
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=' + encodeURIComponent(url);
+    const projQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=' + encodeURIComponent(url);
     
     qrContainer.innerHTML = `
-        <div class="text-center">
-            <img src="${qrUrl}" alt="Attendance QR Code" style="width: 260px; height: 260px; display: block; margin: 0 auto;">
-            <p class="mt-3 mb-0" style="color: #f3e7cd; font-size: 0.9rem; font-weight: 600;">
-                <i class="bi bi-phone me-1" style="color: #cfa46f;"></i> Ask students to scan this code
+        <div class="text-center" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div style="background: #ffffff; padding: 12px; border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); display: inline-block;">
+                <img src="${qrUrl}" alt="Attendance QR Code" style="width: min(380px, 80vw); height: min(380px, 80vw); display: block; margin: 0 auto; border-radius: 8px;">
+            </div>
+            <p class="mt-3 mb-0" style="color: #f3e7cd; font-size: 1.05rem; font-weight: 700;">
+                <i class="bi bi-phone me-1" style="color: #cfa46f;"></i> Ask students to scan this QR code
             </p>
         </div>
     `;
@@ -935,7 +937,11 @@ function showQRCode(url) {
 
     const projContainer = document.getElementById('projectorQrCode');
     if (projContainer) {
-        projContainer.innerHTML = `<img src="${projQrUrl}" alt="Projector QR Code" style="width: 400px; height: 400px; display: block; margin: 0 auto; border-radius: 12px;">`;
+        projContainer.innerHTML = `
+            <div style="background: #ffffff; padding: 16px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); display: inline-block;">
+                <img src="${projQrUrl}" alt="Projector QR Code" style="width: min(560px, 85vw); height: min(560px, 85vw); display: block; margin: 0 auto; border-radius: 12px;">
+            </div>
+        `;
     }
 }
 

@@ -50,7 +50,7 @@ class QrSessionService
             'subject_code'    => $subjectCode,
             'created_by'      => $teacherId,
             'token'           => AttendanceSession::generateToken($subjectCode),
-            'expires_at'      => $now->copy()->addSeconds(20)->min($sessionEnd),
+            'expires_at'      => $now->copy()->addSeconds(60)->min($sessionEnd),
             'session_ends_at' => $sessionEnd,
             'active'          => true,
             'classroom_lat'   => $lat,
@@ -71,7 +71,7 @@ class QrSessionService
         
         $session->update([
             'token'      => AttendanceSession::generateToken($session->subject_code),
-            'expires_at' => now('Asia/Manila')->addSeconds(20)->min($session->session_ends_at),
+            'expires_at' => now('Asia/Manila')->addSeconds(60)->min($session->session_ends_at),
         ]);
         
         return $session;
