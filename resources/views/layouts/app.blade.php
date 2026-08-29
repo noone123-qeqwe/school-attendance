@@ -800,20 +800,6 @@
                         <span class="more-sheet-item-label">Profile</span>
                     </a>
                 @else
-                    <a href="javascript:void(0)" onclick="closeMoreSheet(); if(typeof openStudentScanner === 'function'){ openStudentScanner(); } else { window.location.href='{{ route('home') }}?open_scanner=1'; }" class="more-sheet-item" data-color="gold">
-                        <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
-                            <i class="bi bi-qr-code-scan"></i>
-                        </div>
-                        <span class="more-sheet-item-label" style="color: #f3e7cd; font-weight: 700;">Scan QR</span>
-                    </a>
-                    <a href="{{ route('student.classes') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-folder-fill"></i></div>
-                        <span class="more-sheet-item-label">Classes</span>
-                    </a>
-                    <a href="{{ route('student.schedule') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-range-fill"></i></div>
-                        <span class="more-sheet-item-label">Schedule</span>
-                    </a>
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
                         <span class="more-sheet-item-label">Calendar</span>
