@@ -723,10 +723,6 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
                         <span class="more-sheet-item-label">Excuses</span>
                     </a>
-                    <a href="{{ route('admin.profile') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
-                        <span class="more-sheet-item-label">Profile</span>
-                    </a>
                     <a href="{{ route('admin.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
@@ -770,10 +766,6 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
                         <span class="more-sheet-item-label">Attendance</span>
                     </a>
-                    <a href="{{ route('teacher.profile') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
-                        <span class="more-sheet-item-label">Profile</span>
-                    </a>
                 @elseif(Auth::user()->isParent())
                     <a href="{{ route('parent.link.form') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-link-45deg"></i></div>
@@ -794,10 +786,6 @@
                     <a href="{{ route('parent.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
-                    </a>
-                    <a href="{{ route('parent.profile') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
-                        <span class="more-sheet-item-label">Profile</span>
                     </a>
                 @else
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
