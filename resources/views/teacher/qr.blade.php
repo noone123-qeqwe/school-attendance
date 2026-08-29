@@ -369,6 +369,24 @@
                             <p style="color: #b39b82; margin: 0; font-size: 0.95rem;">Students will scan this code to mark attendance</p>
                         </div>
                     </div>
+
+                    <!-- Attendance Code Display Box (QR or Code) -->
+                    <div id="attendanceCodeSection" style="display: none; background: rgba(0, 0, 0, 0.45); border: 1.5px solid rgba(207, 164, 111, 0.35); border-radius: 20px; padding: 18px 24px; max-width: 480px; margin: 1.5rem auto 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <div style="font-size: 0.76rem; font-weight: 800; color: #b39b82; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px;">
+                            <i class="bi bi-key-fill text-warning me-1"></i> Class Attendance Code
+                        </div>
+                        <div class="d-flex align-items-center justify-content-center gap-3">
+                            <div id="displaySessionCode" style="font-size: 2.6rem; font-weight: 900; letter-spacing: 6px; color: #ffd700; font-family: monospace; text-shadow: 0 2px 14px rgba(255,215,0,0.4);">
+                                ------
+                            </div>
+                            <button type="button" class="btn btn-sm" onclick="copySessionCode()" style="background: rgba(207,164,111,0.15); color: #f3e7cd; border: 1px solid rgba(207,164,111,0.3); border-radius: 10px; padding: 6px 12px; font-weight: 700;" title="Copy Code">
+                                <i class="bi bi-copy me-1"></i> Copy
+                            </button>
+                        </div>
+                        <div style="font-size: 0.82rem; color: #b39b82; margin-top: 6px;">
+                            Students can scan the QR code <strong>OR</strong> type this 6-digit code on their dashboard
+                        </div>
+                    </div>
                     
                     <!-- QR Refresh Countdown -->
                     <div id="qrRefreshCountdown" style="display: none; text-align: center; margin: 1.5rem auto;">
@@ -481,14 +499,24 @@
     <div style="max-width: 600px; width: 100%;">
         <div class="mb-3">
             <span class="badge" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; font-size: 1rem; padding: 8px 20px; border-radius: 99px; font-weight: 700;">
-                <i class="bi bi-broadcast me-1"></i> Live QR Attendance Session
+                <i class="bi bi-broadcast me-1"></i> Live QR & Code Attendance
             </span>
         </div>
         <h2 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 6px; color: #f3e7cd;">{{ $subject->name }}</h2>
-        <p style="color: #b39b82; font-size: 1.1rem; margin-bottom: 24px;">{{ $subject->code }} • Scan with your smartphone to mark attendance</p>
+        <p style="color: #b39b82; font-size: 1.1rem; margin-bottom: 20px;">{{ $subject->code }} • Scan with phone camera or enter code</p>
 
-        <div id="projectorQrWrapper" style="background: white; border-radius: 28px; padding: 24px; display: inline-block; box-shadow: 0 20px 60px rgba(0,0,0,0.6); margin-bottom: 24px;">
+        <div id="projectorQrWrapper" style="background: white; border-radius: 28px; padding: 24px; display: inline-block; box-shadow: 0 20px 60px rgba(0,0,0,0.6); margin-bottom: 16px;">
             <div id="projectorQrCode"></div>
+        </div>
+
+        <!-- Projector Big Attendance Code -->
+        <div id="projectorCodeSection" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(207,164,111,0.4); border-radius: 22px; padding: 14px 28px; max-width: 480px; margin: 0 auto 20px;">
+            <div style="font-size: 0.82rem; text-transform: uppercase; font-weight: 800; color: #b39b82; letter-spacing: 1.5px; margin-bottom: 4px;">
+                <i class="bi bi-key-fill text-warning me-1"></i> Attendance Code / PIN
+            </div>
+            <div id="projectorSessionCode" style="font-size: 3.2rem; font-weight: 900; letter-spacing: 8px; color: #ffd700; font-family: monospace; text-shadow: 0 0 24px rgba(255,215,0,0.5);">
+                ------
+            </div>
         </div>
 
         <div class="d-flex justify-content-center align-items-center gap-4 mt-2">
@@ -752,6 +780,19 @@ function copyScanLink() {
     });
 }
 
+function copySessionCode() {
+    if (!currentSession || !currentSession.session_code) {
+        showTeacherToast('No active attendance code to copy', 'error');
+        return;
+    }
+    const cleanCode = currentSession.session_code;
+    navigator.clipboard.writeText(cleanCode).then(() => {
+        showTeacherToast(`Attendance code (${cleanCode}) copied to clipboard!`, 'success');
+    }).catch(() => {
+        prompt('Copy Attendance Code:', cleanCode);
+    });
+}
+
 function openProjectorMode() {
     const modal = document.getElementById('projectorModal');
     modal.style.display = 'flex';
@@ -776,6 +817,16 @@ function updateUIForActiveSession() {
     document.getElementById('sessionTimer').style.display = 'block';
     document.getElementById('projectorBtn').style.display = 'inline-block';
     document.getElementById('copyLinkBtn').style.display = 'inline-block';
+
+    if (currentSession && (currentSession.formatted_code || currentSession.session_code)) {
+        const codeText = currentSession.formatted_code || currentSession.session_code;
+        const codeBox = document.getElementById('displaySessionCode');
+        if (codeBox) codeBox.textContent = codeText;
+        const pCode = document.getElementById('projectorSessionCode');
+        if (pCode) pCode.textContent = codeText;
+        const codeSection = document.getElementById('attendanceCodeSection');
+        if (codeSection) codeSection.style.display = 'block';
+    }
 }
 
 function getRefreshIntervalSeconds() {

@@ -15,7 +15,7 @@
     </a>
     <a href="javascript:void(0)" onclick="if(typeof openStudentScanner === 'function'){openStudentScanner();}else{window.location.href='{{ route('home') }}?open_scanner=1';}" class="nav-link" style="color: #f3e7cd; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.22); border-radius: 12px; margin: 4px 0 8px 0;">
         <i class="bi bi-qr-code-scan" style="color: #cfa46f;"></i>
-        <span class="nav-link-text" style="font-weight: 700;">Scan Attendance QR</span>
+        <span class="nav-link-text" style="font-weight: 700;">Scan QR / Enter Code</span>
     </a>
     <a href="{{ route('student.schedule') }}" class="nav-link {{ request()->routeIs('student.schedule') ? 'active' : '' }}">
         <i class="bi bi-calendar2-week-fill"></i>

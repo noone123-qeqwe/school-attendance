@@ -826,15 +826,20 @@ function showAttDetail(dateKey, day) {
 }
 </script>
 
-<!-- QR Camera Scanner Modal -->
+<!-- QR or Code Attendance Modal -->
 <div id="studentScannerModal" class="scanner-modal-backdrop" style="display: none;">
     <div class="scanner-modal-card">
         
         <!-- Header & Top Floating Bar -->
         <div class="scanner-top-bar">
-            <div class="scanner-status-pill">
-                <span class="scanner-pulse-dot"></span>
-                <span>Live Camera</span>
+            <!-- Mode Switcher Tabs: QR or Code -->
+            <div class="scanner-mode-switcher">
+                <button type="button" id="tabScanMode" class="scanner-mode-tab active" onclick="switchScannerMode('scan')">
+                    <i class="bi bi-qr-code-scan me-1"></i> Scan QR
+                </button>
+                <button type="button" id="tabCodeMode" class="scanner-mode-tab" onclick="switchScannerMode('code')">
+                    <i class="bi bi-key-fill me-1"></i> Enter Code
+                </button>
             </div>
             
             <div class="scanner-top-actions">
@@ -844,13 +849,13 @@ function showAttDetail(dateKey, day) {
                 <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="scanner-icon-btn" title="Flip Camera">
                     <i class="bi bi-camera-reverse"></i>
                 </button>
-                <button type="button" onclick="closeStudentScanner()" class="scanner-icon-btn close-btn" title="Close Scanner">
+                <button type="button" onclick="closeStudentScanner()" class="scanner-icon-btn close-btn" title="Close">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Scanner View State -->
+        <!-- Mode 1: Camera Scanner View -->
         <div id="scannerActiveView" class="scanner-active-content">
             <div class="scanner-hero-heading">
                 <h4 class="scanner-title">Scan Attendance QR</h4>
@@ -879,7 +884,7 @@ function showAttDetail(dateKey, day) {
                 <div id="scannerProcessingOverlay" class="scanner-processing-overlay" style="display: none;">
                     <div class="spinner-border text-warning mb-3" style="width: 3.2rem; height: 3.2rem; border-width: 3px;" role="status"></div>
                     <div class="processing-title">Recording Attendance...</div>
-                    <div class="processing-sub">Verifying dynamic token & proximity</div>
+                    <div class="processing-sub">Verifying session & GPS proximity</div>
                 </div>
 
                 <!-- Fallback Notice (Permission Blocked / Unsupported) -->
@@ -888,28 +893,49 @@ function showAttDetail(dateKey, day) {
                         <i class="bi bi-camera-video-off"></i>
                     </div>
                     <h5 class="fallback-title">Camera Inactive</h5>
-                    <p id="scannerFallbackText" class="fallback-text">Please allow camera permissions or enter the code manually.</p>
-                    <button type="button" class="btn btn-sm btn-outline-warning mt-2" onclick="requestCameraAgain()" style="border-radius: 12px; font-weight: 700;">
-                        <i class="bi bi-arrow-repeat me-1"></i> Allow / Retry Camera
-                    </button>
-                </div>
-            </div>
-
-            <!-- Expandable Manual Input Toggle -->
-            <div class="scanner-manual-section">
-                <button type="button" class="scanner-manual-toggle-btn" onclick="toggleManualInputDrawer()">
-                    <i class="bi bi-keyboard me-1"></i> <span id="manualToggleLabel">Enter Token / Link Manually</span>
-                    <i class="bi bi-chevron-down ms-1" id="manualToggleIcon" style="transition: transform 0.2s;"></i>
-                </button>
-
-                <div id="scannerManualDrawer" class="scanner-manual-drawer" style="display: none;">
-                    <div class="input-group">
-                        <input type="text" id="manualQrInput" class="form-control scanner-input" placeholder="Paste scan URL or token..." autocomplete="off">
-                        <button type="button" class="btn scanner-submit-btn" onclick="submitManualQr()">
-                            Submit
+                    <p id="scannerFallbackText" class="fallback-text">Please allow camera permissions or switch to Code entry.</p>
+                    <div class="d-flex justify-content-center gap-2 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="requestCameraAgain()" style="border-radius: 12px; font-weight: 700;">
+                            <i class="bi bi-arrow-repeat me-1"></i> Retry Camera
+                        </button>
+                        <button type="button" class="btn btn-sm btn-warning text-dark" onclick="switchScannerMode('code')" style="border-radius: 12px; font-weight: 700;">
+                            <i class="bi bi-key-fill me-1"></i> Use Code
                         </button>
                     </div>
                 </div>
+            </div>
+
+            <!-- Quick switch link to code -->
+            <div class="mt-3 text-center">
+                <button type="button" class="scanner-manual-toggle-btn" onclick="switchScannerMode('code')">
+                    <i class="bi bi-key-fill text-warning me-1"></i> Or enter 6-digit Code instead
+                </button>
+            </div>
+        </div>
+
+        <!-- Mode 2: Direct Code / PIN Input View -->
+        <div id="scannerCodeView" class="scanner-active-content" style="display: none; padding: 10px 0;">
+            <div style="width: 60px; height: 60px; border-radius: 20px; background: linear-gradient(135deg, #cfa46f, #8c6d46); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #181614; margin: 0 auto 14px; box-shadow: 0 8px 24px rgba(207,164,111,0.3);">
+                <i class="bi bi-key-fill"></i>
+            </div>
+            
+            <h4 class="scanner-title">Enter Attendance Code</h4>
+            <p class="scanner-sub">Type the 6-digit attendance code displayed on the teacher's screen</p>
+
+            <div class="code-entry-container my-4">
+                <input type="text" id="directSessionCodeInput" class="code-entry-input" placeholder="849 201" maxlength="9" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" oninput="formatSessionCodeInput(this)" onkeydown="handleCodeKeydown(event)">
+                <div class="code-entry-hint mt-2">
+                    <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
+                </div>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+                <button type="button" id="codeSubmitBtn" class="btn scanner-primary-action-btn w-100" onclick="submitDirectCode()">
+                    <i class="bi bi-check2-circle me-1"></i> Record Attendance
+                </button>
+                <button type="button" class="btn scanner-secondary-action-btn w-100" onclick="switchScannerMode('scan')">
+                    <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
+                </button>
             </div>
         </div>
 
@@ -950,7 +976,7 @@ function showAttDetail(dateKey, day) {
                     <i class="bi bi-check-lg me-1"></i> Back to Dashboard
                 </button>
                 <button type="button" id="resultRetryBtn" onclick="resetScannerView()" class="btn scanner-secondary-action-btn" style="display: none;">
-                    <i class="bi bi-arrow-repeat me-1"></i> Scan Again
+                    <i class="bi bi-arrow-repeat me-1"></i> Try Again
                 </button>
             </div>
         </div>
@@ -959,7 +985,7 @@ function showAttDetail(dateKey, day) {
 </div>
 
 <style>
-/* ── STUDENT SCANNER MODAL STYLES (DESKTOP & MOBILE FIRST) ── */
+/* ── STUDENT SCANNER & CODE MODAL STYLES ── */
 .scanner-modal-backdrop {
     position: fixed;
     inset: 0;
@@ -976,9 +1002,9 @@ function showAttDetail(dateKey, day) {
     background: linear-gradient(180deg, #1f1b17 0%, #131211 100%);
     border: 1px solid rgba(207, 164, 111, 0.28);
     border-radius: 28px;
-    max-width: 460px;
+    max-width: 470px;
     width: 100%;
-    padding: 24px 22px;
+    padding: 22px 20px;
     color: #ffffff;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(207, 164, 111, 0.12);
     text-align: center;
@@ -992,42 +1018,40 @@ function showAttDetail(dateKey, day) {
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+/* Mode Switcher (QR vs Code) */
+.scanner-mode-switcher {
+    display: inline-flex;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 99px;
+    padding: 3px;
+    gap: 3px;
+}
+
+.scanner-mode-tab {
+    background: transparent;
+    border: none;
+    color: #b39b82;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scanner-mode-tab.active {
+    background: linear-gradient(135deg, #cfa46f, #8c6d46);
+    color: #181614;
+    box-shadow: 0 4px 12px rgba(207, 164, 111, 0.35);
+}
+
 /* Top Floating Bar */
 .scanner-top-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 14px;
-}
-
-.scanner-status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-    background: rgba(207, 164, 111, 0.12);
-    border: 1px solid rgba(207, 164, 111, 0.25);
-    color: #f3e7cd;
-    font-size: 0.76rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 5px 12px;
-    border-radius: 99px;
-}
-
-.scanner-pulse-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #10b981;
-    box-shadow: 0 0 8px #10b981;
-    animation: scannerPulse 1.6s infinite;
-}
-
-@keyframes scannerPulse {
-    0% { transform: scale(0.9); opacity: 0.7; }
-    50% { transform: scale(1.3); opacity: 1; }
-    100% { transform: scale(0.9); opacity: 0.7; }
 }
 
 .scanner-top-actions {
@@ -1088,6 +1112,43 @@ function showAttDetail(dateKey, day) {
     color: #b39b82;
     font-size: 0.82rem;
     margin-bottom: 0;
+}
+
+/* Code Entry Panel */
+.code-entry-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1.5px solid rgba(207, 164, 111, 0.35);
+    border-radius: 22px;
+    padding: 20px 16px;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
+}
+
+.code-entry-input {
+    background: rgba(0, 0, 0, 0.6) !important;
+    border: 2px solid rgba(207, 164, 111, 0.4) !important;
+    color: #ffd700 !important;
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    font-size: 2.2rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 8px !important;
+    text-align: center !important;
+    border-radius: 16px !important;
+    padding: 12px 10px !important;
+    width: 100% !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 0 16px rgba(207, 164, 111, 0.15) !important;
+    transition: all 0.2s !important;
+}
+
+.code-entry-input:focus {
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 24px rgba(255, 215, 0, 0.35) !important;
+    outline: none !important;
+}
+
+.code-entry-hint {
+    font-size: 0.78rem;
+    color: #b39b82;
 }
 
 /* Viewfinder Area */
@@ -1231,51 +1292,45 @@ function showAttDetail(dateKey, day) {
 
 /* Fallback Notice */
 .scanner-fallback-box {
-    padding: 28px 18px;
+    padding: 24px 16px;
     color: #b39b82;
     text-align: center;
     z-index: 10;
 }
 
 .fallback-icon-wrap {
-    width: 54px;
-    height: 54px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     background: rgba(239, 68, 68, 0.15);
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: #f87171;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 10px;
+    margin: 0 auto 8px;
 }
 
 .fallback-title {
     font-weight: 700;
     color: #ffffff;
-    font-size: 1.05rem;
-    margin-bottom: 4px;
+    font-size: 1rem;
+    margin-bottom: 2px;
 }
 
 .fallback-text {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: #b39b82;
-    max-width: 260px;
+    max-width: 250px;
     margin: 0 auto;
-}
-
-/* Manual Input Section */
-.scanner-manual-section {
-    margin-top: 14px;
-    text-align: center;
 }
 
 .scanner-manual-toggle-btn {
     background: none;
     border: none;
     color: #cfa46f;
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     font-weight: 700;
     cursor: pointer;
     padding: 6px 12px;
@@ -1284,42 +1339,8 @@ function showAttDetail(dateKey, day) {
 }
 
 .scanner-manual-toggle-btn:hover {
-    color: #f3e7cd;
-    background: rgba(207, 164, 111, 0.08);
-}
-
-.scanner-manual-drawer {
-    margin-top: 10px;
-    animation: drawerSlide 0.2s ease;
-}
-
-@keyframes drawerSlide {
-    from { opacity: 0; transform: translateY(-6px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.scanner-input {
-    background: rgba(0, 0, 0, 0.5) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    color: #ffffff !important;
-    border-radius: 14px 0 0 14px !important;
-    font-size: 0.85rem !important;
-    padding: 10px 14px !important;
-}
-
-.scanner-input:focus {
-    border-color: #cfa46f !important;
-    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.2) !important;
-}
-
-.scanner-submit-btn {
-    background: linear-gradient(135deg, #cfa46f, #8c6d46) !important;
-    color: #181614 !important;
-    border: none !important;
-    border-radius: 0 14px 14px 0 !important;
-    font-weight: 800 !important;
-    padding: 0 20px !important;
-    font-size: 0.85rem !important;
+    color: #ffd700;
+    background: rgba(207, 164, 111, 0.1);
 }
 
 /* Result View */
@@ -1465,6 +1486,12 @@ function showAttDetail(dateKey, day) {
         font-size: 1.35rem;
     }
 
+    .code-entry-input {
+        font-size: 2.4rem !important;
+        letter-spacing: 6px !important;
+        padding: 14px 10px !important;
+    }
+
     .reticle-corner {
         width: 32px;
         height: 32px;
@@ -1483,6 +1510,7 @@ let html5QrScanner = null;
 let currentFacingMode = "environment";
 let torchEnabled = false;
 let studentGeoCoords = null;
+let currentScannerMode = 'scan'; // 'scan' | 'code'
 
 // Auto-capture GPS coords quietly for faster validation
 if (navigator.geolocation) {
@@ -1493,12 +1521,91 @@ if (navigator.geolocation) {
     );
 }
 
-function openStudentScanner() {
+function switchScannerMode(mode) {
+    currentScannerMode = mode;
+    const tabScan = document.getElementById('tabScanMode');
+    const tabCode = document.getElementById('tabCodeMode');
+    const scanView = document.getElementById('scannerActiveView');
+    const codeView = document.getElementById('scannerCodeView');
+    const torchBtn = document.getElementById('torchCameraBtn');
+    const flipBtn = document.getElementById('flipCameraBtn');
+
+    if (mode === 'scan') {
+        tabScan.classList.add('active');
+        tabCode.classList.remove('active');
+        scanView.style.display = 'block';
+        codeView.style.display = 'none';
+        torchBtn.style.display = 'flex';
+        flipBtn.style.display = 'flex';
+        startHtml5Scanner();
+    } else {
+        tabCode.classList.add('active');
+        tabScan.classList.remove('active');
+        scanView.style.display = 'none';
+        codeView.style.display = 'block';
+        torchBtn.style.display = 'none';
+        flipBtn.style.display = 'none';
+
+        // Stop camera while typing to save battery
+        if (html5QrScanner) {
+            html5QrScanner.stop().then(() => {
+                html5QrScanner.clear();
+            }).catch(() => {});
+            html5QrScanner = null;
+        }
+
+        setTimeout(() => {
+            const input = document.getElementById('directSessionCodeInput');
+            if (input) input.focus();
+        }, 100);
+    }
+
+    if (window.triggerHaptic) window.triggerHaptic('light');
+}
+
+function formatSessionCodeInput(el) {
+    let val = el.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    if (val.length > 6) {
+        val = val.substring(0, 6);
+    }
+    if (val.length > 3) {
+        el.value = val.substring(0, 3) + ' ' + val.substring(3);
+    } else {
+        el.value = val;
+    }
+
+    // If 6 characters filled, trigger slight haptic
+    if (val.length === 6 && window.triggerHaptic) {
+        window.triggerHaptic('light');
+    }
+}
+
+function handleCodeKeydown(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        submitDirectCode();
+    }
+}
+
+function submitDirectCode() {
+    const rawVal = (document.getElementById('directSessionCodeInput')?.value || '').trim();
+    const cleanVal = rawVal.replace(/[^0-9A-Za-z]/g, '');
+    
+    if (!cleanVal) {
+        alert('Please enter the 6-digit attendance code shown on the screen.');
+        document.getElementById('directSessionCodeInput')?.focus();
+        return;
+    }
+
+    onQrScanSuccess(cleanVal);
+}
+
+function openStudentScanner(initialMode = 'scan') {
     const modal = document.getElementById('studentScannerModal');
     modal.style.display = 'flex';
     resetScannerView();
 
-    startHtml5Scanner();
+    switchScannerMode(initialMode);
 }
 
 function startHtml5Scanner() {
@@ -1513,7 +1620,7 @@ function startHtml5Scanner() {
                 initScannerInstance();
             }
         } else {
-            showCameraError("Scanner library loading. Please check internet or type token manually.");
+            showCameraError("Scanner library loading. Please switch to Enter Code mode.");
         }
     } catch (e) {
         showCameraError("Camera initialization failed: " + e.message);
@@ -1537,7 +1644,7 @@ function initScannerInstance() {
         document.getElementById('scannerLaser').style.display = 'block';
     }).catch(err => {
         console.warn("Camera start failed:", err);
-        showCameraError("Camera permission denied or camera not found. Allow camera access in browser settings.");
+        showCameraError("Camera permission denied or camera not found. Allow camera access or enter the 6-digit code.");
     });
 }
 
@@ -1577,18 +1684,6 @@ function toggleTorch() {
     } catch (e) {}
 }
 
-function toggleManualInputDrawer() {
-    const drawer = document.getElementById('scannerManualDrawer');
-    const icon = document.getElementById('manualToggleIcon');
-    const isHidden = drawer.style.display === 'none';
-    
-    drawer.style.display = isHidden ? 'block' : 'none';
-    icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-    if (isHidden) {
-        document.getElementById('manualQrInput')?.focus();
-    }
-}
-
 function closeStudentScanner() {
     const modal = document.getElementById('studentScannerModal');
     modal.style.display = 'none';
@@ -1602,13 +1697,12 @@ function closeStudentScanner() {
 
 function resetScannerView() {
     document.getElementById('scannerActiveView').style.display = 'block';
+    document.getElementById('scannerCodeView').style.display = 'none';
     document.getElementById('scannerResultView').style.display = 'none';
     document.getElementById('scannerProcessingOverlay').style.display = 'none';
-    document.getElementById('scannerManualDrawer').style.display = 'none';
-    document.getElementById('manualToggleIcon').style.transform = 'rotate(0deg)';
-    document.getElementById('manualQrInput').value = '';
+    document.getElementById('directSessionCodeInput').value = '';
     
-    if (!html5QrScanner && document.getElementById('studentScannerModal').style.display === 'flex') {
+    if (currentScannerMode === 'scan' && !html5QrScanner && document.getElementById('studentScannerModal').style.display === 'flex') {
         startHtml5Scanner();
     }
 }
@@ -1677,6 +1771,7 @@ async function onQrScanSuccess(decodedText) {
 
 function renderScanSuccess(data) {
     document.getElementById('scannerActiveView').style.display = 'none';
+    document.getElementById('scannerCodeView').style.display = 'none';
     document.getElementById('scannerResultView').style.display = 'block';
 
     const iconBox = document.getElementById('resultStatusIcon');
@@ -1723,6 +1818,7 @@ function renderScanSuccess(data) {
 
 function renderScanError(data) {
     document.getElementById('scannerActiveView').style.display = 'none';
+    document.getElementById('scannerCodeView').style.display = 'none';
     document.getElementById('scannerResultView').style.display = 'block';
 
     const iconBox = document.getElementById('resultStatusIcon');
@@ -1738,14 +1834,14 @@ function renderScanError(data) {
     if (data.error_type === 'schedule_mismatch') {
         title.textContent = 'Schedule Mismatch';
     } else if (data.error_type === 'session_closed' || data.error_type === 'invalid_or_expired') {
-        title.textContent = 'QR Code Expired / Closed';
+        title.textContent = 'Code / QR Expired';
     } else if (data.error_type === 'outside_classroom') {
         title.textContent = 'Outside Classroom Range';
     } else {
         title.textContent = 'Unable to Record Attendance';
     }
 
-    subtitle.textContent = data.message || 'The scanned QR code could not be processed. Please check with your instructor.';
+    subtitle.textContent = data.message || 'The entered code or QR could not be processed. Please check with your instructor.';
 
     document.getElementById('resultDetailsBox').style.display = 'none';
     retryBtn.style.display = 'block';
@@ -1757,15 +1853,6 @@ function renderScanError(data) {
 function finishScanAndRefresh() {
     closeStudentScanner();
     window.location.reload();
-}
-
-function submitManualQr() {
-    const val = (document.getElementById('manualQrInput')?.value || '').trim();
-    if (!val) {
-        alert('Please paste the QR attendance token or link.');
-        return;
-    }
-    onQrScanSuccess(val);
 }
 
 function playScanBeep() {
@@ -1811,6 +1898,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('open_scanner') === '1') {
         openStudentScanner();
+    } else if (urlParams.get('open_code') === '1') {
+        openStudentScanner('code');
     }
 });
 </script>

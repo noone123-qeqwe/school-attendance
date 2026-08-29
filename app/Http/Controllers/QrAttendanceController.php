@@ -232,13 +232,15 @@ class QrAttendanceController extends Controller
                 'success'        => true,
                 'session_id'     => $session->id,
                 'token'          => $session->token,
+                'session_code'   => $session->session_code,
+                'formatted_code' => $session->getFormattedCode(),
                 'scan_url'       => $this->buildScanUrl($session->token, $session->session_ends_at),
                 'expires_at'     => $session->expires_at->timestamp,
                 'ttl'            => self::QR_TTL_SECONDS,
                 'session_end'    => $session->session_ends_at->timestamp,
                 'classroom_lat'  => $session->classroom_lat,
                 'classroom_lng'  => $session->classroom_lng,
-                'message'        => 'QR attendance session started successfully!'
+                'message'        => 'QR & Code attendance session started successfully!'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -267,11 +269,13 @@ class QrAttendanceController extends Controller
             $session = $this->qrSessionService->refreshToken($session);
 
             return response()->json([
-                'success'    => true,
-                'token'      => $session->token,
-                'scan_url'   => $this->buildScanUrl($session->token, $session->session_ends_at),
-                'expires_at' => $session->expires_at->timestamp,
-                'ttl'        => self::QR_TTL_SECONDS,
+                'success'        => true,
+                'token'          => $session->token,
+                'session_code'   => $session->session_code,
+                'formatted_code' => $session->getFormattedCode(),
+                'scan_url'       => $this->buildScanUrl($session->token, $session->session_ends_at),
+                'expires_at'     => $session->expires_at->timestamp,
+                'ttl'            => self::QR_TTL_SECONDS,
             ]);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
@@ -950,7 +954,8 @@ class QrAttendanceController extends Controller
     public function processScan(Request $request)
     {
         $request->validate([
-            'token'     => 'required|string',
+            'token'     => 'required_without:code|nullable|string',
+            'code'      => 'required_without:token|nullable|string',
             'latitude'  => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'accuracy'  => 'nullable|numeric',
@@ -972,20 +977,40 @@ class QrAttendanceController extends Controller
             ], 403);
         }
 
+        $rawInput = trim((string) ($request->token ?? $request->code ?? ''));
+        if (empty($rawInput)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please provide a valid QR code or attendance code.'
+            ], 422);
+        }
+
         // Clean token if full URL was scanned
-        $rawToken = trim($request->token);
+        $rawToken = $rawInput;
         if (str_contains($rawToken, '/qr/scan/')) {
             $parts = explode('/qr/scan/', $rawToken);
             $rawToken = explode('?', $parts[1] ?? '')[0];
         }
 
-        $session = AttendanceSession::with(['subject.instructor'])->where('token', $rawToken)->first();
+        $cleanedCode = strtoupper(preg_replace('/[^0-9A-Za-z]/', '', $rawInput));
+        $isCodeMethod = strlen($cleanedCode) <= 10 && !str_contains($rawInput, '/');
+
+        // Look up by token or session_code
+        $session = AttendanceSession::with(['subject.instructor'])
+            ->where(function ($query) use ($rawToken, $cleanedCode) {
+                $query->where('token', $rawToken);
+                if (!empty($cleanedCode)) {
+                    $query->orWhere('session_code', $cleanedCode);
+                }
+            })
+            ->latest('id')
+            ->first();
 
         if (!$session) {
             return response()->json([
                 'success' => false,
                 'error_type' => 'invalid_or_expired',
-                'message' => 'Invalid or expired QR code. Please scan the latest active QR code displayed by your teacher.'
+                'message' => 'Invalid or expired attendance code / QR. Please verify the code on screen or scan the live QR code.'
             ], 422);
         }
 
@@ -993,7 +1018,7 @@ class QrAttendanceController extends Controller
             return response()->json([
                 'success' => false,
                 'error_type' => 'session_closed',
-                'message' => 'The attendance session for this class has closed. QR codes are only valid while the session is active.'
+                'message' => 'The attendance session for this class has ended. Codes and QR tokens are only valid while the session is active.'
             ], 422);
         }
 
@@ -1100,7 +1125,7 @@ class QrAttendanceController extends Controller
                     'latitude' => $request->latitude,
                     'longitude' => $request->longitude,
                     'gps_accuracy' => $request->accuracy,
-                    'method' => 'qr',
+                    'method' => $isCodeMethod ? 'code' : 'qr',
                 ]
             );
         } catch (\Exception $e) {

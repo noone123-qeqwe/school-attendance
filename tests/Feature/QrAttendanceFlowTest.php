@@ -342,4 +342,63 @@ class QrAttendanceFlowTest extends TestCase
         $this->assertEquals('schedule_mismatch', $scanResponse->json('error_type'));
         $this->assertStringContainsString('Year mismatch', $scanResponse->json('message'));
     }
+
+    public function test_student_can_clock_in_using_session_code_pin()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSCS'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'CS101',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSCS'
+        ]);
+
+        \App\Models\Schedule::create([
+            'subject_id' => $subject->id,
+            'day' => today()->format('l'),
+            'start_time' => now()->subMinutes(10)->format('H:i:s'),
+            'end_time' => now()->addMinutes(50)->format('H:i:s')
+        ]);
+
+        $student->enrolledSubjects()->attach($subject->id);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code,
+            'classroom_lat' => 14.5000,
+            'classroom_lng' => 121.0000
+        ]);
+
+        $startResponse->assertStatus(200);
+        $sessionCode = $startResponse->json('session_code');
+        $this->assertNotEmpty($sessionCode);
+        $this->assertEquals(6, strlen($sessionCode));
+
+        // Submit via 6-digit code with spacing
+        $formattedInput = substr($sessionCode, 0, 3) . ' ' . substr($sessionCode, 3, 3);
+        $scanResponse = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'code' => $formattedInput,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001
+        ]);
+
+        $scanResponse->assertStatus(200);
+        $this->assertTrue($scanResponse->json('success'));
+        $this->assertEquals('Present', $scanResponse->json('status'));
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'subject_code' => $subject->code,
+            'status' => 'Present',
+            'method' => 'code'
+        ]);
+    }
 }

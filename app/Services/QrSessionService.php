@@ -45,11 +45,17 @@ class QrSessionService
         AttendanceSession::where('subject_code', $subjectCode)
             ->where('active', true)
             ->update(['active' => false]);
+
+        $sessionCode = AttendanceSession::generateSessionCode();
+        while (AttendanceSession::where('session_code', $sessionCode)->where('active', true)->exists()) {
+            $sessionCode = AttendanceSession::generateSessionCode();
+        }
             
         return AttendanceSession::create([
             'subject_code'    => $subjectCode,
             'created_by'      => $teacherId,
             'token'           => AttendanceSession::generateToken($subjectCode),
+            'session_code'    => $sessionCode,
             'expires_at'      => $now->copy()->addSeconds(60)->min($sessionEnd),
             'session_ends_at' => $sessionEnd,
             'active'          => true,
