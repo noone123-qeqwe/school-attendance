@@ -1588,7 +1588,7 @@ async function handleSettingsAvatarUpload(input) {
         return;
     }
 
-    // Instant Preview
+    // Instant Local Preview
     const reader = new FileReader();
     reader.onload = function(e) {
         const avatarImg = document.getElementById('settingsAvatarDisplay');
@@ -1605,6 +1605,8 @@ async function handleSettingsAvatarUpload(input) {
 
     const form = document.getElementById('settingsProfileImageForm');
     const formData = new FormData(form);
+    formData.set('profile_image', file);
+    formData.set('_token', '{{ csrf_token() }}');
 
     try {
         const response = await fetch(form.action, {
@@ -1612,7 +1614,8 @@ async function handleSettingsAvatarUpload(input) {
             body: formData,
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
             }
         });
 
@@ -1627,10 +1630,11 @@ async function handleSettingsAvatarUpload(input) {
                 }, 1800);
             }
             if (data.image_url) {
+                const freshUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
                 const avatarImg = document.getElementById('settingsAvatarDisplay');
-                if (avatarImg) avatarImg.src = data.image_url;
-                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar').forEach(img => {
-                    img.src = data.image_url;
+                if (avatarImg) avatarImg.src = freshUrl;
+                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar, .mobile-user-avatar').forEach(img => {
+                    img.src = freshUrl;
                 });
             }
             if (window.triggerHaptic) window.triggerHaptic('success');

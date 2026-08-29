@@ -1,8 +1,8 @@
-/* BUMP_TIMESTAMP: 2026-08-30T04:20:30+08:00 */
-const CACHE_VERSION = 'v113';
-const CACHE_NAME = `attendance-v113`;
+/* BUMP_TIMESTAMP: 2026-08-30T04:21:20+08:00 */
+const CACHE_VERSION = 'v114';
+const CACHE_NAME = `attendance-v114`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v113`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v114`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
