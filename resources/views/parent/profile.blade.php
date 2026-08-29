@@ -503,6 +503,11 @@
 <script>
 function updateProfilePreview(input) {
     if (input.files && input.files[0]) {
+        if (input.files[0].size > 10 * 1024 * 1024) {
+            alert('The selected image is too large (' + (input.files[0].size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
+            input.value = '';
+            return;
+        }
         var reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('profilePreview').src = e.target.result;

@@ -620,7 +620,7 @@ class ParentController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,heic,heif,svg|max:10240',
         ];
 
         if ($request->filled('current_password') || $request->filled('password')) {
@@ -628,7 +628,11 @@ class ParentController extends Controller
             $rules['password'] = 'required|string|min:8|confirmed';
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'profile_image.image' => 'The selected file must be a valid image.',
+            'profile_image.mimes' => 'Allowed formats: JPG, JPEG, PNG, WEBP, GIF, HEIC.',
+            'profile_image.max' => 'The profile image size must not exceed 10 MB.',
+        ]);
 
         $user->name = $request->name;
         $user->phone = $request->phone;

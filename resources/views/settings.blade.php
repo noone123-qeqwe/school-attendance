@@ -324,21 +324,21 @@
             </div>
             <div class="sc-body">
                 <div style="display:flex;align-items:center;gap:20px;">
-                    <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data" id="settingsProfileImageForm">
                         @csrf
-                        <input type="file" name="profile_image" id="imgInput" class="d-none" accept="image/*" onchange="this.form.submit()">
+                        <input type="file" name="profile_image" id="imgInput" class="d-none" accept="image/*" onchange="handleSettingsAvatarUpload(this)">
                         <div onclick="document.getElementById('imgInput').click()"
                              style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #fef3c7;box-shadow:0 4px 16px rgba(128,0,0,.12);cursor:pointer;position:relative;flex-shrink:0;transition:transform .3s;"
-                             onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''">
+                             onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''" title="Click to change photo">
                             @if(Auth::user()->profile_image)
-                                <img src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}" style="width:100%;height:100%;object-fit:cover;"
+                                <img id="settingsAvatarDisplay" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}" style="width:100%;height:100%;object-fit:cover;"
                                      onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
                             @else
-                                <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200" style="width:100%;height:100%;object-fit:cover;">
+                                <img id="settingsAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200" style="width:100%;height:100%;object-fit:cover;">
                             @endif
-                            <div style="position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%;"
+                            <div id="settingsAvatarOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%;color:white;"
                                  onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
-                                <i class="bi bi-camera-fill" style="color:white;font-size:1.2rem;"></i>
+                                <i class="bi bi-camera-fill" style="font-size:1.2rem;"></i>
                             </div>
                         </div>
                     </form>
@@ -1376,6 +1376,28 @@ function generateRecoveryCodes() {
         btn.innerHTML = originalText;
         alert('Network error. Please try again.');
     });
+}
+
+function handleSettingsAvatarUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+        alert('The selected image is too large (' + (file.size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
+        input.value = '';
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const avatarImg = document.getElementById('settingsAvatarDisplay');
+        if (avatarImg) avatarImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    const overlay = document.getElementById('settingsAvatarOverlay');
+    if (overlay) {
+        overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status" style="width:1.1rem;height:1.1rem;"></div>';
+        overlay.style.opacity = '1';
+    }
+    document.getElementById('settingsProfileImageForm').submit();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

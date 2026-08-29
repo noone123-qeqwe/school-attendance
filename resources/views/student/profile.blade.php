@@ -133,6 +133,11 @@
         border-radius: 12px; padding: 12px 16px; font-size: 0.875rem; font-weight: 600;
         margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
     }
+    .flash-err {
+        background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #f87171;
+        border-radius: 12px; padding: 12px 16px; font-size: 0.875rem; font-weight: 600;
+        margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+    }
 
     /* Course badge */
     .course-badge {
@@ -169,6 +174,13 @@
     </div>
     @endif
 
+    @if($errors->any())
+    <div class="flash-err">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <span>{{ $errors->first() }}</span>
+    </div>
+    @endif
+
     <!-- HERO COVER -->
     <div class="position-relative mb-4">
         <div class="profile-hero">
@@ -178,15 +190,15 @@
         <!-- Avatar -->
         <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data" id="profileImageForm">
             @csrf
-            <input type="file" name="profile_image" id="profile_image_input" class="d-none" accept="image/*" onchange="this.form.submit()">
-            <div class="avatar-wrap" onclick="document.getElementById('profile_image_input').click()">
+            <input type="file" name="profile_image" id="profile_image_input" class="d-none" accept="image/*" onchange="handleStudentAvatarUpload(this)">
+            <div class="avatar-wrap" onclick="document.getElementById('profile_image_input').click()" title="Click to change profile picture">
                 @if(Auth::user()->profile_image)
-                    <img src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}"
+                    <img id="studentAvatarDisplay" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}"
                          onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
                 @else
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200">
+                    <img id="studentAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200">
                 @endif
-                <div class="avatar-edit-overlay">
+                <div class="avatar-edit-overlay" id="avatarEditOverlay">
                     <i class="bi bi-camera-fill" style="font-size:1.2rem;"></i>
                     <span>Change</span>
                 </div>
@@ -588,6 +600,35 @@ async function removeDevice(id, btn) {
         });
         loadDevices();
     } catch(e) {}
+}
+
+function handleStudentAvatarUpload(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    
+    // Check file size (10 MB max)
+    if (file.size > 10 * 1024 * 1024) {
+        alert('The selected image is too large (' + (file.size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
+        input.value = '';
+        return;
+    }
+    
+    // Instant preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const avatarImg = document.getElementById('studentAvatarDisplay');
+        if (avatarImg) avatarImg.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    
+    // Loading indicator
+    const overlay = document.getElementById('avatarEditOverlay');
+    if (overlay) {
+        overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status" style="width:1.2rem;height:1.2rem;"></div><span style="font-size:0.7rem;margin-top:4px;">Saving...</span>';
+        overlay.style.opacity = '1';
+    }
+    
+    document.getElementById('profileImageForm').submit();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -883,7 +883,15 @@ class AdminController extends Controller
 
     public function updateImage(Request $request)
     {
-        $request->validate(['profile_image'=>'required|image|mimes:jpeg,png,jpg|max:2048']);
+        $request->validate([
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif,svg|max:10240'
+        ], [
+            'profile_image.required' => 'Please select an image file to upload.',
+            'profile_image.image' => 'The selected file must be a valid image.',
+            'profile_image.mimes' => 'Allowed formats: JPG, JPEG, PNG, WEBP, GIF, HEIC.',
+            'profile_image.max' => 'The profile image size must not exceed 10 MB.',
+        ]);
+
         if ($request->hasFile('profile_image')) {
             $user = Auth::user();
 
@@ -895,7 +903,7 @@ class AdminController extends Controller
             $path = $request->file('profile_image')->store('profile_images', 'public');
             Auth::user()->update(['profile_image' => $path]);
         }
-        return back()->with('success', 'Profile photo updated!');
+        return back()->with('success', 'Profile photo updated successfully!');
     }
 
     public function settings()
