@@ -454,7 +454,16 @@
         }
     }
 
-    async function checkServerVersion() {
+    let lastVersionCheckTime = 0;
+    const VERSION_CHECK_COOLDOWN_MS = 60000;
+
+    async function checkServerVersion(force = false) {
+        const now = Date.now();
+        if (!force && (now - lastVersionCheckTime < VERSION_CHECK_COOLDOWN_MS)) {
+            return;
+        }
+        lastVersionCheckTime = now;
+
         try {
             const res = await fetch('/pwa/version', { cache: 'no-store' });
             if (!res.ok) return;
@@ -483,7 +492,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=72?v={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });
@@ -492,16 +501,16 @@
                 // 1. Immediate version check on page ready
                 checkServerVersion();
 
-                // 2. Periodic check every 2 minutes for real-time detection while using the app
+                // 2. Periodic check every 3 minutes for real-time detection while using the app
                 setInterval(() => {
                     if (document.visibilityState === 'visible') {
                         checkServerVersion();
                     }
-                }, 120000);
+                }, 180000);
 
                 // 3. If an update is already downloaded and waiting, verify version
                 if (reg.waiting) {
-                    checkServerVersion();
+                    checkServerVersion(true);
                 }
 
                 // 4. When a new update is found and finishes installing in the background
@@ -510,7 +519,7 @@
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
-                                checkServerVersion();
+                                checkServerVersion(true);
                             }
                         });
                     }
@@ -519,19 +528,17 @@
                 // 5. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
-                        checkServerVersion();
+                        checkServerVersion(true);
                     }
                 });
 
-                // 6. On app focus or unlock, check for updates
+                // 6. On app focus or unlock, check for updates (throttled)
                 window.addEventListener('focus', () => {
                     checkServerVersion();
-                    try { reg.update(); } catch(e) {}
                 });
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
                         checkServerVersion();
-                        try { reg.update(); } catch(e) {}
                     }
                 });
 
