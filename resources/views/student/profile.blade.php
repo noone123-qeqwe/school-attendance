@@ -190,8 +190,8 @@
         <!-- Avatar -->
         <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data" id="profileImageForm">
             @csrf
-            <input type="file" name="profile_image" id="profile_image_input" class="d-none" accept="image/*" onchange="handleStudentAvatarUpload(this)">
-            <div class="avatar-wrap" onclick="document.getElementById('profile_image_input').click()" title="Click to change profile picture">
+            <input type="file" name="profile_image" id="profile_image_input" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp,image/gif,image/heic,image/heif,image/*" onchange="handleStudentAvatarUpload(this)">
+            <label for="profile_image_input" class="avatar-wrap" title="Click to change profile picture">
                 @if(Auth::user()->profile_image)
                     <img id="studentAvatarDisplay" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}"
                          onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
@@ -202,7 +202,7 @@
                     <i class="bi bi-camera-fill" style="font-size:1.2rem;"></i>
                     <span>Change</span>
                 </div>
-            </div>
+            </label>
         </form>
 
         <!-- Name + meta -->
@@ -602,7 +602,7 @@ async function removeDevice(id, btn) {
     } catch(e) {}
 }
 
-function handleStudentAvatarUpload(input) {
+async function handleStudentAvatarUpload(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
     
@@ -628,7 +628,44 @@ function handleStudentAvatarUpload(input) {
         overlay.style.opacity = '1';
     }
     
-    document.getElementById('profileImageForm').submit();
+    const form = document.getElementById('profileImageForm');
+    const formData = new FormData(form);
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            if (overlay) {
+                overlay.innerHTML = '<i class="bi bi-check-circle-fill text-success" style="font-size:1.3rem;"></i><span style="font-size:0.65rem;margin-top:2px;">Saved</span>';
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    overlay.innerHTML = '<i class="bi bi-camera-fill" style="font-size:1.2rem;"></i><span>Change</span>';
+                }, 1800);
+            }
+            if (data.image_url) {
+                const avatarImg = document.getElementById('studentAvatarDisplay');
+                if (avatarImg) avatarImg.src = data.image_url;
+                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar').forEach(img => {
+                    img.src = data.image_url;
+                });
+            }
+            if (window.triggerHaptic) window.triggerHaptic('success');
+        } else {
+            throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Upload failed'));
+        }
+    } catch (err) {
+        console.warn('AJAX upload fallback to form submit:', err);
+        form.submit();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

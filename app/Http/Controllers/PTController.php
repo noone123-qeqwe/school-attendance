@@ -242,6 +242,7 @@ class PTController extends Controller
             'profile_image.max' => 'The profile image size must not exceed 10 MB.',
         ]);
 
+        $imageUrl = null;
         if ($request->hasFile('profile_image')) {
             /** @var \App\Models\User $user */
             $user = auth()->user();
@@ -254,6 +255,16 @@ class PTController extends Controller
             $path = $request->file('profile_image')->store('profile_images', 'public');
             $user->profile_image = $path;
             $user->save();
+
+            $imageUrl = asset('storage/' . $path);
+        }
+
+        if ($request->expectsJson() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile photo updated successfully!',
+                'image_url' => $imageUrl,
+            ]);
         }
 
         return back()->with('success', 'Profile photo updated successfully!');

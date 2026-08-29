@@ -320,37 +320,45 @@
         <div class="sc">
             <div class="sc-head">
                 <div class="sc-icon" style="background:#fff5f5;color:#800000;"><i class="bi bi-person-circle"></i></div>
-                <div><div class="sc-title">Profile Photo</div><div class="sc-sub">Click the photo to change it</div></div>
+                <div><div class="sc-title">Profile Photo</div><div class="sc-sub">Click the photo or Choose Photo button to update it</div></div>
             </div>
             <div class="sc-body">
-                <div style="display:flex;align-items:center;gap:20px;">
-                    <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data" id="settingsProfileImageForm">
-                        @csrf
-                        <input type="file" name="profile_image" id="imgInput" class="d-none" accept="image/*" onchange="handleSettingsAvatarUpload(this)">
-                        <div onclick="document.getElementById('imgInput').click()"
-                             style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #fef3c7;box-shadow:0 4px 16px rgba(128,0,0,.12);cursor:pointer;position:relative;flex-shrink:0;transition:transform .3s;"
+                <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data" id="settingsProfileImageForm">
+                    @csrf
+                    <input type="file" name="profile_image" id="imgInput" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp,image/gif,image/heic,image/heif,image/*" onchange="handleSettingsAvatarUpload(this)">
+                    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+                        <label for="imgInput"
+                             style="width:84px;height:84px;border-radius:50%;overflow:hidden;border:3px solid rgba(207,164,111,0.5);box-shadow:0 4px 18px rgba(0,0,0,0.4);cursor:pointer;position:relative;flex-shrink:0;transition:transform .3s;display:block;margin:0;"
                              onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''" title="Click to change photo">
                             @if(Auth::user()->profile_image)
-                                <img id="settingsAvatarDisplay" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}" style="width:100%;height:100%;object-fit:cover;"
+                                <img id="settingsAvatarDisplay" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}" style="width:100%;height:100%;object-fit:cover;display:block;"
                                      onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
                             @else
-                                <img id="settingsAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200" style="width:100%;height:100%;object-fit:cover;">
+                                <img id="settingsAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200" style="width:100%;height:100%;object-fit:cover;display:block;">
                             @endif
-                            <div id="settingsAvatarOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%;color:white;"
+                            <div id="settingsAvatarOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%;color:white;"
                                  onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
-                                <i class="bi bi-camera-fill" style="font-size:1.2rem;"></i>
+                                <i class="bi bi-camera-fill" style="font-size:1.3rem;"></i>
+                                <span style="font-size:0.6rem;font-weight:700;">Change</span>
+                            </div>
+                        </label>
+                        <div>
+                            <div style="font-size:1.05rem;font-weight:800;color:#f3e7cd;">{{ Auth::user()->name }}</div>
+                            <div style="font-size:.82rem;color:#b39b82;margin-top:2px;">{{ Auth::user()->student_number ?? Auth::user()->email }}</div>
+                            <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                <label for="imgInput" class="btn btn-sm" style="background:linear-gradient(135deg, #cfa46f, #8c6d46);color:#181614;font-weight:700;border-radius:10px;padding:6px 16px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:none;box-shadow:0 4px 12px rgba(207,164,111,0.3);">
+                                    <i class="bi bi-camera-fill"></i> Choose Photo
+                                </label>
+                                @if(Auth::user()->course)
+                                    <span style="background:rgba(207,164,111,0.15);border:1px solid rgba(207,164,111,0.3);color:#cfa46f;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;">{{ Auth::user()->course }}</span>
+                                @endif
+                                @if(Auth::user()->year_level)
+                                    <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#f3e7cd;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;">Year {{ Auth::user()->year_level }}</span>
+                                @endif
                             </div>
                         </div>
-                    </form>
-                    <div>
-                        <div style="font-size:1rem;font-weight:700;color:#f3e7cd;">{{ Auth::user()->name }}</div>
-                        <div style="font-size:.8rem;color:#b39b82;margin-top:2px;">{{ Auth::user()->student_number }}</div>
-                        <div style="margin-top:8px;display:flex;gap:6px;">
-                            <span style="background:#800000;color:white;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;">{{ Auth::user()->course }}</span>
-                            <span style="background:#eff6ff;color:#2563eb;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;border:1px solid #bfdbfe;">Year {{ Auth::user()->year_level }}</span>
-                        </div>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
 
@@ -1378,7 +1386,7 @@ function generateRecoveryCodes() {
     });
 }
 
-function handleSettingsAvatarUpload(input) {
+async function handleSettingsAvatarUpload(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
     if (file.size > 10 * 1024 * 1024) {
@@ -1386,18 +1394,60 @@ function handleSettingsAvatarUpload(input) {
         input.value = '';
         return;
     }
+
+    // Instant Preview
     const reader = new FileReader();
     reader.onload = function(e) {
         const avatarImg = document.getElementById('settingsAvatarDisplay');
         if (avatarImg) avatarImg.src = e.target.result;
     };
     reader.readAsDataURL(file);
+
+    // Overlay spinner
     const overlay = document.getElementById('settingsAvatarOverlay');
     if (overlay) {
-        overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status" style="width:1.1rem;height:1.1rem;"></div>';
+        overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-warning" role="status" style="width:1.3rem;height:1.3rem;"></div><span style="font-size:0.6rem;color:#ffd700;font-weight:700;margin-top:2px;">Saving...</span>';
         overlay.style.opacity = '1';
     }
-    document.getElementById('settingsProfileImageForm').submit();
+
+    const form = document.getElementById('settingsProfileImageForm');
+    const formData = new FormData(form);
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            if (overlay) {
+                overlay.innerHTML = '<i class="bi bi-check-circle-fill text-success" style="font-size:1.4rem;"></i>';
+                setTimeout(() => { 
+                    overlay.style.opacity = '0'; 
+                    overlay.innerHTML = '<i class="bi bi-camera-fill" style="font-size:1.3rem;"></i><span style="font-size:0.6rem;font-weight:700;">Change</span>'; 
+                }, 1800);
+            }
+            if (data.image_url) {
+                const avatarImg = document.getElementById('settingsAvatarDisplay');
+                if (avatarImg) avatarImg.src = data.image_url;
+                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar').forEach(img => {
+                    img.src = data.image_url;
+                });
+            }
+            if (window.triggerHaptic) window.triggerHaptic('success');
+        } else {
+            throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Upload failed'));
+        }
+    } catch (err) {
+        console.warn('AJAX upload fallback to form submit:', err);
+        form.submit();
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

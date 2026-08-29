@@ -158,12 +158,14 @@ Route::middleware('auth')->group(function () {
 
     // Generate Recovery Codes
     Route::post('/recovery/generate', [App\Http\Controllers\RecoveryCodeController::class, 'generate'])->name('recovery.generate');
+
+    // Profile Image Update (all authenticated roles)
+    Route::post('/profile/image', [PTController::class, 'updateImage'])->name('profile.image.update');
 });
 
 // Authenticated Routes (Protected) - Student Routes
 Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/profile', [PTController::class, 'profile'])->name('profile');
-    Route::post('/profile/image', [PTController::class, 'updateImage'])->name('profile.image.update');
     Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store')->middleware('device.bound');
     Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
     

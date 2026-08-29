@@ -816,10 +816,6 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
                     </a>
-                    <a href="{{ route('profile') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
-                        <span class="more-sheet-item-label">Profile</span>
-                    </a>
                     <a href="{{ route('settings') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
                         <span class="more-sheet-item-label">Settings</span>
