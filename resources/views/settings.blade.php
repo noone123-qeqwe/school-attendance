@@ -1631,13 +1631,14 @@ async function handleSettingsAvatarUpload(input) {
             }
             if (data.image_url) {
                 const freshUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
-                const avatarImg = document.getElementById('settingsAvatarDisplay');
-                if (avatarImg) avatarImg.src = freshUrl;
-                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar, .mobile-user-avatar').forEach(img => {
+                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar, .mobile-user-avatar, .header-profile-img, #settingsAvatarDisplay, #studentAvatarDisplay').forEach(img => {
                     img.src = freshUrl;
                 });
             }
             if (window.triggerHaptic) window.triggerHaptic('success');
+            if (typeof showToast === 'function') {
+                showToast('Profile photo updated successfully!', 'success');
+            }
         } else {
             throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Upload failed'));
         }

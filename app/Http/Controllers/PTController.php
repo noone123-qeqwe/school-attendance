@@ -256,14 +256,15 @@ class PTController extends Controller
             $user->profile_image = $path;
             $user->save();
 
-            $imageUrl = asset('storage/' . $path);
+            $imageUrl = '/storage/' . $path;
         }
 
-        if ($request->expectsJson() || $request->wantsJson()) {
+        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'message' => 'Profile photo updated successfully!',
                 'image_url' => $imageUrl,
+                'path' => $path ?? null,
             ]);
         }
 

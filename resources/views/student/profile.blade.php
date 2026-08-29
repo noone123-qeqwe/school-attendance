@@ -630,6 +630,8 @@ async function handleStudentAvatarUpload(input) {
     
     const form = document.getElementById('profileImageForm');
     const formData = new FormData(form);
+    formData.set('profile_image', file);
+    formData.set('_token', '{{ csrf_token() }}');
 
     try {
         const response = await fetch(form.action, {
@@ -637,7 +639,8 @@ async function handleStudentAvatarUpload(input) {
             body: formData,
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
             }
         });
 
@@ -652,10 +655,9 @@ async function handleStudentAvatarUpload(input) {
                 }, 1800);
             }
             if (data.image_url) {
-                const avatarImg = document.getElementById('studentAvatarDisplay');
-                if (avatarImg) avatarImg.src = data.image_url;
-                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar').forEach(img => {
-                    img.src = data.image_url;
+                const freshUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
+                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar, .header-profile-img, .mobile-user-avatar, #studentAvatarDisplay, #settingsAvatarDisplay').forEach(img => {
+                    img.src = freshUrl;
                 });
             }
             if (window.triggerHaptic) window.triggerHaptic('success');
