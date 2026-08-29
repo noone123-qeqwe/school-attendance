@@ -49,10 +49,11 @@ class AttendanceLifecycleTest extends TestCase
 
     public function test_mark_absent_command_respects_schedule_end_time()
     {
+        Carbon::setTestNow(Carbon::parse('2026-08-25 14:00:00', 'Asia/Manila'));
         $now = now('Asia/Manila');
         $dayName = $now->format('l');
         
-        // Schedule ended 1 hour ago
+        // Schedule ended 1 hour ago (12:00 to 13:00)
         $schedule = Schedule::create([
             'subject_id' => $this->subject->id,
             'day' => $dayName,
@@ -67,14 +68,17 @@ class AttendanceLifecycleTest extends TestCase
             'subject_code' => $this->subject->code,
             'status' => 'Absent'
         ]);
+
+        Carbon::setTestNow();
     }
 
     public function test_mark_absent_command_does_not_mark_before_class_ends()
     {
+        Carbon::setTestNow(Carbon::parse('2026-08-25 14:00:00', 'Asia/Manila'));
         $now = now('Asia/Manila');
         $dayName = $now->format('l');
         
-        // Schedule ends in 1 hour
+        // Schedule ends in 1 hour (13:00 to 15:00)
         $schedule = Schedule::create([
             'subject_id' => $this->subject->id,
             'day' => $dayName,
@@ -88,10 +92,13 @@ class AttendanceLifecycleTest extends TestCase
             'user_id' => $this->student->id,
             'subject_code' => $this->subject->code,
         ]);
+
+        Carbon::setTestNow();
     }
 
     public function test_mark_absent_command_respects_holidays()
     {
+        Carbon::setTestNow(Carbon::parse('2026-08-25 14:00:00', 'Asia/Manila'));
         $now = now('Asia/Manila');
         $dayName = $now->format('l');
         
@@ -117,6 +124,8 @@ class AttendanceLifecycleTest extends TestCase
             'user_id' => $this->student->id,
             'subject_code' => $this->subject->code,
         ]);
+
+        Carbon::setTestNow();
     }
     
     public function test_attendance_auto_close_enforces_unique_constraint()

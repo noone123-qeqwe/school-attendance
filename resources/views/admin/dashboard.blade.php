@@ -93,6 +93,40 @@
     @endif
 </div>
 
+{{-- ─── KPI METRICS ─── --}}
+<div class="dash-animate" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px;">
+    <x-kpi-card 
+        label="Total Students" 
+        :value="$totalStudents" 
+        icon="bi-people-fill" 
+        accent="gold" 
+    />
+    <x-kpi-card 
+        label="Total Instructors" 
+        :value="$totalTeachers" 
+        icon="bi-person-workspace" 
+        accent="info" 
+    />
+    <x-kpi-card 
+        label="Present Today" 
+        :value="$totalPresent" 
+        icon="bi-check-circle-fill" 
+        accent="success" 
+        :delta="($presentDiff >= 0 ? '+'.$presentDiff : (string)$presentDiff)"
+        :deltaType="$presentDiff >= 0 ? 'positive' : 'negative'"
+        deltaText="vs yesterday"
+    />
+    <x-kpi-card 
+        label="Attendance Rate" 
+        :value="$attendanceRate . '%'" 
+        icon="bi-percent" 
+        accent="gold" 
+        :delta="($rateDiff >= 0 ? '+'.$rateDiff : (string)$rateDiff) . '%'"
+        :deltaType="$rateDiff >= 0 ? 'positive' : 'negative'"
+        deltaText="vs yesterday"
+    />
+</div>
+
 {{-- ─── SYSTEM ALERTS ─── --}}
 @if($systemAlerts->count() > 0)
 <div class="dash-animate" style="margin-bottom: 24px;" aria-live="polite">
