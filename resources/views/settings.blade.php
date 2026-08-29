@@ -946,7 +946,11 @@ function openInSystemBrowser() {
         // Fallback after a short delay (if intent doesn't work)
         setTimeout(function() { window.open(url, '_system'); }, 500);
     } else {
-     // ── WebAuthn Fingerprint Registration ──
+        window.open(url, '_system');
+    }
+}
+
+// ── WebAuthn Fingerprint Registration ──
 async function loadDevices() {
     var inApp = isInAppBrowser();
     const list = document.getElementById('deviceList');
