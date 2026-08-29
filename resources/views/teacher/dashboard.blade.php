@@ -1,6 +1,105 @@
 @extends('layouts.app')
 @section('page-title', 'Instructor Dashboard')
 
+@push('styles')
+<style>
+    /* FullCalendar Overrides - Dark Squircle Theme */
+    .fc {
+        color: #f3ede4;
+        font-family: inherit;
+    }
+    .fc-theme-standard td, .fc-theme-standard th, .fc-theme-standard .fc-scrollgrid {
+        border-color: rgba(255,255,255,0.06) !important;
+    }
+    .fc .fc-col-header-cell {
+        background: rgba(255,255,255,0.025) !important;
+        padding: 12px 0;
+        border: none !important;
+    }
+    .fc .fc-col-header-cell-cushion {
+        color: #cfa46f;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-decoration: none !important;
+    }
+    .fc .fc-daygrid-day-frame {
+        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.04) !important;
+        margin: 3px !important;
+        min-height: 85px !important;
+        transition: all 0.2s ease;
+    }
+    .fc .fc-daygrid-day-frame:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(207, 164, 111, 0.3) !important;
+        transform: translateY(-1px);
+        z-index: 2;
+    }
+    .fc .fc-daygrid-day-number {
+        color: #f3ede4;
+        font-weight: 700;
+        font-size: 0.95rem;
+        padding: 6px 10px !important;
+        text-decoration: none !important;
+    }
+    .fc .fc-day-sun .fc-daygrid-day-number {
+        color: #f87171 !important;
+    }
+    .fc .fc-day-other .fc-daygrid-day-number {
+        color: #5c4e40;
+        opacity: 0.5;
+    }
+    .fc a {
+        text-decoration: none !important;
+    }
+    .fc .fc-day-today .fc-daygrid-day-frame {
+        background: rgba(207, 164, 111, 0.1) !important;
+        border: 2px solid #cfa46f !important;
+        box-shadow: 0 0 16px rgba(207, 164, 111, 0.2) !important;
+    }
+    .fc .fc-day-today .fc-daygrid-day-number {
+        color: #ffffff !important;
+        font-weight: 800 !important;
+    }
+    .fc .fc-daygrid-event {
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 3px 6px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #ffffff !important;
+        margin: 2px 4px !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3) !important;
+        cursor: pointer;
+    }
+    .fc .fc-scrollgrid-sync-table { width: 100% !important; }
+    .fc-col-header { width: 100% !important; }
+    .fc-daygrid-body { width: 100% !important; }
+    .fc-scrollgrid { width: 100% !important; }
+
+    /* Modal styling */
+    .event-modal-content {
+        background: linear-gradient(145deg, #241414 0%, #150a0a 100%);
+        border: 1px solid rgba(207, 164, 111, 0.3);
+        border-radius: 20px;
+        color: #f3e7cd;
+    }
+    .event-modal-header {
+        border-bottom: 1px solid rgba(207, 164, 111, 0.15);
+        padding: 18px 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .event-modal-body {
+        padding: 20px 24px;
+    }
+</style>
+@endpush
+
 @section('content')
 
 @php
@@ -350,7 +449,38 @@
     }
 </style>
 
-<script>
+<!-- Event Detail Modal -->
+<div class="modal fade" id="eventDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content event-modal-content w-100">
+            <div class="event-modal-header">
+                <h5 class="modal-title" style="margin: 0; font-weight: 700;" id="eventTitle">Event Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="event-modal-body">
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Event Type</div>
+                    <span id="eventTypeBadge" class="badge" style="background: rgba(207,164,111,0.2); color: #f3e7cd; font-size: 0.82rem; padding: 5px 10px;">Type</span>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Date</div>
+                    <div id="eventDateText" style="color: #ffffff; font-weight: 600;">Date</div>
+                </div>
+                <div id="eventDescriptionContainer" style="margin-bottom: 12px; display: none;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Description</div>
+                    <div id="eventDescription" style="color: #d4c8b8; font-size: 0.9rem;"></div>
+                </div>
+                <div id="eventLocationContainer" style="display: none;">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: #b39b82; font-weight: 700; margin-bottom: 4px;">Location</div>
+                    <div id="eventLocation" style="color: #d4c8b8; font-size: 0.9rem;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
+<script nonce="{{ csp_nonce() }}">
 // Skeleton -> Real Content
 document.addEventListener('DOMContentLoaded', function() {
     var skelStats = document.getElementById('skelStats');
@@ -386,7 +516,7 @@ function filterRecentLogs() {
 let schoolCalendar;
 document.addEventListener('DOMContentLoaded', function() {
     const calendarEl = document.getElementById('schoolCalendar');
-    if (!calendarEl) return;
+    if (!calendarEl || typeof FullCalendar === 'undefined') return;
     
     schoolCalendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -421,6 +551,38 @@ document.addEventListener('DOMContentLoaded', function() {
                     failureCallback(error);
                 });
         },
+        eventClick: function(info) {
+            const event = info.event;
+            const props = event.extendedProps || {};
+            
+            document.getElementById('eventTitle').textContent = event.title;
+            document.getElementById('eventTypeBadge').textContent = props.type || 'Event';
+            document.getElementById('eventDateText').textContent = event.start ? event.start.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : '';
+            
+            const descEl = document.getElementById('eventDescription');
+            const descContainer = document.getElementById('eventDescriptionContainer');
+            if (props.description) {
+                descEl.textContent = props.description;
+                descContainer.style.display = 'block';
+            } else {
+                descContainer.style.display = 'none';
+            }
+            
+            const locEl = document.getElementById('eventLocation');
+            const locContainer = document.getElementById('eventLocationContainer');
+            if (props.location) {
+                locEl.textContent = props.location;
+                locContainer.style.display = 'block';
+            } else {
+                locContainer.style.display = 'none';
+            }
+            
+            const modalEl = document.getElementById('eventDetailModal');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+                const modal = new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        },
         dayCellClassNames: function(arg) {
             const today = new Date();
             if (arg.date.toDateString() === today.toDateString()) {
@@ -435,8 +597,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function updateCalendarTitle() {
-    if(schoolCalendar) {
-        document.getElementById('calendarTitle').textContent = schoolCalendar.view.title;
+    if(schoolCalendar && schoolCalendar.view) {
+        const titleEl = document.getElementById('calendarTitle');
+        if (titleEl) {
+            titleEl.textContent = schoolCalendar.view.title;
+        }
     }
 }
 </script>
