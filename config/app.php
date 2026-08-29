@@ -2,7 +2,7 @@
 
 return [
 
-    'name' => env('APP_NAME', 'Attendance Checker'),
+    'name' => env('APP_NAME', 'Smart Attendance'),
     'subtitle' => env('APP_SUBTITLE', 'QR, GPS, and Biometric-Based Attendance Monitoring'),
 
     'env' => env('APP_ENV', 'production'),
