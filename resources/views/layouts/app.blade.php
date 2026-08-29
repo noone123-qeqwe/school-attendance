@@ -824,6 +824,17 @@
                 overlay.classList.add('show');
             }
             document.body.style.overflow = 'hidden';
+
+            // Highlight More button with top jewel active style like Home
+            document.querySelectorAll('.mobile-bottom-nav .mbn-item').forEach(function(item) {
+                if (item.classList.contains('active') && !item.classList.contains('mbn-item-more')) {
+                    item.setAttribute('data-was-active', 'true');
+                    item.classList.remove('active');
+                }
+            });
+            document.querySelectorAll('.mbn-item-more').forEach(function(btn) {
+                btn.classList.add('active', 'is-open');
+            });
         };
 
         window.closeMoreSheet = function() {
@@ -837,6 +848,16 @@
                 sheet.style.transform = '';
             }
             document.body.style.overflow = '';
+
+            // Restore previous active tab
+            document.querySelectorAll('.mbn-item-more').forEach(function(btn) {
+                btn.classList.remove('active', 'is-open');
+                btn.blur();
+            });
+            document.querySelectorAll('.mobile-bottom-nav .mbn-item[data-was-active="true"]').forEach(function(item) {
+                item.classList.add('active');
+                item.removeAttribute('data-was-active');
+            });
         };
 
         // Fallback listener for any more buttons and close buttons
