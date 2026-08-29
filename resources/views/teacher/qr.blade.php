@@ -507,7 +507,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 let currentSession = null;
 let refreshInterval = null;
 let clockinInterval = null;
@@ -530,7 +530,6 @@ const locationStatus = document.getElementById('locationStatus');
 
 // Check schedule on page load
 document.addEventListener('DOMContentLoaded', () => {
-    startBtn.disabled = true;
     checkScheduleStatus();
     captureTeacherLocation();
     // Check schedule status every 30 seconds
@@ -558,12 +557,6 @@ async function checkScheduleStatus() {
         
         if (scheduleData.error) {
             showScheduleMessage('error', scheduleData.error);
-            return;
-        }
-
-        if (!scheduleData.has_schedule) {
-            showScheduleMessage('no-schedule', scheduleData.message);
-            startBtn.disabled = true;
             return;
         }
 
@@ -597,8 +590,10 @@ function updateScheduleUI(scheduleData) {
             `;
             break;
             
+        case 'ad_hoc':
         case 'ready':
-            startBtn.disabled = teacherLocation === null;
+        default:
+            startBtn.disabled = false;
             startBtn.className = 'btn modern-btn btn-lg';
             startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Start Session';
             
@@ -608,27 +603,7 @@ function updateScheduleUI(scheduleData) {
                     <div>
                         <h6 class="qr-alert-title mb-1"><i class="bi bi-check2-circle me-1"></i> Ready to Start Session</h6>
                         <p class="qr-alert-body mb-0">
-                            <strong>Class Time:</strong> ${scheduleData.schedule.class_start} - ${scheduleData.schedule.class_end}<br>
-                            <strong>Current Time:</strong> ${scheduleData.schedule.current_time}
-                        </p>
-                        ${teacherLocation === null ? '<p class="qr-alert-body mb-0 mt-1" style="color: #60a5fa;">Waiting for laptop location. Start will be enabled once location is captured.</p>' : ''}
-                    </div>
-                </div>
-            `;
-            break;
-            
-        case 'ended':
-            startBtn.disabled = true;
-            startBtn.className = 'btn modern-btn danger btn-lg';
-            startBtn.innerHTML = '<i class="bi bi-x-circle me-2"></i> Class Ended';
-            
-            statusMessages.innerHTML = `
-                <div class="qr-alert qr-alert-danger">
-                    <i class="bi bi-x-circle-fill mb-2" style="font-size: 1.5rem; color: #ef4444;"></i>
-                    <div>
-                        <h6 class="qr-alert-title mb-1"><i class="bi bi-x-circle me-1"></i> Class Has Ended</h6>
-                        <p class="qr-alert-body mb-0">
-                            Class ended at ${scheduleData.schedule.class_end}. Cannot start new attendance session.
+                            ${scheduleData.message ? scheduleData.message : 'Ready to generate attendance QR code for this subject.'}
                         </p>
                     </div>
                 </div>
@@ -666,18 +641,16 @@ function showScheduleMessage(type, message) {
 // Start session
 startBtn.addEventListener('click', async () => {
     try {
-        if (!teacherLocation) {
-            alert('Location not captured! Please wait for the location to be confirmed before starting the session.');
-            return;
-        }
-
         startBtn.disabled = true;
         startBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Starting...';
 
+        const lat = teacherLocation ? teacherLocation.latitude : null;
+        const lng = teacherLocation ? teacherLocation.longitude : null;
+
         const bodyPayload = {
             subject_code: '{{ $subject->code }}',
-            classroom_lat: teacherLocation.latitude,
-            classroom_lng: teacherLocation.longitude
+            classroom_lat: lat,
+            classroom_lng: lng
         };
 
         const response = await fetch('{{ route("teacher.qr.start") }}', {
@@ -729,7 +702,7 @@ startBtn.addEventListener('click', async () => {
             </div>
         `;
     } finally {
-        startBtn.disabled = teacherLocation === null;
+        startBtn.disabled = false;
         startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Start Session';
     }
 });
@@ -1276,19 +1249,14 @@ function captureTeacherLocation() {
         }
 
         teacherLocation = null;
-        const message = error.code === error.PERMISSION_DENIED
-            ? 'Location permission denied. Please allow location access to use your laptop location.'
-            : 'Unable to get your location. Please retry or check your browser settings.';
-
-        startBtn.disabled = true;
+        startBtn.disabled = false;
 
         locationStatus.innerHTML = `
-            <div class="qr-alert qr-alert-warning">
-                <i class="bi bi-exclamation-triangle-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
+            <div class="qr-alert qr-alert-info">
+                <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
                 <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Location Access Needed</h6>
-                    <p class="qr-alert-body mb-1">${message}</p>
-                    <p class="qr-alert-body mb-0"><strong>Please retry location capture before starting the session.</strong></p>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-building-check me-1"></i> Using Campus Geofence</h6>
+                    <p class="qr-alert-body mb-0">Device GPS fix was not detected. The attendance session will validate students using campus coordinates.</p>
                 </div>
             </div>
         `;

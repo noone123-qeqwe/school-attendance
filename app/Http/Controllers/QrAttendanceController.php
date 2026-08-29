@@ -143,37 +143,30 @@ class QrAttendanceController extends Controller
             if (!$todaySchedule) {
                 return response()->json([
                     'has_schedule' => false,
-                    'message' => 'No class scheduled for today (' . $todayName . ')'
+                    'status' => 'ad_hoc',
+                    'message' => 'No regular schedule for today (' . $todayName . '). You can start a special / makeup attendance session.',
+                    'can_start' => true,
+                    'schedule' => [
+                        'class_start' => 'Ad-hoc / Special',
+                        'class_end' => '20 min session',
+                        'session_opens' => 'Now',
+                        'session_closes' => '20 mins',
+                        'current_time' => $now->format('h:i A'),
+                        'day' => $todayName
+                    ]
                 ]);
             }
             $todayDate = $now->toDateString();
             $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
             $endTime = Carbon::parse($todayDate . ' ' . $todaySchedule->end_time);
-            $sessionOpenTime = $startTime->copy()->subMinutes(5);
-            $sessionEndTime = $startTime->copy()->addMinutes(20);
-
-            $status = 'waiting';
-            $message = '';
-            $canStart = false;
-
-            if ($now->lt($sessionOpenTime)) {
-                $waitMinutes = $now->diffInMinutes($sessionOpenTime);
-                $status = 'too_early';
-                $message = "Session opens in {$waitMinutes} minute(s) at {$sessionOpenTime->format('h:i A')}";
-            } else if ($now->gte($sessionOpenTime) && $now->lte($sessionEndTime)) {
-                $status = 'ready';
-                $message = 'Ready to start attendance session';
-                $canStart = true;
-            } else if ($now->gt($sessionEndTime)) {
-                $status = 'ended';
-                $message = 'The 20-minute attendance window has closed';
-            }
+            $sessionOpenTime = $startTime->copy()->subMinutes(15);
+            $sessionEndTime = $endTime;
 
             return response()->json([
                 'has_schedule' => true,
-                'status' => $status,
-                'message' => $message,
-                'can_start' => $canStart,
+                'status' => 'ready',
+                'message' => 'Ready to start attendance session',
+                'can_start' => true,
                 'schedule' => [
                     'class_start' => $startTime->format('h:i A'),
                     'class_end' => $endTime->format('h:i A'),

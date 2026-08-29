@@ -25,23 +25,20 @@ class QrSessionService
             return strcasecmp(trim($schedule->day ?? ''), $todayName) === 0;
         });
 
-        if (!$todaySchedule) {
-            throw new \Exception('This subject does not have a class scheduled for today (' . $todayName . '). Please check the subject schedule.');
-        }
-
         $todayDate = $now->toDateString();
-        $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
-        $endTime = Carbon::parse($todayDate . ' ' . $todaySchedule->end_time);
-        $sessionOpenTime = $startTime->copy()->subMinutes(5);
-        $sessionEnd = $startTime->copy()->addMinutes(20);
 
-        if ($now->lt($sessionOpenTime)) {
-            $waitTime = $sessionOpenTime->diffForHumans($now, \Carbon\CarbonInterface::DIFF_ABSOLUTE);
-            throw new \Exception("⏰ Too early! QR session opens 5 minutes before class starts.\n\nClass time: {$startTime->format('h:i A')} - {$endTime->format('h:i A')}\nWait time: {$waitTime}");
-        }
+        if (!$todaySchedule) {
+            // Allow ad-hoc / makeup class attendance session (20 minutes duration)
+            $sessionEnd = $now->copy()->addMinutes(20);
+        } else {
+            $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
+            $endTime = Carbon::parse($todayDate . ' ' . $todaySchedule->end_time);
+            $sessionEnd = $endTime;
 
-        if ($now->gt($sessionEnd)) {
-            throw new \Exception("The 20-minute attendance window has closed at {$sessionEnd->format('h:i A')}. Cannot start new attendance session.");
+            // If start time is far in future or class ended, ensure a viable 20-minute attendance window
+            if ($sessionEnd->lt($now->copy()->addMinutes(5)) || $now->lt($startTime->copy()->subMinutes(15))) {
+                $sessionEnd = $now->copy()->addMinutes(20);
+            }
         }
 
         // End any active sessions for this subject
