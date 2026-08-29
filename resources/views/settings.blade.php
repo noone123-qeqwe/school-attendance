@@ -327,37 +327,180 @@
     color: #f5dfa8;
     font-size: 0.72rem;
     font-weight: 700;
-    padding: 5px 12px;
-    border-radius: 99px;
+/* ── Modern Security Dashboard ── */
+.sec-card {
+    background: rgba(255, 235, 190, 0.025);
+    border: 1px solid rgba(255, 215, 145, 0.08);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 18px;
+    transition: all 0.25s ease;
+}
+.sec-card:hover {
+    border-color: rgba(255, 215, 145, 0.18);
+    background: rgba(255, 235, 190, 0.04);
+    box-shadow: 0 8px 24px -6px rgba(0,0,0,0.5);
+}
+.sec-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.sec-card-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.sec-card-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.sec-card-title {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    margin-bottom: 2px;
+}
+.sec-card-sub {
+    font-size: 0.78rem;
+    color: #b39b82;
 }
 
-@media (max-width: 576px) {
-    .profile-card-inner {
-        gap: 16px;
-    }
-    .profile-avatar-holder {
-        width: 76px;
-        height: 76px;
-    }
-    .profile-avatar-badge {
-        width: 26px;
-        height: 26px;
-        font-size: 0.72rem;
-    }
-    .profile-user-name {
-        font-size: 1.08rem;
-    }
-    .profile-user-id {
-        font-size: 0.78rem;
-        margin-bottom: 8px;
-    }
-    .profile-btn-choose {
-        padding: 6px 12px;
-        font-size: 0.74rem;
-    }
-    .profile-badge-course, .profile-badge-year {
-        font-size: 0.68rem;
-        padding: 4px 10px;
+/* ── Biometric Pulse Scanner ── */
+.fp-radar-wrap {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.05) 70%, transparent 100%);
+    border: 1.5px solid rgba(74, 222, 128, 0.45);
+    box-shadow: 0 0 24px rgba(34, 197, 94, 0.25);
+    flex-shrink: 0;
+}
+.fp-radar-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(74, 222, 128, 0.35);
+    animation: fpRadarSpin 12s linear infinite;
+}
+@keyframes fpRadarSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ── Attendance KPI Stat Cards ── */
+.att-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.att-stat-card {
+    background: rgba(255, 235, 190, 0.03);
+    border: 1px solid rgba(255, 215, 145, 0.08);
+    border-radius: 14px;
+    padding: 16px 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.25s ease;
+}
+.att-stat-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(255, 215, 145, 0.2);
+    box-shadow: 0 8px 22px -5px rgba(0,0,0,0.5);
+}
+.att-stat-val {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 3px;
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+.att-stat-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #b39b82;
+}
+
+/* ── Attendance Gauge Card ── */
+.att-gauge-card {
+    background: linear-gradient(135deg, rgba(255,235,190,0.04) 0%, rgba(207,164,111,0.02) 100%);
+    border: 1px solid rgba(255, 215, 145, 0.12);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+}
+.att-gauge-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.att-segmented-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 99px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.06);
+    gap: 2px;
+    margin-top: 10px;
+    margin-bottom: 12px;
+}
+.att-seg-present { background: linear-gradient(90deg, #16a34a, #22c55e); }
+.att-seg-late { background: linear-gradient(90deg, #d97706, #f59e0b); }
+.att-seg-absent { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+/* ── Preferences Toggle Rows ── */
+.pref-tile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 18px;
+    background: rgba(255, 235, 190, 0.02);
+    border: 1px solid rgba(255, 215, 145, 0.07);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    gap: 16px;
+    transition: all 0.2s ease;
+}
+.pref-tile:hover {
+    background: rgba(255, 235, 190, 0.04);
+    border-color: rgba(255, 215, 145, 0.15);
+}
+.pref-tile-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(207,164,111,0.12);
+    color: #f5dfa8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .att-stat-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
     }
 }
 
@@ -558,153 +701,187 @@
     <div id="tab-security" class="spanel">
         <div class="sc">
             <div class="sc-head">
-                <div class="sc-icon" style="background:#fff5f5;color:#800000;"><i class="bi bi-shield-lock-fill"></i></div>
-                <div><div class="sc-title">Security & Authentication</div><div class="sc-sub">Manage your email, password, biometrics, and recovery keys</div></div>
+                <div class="sc-icon" style="background:rgba(239,68,68,0.12);color:#f87171;"><i class="bi bi-shield-lock-fill"></i></div>
+                <div>
+                    <div class="sc-title">Security & Credentials</div>
+                    <div class="sc-sub">Manage your account email, password, authentication, and emergency keys</div>
+                </div>
             </div>
             <div class="sc-body">
 
-                <!-- ── Change Email via OTP to current email ── -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
-                    <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Email Address</div>
+                <!-- ── Email Address Management ── -->
+                <div class="sec-card">
+                    <div class="sec-card-header">
+                        <div class="sec-card-title-wrap">
+                            <div class="sec-card-icon" style="background:rgba(59,130,246,0.14);color:#60a5fa;">
+                                <i class="bi bi-envelope-check-fill"></i>
+                            </div>
+                            <div>
+                                <div class="sec-card-title">Primary Email Address</div>
+                                <div class="sec-card-sub">Used for portal notifications, password resets, and OTP verification</div>
+                            </div>
+                        </div>
+                        <span style="font-size:0.72rem;font-weight:700;background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25);padding:3px 10px;border-radius:99px;">
+                            <i class="bi bi-patch-check-fill me-1"></i>Verified
+                        </span>
+                    </div>
 
                     <div id="emailStep1">
-                        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(255,235,190,0.05);border-radius:10px;border:1px solid rgba(255,215,145,0.12);margin-bottom:12px;">
-                            <i class="bi bi-envelope-fill" style="color:#cfa46f;"></i>
-                            <span style="font-size:.875rem;font-weight:600;color:#f3e7cd;">{{ Auth::user()->email }}</span>
+                        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,235,190,0.04);border-radius:12px;border:1px solid rgba(255,215,145,0.1);margin-bottom:14px;">
+                            <i class="bi bi-envelope-at-fill" style="color:var(--gold,#cfa46f);font-size:1.1rem;"></i>
+                            <span style="font-size:0.92rem;font-weight:700;color:#f3e7cd;letter-spacing:0.2px;">{{ Auth::user()->email }}</span>
                         </div>
-                        <p style="font-size:.85rem;color:#b39b82;margin-bottom:12px;">
-                            An OTP will be sent to your <strong>current email</strong> to verify it's you before changing.
+                        <p style="font-size:0.8rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
+                            To change your registered email, a 6-digit one-time security code will be sent to your current address to confirm your identity.
                         </p>
-                        <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sbtn" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 14px rgba(37,99,235,.25);">
-                            <i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email
+                        <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sbtn" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 14px rgba(37,99,235,.25);padding:8px 20px;font-size:0.82rem;">
+                            <i class="bi bi-send-fill me-2"></i>Send Verification OTP
                         </button>
                     </div>
 
                     <div id="emailStep2" style="display:none;">
-                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);color:#4ade80;border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
-                            <i class="bi bi-envelope-check me-2"></i>OTP sent to <strong>{{ Auth::user()->email }}</strong>. Check your inbox.
+                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:12px;padding:12px 16px;font-size:0.82rem;margin-bottom:16px;">
+                            <i class="bi bi-envelope-check-fill me-2"></i>Verification code sent to <strong>{{ Auth::user()->email }}</strong>. Please check your inbox.
                         </div>
                         <form action="{{ route('otp.email.change') }}" method="POST">
                             @csrf
-                            <label class="sl">Enter OTP</label>
-                            <div style="display:flex;gap:8px;margin-bottom:14px;">
+                            <label class="sl">Enter 6-Digit Code</label>
+                            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
                                 @for($j=1;$j<=6;$j++)
-                                <input type="text" class="email-otp-digit" maxlength="1" inputmode="numeric" id="ed{{$j}}" style="width:44px;height:50px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1.3rem;font-weight:800;text-align:center;color:#1e293b;background:#f8fafc;outline:none;transition:all .2s;">
+                                <input type="text" class="email-otp-digit" maxlength="1" inputmode="numeric" id="ed{{$j}}" style="width:44px;height:48px;border-radius:10px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.25rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
                                 @endfor
                             </div>
                             <input type="hidden" name="otp" id="emailOtpHidden">
                             <label class="sl">New Email Address</label>
-                            <input type="email" name="new_email" class="si" placeholder="newemail@example.com" style="margin-bottom:14px;" required>
+                            <input type="email" name="new_email" class="si" placeholder="name@example.com" style="margin-bottom:16px;" required>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="cancelEmailOtp()" class="cancel-btn">Cancel</button>
-                                <button type="button" class="sbtn" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2 me-2"></i>Change Email</button>
+                                <button type="button" class="sbtn" style="flex:1;background:linear-gradient(135deg,#2563eb,#3b82f6);" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-2"></i>Confirm New Email</button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- ── Change Password via OTP ── -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
-                    <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Password</div>
+                <!-- ── Password Security Management ── -->
+                <div class="sec-card">
+                    <div class="sec-card-header">
+                        <div class="sec-card-title-wrap">
+                            <div class="sec-card-icon" style="background:rgba(207,164,111,0.14);color:#f5dfa8;">
+                                <i class="bi bi-key-fill"></i>
+                            </div>
+                            <div>
+                                <div class="sec-card-title">Password Authentication</div>
+                                <div class="sec-card-sub">Secure password protected by salted hashing and rate limiting</div>
+                            </div>
+                        </div>
+                    </div>
 
                     <div id="otpStep1">
-                        <p style="font-size:.85rem;color:#b39b82;margin-bottom:12px;">
-                            An OTP will be sent to <strong>{{ Auth::user()->email }}</strong> before you can change your password.
+                        <p style="font-size:0.82rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
+                            For your security, a one-time verification code is required before creating a new password.
                         </p>
-                        <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sbtn" style="background:linear-gradient(135deg,#1e293b,#334155);box-shadow:0 4px 14px rgba(30,41,59,.25);">
-                            <i class="bi bi-send-fill me-2"></i>Send OTP to Email
+                        <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sbtn" style="background:linear-gradient(135deg,#2d241e,#1a1410);border:1px solid rgba(207,164,111,0.3);box-shadow:0 4px 14px rgba(0,0,0,.3);padding:8px 20px;font-size:0.82rem;color:#f5dfa8;">
+                            <i class="bi bi-shield-lock me-2"></i>Request Password Reset OTP
                         </button>
                     </div>
 
                     <div id="otpStep2" style="display:none;">
-                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);color:#4ade80;border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:16px;">
-                            <i class="bi bi-check-circle me-2"></i>OTP sent to {{ Auth::user()->email }}. Check your inbox.
+                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:12px;padding:12px 16px;font-size:0.82rem;margin-bottom:16px;">
+                            <i class="bi bi-check-circle-fill me-2"></i>OTP sent to {{ Auth::user()->email }}. Check your inbox.
                         </div>
                         <form action="{{ route('otp.change') }}" method="POST">
                             @csrf
-                            <label class="sl">Enter OTP</label>
-                            <div style="display:flex;gap:8px;margin-bottom:16px;">
+                            <label class="sl">Enter 6-Digit Code</label>
+                            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
                                 @for($i=1;$i<=6;$i++)
-                                <input type="text" class="otp-digit-s" maxlength="1" inputmode="numeric" id="sd{{$i}}" style="width:44px;height:50px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1.3rem;font-weight:800;text-align:center;color:#1e293b;background:#f8fafc;outline:none;transition:all .2s;">
+                                <input type="text" class="otp-digit-s" maxlength="1" inputmode="numeric" id="sd{{$i}}" style="width:44px;height:48px;border-radius:10px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.25rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
                                 @endfor
                             </div>
                             <input type="hidden" name="otp" id="settingsOtpHidden">
                             <label class="sl">New Password</label>
-                            <div class="pw-wrap" style="margin-bottom:12px;">
-                                <input type="password" name="password" id="spw1" class="si" placeholder="At least 8 characters" required>
+                            <div class="pw-wrap" style="margin-bottom:14px;">
+                                <input type="password" name="password" id="spw1" class="si" placeholder="Minimum 8 characters" required>
                                 <button type="button" class="eye-btn" onclick="togglePw('spw1',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <label class="sl">Confirm Password</label>
-                            <div class="pw-wrap" style="margin-bottom:16px;">
+                            <div class="pw-wrap" style="margin-bottom:18px;">
                                 <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" required>
                                 <button type="button" class="eye-btn" onclick="togglePw('spw2',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="cancelOtp()" class="cancel-btn">Cancel</button>
-                                <button type="button" class="sbtn" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2 me-2"></i>Change Password</button>
+                                <button type="button" class="sbtn" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-2"></i>Update Password</button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                <!-- ── Biometric & Fingerprint Authentication ── -->
-                <div style="margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid rgba(255,215,145,0.06);">
-                    <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Biometric Authentication</div>
-                    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:rgba(255,235,190,0.03);padding:16px 20px;border-radius:12px;border:1px solid rgba(255,215,145,0.08);">
-                        <div style="display:flex;align-items:center;gap:14px;">
-                            <div style="width:40px;height:40px;border-radius:10px;background:rgba(34,197,94,0.12);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">
+                <!-- ── Biometric Integration Shortcut ── -->
+                <div class="sec-card">
+                    <div class="sec-card-header" style="margin-bottom:0;">
+                        <div class="sec-card-title-wrap">
+                            <div class="sec-card-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;">
                                 <i class="bi bi-fingerprint"></i>
                             </div>
                             <div>
-                                <div style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Fingerprint / Biometric Login</div>
-                                <div style="font-size:.78rem;color:#b39b82;">Use device biometrics (fingerprint / Face ID) for passwordless login and fast QR attendance</div>
+                                <div class="sec-card-title">Biometric & Fingerprint Login</div>
+                                <div class="sec-card-sub">Passwordless Touch ID, Windows Hello, and fast QR attendance</div>
                             </div>
                         </div>
-                        <button type="button" onclick="switchTab('fingerprint', document.querySelectorAll('.stab')[2])" class="sbtn" style="padding:9px 18px;font-size:.82rem;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
-                            <i class="bi bi-fingerprint me-1"></i> Manage Fingerprints
+                        <button type="button" onclick="switchTab('fingerprint')" class="sbtn" style="padding:7px 16px;font-size:0.78rem;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
+                            <i class="bi bi-fingerprint me-1"></i> Manage Biometrics
                         </button>
                     </div>
                 </div>
 
-                <!-- ── Recovery Codes ── -->
-                <div>
-                    <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Recovery Codes</div>
-                    <p style="font-size:.85rem;color:#b39b82;margin-bottom:12px;">
-                        Recovery codes can be used to log in if you lose access to your email or fingerprint. Generate new codes to invalidate old ones.
+                <!-- ── Recovery Codes Vault ── -->
+                <div class="sec-card" style="margin-bottom:0;">
+                    <div class="sec-card-header">
+                        <div class="sec-card-title-wrap">
+                            <div class="sec-card-icon" style="background:rgba(234,179,8,0.14);color:#fbbf24;">
+                                <i class="bi bi-safe-fill"></i>
+                            </div>
+                            <div>
+                                <div class="sec-card-title">Emergency Recovery Vault</div>
+                                <div class="sec-card-sub">One-time emergency backup keys to restore access if you lose email or device access</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p style="font-size:0.8rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
+                        Generating new recovery keys will automatically invalidate all previously generated codes.
                     </p>
-                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="sbtn" style="background:linear-gradient(135deg,#eab308,#ca8a04);box-shadow:0 4px 14px rgba(234,179,8,.25);">
+                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="sbtn" style="background:linear-gradient(135deg,#d97706,#b45309);box-shadow:0 4px 14px rgba(217,119,6,.25);padding:8px 18px;font-size:0.82rem;">
                         <i class="bi bi-key-fill me-2"></i>Generate Recovery Codes
                     </button>
                     
-                    <div id="recoveryCodesList" style="display:none;margin-top:16px;background:rgba(255,235,190,0.05);border:1px solid rgba(255,215,145,0.12);border-radius:10px;padding:16px;">
-                        <div style="font-size:.875rem;font-weight:600;color:#f87171;margin-bottom:12px;">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Save these codes in a safe place. They will not be shown again.
+                    <div id="recoveryCodesList" style="display:none;margin-top:16px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,215,145,0.15);border-radius:12px;padding:18px;">
+                        <div style="font-size:.82rem;font-weight:700;color:#f87171;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                            <i class="bi bi-exclamation-triangle-fill"></i>Store these emergency codes safely. They will only be displayed once.
                         </div>
                         <div id="codesContainer" style="display:flex;flex-wrap:wrap;gap:10px;">
-                            <!-- Codes will be injected here -->
+                            <!-- Codes injected here -->
                         </div>
                     </div>
                 </div>
 
             </div>
         </div>
-
     </div>
 
     <!-- ── TAB: FINGERPRINT ── -->
     <div id="tab-fingerprint" class="spanel">
         <div class="sc">
             <div class="sc-head">
-                <div class="sc-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
+                <div class="sc-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
                 <div>
-                    <div class="sc-title">Fingerprint / Biometric Login</div>
-                    <div class="sc-sub">Register device biometrics (Touch ID, Windows Hello, Android Biometrics) for fast login and attendance</div>
+                    <div class="sc-title">Biometric & Fingerprint Security</div>
+                    <div class="sc-sub">Hardware-grade FIDO2 / WebAuthn biometric authentication on this device</div>
                 </div>
             </div>
             <div class="sc-body">
 
                 <!-- In-app browser alert -->
-                <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
+                <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
                     <div style="display:flex;align-items:flex-start;gap:12px;">
                         <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
                         <div>
@@ -719,42 +896,58 @@
                     </div>
                 </div>
 
-                <!-- Info Cards / How it works -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:24px;">
-                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:14px 16px;">
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                            <div style="width:28px;height:28px;border-radius:8px;background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);display:flex;align-items:center;justify-content:center;font-size:.85rem;"><i class="bi bi-shield-lock"></i></div>
-                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">Passwordless Login</span>
-                        </div>
-                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Sign in instantly on this device using your fingerprint or Face ID without remembering passwords.</p>
+                <!-- Hero Biometric Card -->
+                <div style="display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,rgba(34,197,94,0.08) 0%,rgba(207,164,111,0.04) 100%);border:1px solid rgba(34,197,94,0.2);border-radius:16px;padding:22px;margin-bottom:24px;flex-wrap:wrap;">
+                    <div class="fp-radar-wrap">
+                        <i class="bi bi-fingerprint" style="font-size:2rem;color:#4ade80;"></i>
                     </div>
-                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:14px 16px;">
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                            <div style="width:28px;height:28px;border-radius:8px;background:rgba(34,197,94,0.15);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:.85rem;"><i class="bi bi-qr-code-scan"></i></div>
-                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">QR Attendance Clock-In</span>
+                    <div style="flex:1;min-width:200px;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                            <span style="font-size:1.05rem;font-weight:800;color:#f3e7cd;">FIDO2 / WebAuthn Hardware Security</span>
+                            <span style="font-size:0.68rem;font-weight:700;background:rgba(34,197,94,0.18);color:#4ade80;padding:2px 8px;border-radius:99px;border:1px solid rgba(34,197,94,0.3);">Certified</span>
                         </div>
-                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Verify your identity in seconds when scanning teacher classroom QR codes to record attendance.</p>
+                        <p style="font-size:0.8rem;color:#b39b82;margin:0;line-height:1.5;">
+                            Biometric signatures never leave your local hardware device. Register once to log in and sign attendance without typing passwords.
+                        </p>
                     </div>
                 </div>
 
-                <!-- Registered devices -->
+                <!-- Feature Highlights -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:24px;">
+                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                            <div style="width:30px;height:30px;border-radius:8px;background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);display:flex;align-items:center;justify-content:center;font-size:.9rem;"><i class="bi bi-shield-lock"></i></div>
+                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">Instant Sign-In</span>
+                        </div>
+                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Unlock your account in milliseconds using your fingerprint sensor or Face ID.</p>
+                    </div>
+                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                            <div style="width:30px;height:30px;border-radius:8px;background:rgba(34,197,94,0.15);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:.9rem;"><i class="bi bi-qr-code-scan"></i></div>
+                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">QR Attendance Clock-In</span>
+                        </div>
+                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Verify your identity securely when scanning teacher classroom attendance QR codes.</p>
+                    </div>
+                </div>
+
+                <!-- Registered Devices List -->
                 <div style="margin-bottom:24px;">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <div style="font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Biometric Devices</div>
-                        <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:2px 8px;border-radius:99px;border:1px solid rgba(207,164,111,0.2);">Loading...</span>
+                        <div style="font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Hardware Credentials</div>
+                        <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;">Loading...</span>
                     </div>
                     <div id="deviceList">
-                        <div style="text-align:center;padding:28px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
-                            <i class="bi bi-fingerprint" style="font-size:2.4rem;display:block;margin-bottom:8px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                            <div style="font-weight:600;color:#f3e7cd;margin-bottom:4px;">No fingerprint registered yet</div>
+                        <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
+                            <i class="bi bi-fingerprint" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
+                            <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
                             <div style="font-size:.78rem;color:#b39b82;">Register this device to enable fast fingerprint sign-in and QR clock-in.</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Register button & Status -->
-                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="sbtn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
+                <!-- Register action -->
+                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="sbtn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 16px rgba(22,163,74,.3);padding:10px 22px;font-size:0.85rem;">
                         <i class="bi bi-fingerprint me-2"></i>Register This Device
                     </button>
                     <span style="font-size:.78rem;color:#b39b82;"><i class="bi bi-shield-check me-1 text-success"></i>FIDO2 / WebAuthn standard security</span>
@@ -768,64 +961,110 @@
     <div id="tab-attendance" class="spanel">
         <div class="sc">
             <div class="sc-head">
-                <div class="sc-icon" style="background:#f0fdf4;color:#16a34a;"><i class="bi bi-bar-chart-fill"></i></div>
-                <div><div class="sc-title">Attendance Overview</div><div class="sc-sub">Your all-time attendance summary</div></div>
+                <div class="sc-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;"><i class="bi bi-bar-chart-fill"></i></div>
+                <div>
+                    <div class="sc-title">Attendance Overview & Analytics</div>
+                    <div class="sc-sub">Your complete academic standing and attendance performance summary</div>
+                </div>
             </div>
             <div class="sc-body">
-                <div class="stat-grid">
-                    <div class="stat-box"><div class="stat-val" style="color:#f3e7cd;">{{ $totalRecords }}</div><div class="stat-lbl">Total</div></div>
-                    <div class="stat-box"><div class="stat-val" style="color:#16a34a;">{{ $totalPresent }}</div><div class="stat-lbl">Present</div></div>
-                    <div class="stat-box"><div class="stat-val" style="color:#d97706;">{{ $totalLate }}</div><div class="stat-lbl">Late</div></div>
-                    <div class="stat-box"><div class="stat-val" style="color:#dc2626;">{{ $totalAbsent }}</div><div class="stat-lbl">Absent</div></div>
-                </div>
-                <div>
-                    <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <span style="font-size:.78rem;font-weight:600;color:#b39b82;">Overall Attendance Rate</span>
-                        <span style="font-size:.85rem;font-weight:800;color:{{ $rate>=75?'#16a34a':'#dc2626' }};">{{ $rate }}%</span>
-                    </div>
-                    <div class="prog-bar">
-                        <div class="prog-fill" style="width:{{ $rate }}%;background:{{ $rate>=75?'linear-gradient(90deg,#16a34a,#22c55e)':'linear-gradient(90deg,#dc2626,#ef4444)' }};"></div>
-                    </div>
-                    <div style="font-size:.72rem;color:#b39b82;margin-top:6px;">
-                        {{ $rate>=75 ? 'Great job! Keep it up.' : 'Your attendance is below 75%. Try to attend more classes.' }}
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Recent Activity -->
-        <div class="sc">
-            <div class="sc-head">
-                <div class="sc-icon" style="background:#fffbeb;color:#d97706;"><i class="bi bi-clock-history"></i></div>
-                <div><div class="sc-title">Recent Activity</div><div class="sc-sub">Your last 5 attendance records</div></div>
-            </div>
-            <div class="sc-body" style="padding:0;">
-                @php $recent = Auth::user()->attendances()->with('subject')->latest('date')->take(5)->get(); @endphp
-                @forelse($recent as $r)
-                <div class="act-row">
-                    <div style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                        {{ $r->status=='Present'?'background:#f0fdf4;':($r->status=='Late'?'background:#fffbeb;':'background:#fef2f2;') }}">
-                        <i class="bi {{ $r->status=='Present'?'bi-check2-circle text-success':($r->status=='Late'?'bi-clock text-warning':'bi-x-circle text-danger') }}"></i>
+                <!-- 4 KPI Stat Grid -->
+                <div class="att-stat-grid">
+                    <div class="att-stat-card">
+                        <div class="att-stat-val" style="color:#f3e7cd;">{{ $totalRecords }}</div>
+                        <div class="att-stat-label">Total Classes</div>
                     </div>
-                    <div style="flex:1;">
-                        <div style="font-size:.875rem;font-weight:600;color:#f3e7cd;">{{ $r->subject->name ?? $r->subject_code }}</div>
-                        <div style="font-size:.75rem;color:#b39b82;">{{ \Carbon\Carbon::parse($r->date)->format('M d, Y') }}</div>
+                    <div class="att-stat-card">
+                        <div class="att-stat-val" style="color:#4ade80;">{{ $totalPresent }}</div>
+                        <div class="att-stat-label" style="color:#86efac;">Present</div>
                     </div>
-                    <span style="font-size:.75rem;font-weight:700;padding:4px 12px;border-radius:99px;
-                        {{ $r->status=='Present'?'background:#f0fdf4;color:#16a34a;':($r->status=='Late'?'background:#fffbeb;color:#d97706;':'background:#fef2f2;color:#dc2626;') }}">
-                        {{ $r->status }}
-                    </span>
+                    <div class="att-stat-card">
+                        <div class="att-stat-val" style="color:#fbbf24;">{{ $totalLate }}</div>
+                        <div class="att-stat-label" style="color:#fde68a;">Late</div>
+                    </div>
+                    <div class="att-stat-card">
+                        <div class="att-stat-val" style="color:#f87171;">{{ $totalAbsent }}</div>
+                        <div class="att-stat-label" style="color:#fca5a5;">Absent</div>
+                    </div>
                 </div>
-                @empty
-                <div style="text-align:center;padding:40px;color:#b39b82;font-size:.875rem;">No records yet.</div>
-                @endforelse
-                @if($recent->count()>0)
-                <div style="padding:14px 24px;">
-                    <a href="{{ route('attendance.records') }}" style="font-size:.82rem;font-weight:600;color:#cfa46f;text-decoration:none;">
-                        View all records <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
+
+                <!-- Overall Standing Gauge -->
+                <div class="att-gauge-card">
+                    <div class="att-gauge-header">
+                        <div>
+                            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b39b82;">Overall Attendance Rate</div>
+                            <div style="font-size:1.3rem;font-weight:800;color:{{ $rate >= 75 ? '#4ade80' : '#f87171' }};margin-top:2px;">
+                                {{ $rate }}%
+                                <span style="font-size:0.75rem;font-weight:700;margin-left:8px;padding:3px 10px;border-radius:99px;background:{{ $rate >= 90 ? 'rgba(34,197,94,0.15)' : ($rate >= 75 ? 'rgba(234,179,8,0.15)' : 'rgba(239,68,68,0.15)') }};color:{{ $rate >= 90 ? '#4ade80' : ($rate >= 75 ? '#fbbf24' : '#f87171') }};border:1px solid currentColor;">
+                                    {{ $rate >= 90 ? 'Excellent Standing' : ($rate >= 75 ? 'Good Standing' : 'Attention Needed') }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @php
+                        $presPct = $totalRecords > 0 ? round(($totalPresent / $totalRecords) * 100, 1) : 0;
+                        $latePct = $totalRecords > 0 ? round(($totalLate / $totalRecords) * 100, 1) : 0;
+                        $absPct  = $totalRecords > 0 ? round(($totalAbsent / $totalRecords) * 100, 1) : 0;
+                    @endphp
+
+                    <!-- Segmented Multi-Color Distribution Bar -->
+                    <div class="att-segmented-bar">
+                        @if($totalRecords > 0)
+                            <div class="att-seg-present" style="width:{{ $presPct }}%;" title="Present: {{ $presPct }}%"></div>
+                            <div class="att-seg-late" style="width:{{ $latePct }}%;" title="Late: {{ $latePct }}%"></div>
+                            <div class="att-seg-absent" style="width:{{ $absPct }}%;" title="Absent: {{ $absPct }}%"></div>
+                        @else
+                            <div style="width:100%;background:rgba(255,255,255,0.08);"></div>
+                        @endif
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#b39b82;flex-wrap:wrap;gap:8px;">
+                        <div style="display:flex;gap:14px;align-items:center;">
+                            <span><i class="bi bi-circle-fill me-1" style="color:#22c55e;font-size:0.6rem;"></i>Present ({{ $presPct }}%)</span>
+                            <span><i class="bi bi-circle-fill me-1" style="color:#f59e0b;font-size:0.6rem;"></i>Late ({{ $latePct }}%)</span>
+                            <span><i class="bi bi-circle-fill me-1" style="color:#ef4444;font-size:0.6rem;"></i>Absent ({{ $absPct }}%)</span>
+                        </div>
+                        <div>
+                            {{ $rate >= 75 ? 'Maintaining compliant attendance standing.' : 'Attendance is below 75%. Please submit excuse slips if applicable.' }}
+                        </div>
+                    </div>
                 </div>
-                @endif
+
+                <!-- Recent Activity Section -->
+                <div style="border-top:1px solid rgba(255,215,145,0.08);padding-top:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                        <div style="font-size:0.8rem;font-weight:700;color:#f3e7cd;text-transform:uppercase;letter-spacing:0.5px;">Recent Class Attendance</div>
+                        <a href="{{ route('attendance.records') }}" style="font-size:0.78rem;font-weight:700;color:#cfa46f;text-decoration:none;">
+                            View All <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                    @php $recent = Auth::user()->attendances()->with('subject')->latest('date')->take(5)->get(); @endphp
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        @forelse($recent as $r)
+                        <div class="act-row" style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.06);border-radius:12px;padding:12px 16px;">
+                            <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+                                {{ $r->status=='Present'?'background:rgba(34,197,94,0.15);color:#4ade80;':($r->status=='Late'?'background:rgba(234,179,8,0.15);color:#fbbf24;':'background:rgba(239,68,68,0.15);color:#f87171;') }}">
+                                <i class="bi {{ $r->status=='Present'?'bi-check2-circle':($r->status=='Late'?'bi-clock':'bi-x-circle') }}" style="font-size:1.1rem;"></i>
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:.875rem;font-weight:700;color:#f3e7cd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $r->subject->name ?? $r->subject_code }}</div>
+                                <div style="font-size:.74rem;color:#b39b82;">{{ \Carbon\Carbon::parse($r->date)->format('M d, Y') }} • {{ $r->time_in ? \Carbon\Carbon::parse($r->time_in)->format('h:i A') : 'Recorded' }}</div>
+                            </div>
+                            <span style="font-size:.72rem;font-weight:800;padding:4px 12px;border-radius:99px;
+                                {{ $r->status=='Present'?'background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);':($r->status=='Late'?'background:rgba(234,179,8,0.15);color:#fbbf24;border:1px solid rgba(234,179,8,0.3);':'background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);') }}">
+                                {{ $r->status }}
+                            </span>
+                        </div>
+                        @empty
+                        <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.15);">
+                            No attendance recorded yet.
+                        </div>
+                        @endforelse
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -834,49 +1073,81 @@
     <div id="tab-preferences" class="spanel">
         <div class="sc">
             <div class="sc-head">
-                <div class="sc-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-sliders"></i></div>
-                <div><div class="sc-title">Preferences</div><div class="sc-sub">Customize your portal experience</div></div>
+                <div class="sc-icon" style="background:rgba(59,130,246,0.14);color:#60a5fa;"><i class="bi bi-sliders"></i></div>
+                <div>
+                    <div class="sc-title">System Preferences & Portal Settings</div>
+                    <div class="sc-sub">Customize alerts, language, interface layout, and offline updates</div>
+                </div>
             </div>
             <div class="sc-body">
-                <div class="trow">
-                    <div><div class="tlabel">System Language</div><div class="tsub">Choose your preferred display language</div></div>
-                    <select class="si" style="width:auto;padding:8px 12px;">
-                        <option>English</option><option>Filipino</option><option>Bikolano</option>
+
+                <!-- Language Selection -->
+                <div class="pref-tile">
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <div class="pref-tile-icon"><i class="bi bi-translate"></i></div>
+                        <div>
+                            <div class="tlabel">System Display Language</div>
+                            <div class="tsub">Choose your portal language</div>
+                        </div>
+                    </div>
+                    <select class="si" style="width:auto;padding:7px 14px;font-size:0.82rem;border-radius:10px;">
+                        <option>English (US)</option>
+                        <option>Filipino</option>
+                        <option>Bikolano</option>
                     </select>
                 </div>
+
                 <form action="{{ route('settings.preferences.update') }}" method="POST">
                     @csrf
-                    <div style="margin:16px 0 10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Notifications</div>
+                    <div style="margin:20px 0 10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Notification Alerts</div>
                     
                     @php
                         $prefs = Auth::user()->notification_preferences ?? ['in_app' => true, 'email' => true];
                     @endphp
 
-                    <div class="trow">
-                        <div><div class="tlabel">In-App Notifications</div><div class="tsub">Receive alerts within the portal</div></div>
+                    <!-- In-App Notifications -->
+                    <div class="pref-tile">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div class="pref-tile-icon"><i class="bi bi-app-indicator"></i></div>
+                            <div>
+                                <div class="tlabel">In-App Notifications</div>
+                                <div class="tsub">Receive instant badges and banners inside the portal</div>
+                            </div>
+                        </div>
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" name="prefs[in_app]" value="1" {{ !empty($prefs['in_app']) ? 'checked' : '' }}>
                         </div>
                     </div>
                     
-                    <div class="trow">
-                        <div><div class="tlabel">Email Notifications</div><div class="tsub">Receive important alerts via email</div></div>
+                    <!-- Email Notifications -->
+                    <div class="pref-tile">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div class="pref-tile-icon"><i class="bi bi-envelope"></i></div>
+                            <div>
+                                <div class="tlabel">Email Notifications</div>
+                                <div class="tsub">Receive attendance summaries, excuse approvals, and security alerts via email</div>
+                            </div>
+                        </div>
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" name="prefs[email]" value="1" {{ !empty($prefs['email']) ? 'checked' : '' }}>
                         </div>
                     </div>
 
-                    <div class="trow">
-                        <div>
-                            <div class="tlabel d-flex align-items-center gap-2">
-                                <span>Web Push Notifications</span>
-                                <span class="push-status-badge badge-inactive" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: rgba(207,164,111,0.15); color: #cfa46f; border: 1px solid rgba(207,164,111,0.3); font-weight: 700;">Checking...</span>
-                            </div>
-                            <div class="tsub">Receive instant background alerts on this device for attendance, excuse updates, and announcements.</div>
-                            <div class="mt-2">
-                                <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn" style="display:none; padding: 5px 12px; font-size: 0.75rem; background: rgba(74,222,128,0.12)!important; border-color: rgba(74,222,128,0.3)!important; color: #4ade80!important;">
-                                    <i class="bi bi-bell-fill me-1"></i> Send Test Push Alert
-                                </button>
+                    <!-- Web Push Notifications -->
+                    <div class="pref-tile" style="align-items:flex-start;">
+                        <div style="display:flex;align-items:flex-start;gap:14px;">
+                            <div class="pref-tile-icon" style="margin-top:2px;"><i class="bi bi-bell-fill"></i></div>
+                            <div>
+                                <div class="tlabel d-flex align-items-center gap-2">
+                                    <span>Web Push Notifications</span>
+                                    <span class="push-status-badge badge-inactive" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(207,164,111,0.15); color: #cfa46f; border: 1px solid rgba(207,164,111,0.3); font-weight: 700;">Checking...</span>
+                                </div>
+                                <div class="tsub" style="margin-top:2px;">Receive background push notifications even when the browser tab is closed.</div>
+                                <div class="mt-2">
+                                    <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn" style="display:none; padding: 4px 12px; font-size: 0.72rem; background: rgba(74,222,128,0.12)!important; border-color: rgba(74,222,128,0.3)!important; color: #4ade80!important;">
+                                        <i class="bi bi-send-check me-1"></i> Send Test Push Alert
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <div class="form-check form-switch mb-0">
@@ -884,17 +1155,34 @@
                         </div>
                     </div>
 
-                    <div class="trow">
-                        <div><div class="tlabel">SMS Notifications</div><div class="tsub">Receive important alerts via SMS (charges may apply)</div></div>
+                    <!-- SMS Notifications -->
+                    <div class="pref-tile">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div class="pref-tile-icon"><i class="bi bi-chat-dots"></i></div>
+                            <div>
+                                <div class="tlabel">SMS Urgent Notifications</div>
+                                <div class="tsub">Emergency announcements and absence warnings via text message</div>
+                            </div>
+                        </div>
                         <div class="form-check form-switch mb-0">
                             <input class="form-check-input" type="checkbox" name="prefs[sms]" value="1" {{ !empty($prefs['sms']) ? 'checked' : '' }}>
                         </div>
                     </div>
 
-                    <div style="margin:16px 0 10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Display</div>
-                    <div class="trow">
-                        <div><div class="tlabel">Compact Sidebar</div><div class="tsub">Start with the sidebar collapsed</div></div>
-                        <div class="form-check form-switch mb-0"><input class="form-check-input" type="checkbox" id="compactToggle"></div>
+                    <!-- Display Interface -->
+                    <div style="margin:20px 0 10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Display & Layout</div>
+                    
+                    <div class="pref-tile">
+                        <div style="display:flex;align-items:center;gap:14px;">
+                            <div class="pref-tile-icon"><i class="bi bi-layout-sidebar"></i></div>
+                            <div>
+                                <div class="tlabel">Compact Sidebar</div>
+                                <div class="tsub">Keep sidebar collapsed on desktop for extra dashboard space</div>
+                            </div>
+                        </div>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" id="compactToggle">
+                        </div>
                     </div>
 
                     <div style="margin-top: 20px; text-align: right;">
@@ -902,21 +1190,24 @@
                     </div>
                 </form>
 
-                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin: 28px 0 20px;">
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin: 26px 0 20px;">
 
-                <!-- App & System Updates -->
-                <div style="margin-bottom:10px;font-size:.72rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">App & System Updates</div>
-                <div class="trow" style="align-items: flex-start; gap: 16px;">
-                    <div>
-                        <div class="tlabel" style="display:flex;align-items:center;gap:8px;">
-                            <i class="bi bi-arrow-repeat" style="color:var(--gold);"></i> Software Updates
-                            <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold);border:1px solid rgba(207,164,111,0.3);font-size:0.75rem;">v2.1.0</span>
+                <!-- App & System Software Updates -->
+                <div style="margin-bottom:10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">App & System Updates</div>
+                <div class="pref-tile" style="align-items: center; gap: 16px;">
+                    <div style="display:flex;align-items:center;gap:14px;">
+                        <div class="pref-tile-icon"><i class="bi bi-arrow-repeat"></i></div>
+                        <div>
+                            <div class="tlabel" style="display:flex;align-items:center;gap:8px;">
+                                Software Updates & PWA Assets
+                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;">v2.1.0</span>
+                            </div>
+                            <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
                         </div>
-                        <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
                     </div>
                     <div>
-                        <button type="button" id="checkUpdateBtn" onclick="checkForAppUpdates()" class="sbtn" style="padding:9px 18px;font-size:0.85rem;white-space:nowrap;">
-                            <i class="bi bi-cloud-arrow-down me-1"></i> Check for Updates
+                        <button type="button" id="checkUpdateBtn" onclick="checkForAppUpdates()" class="sbtn" style="padding:8px 18px;font-size:0.82rem;white-space:nowrap;">
+                            <i class="bi bi-cloud-arrow-down me-1"></i> Check Updates
                         </button>
                     </div>
                 </div>
