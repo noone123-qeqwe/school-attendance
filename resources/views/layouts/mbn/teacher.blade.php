@@ -7,13 +7,15 @@
         <i class="bi bi-journal-album"></i>
         <span>Classes</span>
     </a>
+    <a href="{{ route('teacher.subjects') }}" class="mbn-item mbn-item-featured {{ request()->routeIs('teacher.subjects*') || request()->routeIs('teacher.qr*') ? 'active' : '' }}" aria-label="Start QR Attendance Session">
+        <div class="mbn-featured-btn">
+            <i class="bi bi-qr-code-scan"></i>
+        </div>
+        <span>QR</span>
+    </a>
     <a href="{{ route('teacher.absent') }}" class="mbn-item {{ request()->routeIs('teacher.absent*') ? 'active' : '' }}">
         <i class="bi bi-person-x-fill"></i>
         <span>Absent</span>
-    </a>
-    <a href="{{ route('teacher.excuse.reviews') }}" class="mbn-item {{ request()->routeIs('teacher.excuse*') ? 'active' : '' }}">
-        <i class="bi bi-file-text-fill"></i>
-        <span>Excuses</span>
     </a>
     <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" style="background:transparent;border:none;outline:none;cursor:pointer;">
         <i class="bi bi-grid-3x3-gap-fill"></i>

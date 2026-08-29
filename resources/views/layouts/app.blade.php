@@ -93,6 +93,9 @@
                 </div>
 
                 <div class="header-right d-flex align-items-center gap-2">
+                    <button type="button" onclick="if(window.openCommandPalette) window.openCommandPalette();" class="d-flex d-sm-none notif-btn" aria-label="Search" title="Search">
+                        <i class="bi bi-search" style="font-size: 0.85rem;"></i>
+                    </button>
                     <button type="button" onclick="if(window.openCommandPalette) window.openCommandPalette();" class="d-none d-sm-flex align-items-center gap-2" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 6px 12px; color: #b39b82; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease;">
                         <i class="bi bi-search" style="font-size: 0.75rem;"></i>
                         <span>Search...</span>

@@ -148,11 +148,11 @@
                 </div>
                 <!-- Mobile-only compact CTA -->
                 <div class="d-md-none mt-3 d-flex gap-2">
-                    <button type="button" onclick="openStudentScanner()" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.82rem;">
-                        <i class="bi bi-qr-code-scan"></i> Scan QR
+                    <button type="button" onclick="openStudentScanner()" class="btn-modern-primary flex-fill justify-content-center" style="padding: 10px 16px; font-size: 0.85rem; font-weight: 700; border-radius: 12px;">
+                        <i class="bi bi-qr-code-scan me-1"></i> Scan QR / Code
                     </button>
-                    <a href="{{ route('excuses') }}" class="btn-modern-glass" style="padding: 8px 14px; font-size: 0.8rem;">
-                        <i class="bi bi-envelope-paper-fill"></i> Excuse
+                    <a href="{{ route('excuses') }}" class="btn-modern-glass flex-fill justify-content-center" style="padding: 10px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 12px;">
+                        <i class="bi bi-envelope-paper-fill me-1"></i> Excuse
                     </a>
                 </div>
             </div>
