@@ -92,7 +92,13 @@
                     </div>
                 </div>
 
-                <div class="header-right">
+                <div class="header-right d-flex align-items-center gap-2">
+                    <button type="button" onclick="if(window.openCommandPalette) window.openCommandPalette();" class="d-none d-sm-flex align-items-center gap-2" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 6px 12px; color: #b39b82; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease;">
+                        <i class="bi bi-search" style="font-size: 0.75rem;"></i>
+                        <span>Search...</span>
+                        <kbd style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.25); color: #f3e7cd; border-radius: 4px; padding: 1px 5px; font-size: 0.65rem; font-family: inherit;">Ctrl K</kbd>
+                    </button>
+
                     @php
                         if (Auth::user()->isParent()) {
                             $childIds = Auth::user()->children()->pluck('users.id');
@@ -290,6 +296,10 @@
     <!-- System Toast Container (for websocket notifications) -->
     <div class="toast-container" id="toastContainer"></div>
 
+    @auth
+        <x-command-palette />
+    @endauth
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     @auth
@@ -334,6 +344,14 @@
                 setTimeout(() => toast.remove(), 300);
             }, duration);
         }
+
+        // Online / Offline connection listeners
+        window.addEventListener('offline', () => {
+            showToast('You are offline. Cached records and offline features remain accessible.', 'warning', 6000);
+        });
+        window.addEventListener('online', () => {
+            showToast('Connection restored.', 'success', 3000);
+        });
 
         // Auto-show Laravel flash messages
         @if(session('success')) showToast(@json(session('success')), 'success'); @endif

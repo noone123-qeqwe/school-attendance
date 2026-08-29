@@ -230,7 +230,7 @@
 }
 </style>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function() {
     'use strict';
 
