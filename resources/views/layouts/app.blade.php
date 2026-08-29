@@ -937,6 +937,9 @@
             });
         });
         </script>
+        @if(!Auth::user()->isAdmin() && !Auth::user()->isTeacher() && !Auth::user()->isParent())
+            @include('partials.student-scanner-modal')
+        @endif
     @endauth
     @auth
         <x-command-palette />
