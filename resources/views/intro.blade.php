@@ -47,7 +47,10 @@
             height: 100%;
             object-fit: cover;
             z-index: 1;
-            filter: brightness(1.05) contrast(1.1) saturate(1.15);
+            transform: translateZ(0);
+            will-change: transform;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
         }
 
         /* ── VIGNETTE OVERLAY ── */
@@ -202,7 +205,7 @@
 <body>
 
     <!-- Video (Mobile & Desktop native sources) -->
-    <video id="introVideo" autoplay muted playsinline preload="auto" poster="{{ asset('images/logo.png') }}">
+    <video id="introVideo" autoplay muted playsinline preload="auto">
         <source src="{{ asset('videos/intro_mobile.mp4') }}#t=2.0" type="video/mp4" media="(max-width: 768px)">
         <source src="{{ asset('videos/intro.mp4') }}#t=2.0" type="video/mp4">
     </video>
@@ -241,6 +244,7 @@
         const fadeOut     = document.getElementById('fadeOut');
         const INTRO_START_TIME = 2.0; // Starts directly on the 2nd scene (OC MOBO)
         let hasTransitioned = false;
+        let hasInitialized = false;
 
         function goToNext(e) {
             if (e && typeof e.preventDefault === 'function') {
@@ -253,7 +257,6 @@
                 fadeOut.classList.add('active');
             }
 
-            // Navigate immediately
             window.location.href = destUrl;
             setTimeout(() => {
                 window.location.replace(destUrl);
@@ -280,27 +283,29 @@
 
         // 4. Video Events & Playback Monitoring
         if (video) {
-            const seekToStart = () => {
+            const startSmoothPlayback = () => {
+                if (hasInitialized) return;
+                hasInitialized = true;
+
                 if (video.currentTime < INTRO_START_TIME) {
                     try {
                         video.currentTime = INTRO_START_TIME;
                     } catch (err) {}
                 }
+
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        setTimeout(() => goToNext(), 300);
+                    });
+                }
             };
 
-            video.addEventListener('loadedmetadata', seekToStart);
-            video.addEventListener('canplay', seekToStart);
-            seekToStart();
-
-            // Attempt playback; if autoplay is prevented by browser policy, proceed
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.then(() => {
-                    seekToStart();
-                }).catch(() => {
-                    // Autoplay was prevented by browser policy - skip smoothly rather than freezing
-                    setTimeout(() => goToNext(), 400);
-                });
+            if (video.readyState >= 1) {
+                startSmoothPlayback();
+            } else {
+                video.addEventListener('loadedmetadata', startSmoothPlayback, { once: true });
+                video.addEventListener('canplay', startSmoothPlayback, { once: true });
             }
 
             // Real-time progress bar calibrated from 2nd scene to end
@@ -319,12 +324,6 @@
 
             video.addEventListener('ended', () => goToNext());
             video.addEventListener('error', () => goToNext());
-            video.addEventListener('stalled', () => {
-                // If video stalls for more than 1s, proceed
-                setTimeout(() => {
-                    if (video.paused && !hasTransitioned) goToNext();
-                }, 1000);
-            });
         }
 
         // 5. Safety Watchdog Timeout: Never let intro freeze for longer than the remaining video duration
