@@ -35,9 +35,9 @@ class QrSessionService
             $endTime = Carbon::parse($todayDate . ' ' . $todaySchedule->end_time);
             $sessionEnd = $endTime;
 
-            // If start time is far in future or class ended, ensure a viable 20-minute attendance window
-            if ($sessionEnd->lt($now->copy()->addMinutes(5)) || $now->lt($startTime->copy()->subMinutes(15))) {
-                $sessionEnd = $now->copy()->addMinutes(20);
+            // If start time is far in future or class ended, ensure a viable 30-minute attendance window
+            if ($sessionEnd->lt($now->copy()->addMinutes(10)) || $now->lt($startTime->copy()->subMinutes(15))) {
+                $sessionEnd = $now->copy()->addMinutes(30);
             }
         }
 
@@ -56,7 +56,7 @@ class QrSessionService
             'created_by'      => $teacherId,
             'token'           => AttendanceSession::generateToken($subjectCode),
             'session_code'    => $sessionCode,
-            'expires_at'      => $now->copy()->addSeconds(60)->min($sessionEnd),
+            'expires_at'      => $now->copy()->addSeconds(300)->min($sessionEnd),
             'session_ends_at' => $sessionEnd,
             'active'          => true,
             'classroom_lat'   => $lat,
@@ -77,7 +77,7 @@ class QrSessionService
         
         $session->update([
             'token'      => AttendanceSession::generateToken($session->subject_code),
-            'expires_at' => now('Asia/Manila')->addSeconds(60)->min($session->session_ends_at),
+            'expires_at' => now('Asia/Manila')->addSeconds(300)->min($session->session_ends_at),
         ]);
         
         return $session;

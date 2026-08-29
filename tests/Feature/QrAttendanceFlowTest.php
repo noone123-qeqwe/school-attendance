@@ -401,4 +401,30 @@ class QrAttendanceFlowTest extends TestCase
             'method' => 'code'
         ]);
     }
+
+    public function test_qr_session_stays_active_for_5_minutes()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'CS301'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code
+        ]);
+
+        $startResponse->assertStatus(200);
+        $this->assertEquals(300, $startResponse->json('ttl'));
+
+        $sessionId = $startResponse->json('session_id');
+        $session = AttendanceSession::find($sessionId);
+
+        $this->assertNotNull($session);
+        // Expiration is ~300 seconds (5 minutes) in the future
+        $diffSeconds = now()->diffInSeconds($session->expires_at, false);
+        $this->assertGreaterThanOrEqual(290, $diffSeconds);
+        $this->assertLessThanOrEqual(305, $diffSeconds);
+    }
 }

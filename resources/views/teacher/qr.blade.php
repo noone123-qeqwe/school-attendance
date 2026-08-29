@@ -391,12 +391,12 @@
                     <!-- QR Refresh Countdown -->
                     <div id="qrRefreshCountdown" style="display: none; text-align: center; margin: 1.5rem auto;">
                         <div style="font-size: 3.2rem; font-weight: 800; font-family: monospace; color: #cfa46f; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-                            <span id="refreshCountdownText">--</span><span style="font-size: 1.5rem; opacity: 0.5;">s</span>
+                            <span id="refreshCountdownText">05:00</span>
                         </div>
-                        <div class="progress" style="height: 6px; border-radius: 3px; max-width: 200px; margin: 10px auto; background: rgba(255,255,255,0.08); overflow: hidden;">
+                        <div class="progress" style="height: 6px; border-radius: 3px; max-width: 220px; margin: 10px auto; background: rgba(255,255,255,0.08); overflow: hidden;">
                             <div id="qrProgressIndicator" class="progress-bar" style="width: 100%; background: linear-gradient(90deg, #cfa46f, #e5be8a); transition: width 1s linear;"></div>
                         </div>
-                        <small style="color: #b39b82; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 0.75rem;">Code Expires In</small>
+                        <small style="color: #b39b82; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 0.75rem;">Code Refresh In</small>
                     </div>
                     
                     <!-- Session Timer -->
@@ -526,7 +526,7 @@
             </div>
             <div style="background: rgba(255,255,255,0.06); padding: 12px 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
                 <div style="font-size: 0.8rem; color: #b39b82; text-transform: uppercase; font-weight: 600;">Code Refresh</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;" id="projectorCountdown">--s</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;" id="projectorCountdown">05:00</div>
             </div>
         </div>
     </div>
@@ -543,7 +543,7 @@ let teacherLocation = null;
 let locationWatchId = null;
 let locationTimeoutId = null;
 let locationDowngraded = false;
-let refreshCountdownSeconds = 60;
+let refreshCountdownSeconds = 300;
 
 const startBtn = document.getElementById('startBtn');
 const refreshBtn = document.getElementById('refreshBtn');
@@ -829,17 +829,25 @@ function updateUIForActiveSession() {
     }
 }
 
+function formatTtlCountdown(totalSecs) {
+    if (totalSecs < 0) totalSecs = 0;
+    const m = Math.floor(totalSecs / 60);
+    const s = totalSecs % 60;
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 function getRefreshIntervalSeconds() {
-    const ttl = Number(currentSession?.ttl) || 60;
-    return Math.max(ttl - 5, 50);
+    const ttl = Number(currentSession?.ttl) || 300;
+    return Math.max(ttl - 5, 290);
 }
 
 function resetRefreshTimers() {
-    const ttl = Number(currentSession?.ttl) || 60;
+    const ttl = Number(currentSession?.ttl) || 300;
     refreshCountdownSeconds = ttl;
-    document.getElementById('refreshCountdownText').textContent = refreshCountdownSeconds;
+    const formatted = formatTtlCountdown(refreshCountdownSeconds);
+    document.getElementById('refreshCountdownText').textContent = formatted;
     const projCountdown = document.getElementById('projectorCountdown');
-    if (projCountdown) projCountdown.textContent = refreshCountdownSeconds + 's';
+    if (projCountdown) projCountdown.textContent = formatted;
     
     const progressIndicator = document.getElementById('qrProgressIndicator');
     if (progressIndicator) {
@@ -852,8 +860,11 @@ function resetRefreshTimers() {
     if (refreshCountdownInterval) clearInterval(refreshCountdownInterval);
     refreshCountdownInterval = setInterval(() => {
         refreshCountdownSeconds--;
+        const formatted = formatTtlCountdown(refreshCountdownSeconds);
         const pCd = document.getElementById('projectorCountdown');
-        if (pCd) pCd.textContent = refreshCountdownSeconds + 's';
+        if (pCd) pCd.textContent = formatted;
+        document.getElementById('refreshCountdownText').textContent = formatted;
+
         if (refreshCountdownSeconds <= 0) {
             refreshCountdownSeconds = ttl;
             if (progressIndicator) {
@@ -868,7 +879,6 @@ function resetRefreshTimers() {
                 progressIndicator.style.width = percentage + '%';
             }
         }
-        document.getElementById('refreshCountdownText').textContent = refreshCountdownSeconds;
     }, 1000);
 
     if (refreshInterval) clearInterval(refreshInterval);

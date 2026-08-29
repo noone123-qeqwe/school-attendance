@@ -25,7 +25,7 @@ class QrAttendanceController extends Controller
     {
         $this->qrSessionService = $qrSessionService;
     }
-    private const QR_TTL_SECONDS = 60; // QR stays visible for 60 seconds before refresh
+    private const QR_TTL_SECONDS = 300; // QR and Code stay active for 5 minutes (300 seconds) before refresh
 
     private function getSchoolLat(): float
     {
