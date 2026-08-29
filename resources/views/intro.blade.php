@@ -203,8 +203,8 @@
 
     <!-- Video (Mobile & Desktop native sources) -->
     <video id="introVideo" autoplay muted playsinline preload="auto" poster="{{ asset('images/logo.png') }}">
-        <source src="{{ asset('videos/intro_mobile.mp4') }}" type="video/mp4" media="(max-width: 768px)">
-        <source src="{{ asset('videos/intro.mp4') }}" type="video/mp4">
+        <source src="{{ asset('videos/intro_mobile.mp4') }}#t=2.0" type="video/mp4" media="(max-width: 768px)">
+        <source src="{{ asset('videos/intro.mp4') }}#t=2.0" type="video/mp4">
     </video>
 
     <!-- Cinematic Overlays -->
@@ -239,6 +239,7 @@
         const destUrl     = @json($destUrl);
         const progressBar = document.getElementById('progressBar');
         const fadeOut     = document.getElementById('fadeOut');
+        const INTRO_START_TIME = 2.0; // Starts directly on the 2nd scene (OC MOBO)
         let hasTransitioned = false;
 
         function goToNext(e) {
@@ -279,19 +280,35 @@
 
         // 4. Video Events & Playback Monitoring
         if (video) {
+            const seekToStart = () => {
+                if (video.currentTime < INTRO_START_TIME) {
+                    try {
+                        video.currentTime = INTRO_START_TIME;
+                    } catch (err) {}
+                }
+            };
+
+            video.addEventListener('loadedmetadata', seekToStart);
+            video.addEventListener('canplay', seekToStart);
+            seekToStart();
+
             // Attempt playback; if autoplay is prevented by browser policy, proceed
             const playPromise = video.play();
             if (playPromise !== undefined) {
-                playPromise.catch(() => {
+                playPromise.then(() => {
+                    seekToStart();
+                }).catch(() => {
                     // Autoplay was prevented by browser policy - skip smoothly rather than freezing
                     setTimeout(() => goToNext(), 400);
                 });
             }
 
-            // Real-time progress bar and end-point detection
+            // Real-time progress bar calibrated from 2nd scene to end
             video.addEventListener('timeupdate', () => {
-                if (video.duration && !isNaN(video.duration) && video.duration > 0) {
-                    const pct = Math.min(100, (video.currentTime / video.duration) * 100);
+                if (video.duration && !isNaN(video.duration) && video.duration > INTRO_START_TIME) {
+                    const effectiveDuration = video.duration - INTRO_START_TIME;
+                    const elapsed = Math.max(0, video.currentTime - INTRO_START_TIME);
+                    const pct = Math.min(100, Math.max(0, (elapsed / effectiveDuration) * 100));
                     if (progressBar) progressBar.style.width = pct + '%';
 
                     if (video.currentTime >= (video.duration - 0.2)) {
@@ -310,12 +327,12 @@
             });
         }
 
-        // 5. Safety Watchdog Timeout: Never let intro freeze for more than 4.5 seconds under any circumstance
+        // 5. Safety Watchdog Timeout: Never let intro freeze for longer than the remaining video duration
         setTimeout(() => {
             if (!hasTransitioned) {
                 goToNext();
             }
-        }, 4500);
+        }, 6500);
     </script>
 </body>
 </html>
