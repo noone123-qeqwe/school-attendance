@@ -29,7 +29,7 @@ class RoleAccessControlTest extends TestCase
 
     public function test_intro_page_is_public(): void
     {
-        $this->get('/')->assertStatus(200);
+        $this->get('/')->assertRedirect('/login');
     }
 
     public function test_qr_scan_page_is_public(): void
