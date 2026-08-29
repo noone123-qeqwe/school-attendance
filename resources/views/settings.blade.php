@@ -19,13 +19,10 @@
     $rate = $totalRecords > 0 ? round((($totalPresent+$totalLate)/$totalRecords)*100) : 0;
 @endphp
 
-@push('styles')
 <style>
-.sp { max-width: 1100px; margin: 0 auto; }
-.pg-title { font-size: 1.8rem; font-weight: 800; color: #f3e7cd; letter-spacing: -0.3px; }
-.pg-sub { font-size: 0.875rem; color: #b39b82; margin-top: 2px; }
-
-/* ── Pill-Style Sub-Navigation Tabs ── */
+.sp{max-width:1100px;margin:0 auto;}
+.pg-title{font-size:1.8rem;font-weight:800;color:#f3e7cd;letter-spacing:-.3px;}
+.pg-sub{font-size:.875rem;color:#b39b82;margin-top:2px;}
 .stabs-wrapper {
     position: relative;
     margin-bottom: 24px;
@@ -35,48 +32,38 @@
 }
 .stabs {
     display: flex;
-    gap: 6px;
+    gap: 0;
     width: 100%;
+    border-bottom: 2px solid rgba(255,215,145,0.08);
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    padding: 6px;
-    background: rgba(255, 235, 190, 0.03);
-    border: 1px solid rgba(255, 215, 145, 0.08);
-    border-radius: 99px;
+    padding-right: 48px;
+    padding-left: 2px;
 }
 .stabs::-webkit-scrollbar {
     display: none;
 }
 .stab {
     white-space: nowrap;
-    padding: 9px 20px;
-    font-size: 0.84rem;
-    font-weight: 700;
-    color: #a8947e;
+    padding: 10px 20px;
+    font-size: .875rem;
+    font-weight: 600;
+    color: #8f826f;
     cursor: pointer;
-    border: 1px solid transparent;
-    background: transparent;
-    border-radius: 99px;
-    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all .2s;
     flex-shrink: 0;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    text-decoration: none;
 }
-.stab:hover {
-    color: #f3e7cd;
-    background: rgba(255, 235, 190, 0.06);
-}
-.stab.active {
-    background: linear-gradient(135deg, rgba(207,164,111,0.25) 0%, rgba(207,164,111,0.12) 100%) !important;
-    color: #f5dfa8 !important;
-    border-color: rgba(207,164,111,0.4) !important;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.3) !important;
-}
+.stab.active { color: #cfa46f; border-bottom-color: #cfa46f; }
+.stab:hover { color: #f3e7cd; }
 
 .stabs-arrow {
     position: absolute;
@@ -88,6 +75,7 @@
     border-radius: 50%;
     background: rgba(30, 24, 20, 0.95);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1.5px solid rgba(207, 164, 111, 0.5);
     color: #cfa46f;
     display: flex;
@@ -95,223 +83,122 @@
     justify-content: center;
     cursor: pointer;
     font-size: 0.95rem;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-    padding: 0;
-    transition: all 0.2s ease;
-}
-.stabs-arrow-left { left: 0; display: none; }
-.stabs-arrow-left.visible { display: flex; }
-.stabs-arrow-right { right: 0; display: flex; }
-
-/* ── Panel & Base Cards ── */
-.spanel { display: none; }
-.spanel.active { display: block; }
-.sc {
-    background: rgba(255, 235, 190, 0.02) !important;
-    border-radius: 18px !important;
-    border: 1px solid rgba(255, 215, 145, 0.08) !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
-    overflow: hidden;
-    margin-bottom: 20px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6), 0 0 10px rgba(207,164,111,0.3);
     transition: all 0.25s ease;
-}
-.sc:hover {
-    box-shadow: 0 8px 30px rgba(0,0,0,0.35) !important;
-    border-color: rgba(255, 215, 145, 0.15) !important;
-}
-.sc-head {
-    padding: 24px 32px;
-    border-bottom: 1px solid rgba(255, 215, 145, 0.06);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-}
-.sc-icon {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    border-radius: 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3rem;
-    flex-shrink: 0;
-}
-.sc-title { font-size: 1.1rem; font-weight: 800; color: #f3e7cd; }
-.sc-sub { font-size: 0.85rem; color: #b39b82; margin-top: 2px; }
-.sc-body { padding: 32px; }
-
-/* ── Inputs & Form Controls ── */
-.sl {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: #b39b82;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 6px;
-    display: block;
-}
-.si {
-    width: 100%;
-    padding: 11px 14px;
-    border-radius: 12px;
-    border: 1.5px solid rgba(255, 215, 145, 0.12);
-    font-size: 0.88rem;
-    font-family: 'Inter', sans-serif;
-    background: rgba(255, 235, 190, 0.04);
-    color: #f3e7cd;
-    transition: all 0.2s;
-    outline: none;
-}
-.si:hover {
-    border-color: rgba(255, 215, 145, 0.25);
-    background: rgba(255, 235, 190, 0.07);
-}
-.si:focus {
-    border-color: #cfa46f;
-    background: rgba(255, 235, 190, 0.07);
-    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.18);
-}
-.si option { background: #1a1410; color: #f3e7cd; }
-.pw-wrap { position: relative; }
-.pw-wrap .si { padding-right: 44px; }
-.eye-btn {
-    position: absolute;
-    right: 13px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #b39b82;
-    font-size: 1rem;
-    cursor: pointer;
-    background: none;
-    border: none;
     padding: 0;
-    transition: color 0.2s;
-    line-height: 1;
 }
-.eye-btn:hover { color: #cfa46f; }
-
-/* ── Modern Tactile Action Buttons ── */
-.sbtn {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    padding: 10px 22px !important;
-    background: linear-gradient(135deg, #cfa46f 0%, #a87e45 100%) !important;
-    color: #120905 !important;
-    font-weight: 800 !important;
-    font-size: 0.84rem !important;
-    border-radius: 99px !important;
-    border: none !important;
-    box-shadow: 0 4px 14px rgba(207,164,111,0.28) !important;
-    cursor: pointer !important;
-    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-    line-height: 1 !important;
-    text-decoration: none !important;
-    letter-spacing: 0.2px !important;
+.stabs-arrow:hover {
+    background: rgba(45, 36, 30, 0.98);
+    border-color: #cfa46f;
+    color: #f3e7cd;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.7), 0 0 14px rgba(207,164,111,0.45);
+    transform: translateY(-50%) scale(1.08);
 }
-.sbtn:hover {
-    background: linear-gradient(135deg, #dfb885 0%, #b88648 100%) !important;
-    transform: translateY(-1.5px) !important;
-    box-shadow: 0 6px 20px rgba(207,164,111,0.45) !important;
-    color: #120905 !important;
+.stabs-arrow-left {
+    left: 0;
+    display: none;
 }
-.sbtn:active {
-    transform: translateY(0.5px) !important;
+.stabs-arrow-left.visible {
+    display: flex;
 }
+.stabs-arrow-right {
+    right: 0;
+    display: flex;
+    animation: stabsArrowPulse 2.5s infinite ease-in-out;
+}
+@keyframes stabsArrowPulse {
+    0%, 100% {
+        transform: translateY(-50%) scale(1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 8px rgba(207,164,111,0.25);
+    }
+    50% {
+        transform: translateY(-50%) scale(1.12);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.7), 0 0 16px rgba(207,164,111,0.5);
+    }
+}
+.stabs-wrapper.has-scroll-right::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 52px;
+    background: linear-gradient(to right, transparent, rgba(17, 14, 12, 0.9));
+    pointer-events: none;
+    z-index: 5;
+}
+.stabs-wrapper.has-scroll-left::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 52px;
+    background: linear-gradient(to left, transparent, rgba(17, 14, 12, 0.9));
+    pointer-events: none;
+    z-index: 5;
+}
+.spanel{display:none;}.spanel.active{display:block;}
+.sc{background:rgba(255,235,190,0.02);border-radius:16px;border:1px solid rgba(255,215,145,0.08);box-shadow:0 4px 15px rgba(0,0,0,.2);overflow:hidden;margin-bottom:20px;transition:all .25s;}
+.sc:hover{box-shadow:0 8px 25px rgba(0,0,0,.3);border-color:rgba(255,215,145,0.15);}
+.sc-head{padding:28px 40px;border-bottom:1px solid rgba(255,215,145,0.06);display:flex;align-items:center;gap:20px;}
+.sc-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:rgba(207,164,111,0.12)!important;color:#cfa46f!important;}
+.sc-title{font-size:1.15rem;font-weight:700;color:#f3e7cd;}
+.sc-sub{font-size:.9rem;color:#b39b82;margin-top:4px;}
+.sc-body{padding:40px;}
+.sl{font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;}
+.si{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid rgba(255,215,145,0.12);font-size:.875rem;font-family:'Inter',sans-serif;background:rgba(255,235,190,0.05);color:#f3e7cd;transition:all .2s;outline:none;}
+.si:hover{border-color:rgba(255,215,145,0.25);background:rgba(255,235,190,0.08);}
+.si:focus{border-color:#cfa46f;background:rgba(255,235,190,0.08);box-shadow:0 0 0 3px rgba(207,164,111,.15);}
+.si option {background:#1a1d24;color:#f3e7cd;}
+.pw-wrap{position:relative;}
+.pw-wrap .si{padding-right:44px;}
+.eye-btn{position:absolute;right:13px;top:50%;transform:translateY(-50%);color:#b39b82;font-size:1rem;cursor:pointer;background:none;border:none;padding:0;transition:color .2s;line-height:1;}
+.eye-btn:hover{color:#cfa46f;}
+.sbtn{padding:11px 28px;background:rgba(117,69,53,0.9)!important;color:#f3e7cd;font-weight:700;font-size:.875rem;border:1px solid rgba(255,215,145,0.16);border-radius:10px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25)!important;transition:all .25s;}
+.sbtn:hover{background:rgba(135,87,58,0.95)!important;transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.35)!important;}
+.sbtn:active{transform:translateY(0);}
 .cancel-btn {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 10px 18px !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #b39b82 !important;
-    font-weight: 700 !important;
-    font-size: 0.82rem !important;
-    border-radius: 99px !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
+    padding:11px 20px; background:rgba(255,235,190,0.05)!important; color:#b39b82!important; border:1px solid rgba(255,215,145,0.15)!important; border-radius:10px; font-weight:600; font-size:.875rem; cursor:pointer; transition:all 0.2s;
 }
-.cancel-btn:hover {
-    background: rgba(255, 255, 255, 0.08) !important;
+.cancel-btn:hover { background:rgba(255,235,190,0.1)!important; color:#f3e7cd!important; }
+.trow{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,215,145,0.06);}
+.trow:last-child{border-bottom:none;padding-bottom:0;}
+.tlabel{font-size:.875rem;font-weight:600;color:#f3e7cd;}
+.tsub{font-size:.78rem;color:#b39b82;margin-top:2px;}
+.form-check-input{background-color:rgba(255,235,190,0.1);border-color:rgba(255,215,145,0.2);}
+.form-check-input:checked{background-color:#cfa46f!important;border-color:#cfa46f!important;}
+.form-check-input{width:2.4em!important;height:1.3em!important;cursor:pointer;}
+.flash-ok{background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);color:#4ade80;border-radius:12px;padding:12px 16px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.flash-err{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:#f87171;border-radius:12px;padding:12px 16px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-box{background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:14px 16px;text-align:center;transition:transform .2s,box-shadow .2s;}
+.stat-box:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,.15);border-color:rgba(255,215,145,0.15);}
+.stat-val{font-size:1.6rem;font-weight:800;line-height:1;}
+.stat-lbl{font-size:.68rem;font-weight:600;color:#b39b82;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;}
+.prog-bar{height:8px;background:rgba(255,215,145,0.1);border-radius:99px;overflow:hidden;margin-top:6px;}
+.prog-fill{height:100%;border-radius:99px;transition:width 1s ease;}
+.info-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid rgba(255,215,145,0.06);}
+.info-row:last-child{border-bottom:none;}
+.info-icon{width:34px;height:34px;border-radius:9px;background:rgba(207,164,111,0.12);border:1px solid rgba(255,215,145,0.1);display:flex;align-items:center;justify-content:center;color:#cfa46f;font-size:.9rem;flex-shrink:0;}
+.info-lbl{font-size:.7rem;font-weight:600;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;}
+.info-val{font-size:.9rem;font-weight:600;color:#f3e7cd;}
+.act-row{display:flex;align-items:center;gap:14px;padding:14px 24px;border-bottom:1px solid rgba(255,215,145,0.06);transition:background .15s;}
+.act-row:hover{background:rgba(255,235,190,0.04);}
+.act-row:last-child{border-bottom:none;}
+
+/* Form overrides specific for Dark Theme */
+.email-otp-digit, .otp-digit-s {
     color: #f3e7cd !important;
+    background: rgba(255,235,190,0.05) !important;
+    border-color: rgba(255,215,145,0.12) !important;
+}
+.email-otp-digit:focus, .otp-digit-s:focus {
+    border-color: #cfa46f !important;
+    box-shadow: 0 0 0 3px rgba(207,164,111,.15) !important;
 }
 
-/* ── Custom Gold Toggle Switches ── */
-.form-switch .form-check-input {
-    width: 2.75em !important;
-    height: 1.5em !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    border-color: rgba(255, 215, 145, 0.25) !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23b39b82'/%3e%3c/svg%3e") !important;
-    cursor: pointer !important;
-    transition: all 0.25s ease-in-out !important;
-}
-.form-switch .form-check-input:checked {
-    background-color: #cfa46f !important;
-    border-color: #dfb885 !important;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23120905'/%3e%3c/svg%3e") !important;
-    box-shadow: 0 0 12px rgba(207, 164, 111, 0.45) !important;
-}
-.form-switch .form-check-input:focus {
-    box-shadow: 0 0 0 2px rgba(207, 164, 111, 0.25) !important;
-}
-
-/* ── Notifications & Alerts ── */
-.flash-ok {
-    background: rgba(74, 222, 128, 0.1);
-    border: 1px solid rgba(74, 222, 128, 0.25);
-    color: #4ade80;
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 0.875rem;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.flash-err {
-    background: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.25);
-    color: #f87171;
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 0.875rem;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-/* ── Info Rows (Academic Tab) ── */
-.info-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 14px 0;
-    border-bottom: 1px solid rgba(255, 215, 145, 0.06);
-}
-.info-row:last-child { border-bottom: none; }
-.info-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: rgba(207, 164, 111, 0.12);
-    border: 1px solid rgba(255, 215, 145, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #cfa46f;
-    font-size: 0.95rem;
-    flex-shrink: 0;
-}
-.info-lbl { font-size: 0.72rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; }
-.info-val { font-size: 0.92rem; font-weight: 700; color: #f3e7cd; }
-
-/* ── Profile Identity Card ── */
+/* ── Sleek Profile Identity Card ── */
 .profile-card-inner {
     display: flex;
     align-items: center;
@@ -421,6 +308,9 @@
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(207,164,111,0.45) !important;
 }
+.profile-btn-choose:active {
+    transform: scale(0.96);
+}
 .profile-badge-course {
     background: rgba(128, 0, 0, 0.4);
     border: 1px solid rgba(239, 68, 68, 0.35);
@@ -439,20 +329,21 @@
     font-weight: 700;
     padding: 5px 12px;
     border-radius: 99px;
+    letter-spacing: 0.3px;
 }
 
-/* ── Modern Security Dashboard ── */
+/* ── Modern Dashboard Cards ── */
 .sec-card {
-    background: rgba(255, 235, 190, 0.025) !important;
-    border: 1px solid rgba(255, 215, 145, 0.09) !important;
+    background: rgba(255, 235, 190, 0.03) !important;
+    border: 1px solid rgba(255, 215, 145, 0.1) !important;
     border-radius: 16px !important;
-    padding: 20px !important;
+    padding: 20px 18px !important;
     margin-bottom: 16px !important;
     transition: all 0.25s ease !important;
 }
 .sec-card:hover {
-    border-color: rgba(255, 215, 145, 0.2) !important;
-    background: rgba(255, 235, 190, 0.045) !important;
+    border-color: rgba(255, 215, 145, 0.22) !important;
+    background: rgba(255, 235, 190, 0.05) !important;
     box-shadow: 0 8px 24px -6px rgba(0,0,0,0.5) !important;
 }
 .sec-card-header {
@@ -460,24 +351,20 @@
     align-items: center !important;
     justify-content: space-between !important;
     gap: 12px !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 14px !important;
     flex-wrap: wrap !important;
 }
 .sec-card-title-wrap {
     display: flex !important;
     align-items: center !important;
     gap: 12px !important;
-    min-width: 0 !important;
     flex: 1 !important;
+    min-width: 0 !important;
 }
 .sec-card-icon {
-    width: 38px !important;
-    height: 38px !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-    max-width: 38px !important;
-    max-height: 38px !important;
-    border-radius: 10px !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -486,21 +373,22 @@
 }
 .sec-card-title {
     font-size: 0.95rem !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
     color: #f3e7cd !important;
-    line-height: 1.25 !important;
     margin-bottom: 2px !important;
+    line-height: 1.3 !important;
 }
 .sec-card-sub {
     font-size: 0.76rem !important;
     color: #b39b82 !important;
+    line-height: 1.4 !important;
 }
 
 /* ── Biometric Pulse Scanner ── */
 .fp-radar-wrap {
     position: relative;
-    width: 68px;
-    height: 68px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -528,36 +416,33 @@
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 12px !important;
-    margin-bottom: 20px !important;
+    margin-bottom: 18px !important;
 }
 .att-stat-card {
-    background: rgba(255, 235, 190, 0.03) !important;
-    border: 1px solid rgba(255, 215, 145, 0.09) !important;
+    background: rgba(255, 235, 190, 0.035) !important;
+    border: 1px solid rgba(255, 215, 145, 0.1) !important;
     border-radius: 14px !important;
-    padding: 16px 14px !important;
+    padding: 16px 12px !important;
     text-align: center !important;
     position: relative !important;
     overflow: hidden !important;
     transition: all 0.25s ease !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
 }
 .att-stat-card:hover {
-    transform: translateY(-3px) !important;
+    transform: translateY(-2px);
     border-color: rgba(255, 215, 145, 0.22) !important;
-    box-shadow: 0 8px 22px -5px rgba(0,0,0,0.5) !important;
+    background: rgba(255, 235, 190, 0.055) !important;
+    box-shadow: 0 8px 20px -5px rgba(0,0,0,0.5) !important;
 }
 .att-stat-val {
-    font-size: 1.85rem !important;
+    font-size: 1.75rem !important;
     font-weight: 800 !important;
     line-height: 1.1 !important;
-    margin-bottom: 4px !important;
+    margin-bottom: 3px !important;
     font-family: 'Outfit', 'Inter', sans-serif !important;
 }
 .att-stat-label {
-    font-size: 0.72rem !important;
+    font-size: 0.7rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
@@ -566,26 +451,24 @@
 
 /* ── Attendance Gauge Card ── */
 .att-gauge-card {
-    background: linear-gradient(135deg, rgba(255,235,190,0.04) 0%, rgba(207,164,111,0.02) 100%) !important;
-    border: 1px solid rgba(255, 215, 145, 0.12) !important;
+    background: rgba(255, 235, 190, 0.03) !important;
+    border: 1px solid rgba(255, 215, 145, 0.1) !important;
     border-radius: 16px !important;
-    padding: 20px 22px !important;
-    margin-bottom: 20px !important;
+    padding: 18px 20px !important;
+    margin-bottom: 18px !important;
 }
 .att-gauge-header {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
     margin-bottom: 8px !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
 }
 .att-segmented-bar {
     display: flex !important;
-    height: 8px !important;
+    height: 10px !important;
     border-radius: 99px !important;
     overflow: hidden !important;
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
     gap: 2px !important;
     margin-top: 10px !important;
     margin-bottom: 12px !important;
@@ -599,23 +482,21 @@
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 15px 18px !important;
+    padding: 16px 18px !important;
     background: rgba(255, 235, 190, 0.025) !important;
     border: 1px solid rgba(255, 215, 145, 0.08) !important;
     border-radius: 14px !important;
     margin-bottom: 10px !important;
-    gap: 16px !important;
+    gap: 14px !important;
     transition: all 0.2s ease !important;
 }
 .pref-tile:hover {
     background: rgba(255, 235, 190, 0.045) !important;
-    border-color: rgba(255, 215, 145, 0.16) !important;
+    border-color: rgba(255, 215, 145, 0.18) !important;
 }
 .pref-tile-icon {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
+    width: 38px !important;
+    height: 38px !important;
     border-radius: 10px !important;
     background: rgba(207,164,111,0.12) !important;
     color: #f5dfa8 !important;
@@ -626,96 +507,155 @@
     flex-shrink: 0 !important;
 }
 
-/* ── RESPONSIVENESS ── */
+/* ── Luxury Buttons ── */
+.btn-gold {
+    background: linear-gradient(135deg, #cfa46f 0%, #a67c43 100%) !important;
+    color: #140703 !important;
+    font-weight: 800 !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(207,164,111,0.3) !important;
+}
+.btn-gold:hover {
+    background: linear-gradient(135deg, #dfb885 0%, #b88648 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(207,164,111,0.45) !important;
+}
+
+.btn-emerald {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(22,163,74,0.3) !important;
+}
+.btn-emerald:hover {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(22,163,74,0.45) !important;
+}
+
+.btn-amber {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(217,119,6,0.3) !important;
+}
+.btn-amber:hover {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(217,119,6,0.45) !important;
+}
+
+.btn-blue {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.3) !important;
+}
+.btn-blue:hover {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(37,99,235,0.45) !important;
+}
+
 @media (max-width: 768px) {
-    .sp {
-        padding-left: 14px !important;
-        padding-right: 14px !important;
-    }
-    .pg-title { font-size: 1.35rem !important; }
-    .pg-sub { font-size: 0.8rem !important; }
-
-    .stabs-wrapper {
-        margin-bottom: 18px !important;
-    }
-    .stabs-arrow {
-        display: none !important;
-    }
-    .stabs {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        overflow-x: auto !important;
-        -webkit-overflow-scrolling: touch !important;
-        gap: 6px !important;
-        padding: 5px !important;
-        background: rgba(255, 235, 190, 0.03) !important;
-        border: 1px solid rgba(255, 215, 145, 0.08) !important;
-        border-radius: 99px !important;
-        margin-bottom: 0 !important;
-        mask-image: none !important;
-        -webkit-mask-image: none !important;
-    }
-    .stab {
-        white-space: nowrap !important;
-        padding: 8px 16px !important;
-        font-size: 0.8rem !important;
-        border-radius: 99px !important;
-        background: transparent !important;
-        border: 1px solid transparent !important;
-        color: #b39b82 !important;
-    }
-    .stab.active {
-        background: linear-gradient(135deg, rgba(207,164,111,0.22) 0%, rgba(207,164,111,0.1) 100%) !important;
-        color: #f5dfa8 !important;
-        border-color: rgba(207,164,111,0.35) !important;
-    }
-
-    .sc-head {
-        padding: 16px 18px !important;
-    }
-    .sc-icon {
-        width: 36px !important;
-        height: 36px !important;
-        min-width: 36px !important;
-        min-height: 36px !important;
-        font-size: 1rem !important;
-    }
-    .sc-title { font-size: 0.95rem !important; }
-    .sc-sub { font-size: 0.75rem !important; }
-    .sc-body { padding: 18px !important; }
-
     .att-stat-grid {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 10px !important;
-        margin-bottom: 16px !important;
     }
-    .att-stat-card {
-        padding: 14px 10px !important;
+    .sec-card {
+        padding: 16px 14px !important;
     }
-    .att-stat-val {
-        font-size: 1.55rem !important;
-    }
-    .att-stat-label {
-        font-size: 0.68rem !important;
-    }
-
-    .profile-card-inner {
-        gap: 14px !important;
-    }
-    .profile-avatar-holder {
-        width: 74px !important;
-        height: 74px !important;
-    }
-    .profile-user-name {
-        font-size: 1.05rem !important;
-    }
-    .profile-user-id {
-        font-size: 0.76rem !important;
-        margin-bottom: 8px !important;
+    .pref-tile {
+        padding: 14px 14px !important;
     }
 }
+
+    /* â”€â”€ MOBILE RESPONSIVENESS â”€â”€ */
+    @media (max-width: 768px) {
+        .sp {
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+        }
+
+        .pg-title { font-size: 1.2rem; }
+        .pg-sub { font-size: 0.8rem; }
+
+        .stabs-wrapper {
+            margin-bottom: 20px;
+        }
+        .stabs {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            gap: 8px;
+            padding: 4px 44px 4px 4px;
+            margin-bottom: 0;
+        }
+        .stabs::-webkit-scrollbar {
+            display: none;
+        }
+        .stab {
+            white-space: nowrap;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+        }
+
+        .sc-head {
+            padding: 16px 20px;
+        }
+        .sc-icon {
+            width: 32px; height: 32px;
+            font-size: 0.9rem;
+        }
+        .sc-title { font-size: 0.9rem; }
+        .sc-sub { font-size: 0.75rem; }
+        .sc-body { padding: 20px; }
+
+        .sl { font-size: 0.7rem; }
+        .si { font-size: 0.85rem; padding: 10px 12px; }
+
+        .sbtn { padding: 10px 20px; font-size: 0.85rem; }
+
+        .trow {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            padding: 12px 0;
+        }
+        .tlabel { font-size: 0.85rem; }
+        .tsub { font-size: 0.75rem; }
+
+        .stat-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .stat-box {
+            padding: 12px 14px;
+        }
+        .stat-val { font-size: 1.4rem; }
+        .stat-lbl { font-size: 0.65rem; }
+
+        .info-row {
+            gap: 10px;
+            padding: 10px 0;
+        }
+        .info-icon {
+            width: 30px; height: 30px;
+            font-size: 0.8rem;
+        }
+        .info-lbl { font-size: 0.68rem; }
+        .info-val { font-size: 0.85rem; }
+
+        .act-row {
+            padding: 12px 20px;
+            gap: 10px;
+        }
+    }
 </style>
-@endpush
 
 <div class="sp">
 
@@ -863,7 +803,7 @@
                         <p style="font-size:0.8rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
                             To change your registered email, a 6-digit one-time security code will be sent to your current address to confirm your identity.
                         </p>
-                        <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sbtn" style="background:linear-gradient(135deg,#2563eb,#3b82f6);box-shadow:0 4px 14px rgba(37,99,235,.25);padding:8px 20px;font-size:0.82rem;">
+                        <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sbtn btn-blue" style="padding:9px 20px;font-size:0.82rem;">
                             <i class="bi bi-send-fill me-2"></i>Send Verification OTP
                         </button>
                     </div>
@@ -885,7 +825,7 @@
                             <input type="email" name="new_email" class="si" placeholder="name@example.com" style="margin-bottom:16px;" required>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="cancelEmailOtp()" class="cancel-btn">Cancel</button>
-                                <button type="button" class="sbtn" style="flex:1;background:linear-gradient(135deg,#2563eb,#3b82f6);" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-2"></i>Confirm New Email</button>
+                                <button type="button" class="sbtn btn-blue" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-2"></i>Confirm New Email</button>
                             </div>
                         </form>
                     </div>
@@ -909,7 +849,7 @@
                         <p style="font-size:0.82rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
                             For your security, a one-time verification code is required before creating a new password.
                         </p>
-                        <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sbtn" style="background:linear-gradient(135deg,#2d241e,#1a1410);border:1px solid rgba(207,164,111,0.3);box-shadow:0 4px 14px rgba(0,0,0,.3);padding:8px 20px;font-size:0.82rem;color:#f5dfa8;">
+                        <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sbtn btn-amber" style="padding:9px 20px;font-size:0.82rem;">
                             <i class="bi bi-shield-lock me-2"></i>Request Password Reset OTP
                         </button>
                     </div>
@@ -939,7 +879,7 @@
                             </div>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="cancelOtp()" class="cancel-btn">Cancel</button>
-                                <button type="button" class="sbtn" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-2"></i>Update Password</button>
+                                <button type="button" class="sbtn btn-amber" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-2"></i>Update Password</button>
                             </div>
                         </form>
                     </div>
@@ -957,7 +897,7 @@
                                 <div class="sec-card-sub">Passwordless Touch ID, Windows Hello, and fast QR attendance</div>
                             </div>
                         </div>
-                        <button type="button" onclick="switchTab('fingerprint')" class="sbtn" style="padding:7px 16px;font-size:0.78rem;background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 14px rgba(22,163,74,.25);">
+                        <button type="button" onclick="switchTab('fingerprint')" class="sbtn btn-emerald" style="padding:7px 16px;font-size:0.78rem;">
                             <i class="bi bi-fingerprint me-1"></i> Manage Biometrics
                         </button>
                     </div>
@@ -979,7 +919,7 @@
                     <p style="font-size:0.8rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
                         Generating new recovery keys will automatically invalidate all previously generated codes.
                     </p>
-                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="sbtn" style="background:linear-gradient(135deg,#d97706,#b45309);box-shadow:0 4px 14px rgba(217,119,6,.25);padding:8px 18px;font-size:0.82rem;">
+                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="sbtn btn-gold" style="padding:8px 18px;font-size:0.82rem;">
                         <i class="bi bi-key-fill me-2"></i>Generate Recovery Codes
                     </button>
                     
@@ -1076,7 +1016,7 @@
 
                 <!-- Register action -->
                 <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="sbtn" style="background:linear-gradient(135deg,#16a34a,#22c55e);box-shadow:0 4px 16px rgba(22,163,74,.3);padding:10px 22px;font-size:0.85rem;">
+                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="sbtn btn-emerald" style="padding:10px 22px;font-size:0.85rem;">
                         <i class="bi bi-fingerprint me-2"></i>Register This Device
                     </button>
                     <span style="font-size:.78rem;color:#b39b82;"><i class="bi bi-shield-check me-1 text-success"></i>FIDO2 / WebAuthn standard security</span>
@@ -1104,15 +1044,15 @@
                         <div class="att-stat-val" style="color:#f3e7cd;">{{ $totalRecords }}</div>
                         <div class="att-stat-label">Total Classes</div>
                     </div>
-                    <div class="att-stat-card">
+                    <div class="att-stat-card" style="border-color:rgba(34,197,94,0.25)!important;background:rgba(34,197,94,0.06)!important;">
                         <div class="att-stat-val" style="color:#4ade80;">{{ $totalPresent }}</div>
                         <div class="att-stat-label" style="color:#86efac;">Present</div>
                     </div>
-                    <div class="att-stat-card">
+                    <div class="att-stat-card" style="border-color:rgba(234,179,8,0.25)!important;background:rgba(234,179,8,0.06)!important;">
                         <div class="att-stat-val" style="color:#fbbf24;">{{ $totalLate }}</div>
                         <div class="att-stat-label" style="color:#fde68a;">Late</div>
                     </div>
-                    <div class="att-stat-card">
+                    <div class="att-stat-card" style="border-color:rgba(239,68,68,0.25)!important;background:rgba(239,68,68,0.06)!important;">
                         <div class="att-stat-val" style="color:#f87171;">{{ $totalAbsent }}</div>
                         <div class="att-stat-label" style="color:#fca5a5;">Absent</div>
                     </div>
@@ -1273,7 +1213,7 @@
                                 </div>
                                 <div class="tsub" style="margin-top:2px;">Receive background push notifications even when the browser tab is closed.</div>
                                 <div class="mt-2">
-                                    <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn" style="display:none; padding: 4px 12px; font-size: 0.72rem; background: rgba(74,222,128,0.12)!important; border-color: rgba(74,222,128,0.3)!important; color: #4ade80!important;">
+                                    <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn btn-emerald" style="display:none; padding: 4px 12px; font-size: 0.72rem;">
                                         <i class="bi bi-send-check me-1"></i> Send Test Push Alert
                                     </button>
                                 </div>
@@ -1315,7 +1255,7 @@
                     </div>
 
                     <div style="margin-top: 20px; text-align: right;">
-                        <button type="submit" class="sbtn"><i class="bi bi-save me-2"></i>Save Preferences</button>
+                        <button type="submit" class="sbtn btn-gold"><i class="bi bi-save me-2"></i>Save Preferences</button>
                     </div>
                 </form>
 
@@ -1335,7 +1275,7 @@
                         </div>
                     </div>
                     <div>
-                        <button type="button" id="checkUpdateBtn" onclick="checkForAppUpdates()" class="sbtn" style="padding:8px 18px;font-size:0.82rem;white-space:nowrap;">
+                        <button type="button" id="checkUpdateBtn" onclick="checkForAppUpdates()" class="sbtn btn-gold" style="padding:8px 18px;font-size:0.82rem;white-space:nowrap;">
                             <i class="bi bi-cloud-arrow-down me-1"></i> Check Updates
                         </button>
                     </div>
@@ -1607,26 +1547,26 @@ async function loadDevices() {
 
             devices.forEach(d => {
                 const div = document.createElement('div');
-                div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);margin-bottom:10px;transition:all .2s;';
+                div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);margin-bottom:10px;transition:all .2s;justify-content:space-between;';
                 div.onmouseover = function() { this.style.borderColor = 'rgba(255,215,145,0.2)'; this.style.background = 'rgba(255,235,190,0.06)'; };
                 div.onmouseout = function() { this.style.borderColor = 'rgba(255,215,145,0.08)'; this.style.background = 'rgba(255,235,190,0.03)'; };
 
                 div.innerHTML = `
-                    <div style="width:38px;height:38px;min-width:38px;min-height:38px;border-radius:10px;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);display:inline-flex;align-items:center;justify-content:center;color:#4ade80;font-size:1.15rem;flex-shrink:0;">
+                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:1.15rem;flex-shrink:0;">
                         <i class="bi bi-fingerprint"></i>
                     </div>
-                    <div style="flex:1;min-width:0;padding-right:6px;">
+                    <div style="flex:1;min-width:0;padding:0 6px;">
                         <div style="font-size:.88rem;font-weight:700;color:#f3e7cd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name || d.device_name || "Registered Device"}</div>
-                        <div style="font-size:.72rem;color:#b39b82;display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:2px;">
-                            <span style="color:#4ade80;font-weight:600;"><i class="bi bi-shield-check me-1"></i>Verified</span>
+                        <div style="font-size:.72rem;color:#b39b82;display:flex;align-items:center;gap:6px;margin-top:2px;">
+                            <span><i class="bi bi-shield-check text-success me-1"></i>Verified</span>
                             <span>•</span>
-                            <span>Added ${new Date(d.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                     </div>
-                    <button type="button" onclick="removeDevice('${d.credential_id}', this)"
-                        style="padding:6px 12px;border-radius:8px;background:rgba(239,68,68,0.12);color:#fca5a5;border:1px solid rgba(239,68,68,0.25);font-size:.74rem;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;transition:all .2s;"
-                        onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
-                        <i class="bi bi-trash3"></i> Remove
+                    <button onclick="removeDevice('${d.credential_id}', this)"
+                        style="flex-shrink:0;padding:5px 12px;border-radius:8px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.25);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;"
+                        onmouseover="this.style.background='rgba(248,113,113,0.2)'" onmouseout="this.style.background='rgba(248,113,113,0.1)'">
+                        <i class="bi bi-trash3 me-1"></i>Remove
                     </button>`;
                 list.appendChild(div);
             });
