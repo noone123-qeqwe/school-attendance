@@ -355,22 +355,29 @@
         letter-spacing: -0.3px !important;
     }
     .more-sheet-close {
-        width: 32px !important;
-        height: 32px !important;
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
         border-radius: 50% !important;
-        background: rgba(255,255,255,0.06) !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
-        color: #b39b82 !important;
+        background: rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255,255,255,0.14) !important;
+        color: #f3e7cd !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 0.9rem !important;
+        font-size: 1rem !important;
         cursor: pointer !important;
         transition: all 0.2s !important;
+        position: relative !important;
+        z-index: 10 !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent !important;
     }
     .more-sheet-close:active {
-        transform: scale(0.9) !important;
-        background: rgba(255,255,255,0.12) !important;
+        transform: scale(0.88) !important;
+        background: rgba(207,164,111,0.2) !important;
+        color: #cfa46f !important;
     }
 
     .more-sheet-grid {

@@ -679,7 +679,9 @@
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
                 <span class="more-sheet-title">More</span>
-                <button class="more-sheet-close" onclick="closeMoreSheet()"><i class="bi bi-x-lg"></i></button>
+                <button type="button" class="more-sheet-close" id="moreSheetCloseBtn" onclick="closeMoreSheet()" aria-label="Close More Menu">
+                    <i class="bi bi-x-lg" style="pointer-events:none;"></i>
+                </button>
             </div>
             <div class="more-sheet-grid" id="moreSheetContent">
                 @if(Auth::user()->isAdmin())
@@ -867,7 +869,7 @@
             document.body.style.overflow = '';
         };
 
-        // Fallback listener for any more buttons
+        // Fallback listener for any more buttons and close buttons
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.mbn-item-more, [data-action="open-more-sheet"]').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
@@ -876,11 +878,37 @@
                 });
             });
 
+            document.querySelectorAll('.more-sheet-close, #moreSheetCloseBtn, [data-action="close-more-sheet"]').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.closeMoreSheet();
+                });
+                btn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.closeMoreSheet();
+                });
+            });
+
+            var overlay = document.getElementById('moreSheetOverlay');
+            if (overlay) {
+                overlay.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.closeMoreSheet();
+                });
+                overlay.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    window.closeMoreSheet();
+                });
+            }
+
             // Swipe-down to dismiss
             var sheet = document.getElementById('moreSheet');
             if (!sheet) return;
             var startY = 0, currentY = 0, isDragging = false;
             sheet.addEventListener('touchstart', function(e) {
+                if (e.target.closest('.more-sheet-close, #moreSheetCloseBtn, button, a')) return;
                 if (sheet.scrollTop > 0) return;
                 startY = e.touches[0].clientY;
                 isDragging = true;
@@ -896,7 +924,7 @@
                 }
             }, { passive: true });
 
-            sheet.addEventListener('touchend', function() {
+            sheet.addEventListener('touchend', function(e) {
                 if (!isDragging) return;
                 isDragging = false;
                 var diff = currentY - startY;
