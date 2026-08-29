@@ -293,6 +293,11 @@
                     } catch (err) {}
                 }
 
+                // Cinematic playback speed (comfortable to read and view)
+                try {
+                    video.playbackRate = 0.85;
+                } catch (e) {}
+
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(() => {
@@ -315,23 +320,24 @@
                     const elapsed = Math.max(0, video.currentTime - INTRO_START_TIME);
                     const pct = Math.min(100, Math.max(0, (elapsed / effectiveDuration) * 100));
                     if (progressBar) progressBar.style.width = pct + '%';
-
-                    if (video.currentTime >= (video.duration - 0.2)) {
-                        goToNext();
-                    }
                 }
             });
 
-            video.addEventListener('ended', () => goToNext());
+            // Smooth finish: allow the final frame to linger gracefully before navigating
+            video.addEventListener('ended', () => {
+                if (progressBar) progressBar.style.width = '100%';
+                setTimeout(() => goToNext(), 750);
+            });
+
             video.addEventListener('error', () => goToNext());
         }
 
-        // 5. Safety Watchdog Timeout: Never let intro freeze for longer than the remaining video duration
+        // 5. Safety Watchdog Timeout: Never let intro freeze indefinitely
         setTimeout(() => {
             if (!hasTransitioned) {
                 goToNext();
             }
-        }, 6500);
+        }, 10000);
     </script>
 </body>
 </html>
