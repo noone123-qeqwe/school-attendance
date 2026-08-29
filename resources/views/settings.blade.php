@@ -465,11 +465,11 @@
             <i class="bi bi-chevron-left"></i>
         </button>
         <div class="stabs" id="stabsNav">
-            <button class="stab active" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
-            <button class="stab" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
-            <button class="stab" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Fingerprint</button>
-            <button class="stab" onclick="switchTab('attendance',this)"><i class="bi bi-bar-chart-fill me-1"></i> Attendance</button>
-            <button class="stab" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
+            <button class="stab active" data-tab="profile" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
+            <button class="stab" data-tab="security" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
+            <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Fingerprint</button>
+            <button class="stab" data-tab="attendance" onclick="switchTab('attendance',this)"><i class="bi bi-bar-chart-fill me-1"></i> Attendance</button>
+            <button class="stab" data-tab="preferences" data-tab-id="preferences" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
         </div>
         <button type="button" class="stabs-arrow stabs-arrow-right" id="stabsArrowRight" onclick="scrollStabs('right')" aria-label="Scroll right">
             <i class="bi bi-chevron-right"></i>
@@ -1047,7 +1047,7 @@ function updateStabsScrollArrows() {
     }
 }
 
-function scrollStabs(direction) {
+window.scrollStabs = function(direction) {
     const nav = document.getElementById('stabsNav');
     if (!nav) return;
     const maxScrollLeft = nav.scrollWidth - nav.clientWidth;
@@ -1062,23 +1062,37 @@ function scrollStabs(direction) {
         });
     }
     setTimeout(updateStabsScrollArrows, 250);
-}
+};
 
-function switchTab(id, btn) {
+window.switchTab = function(id, btn) {
+    if (!id) return;
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+
     const targetPanel = document.getElementById('tab-' + id);
-    if (targetPanel) targetPanel.classList.add('active');
-    if (btn) {
-        btn.classList.add('active');
-        btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    if (targetPanel) {
+        targetPanel.classList.add('active');
     }
+
+    let targetBtn = btn;
+    if (!targetBtn || !targetBtn.classList || !targetBtn.classList.contains('stab')) {
+        targetBtn = document.querySelector(`.stab[data-tab="${id}"]`) || Array.from(document.querySelectorAll('.stab')).find(b => b.textContent.toLowerCase().includes(id));
+    }
+    if (targetBtn) {
+        targetBtn.classList.add('active');
+        targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+
     if (id === 'fingerprint') {
-        loadDevices();
-        prefetchWebAuthn();
+        if (typeof loadDevices === 'function') loadDevices();
+        if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
+    }
+    if (window.triggerHaptic) window.triggerHaptic('light');
+    if (window.history && window.history.replaceState) {
+        window.history.replaceState(null, null, '#tab-' + id);
     }
     setTimeout(updateStabsScrollArrows, 300);
-}
+};
 
 async function toggleWebPush(input) {
     if (input.checked) {
@@ -1630,9 +1644,20 @@ async function handleSettingsAvatarUpload(input) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadDevices();
-    prefetchWebAuthn();
-    updateStabsScrollArrows();
+    if (typeof loadDevices === 'function') loadDevices();
+    if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
+    if (typeof updateStabsScrollArrows === 'function') updateStabsScrollArrows();
+
+    // Attach direct click event listeners to all stab buttons for guaranteed response
+    document.querySelectorAll('.stab').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tab = this.getAttribute('data-tab') || this.dataset.tab;
+            if (tab && window.switchTab) {
+                window.switchTab(tab, this);
+            }
+        });
+    });
 
     const nav = document.getElementById('stabsNav');
     if (nav) {
@@ -1644,12 +1669,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const rawHash = window.location.hash.replace('#tab-', '').replace('#', '');
     const storedTab = localStorage.getItem('active_settings_tab');
     const targetTab = rawHash || storedTab;
-    if (targetTab) {
+    if (targetTab && window.switchTab) {
         localStorage.removeItem('active_settings_tab');
-        const tabBtn = Array.from(document.querySelectorAll('.stab')).find(b => b.getAttribute('onclick')?.includes(`'${targetTab}'`));
-        if (tabBtn) {
-            switchTab(targetTab, tabBtn);
-        }
+        window.switchTab(targetTab);
     }
 });
 </script>
