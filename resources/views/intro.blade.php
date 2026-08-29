@@ -116,32 +116,41 @@
             position: fixed;
             bottom: 40px;
             right: 40px;
-            z-index: 10;
+            z-index: 1000;
             background: rgba(255,255,255,0.12);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            color: white;
+            color: #ffffff;
             border: 1px solid rgba(255,255,255,0.25);
             padding: 12px 26px;
             border-radius: 99px;
             font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
+            text-decoration: none;
             transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 10px;
             letter-spacing: 0.5px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
             animation: fadeIn 0.8s ease forwards;
-            animation-delay: 0.8s;
+            animation-delay: 0.3s;
             opacity: 0;
+            pointer-events: auto !important;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .skip-btn:hover {
             background: rgba(255,255,255,0.25);
             border-color: rgba(255,255,255,0.5);
             transform: scale(1.05);
             box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+            color: #ffffff;
+        }
+        .skip-btn:active {
+            transform: scale(0.96);
         }
         @media (max-width: 768px) {
             .skip-btn {
@@ -179,7 +188,7 @@
             position: fixed;
             inset: 0;
             background: #110A0A;
-            z-index: 100;
+            z-index: 999;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease-out;
@@ -192,9 +201,10 @@
 </head>
 <body>
 
-    <!-- Video -->
-    <video id="introVideo" autoplay muted playsinline preload="auto">
-        <source id="introSource" src="{{ asset('videos/intro.mp4') }}" type="video/mp4">
+    <!-- Video (Mobile & Desktop native sources) -->
+    <video id="introVideo" autoplay muted playsinline preload="auto" poster="{{ asset('images/logo.png') }}">
+        <source src="{{ asset('videos/intro_mobile.mp4') }}" type="video/mp4" media="(max-width: 768px)">
+        <source src="{{ asset('videos/intro.mp4') }}" type="video/mp4">
     </video>
 
     <!-- Cinematic Overlays -->
@@ -213,52 +223,99 @@
     </div>
 
     <!-- Skip button -->
-    <button class="skip-btn" onclick="goToNext()">
-        Skip Intro <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </button>
+    <a href="{{ $destUrl }}" class="skip-btn" id="skipBtn" role="button" aria-label="Skip Intro Video">
+        <span>Skip Intro</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+    </a>
 
     <!-- Fade out overlay -->
     <div class="fade-out" id="fadeOut"></div>
 
-    <script>
+    <script nonce="{{ csp_nonce() }}">
         const video       = document.getElementById('introVideo');
-        const introSource = document.getElementById('introSource');
+        const skipBtn     = document.getElementById('skipBtn');
         const destUrl     = @json($destUrl);
-
-        // Use mobile intro on small viewports
-        if (window.innerWidth <= 768) {
-            introSource.src = '{{ asset("videos/intro_mobile.mp4") }}';
-            video.load();
-        }
-        
         const progressBar = document.getElementById('progressBar');
         const fadeOut     = document.getElementById('fadeOut');
         let hasTransitioned = false;
 
-        function goToNext() {
+        function goToNext(e) {
+            if (e && typeof e.preventDefault === 'function') {
+                e.preventDefault();
+            }
             if (hasTransitioned) return;
             hasTransitioned = true;
-            fadeOut.classList.add('active');
-            window.location.replace(destUrl);
+
+            if (fadeOut) {
+                fadeOut.classList.add('active');
+            }
+
+            // Navigate immediately
+            window.location.href = destUrl;
+            setTimeout(() => {
+                window.location.replace(destUrl);
+            }, 50);
         }
 
-        // Instant transition as video concludes (no trailing lag or buffer pause)
-        video.addEventListener('timeupdate', () => {
-            if (video.duration) {
-                const pct = (video.currentTime / video.duration) * 100;
-                progressBar.style.width = pct + '%';
+        // 1. Skip button click & touch
+        if (skipBtn) {
+            skipBtn.addEventListener('click', goToNext);
+            skipBtn.addEventListener('touchend', goToNext);
+        }
 
-                if (video.duration > 1 && video.currentTime >= (video.duration - 0.12)) {
-                    goToNext();
-                }
+        // 2. Click/Tap anywhere on screen to skip
+        document.addEventListener('click', (e) => {
+            goToNext(e);
+        }, { passive: true });
+
+        // 3. Keyboard navigation (Space, Enter, Escape)
+        document.addEventListener('keydown', (e) => {
+            if (['Space', 'Enter', 'Escape'].includes(e.code) || e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
+                goToNext(e);
             }
         });
 
-        video.addEventListener('ended', goToNext);
+        // 4. Video Events & Playback Monitoring
+        if (video) {
+            // Attempt playback; if autoplay is prevented by browser policy, proceed
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    // Autoplay was prevented by browser policy - skip smoothly rather than freezing
+                    setTimeout(() => goToNext(), 400);
+                });
+            }
 
-        video.addEventListener('error', () => {
-            window.location.replace(destUrl);
-        });
+            // Real-time progress bar and end-point detection
+            video.addEventListener('timeupdate', () => {
+                if (video.duration && !isNaN(video.duration) && video.duration > 0) {
+                    const pct = Math.min(100, (video.currentTime / video.duration) * 100);
+                    if (progressBar) progressBar.style.width = pct + '%';
+
+                    if (video.currentTime >= (video.duration - 0.2)) {
+                        goToNext();
+                    }
+                }
+            });
+
+            video.addEventListener('ended', () => goToNext());
+            video.addEventListener('error', () => goToNext());
+            video.addEventListener('stalled', () => {
+                // If video stalls for more than 1s, proceed
+                setTimeout(() => {
+                    if (video.paused && !hasTransitioned) goToNext();
+                }, 1000);
+            });
+        }
+
+        // 5. Safety Watchdog Timeout: Never let intro freeze for more than 4.5 seconds under any circumstance
+        setTimeout(() => {
+            if (!hasTransitioned) {
+                goToNext();
+            }
+        }, 4500);
     </script>
 </body>
 </html>

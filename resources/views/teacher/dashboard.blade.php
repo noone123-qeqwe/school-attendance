@@ -41,30 +41,29 @@
 @endif
 
 <!-- Hero Banner -->
-<div class="mb-4" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-    <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
+<div class="premium-hero-card mb-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
-        <div class="d-flex align-items-center gap-4">
+        <div class="d-flex align-items-center gap-3">
             <div>
-                <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: 2rem;">{{ Auth::user()->name }}</h1>
-                <div style="color: #b39b82; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    <span>Instructor</span>
+                <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2.1rem); letter-spacing: -0.5px;">{{ Auth::user()->name }}</h1>
+                <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
+                    Manage your active classes, attendance, and student requests
                 </div>
             </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:12px; text-align:right;">
-            <div style="text-align: right; background: rgba(0,0,0,0.3); padding: 12px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
-                <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+        <div class="d-flex flex-column align-items-md-end gap-2">
+            <div class="hero-clock-pill">
+                <div class="hero-clock-time">
                     <i class="bi bi-clock"></i> <span id="teacherClock">{{ now()->format('h:i A') }}</span>
                 </div>
-                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 2px;">{{ now()->format('l, F j, Y') }}</div>
+                <div class="hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <div class="d-flex gap-2 justify-content-end">
-                <a href="{{ route('teacher.reports.pdf') }}" target="_blank" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
-                    <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Export
+            <div class="d-flex gap-2 justify-content-end mt-1">
+                <a href="{{ route('teacher.reports.pdf') }}" target="_blank" class="btn-modern-glass" style="padding: 8px 16px; font-size: 0.84rem;">
+                    <i class="bi bi-file-earmark-arrow-down-fill" style="color: var(--gold);"></i> Export
                 </a>
-                <a href="{{ route('teacher.excuse.reviews') }}" class="ent-btn" style="background: rgba(255,255,255,0.1); color: var(--gold); border: 1px solid rgba(207,164,111,0.3); justify-content:center; text-decoration:none;">
-                    <i class="bi bi-file-earmark-text me-1"></i> Reviews
+                <a href="{{ route('teacher.excuse.reviews') }}" class="btn-modern-gold" style="padding: 8px 16px; font-size: 0.84rem;">
+                    <i class="bi bi-file-earmark-text"></i> Reviews
                 </a>
             </div>
         </div>
@@ -80,9 +79,9 @@
 </div>
 
 <!-- Quick Stats -->
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:24px; margin-bottom:24px;">
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:20px; margin-bottom:24px;">
     <x-card type="kpi" accent="gold" label="Today's Classes" value="{{ $todayClasses->count() }}" icon="bi bi-easel-fill" />
-    <x-card type="kpi" accent="primary" label="Total Students" value="{{ $totalStudents ?? 0 }}" icon="bi bi-people-fill" />
+    <x-card type="kpi" accent="info" label="Total Students" value="{{ $totalStudents ?? 0 }}" icon="bi bi-people-fill" />
     <x-card type="kpi" accent="success" label="Present Today" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
     <x-card type="kpi" accent="danger" label="Absent Today" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
 </div>

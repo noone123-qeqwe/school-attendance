@@ -33,7 +33,8 @@
     $cleanIcon = $icon ? (str_starts_with($icon, 'bi-') ? 'bi ' . $icon : $icon) : null;
 @endphp
 
-<div {{ $attributes->merge(['class' => 'ent-kpi-card']) }} style="position: relative; background: var(--ds-surface, #1E1515); border: 1px solid var(--ds-border, rgba(212, 175, 55, 0.15)); border-radius: var(--ds-radius-lg, 16px); padding: 22px; box-shadow: var(--ds-shadow-md, 0 4px 12px rgba(0,0,0,0.4)); overflow: hidden; backdrop-filter: blur(12px);">
+<div {{ $attributes->merge(['class' => 'ent-kpi-card']) }} style="position: relative; background: linear-gradient(145deg, rgba(30, 21, 21, 0.7) 0%, rgba(18, 10, 10, 0.85) 100%); border: 1px solid var(--ds-border, rgba(212, 175, 55, 0.16)); border-radius: var(--ds-radius-lg, 18px); padding: 22px; box-shadow: var(--ds-shadow-md, 0 8px 24px rgba(0,0,0,0.35)); overflow: hidden; backdrop-filter: blur(16px); transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);">
+    <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: {{ $accent === 'success' ? 'var(--ds-success, #4ade80)' : ($accent === 'danger' ? 'var(--ds-danger, #f87171)' : ($accent === 'warning' ? 'var(--ds-warning, #fbbf24)' : ($accent === 'info' ? 'var(--ds-info, #60a5fa)' : 'var(--ds-gold, #D4AF37)'))) }}; opacity: 0.85;"></div>
     @if($loading)
         <div style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -45,7 +46,7 @@
         </div>
     @else
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-            <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ds-text-muted, #A39683); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ds-text-secondary, #D1C5B4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                 {{ $label }}
             </span>
             @if($cleanIcon)
@@ -56,7 +57,7 @@
         </div>
 
         <div style="margin-top: 10px; display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 2.1rem; font-weight: 800; color: var(--ds-text-primary, #FCF8F2); font-family: var(--ds-font-mono, monospace); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;">
+            <span style="font-size: 2.1rem; font-weight: 800; color: #ffffff; line-height: 1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums;">
                 {{ $value }}
             </span>
         </div>

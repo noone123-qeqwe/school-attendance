@@ -3,7 +3,6 @@
     <div class="sidebar-text">
         <div class="sidebar-brand">{{ config('app.name') }}</div>
         <div class="sidebar-subtitle">{{ config('app.subtitle') }}</div>
-        <div class="sidebar-portal">Instructor Portal</div>
     </div>
 </div>
 

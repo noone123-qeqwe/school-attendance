@@ -16,85 +16,79 @@
 @endphp
 
 {{-- ─── MODERNIZED DASHBOARD HEADER ─── --}}
-<div class="dash-header-bar dash-animate">
-    <div class="dash-header-left">
-        <h1 class="dash-title">Command Center</h1>
-        <div class="dash-subtitle">
-            <i class="bi bi-clock"></i> <span id="dashLiveClock" class="dash-live-clock">{{ now()->format('h:i:s A') }}</span> &mdash; <span id="dashLiveDate">{{ now()->format('l, F j, Y') }}</span>
-        </div>
-    </div>
-    <div class="dash-header-right">
-        <!-- Date Range Picker -->
-        <div class="date-range-picker">
-            <button type="button" class="date-range-btn" id="dateRangeBtn">
-                <i class="bi bi-calendar-event"></i>
-                <span id="dateRangeLabel">Today</span>
-                <i class="bi bi-chevron-down" style="font-size:0.6rem; margin-left: 4px;"></i>
-            </button>
-            <div class="date-range-dropdown" id="dateRangeDropdown">
-                <button type="button" class="date-range-option active" data-range="today">Today</button>
-                <button type="button" class="date-range-option" data-range="yesterday">Yesterday</button>
-                <button type="button" class="date-range-option" data-range="this_week">This Week</button>
-                <button type="button" class="date-range-option" data-range="this_month">This Month</button>
+<div class="premium-hero-card dash-animate">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
+        <div>
+            <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -0.5px;">Command Center</h1>
+            <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
+                Live operational analytics & campus attendance tracking
             </div>
         </div>
-        
-        <a href="{{ route('admin.attendance.pdf') }}" class="adm-btn-primary ent-btn" style="border-radius: 12px; padding: 10px 20px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-            <i class="bi bi-cloud-arrow-down-fill"></i> Generate Report
-        </a>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="hero-clock-pill">
+                <div class="hero-clock-time">
+                    <i class="bi bi-clock"></i> <span id="dashLiveClock">{{ now()->format('h:i:s A') }}</span>
+                </div>
+                <div class="hero-clock-date" id="dashLiveDate">{{ now()->format('l, F j, Y') }}</div>
+            </div>
+            
+            <a href="{{ route('admin.attendance.pdf') }}" class="btn-modern-gold" style="padding: 10px 18px;">
+                <i class="bi bi-cloud-arrow-down-fill"></i> <span>Report</span>
+            </a>
+        </div>
     </div>
 </div>
 
 {{-- ─── QUICK ACTIONS PANEL ─── --}}
-<div class="quick-actions-grid dash-animate">
-    <a href="{{ route('admin.students') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(34, 197, 94, 0.12); color: #4ade80;">
+<div class="modern-qa-grid dash-animate">
+    <a href="{{ route('admin.students') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25);">
             <i class="bi bi-people-fill"></i>
         </div>
-        <span>Students</span>
+        <span class="qa-label">Students</span>
     </a>
-    <a href="{{ route('admin.teachers') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(59, 130, 246, 0.12); color: #60a5fa;">
+    <a href="{{ route('admin.teachers') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(59, 130, 246, 0.14); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.25);">
             <i class="bi bi-person-workspace"></i>
         </div>
-        <span>Instructors</span>
+        <span class="qa-label">Instructors</span>
     </a>
-    <a href="{{ route('admin.attendance') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(239, 68, 68, 0.12); color: #f87171;">
-            <i class="bi bi-calendar-check-fill"></i>
+    <a href="{{ route('admin.attendance') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(239, 68, 68, 0.14); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.25);">
+            <i class="bi bi-clipboard-check-fill"></i>
         </div>
-        <span>Attendance Logs</span>
+        <span class="qa-label">Attendance</span>
     </a>
-    <a href="{{ route('admin.calendar') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(168, 85, 247, 0.12); color: #c084fc;">
+    <a href="{{ route('admin.calendar') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(168, 85, 247, 0.14); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25);">
             <i class="bi bi-calendar3-fill"></i>
         </div>
-        <span>Holiday Calendar</span>
+        <span class="qa-label">Calendar</span>
     </a>
-    <a href="{{ route('admin.announcements.index') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(236, 72, 153, 0.12); color: #f472b6;">
+    <a href="{{ route('admin.announcements.index') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(236, 72, 153, 0.14); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.25);">
             <i class="bi bi-megaphone-fill"></i>
         </div>
-        <span>Announcements</span>
+        <span class="qa-label">Announcements</span>
     </a>
-    <a href="{{ route('admin.activity.log') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(245, 158, 11, 0.12); color: #fbbf24;">
+    <a href="{{ route('admin.activity.log') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(245, 158, 11, 0.14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25);">
             <i class="bi bi-journal-text"></i>
         </div>
-        <span>Activity Logs</span>
+        <span class="qa-label">Activity Logs</span>
     </a>
     @if(Auth::user()->admin_sub_role === 'super_admin' || is_null(Auth::user()->admin_sub_role))
-    <a href="{{ route('admin.system-health.index') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(20, 184, 166, 0.12); color: #2dd4bf;">
+    <a href="{{ route('admin.system-health.index') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(20, 184, 166, 0.14); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.25);">
             <i class="bi bi-heart-pulse-fill"></i>
         </div>
-        <span>System Health</span>
+        <span class="qa-label">System Health</span>
     </a>
-    <a href="{{ route('admin.settings') }}" class="quick-action-btn">
-        <div class="qa-icon" style="background: rgba(148, 163, 184, 0.12); color: #94a3b8;">
+    <a href="{{ route('admin.settings') }}" class="modern-qa-tile">
+        <div class="qa-icon-wrap" style="background: rgba(148, 163, 184, 0.14); color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.25);">
             <i class="bi bi-sliders"></i>
         </div>
-        <span>Settings</span>
+        <span class="qa-label">Settings</span>
     </a>
     @endif
 </div>
@@ -116,129 +110,7 @@
 </div>
 @endif
 
-{{-- ─── CORE ENTITY METRICS ─── --}}
-<div class="stat-grid stat-grid-4 dash-animate" style="margin-bottom: 24px;">
-    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
-        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
-            <i class="bi bi-people-fill"></i>
-        </div>
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Total Students</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalStudents) }}</div>
-        </div>
-    </div>
-    
-    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
-        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
-            <i class="bi bi-person-workspace"></i>
-        </div>
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Instructors</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalTeachers) }}</div>
-        </div>
-    </div>
 
-    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
-        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
-            <i class="bi bi-building"></i>
-        </div>
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Departments</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalDepartments) }}</div>
-        </div>
-    </div>
-
-    <div class="adm-stat" style="padding: 22px 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px;">
-        <div style="width: 48px; height: 48px; border-radius: 14px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.4rem; flex-shrink: 0;">
-            <i class="bi bi-diagram-3"></i>
-        </div>
-        <div style="width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center;">
-            <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; text-align: center; width: 100%;">Sections</div>
-            <div class="adm-stat-val" style="font-size: 1.8rem !important; text-align: center; width: 100%; display: block; line-height: 1.1;">{{ number_format($totalSections) }}</div>
-        </div>
-    </div>
-</div>
-
-{{-- ─── ATTENDANCE STATS & REAL-TIME TRENDS ─── --}}
-<div class="stat-grid stat-grid-4 dash-animate" style="margin-bottom: 28px;">
-    <!-- Present Card -->
-    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;" id="presentLabel">Present Today</div>
-                <div class="adm-stat-val" id="presentVal" style="font-size: 2rem !important;">{{ number_format($totalPresent) }}</div>
-            </div>
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(74, 222, 128, 0.1); border: 1px solid rgba(74, 222, 128, 0.2); display: flex; align-items: center; justify-content: center; color: #4ade80; font-size: 1.2rem;">
-                <i class="bi bi-check-circle-fill"></i>
-            </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;" id="presentTrendContainer">
-            <span class="stat-trend {{ $presentDiff >= 0 ? 'up' : 'down' }}">
-                <i class="bi {{ $presentDiff >= 0 ? 'bi-caret-up-fill' : 'bi-caret-down-fill' }}"></i>
-                {{ abs($presentDiff) }}
-            </span>
-            <span class="stat-comparison">vs yesterday</span>
-        </div>
-    </div>
-
-    <!-- Late Card -->
-    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;" id="lateLabel">Late Today</div>
-                <div class="adm-stat-val" id="lateVal" style="font-size: 2rem !important;">{{ number_format($totalLate) }}</div>
-            </div>
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.2); display: flex; align-items: center; justify-content: center; color: #fbbf24; font-size: 1.2rem;">
-                <i class="bi bi-clock-fill"></i>
-            </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;" id="lateTrendContainer">
-            <span class="stat-trend {{ $lateDiff <= 0 ? 'up' : 'down' }}">
-                <i class="bi {{ $lateDiff <= 0 ? 'bi-caret-down-fill' : 'bi-caret-up-fill' }}"></i>
-                {{ abs($lateDiff) }}
-            </span>
-            <span class="stat-comparison">vs yesterday</span>
-        </div>
-    </div>
-
-    <!-- Absent Card -->
-    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;" id="absentLabel">Absent Today</div>
-                <div class="adm-stat-val" id="absentVal" style="font-size: 2rem !important;">{{ number_format($totalAbsent) }}</div>
-            </div>
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(248, 113, 113, 0.1); border: 1px solid rgba(248, 113, 113, 0.2); display: flex; align-items: center; justify-content: center; color: #f87171; font-size: 1.2rem;">
-                <i class="bi bi-x-circle-fill"></i>
-            </div>
-        </div>
-        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;" id="absentTrendContainer">
-            <span class="stat-trend {{ $absentDiff <= 0 ? 'up' : 'down' }}">
-                <i class="bi {{ $absentDiff <= 0 ? 'bi-caret-down-fill' : 'bi-caret-up-fill' }}"></i>
-                {{ abs($absentDiff) }}
-            </span>
-            <span class="stat-comparison">vs yesterday</span>
-        </div>
-    </div>
-
-    <!-- Overall Rate Card -->
-    <div class="adm-stat" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px;">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div style="font-size: 0.72rem; font-weight: 700; color: #8f826f; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">Overall Rate</div>
-                <div class="adm-stat-val" id="rateVal" style="font-size: 2rem !important;">{{ $attendanceRate }}%</div>
-            </div>
-            <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(207, 164, 111, 0.1); border: 1px solid rgba(207, 164, 111, 0.2); display: flex; align-items: center; justify-content: center; color: #d4b77d; font-size: 1.2rem;">
-                <i class="bi bi-speedometer2"></i>
-            </div>
-        </div>
-        <div style="margin-top: 10px;">
-            <div class="perf-bar" style="margin-top:8px;">
-                <div id="rateProgressFill" class="perf-bar-fill {{ $attendanceRate >= 80 ? 'high' : ($attendanceRate >= 60 ? 'medium' : 'low') }}" style="width:{{ $attendanceRate }}%"></div>
-            </div>
-        </div>
-    </div>
-</div>
 
 {{-- ─── LIVE ATTENDANCE QR SESSIONS ─── --}}
 <div class="dash-animate" style="margin-bottom: 28px;">
@@ -372,82 +244,6 @@ document.addEventListener('DOMContentLoaded', function() {
         clockEl.textContent = now.toLocaleTimeString('en-US', { hour12: true });
     }
     setInterval(updateClock, 1000);
-
-    // ─── Date Range Dropdown Toggle ───
-    const dateRangeBtn = document.getElementById('dateRangeBtn');
-    const dateRangeDropdown = document.getElementById('dateRangeDropdown');
-    
-    if (dateRangeBtn && dateRangeDropdown) {
-        dateRangeBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dateRangeDropdown.classList.toggle('show');
-        });
-        
-        document.addEventListener('click', function() {
-            dateRangeDropdown.classList.remove('show');
-        });
-    }
-
-    // ─── Date Range Change Handler ───
-    const options = document.querySelectorAll('.date-range-option');
-    options.forEach(opt => {
-        opt.addEventListener('click', function() {
-            options.forEach(o => o.classList.remove('active'));
-            this.classList.add('active');
-            const range = this.getAttribute('data-range');
-            document.getElementById('dateRangeLabel').textContent = this.textContent;
-            fetchDashboardStats(range);
-        });
-    });
-
-    // ─── AJAX Fetch Dashboard Stats ───
-    function fetchDashboardStats(range) {
-        const statsToFade = ['presentVal', 'lateVal', 'absentVal', 'rateVal'];
-        statsToFade.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.opacity = '0.5';
-        });
-
-        fetch(`{{ route('admin.dashboard.stats') }}?range=${range}`)
-            .then(response => response.json())
-            .then(data => {
-                statsToFade.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.opacity = '1';
-                });
-
-                document.getElementById('presentVal').textContent = Number(data.present).toLocaleString();
-                document.getElementById('lateVal').textContent = Number(data.late).toLocaleString();
-                document.getElementById('absentVal').textContent = Number(data.absent).toLocaleString();
-                document.getElementById('rateVal').textContent = data.rate + '%';
-                
-                const labelSuffix = range === 'today' ? 'Today' : (range === 'yesterday' ? 'Yesterday' : (range === 'this_week' ? 'This Week' : 'This Month'));
-                document.getElementById('presentLabel').textContent = 'Present ' + labelSuffix;
-                document.getElementById('lateLabel').textContent = 'Late ' + labelSuffix;
-                document.getElementById('absentLabel').textContent = 'Absent ' + labelSuffix;
-                
-                const trends = ['presentTrendContainer', 'lateTrendContainer', 'absentTrendContainer'];
-                trends.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.style.display = range === 'today' ? '' : 'none';
-                    }
-                });
-                
-                const progress = document.getElementById('rateProgressFill');
-                if (progress) {
-                    progress.style.width = data.rate + '%';
-                    progress.className = 'perf-bar-fill ' + (data.rate >= 80 ? 'high' : (data.rate >= 60 ? 'medium' : 'low'));
-                }
-            })
-            .catch(err => {
-                console.error('Error fetching dashboard stats:', err);
-                statsToFade.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.style.opacity = '1';
-                });
-            });
-    }
 });
 </script>
 @endpush

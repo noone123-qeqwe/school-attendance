@@ -1931,3 +1931,543 @@ input:focus, select:focus, textarea:focus, button:focus {
     50% { box-shadow: 0 0 0 6px transparent; }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   MODERN UNIFIED UI/UX SYSTEM EXPANSION (ALL ROLES & PAGES)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. UNIFIED PORTAL BADGES (Sidebar & Header) ── */
+.sidebar-portal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    background: rgba(212, 175, 55, 0.12);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    color: var(--gold);
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-top: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar.collapsed .sidebar-portal-badge {
+    display: none;
+}
+
+/* ── 2. ENHANCED SIDEBAR NAVIGATION & SUBMENUS ── */
+.sidebar .nav-link {
+    border-radius: 12px;
+    margin: 3px 10px;
+    padding: 11px 14px;
+    font-weight: 500;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.sidebar .nav-link:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+    transform: translateX(3px);
+}
+
+.sidebar .nav-link.active {
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.04) 100%);
+    color: #fff !important;
+    border-left: 3px solid var(--gold);
+    box-shadow: inset 2px 0 10px rgba(212, 175, 55, 0.12);
+}
+
+.sidebar .nav-link.active i {
+    color: var(--gold) !important;
+    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
+}
+
+.sidebar-dropdown-group {
+    margin: 3px 10px;
+    border-radius: 12px;
+    transition: background 0.2s;
+}
+
+.sidebar-dropdown-group.open {
+    background: rgba(0, 0, 0, 0.22);
+}
+
+.sidebar-dropdown-group .dropdown-toggle-btn {
+    width: 100%;
+    margin: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.sidebar-dropdown-group .dropdown-chevron {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-dropdown-group.open .dropdown-chevron {
+    transform: rotate(180deg);
+    color: var(--gold);
+}
+
+.sidebar-submenu {
+    display: none;
+    padding: 4px 0 6px 14px;
+    position: relative;
+}
+
+.sidebar-dropdown-group.open .sidebar-submenu {
+    display: block;
+    animation: submenuExpand 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes submenuExpand {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.sidebar-submenu::before {
+    content: '';
+    position: absolute;
+    left: 24px;
+    top: 6px;
+    bottom: 12px;
+    width: 2px;
+    background: rgba(212, 175, 55, 0.2);
+    border-radius: 2px;
+}
+
+.sidebar .sub-nav-link {
+    margin: 2px 0 2px 18px;
+    padding: 8px 12px;
+    font-size: 0.84rem;
+    color: rgba(255, 255, 255, 0.75);
+    border-radius: 8px;
+}
+
+.sidebar .sub-nav-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateX(2px);
+}
+
+.sidebar .sub-nav-link.active {
+    color: var(--gold) !important;
+    background: rgba(212, 175, 55, 0.12);
+    font-weight: 600;
+}
+
+/* ── 3. PREMIUM HERO HEADER CARDS ── */
+.premium-hero-card {
+    background: linear-gradient(135deg, rgba(42, 14, 14, 0.95) 0%, rgba(20, 10, 10, 0.98) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 22px;
+    padding: 24px 28px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    margin-bottom: 24px;
+}
+
+.premium-hero-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 6px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+}
+
+.premium-hero-card::after {
+    content: '';
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.hero-clock-pill {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 16px;
+    padding: 10px 18px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.hero-clock-time {
+    color: var(--gold);
+    font-size: 1.35rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.1;
+}
+
+.hero-clock-date {
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    margin-top: 3px;
+}
+
+/* ── 4. MODERN KPI & STAT CARDS ── */
+.modern-kpi-card {
+    background: linear-gradient(145deg, rgba(30, 21, 21, 0.7) 0%, rgba(18, 10, 10, 0.85) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.16);
+    border-radius: 18px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.modern-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--kpi-accent, var(--gold));
+    opacity: 0.85;
+}
+
+.modern-kpi-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(212, 175, 55, 0.35);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+.modern-kpi-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--gold);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    transition: transform 0.25s ease;
+}
+
+.modern-kpi-card:hover .modern-kpi-icon-wrap {
+    transform: scale(1.08) rotate(3deg);
+}
+
+.modern-kpi-val {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+.modern-kpi-lbl {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 3px;
+}
+
+/* ── 5. MODERN REFINED BUTTONS ── */
+.btn-modern-primary {
+    background: linear-gradient(135deg, #8A1C1C 0%, #5E1010 100%);
+    color: #FFF !important;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.btn-modern-primary:hover {
+    background: linear-gradient(135deg, #A82424 0%, #751414 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(122, 26, 26, 0.4), 0 0 12px rgba(212, 175, 55, 0.2);
+    border-color: var(--gold);
+}
+
+.btn-modern-gold {
+    background: linear-gradient(135deg, #D4AF37 0%, #A68822 100%);
+    color: #1A0D0D !important;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(212, 175, 55, 0.25);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.btn-modern-gold:hover {
+    background: linear-gradient(135deg, #E6C34E 0%, #BA9928 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(212, 175, 55, 0.4);
+}
+
+.btn-modern-glass {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary) !important;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    backdrop-filter: blur(12px);
+    transition: all 0.22s ease;
+    cursor: pointer;
+}
+
+.btn-modern-glass:hover {
+    background: rgba(212, 175, 55, 0.12);
+    border-color: rgba(212, 175, 55, 0.4);
+    color: #fff !important;
+    transform: translateY(-1px);
+}
+
+/* ── 6. MODERN DATA TABLES ── */
+.modern-table-card {
+    background: rgba(24, 15, 15, 0.7);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    margin-bottom: 24px;
+}
+
+.modern-table-card-head {
+    padding: 18px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.modern-table-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+}
+
+.modern-table thead th {
+    background: rgba(14, 8, 8, 0.8);
+    color: var(--text-muted);
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    padding: 14px 20px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+    white-space: nowrap;
+}
+
+.modern-table tbody tr {
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.modern-table tbody td {
+    padding: 16px 20px;
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    vertical-align: middle;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.modern-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── 7. MODERN CHIP BADGES ── */
+.modern-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.modern-chip-present {
+    background: rgba(34, 197, 94, 0.14);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.modern-chip-late {
+    background: rgba(245, 158, 11, 0.14);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.modern-chip-absent {
+    background: rgba(239, 68, 68, 0.14);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.modern-chip-excused {
+    background: rgba(59, 130, 246, 0.14);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.modern-chip-gold {
+    background: rgba(212, 175, 55, 0.14);
+    color: var(--gold);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+}
+
+/* ── 8. MODERN QUICK ACTION TILES ── */
+.modern-qa-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.modern-qa-tile {
+    background: linear-gradient(145deg, rgba(30, 20, 20, 0.7) 0%, rgba(18, 10, 10, 0.85) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.16);
+    border-radius: 16px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+    text-decoration: none !important;
+    transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+.modern-qa-tile:hover {
+    transform: translateY(-4px);
+    border-color: rgba(212, 175, 55, 0.35);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45), 0 0 16px rgba(212, 175, 55, 0.12);
+}
+
+.modern-qa-tile .qa-icon-wrap {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    transition: transform 0.25s ease;
+}
+
+.modern-qa-tile:hover .qa-icon-wrap {
+    transform: scale(1.12);
+}
+
+.modern-qa-tile .qa-label {
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+/* ── 9. RESPONSIVENESS REFINEMENTS ── */
+@media (max-width: 992px) {
+    .premium-hero-card {
+        padding: 20px;
+    }
+    .modern-kpi-card {
+        padding: 16px;
+    }
+    .modern-kpi-val {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .premium-hero-card {
+        border-radius: 16px;
+        padding: 16px;
+    }
+    .hero-clock-pill {
+        width: 100%;
+        align-items: center;
+        margin-top: 12px;
+    }
+    .modern-qa-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+    .modern-qa-tile {
+        padding: 12px 6px;
+        border-radius: 12px;
+    }
+    .modern-qa-tile .qa-icon-wrap {
+        width: 36px;
+        height: 36px;
+        font-size: 1.05rem;
+    }
+    .modern-qa-tile .qa-label {
+        font-size: 0.72rem;
+    }
+}
+
+

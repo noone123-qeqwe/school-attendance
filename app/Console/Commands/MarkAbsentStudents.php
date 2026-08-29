@@ -46,6 +46,17 @@ class MarkAbsentStudents extends Command
             $subject = $schedule->subject;
             if (!$subject) continue;
 
+            // Only mark absent if class actually happened:
+            // A QR session was started for this subject today, OR at least one student already has a record
+            $classHappened = \App\Models\AttendanceSession::where('subject_code', $subject->code)
+                ->whereDate('created_at', $today)
+                ->exists()
+                || Attendance::where('subject_code', $subject->code)
+                    ->whereDate('date', $today)
+                    ->exists();
+
+            if (!$classHappened) continue;
+
             $students = $subject->getAllStudents();
 
             foreach ($students as $student) {

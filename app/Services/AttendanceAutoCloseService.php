@@ -81,7 +81,6 @@ class AttendanceAutoCloseService
                         'time_in' => null,
                         'latitude' => null,
                         'longitude' => null,
-                        'session_id' => $session->id, // link to the closed session
                     ]);
                     
                     $absentCount++;

@@ -92,41 +92,39 @@
 </style>
 
 <!-- Desktop Header -->
-<div class="mb-4 parent-header-card">
+<div class="premium-hero-card mb-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
         <div class="d-flex align-items-center gap-3 gap-md-4">
-            <div class="d-none d-md-block" style="font-size: 3rem;">👨‍👩‍👧‍👦</div>
             <div>
-                <h1 class="parent-header-title">My Children</h1>
-                <div class="parent-header-sub">
-                    Monitor attendance, performance & warnings
+                <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2.1rem); letter-spacing: -0.5px;">Student Guardianship</h1>
+                <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
+                    Real-time attendance tracking, academic warnings, and official excuse filings
                 </div>
             </div>
         </div>
-        <div class="w-100 d-md-block" style="max-width: 280px; flex-grow: 1;">
-            <a href="{{ route('parent.link.form') }}" class="ent-btn w-100" style="background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.3); color: var(--gold); border-radius: 12px;">
-                <i class="bi bi-link-45deg"></i> Link Another Child
+        <div class="w-100 d-md-block" style="max-width: 240px;">
+            <a href="{{ route('parent.link.form') }}" class="btn-modern-gold w-100 justify-content-center">
+                <i class="bi bi-link-45deg"></i> Link Student
             </a>
         </div>
     </div>
 </div>
 
-
 @if(count($childrenData) > 1)
 <!-- Child Dropdown Selector -->
-<div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: linear-gradient(135deg, rgba(32,20,15,0.7) 0%, rgba(20,10,5,0.85) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 18px; padding: 14px 22px; box-shadow: 0 10px 25px rgba(0,0,0,0.3);">
+<div class="mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3" style="background: linear-gradient(145deg, rgba(30, 20, 20, 0.7) 0%, rgba(18, 10, 10, 0.85) 100%); border: 1px solid rgba(212, 175, 55, 0.2); border-radius: 18px; padding: 14px 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
     <div class="d-flex align-items-center gap-2">
-        <i class="bi bi-people-fill" style="color: var(--gold); font-size: 1.15rem;"></i>
-        <label for="dashboardChildSelect" style="font-weight: 700; color: #f3e7cd; margin: 0; font-size: 0.95rem; white-space: nowrap;">
-            Select Student:
+        <i class="bi bi-person-badge-fill" style="color: var(--gold); font-size: 1.2rem;"></i>
+        <label for="dashboardChildSelect" style="font-weight: 700; color: #ffffff; margin: 0; font-size: 0.92rem; white-space: nowrap;">
+            Active Student:
         </label>
     </div>
     <div style="min-width: 260px; flex: 1; max-width: 480px;">
-        <select id="dashboardChildSelect" class="form-select" onchange="switchDashboardChild(this.value)"
-            style="background-color: #140d07; border: 1px solid rgba(207,164,111,0.35); color: #f3e7cd; font-weight: 600; font-size: 0.9rem; border-radius: 12px; padding: 8px 36px 8px 14px; cursor: pointer; outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 100%;">
+        <select id="dashboardChildSelect" class="form-select ds-select" onchange="switchDashboardChild(this.value)"
+            style="background-color: rgba(0, 0, 0, 0.4); border: 1px solid rgba(212, 175, 55, 0.35); color: #ffffff; font-weight: 600; font-size: 0.9rem; border-radius: 12px; padding: 10px 38px 10px 14px; cursor: pointer; outline: none; width: 100%;">
             @foreach($childrenData as $index => $data)
                 <option value="{{ $data->child->id }}" {{ $index === 0 ? 'selected' : '' }} style="background: #140d07; color: #f3e7cd;">
-                    {{ $data->child->name }} — {{ $data->child->student_number ?? 'Student' }}
+                    {{ $data->child->name }} ({{ $data->child->student_number ?? 'Student' }})
                 </option>
             @endforeach
         </select>

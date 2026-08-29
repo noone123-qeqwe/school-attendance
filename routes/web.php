@@ -18,11 +18,11 @@ Route::post('/push/unsubscribe', [App\Http\Controllers\PushSubscriptionControlle
 Route::post('/push/test', [App\Http\Controllers\PushSubscriptionController::class, 'sendTest'])->middleware('auth')->name('push.test');
 
 
-// Intro page should always show, even to authenticated users with high-concurrency caching
+// Intro page should always show, with private no-cache to evaluate destination correctly
 Route::get('/', function () {
     return response()
         ->view('intro')
-        ->header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+        ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0, private');
 })->name('intro');
 
 // Offline page for PWA

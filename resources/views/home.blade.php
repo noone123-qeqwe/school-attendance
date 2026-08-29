@@ -119,35 +119,28 @@
 </style>
 
 <!-- Hero Banner -->
-<div class="mb-4 hero-banner" style="background: linear-gradient(135deg, rgba(32,20,15,0.9) 0%, rgba(20,10,5,0.95) 100%); border: 1px solid rgba(207,164,111,0.25); border-radius: 24px; padding: 24px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-    <div style="position: absolute; top: 0; left: 0; width: 6px; height: 100%; background: linear-gradient(180deg, var(--gold) 0%, #8f6e4a 100%);"></div>
+<div class="premium-hero-card mb-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
         <div class="d-flex align-items-center gap-3">
-            <div class="d-none d-md-block" style="font-size: 3.5rem; line-height: 1; filter: drop-shadow(0 4px 10px rgba(207,164,111,0.3));">🎓</div>
             <div>
                 <div style="color: var(--gold); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">{{ $greeting }}</div>
-                <h1 style="color: #f3e7cd; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 5vw, 2.2rem); line-height: 1.1;">{{ Auth::user()->name }}</h1>
-                <div style="color: #b39b82; font-size: 0.85rem; font-weight: 500;">
+                <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 5vw, 2.2rem); line-height: 1.1; letter-spacing: -0.5px;">{{ Auth::user()->name }}</h1>
+                <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
                     {{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Sem {{ Auth::user()->semester }}
                 </div>
                 <div class="mt-2 d-flex gap-2 flex-wrap align-items-center">
-                    @if(isset($totalAbsent) && $totalAbsent === 0 && isset($totalPresent) && $totalPresent > 0)
-                        <span style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #4ade80; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(34, 197, 94, 0.1);"><i class="bi bi-star-fill"></i> Perfect Attendance</span>
-                    @elseif(isset($totalPresent) && $totalPresent > 3)
-                        <span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.1);"><i class="bi bi-fire"></i> {{ $totalPresent }} Class Streak</span>
-                    @endif
                     @php
                         $hasFingerprint = Auth::user()->webauthnCredentials()->exists();
                     @endphp
                     @if($hasFingerprint)
                         <a href="{{ route('settings') }}#tab-fingerprint" style="text-decoration:none;">
-                            <span style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #4ade80; padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Biometric Authentication Enabled">
+                            <span class="modern-chip modern-chip-present" title="Biometric Authentication Enabled">
                                 <i class="bi bi-fingerprint"></i> Biometric Verified
                             </span>
                         </a>
                     @else
                         <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" style="text-decoration:none;">
-                            <span style="background: rgba(207,164,111,0.12); border: 1px solid rgba(207,164,111,0.25); color: var(--gold,#cfa46f); padding: 4px 12px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;" title="Click to register device fingerprint">
+                            <span class="modern-chip modern-chip-gold" title="Click to register device fingerprint">
                                 <i class="bi bi-fingerprint"></i> Set up Fingerprint
                             </span>
                         </a>
@@ -155,10 +148,10 @@
                 </div>
                 <!-- Mobile-only compact CTA -->
                 <div class="d-md-none mt-3 d-flex gap-2">
-                    <button type="button" onclick="openStudentScanner()" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #800000, #991b1b); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; box-shadow: 0 4px 12px rgba(128,0,0,0.3);">
+                    <button type="button" onclick="openStudentScanner()" class="btn-modern-primary" style="padding: 8px 16px; font-size: 0.82rem;">
                         <i class="bi bi-qr-code-scan"></i> Scan QR
                     </button>
-                    <a href="{{ route('excuses') }}" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(207,164,111,0.12); color: #cfa46f; border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 8px 14px; border-radius: 10px; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">
+                    <a href="{{ route('excuses') }}" class="btn-modern-glass" style="padding: 8px 14px; font-size: 0.8rem;">
                         <i class="bi bi-envelope-paper-fill"></i> Excuse
                     </a>
                 </div>
@@ -166,17 +159,17 @@
         </div>
         <!-- Desktop: Clock + CTA (hidden on mobile) -->
         <div class="d-none d-md-flex flex-column gap-2" style="min-width: 250px;">
-            <div style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <div style="color: var(--gold); font-size: 1.5rem; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; font-variant-numeric: tabular-nums;">
+            <div class="hero-clock-pill" style="align-items: center; text-align: center; width: 100%;">
+                <div class="hero-clock-time" style="justify-content: center;">
                     <i class="bi bi-clock"></i> <span id="studentClock">{{ now()->format('h:i A') }}</span>
                 </div>
-                <div style="color: #b39b82; font-size: 0.82rem; margin-top: 2px; font-weight: 500;">{{ now()->format('l, F j, Y') }}</div>
+                <div class="hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <button type="button" onclick="openStudentScanner()" class="ent-btn w-100 d-flex justify-content-center align-items-center" style="background: linear-gradient(135deg, #800000, #991b1b); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 12px; border-radius: 14px; font-weight: 700; box-shadow: 0 4px 14px rgba(128,0,0,0.35); cursor: pointer;">
-                <i class="bi bi-qr-code-scan me-2"></i> Scan Attendance QR
+            <button type="button" onclick="openStudentScanner()" class="btn-modern-primary w-100 justify-content-center" style="padding: 12px; font-size: 0.95rem;">
+                <i class="bi bi-qr-code-scan"></i> Scan Attendance QR
             </button>
-            <a href="{{ route('excuses') }}" class="ent-btn w-100 d-flex justify-content-center align-items-center" style="background: rgba(255,255,255,0.05); color: var(--gold); border: 1px solid rgba(207,164,111,0.25); text-decoration:none; padding: 9px; border-radius: 14px; font-size: 0.88rem; transition: all 0.2s;">
-                <i class="bi bi-envelope-paper-fill me-2"></i> Submit Excuse / Leave
+            <a href="{{ route('excuses') }}" class="btn-modern-glass w-100 justify-content-center" style="padding: 10px; font-size: 0.88rem;">
+                <i class="bi bi-envelope-paper-fill"></i> Submit Excuse / Leave
             </a>
         </div>
     </div>
@@ -191,7 +184,7 @@
 </div>
 
 <!-- Quick Stats -->
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:24px; margin-bottom:24px;">
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:20px; margin-bottom:24px;">
     <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
     <x-card type="kpi" accent="warning" label="Late" value="{{ $totalLate ?? 0 }}" icon="bi bi-clock-fill" />
     <x-card type="kpi" accent="danger" label="Absent" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />

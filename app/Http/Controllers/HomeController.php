@@ -88,6 +88,12 @@ class HomeController extends Controller
     if ($currentDayLetter) {
         $todaySubjects = Subject::where('year_level', $user->year_level)
             ->where('semester', $user->semester)
+            ->where(function ($q) use ($user) {
+                $q->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
+            })
+            ->where(function ($q) use ($user) {
+                $q->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
+            })
             ->whereHas('schedules', function ($query) use ($currentDayName) {
                 $query->where('day', $currentDayName);
             })
@@ -102,6 +108,12 @@ class HomeController extends Controller
     if ($currentDayLetter) {
         $currentClass = Subject::where('year_level', $user->year_level)
             ->where('semester', $user->semester)
+            ->where(function ($q) use ($user) {
+                $q->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
+            })
+            ->where(function ($q) use ($user) {
+                $q->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
+            })
             ->whereHas('schedules', function ($query) use ($currentTime, $currentDayName) {
                 $query->whereTime('start_time', '<=', $currentTime)
                       ->whereTime('end_time', '>=', $currentTime)
