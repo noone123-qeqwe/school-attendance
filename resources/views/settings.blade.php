@@ -198,6 +198,169 @@
     box-shadow: 0 0 0 3px rgba(207,164,111,.15) !important;
 }
 
+/* ── Sleek Profile Identity Card ── */
+.profile-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+.profile-avatar-holder {
+    position: relative;
+    width: 88px;
+    height: 88px;
+    flex-shrink: 0;
+    cursor: pointer;
+    display: block;
+    margin: 0;
+}
+.profile-avatar-img-wrap {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2.5px solid rgba(207,164,111,0.65);
+    box-shadow: 0 8px 24px -4px rgba(0,0,0,0.6), 0 0 16px rgba(207,164,111,0.2);
+    position: relative;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+    background: #181412;
+}
+.profile-avatar-holder:hover .profile-avatar-img-wrap {
+    transform: scale(1.04);
+    border-color: #f5dfa8;
+}
+.profile-avatar-holder:active .profile-avatar-img-wrap {
+    transform: scale(0.97);
+}
+.profile-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.profile-avatar-badge {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff7db 0%, #e5c07b 50%, #b88638 100%);
+    color: #140703;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.8);
+    border: 2.5px solid #181412;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+.profile-avatar-holder:hover .profile-avatar-badge {
+    transform: scale(1.15);
+}
+.profile-details-col {
+    flex: 1;
+    min-width: 0;
+}
+.profile-user-name {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #f3e7cd;
+    letter-spacing: -0.3px;
+    line-height: 1.25;
+    margin-bottom: 4px;
+    word-break: break-word;
+}
+.profile-user-id {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.82rem;
+    color: #b39b82;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+.profile-actions-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.profile-btn-choose {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    background: linear-gradient(135deg, #cfa46f 0%, #9a733e 100%) !important;
+    color: #140703 !important;
+    font-weight: 800 !important;
+    font-size: 0.78rem !important;
+    border-radius: 99px !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(207,164,111,0.3) !important;
+    cursor: pointer !important;
+    transition: all 0.22s ease !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+}
+.profile-btn-choose:hover {
+    background: linear-gradient(135deg, #dfb885 0%, #b88648 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(207,164,111,0.45) !important;
+}
+.profile-btn-choose:active {
+    transform: scale(0.96);
+}
+.profile-badge-course {
+    background: rgba(128, 0, 0, 0.4);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 99px;
+    letter-spacing: 0.3px;
+}
+.profile-badge-year {
+    background: rgba(207, 164, 111, 0.12);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    color: #f5dfa8;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 99px;
+}
+
+@media (max-width: 576px) {
+    .profile-card-inner {
+        gap: 16px;
+    }
+    .profile-avatar-holder {
+        width: 76px;
+        height: 76px;
+    }
+    .profile-avatar-badge {
+        width: 26px;
+        height: 26px;
+        font-size: 0.72rem;
+    }
+    .profile-user-name {
+        font-size: 1.08rem;
+    }
+    .profile-user-id {
+        font-size: 0.78rem;
+        margin-bottom: 8px;
+    }
+    .profile-btn-choose {
+        padding: 6px 12px;
+        font-size: 0.74rem;
+    }
+    .profile-badge-course, .profile-badge-year {
+        font-size: 0.68rem;
+        padding: 4px 10px;
+    }
+}
+
     /* â”€â”€ MOBILE RESPONSIVENESS â”€â”€ */
     @media (max-width: 768px) {
         .sp {
@@ -316,44 +479,56 @@
     <!-- ── TAB: PROFILE ── -->
     <div id="tab-profile" class="spanel active">
 
-        <!-- Avatar -->
+        <!-- Avatar / Profile Photo Card -->
         <div class="sc">
             <div class="sc-head">
-                <div class="sc-icon" style="background:#fff5f5;color:#800000;"><i class="bi bi-person-circle"></i></div>
-                <div><div class="sc-title">Profile Photo</div><div class="sc-sub">Click the photo or Choose Photo button to update it</div></div>
+                <div class="sc-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;"><i class="bi bi-person-bounding-box"></i></div>
+                <div>
+                    <div class="sc-title">Profile Photo</div>
+                    <div class="sc-sub">Manage your avatar and account appearance</div>
+                </div>
             </div>
             <div class="sc-body">
                 <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data" id="settingsProfileImageForm">
                     @csrf
                     <input type="file" name="profile_image" id="imgInput" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp,image/gif,image/heic,image/heif,image/*" onchange="handleSettingsAvatarUpload(this)">
-                    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
-                        <label for="imgInput"
-                             style="width:84px;height:84px;border-radius:50%;overflow:hidden;border:3px solid rgba(207,164,111,0.5);box-shadow:0 4px 18px rgba(0,0,0,0.4);cursor:pointer;position:relative;flex-shrink:0;transition:transform .3s;display:block;margin:0;"
-                             onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''" title="Click to change photo">
-                            @if(Auth::user()->profile_image)
-                                <img id="settingsAvatarDisplay" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}" style="width:100%;height:100%;object-fit:cover;display:block;"
-                                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
-                            @else
-                                <img id="settingsAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200" style="width:100%;height:100%;object-fit:cover;display:block;">
-                            @endif
-                            <div id="settingsAvatarOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%;color:white;"
-                                 onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
-                                <i class="bi bi-camera-fill" style="font-size:1.3rem;"></i>
-                                <span style="font-size:0.6rem;font-weight:700;">Change</span>
+                    
+                    <div class="profile-card-inner">
+                        <!-- Avatar clickable area with floating camera badge -->
+                        <label for="imgInput" class="profile-avatar-holder" title="Tap to change profile picture">
+                            <div class="profile-avatar-img-wrap">
+                                @if(Auth::user()->profile_image)
+                                    <img id="settingsAvatarDisplay" class="profile-avatar-img" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}"
+                                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
+                                @else
+                                    <img id="settingsAvatarDisplay" class="profile-avatar-img" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200">
+                                @endif
+                                <div id="settingsAvatarOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%;color:white;">
+                                    <i class="bi bi-camera-fill" style="font-size:1.3rem;"></i>
+                                    <span style="font-size:0.6rem;font-weight:700;">Change</span>
+                                </div>
+                            </div>
+                            <div class="profile-avatar-badge" aria-hidden="true">
+                                <i class="bi bi-camera-fill"></i>
                             </div>
                         </label>
-                        <div>
-                            <div style="font-size:1.05rem;font-weight:800;color:#f3e7cd;">{{ Auth::user()->name }}</div>
-                            <div style="font-size:.82rem;color:#b39b82;margin-top:2px;">{{ Auth::user()->student_number ?? Auth::user()->email }}</div>
-                            <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                                <label for="imgInput" class="btn btn-sm" style="background:linear-gradient(135deg, #cfa46f, #8c6d46);color:#181614;font-weight:700;border-radius:10px;padding:6px 16px;font-size:0.8rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:none;box-shadow:0 4px 12px rgba(207,164,111,0.3);">
+
+                        <!-- User details column -->
+                        <div class="profile-details-col">
+                            <div class="profile-user-name">{{ Auth::user()->name }}</div>
+                            <div class="profile-user-id">
+                                <i class="bi bi-person-badge"></i>
+                                <span>{{ Auth::user()->student_number ?? Auth::user()->email }}</span>
+                            </div>
+                            <div class="profile-actions-row">
+                                <label for="imgInput" class="profile-btn-choose">
                                     <i class="bi bi-camera-fill"></i> Choose Photo
                                 </label>
                                 @if(Auth::user()->course)
-                                    <span style="background:rgba(207,164,111,0.15);border:1px solid rgba(207,164,111,0.3);color:#cfa46f;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;">{{ Auth::user()->course }}</span>
+                                    <span class="profile-badge-course">{{ Auth::user()->course }}</span>
                                 @endif
                                 @if(Auth::user()->year_level)
-                                    <span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:#f3e7cd;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:99px;">Year {{ Auth::user()->year_level }}</span>
+                                    <span class="profile-badge-year">Year {{ Auth::user()->year_level }}</span>
                                 @endif
                             </div>
                         </div>
