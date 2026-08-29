@@ -827,106 +827,129 @@ function showAttDetail(dateKey, day) {
 </script>
 
 <!-- QR Camera Scanner Modal -->
-<div id="studentScannerModal" style="display: none; position: fixed; inset: 0; background: rgba(10, 10, 14, 0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 99999; align-items: center; justify-content: center; padding: 18px;">
-    <div style="background: #181614; border: 1px solid rgba(207,164,111,0.25); border-radius: 28px; max-width: 480px; width: 100%; padding: 28px 24px; color: white; box-shadow: 0 25px 70px rgba(0,0,0,0.6); text-align: center; position: relative; overflow: hidden;">
+<div id="studentScannerModal" class="scanner-modal-backdrop" style="display: none;">
+    <div class="scanner-modal-card">
         
-        <!-- Close Button -->
-        <button type="button" onclick="closeStudentScanner()" style="position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #f3e7cd; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
-            <i class="bi bi-x-lg"></i>
-        </button>
+        <!-- Header & Top Floating Bar -->
+        <div class="scanner-top-bar">
+            <div class="scanner-status-pill">
+                <span class="scanner-pulse-dot"></span>
+                <span>Live Camera</span>
+            </div>
+            
+            <div class="scanner-top-actions">
+                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="scanner-icon-btn" title="Toggle Flashlight">
+                    <i class="bi bi-lightning-charge"></i>
+                </button>
+                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="scanner-icon-btn" title="Flip Camera">
+                    <i class="bi bi-camera-reverse"></i>
+                </button>
+                <button type="button" onclick="closeStudentScanner()" class="scanner-icon-btn close-btn" title="Close Scanner">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
 
         <!-- Scanner View State -->
-        <div id="scannerActiveView">
-            <div style="width: 58px; height: 58px; border-radius: 18px; background: linear-gradient(135deg, #cfa46f, #8c6d46); display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: #181614; margin: 0 auto 12px; box-shadow: 0 8px 24px rgba(207,164,111,0.3);">
-                <i class="bi bi-qr-code-scan"></i>
+        <div id="scannerActiveView" class="scanner-active-content">
+            <div class="scanner-hero-heading">
+                <h4 class="scanner-title">Scan Attendance QR</h4>
+                <p class="scanner-sub">Align the teacher's classroom QR code within the frame</p>
             </div>
-            <h4 style="font-weight: 800; font-size: 1.35rem; color: #ffffff; margin-bottom: 4px; letter-spacing: -0.02em;">Scan Attendance QR</h4>
-            <p style="color: #b39b82; font-size: 0.88rem; margin-bottom: 18px;">Point camera at teacher's dynamic classroom QR code</p>
 
-            <div id="scannerVideoContainer" style="border-radius: 20px; overflow: hidden; background: #000000; position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(207,164,111,0.35); box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
-                <div id="reader" style="width: 100%;"></div>
+            <!-- Viewfinder Area with Glowing Corner Reticles -->
+            <div id="scannerVideoContainer" class="scanner-viewfinder-wrapper">
+                <div id="reader" class="scanner-reader-feed"></div>
                 
-                <!-- Laser line scan overlay -->
-                <div id="scannerLaser" style="position: absolute; left: 10%; right: 10%; height: 3px; background: linear-gradient(90deg, transparent, #cfa46f, #ffd700, transparent); box-shadow: 0 0 14px #ffd700; z-index: 10; animation: laserScan 2s ease-in-out infinite; pointer-events: none;"></div>
+                <!-- 4 Corner Reticle Accents -->
+                <div class="reticle-corner top-left"></div>
+                <div class="reticle-corner top-right"></div>
+                <div class="reticle-corner bottom-left"></div>
+                <div class="reticle-corner bottom-right"></div>
 
-                <!-- Processing overlay -->
-                <div id="scannerProcessingOverlay" style="display: none; position: absolute; inset: 0; background: rgba(15,15,17,0.85); backdrop-filter: blur(8px); z-index: 20; flex-direction: column; align-items: center; justify-content: center;">
-                    <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
-                    <div style="font-weight: 700; color: #f3e7cd; font-size: 1rem;">Recording Attendance...</div>
-                    <div style="font-size: 0.8rem; color: #b39b82;">Verifying session & GPS proximity</div>
+                <!-- Laser scanning beam -->
+                <div id="scannerLaser" class="scanner-laser-line"></div>
+
+                <!-- Guidance Pill -->
+                <div class="scanner-guide-badge">
+                    <i class="bi bi-viewfinder me-1"></i> Point at screen
                 </div>
 
-                <!-- Fallback notice -->
-                <div id="scannerFallbackNotice" style="display: none; padding: 24px 16px; color: #b39b82; font-size: 0.88rem; text-align: center;">
-                    <i class="bi bi-camera-video-off" style="font-size: 2.4rem; display: block; margin-bottom: 10px; color: #f87171;"></i>
-                    <span id="scannerFallbackText">Camera access blocked or unavailable. Please allow camera permissions in your browser or paste the QR code token below.</span>
-                    <div class="mt-3">
-                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="requestCameraAgain()">
-                            <i class="bi bi-arrow-repeat me-1"></i> Retry Camera
+                <!-- Processing Overlay -->
+                <div id="scannerProcessingOverlay" class="scanner-processing-overlay" style="display: none;">
+                    <div class="spinner-border text-warning mb-3" style="width: 3.2rem; height: 3.2rem; border-width: 3px;" role="status"></div>
+                    <div class="processing-title">Recording Attendance...</div>
+                    <div class="processing-sub">Verifying dynamic token & proximity</div>
+                </div>
+
+                <!-- Fallback Notice (Permission Blocked / Unsupported) -->
+                <div id="scannerFallbackNotice" class="scanner-fallback-box" style="display: none;">
+                    <div class="fallback-icon-wrap">
+                        <i class="bi bi-camera-video-off"></i>
+                    </div>
+                    <h5 class="fallback-title">Camera Inactive</h5>
+                    <p id="scannerFallbackText" class="fallback-text">Please allow camera permissions or enter the code manually.</p>
+                    <button type="button" class="btn btn-sm btn-outline-warning mt-2" onclick="requestCameraAgain()" style="border-radius: 12px; font-weight: 700;">
+                        <i class="bi bi-arrow-repeat me-1"></i> Allow / Retry Camera
+                    </button>
+                </div>
+            </div>
+
+            <!-- Expandable Manual Input Toggle -->
+            <div class="scanner-manual-section">
+                <button type="button" class="scanner-manual-toggle-btn" onclick="toggleManualInputDrawer()">
+                    <i class="bi bi-keyboard me-1"></i> <span id="manualToggleLabel">Enter Token / Link Manually</span>
+                    <i class="bi bi-chevron-down ms-1" id="manualToggleIcon" style="transition: transform 0.2s;"></i>
+                </button>
+
+                <div id="scannerManualDrawer" class="scanner-manual-drawer" style="display: none;">
+                    <div class="input-group">
+                        <input type="text" id="manualQrInput" class="form-control scanner-input" placeholder="Paste scan URL or token..." autocomplete="off">
+                        <button type="button" class="btn scanner-submit-btn" onclick="submitManualQr()">
+                            Submit
                         </button>
                     </div>
-                </div>
-            </div>
-
-            <!-- Camera Controls (Flip / Torch) -->
-            <div class="d-flex justify-content-center gap-2 mt-3" id="cameraControls">
-                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="btn btn-sm" style="background: rgba(255,255,255,0.06); color: #f3e7cd; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 6px 14px; font-size: 0.8rem;">
-                    <i class="bi bi-camera-reverse me-1"></i> Flip Camera
-                </button>
-                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="btn btn-sm" style="background: rgba(255,255,255,0.06); color: #f3e7cd; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 6px 14px; font-size: 0.8rem;">
-                    <i class="bi bi-lightning-charge me-1"></i> Flashlight
-                </button>
-            </div>
-
-            <!-- Manual input fallback -->
-            <div class="mt-3 text-start">
-                <label style="font-size: 0.72rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 1px;">Or Enter Session Token / Link</label>
-                <div class="input-group mt-1">
-                    <input type="text" id="manualQrInput" class="form-control" placeholder="Paste scan URL or token..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: white; border-radius: 12px 0 0 12px; font-size: 0.85rem;">
-                    <button type="button" class="btn" style="background: linear-gradient(135deg, #cfa46f, #8c6d46); color: #181614; border-radius: 0 12px 12px 0; font-weight: 700; padding: 0 18px;" onclick="submitManualQr()">
-                        Submit
-                    </button>
                 </div>
             </div>
         </div>
 
         <!-- Result View State -->
-        <div id="scannerResultView" style="display: none; text-align: center; padding: 10px 0;">
-            <div id="resultStatusIcon" style="width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; margin: 0 auto 16px;"></div>
+        <div id="scannerResultView" class="scanner-result-content" style="display: none;">
+            <div id="resultStatusIcon" class="result-status-icon-wrap"></div>
             
-            <h4 id="resultTitle" style="font-weight: 800; font-size: 1.35rem; margin-bottom: 6px; letter-spacing: -0.02em;"></h4>
-            <p id="resultSubtitle" style="color: #b39b82; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;"></p>
+            <h4 id="resultTitle" class="result-headline"></h4>
+            <p id="resultSubtitle" class="result-caption"></p>
 
             <!-- Result Details Box -->
-            <div id="resultDetailsBox" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 16px 20px; margin-bottom: 22px; text-align: left;">
-                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Status</span>
-                    <span id="resultBadge" class="badge" style="font-size: 0.85rem; padding: 6px 14px; border-radius: 99px;"></span>
+            <div id="resultDetailsBox" class="result-summary-card">
+                <div class="result-row">
+                    <span class="result-label">Status</span>
+                    <span id="resultBadge" class="badge"></span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Class / Subject</span>
-                    <span id="resultSubject" style="font-size: 0.88rem; font-weight: 700; color: #ffffff; text-align: right;"></span>
+                <div class="result-row">
+                    <span class="result-label">Subject</span>
+                    <span id="resultSubject" class="result-val highlight"></span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Instructor</span>
-                    <span id="resultInstructor" style="font-size: 0.88rem; color: #f3e7cd; font-weight: 600;"></span>
+                <div class="result-row">
+                    <span class="result-label">Instructor</span>
+                    <span id="resultInstructor" class="result-val"></span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Section</span>
-                    <span id="resultSection" style="font-size: 0.88rem; color: #f3e7cd;"></span>
+                <div class="result-row">
+                    <span class="result-label">Section</span>
+                    <span id="resultSection" class="result-val"></span>
                 </div>
-                <div class="d-flex justify-content-between align-items-center">
-                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Recorded At</span>
-                    <span id="resultTimestamp" style="font-size: 0.88rem; color: #cfa46f; font-weight: 700;"></span>
+                <div class="result-row no-border">
+                    <span class="result-label">Recorded At</span>
+                    <span id="resultTimestamp" class="result-val text-gold"></span>
                 </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="d-flex gap-2">
-                <button type="button" id="resultDoneBtn" onclick="finishScanAndRefresh()" class="btn w-100" style="background: linear-gradient(135deg, #cfa46f, #8c6d46); color: #181614; font-weight: 800; padding: 12px; border-radius: 14px; font-size: 0.95rem;">
-                    <i class="bi bi-check-lg me-1"></i> Done
+            <div class="d-flex gap-2 w-100">
+                <button type="button" id="resultDoneBtn" onclick="finishScanAndRefresh()" class="btn scanner-primary-action-btn">
+                    <i class="bi bi-check-lg me-1"></i> Back to Dashboard
                 </button>
-                <button type="button" id="resultRetryBtn" onclick="resetScannerView()" class="btn w-100" style="display: none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #f3e7cd; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 0.95rem;">
+                <button type="button" id="resultRetryBtn" onclick="resetScannerView()" class="btn scanner-secondary-action-btn" style="display: none;">
                     <i class="bi bi-arrow-repeat me-1"></i> Scan Again
                 </button>
             </div>
@@ -936,19 +959,521 @@ function showAttDetail(dateKey, day) {
 </div>
 
 <style>
-@keyframes laserScan {
-    0% { top: 12%; opacity: 0.4; }
-    50% { top: 85%; opacity: 1; }
-    100% { top: 12%; opacity: 0.4; }
+/* ── STUDENT SCANNER MODAL STYLES (DESKTOP & MOBILE FIRST) ── */
+.scanner-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 8, 10, 0.88);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
 }
-#reader video {
-    border-radius: 18px !important;
+
+.scanner-modal-card {
+    background: linear-gradient(180deg, #1f1b17 0%, #131211 100%);
+    border: 1px solid rgba(207, 164, 111, 0.28);
+    border-radius: 28px;
+    max-width: 460px;
+    width: 100%;
+    padding: 24px 22px;
+    color: #ffffff;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(207, 164, 111, 0.12);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: scannerCardEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scannerCardEnter {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Top Floating Bar */
+.scanner-top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.scanner-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(207, 164, 111, 0.12);
+    border: 1px solid rgba(207, 164, 111, 0.25);
+    color: #f3e7cd;
+    font-size: 0.76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 5px 12px;
+    border-radius: 99px;
+}
+
+.scanner-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    animation: scannerPulse 1.6s infinite;
+}
+
+@keyframes scannerPulse {
+    0% { transform: scale(0.9); opacity: 0.7; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+.scanner-top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.scanner-icon-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f3e7cd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.scanner-icon-btn:hover, .scanner-icon-btn:active {
+    background: rgba(207, 164, 111, 0.2);
+    color: #ffffff;
+    border-color: rgba(207, 164, 111, 0.4);
+    transform: scale(1.06);
+}
+
+.scanner-icon-btn.active-torch {
+    background: #cfa46f;
+    color: #181614;
+    border-color: #ffd700;
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.6);
+}
+
+.scanner-icon-btn.close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* Heading */
+.scanner-hero-heading {
+    margin-bottom: 14px;
+}
+
+.scanner-title {
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: #ffffff;
+    margin-bottom: 2px;
+    letter-spacing: -0.02em;
+}
+
+.scanner-sub {
+    color: #b39b82;
+    font-size: 0.82rem;
+    margin-bottom: 0;
+}
+
+/* Viewfinder Area */
+.scanner-viewfinder-wrapper {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    background: #000000;
+    min-height: 270px;
+    max-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid rgba(207, 164, 111, 0.35);
+    box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.85);
+}
+
+.scanner-reader-feed {
+    width: 100% !important;
+}
+
+.scanner-reader-feed video {
+    border-radius: 20px !important;
     object-fit: cover !important;
     width: 100% !important;
-    max-height: 280px !important;
+    max-height: 310px !important;
 }
-#reader __scan_region__ {
+
+.scanner-reader-feed __scan_region__ {
     border: none !important;
+}
+
+/* Reticle Corner Markers */
+.reticle-corner {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-color: #cfa46f;
+    border-style: solid;
+    border-width: 0;
+    z-index: 12;
+    pointer-events: none;
+    filter: drop-shadow(0 0 6px rgba(207, 164, 111, 0.8));
+}
+
+.reticle-corner.top-left {
+    top: 24px;
+    left: 24px;
+    border-top-width: 3.5px;
+    border-left-width: 3.5px;
+    border-top-left-radius: 12px;
+}
+
+.reticle-corner.top-right {
+    top: 24px;
+    right: 24px;
+    border-top-width: 3.5px;
+    border-right-width: 3.5px;
+    border-top-right-radius: 12px;
+}
+
+.reticle-corner.bottom-left {
+    bottom: 24px;
+    left: 24px;
+    border-bottom-width: 3.5px;
+    border-left-width: 3.5px;
+    border-bottom-left-radius: 12px;
+}
+
+.reticle-corner.bottom-right {
+    bottom: 24px;
+    right: 24px;
+    border-bottom-width: 3.5px;
+    border-right-width: 3.5px;
+    border-bottom-right-radius: 12px;
+}
+
+/* Laser Scan Line */
+.scanner-laser-line {
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #cfa46f 30%, #ffd700 50%, #cfa46f 70%, transparent);
+    box-shadow: 0 0 16px #ffd700, 0 0 30px rgba(207, 164, 111, 0.6);
+    z-index: 15;
+    animation: modernLaserScan 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes modernLaserScan {
+    0% { top: 18%; opacity: 0.3; }
+    50% { top: 78%; opacity: 1; }
+    100% { top: 18%; opacity: 0.3; }
+}
+
+/* Guidance Badge */
+.scanner-guide-badge {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(18, 16, 14, 0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #f3e7cd;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 99px;
+    z-index: 16;
+    pointer-events: none;
+}
+
+/* Processing Overlay */
+.scanner-processing-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(14, 13, 12, 0.9);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 25;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.processing-title {
+    font-weight: 800;
+    color: #ffffff;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+}
+
+.processing-sub {
+    font-size: 0.78rem;
+    color: #b39b82;
+    margin-top: 2px;
+}
+
+/* Fallback Notice */
+.scanner-fallback-box {
+    padding: 28px 18px;
+    color: #b39b82;
+    text-align: center;
+    z-index: 10;
+}
+
+.fallback-icon-wrap {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    font-size: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+}
+
+.fallback-title {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+}
+
+.fallback-text {
+    font-size: 0.82rem;
+    color: #b39b82;
+    max-width: 260px;
+    margin: 0 auto;
+}
+
+/* Manual Input Section */
+.scanner-manual-section {
+    margin-top: 14px;
+    text-align: center;
+}
+
+.scanner-manual-toggle-btn {
+    background: none;
+    border: none;
+    color: #cfa46f;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.scanner-manual-toggle-btn:hover {
+    color: #f3e7cd;
+    background: rgba(207, 164, 111, 0.08);
+}
+
+.scanner-manual-drawer {
+    margin-top: 10px;
+    animation: drawerSlide 0.2s ease;
+}
+
+@keyframes drawerSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.scanner-input {
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border-radius: 14px 0 0 14px !important;
+    font-size: 0.85rem !important;
+    padding: 10px 14px !important;
+}
+
+.scanner-input:focus {
+    border-color: #cfa46f !important;
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.2) !important;
+}
+
+.scanner-submit-btn {
+    background: linear-gradient(135deg, #cfa46f, #8c6d46) !important;
+    color: #181614 !important;
+    border: none !important;
+    border-radius: 0 14px 14px 0 !important;
+    font-weight: 800 !important;
+    padding: 0 20px !important;
+    font-size: 0.85rem !important;
+}
+
+/* Result View */
+.scanner-result-content {
+    padding: 8px 0 4px;
+    text-align: center;
+}
+
+.result-status-icon-wrap {
+    width: 74px;
+    height: 74px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.3rem;
+    margin: 0 auto 14px;
+    animation: resultPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes resultPop {
+    0% { transform: scale(0.4); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.result-headline {
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+}
+
+.result-caption {
+    color: #b39b82;
+    font-size: 0.86rem;
+    margin-bottom: 18px;
+    line-height: 1.45;
+}
+
+.result-summary-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.result-row.no-border {
+    border-bottom: none;
+    padding-bottom: 2px;
+}
+
+.result-label {
+    font-size: 0.75rem;
+    color: #b39b82;
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.result-val {
+    font-size: 0.86rem;
+    color: #f3e7cd;
+    font-weight: 600;
+    text-align: right;
+}
+
+.result-val.highlight {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.result-val.text-gold {
+    color: #cfa46f;
+    font-weight: 700;
+}
+
+.scanner-primary-action-btn {
+    background: linear-gradient(135deg, #cfa46f, #8c6d46) !important;
+    color: #181614 !important;
+    font-weight: 800 !important;
+    padding: 13px !important;
+    border-radius: 16px !important;
+    font-size: 0.95rem !important;
+    border: none !important;
+    box-shadow: 0 8px 24px rgba(207, 164, 111, 0.3) !important;
+    transition: all 0.2s !important;
+}
+
+.scanner-secondary-action-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #f3e7cd !important;
+    font-weight: 700 !important;
+    padding: 13px !important;
+    border-radius: 16px !important;
+    font-size: 0.95rem !important;
+}
+
+/* ── MOBILE ADAPTIVE VIEWPORT OPTIMIZATIONS ── */
+@media (max-width: 640px) {
+    .scanner-modal-backdrop {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .scanner-modal-card {
+        max-width: 100vw;
+        width: 100vw;
+        min-height: 92dvh;
+        max-height: 96dvh;
+        border-radius: 32px 32px 0 0;
+        border-bottom: none;
+        border-left: none;
+        border-right: none;
+        padding: 20px 18px max(24px, env(safe-area-inset-bottom)) 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .scanner-viewfinder-wrapper {
+        min-height: 290px;
+        max-height: 350px;
+        border-radius: 26px;
+    }
+
+    .scanner-reader-feed video {
+        max-height: 340px !important;
+        border-radius: 24px !important;
+    }
+
+    .scanner-title {
+        font-size: 1.35rem;
+    }
+
+    .reticle-corner {
+        width: 32px;
+        height: 32px;
+    }
+
+    .reticle-corner.top-left { top: 20px; left: 20px; }
+    .reticle-corner.top-right { top: 20px; right: 20px; }
+    .reticle-corner.bottom-left { bottom: 20px; left: 20px; }
+    .reticle-corner.bottom-right { bottom: 20px; right: 20px; }
 }
 </style>
 
@@ -988,7 +1513,7 @@ function startHtml5Scanner() {
                 initScannerInstance();
             }
         } else {
-            showCameraError("Scanner library loading. Please check connection or enter code manually.");
+            showCameraError("Scanner library loading. Please check internet or type token manually.");
         }
     } catch (e) {
         showCameraError("Camera initialization failed: " + e.message);
@@ -997,9 +1522,10 @@ function startHtml5Scanner() {
 
 function initScannerInstance() {
     html5QrScanner = new Html5Qrcode("reader");
+    const isMobile = window.innerWidth <= 640;
     const config = {
         fps: 15,
-        qrbox: { width: 230, height: 230 },
+        qrbox: { width: isMobile ? 250 : 230, height: isMobile ? 250 : 230 },
         aspectRatio: 1.0
     };
 
@@ -1011,7 +1537,7 @@ function initScannerInstance() {
         document.getElementById('scannerLaser').style.display = 'block';
     }).catch(err => {
         console.warn("Camera start failed:", err);
-        showCameraError("Camera permission denied or camera not found. Allow camera access to scan.");
+        showCameraError("Camera permission denied or camera not found. Allow camera access in browser settings.");
     });
 }
 
@@ -1028,18 +1554,39 @@ function requestCameraAgain() {
 function toggleCameraFacing() {
     currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
     startHtml5Scanner();
+    if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
 function toggleTorch() {
     if (!html5QrScanner) return;
     try {
         torchEnabled = !torchEnabled;
+        const torchBtn = document.getElementById('torchCameraBtn');
         html5QrScanner.applyVideoConstraints({
             advanced: [{ torch: torchEnabled }]
+        }).then(() => {
+            if (torchEnabled) {
+                torchBtn.classList.add('active-torch');
+            } else {
+                torchBtn.classList.remove('active-torch');
+            }
         }).catch(() => {
-            alert('Torch / Flashlight is not supported on this camera.');
+            torchBtn.classList.remove('active-torch');
+            alert('Torch / Flashlight is not supported on this camera device.');
         });
     } catch (e) {}
+}
+
+function toggleManualInputDrawer() {
+    const drawer = document.getElementById('scannerManualDrawer');
+    const icon = document.getElementById('manualToggleIcon');
+    const isHidden = drawer.style.display === 'none';
+    
+    drawer.style.display = isHidden ? 'block' : 'none';
+    icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    if (isHidden) {
+        document.getElementById('manualQrInput')?.focus();
+    }
 }
 
 function closeStudentScanner() {
@@ -1057,7 +1604,10 @@ function resetScannerView() {
     document.getElementById('scannerActiveView').style.display = 'block';
     document.getElementById('scannerResultView').style.display = 'none';
     document.getElementById('scannerProcessingOverlay').style.display = 'none';
+    document.getElementById('scannerManualDrawer').style.display = 'none';
+    document.getElementById('manualToggleIcon').style.transform = 'rotate(0deg)';
     document.getElementById('manualQrInput').value = '';
+    
     if (!html5QrScanner && document.getElementById('studentScannerModal').style.display === 'flex') {
         startHtml5Scanner();
     }
@@ -1071,8 +1621,9 @@ async function onQrScanSuccess(decodedText) {
     document.getElementById('scannerProcessingOverlay').style.display = 'flex';
     document.getElementById('scannerLaser').style.display = 'none';
 
-    // Play quick scan beep
+    // Play quick scan beep & haptic
     playScanBeep();
+    if (window.triggerHaptic) window.triggerHaptic('medium');
 
     // Fetch fresh GPS if not present
     if (!studentGeoCoords && navigator.geolocation) {
@@ -1141,7 +1692,7 @@ function renderScanSuccess(data) {
     if (data.already_clocked_in) {
         iconBox.style.background = 'rgba(59, 130, 246, 0.15)';
         iconBox.style.border = '2px solid rgba(59, 130, 246, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-info-circle-fill text-info"></i>';
+        iconBox.innerHTML = '<i class="bi bi-info-circle-fill" style="color: #60a5fa;"></i>';
         
         title.textContent = 'Already Clocked In';
         subtitle.textContent = data.message || 'You have already recorded your attendance for this class today.';
@@ -1151,7 +1702,7 @@ function renderScanSuccess(data) {
     } else {
         iconBox.style.background = 'rgba(16, 185, 129, 0.15)';
         iconBox.style.border = '2px solid rgba(16, 185, 129, 0.4)';
-        iconBox.innerHTML = '<i class="bi bi-check2-circle text-success"></i>';
+        iconBox.innerHTML = '<i class="bi bi-check2-circle" style="color: #34d399;"></i>';
 
         title.textContent = 'Attendance Recorded Successfully!';
         subtitle.textContent = `Your attendance has been recorded for ${data.subject || 'this class'}.`;
@@ -1182,7 +1733,7 @@ function renderScanError(data) {
 
     iconBox.style.background = 'rgba(239, 68, 68, 0.15)';
     iconBox.style.border = '2px solid rgba(239, 68, 68, 0.4)';
-    iconBox.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+    iconBox.innerHTML = '<i class="bi bi-x-circle-fill" style="color: #f87171;"></i>';
 
     if (data.error_type === 'schedule_mismatch') {
         title.textContent = 'Schedule Mismatch';
