@@ -192,4 +192,154 @@ class QrAttendanceFlowTest extends TestCase
             'subject_code' => $subject->code
         ]);
     }
+
+    public function test_student_in_app_qr_scanner_success_records_attendance()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A',
+            'student_number' => '2026-001'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'IT101',
+            'name' => 'Intro to Computing',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        \App\Models\Schedule::create([
+            'subject_id' => $subject->id,
+            'day' => today()->format('l'),
+            'start_time' => now()->subMinutes(5)->format('H:i:s'),
+            'end_time' => now()->addMinutes(55)->format('H:i:s')
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code,
+            'classroom_lat' => 14.5000,
+            'classroom_lng' => 121.0000
+        ]);
+
+        $startResponse->assertStatus(200);
+        $token = $startResponse->json('token');
+
+        // Student scans directly via in-app scanner
+        $scanResponse = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $token,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001,
+            'accuracy' => 15
+        ]);
+
+        $scanResponse->assertStatus(200);
+        $this->assertTrue($scanResponse->json('success'));
+        $this->assertFalse($scanResponse->json('already_clocked_in'));
+        $this->assertEquals('Present', $scanResponse->json('status'));
+        $this->assertEquals('Intro to Computing', $scanResponse->json('subject'));
+        $this->assertEquals('IT101', $scanResponse->json('subject_code'));
+        $this->assertEquals('Attendance Recorded Successfully', $scanResponse->json('message'));
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'subject_code' => 'IT101',
+            'status' => 'Present',
+            'method' => 'qr'
+        ]);
+    }
+
+    public function test_student_in_app_qr_scanner_prevents_duplicate_attendance()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'IT102',
+            'name' => 'Computer Programming',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code,
+            'classroom_lat' => 14.5000,
+            'classroom_lng' => 121.0000
+        ]);
+
+        $token = $startResponse->json('token');
+
+        // First scan
+        $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $token,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001
+        ]);
+
+        // Second scan attempts duplicate
+        $secondResponse = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $token,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001
+        ]);
+
+        $secondResponse->assertStatus(200);
+        $this->assertTrue($secondResponse->json('success'));
+        $this->assertTrue($secondResponse->json('already_clocked_in'));
+        $this->assertStringContainsString('already clocked in', $secondResponse->json('message'));
+    }
+
+    public function test_student_in_app_qr_scanner_rejects_schedule_mismatch()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        
+        // 2nd Year Student
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSIT'
+        ]);
+
+        // 1st Year Subject
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'IT103',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code
+        ]);
+
+        $token = $startResponse->json('token');
+
+        $scanResponse = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $token
+        ]);
+
+        $scanResponse->assertStatus(422);
+        $this->assertFalse($scanResponse->json('success'));
+        $this->assertEquals('schedule_mismatch', $scanResponse->json('error_type'));
+        $this->assertStringContainsString('Year mismatch', $scanResponse->json('message'));
+    }
 }

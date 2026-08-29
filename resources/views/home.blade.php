@@ -827,61 +827,219 @@ function showAttDetail(dateKey, day) {
 </script>
 
 <!-- QR Camera Scanner Modal -->
-<div id="studentScannerModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); z-index: 99999; align-items: center; justify-content: center; padding: 20px;">
-    <div style="background: #1e293b; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; max-width: 460px; width: 100%; padding: 28px 24px; color: white; box-shadow: 0 25px 60px rgba(0,0,0,0.5); text-align: center; position: relative;">
-        <button type="button" onclick="closeStudentScanner()" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+<div id="studentScannerModal" style="display: none; position: fixed; inset: 0; background: rgba(10, 10, 14, 0.88); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); z-index: 99999; align-items: center; justify-content: center; padding: 18px;">
+    <div style="background: #181614; border: 1px solid rgba(207,164,111,0.25); border-radius: 28px; max-width: 480px; width: 100%; padding: 28px 24px; color: white; box-shadow: 0 25px 70px rgba(0,0,0,0.6); text-align: center; position: relative; overflow: hidden;">
+        
+        <!-- Close Button -->
+        <button type="button" onclick="closeStudentScanner()" style="position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #f3e7cd; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.08)'">
             <i class="bi bi-x-lg"></i>
         </button>
-        <div style="width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #800000, #991b1b); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 14px; box-shadow: 0 6px 18px rgba(128,0,0,0.4);">
-            <i class="bi bi-qr-code-scan"></i>
-        </div>
-        <h4 style="font-weight: 800; font-size: 1.25rem; margin-bottom: 4px;">Scan Attendance QR</h4>
-        <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 18px;">Point your camera at the teacher's classroom QR code</p>
 
-        <div id="scannerVideoContainer" style="border-radius: 16px; overflow: hidden; background: #000; position: relative; min-height: 250px; display: flex; align-items: center; justify-content: center; border: 2px dashed rgba(207,164,111,0.4);">
-            <div id="reader" style="width: 100%;"></div>
-            <div id="scannerFallbackNotice" style="display: none; padding: 20px; color: #94a3b8; font-size: 0.85rem;">
-                <i class="bi bi-camera-video-off" style="font-size: 2rem; display: block; margin-bottom: 8px; color: #f87171;"></i>
-                Camera access unavailable. Paste the QR link or token below.
+        <!-- Scanner View State -->
+        <div id="scannerActiveView">
+            <div style="width: 58px; height: 58px; border-radius: 18px; background: linear-gradient(135deg, #cfa46f, #8c6d46); display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: #181614; margin: 0 auto 12px; box-shadow: 0 8px 24px rgba(207,164,111,0.3);">
+                <i class="bi bi-qr-code-scan"></i>
+            </div>
+            <h4 style="font-weight: 800; font-size: 1.35rem; color: #ffffff; margin-bottom: 4px; letter-spacing: -0.02em;">Scan Attendance QR</h4>
+            <p style="color: #b39b82; font-size: 0.88rem; margin-bottom: 18px;">Point camera at teacher's dynamic classroom QR code</p>
+
+            <div id="scannerVideoContainer" style="border-radius: 20px; overflow: hidden; background: #000000; position: relative; min-height: 260px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(207,164,111,0.35); box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+                <div id="reader" style="width: 100%;"></div>
+                
+                <!-- Laser line scan overlay -->
+                <div id="scannerLaser" style="position: absolute; left: 10%; right: 10%; height: 3px; background: linear-gradient(90deg, transparent, #cfa46f, #ffd700, transparent); box-shadow: 0 0 14px #ffd700; z-index: 10; animation: laserScan 2s ease-in-out infinite; pointer-events: none;"></div>
+
+                <!-- Processing overlay -->
+                <div id="scannerProcessingOverlay" style="display: none; position: absolute; inset: 0; background: rgba(15,15,17,0.85); backdrop-filter: blur(8px); z-index: 20; flex-direction: column; align-items: center; justify-content: center;">
+                    <div class="spinner-border text-warning mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                    <div style="font-weight: 700; color: #f3e7cd; font-size: 1rem;">Recording Attendance...</div>
+                    <div style="font-size: 0.8rem; color: #b39b82;">Verifying session & GPS proximity</div>
+                </div>
+
+                <!-- Fallback notice -->
+                <div id="scannerFallbackNotice" style="display: none; padding: 24px 16px; color: #b39b82; font-size: 0.88rem; text-align: center;">
+                    <i class="bi bi-camera-video-off" style="font-size: 2.4rem; display: block; margin-bottom: 10px; color: #f87171;"></i>
+                    <span id="scannerFallbackText">Camera access blocked or unavailable. Please allow camera permissions in your browser or paste the QR code token below.</span>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="requestCameraAgain()">
+                            <i class="bi bi-arrow-repeat me-1"></i> Retry Camera
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Controls (Flip / Torch) -->
+            <div class="d-flex justify-content-center gap-2 mt-3" id="cameraControls">
+                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="btn btn-sm" style="background: rgba(255,255,255,0.06); color: #f3e7cd; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 6px 14px; font-size: 0.8rem;">
+                    <i class="bi bi-camera-reverse me-1"></i> Flip Camera
+                </button>
+                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="btn btn-sm" style="background: rgba(255,255,255,0.06); color: #f3e7cd; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 6px 14px; font-size: 0.8rem;">
+                    <i class="bi bi-lightning-charge me-1"></i> Flashlight
+                </button>
+            </div>
+
+            <!-- Manual input fallback -->
+            <div class="mt-3 text-start">
+                <label style="font-size: 0.72rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 1px;">Or Enter Session Token / Link</label>
+                <div class="input-group mt-1">
+                    <input type="text" id="manualQrInput" class="form-control" placeholder="Paste scan URL or token..." style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12); color: white; border-radius: 12px 0 0 12px; font-size: 0.85rem;">
+                    <button type="button" class="btn" style="background: linear-gradient(135deg, #cfa46f, #8c6d46); color: #181614; border-radius: 0 12px 12px 0; font-weight: 700; padding: 0 18px;" onclick="submitManualQr()">
+                        Submit
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="mt-3 text-start">
-            <label style="font-size: 0.75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Or Enter Token / URL Manually</label>
-            <div class="input-group mt-1">
-                <input type="text" id="manualQrInput" class="form-control" placeholder="Paste scan URL or token..." style="background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.12); color: white; border-radius: 12px 0 0 12px; font-size: 0.85rem;">
-                <button type="button" class="btn" style="background: #800000; color: white; border-radius: 0 12px 12px 0; font-weight: 700; padding: 0 16px;" onclick="submitManualQr()">
-                    Go
+        <!-- Result View State -->
+        <div id="scannerResultView" style="display: none; text-align: center; padding: 10px 0;">
+            <div id="resultStatusIcon" style="width: 76px; height: 76px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.4rem; margin: 0 auto 16px;"></div>
+            
+            <h4 id="resultTitle" style="font-weight: 800; font-size: 1.35rem; margin-bottom: 6px; letter-spacing: -0.02em;"></h4>
+            <p id="resultSubtitle" style="color: #b39b82; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.5;"></p>
+
+            <!-- Result Details Box -->
+            <div id="resultDetailsBox" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 16px 20px; margin-bottom: 22px; text-align: left;">
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Status</span>
+                    <span id="resultBadge" class="badge" style="font-size: 0.85rem; padding: 6px 14px; border-radius: 99px;"></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Class / Subject</span>
+                    <span id="resultSubject" style="font-size: 0.88rem; font-weight: 700; color: #ffffff; text-align: right;"></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Instructor</span>
+                    <span id="resultInstructor" style="font-size: 0.88rem; color: #f3e7cd; font-weight: 600;"></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Section</span>
+                    <span id="resultSection" style="font-size: 0.88rem; color: #f3e7cd;"></span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-size: 0.78rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Recorded At</span>
+                    <span id="resultTimestamp" style="font-size: 0.88rem; color: #cfa46f; font-weight: 700;"></span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex gap-2">
+                <button type="button" id="resultDoneBtn" onclick="finishScanAndRefresh()" class="btn w-100" style="background: linear-gradient(135deg, #cfa46f, #8c6d46); color: #181614; font-weight: 800; padding: 12px; border-radius: 14px; font-size: 0.95rem;">
+                    <i class="bi bi-check-lg me-1"></i> Done
+                </button>
+                <button type="button" id="resultRetryBtn" onclick="resetScannerView()" class="btn w-100" style="display: none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #f3e7cd; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 0.95rem;">
+                    <i class="bi bi-arrow-repeat me-1"></i> Scan Again
                 </button>
             </div>
         </div>
+
     </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script>
+<style>
+@keyframes laserScan {
+    0% { top: 12%; opacity: 0.4; }
+    50% { top: 85%; opacity: 1; }
+    100% { top: 12%; opacity: 0.4; }
+}
+#reader video {
+    border-radius: 18px !important;
+    object-fit: cover !important;
+    width: 100% !important;
+    max-height: 280px !important;
+}
+#reader __scan_region__ {
+    border: none !important;
+}
+</style>
+
+<script nonce="{{ csp_nonce() }}" src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script nonce="{{ csp_nonce() }}">
 let html5QrScanner = null;
+let currentFacingMode = "environment";
+let torchEnabled = false;
+let studentGeoCoords = null;
+
+// Auto-capture GPS coords quietly for faster validation
+if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+        pos => { studentGeoCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; },
+        () => {},
+        { enableHighAccuracy: true, timeout: 5000 }
+    );
+}
 
 function openStudentScanner() {
     const modal = document.getElementById('studentScannerModal');
     modal.style.display = 'flex';
-    document.getElementById('scannerFallbackNotice').style.display = 'none';
+    resetScannerView();
+
+    startHtml5Scanner();
+}
+
+function startHtml5Scanner() {
+    const fallbackNotice = document.getElementById('scannerFallbackNotice');
+    fallbackNotice.style.display = 'none';
 
     try {
         if (typeof Html5Qrcode !== 'undefined') {
-            html5QrScanner = new Html5Qrcode("reader");
-            const config = { fps: 10, qrbox: { width: 220, height: 220 } };
-            html5QrScanner.start({ facingMode: "environment" }, config, onQrScanSuccess)
-                .catch(err => {
-                    console.warn("Camera start failed, showing manual input fallback:", err);
-                    document.getElementById('scannerFallbackNotice').style.display = 'block';
-                });
+            if (html5QrScanner) {
+                html5QrScanner.stop().catch(() => {}).finally(() => initScannerInstance());
+            } else {
+                initScannerInstance();
+            }
         } else {
-            document.getElementById('scannerFallbackNotice').style.display = 'block';
+            showCameraError("Scanner library loading. Please check connection or enter code manually.");
         }
     } catch (e) {
-        document.getElementById('scannerFallbackNotice').style.display = 'block';
+        showCameraError("Camera initialization failed: " + e.message);
     }
+}
+
+function initScannerInstance() {
+    html5QrScanner = new Html5Qrcode("reader");
+    const config = {
+        fps: 15,
+        qrbox: { width: 230, height: 230 },
+        aspectRatio: 1.0
+    };
+
+    html5QrScanner.start(
+        { facingMode: currentFacingMode },
+        config,
+        onQrScanSuccess
+    ).then(() => {
+        document.getElementById('scannerLaser').style.display = 'block';
+    }).catch(err => {
+        console.warn("Camera start failed:", err);
+        showCameraError("Camera permission denied or camera not found. Allow camera access to scan.");
+    });
+}
+
+function showCameraError(msg) {
+    document.getElementById('scannerFallbackNotice').style.display = 'block';
+    document.getElementById('scannerFallbackText').textContent = msg;
+    document.getElementById('scannerLaser').style.display = 'none';
+}
+
+function requestCameraAgain() {
+    startHtml5Scanner();
+}
+
+function toggleCameraFacing() {
+    currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+    startHtml5Scanner();
+}
+
+function toggleTorch() {
+    if (!html5QrScanner) return;
+    try {
+        torchEnabled = !torchEnabled;
+        html5QrScanner.applyVideoConstraints({
+            advanced: [{ torch: torchEnabled }]
+        }).catch(() => {
+            alert('Torch / Flashlight is not supported on this camera.');
+        });
+    } catch (e) {}
 }
 
 function closeStudentScanner() {
@@ -895,27 +1053,218 @@ function closeStudentScanner() {
     }
 }
 
-function onQrScanSuccess(decodedText) {
+function resetScannerView() {
+    document.getElementById('scannerActiveView').style.display = 'block';
+    document.getElementById('scannerResultView').style.display = 'none';
+    document.getElementById('scannerProcessingOverlay').style.display = 'none';
+    document.getElementById('manualQrInput').value = '';
+    if (!html5QrScanner && document.getElementById('studentScannerModal').style.display === 'flex') {
+        startHtml5Scanner();
+    }
+}
+
+async function onQrScanSuccess(decodedText) {
     if (html5QrScanner) {
         html5QrScanner.stop().catch(() => {});
     }
-    
-    // Check if decoded text is a full URL or just a token
-    if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
-        window.location.href = decodedText;
-    } else {
-        window.location.href = '/qr/scan/' + encodeURIComponent(decodedText.trim());
+
+    document.getElementById('scannerProcessingOverlay').style.display = 'flex';
+    document.getElementById('scannerLaser').style.display = 'none';
+
+    // Play quick scan beep
+    playScanBeep();
+
+    // Fetch fresh GPS if not present
+    if (!studentGeoCoords && navigator.geolocation) {
+        try {
+            await new Promise((resolve) => {
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        studentGeoCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
+                        resolve();
+                    },
+                    () => resolve(),
+                    { enableHighAccuracy: true, timeout: 3500 }
+                );
+            });
+        } catch(e) {}
     }
+
+    const payload = {
+        token: decodedText.trim(),
+        latitude: studentGeoCoords ? studentGeoCoords.lat : null,
+        longitude: studentGeoCoords ? studentGeoCoords.lng : null,
+        accuracy: studentGeoCoords ? studentGeoCoords.acc : null
+    };
+
+    try {
+        const response = await fetch('{{ route("qr.scan.process") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        document.getElementById('scannerProcessingOverlay').style.display = 'none';
+
+        if (response.ok && data.success) {
+            renderScanSuccess(data);
+        } else {
+            renderScanError(data);
+        }
+    } catch (error) {
+        document.getElementById('scannerProcessingOverlay').style.display = 'none';
+        renderScanError({
+            message: 'Network connection failed. Please verify your internet connection and try again.'
+        });
+    }
+}
+
+function renderScanSuccess(data) {
+    document.getElementById('scannerActiveView').style.display = 'none';
+    document.getElementById('scannerResultView').style.display = 'block';
+
+    const iconBox = document.getElementById('resultStatusIcon');
+    const badge = document.getElementById('resultBadge');
+    const title = document.getElementById('resultTitle');
+    const subtitle = document.getElementById('resultSubtitle');
+    const retryBtn = document.getElementById('resultRetryBtn');
+    const doneBtn = document.getElementById('resultDoneBtn');
+
+    retryBtn.style.display = 'none';
+    doneBtn.style.display = 'block';
+
+    if (data.already_clocked_in) {
+        iconBox.style.background = 'rgba(59, 130, 246, 0.15)';
+        iconBox.style.border = '2px solid rgba(59, 130, 246, 0.4)';
+        iconBox.innerHTML = '<i class="bi bi-info-circle-fill text-info"></i>';
+        
+        title.textContent = 'Already Clocked In';
+        subtitle.textContent = data.message || 'You have already recorded your attendance for this class today.';
+        
+        badge.className = 'badge bg-info text-dark';
+        badge.textContent = data.status || 'Present';
+    } else {
+        iconBox.style.background = 'rgba(16, 185, 129, 0.15)';
+        iconBox.style.border = '2px solid rgba(16, 185, 129, 0.4)';
+        iconBox.innerHTML = '<i class="bi bi-check2-circle text-success"></i>';
+
+        title.textContent = 'Attendance Recorded Successfully!';
+        subtitle.textContent = `Your attendance has been recorded for ${data.subject || 'this class'}.`;
+
+        const isPresent = (data.status || 'Present') === 'Present';
+        badge.className = isPresent ? 'badge bg-success' : 'badge bg-warning text-dark';
+        badge.textContent = data.status || 'Present';
+
+        playSuccessChime();
+        if (window.triggerHaptic) window.triggerHaptic('success');
+    }
+
+    document.getElementById('resultSubject').textContent = (data.subject || 'Subject') + (data.subject_code ? ' (' + data.subject_code + ')' : '');
+    document.getElementById('resultInstructor').textContent = data.instructor || 'Instructor';
+    document.getElementById('resultSection').textContent = data.section || 'Regular';
+    document.getElementById('resultTimestamp').textContent = (data.date || '') + (data.time ? ' at ' + data.time : '');
+}
+
+function renderScanError(data) {
+    document.getElementById('scannerActiveView').style.display = 'none';
+    document.getElementById('scannerResultView').style.display = 'block';
+
+    const iconBox = document.getElementById('resultStatusIcon');
+    const title = document.getElementById('resultTitle');
+    const subtitle = document.getElementById('resultSubtitle');
+    const retryBtn = document.getElementById('resultRetryBtn');
+    const doneBtn = document.getElementById('resultDoneBtn');
+
+    iconBox.style.background = 'rgba(239, 68, 68, 0.15)';
+    iconBox.style.border = '2px solid rgba(239, 68, 68, 0.4)';
+    iconBox.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+
+    if (data.error_type === 'schedule_mismatch') {
+        title.textContent = 'Schedule Mismatch';
+    } else if (data.error_type === 'session_closed' || data.error_type === 'invalid_or_expired') {
+        title.textContent = 'QR Code Expired / Closed';
+    } else if (data.error_type === 'outside_classroom') {
+        title.textContent = 'Outside Classroom Range';
+    } else {
+        title.textContent = 'Unable to Record Attendance';
+    }
+
+    subtitle.textContent = data.message || 'The scanned QR code could not be processed. Please check with your instructor.';
+
+    document.getElementById('resultDetailsBox').style.display = 'none';
+    retryBtn.style.display = 'block';
+    doneBtn.style.display = 'none';
+
+    if (window.triggerHaptic) window.triggerHaptic('error');
+}
+
+function finishScanAndRefresh() {
+    closeStudentScanner();
+    window.location.reload();
 }
 
 function submitManualQr() {
     const val = (document.getElementById('manualQrInput')?.value || '').trim();
-    if (!val) return;
+    if (!val) {
+        alert('Please paste the QR attendance token or link.');
+        return;
+    }
     onQrScanSuccess(val);
 }
+
+function playScanBeep() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+}
+
+function playSuccessChime() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+    } catch(e) {}
+}
+
+// Auto open scanner if directed with URL query
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('open_scanner') === '1') {
+        openStudentScanner();
+    }
+});
 </script>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 // ── Skeleton → Content Reveal ──
 document.addEventListener('DOMContentLoaded', function() {
     var skelStats = document.getElementById('skelStats');

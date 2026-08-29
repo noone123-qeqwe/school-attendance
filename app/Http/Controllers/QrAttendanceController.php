@@ -541,7 +541,16 @@ class QrAttendanceController extends Controller
             ->first();
 
         if ($existing && in_array($existing->status, ['Present', 'Late'])) {
-            return view('qr.result', ['status' => 'already', 'message' => 'You have already clocked in for this class.', 'subject' => $subject->name, 'status_val' => $existing->status]);
+            return view('qr.result', [
+                'status'     => 'already',
+                'message'    => 'You have already clocked in for this class today.',
+                'subject'    => $subject->name . ' (' . $subject->code . ')',
+                'instructor' => $subject->instructor->name ?? 'Instructor',
+                'section'    => $subject->section ?? $user->section ?? 'Regular',
+                'time'       => $existing->time_in ? Carbon::parse($existing->time_in)->format('h:i A') : '',
+                'date'       => Carbon::parse($existing->date)->format('F j, Y'),
+                'status_val' => $existing->status
+            ]);
         }
 
         $classroomLat = (float) ($session->classroom_lat ?? $this->getSchoolLat());
@@ -932,6 +941,222 @@ class QrAttendanceController extends Controller
             'success'  => true,
             'redirect' => route('home'),
             'message'  => "Clock-in successful! Status: {$status}",
+        ]);
+    }
+
+    // ─────────────────────────────────────────
+    // STUDENT: Direct In-App QR Scanner Process
+    // ─────────────────────────────────────────
+    public function processScan(Request $request)
+    {
+        $request->validate([
+            'token'     => 'required|string',
+            'latitude'  => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'accuracy'  => 'nullable|numeric',
+        ]);
+
+        if (!Auth::check()) {
+            return response()->json([
+                'success' => false,
+                'require_login' => true,
+                'message' => 'Please log in to record attendance.'
+            ], 401);
+        }
+
+        $user = Auth::user();
+        if ($user->role !== 'student') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only enrolled students can record attendance.'
+            ], 403);
+        }
+
+        // Clean token if full URL was scanned
+        $rawToken = trim($request->token);
+        if (str_contains($rawToken, '/qr/scan/')) {
+            $parts = explode('/qr/scan/', $rawToken);
+            $rawToken = explode('?', $parts[1] ?? '')[0];
+        }
+
+        $session = AttendanceSession::with(['subject.instructor'])->where('token', $rawToken)->first();
+
+        if (!$session) {
+            return response()->json([
+                'success' => false,
+                'error_type' => 'invalid_or_expired',
+                'message' => 'Invalid or expired QR code. Please scan the latest active QR code displayed by your teacher.'
+            ], 422);
+        }
+
+        if (!$session->active || now()->gt($session->session_ends_at)) {
+            return response()->json([
+                'success' => false,
+                'error_type' => 'session_closed',
+                'message' => 'The attendance session for this class has closed. QR codes are only valid while the session is active.'
+            ], 422);
+        }
+
+        $subject = $session->subject;
+        if (!$subject) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Class subject not found.'
+            ], 404);
+        }
+
+        $todayDate = now()->toDateString();
+        $now = now('Asia/Manila');
+
+        // 1. Schedule & Class / Section Validation
+        $mismatchReason = $this->scheduleMismatchReason($subject, $user);
+        if ($mismatchReason) {
+            return response()->json([
+                'success' => false,
+                'error_type' => 'schedule_mismatch',
+                'message' => 'This QR code is not intended for your class: ' . $mismatchReason
+            ], 422);
+        }
+
+        // 2. Prevent duplicate scan
+        $existing = Attendance::where('user_id', $user->id)
+            ->where('subject_code', $session->subject_code)
+            ->where('date', $todayDate)
+            ->first();
+
+        if ($existing && in_array($existing->status, ['Present', 'Late'])) {
+            $existingTime = $existing->time_in ? Carbon::parse($existing->time_in)->format('h:i A') : 'Earlier';
+            return response()->json([
+                'success' => true,
+                'already_clocked_in' => true,
+                'status' => $existing->status,
+                'time' => $existingTime,
+                'date' => Carbon::parse($existing->date)->format('F j, Y'),
+                'student_name' => $user->name,
+                'student_id' => $user->student_number ?? (string) $user->id,
+                'subject' => $subject->name,
+                'subject_code' => $subject->code,
+                'section' => $subject->section ?? $user->section ?? 'Regular',
+                'instructor' => ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : 'Instructor')),
+                'session_id' => $session->id,
+                'message' => "You have already clocked in for this class today at {$existingTime}."
+            ]);
+        }
+
+        // 3. Geofence Distance Check (if coordinates provided and session coordinates exist)
+        $schoolLat = $session->classroom_lat ?? $this->getSchoolLat();
+        $schoolLng = $session->classroom_lng ?? $this->getSchoolLng();
+        $radiusMeters = \App\Models\Setting::get('gps_radius', $this->getRadiusMeters());
+
+        if ($request->filled('latitude') && $request->filled('longitude') && $session->classroom_lat !== null) {
+            $distance = $this->distance(
+                (float) $request->latitude,
+                (float) $request->longitude,
+                $schoolLat,
+                $schoolLng
+            );
+
+            if ($distance > $radiusMeters) {
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'outside_classroom',
+                    'distance' => round($distance),
+                    'radius' => $radiusMeters,
+                    'message' => 'You are outside the classroom boundary (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Please scan inside the classroom.'
+                ], 422);
+            }
+        }
+
+        // 4. Calculate Timing (Present vs Late threshold)
+        $startTime = null;
+        if ($subject->schedules) {
+            $todayName = $now->format('l');
+            $matchingSchedule = $subject->schedules->first(function ($sched) use ($todayName) {
+                return strcasecmp(trim($sched->day ?? ''), $todayName) === 0;
+            });
+            if ($matchingSchedule) {
+                $startTime = Carbon::parse($todayDate . ' ' . $matchingSchedule->start_time);
+            }
+        }
+        if (!$startTime && $subject->start_time) {
+            $startTime = Carbon::parse($todayDate . ' ' . $subject->start_time);
+        }
+
+        $status = 'Present';
+        if ($startTime) {
+            $lateThreshold = $startTime->copy()->addMinutes(15);
+            $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
+        }
+
+        // 5. Record Attendance in Database
+        try {
+            $attendance = Attendance::updateOrCreate(
+                ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
+                [
+                    'status' => $status,
+                    'excused' => false,
+                    'excuse_note' => null,
+                    'time_in' => $now->format('H:i:s'),
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                    'gps_accuracy' => $request->accuracy,
+                    'method' => 'qr',
+                ]
+            );
+        } catch (\Exception $e) {
+            $attendance = Attendance::where('user_id', $user->id)
+                ->where('subject_code', $session->subject_code)
+                ->where('date', $todayDate)
+                ->first();
+        }
+
+        // 6. Broadcast Real-Time Update to Teacher
+        try {
+            $attendanceRecords = Attendance::where('subject_code', $session->subject_code)
+                ->whereDate('date', $todayDate)
+                ->whereNotNull('time_in')
+                ->get();
+
+            $totalStudents = User::where('role', 'student')
+                ->where('year_level', $subject->year_level)
+                ->where('semester', $subject->semester)
+                ->when(!empty($subject->course), fn($query) => $query->where('course', $subject->course))
+                ->when(!empty($subject->section), fn($query) => $query->where('section', $subject->section))
+                ->count();
+
+            $stats = [
+                'total_present'  => $attendanceRecords->where('status', 'Present')->count(),
+                'total_late'     => $attendanceRecords->where('status', 'Late')->count(),
+                'total_absent'   => max($totalStudents - $attendanceRecords->count(), 0),
+                'total_students' => $totalStudents,
+            ];
+
+            broadcast(new TeacherAttendanceUpdated(
+                (int) $session->created_by,
+                $user->name,
+                $session->subject_code,
+                $status,
+                'clock_in',
+                $stats
+            ));
+        } catch (\Throwable $e) {
+            // Ignore broadcast failure in local/test
+        }
+
+        return response()->json([
+            'success' => true,
+            'already_clocked_in' => false,
+            'status' => $status,
+            'time' => $now->format('h:i A'),
+            'date' => $now->format('F j, Y'),
+            'student_name' => $user->name,
+            'student_id' => $user->student_number ?? (string) $user->id,
+            'subject' => $subject->name,
+            'subject_code' => $subject->code,
+            'section' => $subject->section ?? $user->section ?? 'Regular',
+            'instructor' => ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : 'Instructor')),
+            'session_id' => $session->id,
+            'message' => 'Attendance Recorded Successfully'
         ]);
     }
 

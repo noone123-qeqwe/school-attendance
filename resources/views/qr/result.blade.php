@@ -126,18 +126,27 @@
             <div class="result-icon" style="background: rgba(16, 185, 129, 0.15); border: 2px solid rgba(16, 185, 129, 0.4);">
                 <i class="bi bi-check2-circle" style="color: #34d399;"></i>
             </div>
-            <div class="result-title">Clocked In Successfully!</div>
+            <div class="result-title">Attendance Recorded Successfully!</div>
             <div class="result-sub">{{ $message ?? 'Your attendance has been recorded for this class session.' }}</div>
             
             <div class="result-badge" style="background: {{ ($status_val ?? 'Present') === 'Present' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)' }}; color: {{ ($status_val ?? 'Present') === 'Present' ? '#34d399' : '#fbbf24' }}; border: 1px solid {{ ($status_val ?? 'Present') === 'Present' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(245, 158, 11, 0.3)' }};">
                 <i class="bi bi-patch-check-fill me-1"></i> {{ $status_val ?? 'Present' }} @if(!empty($time)) — {{ $time }} @endif
             </div>
             
-            @if(!empty($subject))
-                <div class="subject-box">
-                    <i class="bi bi-journal-text me-1 text-warning"></i> {{ $subject }}
-                </div>
-            @endif
+            <div class="subject-box text-start" style="line-height: 1.8;">
+                @if(!empty($subject))
+                    <div><strong><i class="bi bi-journal-text me-1 text-warning"></i> Subject:</strong> {{ $subject }}</div>
+                @endif
+                @if(!empty($instructor))
+                    <div><strong><i class="bi bi-person-badge me-1 text-warning"></i> Instructor:</strong> {{ $instructor }}</div>
+                @endif
+                @if(!empty($section))
+                    <div><strong><i class="bi bi-people me-1 text-warning"></i> Section:</strong> {{ $section }}</div>
+                @endif
+                @if(!empty($date))
+                    <div><strong><i class="bi bi-calendar-event me-1 text-warning"></i> Date:</strong> {{ $date }}</div>
+                @endif
+            </div>
 
         @elseif($status === 'already')
             <div class="result-icon" style="background: rgba(59, 130, 246, 0.15); border: 2px solid rgba(59, 130, 246, 0.4);">
@@ -148,15 +157,21 @@
             
             @if(!empty($status_val))
             <div class="result-badge" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3);">
-                Status: {{ $status_val }}
+                Status: {{ $status_val }} @if(!empty($time)) (at {{ $time }}) @endif
             </div>
             @endif
 
-            @if(!empty($subject))
-                <div class="subject-box">
-                    <i class="bi bi-journal-text me-1 text-info"></i> {{ $subject }}
-                </div>
-            @endif
+            <div class="subject-box text-start" style="line-height: 1.8;">
+                @if(!empty($subject))
+                    <div><strong><i class="bi bi-journal-text me-1 text-info"></i> Subject:</strong> {{ $subject }}</div>
+                @endif
+                @if(!empty($instructor))
+                    <div><strong><i class="bi bi-person-badge me-1 text-info"></i> Instructor:</strong> {{ $instructor }}</div>
+                @endif
+                @if(!empty($section))
+                    <div><strong><i class="bi bi-people me-1 text-info"></i> Section:</strong> {{ $section }}</div>
+                @endif
+            </div>
 
         @elseif($status === 'outside_classroom')
             <div class="result-icon" style="background: rgba(239, 68, 68, 0.15); border: 2px solid rgba(239, 68, 68, 0.4);">

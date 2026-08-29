@@ -27,6 +27,11 @@ class Subject extends Model
         return $this->belongsTo(User::class, 'instructor_id');
     }
 
+    public function instructor()
+    {
+        return $this->belongsTo(User::class, 'instructor_id');
+    }
+
     public function schedules()
     {
         return $this->hasMany(Schedule::class);

@@ -287,6 +287,7 @@
         @else
             navItems = [
                 { label: 'Dashboard', hint: 'Student home', icon: 'bi-grid-fill', url: '{{ route("home") }}' },
+                { label: 'Scan Attendance QR', hint: 'Open camera scanner', icon: 'bi-qr-code-scan', url: '{{ route("home") }}?open_scanner=1' },
                 { label: 'My Classes', hint: 'Enrolled subjects', icon: 'bi-folder', url: '{{ route("student.classes") }}' },
                 { label: 'My Schedule', hint: 'Weekly timetable', icon: 'bi-calendar-week', url: '{{ route("student.schedule") }}' },
                 { label: 'Notifications', hint: 'Alerts & warnings', icon: 'bi-bell', url: '{{ route("notifications") }}' },
