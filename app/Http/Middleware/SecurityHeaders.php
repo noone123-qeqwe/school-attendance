@@ -53,10 +53,11 @@ class SecurityHeaders
         $csp = implode(' ', [
             "default-src 'self';",
 
-            // Scripts: nonce required; CDN bundles allowed by origin only.
-            // 'unsafe-inline' is intentionally absent — nonce supersedes it in
-            // modern browsers; legacy browsers fall back silently.
-            "script-src 'self' 'nonce-{$nonce}' https://cdn.jsdelivr.net;",
+            // Scripts: nonce + unsafe-inline for inline onclick handlers.
+            // unsafe-inline is required because the codebase uses inline event
+            // handlers (onclick, onchange, etc.) extensively across all views.
+            // The nonce still protects injected <script> blocks.
+            "script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://cdn.jsdelivr.net;",
 
             // Styles: nonce for inline styles; CDN origins for Bootstrap / Fonts.
             // 'unsafe-inline' kept here because moving every inline style to a

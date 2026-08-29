@@ -927,7 +927,7 @@
 
 </div>
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 async function checkForAppUpdates() {
     const btn = document.getElementById('checkUpdateBtn');
     const feedback = document.getElementById('updateFeedbackArea');
