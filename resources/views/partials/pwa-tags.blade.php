@@ -375,7 +375,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <div style="display:flex; align-items:center; gap:10px;">
                 <img src="/images/icons/icon-72x72.png" style="width:34px; height:34px; border-radius:8px; border:1px solid rgba(207,164,111,0.3);" alt="App Icon">
-                <h3 id="pwaModalTitle" style="margin:0; font-size:1.1rem; color:#F3E7CD; text-align:left;">Install Attendance App</h3>
+                <h3 id="pwaModalTitle" style="margin:0; font-size:1.1rem; color:#F3E7CD; text-align:left;">Install Smart Attendance</h3>
             </div>
             <button type="button" id="pwaModalCloseIcon" style="background:none; border:none; color:#B39B82; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px;">&times;</button>
         </div>
@@ -614,12 +614,12 @@
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">3</div>
-                    <div>Tap <strong>Install Attendance App</strong> once opened in the browser</div>
+                    <div>Tap <strong>Install Smart Attendance</strong> once opened in the browser</div>
                 </div>
             `;
         } else if (isIosSafari) {
-            if (titleEl) titleEl.textContent = 'Install on iPhone / iPad';
-            if (subEl) subEl.textContent = 'Add Attendance to your Home Screen in 3 quick steps:';
+            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
+            if (subEl) subEl.textContent = 'Add Smart Attendance to your Home Screen in 3 quick steps:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">1</div>
@@ -635,7 +635,7 @@
                 </div>
             `;
         } else if (isIos) {
-            if (titleEl) titleEl.textContent = 'Install on iPhone / iPad';
+            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
             if (subEl) subEl.textContent = 'To install on iOS from this browser:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
@@ -648,12 +648,12 @@
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">3</div>
-                    <div>Tap <strong>Add</strong> to put the app on your home screen</div>
+                    <div>Tap <strong>Add</strong> to put Smart Attendance on your home screen</div>
                 </div>
             `;
         } else if (isSamsung) {
-            if (titleEl) titleEl.textContent = 'Install on Samsung Internet';
-            if (subEl) subEl.textContent = 'Add Attendance to your Home Screen:';
+            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
+            if (subEl) subEl.textContent = 'Add Smart Attendance to your Home Screen:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">1</div>
@@ -669,8 +669,8 @@
                 </div>
             `;
         } else if (isAndroid) {
-            if (titleEl) titleEl.textContent = 'Install on Android';
-            if (subEl) subEl.textContent = 'Install the Attendance App from your browser menu:';
+            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
+            if (subEl) subEl.textContent = 'Install Smart Attendance from your browser menu:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">1</div>
@@ -686,7 +686,7 @@
                 </div>
             `;
         } else {
-            if (titleEl) titleEl.textContent = 'Install Attendance App';
+            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
             if (subEl) subEl.textContent = 'Install on your computer or mobile device:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
