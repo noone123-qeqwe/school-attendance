@@ -8,6 +8,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ asset('css/premium.css') }}">
+    <link rel="preload" as="image" href="/images/background.jpg" media="(min-width: 769px)">
+    <link rel="preload" as="image" href="/images/background_mobile.jpg" media="(max-width: 768px)">
     @include('partials.pwa-tags')
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,9 +64,14 @@
         /* â”€â”€ FULL-SCREEN BACKGROUND â”€â”€ */
         .bg-scene {
             position: fixed; inset: 0;
-            background: url('{{ asset("images/background.png") }}') center center / cover no-repeat;
+            background: url('/images/background.jpg') center center / cover no-repeat;
             background-color: #1a0a0a;
             z-index: 0;
+        }
+        @media (max-width: 768px) {
+            .bg-scene {
+                background-image: url('/images/background_mobile.jpg');
+            }
         }
         .bg-scene::after {
             content: '';
