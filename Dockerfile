@@ -45,8 +45,9 @@ COPY . .
 RUN composer dump-autoload --optimize --no-dev \
     && npm run build
 
-# Configure Nginx and Entrypoint script
+# Configure Nginx, PHP-FPM, and Entrypoint script
 COPY nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 COPY docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
@@ -60,6 +61,6 @@ RUN mkdir -p /var/www/html/storage/logs \
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-EXPOSE 80
+EXPOSE 10000 80
 
 ENTRYPOINT ["/usr/local/bin/start.sh"]

@@ -62,7 +62,17 @@ php artisan view:cache || true
 
 # Start PHP-FPM in daemon mode
 echo "🐘 Starting PHP-FPM..."
+mkdir -p /var/run
+rm -f /var/run/php-fpm.sock
 php-fpm -D
+
+# Wait briefly for PHP-FPM socket to initialize
+RETRY_FPM=0
+while [ ! -e /var/run/php-fpm.sock ] && [ $RETRY_FPM -lt 10 ]; do
+    sleep 0.5
+    RETRY_FPM=$((RETRY_FPM+1))
+done
+chmod 666 /var/run/php-fpm.sock 2>/dev/null || true
 
 # Start Nginx in the foreground
 echo "🚀 Starting Nginx..."
