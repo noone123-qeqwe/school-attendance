@@ -141,11 +141,12 @@
 .spanel{display:none;}.spanel.active{display:block;}
 .sc{background:rgba(255,235,190,0.02);border-radius:16px;border:1px solid rgba(255,215,145,0.08);box-shadow:0 4px 15px rgba(0,0,0,.2);overflow:hidden;margin-bottom:20px;transition:all .25s;}
 .sc:hover{box-shadow:0 8px 25px rgba(0,0,0,.3);border-color:rgba(255,215,145,0.15);}
-.sc-head{padding:28px 40px;border-bottom:1px solid rgba(255,215,145,0.06);display:flex;align-items:center;gap:20px;}
-.sc-icon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:rgba(207,164,111,0.12)!important;color:#cfa46f!important;}
-.sc-title{font-size:1.15rem;font-weight:700;color:#f3e7cd;}
-.sc-sub{font-size:.9rem;color:#b39b82;margin-top:4px;}
-.sc-body{padding:40px;}
+.sc-head{padding:20px 22px;border-bottom:1px solid rgba(255,215,145,0.06);display:flex;align-items:center;gap:16px;}
+.sc-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:rgba(207,164,111,0.12)!important;color:#cfa46f!important;flex-shrink:0;}
+.sc-title{font-size:1.05rem;font-weight:700;color:#f3e7cd;}
+.sc-sub{font-size:.82rem;color:#b39b82;margin-top:3px;}
+.sc-body{padding:18px 18px 20px;}
+@media(max-width:640px){.sc-head{padding:16px 16px;}.sc-body{padding:14px 14px 18px;}}
 .sl{font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;}
 .si{width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid rgba(255,215,145,0.12);font-size:.875rem;font-family:'Inter',sans-serif;background:rgba(255,235,190,0.05);color:#f3e7cd;transition:all .2s;outline:none;}
 .si:hover{border-color:rgba(255,215,145,0.25);background:rgba(255,235,190,0.08);}
@@ -320,6 +321,8 @@
     padding: 5px 12px;
     border-radius: 99px;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .profile-badge-year {
     background: rgba(207, 164, 111, 0.12);
@@ -330,58 +333,416 @@
     padding: 5px 12px;
     border-radius: 99px;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-/* ── Modern Dashboard Cards ── */
+/* ── Modern Security Dashboard Design System ── */
+.sec-health-hero {
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.08) 0%, rgba(30, 22, 18, 0.65) 100%);
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+}
+.sec-health-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+.sec-health-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(207, 164, 111, 0.15);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    color: #f5dfa8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.sec-health-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #f3e7cd;
+    letter-spacing: -0.2px;
+    line-height: 1.25;
+}
+.sec-health-sub {
+    font-size: 0.78rem;
+    color: #b39b82;
+    margin-top: 2px;
+}
+.sec-health-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 99px;
+    white-space: nowrap;
+}
+.sec-pulse-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 8px #4ade80;
+    animation: secPulse 2s infinite ease-in-out;
+}
+@keyframes secPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.6; }
+}
+
+.sec-matrix-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+}
+@media (max-width: 768px) {
+    .sec-matrix-bar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+.sec-matrix-item {
+    background: rgba(255, 235, 190, 0.03);
+    border: 1px solid rgba(255, 215, 145, 0.09);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    transition: all 0.2s ease;
+}
+.sec-matrix-item:hover {
+    border-color: rgba(207, 164, 111, 0.25);
+    background: rgba(255, 235, 190, 0.06);
+}
+
+.sec-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+}
+
 .sec-card {
-    background: rgba(255, 235, 190, 0.03) !important;
-    border: 1px solid rgba(255, 215, 145, 0.1) !important;
+    background: rgba(24, 17, 15, 0.88) !important;
+    border: 1px solid rgba(255, 215, 145, 0.12) !important;
+    border-left: 3.5px solid var(--card-accent, #cfa46f) !important;
     border-radius: 16px !important;
-    padding: 20px 18px !important;
-    margin-bottom: 16px !important;
+    padding: 18px !important;
+    margin-bottom: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    position: relative !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
     transition: all 0.25s ease !important;
 }
 .sec-card:hover {
-    border-color: rgba(255, 215, 145, 0.22) !important;
-    background: rgba(255, 235, 190, 0.05) !important;
-    box-shadow: 0 8px 24px -6px rgba(0,0,0,0.5) !important;
+    border-color: rgba(207, 164, 111, 0.3) !important;
+    border-left-color: var(--card-accent, #cfa46f) !important;
+    background: rgba(30, 21, 18, 0.94) !important;
+    box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.55), 0 0 16px rgba(207, 164, 111, 0.1) !important;
+    transform: translateY(-2px) !important;
 }
-.sec-card-header {
+
+.sec-card-top {
     display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
+    align-items: flex-start !important;
     gap: 12px !important;
     margin-bottom: 14px !important;
-    flex-wrap: wrap !important;
-}
-.sec-card-title-wrap {
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    flex: 1 !important;
-    min-width: 0 !important;
 }
 .sec-card-icon {
     width: 40px !important;
     height: 40px !important;
-    border-radius: 12px !important;
+    border-radius: 11px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     font-size: 1.15rem !important;
     flex-shrink: 0 !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 3px 8px rgba(0, 0, 0, 0.25) !important;
 }
-.sec-card-title {
-    font-size: 0.95rem !important;
+.sec-card-meta {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+.sec-card-header-line {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-bottom: 2px !important;
+}
+.sec-card-name {
+    font-size: 0.94rem !important;
+    font-weight: 800 !important;
+    color: #f3e7cd !important;
+    line-height: 1.25 !important;
+    letter-spacing: -0.2px !important;
+}
+.sec-card-subtitle {
+    font-size: 0.74rem !important;
+    color: #b39b82 !important;
+    line-height: 1.35 !important;
+}
+
+.sec-badge {
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    padding: 3px 8px !important;
+    border-radius: 99px !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+    letter-spacing: 0.2px !important;
+}
+.sec-badge-blue {
+    background: rgba(59, 130, 246, 0.12) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+.sec-badge-amber {
+    background: rgba(245, 158, 11, 0.12) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+.sec-badge-green {
+    background: rgba(34, 197, 94, 0.12) !important;
+    color: #4ade80 !important;
+    border: 1px solid rgba(34, 197, 94, 0.3) !important;
+}
+.sec-badge-gold {
+    background: rgba(207, 164, 111, 0.14) !important;
+    color: #f5dfa8 !important;
+    border: 1px solid rgba(207, 164, 111, 0.3) !important;
+}
+
+.sec-card-content {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    margin-top: 10px !important;
+    padding-top: 12px !important;
+    border-top: 1px solid rgba(255, 215, 145, 0.07) !important;
+}
+.sec-card-hint {
+    font-size: 0.78rem !important;
+    color: #b39b82 !important;
+    line-height: 1.45 !important;
+    margin-bottom: 14px !important;
+}
+
+.sec-input-display {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding: 9px 12px !important;
+    background: rgba(59, 130, 246, 0.07) !important;
+    border: 1px solid rgba(59, 130, 246, 0.22) !important;
+    border-radius: 10px !important;
+    margin-bottom: 12px !important;
+}
+.sec-input-val {
+    font-size: 0.85rem !important;
     font-weight: 700 !important;
     color: #f3e7cd !important;
-    margin-bottom: 2px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    flex: 1 !important;
+}
+.sec-copy-btn {
+    background: transparent !important;
+    border: none !important;
+    color: #8f826f !important;
+    cursor: pointer !important;
+    padding: 3px 6px !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
+}
+.sec-copy-btn:hover {
+    color: #f3e7cd !important;
+}
+
+.sec-status-tile {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 8px 12px !important;
+    background: rgba(255, 235, 190, 0.03) !important;
+    border: 1px solid rgba(255, 215, 145, 0.08) !important;
+    border-radius: 10px !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: #f3e7cd !important;
+    margin-bottom: 12px !important;
+}
+
+.sec-feature-chips {
+    display: flex !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    margin-bottom: 10px !important;
+}
+.sec-feature-chips span {
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    background: rgba(34, 197, 94, 0.06) !important;
+    border: 1px solid rgba(34, 197, 94, 0.18) !important;
+    color: #86efac !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+}
+
+.sec-action-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    padding: 10px 16px !important;
+    border-radius: 11px !important;
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.2px !important;
+    cursor: pointer !important;
+    border: none !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    text-decoration: none !important;
+}
+.sec-action-btn:hover {
+    transform: translateY(-1px) !important;
+    filter: brightness(1.08) !important;
+}
+.sec-action-btn:active {
+    transform: translateY(0) scale(0.98) !important;
+}
+.sec-btn-blue {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.35) !important;
+}
+.sec-btn-amber {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(217,119,6,0.35) !important;
+}
+.sec-btn-emerald {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(22,163,74,0.35) !important;
+}
+.sec-btn-gold {
+    background: linear-gradient(135deg, #cfa46f 0%, #a67c43 100%) !important;
+    color: #140703 !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px rgba(207,164,111,0.35) !important;
+}
+.sec-card-title {
+    font-size: 0.96rem !important;
+    font-weight: 800 !important;
+    color: #f3e7cd !important;
     line-height: 1.3 !important;
+    letter-spacing: -0.2px !important;
+    margin-bottom: 3px !important;
 }
 .sec-card-sub {
     font-size: 0.76rem !important;
     color: #b39b82 !important;
     line-height: 1.4 !important;
+}
+
+.sec-card-body {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+    margin-top: 14px !important;
+    padding-top: 14px !important;
+    border-top: 1px solid rgba(255, 215, 145, 0.08) !important;
+}
+.sec-card-desc {
+    font-size: 0.8rem !important;
+    color: #b39b82 !important;
+    line-height: 1.5 !important;
+    margin-bottom: 14px !important;
+}
+
+.sec-email-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    overflow: hidden;
+    min-width: 0;
+}
+.sec-email-val {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    letter-spacing: 0.2px;
+    word-break: break-all;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sbtn { 
+    display: inline-flex !important; 
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important; 
+    padding: 11px 20px !important;
+    border-radius: 12px !important;
+    font-size: 0.84rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.2px !important;
+    cursor: pointer !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    text-decoration: none !important;
+}
+.sbtn:hover {
+    transform: translateY(-2px) !important;
+    filter: brightness(1.08) !important;
+}
+.sbtn:active {
+    transform: translateY(0) scale(0.98) !important;
 }
 
 /* ── Biometric Pulse Scanner ── */
@@ -409,6 +770,98 @@
 @keyframes fpRadarSpin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+}
+
+/* ── Device Credential Cards ── */
+.device-item-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255, 235, 190, 0.03);
+    border: 1px solid rgba(255, 215, 145, 0.08);
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+}
+.device-item-card:hover {
+    border-color: rgba(255, 215, 145, 0.2);
+    background: rgba(255, 235, 190, 0.06);
+}
+.device-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+.device-item-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(22, 163, 74, 0.15);
+    border: 1px solid rgba(22, 163, 74, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4ade80;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+.device-item-info {
+    flex: 1;
+    min-width: 0;
+}
+.device-item-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.device-item-meta {
+    font-size: 0.74rem;
+    color: #b39b82;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+}
+.device-meta-verified {
+    color: #4ade80;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+}
+.device-meta-dot {
+    color: #8f826f;
+}
+.device-meta-date {
+    color: #b39b82;
+    font-weight: 500;
+}
+.device-remove-btn {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 10px;
+    background: rgba(248, 113, 113, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+}
+.device-remove-btn:hover {
+    background: rgba(248, 113, 113, 0.22);
+    color: #fca5a5;
+    border-color: rgba(248, 113, 113, 0.4);
 }
 
 /* ── Attendance KPI Stat Cards ── */
@@ -566,10 +1019,78 @@
         gap: 10px !important;
     }
     .sec-card {
-        padding: 16px 14px !important;
+        padding: 14px 14px 14px 16px !important;
     }
     .pref-tile {
         padding: 14px 14px !important;
+    }
+}
+
+@media (max-width: 640px) {
+    .sec-card-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+    .sec-card-header .sec-card-title-wrap {
+        width: 100% !important;
+    }
+    .sec-card-header .sbtn,
+    .sec-card-header .sec-card-action-btn {
+        width: 100% !important;
+        display: inline-flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        margin-top: 4px !important;
+    }
+    .pref-tile.pref-tile-update {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 14px !important;
+    }
+    .pref-tile.pref-tile-update .pref-tile-btn-wrap,
+    .pref-tile.pref-tile-update #checkUpdateBtn {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .profile-card-inner {
+        flex-direction: column !important;
+        text-align: center !important;
+        align-items: center !important;
+        gap: 16px !important;
+    }
+    .profile-details-col {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+    }
+    .profile-actions-row {
+        justify-content: center !important;
+    }
+    .profile-user-id {
+        justify-content: center !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .device-item-card {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 14px !important;
+    }
+    .device-item-left {
+        width: 100% !important;
+    }
+    .device-remove-btn {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 8px 14px !important;
     }
 }
 
@@ -733,9 +1254,6 @@
                                 <span>{{ Auth::user()->student_number ?? Auth::user()->email }}</span>
                             </div>
                             <div class="profile-actions-row">
-                                <label for="imgInput" class="profile-btn-choose">
-                                    <i class="bi bi-camera-fill"></i> Choose Photo
-                                </label>
                                 @if(Auth::user()->course)
                                     <span class="profile-badge-course">{{ Auth::user()->course }}</span>
                                 @endif
@@ -768,173 +1286,245 @@
 
     <!-- ── TAB: SECURITY ── -->
     <div id="tab-security" class="spanel">
-        <div class="sc">
-            <div class="sc-head">
-                <div class="sc-icon" style="background:rgba(239,68,68,0.12);color:#f87171;"><i class="bi bi-shield-lock-fill"></i></div>
+
+        <!-- ── Security Hero Header ── -->
+        <div class="sec-health-hero">
+            <div class="sec-health-left">
+                <div class="sec-health-icon">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
                 <div>
-                    <div class="sc-title">Security & Credentials</div>
-                    <div class="sc-sub">Manage your account email, password, authentication, and emergency keys</div>
+                    <div class="sec-health-title">Security & Access Control</div>
+                    <div class="sec-health-sub">Manage credentials, biometric authentication, and emergency vault</div>
                 </div>
             </div>
-            <div class="sc-body">
+            <div class="sec-health-pill">
+                <span class="sec-pulse-dot"></span>
+                <span>Account Protected</span>
+            </div>
+        </div>
 
-                <!-- ── Email Address Management ── -->
-                <div class="sec-card">
-                    <div class="sec-card-header">
-                        <div class="sec-card-title-wrap">
-                            <div class="sec-card-icon" style="background:rgba(59,130,246,0.14);color:#60a5fa;">
-                                <i class="bi bi-envelope-check-fill"></i>
-                            </div>
-                            <div>
-                                <div class="sec-card-title">Primary Email Address</div>
-                                <div class="sec-card-sub">Used for portal notifications, password resets, and OTP verification</div>
-                            </div>
-                        </div>
-                        <span style="font-size:0.72rem;font-weight:700;background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25);padding:3px 10px;border-radius:99px;">
-                            <i class="bi bi-patch-check-fill me-1"></i>Verified
-                        </span>
+        <!-- ── Real-Time Security Matrix Strip ── -->
+        <div class="sec-matrix-bar">
+            <div class="sec-matrix-item">
+                <i class="bi bi-envelope-check-fill text-primary"></i>
+                <span>Email Verified</span>
+            </div>
+            <div class="sec-matrix-item">
+                <i class="bi bi-key-fill text-warning"></i>
+                <span>bcrypt-12 Hashed</span>
+            </div>
+            <div class="sec-matrix-item">
+                <i class="bi bi-fingerprint text-success"></i>
+                <span>FIDO2 Ready</span>
+            </div>
+            <div class="sec-matrix-item">
+                <i class="bi bi-safe-fill" style="color:#f5dfa8;"></i>
+                <span>Recovery Vault</span>
+            </div>
+        </div>
+
+        <!-- ── 2-Column Responsive Security Cards Grid ── -->
+        <div class="sec-cards-grid">
+
+            <!-- ── Card 1: Email Address Management ── -->
+            <div class="sec-card" style="--card-accent: #3b82f6;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
+                        <i class="bi bi-envelope-check-fill"></i>
                     </div>
-
-                    <div id="emailStep1">
-                        <div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:rgba(255,235,190,0.04);border-radius:12px;border:1px solid rgba(255,215,145,0.1);margin-bottom:14px;">
-                            <i class="bi bi-envelope-at-fill" style="color:var(--gold,#cfa46f);font-size:1.1rem;"></i>
-                            <span style="font-size:0.92rem;font-weight:700;color:#f3e7cd;letter-spacing:0.2px;">{{ Auth::user()->email }}</span>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Primary Email Address</span>
+                            <span class="sec-badge sec-badge-blue"><i class="bi bi-patch-check-fill"></i> Verified</span>
                         </div>
-                        <p style="font-size:0.8rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
-                            To change your registered email, a 6-digit one-time security code will be sent to your current address to confirm your identity.
+                        <div class="sec-card-subtitle">Primary channel for portal alerts & OTP security codes</div>
+                    </div>
+                </div>
+
+                <div class="sec-card-content">
+                    <div id="emailStep1">
+                        <div class="sec-input-display">
+                            <i class="bi bi-envelope-at-fill text-primary me-2"></i>
+                            <span class="sec-input-val" id="displayUserEmail">{{ Auth::user()->email }}</span>
+                            <button type="button" onclick="navigator.clipboard.writeText('{{ Auth::user()->email }}'); if(typeof showToast==='function') showToast('Email address copied!','info');" class="sec-copy-btn" title="Copy email">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <p class="sec-card-hint">
+                            A 6-digit security code will be sent to your current email before updating.
                         </p>
-                        <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sbtn btn-blue" style="padding:9px 20px;font-size:0.82rem;">
+                        <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sec-action-btn sec-btn-blue">
                             <i class="bi bi-send-fill me-2"></i>Send Verification OTP
                         </button>
                     </div>
 
                     <div id="emailStep2" style="display:none;">
-                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:12px;padding:12px 16px;font-size:0.82rem;margin-bottom:16px;">
-                            <i class="bi bi-envelope-check-fill me-2"></i>Verification code sent to <strong>{{ Auth::user()->email }}</strong>. Please check your inbox.
+                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                            <i class="bi bi-envelope-check-fill" style="font-size:1.05rem;"></i>
+                            <span>Code sent to <strong>{{ Auth::user()->email }}</strong></span>
                         </div>
                         <form action="{{ route('otp.email.change') }}" method="POST">
                             @csrf
-                            <label class="sl">Enter 6-Digit Code</label>
-                            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
+                            <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
                                 @for($j=1;$j<=6;$j++)
-                                <input type="text" class="email-otp-digit" maxlength="1" inputmode="numeric" id="ed{{$j}}" style="width:44px;height:48px;border-radius:10px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.25rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
+                                <input type="text" class="email-otp-digit" maxlength="1" inputmode="numeric" id="ed{{$j}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
                                 @endfor
                             </div>
                             <input type="hidden" name="otp" id="emailOtpHidden">
-                            <label class="sl">New Email Address</label>
-                            <input type="email" name="new_email" class="si" placeholder="name@example.com" style="margin-bottom:16px;" required>
-                            <div style="display:flex;gap:10px;">
-                                <button type="button" onclick="cancelEmailOtp()" class="cancel-btn">Cancel</button>
-                                <button type="button" class="sbtn btn-blue" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-2"></i>Confirm New Email</button>
+                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Email Address</label>
+                            <input type="email" name="new_email" class="si" placeholder="name@example.com" style="margin-bottom:12px;padding:9px 12px;font-size:0.84rem;" required>
+                            <div style="display:flex;gap:8px;">
+                                <button type="button" onclick="cancelEmailOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
+                                <button type="button" class="sec-action-btn sec-btn-blue" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-1"></i>Confirm Email</button>
                             </div>
                         </form>
                     </div>
                 </div>
+            </div>
 
-                <!-- ── Password Security Management ── -->
-                <div class="sec-card">
-                    <div class="sec-card-header">
-                        <div class="sec-card-title-wrap">
-                            <div class="sec-card-icon" style="background:rgba(207,164,111,0.14);color:#f5dfa8;">
-                                <i class="bi bi-key-fill"></i>
-                            </div>
-                            <div>
-                                <div class="sec-card-title">Password Authentication</div>
-                                <div class="sec-card-sub">Secure password protected by salted hashing and rate limiting</div>
-                            </div>
-                        </div>
+            <!-- ── Card 2: Password Authentication ── -->
+            <div class="sec-card" style="--card-accent: #f59e0b;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(207,164,111,0.12);color:#f5dfa8;border:1px solid rgba(207,164,111,0.25);">
+                        <i class="bi bi-key-fill"></i>
                     </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Password Authentication</span>
+                            <span class="sec-badge sec-badge-amber"><i class="bi bi-shield-lock-fill"></i> Encrypted</span>
+                        </div>
+                        <div class="sec-card-subtitle">Protected by salted bcrypt-12 hashing & rate limits</div>
+                    </div>
+                </div>
 
+                <div class="sec-card-content">
                     <div id="otpStep1">
-                        <p style="font-size:0.82rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
-                            For your security, a one-time verification code is required before creating a new password.
+                        <div class="sec-status-tile">
+                            <i class="bi bi-shield-check text-warning"></i>
+                            <span>Active • Encrypted with salted bcrypt-12</span>
+                        </div>
+                        <p class="sec-card-hint">
+                            A verification code is required before creating a new password.
                         </p>
-                        <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sbtn btn-amber" style="padding:9px 20px;font-size:0.82rem;">
-                            <i class="bi bi-shield-lock me-2"></i>Request Password Reset OTP
+                        <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sec-action-btn sec-btn-amber">
+                            <i class="bi bi-shield-lock-fill me-2"></i>Request Password Reset OTP
                         </button>
                     </div>
 
                     <div id="otpStep2" style="display:none;">
-                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:12px;padding:12px 16px;font-size:0.82rem;margin-bottom:16px;">
-                            <i class="bi bi-check-circle-fill me-2"></i>OTP sent to {{ Auth::user()->email }}. Check your inbox.
+                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                            <i class="bi bi-check-circle-fill" style="font-size:1.05rem;"></i>
+                            <span>OTP sent to <strong>{{ Auth::user()->email }}</strong></span>
                         </div>
                         <form action="{{ route('otp.change') }}" method="POST">
                             @csrf
-                            <label class="sl">Enter 6-Digit Code</label>
-                            <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
+                            <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
                                 @for($i=1;$i<=6;$i++)
-                                <input type="text" class="otp-digit-s" maxlength="1" inputmode="numeric" id="sd{{$i}}" style="width:44px;height:48px;border-radius:10px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.25rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
+                                <input type="text" class="otp-digit-s" maxlength="1" inputmode="numeric" id="sd{{$i}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
                                 @endfor
                             </div>
                             <input type="hidden" name="otp" id="settingsOtpHidden">
-                            <label class="sl">New Password</label>
-                            <div class="pw-wrap" style="margin-bottom:14px;">
-                                <input type="password" name="password" id="spw1" class="si" placeholder="Minimum 8 characters" required>
+                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Password</label>
+                            <div class="pw-wrap" style="margin-bottom:10px;">
+                                <input type="password" name="password" id="spw1" class="si" placeholder="Minimum 8 characters" style="padding:9px 12px;font-size:0.84rem;" required>
                                 <button type="button" class="eye-btn" onclick="togglePw('spw1',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
                             </div>
-                            <label class="sl">Confirm Password</label>
-                            <div class="pw-wrap" style="margin-bottom:18px;">
-                                <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" required>
+                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Confirm Password</label>
+                            <div class="pw-wrap" style="margin-bottom:14px;">
+                                <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" style="padding:9px 12px;font-size:0.84rem;" required>
                                 <button type="button" class="eye-btn" onclick="togglePw('spw2',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
                             </div>
-                            <div style="display:flex;gap:10px;">
-                                <button type="button" onclick="cancelOtp()" class="cancel-btn">Cancel</button>
-                                <button type="button" class="sbtn btn-amber" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-2"></i>Update Password</button>
+                            <div style="display:flex;gap:8px;">
+                                <button type="button" onclick="cancelOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
+                                <button type="button" class="sec-action-btn sec-btn-amber" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-1"></i>Update Password</button>
                             </div>
                         </form>
                     </div>
                 </div>
+            </div>
 
-                <!-- ── Biometric Integration Shortcut ── -->
-                <div class="sec-card">
-                    <div class="sec-card-header" style="margin-bottom:0;">
-                        <div class="sec-card-title-wrap">
-                            <div class="sec-card-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;">
-                                <i class="bi bi-fingerprint"></i>
-                            </div>
-                            <div>
-                                <div class="sec-card-title">Biometric & Fingerprint Login</div>
-                                <div class="sec-card-sub">Passwordless Touch ID, Windows Hello, and fast QR attendance</div>
-                            </div>
+            <!-- ── Card 3: Biometric & Fingerprint Login ── -->
+            <div class="sec-card" style="--card-accent: #22c55e;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25);">
+                        <i class="bi bi-fingerprint"></i>
+                    </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Biometric & Fingerprint Login</span>
+                            <span class="sec-badge sec-badge-green"><i class="bi bi-patch-check-fill"></i> FIDO2 Ready</span>
                         </div>
-                        <button type="button" onclick="switchTab('fingerprint')" class="sbtn btn-emerald" style="padding:7px 16px;font-size:0.78rem;">
-                            <i class="bi bi-fingerprint me-1"></i> Manage Biometrics
-                        </button>
+                        <div class="sec-card-subtitle">Hardware-grade passwordless biometric authentication</div>
                     </div>
                 </div>
 
-                <!-- ── Recovery Codes Vault ── -->
-                <div class="sec-card" style="margin-bottom:0;">
-                    <div class="sec-card-header">
-                        <div class="sec-card-title-wrap">
-                            <div class="sec-card-icon" style="background:rgba(234,179,8,0.14);color:#fbbf24;">
-                                <i class="bi bi-safe-fill"></i>
-                            </div>
-                            <div>
-                                <div class="sec-card-title">Emergency Recovery Vault</div>
-                                <div class="sec-card-sub">One-time emergency backup keys to restore access if you lose email or device access</div>
-                            </div>
-                        </div>
+                <div class="sec-card-content">
+                    <div class="sec-feature-chips">
+                        <span><i class="bi bi-check2"></i> Touch ID</span>
+                        <span><i class="bi bi-check2"></i> Face ID</span>
+                        <span><i class="bi bi-check2"></i> Windows Hello</span>
+                        <span><i class="bi bi-qr-code"></i> Fast QR Clock-In</span>
                     </div>
-                    <p style="font-size:0.8rem;color:#b39b82;margin-bottom:14px;line-height:1.5;">
-                        Generating new recovery keys will automatically invalidate all previously generated codes.
+                    <p class="sec-card-hint">
+                        Sign in instantly and verify classroom attendance QR scans without typing passwords.
                     </p>
-                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="sbtn btn-gold" style="padding:8px 18px;font-size:0.82rem;">
+                    <button type="button" onclick="switchTab('fingerprint')" class="sec-action-btn sec-btn-emerald">
+                        <i class="bi bi-fingerprint me-2"></i>Manage Biometrics & Devices
+                    </button>
+                </div>
+            </div>
+
+            <!-- ── Card 4: Emergency Recovery Codes Vault ── -->
+            <div class="sec-card" style="--card-accent: #cfa46f;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(234,179,8,0.12);color:#fbbf24;border:1px solid rgba(234,179,8,0.25);">
+                        <i class="bi bi-safe-fill"></i>
+                    </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Emergency Recovery Vault</span>
+                            <span class="sec-badge sec-badge-gold"><i class="bi bi-key-fill"></i> Backup Keys</span>
+                        </div>
+                        <div class="sec-card-subtitle">One-time offline emergency keys to restore account access</div>
+                    </div>
+                </div>
+
+                <div class="sec-card-content">
+                    <div class="sec-status-tile">
+                        <i class="bi bi-info-circle-fill text-warning"></i>
+                        <span>Generating new keys invalidates all previous codes</span>
+                    </div>
+                    <p class="sec-card-hint">
+                        Store emergency codes safely in a secure password manager or offline notes.
+                    </p>
+                    <button type="button" onclick="generateRecoveryCodes()" id="generateCodesBtn" class="sec-action-btn sec-btn-gold">
                         <i class="bi bi-key-fill me-2"></i>Generate Recovery Codes
                     </button>
                     
-                    <div id="recoveryCodesList" style="display:none;margin-top:16px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,215,145,0.15);border-radius:12px;padding:18px;">
-                        <div style="font-size:.82rem;font-weight:700;color:#f87171;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-                            <i class="bi bi-exclamation-triangle-fill"></i>Store these emergency codes safely. They will only be displayed once.
+                    <div id="recoveryCodesList" style="display:none;margin-top:14px;background:rgba(18,12,10,0.95);border:1px solid rgba(207,164,111,0.25);border-radius:12px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,0.55);">
+                        <div style="font-size:.76rem;font-weight:700;color:#f87171;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Store these codes safely. Only shown once!
                         </div>
-                        <div id="codesContainer" style="display:flex;flex-wrap:wrap;gap:10px;">
+                        <div id="codesContainer" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(105px, 1fr));gap:6px;margin-bottom:10px;">
                             <!-- Codes injected here -->
+                        </div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                            <button type="button" onclick="copyAllRecoveryCodes(this)" class="sec-action-btn sec-btn-gold" style="flex:1;padding:7px 10px;font-size:0.76rem;">
+                                <i class="bi bi-clipboard-check me-1"></i>Copy All
+                            </button>
+                            <button type="button" onclick="downloadRecoveryCodes()" class="cancel-btn" style="padding:7px 10px;font-size:0.76rem;border-radius:10px;">
+                                <i class="bi bi-download me-1"></i>TXT
+                            </button>
                         </div>
                     </div>
                 </div>
-
             </div>
+
         </div>
+
     </div>
 
     <!-- ── TAB: FINGERPRINT ── -->
@@ -1001,9 +1591,9 @@
 
                 <!-- Registered Devices List -->
                 <div style="margin-bottom:24px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <div style="font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Hardware Credentials</div>
-                        <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;">Loading...</span>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;">
+                        <div style="font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;flex:1;min-width:0;">Registered Hardware Credentials</div>
+                        <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;">Loading...</span>
                     </div>
                     <div id="deviceList">
                         <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
@@ -1152,14 +1742,14 @@
 
                 <!-- Language Selection -->
                 <div class="pref-tile">
-                    <div style="display:flex;align-items:center;gap:14px;">
+                    <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                         <div class="pref-tile-icon"><i class="bi bi-translate"></i></div>
-                        <div>
+                        <div style="flex:1;min-width:0;">
                             <div class="tlabel">System Display Language</div>
                             <div class="tsub">Choose your portal language</div>
                         </div>
                     </div>
-                    <select class="si" style="width:auto;padding:7px 14px;font-size:0.82rem;border-radius:10px;">
+                    <select class="si" style="width:auto;padding:7px 14px;font-size:0.82rem;border-radius:10px;flex-shrink:0;">
                         <option>English (US)</option>
                         <option>Filipino</option>
                         <option>Bikolano</option>
@@ -1176,64 +1766,64 @@
 
                     <!-- In-App Notifications -->
                     <div class="pref-tile">
-                        <div style="display:flex;align-items:center;gap:14px;">
+                        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-app-indicator"></i></div>
-                            <div>
+                            <div style="flex:1;min-width:0;">
                                 <div class="tlabel">In-App Notifications</div>
                                 <div class="tsub">Receive instant badges and banners inside the portal</div>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0">
+                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
                             <input class="form-check-input" type="checkbox" name="prefs[in_app]" value="1" {{ !empty($prefs['in_app']) ? 'checked' : '' }}>
                         </div>
                     </div>
                     
                     <!-- Email Notifications -->
                     <div class="pref-tile">
-                        <div style="display:flex;align-items:center;gap:14px;">
+                        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-envelope"></i></div>
-                            <div>
+                            <div style="flex:1;min-width:0;">
                                 <div class="tlabel">Email Notifications</div>
                                 <div class="tsub">Receive attendance summaries, excuse approvals, and security alerts via email</div>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0">
+                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
                             <input class="form-check-input" type="checkbox" name="prefs[email]" value="1" {{ !empty($prefs['email']) ? 'checked' : '' }}>
                         </div>
                     </div>
 
                     <!-- Web Push Notifications -->
-                    <div class="pref-tile" style="align-items:flex-start;">
-                        <div style="display:flex;align-items:flex-start;gap:14px;">
+                    <div class="pref-tile">
+                        <div style="display:flex;align-items:flex-start;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon" style="margin-top:2px;"><i class="bi bi-bell-fill"></i></div>
-                            <div>
-                                <div class="tlabel d-flex align-items-center gap-2">
+                            <div style="flex:1;min-width:0;">
+                                <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                     <span>Web Push Notifications</span>
-                                    <span class="push-status-badge badge-inactive" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 999px; background: rgba(207,164,111,0.15); color: #cfa46f; border: 1px solid rgba(207,164,111,0.3); font-weight: 700;">Checking...</span>
+                                    <span class="push-status-badge badge-inactive" style="font-size:0.7rem;padding:2px 8px;border-radius:999px;background:rgba(207,164,111,0.15);color:#cfa46f;border:1px solid rgba(207,164,111,0.3);font-weight:700;flex-shrink:0;">Checking...</span>
                                 </div>
                                 <div class="tsub" style="margin-top:2px;">Receive background push notifications even when the browser tab is closed.</div>
                                 <div class="mt-2">
-                                    <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn btn-emerald" style="display:none; padding: 4px 12px; font-size: 0.72rem;">
+                                    <button type="button" onclick="WebPushManager.sendTest()" class="push-test-btn sbtn btn-emerald" style="display:none;padding:4px 12px;font-size:0.72rem;">
                                         <i class="bi bi-send-check me-1"></i> Send Test Push Alert
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0">
+                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
                             <input class="form-check-input push-toggle-input" type="checkbox" onchange="toggleWebPush(this)">
                         </div>
                     </div>
 
                     <!-- SMS Notifications -->
                     <div class="pref-tile">
-                        <div style="display:flex;align-items:center;gap:14px;">
+                        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-chat-dots"></i></div>
-                            <div>
+                            <div style="flex:1;min-width:0;">
                                 <div class="tlabel">SMS Urgent Notifications</div>
                                 <div class="tsub">Emergency announcements and absence warnings via text message</div>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0">
+                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
                             <input class="form-check-input" type="checkbox" name="prefs[sms]" value="1" {{ !empty($prefs['sms']) ? 'checked' : '' }}>
                         </div>
                     </div>
@@ -1242,14 +1832,14 @@
                     <div style="margin:20px 0 10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Display & Layout</div>
                     
                     <div class="pref-tile">
-                        <div style="display:flex;align-items:center;gap:14px;">
+                        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-layout-sidebar"></i></div>
-                            <div>
+                            <div style="flex:1;min-width:0;">
                                 <div class="tlabel">Compact Sidebar</div>
                                 <div class="tsub">Keep sidebar collapsed on desktop for extra dashboard space</div>
                             </div>
                         </div>
-                        <div class="form-check form-switch mb-0">
+                        <div class="form-check form-switch mb-0" style="flex-shrink:0;">
                             <input class="form-check-input" type="checkbox" id="compactToggle">
                         </div>
                     </div>
@@ -1263,18 +1853,18 @@
 
                 <!-- App & System Software Updates -->
                 <div style="margin-bottom:10px;font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">App & System Updates</div>
-                <div class="pref-tile" style="align-items: center; gap: 16px;">
-                    <div style="display:flex;align-items:center;gap:14px;">
+                <div class="pref-tile pref-tile-update" style="gap: 16px;">
+                    <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                         <div class="pref-tile-icon"><i class="bi bi-arrow-repeat"></i></div>
-                        <div>
-                            <div class="tlabel" style="display:flex;align-items:center;gap:8px;">
-                                Software Updates & PWA Assets
-                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;">v2.1.0</span>
+                        <div style="flex:1;min-width:0;">
+                            <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span>Software Updates & PWA Assets</span>
+                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v2.1.0</span>
                             </div>
                             <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
                         </div>
                     </div>
-                    <div>
+                    <div class="pref-tile-btn-wrap">
                         <button type="button" id="checkUpdateBtn" onclick="checkForAppUpdates()" class="sbtn btn-gold" style="padding:8px 18px;font-size:0.82rem;white-space:nowrap;">
                             <i class="bi bi-cloud-arrow-down me-1"></i> Check Updates
                         </button>
@@ -1538,6 +2128,10 @@ async function loadDevices() {
                 badge.style.color = '#4ade80';
                 badge.style.borderColor = 'rgba(74,222,128,0.3)';
                 badge.style.background = 'rgba(74,222,128,0.1)';
+                badge.style.whiteSpace = 'nowrap';
+                badge.style.flexShrink = '0';
+                badge.style.display = 'inline-flex';
+                badge.style.alignItems = 'center';
             }
 
             const registeredMsg = document.createElement('div');
@@ -1547,25 +2141,22 @@ async function loadDevices() {
 
             devices.forEach(d => {
                 const div = document.createElement('div');
-                div.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);margin-bottom:10px;transition:all .2s;justify-content:space-between;';
-                div.onmouseover = function() { this.style.borderColor = 'rgba(255,215,145,0.2)'; this.style.background = 'rgba(255,235,190,0.06)'; };
-                div.onmouseout = function() { this.style.borderColor = 'rgba(255,215,145,0.08)'; this.style.background = 'rgba(255,235,190,0.03)'; };
-
+                div.className = 'device-item-card';
                 div.innerHTML = `
-                    <div style="width:38px;height:38px;border-radius:10px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);display:flex;align-items:center;justify-content:center;color:#4ade80;font-size:1.15rem;flex-shrink:0;">
-                        <i class="bi bi-fingerprint"></i>
-                    </div>
-                    <div style="flex:1;min-width:0;padding:0 6px;">
-                        <div style="font-size:.88rem;font-weight:700;color:#f3e7cd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${d.name || d.device_name || "Registered Device"}</div>
-                        <div style="font-size:.72rem;color:#b39b82;display:flex;align-items:center;gap:6px;margin-top:2px;">
-                            <span><i class="bi bi-shield-check text-success me-1"></i>Verified</span>
-                            <span>•</span>
-                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <div class="device-item-left">
+                        <div class="device-item-icon">
+                            <i class="bi bi-fingerprint"></i>
+                        </div>
+                        <div class="device-item-info">
+                            <div class="device-item-name">${d.name || d.device_name || "Registered Device"}</div>
+                            <div class="device-item-meta">
+                                <span class="device-meta-verified"><i class="bi bi-shield-check me-1"></i>Verified</span>
+                                <span class="device-meta-dot">•</span>
+                                <span class="device-meta-date">${new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
                         </div>
                     </div>
-                    <button onclick="removeDevice('${d.credential_id}', this)"
-                        style="flex-shrink:0;padding:5px 12px;border-radius:8px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.25);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;"
-                        onmouseover="this.style.background='rgba(248,113,113,0.2)'" onmouseout="this.style.background='rgba(248,113,113,0.1)'">
+                    <button onclick="removeDevice('${d.credential_id}', this)" class="device-remove-btn" type="button" title="Remove device credential">
                         <i class="bi bi-trash3 me-1"></i>Remove
                     </button>`;
                 list.appendChild(div);
@@ -1576,6 +2167,10 @@ async function loadDevices() {
                 badge.style.color = '#b39b82';
                 badge.style.borderColor = 'rgba(207,164,111,0.2)';
                 badge.style.background = 'rgba(207,164,111,0.12)';
+                badge.style.whiteSpace = 'nowrap';
+                badge.style.flexShrink = '0';
+                badge.style.display = 'inline-flex';
+                badge.style.alignItems = 'center';
             }
             const emptyDiv = document.createElement('div');
             emptyDiv.id = 'noDevices';
@@ -1922,12 +2517,17 @@ function generateRecoveryCodes() {
             container.innerHTML = '';
             data.codes.forEach(code => {
                 const codeEl = document.createElement('div');
-                codeEl.style.cssText = 'background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:6px;font-family:monospace;font-size:1.1rem;color:#f3e7cd;letter-spacing:1px;font-weight:700;';
+                codeEl.className = 'recovery-code-chip';
+                codeEl.style.cssText = 'background:rgba(255,235,190,0.06);border:1px solid rgba(207,164,111,0.2);padding:8px 10px;border-radius:8px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:0.95rem;color:#f3e7cd;letter-spacing:1px;font-weight:700;text-align:center;user-select:all;box-shadow:inset 0 1px 2px rgba(0,0,0,0.3);';
                 codeEl.textContent = code;
                 container.appendChild(codeEl);
             });
             document.getElementById('recoveryCodesList').style.display = 'block';
-            alert('New recovery codes generated successfully. Please save them now.');
+            if (typeof showToast === 'function') {
+                showToast('New recovery codes generated! Please save them now.', 'success');
+            } else {
+                alert('New recovery codes generated successfully. Please save them now.');
+            }
         } else {
             alert(data.message || 'Failed to generate recovery codes.');
         }
@@ -1937,6 +2537,38 @@ function generateRecoveryCodes() {
         btn.innerHTML = originalText;
         alert('Network error. Please try again.');
     });
+}
+
+function copyAllRecoveryCodes(btn) {
+    const chips = document.querySelectorAll('#codesContainer .recovery-code-chip');
+    if (!chips.length) return;
+    const codes = Array.from(chips).map(el => el.textContent.trim()).join('\n');
+    navigator.clipboard.writeText(codes).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+        if (typeof showToast === 'function') showToast('Recovery codes copied to clipboard!', 'success');
+        if (window.triggerHaptic) window.triggerHaptic('success');
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    }).catch(() => {
+        alert('Failed to copy to clipboard.');
+    });
+}
+
+function downloadRecoveryCodes() {
+    const chips = document.querySelectorAll('#codesContainer .recovery-code-chip');
+    if (!chips.length) return;
+    const codes = Array.from(chips).map(el => el.textContent.trim()).join('\n');
+    const content = "SMART ATTENDANCE - EMERGENCY RECOVERY CODES\nGenerated: " + new Date().toLocaleString() + "\nAccount: {{ Auth::user()->email }}\n\n" + codes + "\n\nStore these keys in a safe, offline location.";
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'attendance-recovery-codes-' + Date.now() + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (typeof showToast === 'function') showToast('Recovery codes downloaded!', 'info');
 }
 
 async function handleSettingsAvatarUpload(input) {

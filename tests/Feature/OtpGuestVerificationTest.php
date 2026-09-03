@@ -34,7 +34,7 @@ class OtpGuestVerificationTest extends TestCase
         $this->assertNotNull($hashedCode);
 
         // Find what was sent
-        Mail::assertQueued(OtpMail::class, function ($mail) use ($email, &$sentCode) {
+        Mail::assertSent(OtpMail::class, function ($mail) use ($email, &$sentCode) {
             $sentCode = $mail->otp;
             return $mail->hasTo($email);
         });
@@ -75,7 +75,7 @@ class OtpGuestVerificationTest extends TestCase
         $cacheKey = 'guest_otp:' . sha1($email . ':email_verify');
         $this->assertNotNull(Cache::get($cacheKey));
 
-        Mail::assertQueued(OtpMail::class, function ($mail) use ($email, &$sentCode) {
+        Mail::assertSent(OtpMail::class, function ($mail) use ($email, &$sentCode) {
             $sentCode = $mail->otp;
             return $mail->hasTo($email) && $mail->purpose === 'email_verify';
         });

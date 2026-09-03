@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Log;
 use App\Models\BackupLog;
 use App\Models\Setting;
 
@@ -348,6 +349,31 @@ class SystemUpdateController extends Controller
                 ['url' => route('intro'), 'tag' => 'sys-update-' . time()]
             );
 
+            // Create in-app notification records for all active users
+            try {
+                $activeUserIds = \App\Models\User::pluck('id');
+                $senderId = Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id');
+                $notifBatch = [];
+                $now = now();
+                foreach ($activeUserIds as $uId) {
+                    $notifBatch[] = [
+                        'user_id' => $uId,
+                        'sent_by' => $senderId,
+                        'type' => 'system_update',
+                        'subject_code' => 'SYS',
+                        'message' => "Smart Attendance full system update applied successfully. New features, security improvements, and optimizations are live.",
+                        'is_read' => false,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+                if (!empty($notifBatch)) {
+                    \App\Models\Notification::insert($notifBatch);
+                }
+            } catch (\Throwable $notifErr) {
+                Log::warning('In-app system update notification insert error: ' . $notifErr->getMessage());
+            }
+
             $results[] = [
                 'step' => 'Live User Broadcast & Push Announcement',
                 'status' => 'success',
@@ -454,6 +480,31 @@ class SystemUpdateController extends Controller
                 );
             } catch (\Throwable $pushErr) {
                 Log::warning('PWA broadcast push error: ' . $pushErr->getMessage());
+            }
+
+            // Create in-app notification records for all active users
+            try {
+                $activeUserIds = \App\Models\User::pluck('id');
+                $senderId = Auth::id() ?? \App\Models\User::where('role', 'admin')->value('id');
+                $notifBatch = [];
+                $now = now();
+                foreach ($activeUserIds as $uId) {
+                    $notifBatch[] = [
+                        'user_id' => $uId,
+                        'sent_by' => $senderId,
+                        'type' => 'system_update',
+                        'subject_code' => 'SYS',
+                        'message' => "Smart Attendance updated to build {$newVer}. New features, security improvements, and speed optimizations are live.",
+                        'is_read' => false,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+                }
+                if (!empty($notifBatch)) {
+                    \App\Models\Notification::insert($notifBatch);
+                }
+            } catch (\Throwable $notifErr) {
+                Log::warning('In-app system update notification insert error: ' . $notifErr->getMessage());
             }
 
             return response()->json([
@@ -638,6 +689,9 @@ class SystemUpdateController extends Controller
         $swPath = public_path('sw.js');
         $newVersion = 'v8';
 
+        // Capture old mtime BEFORE modifying sw.js so we can forget the old cache key
+        $oldMtime = File::exists($swPath) ? filemtime($swPath) : 0;
+
         if (File::exists($swPath)) {
             $content = File::get($swPath);
             $currentNum = 7;
@@ -683,6 +737,12 @@ class SystemUpdateController extends Controller
         }
 
         \Illuminate\Support\Facades\Cache::forever('pwa_sw_version', $newVersion);
+
+        // Flush the old mtime-based cached version response so /pwa/version immediately returns the new tag
+        // The new mtime (from the File::put above) will auto-generate a fresh cache key on next request
+        if ($oldMtime) {
+            \Illuminate\Support\Facades\Cache::forget('pwa_version_response_' . $oldMtime);
+        }
 
         return $newVersion;
     }

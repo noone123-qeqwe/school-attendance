@@ -112,10 +112,10 @@
                     @endphp
 
                     <div class="dropdown">
-                        <div class="notif-btn position-relative" data-bs-toggle="dropdown" style="cursor:pointer;">
+                        <div class="notif-btn position-relative" data-bs-toggle="dropdown" style="cursor:pointer;" id="topNavNotifBtn">
                             <i class="bi bi-bell-fill" style="font-size:0.95rem;"></i>
                             @if($unreadCount > 0)
-                            <span style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#dc2626;color:white;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid white;">
+                            <span id="topNavNotifBadge" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#dc2626;color:white;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid white;">
                                 {{ $unreadCount > 9 ? '9+' : $unreadCount }}
                             </span>
                             @endif
@@ -123,9 +123,9 @@
                         <div class="dropdown-menu dropdown-menu-end mt-2" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
                             <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
                                 <span style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
-                                <div style="display:flex;align-items:center;gap:10px;">
+                                <div id="topNavNotifHeaderActions" style="display:flex;align-items:center;gap:10px;">
                                     @if($unreadCount > 0)
-                                    <span style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">{{ $unreadCount }} new</span>
+                                    <span id="topNavNotifCountBadge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">{{ $unreadCount }} new</span>
                                     <button onclick="markAllRead()" class="mark-all-read-btn">Mark all read</button>
                                     @endif
                                 </div>
@@ -143,17 +143,46 @@
                                 }
                                 $todayNotifs = $notifications->filter(fn($n) => $n->created_at->isToday());
                                 $olderNotifs = $notifications->filter(fn($n) => !$n->created_at->isToday());
+
+                                $getNotifVisual = function($type) {
+                                    if ($type === 'system_update') {
+                                        return [
+                                            'icon' => 'bi-rocket-takeoff-fill',
+                                            'style' => 'background:rgba(16, 185, 129, 0.18);color:#34d399;border:1px solid rgba(16, 185, 129, 0.3);'
+                                        ];
+                                    } elseif ($type === 'warning_3') {
+                                        return [
+                                            'icon' => 'bi-exclamation-octagon-fill',
+                                            'style' => 'background:rgba(239, 68, 68, 0.15);color:#f87171;'
+                                        ];
+                                    } elseif ($type === 'warning_2' || $type === 'warning_consecutive_3') {
+                                        return [
+                                            'icon' => 'bi-exclamation-triangle-fill',
+                                            'style' => 'background:rgba(245, 158, 11, 0.15);color:#fbbf24;'
+                                        ];
+                                    } elseif ($type === 'custom') {
+                                        return [
+                                            'icon' => 'bi-info-circle-fill',
+                                            'style' => 'background:rgba(59, 130, 246, 0.15);color:#60a5fa;'
+                                        ];
+                                    } else {
+                                        return [
+                                            'icon' => 'bi-bell-fill',
+                                            'style' => 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;'
+                                        ];
+                                    }
+                                };
                             @endphp
-                            <div style="max-height:360px;overflow-y:auto;">
+                            <div id="topNavNotifList" style="max-height:360px;overflow-y:auto;">
                                 @if($notifications->count() > 0)
                                     @if($todayNotifs->count() > 0)
                                     <div class="notif-group-label">Today</div>
                                     @foreach($todayNotifs as $notif)
-                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : 'rgba(212, 175, 55, 0.08)' }};transition:all .2s;">
+                                    @php $v = $getNotifVisual($notif->type); @endphp
+                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : ($notif->type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)') }};transition:all .2s;">
                                         <div style="display:flex;gap:10px;align-items:flex-start;">
-                                            <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-                                                {{ $notif->type === 'warning_3' ? 'background:rgba(239, 68, 68, 0.15);color:#f87171;' : ($notif->type === 'custom' ? 'background:rgba(59, 130, 246, 0.15);color:#60a5fa;' : 'background:rgba(245, 158, 11, 0.15);color:#fbbf24;') }}">
-                                                <i class="bi {{ $notif->type === 'warning_3' ? 'bi-exclamation-octagon-fill' : ($notif->type === 'custom' ? 'bi-info-circle-fill' : 'bi-exclamation-triangle-fill') }}"></i>
+                                            <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;{{ $v['style'] }}">
+                                                <i class="bi {{ $v['icon'] }}"></i>
                                             </div>
                                             <div style="flex:1;min-width:0;">
                                                 <div style="font-size:.82rem;color:#f3e7cd;line-height:1.4;">{{ $notif->message }}</div>
@@ -161,7 +190,7 @@
                                             </div>
                                             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
                                                 @if(!$notif->is_read)
-                                                <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;"></div>
+                                                <div style="width:8px;height:8px;border-radius:50%;background:{{ $notif->type === 'system_update' ? '#10b981' : '#f59e0b' }};"></div>
                                                 @endif
                                                 @if(!Auth::user()->isParent())
                                                 <button onclick="archiveNotif({{ $notif->id }}, this)" title="Archive" class="notif-archive-btn">
@@ -177,11 +206,11 @@
                                     @if($olderNotifs->count() > 0)
                                     <div class="notif-group-label">Earlier</div>
                                     @foreach($olderNotifs as $notif)
-                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : 'rgba(212, 175, 55, 0.08)' }};transition:all .2s;">
+                                    @php $v = $getNotifVisual($notif->type); @endphp
+                                    <div id="notif-{{ $notif->id }}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:{{ $notif->is_read ? 'transparent' : ($notif->type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)') }};transition:all .2s;">
                                         <div style="display:flex;gap:10px;align-items:flex-start;">
-                                            <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-                                                {{ $notif->type === 'warning_3' ? 'background:rgba(239, 68, 68, 0.15);color:#f87171;' : ($notif->type === 'custom' ? 'background:rgba(59, 130, 246, 0.15);color:#60a5fa;' : 'background:rgba(245, 158, 11, 0.15);color:#fbbf24;') }}">
-                                                <i class="bi {{ $notif->type === 'warning_3' ? 'bi-exclamation-octagon-fill' : ($notif->type === 'custom' ? 'bi-info-circle-fill' : 'bi-exclamation-triangle-fill') }}"></i>
+                                            <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;{{ $v['style'] }}">
+                                                <i class="bi {{ $v['icon'] }}"></i>
                                             </div>
                                             <div style="flex:1;min-width:0;">
                                                 <div style="font-size:.82rem;color:#f3e7cd;line-height:1.4;">{{ $notif->message }}</div>
@@ -189,7 +218,7 @@
                                             </div>
                                             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
                                                 @if(!$notif->is_read)
-                                                <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;"></div>
+                                                <div style="width:8px;height:8px;border-radius:50%;background:{{ $notif->type === 'system_update' ? '#10b981' : '#f59e0b' }};"></div>
                                                 @endif
                                                 @if(!Auth::user()->isParent())
                                                 <button onclick="archiveNotif({{ $notif->id }}, this)" title="Archive" class="notif-archive-btn">
@@ -500,71 +529,149 @@
             }, 200);
         }
 
+        // ── Real-Time Notification Bell Poller & WebSocket Sync ──
+        window.refreshNotificationBell = async function() {
+            try {
+                const res = await fetch('{{ route("notifications.poll") }}', {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                // 1. Update bell badge
+                const notifBtn = document.getElementById('topNavNotifBtn') || document.querySelector('.notif-btn');
+                if (notifBtn) {
+                    let badge = notifBtn.querySelector('span');
+                    if (data.unread_count > 0) {
+                        if (!badge) {
+                            badge = document.createElement('span');
+                            badge.id = 'topNavNotifBadge';
+                            badge.style.cssText = 'position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#dc2626;color:white;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid white;';
+                            notifBtn.appendChild(badge);
+                        }
+                        badge.textContent = data.unread_count > 9 ? '9+' : data.unread_count;
+                    } else if (badge) {
+                        badge.remove();
+                    }
+                }
+
+                // 2. Update dropdown header badge
+                const headerActions = document.getElementById('topNavNotifHeaderActions');
+                if (headerActions) {
+                    if (data.unread_count > 0) {
+                        headerActions.innerHTML = `
+                            <span id="topNavNotifCountBadge" style="background:#fef2f2;color:#dc2626;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;">${data.unread_count} new</span>
+                            <button onclick="markAllRead()" class="mark-all-read-btn">Mark all read</button>
+                        `;
+                    } else {
+                        headerActions.innerHTML = '';
+                    }
+                }
+
+                // 3. Update dropdown notification list
+                const listEl = document.getElementById('topNavNotifList');
+                if (listEl && data.notifications && data.notifications.length > 0) {
+                    const iconMap = {
+                        system_update: 'bi-rocket-takeoff-fill',
+                        warning_3: 'bi-exclamation-octagon-fill',
+                        warning_2: 'bi-exclamation-triangle-fill',
+                        warning_consecutive_3: 'bi-exclamation-triangle-fill',
+                        custom: 'bi-info-circle-fill'
+                    };
+                    const colorMap = {
+                        system_update: 'background:rgba(16, 185, 129, 0.18);color:#34d399;border:1px solid rgba(16, 185, 129, 0.3);',
+                        warning_3: 'background:rgba(239, 68, 68, 0.15);color:#f87171;',
+                        warning_2: 'background:rgba(245, 158, 11, 0.15);color:#fbbf24;',
+                        warning_consecutive_3: 'background:rgba(245, 158, 11, 0.15);color:#fbbf24;',
+                        custom: 'background:rgba(59, 130, 246, 0.15);color:#60a5fa;'
+                    };
+
+                    let html = '';
+                    const todayList = data.notifications.filter(n => n.is_today);
+                    const olderList = data.notifications.filter(n => !n.is_today);
+
+                    const renderItem = (n) => {
+                        const style = colorMap[n.type] || 'background:rgba(207, 164, 111, 0.15);color:#f3e7cd;';
+                        const icon = iconMap[n.type] || 'bi-bell-fill';
+                        const bgRow = n.is_read ? 'transparent' : (n.type === 'system_update' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(212, 175, 55, 0.08)');
+                        const dotColor = n.type === 'system_update' ? '#10b981' : '#f59e0b';
+                        const isParent = {{ Auth::user()->isParent() ? 'true' : 'false' }};
+                        return `
+                            <div id="notif-${n.id}" style="padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.05);background:${bgRow};transition:all .2s;">
+                                <div style="display:flex;gap:10px;align-items:flex-start;">
+                                    <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${style}">
+                                        <i class="bi ${icon}"></i>
+                                    </div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div style="font-size:.82rem;color:#f3e7cd;line-height:1.4;">${n.message}</div>
+                                        <div style="font-size:.72rem;color:rgba(255,255,255,0.5);margin-top:4px;">${n.created_at_human}</div>
+                                    </div>
+                                    <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+                                        ${!n.is_read ? `<div style="width:8px;height:8px;border-radius:50%;background:${dotColor};"></div>` : ''}
+                                        ${!isParent ? `<button onclick="archiveNotif(${n.id}, this)" title="Archive" class="notif-archive-btn"><i class="bi bi-archive-fill"></i></button>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    };
+
+                    if (todayList.length > 0) {
+                        html += '<div class="notif-group-label">Today</div>';
+                        todayList.forEach(n => html += renderItem(n));
+                    }
+                    if (olderList.length > 0) {
+                        html += '<div class="notif-group-label">Earlier</div>';
+                        olderList.forEach(n => html += renderItem(n));
+                    }
+
+                    listEl.innerHTML = html;
+                }
+            } catch(e) {}
+        };
+
+        // Poll every 30s when tab is active and check on focus
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                window.refreshNotificationBell();
+            }
+        }, 30000);
+        window.addEventListener('focus', () => window.refreshNotificationBell());
+
         // ── WEBSOCKET: Real-time notifications via Laravel Echo + Reverb ──
         (function() {
-            // Dynamically load Laravel Echo + Pusher-js (Reverb uses Pusher protocol)
+            const reverbKey = '{{ config("broadcasting.connections.reverb.key") ?: env("REVERB_APP_KEY") }}';
+            if (!reverbKey) return;
+
             const script1 = document.createElement('script');
             script1.src = 'https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js';
             script1.onload = function() {
                 const script2 = document.createElement('script');
                 script2.src = 'https://cdn.jsdelivr.net/npm/laravel-echo@1.16.0/dist/echo.iife.js';
                 script2.onload = function() {
-                    window.adminEcho = new Echo({
-                        broadcaster: 'reverb',
-                        key: '{{ env("REVERB_APP_KEY") }}',
-                        wsHost: '{{ env("REVERB_HOST", "localhost") }}',
-                        wsPort: {{ env("REVERB_PORT", 8080) }},
-                        wssPort: {{ env("REVERB_PORT", 8080) }},
-                        forceTLS: false,
-                        enabledTransports: ['ws'],
-                    });
+                    try {
+                        const isHttps = window.location.protocol === 'https:';
+                        const wsHost = '{{ config("broadcasting.connections.reverb.options.host") ?: env("REVERB_HOST", "") }}' || window.location.hostname;
+                        const wsPort = {{ (int) (config("broadcasting.connections.reverb.options.port") ?: env("REVERB_PORT", 8080)) }};
+                        const forceTls = {{ (config("broadcasting.connections.reverb.options.useTLS") || env("REVERB_SCHEME") === 'https') ? 'true' : 'false' }} || isHttps;
 
-                    // Listen on private channel
-                    window.adminEcho.private('notifications.{{ Auth::id() }}')
-                        .listen('.notification.sent', (e) => {
-                            // Bump badge count
-                            const notifBtn = document.querySelector('.notif-btn');
-                            let badge = notifBtn.querySelector('span');
-                            if (badge) {
-                                const count = parseInt(badge.textContent) || 0;
-                                badge.textContent = count + 1 > 9 ? '9+' : count + 1;
-                            } else {
-                                badge = document.createElement('span');
-                                badge.style.cssText = 'position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#dc2626;color:white;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid white;';
-                                badge.textContent = '1';
-                                notifBtn.appendChild(badge);
-                            }
-
-                            // Add notification to dropdown list
-                            const list = document.querySelector('.dropdown-menu .overflow-auto, .dropdown-menu [style*="max-height"]');
-                            if (list) {
-                                const iconMap = { warning_3: 'bi-exclamation-octagon-fill', warning_2: 'bi-exclamation-triangle-fill', custom: 'bi-info-circle-fill' };
-                                const colorMap = { warning_3: 'background:#fef2f2;color:#dc2626;', warning_2: 'background:#fffbeb;color:#d97706;', custom: 'background:#eff6ff;color:#2563eb;' };
-                                const id = Date.now();
-                                const div = document.createElement('div');
-                                div.id = 'notif-' + id;
-                                div.style.cssText = 'padding:13px 18px;border-bottom:1px solid #f8fafc;background:#fffbeb;';
-                                div.innerHTML = `
-                                    <div style="display:flex;gap:10px;align-items:flex-start;">
-                                        <div style="width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;${colorMap[e.type]||colorMap.custom}">
-                                            <i class="bi ${iconMap[e.type]||'bi-bell-fill'}"></i>
-                                        </div>
-                                        <div style="flex:1;min-width:0;">
-                                            <div style="font-size:.82rem;color:#1e293b;line-height:1.4;">${e.message}</div>
-                                            <div style="font-size:.72rem;color:#94a3b8;margin-top:4px;">Just now</div>
-                                        </div>
-                                        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-                                            <div style="width:8px;height:8px;border-radius:50%;background:#f59e0b;"></div>
-                                        </div>
-                                    </div>`;
-                                list.prepend(div);
-                            }
-
-                            // Show toast notification
-                            if (typeof showToast === 'function') {
-                                showToast(e.message, e.type || 'custom');
-                            }
+                        window.adminEcho = new Echo({
+                            broadcaster: 'reverb',
+                            key: reverbKey,
+                            wsHost: wsHost,
+                            wsPort: wsPort,
+                            wssPort: wsPort,
+                            forceTLS: forceTls,
+                            enabledTransports: forceTls ? ['wss', 'ws'] : ['ws'],
                         });
+
+                        window.adminEcho.private('notifications.{{ Auth::id() }}')
+                            .listen('.notification.sent', (e) => {
+                                window.refreshNotificationBell();
+                                if (typeof showToast === 'function') {
+                                    showToast(e.message, e.type || 'custom');
+                                }
+                            });
+                    } catch(ex) {}
                 };
                 document.head.appendChild(script2);
             };

@@ -135,4 +135,33 @@ class SystemUpdateAndBackupTest extends TestCase
         }
         $restoreRes->assertSessionHas('success');
     }
+
+    public function test_system_update_creates_in_app_notification_and_poll_returns_it(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'email' => 'student_test@school.test',
+        ]);
+
+        // Super admin runs bump PWA version / system update
+        $bumpRes = $this->actingAs($this->superAdmin)->postJson(route('admin.system-update.pwa-bump'));
+        $bumpRes->assertStatus(200);
+
+        // Verify notification was created in DB for student
+        $notif = \App\Models\Notification::where('user_id', $student->id)->where('type', 'system_update')->latest()->first();
+        $this->assertNotNull($notif);
+        $this->assertFalse($notif->is_read);
+
+        // Verify poll endpoint returns the notification for student
+        $pollRes = $this->actingAs($student)->getJson(route('notifications.poll'));
+        $pollRes->assertStatus(200);
+        $pollRes->assertJsonStructure([
+            'unread_count',
+            'notifications' => [
+                '*' => ['id', 'type', 'message', 'is_read', 'created_at_human', 'is_today']
+            ]
+        ]);
+        $this->assertGreaterThanOrEqual(1, $pollRes->json('unread_count'));
+        $this->assertEquals('system_update', $pollRes->json('notifications.0.type'));
+    }
 }

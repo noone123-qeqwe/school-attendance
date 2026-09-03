@@ -29,6 +29,8 @@ return [
 
     'key' => env('APP_KEY'),
 
+    'trusted_proxies' => env('TRUSTED_PROXIES', '*'),
+
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),

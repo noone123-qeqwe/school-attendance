@@ -46,10 +46,13 @@ Route::get('/sw.js', function () {
 
 // Real-time PWA Version Checker with memory cache
 Route::get('/pwa/version', function () {
-    $versionData = \Illuminate\Support\Facades\Cache::remember('pwa_version_response', 60, function () {
+    // Use sw.js mtime in cache key so any file change (manual edit or bump) instantly busts cache
+    $swPath = public_path('sw.js');
+    $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
+    $cacheKey = 'pwa_version_response_' . $swMtime;
+
+    $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime) {
         $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '15');
-        $swPath = public_path('sw.js');
-        $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
         $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
 
         return [
@@ -60,7 +63,7 @@ Route::get('/pwa/version', function () {
     });
 
     return response()->json($versionData, 200, [
-        'Cache-Control' => 'public, max-age=30, stale-while-revalidate=60',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
     ]);
 })->name('pwa.version');
 
@@ -186,6 +189,7 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/settings/update', [App\Http\Controllers\HomeController::class, 'update'])->name('settings.update');
     Route::post('/settings/preferences/update', [App\Http\Controllers\HomeController::class, 'updatePreferences'])->name('settings.preferences.update');
     Route::get('/notifications', [App\Http\Controllers\HomeController::class, 'notifications'])->name('notifications');
+    Route::get('/notifications/poll', [App\Http\Controllers\HomeController::class, 'pollNotifications'])->name('notifications.poll');
     Route::post('/notifications/read', [App\Http\Controllers\HomeController::class, 'markNotificationsRead'])->name('notifications.read');
     Route::delete('/notifications/{notification}', [App\Http\Controllers\HomeController::class, 'deleteNotification'])->name('notifications.delete');
     Route::post('/notifications/{notification}/archive', [App\Http\Controllers\HomeController::class, 'archiveNotification'])->name('notifications.archive');

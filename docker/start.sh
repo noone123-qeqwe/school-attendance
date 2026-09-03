@@ -1,51 +1,69 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
 echo "🚀 Starting Smart Classroom Attendance System..."
 
-# Wait for database to be ready
-echo "⏳ Waiting for database connection..."
-until php artisan tinker --execute="DB::connection()->getPdo(); echo 'Database connected';" 2>/dev/null; do
-  echo "Database not ready, waiting 5 seconds..."
-  sleep 5
-done
+# Default port to 80 if PORT is not provided by Render/Railway
+PORT="${PORT:-80}"
+echo "🌐 Configuring Nginx to listen on port ${PORT}..."
+sed -i "s/listen 80;/listen ${PORT};/g" /etc/nginx/http.d/default.conf
+sed -i "s/listen \[::\]:80;/listen [::]:${PORT};/g" /etc/nginx/http.d/default.conf
+sed -i "s/\${PORT}/${PORT}/g" /etc/nginx/http.d/default.conf 2>/dev/null || true
 
-echo "✅ Database connected successfully"
+# Setup required storage directories
+mkdir -p /var/www/html/storage/logs \
+         /var/www/html/storage/framework/cache/data \
+         /var/www/html/storage/framework/sessions \
+         /var/www/html/storage/framework/views \
+         /var/www/html/storage/app/public \
+         /var/www/html/bootstrap/cache
 
-# Generate application key if not set
-if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "" ]; then
-    echo "🔑 Generating application key..."
-    php artisan key:generate --force
+# Ensure write permissions
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Generate temporary APP_KEY fallback if not provided in environment
+if [ -z "$APP_KEY" ]; then
+    echo "🔑 APP_KEY not provided, generating temporary fallback key..."
+    export APP_KEY=$(php artisan key:generate --show)
 fi
 
-# Run migrations
-echo "🗄️ Running database migrations..."
-php artisan migrate --force
+# Run storage symlink
+echo "🔗 Ensuring storage symlink..."
+php artisan storage:link || true
 
-# Create storage link
-echo "🔗 Creating storage symbolic link..."
-php artisan storage:link
+# Ensure SQLite file exists if using sqlite
+if [ "$DB_CONNECTION" = "sqlite" ]; then
+    DB_FILE="${DB_DATABASE:-/var/www/html/database/database.sqlite}"
+    mkdir -p "$(dirname "$DB_FILE")"
+    touch "$DB_FILE"
+    chown -R www-data:www-data "$(dirname "$DB_FILE")"
+    chmod -R 775 "$(dirname "$DB_FILE")"
+fi
 
-# Clear and cache for production
-echo "⚡ Optimizing application..."
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-php artisan cache:clear
+# Run database migrations if configured
+if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ] || [ -n "$DB_URL" ] || [ -n "$MYSQLHOST" ] || [ -n "$MYSQL_URL" ] || [ "$DB_CONNECTION" = "sqlite" ]; then
+    echo "🗄️ Database configured, running migrations..."
+    RETRY_COUNT=0
+    MAX_RETRIES=6
+    until php artisan migrate --force || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
+        RETRY_COUNT=$((RETRY_COUNT+1))
+        echo "Database not ready yet... retry $RETRY_COUNT/$MAX_RETRIES in 5 seconds..."
+        sleep 5
+    done
+fi
 
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan optimize
+# Cache config, routes, and views for production performance
+echo "⚡ Optimizing Laravel caches..."
+php artisan optimize:clear || true
+php artisan config:cache || true
+php artisan route:cache || true
+php artisan view:cache || true
 
-# Set correct permissions
-echo "🔒 Setting permissions..."
-chown -R www-data:www-data /var/www/html/storage
-chown -R www-data:www-data /var/www/html/bootstrap/cache
-chmod -R 755 /var/www/html/storage
-chmod -R 755 /var/www/html/bootstrap/cache
+# Start PHP-FPM in daemon mode
+echo "🐘 Starting PHP-FPM..."
+php-fpm -D
 
-echo "✅ Application startup complete!"
-
-# Start Apache
-echo "🌐 Starting web server..."
-exec apache2-foreground
+# Start Nginx in the foreground
+echo "🚀 Starting Nginx..."
+exec nginx -g "daemon off;"

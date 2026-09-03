@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Notifications')
 
@@ -51,7 +51,9 @@
         @endif
         <div style="padding:16px; border:1px solid {{ $notification->is_read ? 'var(--saas-border)' : 'var(--saas-primary)' }}; border-radius:var(--saas-radius-md); margin-bottom:12px; background:{{ $notification->is_read ? 'transparent' : 'rgba(255,215,145,0.03)' }}; display:flex; gap:16px; align-items:flex-start; transition:all 0.2s;">
             <div style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                @if($notification->type === 'excuse')
+                @if($notification->type === 'system_update')
+                    <i class="bi bi-rocket-takeoff" style="color:#34d399;"></i>
+                @elseif($notification->type === 'excuse')
                     <i class="bi bi-envelope-paper saas-text-muted"></i>
                 @elseif($notification->type === 'system')
                     <i class="bi bi-info-circle saas-text-muted"></i>
@@ -63,7 +65,7 @@
             <div style="flex:1;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                     <div style="font-weight:600; font-size:0.95rem; color:{{ $notification->is_read ? 'var(--saas-text)' : 'var(--saas-gold)' }};">
-                        {{ $notification->type === 'excuse' ? 'New Excuse Letter' : 'System Notification' }}
+                        {{ $notification->type === 'system_update' ? '🚀 System Update' : ($notification->type === 'excuse' ? 'New Excuse Letter' : 'System Notification') }}
                     </div>
                     <div class="saas-text-muted" style="font-size:0.75rem;">
                         {{ $notification->created_at->diffForHumans() }}

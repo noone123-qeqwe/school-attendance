@@ -264,6 +264,18 @@
         animation: pwaSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    /* On mobile, the floating bottom nav is 64px tall at bottom: 14px, so we push
+       the update popup above it: 14px offset + 64px nav height + 12px breathing room */
+    @media (max-width: 1024px) {
+        .pwa-update-banner {
+            bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+            left: 12px;
+            right: 12px;
+            max-width: calc(100% - 24px);
+            margin: 0;
+        }
+    }
+
     .pwa-update-banner-header {
         display: flex;
         align-items: flex-start;
@@ -428,19 +440,68 @@
     let deferredPrompt = null;
     let latestDetectedVersion = null;
 
-    function showAppUpdatePopup(version) {
-        if (!version) return;
+    // Track which specific version we already notified about (not just a boolean)
+    // so that a NEW version from the server always triggers a fresh popup
+    let lastNotifiedVersion = null;
+
+    function showAppUpdatePopup(version, force = false) {
+        if (version) latestDetectedVersion = version;
         
-        const currentVer = localStorage.getItem('pwa_app_version');
         const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
 
-        if (currentVer === version || sessionDismissed === version) {
+        // Only block if this EXACT version was dismissed AND not forced
+        if (!force && sessionDismissed && latestDetectedVersion && sessionDismissed === latestDetectedVersion) {
             return;
         }
 
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) {
+            // Re-trigger slide-up animation by re-inserting the element
+            popup.style.display = 'none';
+            void popup.offsetHeight; // force reflow
             popup.style.display = 'flex';
+        }
+
+        // Trigger multi-channel update alerts ONCE PER NEW VERSION
+        // If the server version changed, this is a new update — always notify again
+        const isNewVersion = !lastNotifiedVersion || lastNotifiedVersion !== latestDetectedVersion;
+        if (isNewVersion) {
+            lastNotifiedVersion = latestDetectedVersion;
+
+            // 1. Mobile Haptic Vibration Feedback
+            if (window.triggerHaptic) {
+                window.triggerHaptic('success');
+            } else if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+
+            // 2. In-App Floating Toast Notification
+            if (typeof showToast === 'function') {
+                showToast('🚀 System update ready! Tap below to update.', 'info');
+            }
+
+            // 3. Native OS/Browser Push Notification if permitted
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    const notifTitle = '🚀 Smart Attendance Update Available';
+                    const notifOptions = {
+                        body: 'A new version of the attendance portal is ready. Tap to load the latest features and optimizations.',
+                        icon: '/images/icons/icon-192x192.png',
+                        badge: '/images/icons/icon-72x72.png',
+                        vibrate: [100, 50, 100],
+                        tag: 'app-update-' + (latestDetectedVersion || Date.now()),
+                        renotify: true,
+                        data: { url: window.location.href, action: 'update' }
+                    };
+
+                    if (swRegistration && swRegistration.showNotification) {
+                        swRegistration.showNotification(notifTitle, notifOptions);
+                    } else {
+                        new Notification(notifTitle, notifOptions);
+            // 4. Update In-App Notification Bell & Badge in Real-Time
+            if (typeof window.refreshNotificationBell === 'function') {
+                try { window.refreshNotificationBell(); } catch(e) {}
+            }
         }
     }
 
@@ -448,6 +509,8 @@
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) popup.style.display = 'none';
         
+        // Only dismiss THIS specific version — a new version from the server
+        // will have a different string and bypass this guard automatically
         const targetVersion = version || latestDetectedVersion;
         if (targetVersion) {
             sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
@@ -455,7 +518,7 @@
     }
 
     let lastVersionCheckTime = 0;
-    const VERSION_CHECK_COOLDOWN_MS = 60000;
+    const VERSION_CHECK_COOLDOWN_MS = 10000; // 10s cooldown for immediate mobile responsiveness
 
     async function checkServerVersion(force = false) {
         const now = Date.now();
@@ -464,23 +527,46 @@
         }
         lastVersionCheckTime = now;
 
+        if (swRegistration) {
+            try { swRegistration.update(); } catch(e) {}
+        }
+
         try {
-            const res = await fetch('/pwa/version', { cache: 'no-store' });
+            const res = await fetch('/pwa/version?_t=' + now, { cache: 'no-store' });
             if (!res.ok) return;
             const data = await res.json();
             if (data && data.version) {
-                latestDetectedVersion = data.version;
+                const serverVersion = data.version;
                 const currentVer = localStorage.getItem('pwa_app_version');
-                const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
+
+                // If server version differs from what we previously notified about,
+                // clear the dismiss guard so the new update can show
+                if (serverVersion !== sessionStorage.getItem('pwa_update_dismissed_ver')) {
+                    // New version from server — allow popup to show
+                }
+
+                latestDetectedVersion = serverVersion;
 
                 if (!currentVer) {
                     // First time load: establish current version baseline
-                    localStorage.setItem('pwa_app_version', data.version);
-                } else if (currentVer !== data.version && sessionDismissed !== data.version) {
+                    localStorage.setItem('pwa_app_version', serverVersion);
+                    if (swRegistration && swRegistration.waiting) {
+                        showAppUpdatePopup(serverVersion, true);
+                    }
+                } else if (currentVer !== serverVersion) {
+                    // Server has a newer version than what we last applied
+                    // Clear any previous dismiss for an old version
+                    const prevDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
+                    if (prevDismissed && prevDismissed !== serverVersion) {
+                        sessionStorage.removeItem('pwa_update_dismissed_ver');
+                    }
+
                     if (swRegistration) {
                         try { swRegistration.update(); } catch(e) {}
                     }
-                    showAppUpdatePopup(data.version);
+                    showAppUpdatePopup(serverVersion, true);
+                } else if (force && swRegistration && swRegistration.waiting) {
+                    showAppUpdatePopup(serverVersion, true);
                 }
             }
         } catch (e) {}
@@ -492,25 +578,27 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=117&mtime={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=127?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });
                 swRegistration = reg;
 
-                // 1. Immediate version check on page ready
-                checkServerVersion();
+                // 1. Force update check with server and SW registration on load
+                try { reg.update(); } catch(e) {}
+                checkServerVersion(true);
 
-                // 2. Periodic check every 3 minutes for real-time detection while using the app
+                // 2. Periodic check every 30s for real-time mobile background detection
                 setInterval(() => {
                     if (document.visibilityState === 'visible') {
-                        checkServerVersion();
+                        if (swRegistration) try { swRegistration.update(); } catch(e) {}
+                        checkServerVersion(true);
                     }
-                }, 180000);
+                }, 30000);
 
-                // 3. If an update is already downloaded and waiting, verify version
+                // 3. If an update is already downloaded and waiting in background, trigger popup immediately
                 if (reg.waiting) {
-                    checkServerVersion(true);
+                    showAppUpdatePopup(latestDetectedVersion || 'new', true);
                 }
 
                 // 4. When a new update is found and finishes installing in the background
@@ -519,7 +607,11 @@
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
-                                checkServerVersion(true);
+                                if (navigator.serviceWorker.controller) {
+                                    showAppUpdatePopup(latestDetectedVersion || 'new', true);
+                                } else {
+                                    checkServerVersion(true);
+                                }
                             }
                         });
                     }
@@ -528,17 +620,19 @@
                 // 5. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
-                        checkServerVersion(true);
+                        showAppUpdatePopup(event.data.version || latestDetectedVersion || 'new', true);
                     }
                 });
 
-                // 6. On app focus or unlock, check for updates (throttled)
+                // 6. On app focus, unlock, or tab switch, immediately check for updates on mobile
                 window.addEventListener('focus', () => {
-                    checkServerVersion();
+                    if (swRegistration) try { swRegistration.update(); } catch(e) {}
+                    checkServerVersion(true);
                 });
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
-                        checkServerVersion();
+                        if (swRegistration) try { swRegistration.update(); } catch(e) {}
+                        checkServerVersion(true);
                     }
                 });
 

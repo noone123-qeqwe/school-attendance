@@ -1,8 +1,8 @@
-/* BUMP_TIMESTAMP: 2026-08-30T04:43:40+08:00 */
-const CACHE_VERSION = 'v117';
-const CACHE_NAME = `attendance-v117`;
+/* BUMP_TIMESTAMP: 2026-09-03T18:31:16+08:00 */
+const CACHE_VERSION = 'v127';
+const CACHE_NAME = `attendance-v127`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v117`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v127`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
@@ -44,6 +44,17 @@ self.addEventListener('install', (event) => {
             return cache.addAll(PRECACHE_ASSETS).catch((err) => {
                 console.warn('[PWA SW] Pre-cache partial warning:', err);
             });
+        }).then(() => {
+            // Instantly notify all open window clients that an update is installed and ready
+            return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+                windowClients.forEach((client) => {
+                    client.postMessage({
+                        type: 'SW_UPDATED',
+                        version: CACHE_VERSION,
+                        timestamp: Date.now()
+                    });
+                });
+            }).catch(() => {});
         })
     );
 });

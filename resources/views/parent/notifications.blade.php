@@ -52,7 +52,11 @@
                         @endif
                         <div style="display: flex; gap: 20px;">
                             <div>
-                                @if(str_contains($notification->type, 'warning'))
+                                @if($notification->type === 'system_update')
+                                    <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16,185,129,0.18); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; border: 1px solid rgba(16,185,129,0.35);">
+                                        <i class="bi bi-rocket-takeoff-fill"></i>
+                                    </div>
+                                @elseif(str_contains($notification->type, 'warning'))
                                     <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(239,83,80,0.15); color: #ef5350; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; border: 1px solid rgba(239,83,80,0.2);">
                                         <i class="bi bi-exclamation-triangle-fill"></i>
                                     </div>

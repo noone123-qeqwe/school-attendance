@@ -59,6 +59,11 @@
         color: #60a5fa;
         border: 1px solid rgba(59, 130, 246, 0.3);
     }
+    .type-system_update {
+        background: rgba(16, 185, 129, 0.18);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+    }
     .notification-message {
         font-size: 0.9rem;
         color: #e5e7eb;
@@ -231,7 +236,9 @@
             <div class="notification-header">
                 <div class="notification-info">
                     <div class="notification-type type-{{ $notification->type }}">
-                        @if($notification->type === 'warning_2')
+                        @if($notification->type === 'system_update')
+                            <i class="bi bi-rocket-takeoff-fill"></i> System Update
+                        @elseif($notification->type === 'warning_2')
                             <i class="bi bi-exclamation-triangle-fill"></i> Warning (2 Absences)
                         @elseif($notification->type === 'warning_3')
                             <i class="bi bi-exclamation-octagon-fill"></i> Final Warning (3+ Absences)

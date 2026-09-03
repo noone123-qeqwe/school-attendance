@@ -1,36 +1,37 @@
+# Render Blueprint for Smart Classroom Attendance System
+# Documentation: https://render.com/docs/blueprint-spec
+
+databases:
+  - name: attendance-db
+    databaseName: attendance
+    user: attendance_user
+    plan: free
+
 services:
-  # Web Service - Laravel Application
   - type: web
     name: attendance-system
-    env: php
-    buildCommand: |
-      npm install
-      npm run build
-      composer install --optimize-autoloader --no-dev
-      php artisan config:cache
-      php artisan route:cache  
-      php artisan view:cache
-      php artisan storage:link
-    startCommand: |
-      php artisan migrate --force
-      php artisan optimize
-      apache2-foreground
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /up
     envVars:
       - key: APP_NAME
-        value: Smart Classroom Attendance System
-      - key: APP_SUBTITLE  
-        value: QR, GPS, and Biometric-Based Attendance Monitoring
+        value: "Smart Classroom Attendance System"
+      - key: APP_SUBTITLE
+        value: "QR, GPS, and Biometric-Based Attendance Monitoring"
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: false
+        value: "false"
+      - key: APP_TIMEZONE
+        value: Asia/Manila
       - key: APP_URL
         fromService:
           type: web
           name: attendance-system
           property: host
-      - key: APP_TIMEZONE
-        value: Asia/Manila
+      - key: APP_KEY
+        generateValue: true
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL
@@ -38,125 +39,16 @@ services:
       - key: SESSION_DRIVER
         value: database
       - key: SESSION_SECURE_COOKIE
-        value: true
-      - key: BROADCAST_CONNECTION
-        value: reverb
+        value: "true"
+      - key: TRUSTED_PROXIES
+        value: "*"
       - key: CACHE_STORE
         value: database
       - key: QUEUE_CONNECTION
-        value: database
-      - key: FILESYSTEM_DISK
-        value: local
-      - key: MAIL_MAILER
-        value: smtp
-      - key: MAIL_HOST
-        value: smtp.gmail.com
-      - key: MAIL_PORT
-        value: 587
-      - key: MAIL_FROM_NAME
-        value: Smart Classroom Attendance System
-      # Database connection will be auto-configured by Render
+        value: sync
       - key: DB_CONNECTION
-        value: mysql
-      # These will be auto-populated by Render's database service
-      - key: DB_HOST
+        value: pgsql
+      - key: DATABASE_URL
         fromDatabase:
           name: attendance-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: attendance-db
-          property: port  
-      - key: DB_DATABASE
-        fromDatabase:
-          name: attendance-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: attendance-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: attendance-db
-          property: password
-    disk:
-      name: attendance-storage
-      mountPath: /var/www/html/storage
-      sizeGB: 10
-
-  # Database Service
-  - type: pserv
-    name: attendance-db
-    env: mysql
-    plan: starter
-    databases:
-      - name: attendance_production
-        user: attendance_user
-
-  # Background Service - Reverb WebSocket Server
-  - type: pserv
-    name: reverb-websocket
-    env: php
-    buildCommand: |
-      composer install --optimize-autoloader --no-dev
-    startCommand: |
-      php artisan reverb:start --host=0.0.0.0 --port=8080
-    envVars:
-      # Same environment variables as web service
-      - key: APP_NAME
-        value: Smart Classroom Attendance System
-      - key: APP_ENV
-        value: production
-      - key: APP_DEBUG
-        value: false
-      - key: DB_HOST
-        fromDatabase:
-          name: attendance-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: attendance-db
-          property: port
-      - key: DB_DATABASE
-        fromDatabase:
-          name: attendance-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: attendance-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: attendance-db
-          property: password
-
-  # Cron Service - Scheduled Tasks
-  - type: cron
-    name: attendance-scheduler
-    env: php
-    buildCommand: |
-      composer install --optimize-autoloader --no-dev
-    schedule: "* * * * *"
-    startCommand: php artisan schedule:run
-    envVars:
-      # Same database configuration
-      - key: DB_HOST
-        fromDatabase:
-          name: attendance-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: attendance-db
-          property: port
-      - key: DB_DATABASE
-        fromDatabase:
-          name: attendance-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: attendance-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: attendance-db
-          property: password
+          property: connectionString

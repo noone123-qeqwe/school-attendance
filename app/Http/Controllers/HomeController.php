@@ -488,6 +488,51 @@ class HomeController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function pollNotifications()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['unread_count' => 0, 'notifications' => []]);
+        }
+
+        if ($user->isParent()) {
+            $childIds = $user->children()->pluck('users.id');
+            $unreadCount = \App\Models\Notification::whereIn('user_id', $childIds)->where('is_read', false)->count();
+            $notifications = \App\Models\Notification::with(['user', 'sender', 'subject'])
+                ->whereIn('user_id', $childIds)
+                ->active()
+                ->orderBy('created_at', 'desc')
+                ->take(8)
+                ->get();
+        } else {
+            $unreadCount = \App\Models\Notification::where('user_id', $user->id)->where('is_read', false)->count();
+            $notifications = \App\Models\Notification::with(['sender', 'subject'])
+                ->where('user_id', $user->id)
+                ->active()
+                ->orderBy('created_at', 'desc')
+                ->take(8)
+                ->get();
+        }
+
+        $formatted = $notifications->map(function($notif) {
+            return [
+                'id' => $notif->id,
+                'type' => $notif->type,
+                'message' => $notif->message,
+                'is_read' => (bool)$notif->is_read,
+                'created_at_human' => $notif->created_at->diffForHumans(),
+                'is_today' => $notif->created_at->isToday(),
+                'sender_name' => $notif->sender?->name,
+                'subject_name' => $notif->subject?->name ?? $notif->subject_code,
+            ];
+        });
+
+        return response()->json([
+            'unread_count' => $unreadCount,
+            'notifications' => $formatted,
+        ]);
+    }
+
     public function update(Request $request)
     {
         $user = Auth::user();

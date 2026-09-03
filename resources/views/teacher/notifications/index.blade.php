@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('page-title', 'Notifications')
 
@@ -174,7 +174,11 @@
                             </div>
                         </td>
                         <td data-label="Type">
-                            @if($notification->type === 'warning_2')
+                            @if($notification->type === 'system_update')
+                                <span style="background: #ecfdf5; color: #059669; padding: 3px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="bi bi-rocket-takeoff-fill"></i> Update
+                                </span>
+                            @elseif($notification->type === 'warning_2')
                                 <span style="background: #fffbeb; color: #d97706; padding: 3px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 700;">
                                     2nd Warning
                                 </span>
