@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 @section('page-title', $child->name . ' â€” Warnings')
 
 @section('content')

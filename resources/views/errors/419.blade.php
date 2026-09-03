@@ -15,12 +15,8 @@
         </p>
 
         <div class="d-flex flex-column gap-2">
-            <a href="{{ url()->previous() ?: route('login') }}" class="btn" style="background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%); color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; border: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
-                <i class="bi bi-arrow-clockwise"></i> Refresh & Return
-            </a>
-            
-            <a href="{{ route('login') }}" class="btn" style="background: rgba(207,164,111,0.1); color: #cfa46f; font-weight: 600; padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(207,164,111,0.25); text-decoration: none;">
-                Go to Sign In
+            <a href="{{ route('login') }}" class="btn" style="background: linear-gradient(135deg, #cfa46f 0%, #8f6e4a 100%); color: #ffffff; font-weight: 700; padding: 12px 24px; border-radius: 12px; border: none; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px;">
+                <i class="bi bi-box-arrow-in-right"></i> Return to Sign In
             </a>
         </div>
     </div>

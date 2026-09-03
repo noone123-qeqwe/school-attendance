@@ -23,9 +23,7 @@
         }
     @endphp
 
-    <!-- Instant Preload Destination Page -->
-    <link rel="prefetch" href="{{ $destUrl }}">
-    <link rel="prerender" href="{{ $destUrl }}">
+
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
