@@ -56,6 +56,117 @@
     /* Spinner */
     .spin { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,.3); border-top-color: white; border-radius: 50%; animation: spin .7s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── OUTSIDE RANGE POPUP DIALOG ── */
+    .outside-range-popup-backdrop {
+        position: fixed; inset: 0;
+        background: rgba(10, 5, 5, 0.88);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        z-index: 100002;
+        display: flex; align-items: center; justify-content: center;
+        padding: 16px;
+        animation: fadeIn 0.25s ease-out forwards;
+    }
+    .outside-range-popup-card {
+        background: linear-gradient(180deg, #241616 0%, #150d0d 100%);
+        border: 1.5px solid rgba(239, 68, 68, 0.45);
+        border-radius: 24px;
+        max-width: 440px; width: 100%;
+        padding: 28px 24px 24px;
+        color: #f3e7cd; text-align: center;
+        position: relative;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(239, 68, 68, 0.15);
+        animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popIn {
+        0% { opacity: 0; transform: scale(0.88) translateY(20px); }
+        100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+    .outside-range-close-btn {
+        position: absolute; top: 16px; right: 16px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #f3e7cd; width: 34px; height: 34px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .outside-range-close-btn:hover { background: rgba(239, 68, 68, 0.25); color: #f87171; transform: rotate(90deg); }
+    .outside-range-icon-pulse {
+        width: 76px; height: 76px; border-radius: 50%;
+        background: rgba(239, 68, 68, 0.12);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 16px; position: relative;
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+        animation: pulseGps 2s infinite;
+    }
+    @keyframes pulseGps {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+        70% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .outside-range-icon-inner {
+        width: 54px; height: 54px; border-radius: 50%;
+        background: linear-gradient(135deg, #ef4444, #991b1b);
+        display: flex; align-items: center; justify-content: center;
+        color: #ffffff; font-size: 1.7rem;
+    }
+    .outside-range-badge {
+        display: inline-flex; align-items: center;
+        padding: 4px 12px; border-radius: 999px;
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #f87171; font-size: 0.72rem; font-weight: 800;
+        letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .outside-range-headline { font-size: 1.35rem; font-weight: 800; color: #ffffff; margin-bottom: 8px; }
+    .outside-range-desc { font-size: 0.88rem; color: #d1c4b2; line-height: 1.5; margin-bottom: 20px; }
+    .outside-range-metrics-box {
+        display: flex; align-items: center; justify-content: space-between;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(207, 164, 111, 0.2);
+        border-radius: 16px; padding: 14px 18px; margin-bottom: 18px;
+    }
+    .outside-range-metric-col { flex: 1; text-align: center; }
+    .outside-range-metric-col .metric-label { font-size: 0.72rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .outside-range-metric-col .metric-val { font-size: 1.45rem; font-weight: 800; font-family: monospace; }
+    .outside-range-metric-col.detected .metric-val { color: #f87171; }
+    .outside-range-metric-col.allowed .metric-val { color: #fbbf24; }
+    .outside-range-metric-col .metric-sub { font-size: 0.72rem; font-weight: 600; }
+    .outside-range-divider { width: 1px; height: 48px; background: rgba(255, 255, 255, 0.1); margin: 0 12px; }
+    .outside-range-tip-box {
+        display: flex; align-items: flex-start;
+        background: rgba(245, 158, 11, 0.1);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        border-radius: 12px; padding: 12px 14px; font-size: 0.8rem;
+        color: #fde68a; text-align: left; margin-bottom: 22px; line-height: 1.45;
+    }
+    .outside-range-actions { display: flex; flex-direction: column; gap: 10px; }
+    .outside-range-btn-primary {
+        background: linear-gradient(135deg, #cfa46f, #a07a4a);
+        color: #110a0a; font-weight: 800; font-size: 0.92rem;
+        padding: 12px 20px; border-radius: 14px; border: none; cursor: pointer;
+        transition: all 0.2s; box-shadow: 0 4px 16px rgba(207, 164, 111, 0.3);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .outside-range-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(207, 164, 111, 0.4); }
+    .outside-range-btn-secondary {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(207, 164, 111, 0.3);
+        color: #f3e7cd; font-weight: 700; font-size: 0.88rem;
+        padding: 10px 18px; border-radius: 14px; cursor: pointer;
+        transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+    }
+    .outside-range-btn-secondary:hover { background: rgba(207, 164, 111, 0.15); color: #ffffff; }
+    .outside-range-btn-text {
+        background: transparent; border: none; color: #b39b82;
+        font-size: 0.82rem; font-weight: 600; padding: 6px; cursor: pointer; transition: color 0.2s;
+    }
+    .outside-range-btn-text:hover { color: #f3e7cd; }
 </style>
 
 <div class="verify-wrapper">
@@ -105,6 +216,66 @@
             <input type="hidden" name="accuracy" id="accuracyInput">
             <input type="hidden" name="credential" id="credentialInput">
         </form>
+    </div>
+</div>
+
+<!-- OUTSIDE RANGE ALERT POPUP MODAL -->
+<div id="outsideRangePopupModal" class="outside-range-popup-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="outsideRangeTitle">
+    <div class="outside-range-popup-card">
+        <!-- Close icon button -->
+        <button type="button" class="outside-range-close-btn" onclick="closeOutsideRangePopup()" aria-label="Close dialog">
+            <i class="bi bi-x-lg"></i>
+        </button>
+
+        <!-- Animated Warning Icon -->
+        <div class="outside-range-icon-pulse">
+            <div class="outside-range-icon-inner">
+                <i class="bi bi-geo-alt-fill"></i>
+            </div>
+        </div>
+
+        <!-- Headline & Subtitle -->
+        <div class="outside-range-badge">
+            <i class="bi bi-shield-exclamation me-1"></i> GEOFENCE BOUNDARY EXCEEDED
+        </div>
+        <h3 id="outsideRangeTitle" class="outside-range-headline">Outside Classroom Range</h3>
+        <p id="outsideRangeMessage" class="outside-range-desc">
+            You are too far from the classroom to record attendance. You must be physically inside the room during class.
+        </p>
+
+        <!-- Range Metrics Display -->
+        <div class="outside-range-metrics-box">
+            <div class="outside-range-metric-col detected">
+                <div class="metric-label"><i class="bi bi-person-walking me-1"></i> Your Distance</div>
+                <div class="metric-val" id="outsideRangeDetectedDist">--m</div>
+                <div class="metric-sub text-danger">Outside Boundary</div>
+            </div>
+            <div class="outside-range-divider"></div>
+            <div class="outside-range-metric-col allowed">
+                <div class="metric-label"><i class="bi bi-broadcast me-1"></i> Allowed Radius</div>
+                <div class="metric-val" id="outsideRangeAllowedRadius">50m</div>
+                <div class="metric-sub text-warning">Maximum Limit</div>
+            </div>
+        </div>
+
+        <!-- Proximity Guidance -->
+        <div class="outside-range-tip-box">
+            <i class="bi bi-info-circle-fill text-warning me-2" style="font-size: 1.1rem; flex-shrink: 0;"></i>
+            <span>Please step into the classroom or move closer to the instructor's display and try verifying again.</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="outside-range-actions">
+            <button type="button" class="outside-range-btn-primary" onclick="retryScanFromOutsidePopup()">
+                <i class="bi bi-arrow-repeat me-1"></i> Retry Location Check
+            </button>
+            <a href="{{ route('home') }}?open_code=1" class="outside-range-btn-secondary" style="text-decoration:none;">
+                <i class="bi bi-key-fill me-1"></i> Enter 6-Digit Code Instead
+            </a>
+            <button type="button" class="outside-range-btn-text" onclick="closeOutsideRangePopup()">
+                Dismiss
+            </button>
+        </div>
     </div>
 </div>
 
@@ -568,6 +739,43 @@ function showOutsideClassroomError(dist, limit) {
     btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
     btn.onclick = function() { startGPS(); };
     btn.style.display = 'flex';
+
+    showOutsideRangePopup({
+        distance: dist,
+        radius: limit,
+        message: 'You are outside the classroom boundary (' + Math.round(dist) + 'm away, allowed within ' + limit + 'm). Attendance can only be recorded while physically inside the classroom.'
+    });
+}
+
+function showOutsideRangePopup(data) {
+    const modal = document.getElementById('outsideRangePopupModal');
+    if (!modal) return;
+
+    const dist = data.distance ? Math.round(data.distance) : (data.dist ? Math.round(data.dist) : null);
+    const radius = data.radius ? Math.round(data.radius) : (data.limit ? Math.round(data.limit) : 50);
+
+    const distEl = document.getElementById('outsideRangeDetectedDist');
+    const radEl = document.getElementById('outsideRangeAllowedRadius');
+    const msgEl = document.getElementById('outsideRangeMessage');
+
+    if (distEl) distEl.textContent = dist !== null ? (dist + 'm away') : 'Out of range';
+    if (radEl) radEl.textContent = radius + 'm radius';
+    if (msgEl && data.message) {
+        msgEl.textContent = data.message;
+    }
+
+    modal.style.display = 'flex';
+    if (window.triggerHaptic) window.triggerHaptic('error');
+}
+
+function closeOutsideRangePopup() {
+    const modal = document.getElementById('outsideRangePopupModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function retryScanFromOutsidePopup() {
+    closeOutsideRangePopup();
+    startGPS();
 }
 
 function showFpError(msg) {
