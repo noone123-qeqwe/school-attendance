@@ -130,7 +130,20 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     public function students(Request $request)
     {
-        $query = User::where('role', 'student')->with(['attendances', 'deviceBinding']);
+        $status = $request->get('status', 'active');
+        $query = User::query()->where('role', 'student')->with(['attendances', 'deviceBinding']);
+
+        if ($status === 'active') {
+            $query->whereNull('deleted_at')->where(function($q) {
+                $q->whereNull('is_active')->orWhere('is_active', true);
+            });
+        } elseif ($status === 'deactivated') {
+            $query->withTrashed()->where(function($q) {
+                $q->whereNotNull('deleted_at')->orWhere('is_active', false);
+            });
+        } else {
+            $query->withTrashed();
+        }
 
         if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
         if ($request->filled('semester'))   $query->where('semester', $request->semester);
@@ -145,7 +158,7 @@ class AdminController extends Controller
         }
 
         $students = $query->orderBy('year_level')->orderBy('name')->paginate(100)->withQueryString();
-        return view('admin.students.index', compact('students'));
+        return view('admin.students.index', compact('students', 'status'));
      }
 
      public function createStudent()
@@ -335,62 +348,67 @@ class AdminController extends Controller
         $updated = 0;
         $skipped = 0;
 
-        foreach ($rows as $row) {
-            $name  = isset($row[$nameIdx]) ? trim($row[$nameIdx]) : '';
-            $email = isset($row[$emailIdx]) ? strtolower(trim($row[$emailIdx])) : '';
+        $chunks = array_chunk($rows, 100);
+        foreach ($chunks as $chunk) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($chunk, $nameIdx, $emailIdx, $idIdx, $courseIdx, $yearIdx, $semIdx, $sectionIdx, $passIdx, &$created, &$updated, &$skipped) {
+                foreach ($chunk as $row) {
+                    $name  = isset($row[$nameIdx]) ? trim($row[$nameIdx]) : '';
+                    $email = isset($row[$emailIdx]) ? strtolower(trim($row[$emailIdx])) : '';
 
-            if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $skipped++;
-                continue;
-            }
-
-            $studentNumber = ($idIdx !== null && isset($row[$idIdx])) ? trim($row[$idIdx]) : null;
-            $course        = ($courseIdx !== null && isset($row[$courseIdx])) ? trim($row[$courseIdx]) : null;
-            $yearLevel     = ($yearIdx !== null && isset($row[$yearIdx]) && is_numeric(trim($row[$yearIdx]))) ? (int)trim($row[$yearIdx]) : null;
-            $semester      = ($semIdx !== null && isset($row[$semIdx]) && is_numeric(trim($row[$semIdx]))) ? (int)trim($row[$semIdx]) : null;
-            $section       = ($sectionIdx !== null && isset($row[$sectionIdx])) ? trim($row[$sectionIdx]) : 'A';
-            $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && !empty(trim($row[$passIdx]))) ? trim($row[$passIdx]) : 'student123';
-
-            $existing = User::withTrashed()
-                ->where(function ($q) use ($studentNumber, $email) {
-                    if (!empty($studentNumber)) {
-                        $q->where('student_number', $studentNumber);
+                    if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        $skipped++;
+                        continue;
                     }
-                    $q->orWhere('email', $email);
-                })
-                ->first();
 
-            $attributes = [
-                'name'              => $name,
-                'email'             => $email,
-                'student_number'    => $studentNumber ?: null,
-                'course'            => $course ?: null,
-                'year_level'        => $yearLevel,
-                'semester'          => $semester,
-                'section'           => $section ?: 'A',
-                'role'              => 'student',
-                'email_verified_at' => now(),
-            ];
+                    $studentNumber = ($idIdx !== null && isset($row[$idIdx])) ? trim($row[$idIdx]) : null;
+                    $course        = ($courseIdx !== null && isset($row[$courseIdx])) ? trim($row[$courseIdx]) : null;
+                    $yearLevel     = ($yearIdx !== null && isset($row[$yearIdx]) && is_numeric(trim($row[$yearIdx]))) ? (int)trim($row[$yearIdx]) : null;
+                    $semester      = ($semIdx !== null && isset($row[$semIdx]) && is_numeric(trim($row[$semIdx]))) ? (int)trim($row[$semIdx]) : null;
+                    $section       = ($sectionIdx !== null && isset($row[$sectionIdx])) ? trim($row[$sectionIdx]) : 'A';
+                    $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && !empty(trim($row[$passIdx]))) ? trim($row[$passIdx]) : 'student123';
 
-            if ($existing) {
-                // Security check: Refuse to downgrade or overwrite existing non-student accounts (e.g. admins, teachers)
-                if ($existing->role !== 'student') {
-                    $skipped++;
-                    \Illuminate\Support\Facades\Log::warning("CSV Student Import skipped row for '{$email}': Account exists with elevated role '{$existing->role}'.");
-                    continue;
+                    $existing = User::withTrashed()
+                        ->where(function ($q) use ($studentNumber, $email) {
+                            if (!empty($studentNumber)) {
+                                $q->where('student_number', $studentNumber);
+                            }
+                            $q->orWhere('email', $email);
+                        })
+                        ->first();
+
+                    $attributes = [
+                        'name'              => $name,
+                        'email'             => $email,
+                        'student_number'    => $studentNumber ?: null,
+                        'course'            => $course ?: null,
+                        'year_level'        => $yearLevel,
+                        'semester'          => $semester,
+                        'section'           => $section ?: 'A',
+                        'role'              => 'student',
+                        'email_verified_at' => now(),
+                    ];
+
+                    if ($existing) {
+                        // Security check: Refuse to downgrade or overwrite existing non-student accounts (e.g. admins, teachers)
+                        if ($existing->role !== 'student') {
+                            $skipped++;
+                            \Illuminate\Support\Facades\Log::warning("CSV Student Import skipped row for '{$email}': Account exists with elevated role '{$existing->role}'.");
+                            continue;
+                        }
+
+                        if ($existing->trashed()) {
+                            $existing->restore();
+                        }
+                        $existing->update($attributes);
+                        $updated++;
+                    } else {
+                        $attributes['password'] = Hash::make($plainPassword);
+                        $attributes['must_change_password'] = true;
+                        User::create($attributes);
+                        $created++;
+                    }
                 }
-
-                if ($existing->trashed()) {
-                    $existing->restore();
-                }
-                $existing->update($attributes);
-                $updated++;
-            } else {
-                $attributes['password'] = Hash::make($plainPassword);
-                $attributes['must_change_password'] = true;
-                User::create($attributes);
-                $created++;
-            }
+            });
         }
 
         $message = "Import completed: {$created} new students added, {$updated} updated.";
@@ -508,8 +526,33 @@ class AdminController extends Controller
     public function destroyStudent(User $student)
     {
         abort_unless($student->role === 'student', 404);
+        $student->is_active = false;
+        $student->save();
         $student->delete();
+        activity()->performedOn($student)->causedBy(Auth::user())->log("Deleted student account: {$student->name} ({$student->student_number})");
         return redirect()->route('admin.students')->with('success', 'Student deleted.');
+    }
+
+    public function deactivateStudent(User $student)
+    {
+        abort_unless($student->role === 'student', 404);
+        $student->is_active = false;
+        $student->save();
+        activity()->performedOn($student)->causedBy(Auth::user())->log("Deactivated student account: {$student->name} ({$student->student_number})");
+        return back()->with('success', "Student {$student->name} has been deactivated.");
+    }
+
+    public function reactivateStudent($id)
+    {
+        $student = User::withTrashed()->findOrFail($id);
+        abort_unless($student->role === 'student', 404);
+        if ($student->trashed()) {
+            $student->restore();
+        }
+        $student->is_active = true;
+        $student->save();
+        activity()->performedOn($student)->causedBy(Auth::user())->log("Reactivated student account: {$student->name} ({$student->student_number})");
+        return back()->with('success', "Student {$student->name} has been reactivated.");
     }
 
 
@@ -683,30 +726,88 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     public function attendanceLogs(Request $request)
     {
+        $tab = $request->get('tab', 'summary'); // 'summary' or 'records'
+        $subjects = Subject::orderBy('name')->get();
+
+        if ($tab === 'records') {
+            $recordQuery = Attendance::with(['user', 'subject', 'academicYear'])
+                ->orderBy('date', 'desc')
+                ->orderBy('time_in', 'desc');
+
+            if ($request->filled('date'))       $recordQuery->whereDate('date', $request->date);
+            if ($request->filled('date_from'))  $recordQuery->whereDate('date', '>=', $request->date_from);
+            if ($request->filled('date_to'))    $recordQuery->whereDate('date', '<=', $request->date_to);
+            if ($request->filled('status')) {
+                if ($request->status === 'Excused') {
+                    $recordQuery->where('excused', true);
+                } else {
+                    $recordQuery->where('status', $request->status);
+                }
+            }
+            if ($request->filled('subject'))    $recordQuery->where('subject_code', $request->subject);
+            if ($request->filled('course'))     $recordQuery->whereHas('user', fn($q) => $q->where('course', $request->course));
+            if ($request->filled('year_level')) $recordQuery->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
+            if ($request->filled('search')) {
+                $s = $request->search;
+                $recordQuery->whereHas('user', fn($q) => $q->where('name', 'like', "%{$s}%")->orWhere('student_number', 'like', "%{$s}%"));
+            }
+
+            $records = $recordQuery->paginate(30)->withQueryString();
+            $logs = collect();
+
+            return view('admin.attendance.index', compact('logs', 'records', 'subjects', 'tab'));
+        }
+
+        // Summary View by Class & Subject
         $query = Attendance::selectRaw('
             date, 
             subject_code, 
             COUNT(id) as total,
             SUM(CASE WHEN status = \'Present\' THEN 1 ELSE 0 END) as present_count,
             SUM(CASE WHEN status = \'Late\' THEN 1 ELSE 0 END) as late_count,
-            SUM(CASE WHEN status = \'Absent\' AND excused = 0 THEN 1 ELSE 0 END) as absent_count,
-            SUM(CASE WHEN excused = 1 THEN 1 ELSE 0 END) as excused_count
+            SUM(CASE WHEN status = \'Absent\' AND (excused IS FALSE OR excused IS NULL) THEN 1 ELSE 0 END) as absent_count,
+            SUM(CASE WHEN excused IS TRUE THEN 1 ELSE 0 END) as excused_count
         ')
         ->with('subject')
         ->groupBy('date', 'subject_code')
         ->orderBy('date', 'desc');
 
-        // Apply filters
-        if ($request->filled('date'))         $query->whereDate('date', $request->date);
-        if ($request->filled('subject'))      $query->where('subject_code', $request->subject);
+        if ($request->filled('date'))    $query->whereDate('date', $request->date);
+        if ($request->filled('subject')) $query->where('subject_code', $request->subject);
         
-        $logs     = $query->paginate(30)->withQueryString();
-        $subjects = Subject::orderBy('name')->get();
+        $logs = $query->paginate(30)->withQueryString();
+        $records = collect();
 
-        return view('admin.attendance.index', compact('logs','subjects'));
+        return view('admin.attendance.index', compact('logs', 'records', 'subjects', 'tab'));
     }
 
+    public function overrideAttendanceRecord(Request $request, Attendance $attendance)
+    {
+        $request->validate([
+            'status' => 'required|in:Present,Late,Absent,Excused',
+            'reason' => 'required|string|max:255',
+        ]);
 
+        $oldStatus = $attendance->status . ($attendance->excused ? ' (Excused)' : '');
+        $newStatus = $request->status;
+        $isExcused = $request->status === 'Excused';
+        $actualStatus = $isExcused ? 'Absent' : $request->status;
+
+        $attendance->update([
+            'status' => $actualStatus,
+            'excused' => $isExcused,
+            'excuse_note' => $request->reason,
+            'time_in' => in_array($actualStatus, ['Present', 'Late']) ? ($attendance->time_in ?? now()->format('H:i:s')) : null,
+        ]);
+
+        $studentName = $attendance->user->name ?? 'Student';
+        activity()
+            ->performedOn($attendance)
+            ->causedBy(Auth::user())
+            ->log("Admin override: Attendance ID #{$attendance->id} for {$studentName} changed from {$oldStatus} to {$newStatus}. Reason: {$request->reason}");
+
+        return back()->with('success', "Attendance record updated to {$newStatus}.");
+    }
 
     public function exportAttendancePdf(Request $request)
     {
@@ -884,7 +985,7 @@ class AdminController extends Controller
     public function updateImage(Request $request)
     {
         $request->validate([
-            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif,svg|max:10240'
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif|max:10240'
         ], [
             'profile_image.required' => 'Please select an image file to upload.',
             'profile_image.image' => 'The selected file must be a valid image.',
@@ -1167,8 +1268,35 @@ class AdminController extends Controller
             return redirect()->route('admin.admins')->with('error', 'You cannot delete your own account.');
         }
 
+        $admin->is_active = false;
+        $admin->save();
         $admin->delete();
+        activity()->performedOn($admin)->causedBy(Auth::user())->log("Deleted admin account: {$admin->name} ({$admin->email})");
         return redirect()->route('admin.admins')->with('success', 'Admin deleted.');
+    }
+
+    public function deactivateAdmin(User $admin)
+    {
+        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if($admin->id === Auth::id(), 400, 'You cannot deactivate your own account.');
+        $admin->is_active = false;
+        $admin->save();
+        activity()->performedOn($admin)->causedBy(Auth::user())->log("Deactivated admin account: {$admin->name} ({$admin->email})");
+        return back()->with('success', "Admin {$admin->name} has been deactivated.");
+    }
+
+    public function reactivateAdmin($id)
+    {
+        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        $admin = User::withTrashed()->findOrFail($id);
+        abort_unless($admin->role === 'admin', 404);
+        if ($admin->trashed()) {
+            $admin->restore();
+        }
+        $admin->is_active = true;
+        $admin->save();
+        activity()->performedOn($admin)->causedBy(Auth::user())->log("Reactivated admin account: {$admin->name} ({$admin->email})");
+        return back()->with('success', "Admin {$admin->name} has been reactivated.");
     }
 
     // ─────────────────────────────────────────
@@ -1176,7 +1304,20 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     public function teachers(Request $request)
     {
-        $query = User::where('role', 'teacher');
+        $status = $request->get('status', 'active');
+        $query = User::query()->where('role', 'teacher');
+
+        if ($status === 'active') {
+            $query->whereNull('deleted_at')->where(function($q) {
+                $q->whereNull('is_active')->orWhere('is_active', true);
+            });
+        } elseif ($status === 'deactivated') {
+            $query->withTrashed()->where(function($q) {
+                $q->whereNotNull('deleted_at')->orWhere('is_active', false);
+            });
+        } else {
+            $query->withTrashed();
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -1191,8 +1332,8 @@ class AdminController extends Controller
             $query->where('department', 'like', "%{$request->department}%");
         }
 
-        $teachers = $query->orderBy('name')->get();
-        return view('admin.teachers.index', compact('teachers'));
+        $teachers = $query->orderBy('name')->paginate(50)->withQueryString();
+        return view('admin.teachers.index', compact('teachers', 'status'));
     }
 
     public function searchTeachers(Request $request)
@@ -1458,8 +1599,33 @@ class AdminController extends Controller
     public function destroyTeacher(User $teacher)
     {
         abort_unless($teacher->role === 'teacher', 404);
+        $teacher->is_active = false;
+        $teacher->save();
         $teacher->delete();
+        activity()->performedOn($teacher)->causedBy(Auth::user())->log("Deleted teacher account: {$teacher->name} ({$teacher->employee_id})");
         return redirect()->route('admin.teachers')->with('success', 'Teacher deleted.');
+    }
+
+    public function deactivateTeacher(User $teacher)
+    {
+        abort_unless($teacher->role === 'teacher', 404);
+        $teacher->is_active = false;
+        $teacher->save();
+        activity()->performedOn($teacher)->causedBy(Auth::user())->log("Deactivated teacher account: {$teacher->name} ({$teacher->employee_id})");
+        return back()->with('success', "Teacher {$teacher->name} has been deactivated.");
+    }
+
+    public function reactivateTeacher($id)
+    {
+        $teacher = User::withTrashed()->findOrFail($id);
+        abort_unless($teacher->role === 'teacher', 404);
+        if ($teacher->trashed()) {
+            $teacher->restore();
+        }
+        $teacher->is_active = true;
+        $teacher->save();
+        activity()->performedOn($teacher)->causedBy(Auth::user())->log("Reactivated teacher account: {$teacher->name} ({$teacher->employee_id})");
+        return back()->with('success', "Teacher {$teacher->name} has been reactivated.");
     }
 
 
@@ -1488,14 +1654,13 @@ class AdminController extends Controller
 
             $correction->update([
                 'status' => 'approved',
-                'reviewed_by' => \Illuminate\Support\Facades\Auth::id(),
-                'reviewed_at' => now(),
+                'teacher_notes' => 'Approved by Administrator ' . Auth::user()->name,
             ]);
 
             // Update original attendance
             $attendance = $correction->attendance;
             if ($attendance) {
-                $attendance->status = $correction->requested_status;
+                $attendance->status = 'Present';
                 $attendance->save();
             }
 
@@ -1511,17 +1676,51 @@ class AdminController extends Controller
     public function rejectCorrection(Request $request, \App\Models\AttendanceCorrection $correction)
     {
         $request->validate([
-            'admin_notes' => 'required|string|max:500'
+            'admin_notes' => 'nullable|string|max:500'
         ]);
 
         $correction->update([
             'status' => 'rejected',
-            'reviewed_by' => Auth::id(),
-            'reviewed_at' => now(),
-            'admin_notes' => $request->admin_notes
+            'teacher_notes' => $request->admin_notes ?: 'Rejected by Administrator ' . Auth::user()->name,
         ]);
 
         return back()->with('success', 'Correction request rejected.');
+    }
+
+    public function bulkApproveCorrections(Request $request)
+    {
+        $ids = $request->input('selected_ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'No correction requests selected.');
+        }
+
+        $corrections = \App\Models\AttendanceCorrection::whereIn('id', $ids)->where('status', 'pending')->get();
+        foreach ($corrections as $correction) {
+            $correction->update([
+                'status' => 'approved',
+                'teacher_notes' => 'Bulk approved by Administrator',
+            ]);
+            if ($correction->attendance) {
+                $correction->attendance->update(['status' => 'Present']);
+            }
+        }
+
+        return back()->with('success', count($corrections) . ' correction requests approved.');
+    }
+
+    public function bulkRejectCorrections(Request $request)
+    {
+        $ids = $request->input('selected_ids', []);
+        if (empty($ids)) {
+            return back()->with('error', 'No correction requests selected.');
+        }
+
+        $count = \App\Models\AttendanceCorrection::whereIn('id', $ids)->where('status', 'pending')->update([
+            'status' => 'rejected',
+            'teacher_notes' => 'Bulk rejected by Administrator',
+        ]);
+
+        return back()->with('success', $count . ' correction requests rejected.');
     }
 
     // ─────────────────────────────────────────
@@ -1614,6 +1813,25 @@ class AdminController extends Controller
         return back()->with('success', $count . ' excuse(s) rejected.');
     }
 
+    public function reports(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        $report = $reportService->generate($request->all());
+        $subjects = Subject::orderBy('name')->get();
+        $courses = \App\Models\Course::orderBy('code')->get();
 
+        return view('admin.reports.index', array_merge($report, compact('subjects', 'courses')));
+    }
 
+    public function exportReportsPdf(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        $report = $reportService->generate($request->all());
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports.pdf', $report);
+        return $pdf->download('attendance-report-' . $report['type'] . '-' . now()->format('Y-m-d') . '.pdf');
+    }
+
+    public function exportReportsCsv(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        $report = $reportService->generate($request->all());
+        return $reportService->downloadCsv($report);
+    }
 }

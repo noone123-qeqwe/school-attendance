@@ -25,6 +25,10 @@
         <i class="bi bi-calendar-check-fill"></i>
         <span class="nav-link-text">Attendance Calendar</span>
     </a>
+    <a href="{{ route('attendance.records') }}" class="nav-link {{ request()->routeIs('attendance.records') ? 'active' : '' }}">
+        <i class="bi bi-clipboard-data-fill"></i>
+        <span class="nav-link-text">Attendance Records</span>
+    </a>
 
     <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-event-fill"></i>

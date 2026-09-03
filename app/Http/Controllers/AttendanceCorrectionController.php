@@ -31,7 +31,10 @@ class AttendanceCorrectionController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json(['success' => false, 'message' => 'A correction request is already pending for this attendance record.'], 422);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'A correction request is already pending for this attendance record.'], 422);
+            }
+            return back()->with('error', 'A correction request is already pending for this attendance record.');
         }
 
         $correction = AttendanceCorrection::create([
@@ -41,7 +44,11 @@ class AttendanceCorrectionController extends Controller
             'status' => 'pending',
         ]);
 
-        return response()->json(['success' => true, 'message' => 'Correction request submitted successfully.']);
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Correction request submitted successfully.']);
+        }
+
+        return back()->with('success', 'Correction request submitted successfully. Your teacher or admin will review it.');
     }
 
     /**
@@ -51,6 +58,7 @@ class AttendanceCorrectionController extends Controller
     {
         $request->validate([
             'action' => 'required|in:approve,reject',
+            'target_status' => 'nullable|in:Present,Late,Excused',
             'notes' => 'nullable|string|max:500',
         ]);
 
@@ -58,12 +66,15 @@ class AttendanceCorrectionController extends Controller
         $attendance = $correction->attendance;
         $subject = $attendance->subject;
 
-        if ($subject->instructor_id !== $teacher->id && !$teacher->isAdmin()) {
+        if ($subject && $subject->instructor_id !== $teacher->id && !$teacher->isAdmin()) {
             abort(403, 'Unauthorized');
         }
 
         if ($correction->status !== 'pending') {
-            return response()->json(['success' => false, 'message' => 'Request has already been processed.'], 422);
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Request has already been processed.'], 422);
+            }
+            return back()->with('error', 'Request has already been processed.');
         }
 
         if ($request->action === 'approve') {
@@ -72,15 +83,22 @@ class AttendanceCorrectionController extends Controller
                 'teacher_notes' => $request->notes,
             ]);
 
-            // Assuming correction sets status to 'Present' if they were 'Absent' or 'Late' incorrectly
-            $oldStatus = $attendance->status;
-            $attendance->update(['status' => 'Present']);
+            $targetStatus = $request->input('target_status', 'Present');
+            $oldStatus = $attendance->status . ($attendance->excused ? ' (Excused)' : '');
+            $isExcused = $targetStatus === 'Excused';
+            $actualStatus = $isExcused ? 'Absent' : $targetStatus;
+
+            $attendance->update([
+                'status' => $actualStatus,
+                'excused' => $isExcused,
+                'excuse_note' => $correction->reason,
+            ]);
             
             activity()
                 ->performedOn($attendance)
                 ->causedBy($teacher)
-                ->withProperties(['reason' => 'Correction Approved: ' . $correction->reason, 'old_status' => $oldStatus, 'new_status' => 'Present'])
-                ->log("Attendance corrected to Present. Teacher notes: {$request->notes}");
+                ->withProperties(['reason' => 'Correction Approved: ' . $correction->reason, 'old_status' => $oldStatus, 'new_status' => $targetStatus])
+                ->log("Attendance corrected to {$targetStatus}. Reviewer notes: {$request->notes}");
 
         } else {
             $correction->update([
@@ -89,6 +107,10 @@ class AttendanceCorrectionController extends Controller
             ]);
         }
 
-        return response()->json(['success' => true, 'message' => 'Correction request ' . $request->action . 'd.']);
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json(['success' => true, 'message' => 'Correction request ' . $request->action . 'd.']);
+        }
+
+        return back()->with('success', 'Correction request ' . $request->action . 'd.');
     }
 }

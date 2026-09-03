@@ -1285,4 +1285,25 @@
     .ent-table td:last-child {
         border-bottom: none !important;
     }
+
+    /* Enhanced Mobile Table & Filter Bar Usability */
+    .saas-table-container, .table-responsive, .adm-table-wrap {
+        -webkit-overflow-scrolling: touch !important;
+        overflow-x: auto !important;
+        border-radius: 14px !important;
+        margin-bottom: 16px !important;
+    }
+    .saas-card-header form {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+    .saas-card-header form .saas-form-group,
+    .saas-card-header form input,
+    .saas-card-header form select,
+    .saas-card-header form button {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
 }

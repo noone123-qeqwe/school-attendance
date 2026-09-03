@@ -43,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             \App\Http\Middleware\CheckPasswordChange::class,
+            \App\Http\Middleware\CheckAccountStatus::class,
         ]);
 
         $middleware->api(

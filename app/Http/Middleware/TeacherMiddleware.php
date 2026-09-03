@@ -23,6 +23,13 @@ class TeacherMiddleware
 
         // Check if user has teacher or department head role
         if (!$user->isTeacher() && !$user->isDepartmentHead()) {
+            if ($user->isAdmin()) {
+                return redirect()->route('admin.dashboard')->with('error', 'Access denied. Instructor access required.');
+            } elseif ($user->isParent()) {
+                return redirect()->route('parent.dashboard')->with('error', 'Access denied. Instructor access required.');
+            } elseif ($user->isStudent()) {
+                return redirect()->route('home')->with('error', 'Access denied. Instructor access required.');
+            }
             return redirect()->route('login')->with('error', 'Access denied. Teacher access required.');
         }
 

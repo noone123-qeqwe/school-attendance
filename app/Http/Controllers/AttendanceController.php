@@ -58,9 +58,9 @@ class AttendanceController extends Controller
     }
 
     // SCHOOL LOCATION — Read dynamically from admin settings
-    $schoolLat    = (float) \App\Models\Setting::get('gps_lat', 12.316);
-    $schoolLng    = (float) \App\Models\Setting::get('gps_lng', 123.673);
-    $radiusMeters = (int) \App\Models\Setting::get('gps_radius', 100);
+    $schoolLat    = (float) \App\Models\Setting::get('gps_lat', 14.538800);
+    $schoolLng    = (float) \App\Models\Setting::get('gps_lng', 121.022300);
+    $radiusMeters = (int) \App\Models\Setting::get('gps_radius', 50);
 
     // GPS VALIDATION — use is_null() so 0.0 is accepted
     if (is_null($request->latitude) || is_null($request->longitude)) {

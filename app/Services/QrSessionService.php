@@ -75,6 +75,11 @@ class QrSessionService
             throw new \Exception('Session expired.');
         }
         
+        $oldToken = $session->token;
+        if ($oldToken) {
+            \Illuminate\Support\Facades\Cache::put("session_prev_token_{$oldToken}", $session->id, 60);
+        }
+
         $session->update([
             'token'      => AttendanceSession::generateToken($session->subject_code),
             'expires_at' => now('Asia/Manila')->addSeconds(300)->min($session->session_ends_at),

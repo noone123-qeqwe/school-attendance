@@ -3,7 +3,7 @@
 namespace App\Events;
 
 use App\Models\Attendance;
-use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -21,11 +21,11 @@ class AttendanceClockedIn implements ShouldBroadcast
     ) {}
 
     /**
-     * Broadcast on the public admin-dashboard channel.
+     * Broadcast on the private admin-dashboard channel.
      */
     public function broadcastOn(): array
     {
-        return [new Channel('admin-dashboard')];
+        return [new PrivateChannel('admin-dashboard')];
     }
 
     public function broadcastAs(): string

@@ -1,18 +1,19 @@
 @extends('layouts.app')
-@section('page-title', 'Reports')
+@section('portal-title', 'Teacher Portal')
+@section('page-title', 'Attendance Reports')
+@section('page-sub', 'Analyze attendance trends and performance across your assigned subjects')
 
 @section('content')
 <style>
 .tch-table {
     width: 100%;
     border-collapse: separate;
-    border-spacing: 0 14px;
-    table-layout: auto;
+    border-spacing: 0 10px;
 }
 .tch-table thead th {
-    padding: 18px 20px;
+    padding: 14px 18px;
     text-align: left;
-    font-size: .9rem;
+    font-size: .85rem;
     font-weight: 700;
     color: #f8e7d3;
     text-transform: uppercase;
@@ -20,227 +21,272 @@
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 .tch-table tbody tr {
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    border-radius: 12px;
+    transition: transform 0.15s ease;
 }
 .tch-table tbody tr:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.14);
+    background: rgba(255,255,255,0.07);
 }
 .tch-table tbody td {
-    padding: 16px 18px;
-    vertical-align: top;
-    color: #d8c5a8;
+    padding: 14px 18px;
+    vertical-align: middle;
+    color: #f3e7cd;
     font-size: .85rem;
 }
-.tch-table tbody td div,
-.tch-table tbody td span {
-    display: block;
-}
 .badge-present {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     background: rgba(16,185,129,0.18);
-    color: #22c55e;
+    color: #34d399;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
 }
 .badge-late {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     background: rgba(245,158,11,0.18);
-    color: #f59e0b;
+    color: #fbbf24;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
-}
-.badge-absent {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+}
+.badge-absent {
     background: rgba(239,68,68,0.18);
     color: #f87171;
     padding: 4px 10px;
     border-radius: 999px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 700;
+    display: inline-flex;
+    align-items: center;
 }
-.tch-table tbody td:last-child {
-    padding-right: 20px;
-}
-.tch-table tbody td[data-label="Status"] {
-    min-width: 110px;
-}
-.tch-card-head {
-    gap: 12px;
-    flex-wrap: wrap;
-}
-@media (max-width: 992px) {
-    .tch-card-head {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-}
-@media (max-width: 768px) {
-    .tch-table thead { display: none; }
-    .tch-table tbody tr { display: block; border: 1px solid #f1f5f9; border-radius: 12px; margin-bottom: 16px; background: white; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
-    .tch-table tbody td { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; padding: 14px 16px; border-bottom: 1px solid #f8fafc; font-size: .85rem; }
-    .tch-table tbody td:last-child { border-bottom: none; }
-    .tch-table tbody td::before { content: attr(data-label); font-size: .75rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; margin-right: 10px; flex-shrink: 0; }
-    .tch-table tbody tr:last-child td { border-bottom: none; }
+.badge-excused {
+    background: rgba(59,130,246,0.18);
+    color: #60a5fa;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
 }
 </style>
 
-<!-- Report type tabs -->
-<div style="display:flex;gap:6px;margin-bottom:20px;">
-    @foreach(['daily'=>'Daily Report','monthly'=>'Monthly Report','percentage'=>'Attendance %'] as $key=>$label)
-    <a href="{{ route('teacher.reports', array_merge(request()->query(), ['type'=>$key])) }}"
-       style="padding:9px 18px;border-radius:9px;font-size:.85rem;font-weight:600;text-decoration:none;transition:all .2s;
-              {{ $type===$key ? 'background:#7c2d12;color:white;box-shadow:0 4px 12px rgba(124,45,18,.25);' : 'background:white;color:#64748b;border:1.5px solid #e2e8f0;' }}">
-        {{ $label }}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
+    <div>
+        <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Class Attendance Reports</h1>
+        <p class="saas-text-muted" style="margin:0;">View detailed student clock-ins, absence lists, and subject attendance rankings.</p>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <a href="{{ route('teacher.reports.csv', request()->all()) }}" class="saas-btn saas-btn-secondary" style="color:#34d399; border-color:rgba(52,211,153,0.3); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+        </a>
+        <a href="{{ route('teacher.reports.pdf', request()->all()) }}" class="saas-btn saas-btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        </a>
+    </div>
+</div>
+
+<!-- Report Type Navigation Tabs -->
+@php
+    $teacherReportTabs = [
+        'daily' => ['label' => 'Daily', 'icon' => 'calendar-day'],
+        'weekly' => ['label' => 'Weekly', 'icon' => 'calendar2-week'],
+        'monthly' => ['label' => 'Monthly', 'icon' => 'calendar-month'],
+        'range' => ['label' => 'Date Range', 'icon' => 'calendar-range'],
+        'late' => ['label' => 'Late Students', 'icon' => 'clock-history'],
+        'absent' => ['label' => 'Absent Students', 'icon' => 'person-x'],
+        'percentage' => ['label' => 'Student Ranking %', 'icon' => 'pie-chart'],
+    ];
+@endphp
+
+<div style="display:flex; gap:8px; margin-bottom:20px; overflow-x:auto; padding-bottom:6px;">
+    @foreach($teacherReportTabs as $key => $meta)
+    <a href="{{ route('teacher.reports', array_merge(request()->except(['page']), ['type' => $key])) }}"
+       class="saas-btn {{ $type === $key ? 'saas-btn-primary' : 'saas-btn-secondary' }}" 
+       style="padding:8px 14px; font-size:0.85rem; white-space:nowrap; text-decoration:none;">
+        <i class="bi bi-{{ $meta['icon'] }} me-1"></i> {{ $meta['label'] }}
     </a>
     @endforeach
 </div>
 
-<!-- Filters -->
-<div class="tch-card" style="margin-bottom:20px;">
-    <div style="padding:16px 22px;">
-        <form method="GET" action="{{ route('teacher.reports') }}" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+<!-- Filter Bar -->
+<div class="saas-card" style="margin-bottom:20px;">
+    <div style="padding:16px 20px; background:rgba(0,0,0,0.15);">
+        <form method="GET" action="{{ route('teacher.reports') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
             <input type="hidden" name="type" value="{{ $type }}">
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-                @if($type === 'daily')
-                <div>
-                    <label style="font-size:.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;">Date</label>
-                    <input type="date" name="date" class="tch-input" value="{{ $date }}">
-                </div>
-                @elseif($type === 'monthly')
-                <div>
-                    <label style="font-size:.68rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:3px;">Month</label>
-                    <input type="month" name="month" class="tch-input" value="{{ $month }}">
-                </div>
-                @endif
+
+            @if($type === 'daily' || $type === 'weekly')
+            <div class="saas-form-group" style="margin:0;">
+                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Select Date</label>
+                <input type="date" name="date" class="saas-input" value="{{ $date }}" style="width:160px;">
             </div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
-                <button type="submit" class="tch-btn tch-btn-primary"><i class="bi bi-funnel me-1"></i>Generate</button>
-                <button type="button" onclick="exportToExcel()" class="tch-btn" style="background:#059669;color:white;display:inline-flex;align-items:center;gap:6px;border:none;">
-                    <i class="bi bi-file-earmark-excel-fill"></i> Export Excel
-                </button>
-                <button type="button" onclick="openPdfPreview()" class="tch-btn" style="background:#7c2d12;color:white;display:inline-flex;align-items:center;gap:6px;border:none;">
-                    <i class="bi bi-file-earmark-pdf-fill"></i> Export PDF
-                </button>
+            @elseif($type === 'monthly')
+            <div class="saas-form-group" style="margin:0;">
+                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Select Month</label>
+                <input type="month" name="month" class="saas-input" value="{{ $month }}" style="width:160px;">
             </div>
+            @else
+            <div class="saas-form-group" style="margin:0;">
+                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Start Date</label>
+                <input type="date" name="start_date" class="saas-input" value="{{ $start_date }}" style="width:150px;">
+            </div>
+            <div class="saas-form-group" style="margin:0;">
+                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">End Date</label>
+                <input type="date" name="end_date" class="saas-input" value="{{ $end_date }}" style="width:150px;">
+            </div>
+            @endif
+
+            <div class="saas-form-group" style="margin:0;">
+                <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Subject</label>
+                <select name="subject" class="saas-input saas-select" style="width:160px;">
+                    <option value="">All My Subjects</option>
+                    @foreach($teacherSubjects as $ts)
+                        <option value="{{ $ts->code }}" {{ request('subject') == $ts->code ? 'selected' : '' }}>{{ $ts->code }} - {{ $ts->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <button type="submit" class="saas-btn saas-btn-primary" style="padding:8px 16px;">
+                <i class="bi bi-funnel-fill me-1"></i> Filter
+            </button>
+
+            @if(request()->hasAny(['subject', 'date', 'month', 'start_date', 'end_date']))
+            <a href="{{ route('teacher.reports', ['type' => $type]) }}" class="saas-btn saas-btn-secondary" style="color:#f87171; border-color:rgba(239,68,68,0.3); text-decoration:none;">
+                Reset
+            </a>
+            @endif
         </form>
     </div>
-</div>
 
-<!-- Results -->
-<div class="tch-card">
-    <div class="tch-card-head">
-        <div class="tch-card-title">
-            <div class="tch-card-icon" style="background:#fff5f5;color:#7c2d12;"><i class="bi bi-bar-chart-fill"></i></div>
-            @if($type==='daily') Daily Report â€” {{ \Carbon\Carbon::parse($date)->format('F j, Y') }}
-            @elseif($type==='monthly') Monthly Report â€” {{ \Carbon\Carbon::createFromFormat('Y-m',$month)->format('F Y') }}
-            @else Attendance Percentage Report
-            @endif
+    <!-- Summary Metrics -->
+    @if(in_array($type, ['daily', 'weekly', 'monthly', 'range', 'late', 'absent']))
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; padding:14px 20px; background:rgba(0,0,0,0.06); border-bottom:1px solid rgba(207,164,111,0.15);">
+        <div>
+            <div class="saas-text-muted" style="font-size:0.75rem; text-transform:uppercase;">Total Logs</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#f3e7cd;">{{ number_format($stats['total'] ?? 0) }}</div>
         </div>
-        <span style="font-size:.78rem;color:#94a3b8;">{{ is_countable($data) ? count($data) : $data->count() }} records</span>
+        <div>
+            <div class="saas-text-muted" style="font-size:0.75rem; text-transform:uppercase; color:#34d399;">Present</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#34d399;">{{ number_format($stats['present'] ?? 0) }}</div>
+        </div>
+        <div>
+            <div class="saas-text-muted" style="font-size:0.75rem; text-transform:uppercase; color:#fbbf24;">Late</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#fbbf24;">{{ number_format($stats['late'] ?? 0) }}</div>
+        </div>
+        <div>
+            <div class="saas-text-muted" style="font-size:0.75rem; text-transform:uppercase; color:#f87171;">Absent</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#f87171;">{{ number_format($stats['absent'] ?? 0) }}</div>
+        </div>
+        <div>
+            <div class="saas-text-muted" style="font-size:0.75rem; text-transform:uppercase; color:#60a5fa;">Excused</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#60a5fa;">{{ number_format($stats['excused'] ?? 0) }}</div>
+        </div>
+        <div>
+            <div class="saas-text-muted" style="font-size:0.75rem; text-transform:uppercase; color:#cfa46f;">Attendance Rate</div>
+            <div style="font-size:1.3rem; font-weight:800; color:#cfa46f;">{{ $stats['rate'] ?? 0 }}%</div>
+        </div>
     </div>
+    @endif
 
-    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <div style="padding:16px 20px; overflow-x:auto;">
         @if($type === 'percentage')
+        <!-- STUDENT PERCENTAGE RANKINGS -->
         <table class="tch-table">
-            <thead><tr><th>#</th><th>Student</th><th>Course</th><th>Year</th><th>Total</th><th>Present</th><th>Absent</th><th>Rate</th></tr></thead>
-            <tbody>
-                @forelse($data as $i => $row)
+            <thead>
                 <tr>
-                    <td data-label="#" style="color:#cbd5e1;font-size:.78rem;">{{ $i+1 }}</td>
-                    <td data-label="Student">
-                        <div style="font-weight:600;color:#f8e7d3;">{{ $row['student']->name }}</div>
-                        <div style="font-size:.72rem;color:#d8c5a8;">{{ $row['student']->student_number }}</div>
-                    </td>
-                    <td data-label="Course"><span class="badge-course" style="color:#f8e7d3;">{{ $row['student']->course }}</span></td>
-                    <td data-label="Year"><span class="badge-year">Year {{ $row['student']->year_level }}</span></td>
-                    <td data-label="Total" style="font-weight:600;">{{ $row['total'] }}</td>
-                    <td data-label="Present" style="color:#16a34a;font-weight:600;">{{ $row['present'] }}</td>
-                    <td data-label="Absent" style="color:#dc2626;font-weight:600;">{{ $row['absent'] }}</td>
-                    <td data-label="Rate">
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <div style="flex:1;height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;min-width:60px;">
-                                <div style="height:100%;width:{{ $row['rate'] }}%;background:{{ $row['rate']>=75?'#16a34a':'#dc2626' }};border-radius:99px;"></div>
+                    <th style="width:40px;">#</th>
+                    <th>Student</th>
+                    <th>Student ID</th>
+                    <th>Course & Section</th>
+                    <th>Total Classes</th>
+                    <th>Present</th>
+                    <th>Late</th>
+                    <th>Absent</th>
+                    <th>Attendance %</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($percentageData as $i => $row)
+                <tr>
+                    <td style="color:#b39b82;">{{ $i + 1 }}</td>
+                    <td style="font-weight:700; color:#f3e7cd;">{{ $row['student']->name }}</td>
+                    <td><span class="saas-badge saas-badge-default" style="font-family:monospace;">{{ $row['student']->student_number ?? 'N/A' }}</span></td>
+                    <td><span class="saas-badge saas-badge-info">{{ $row['student']->course ?? 'N/A' }} {{ $row['student']->section ? '- ' . $row['student']->section : '' }}</span></td>
+                    <td><strong>{{ $row['total'] }}</strong></td>
+                    <td style="color:#34d399; font-weight:600;">{{ $row['present'] }}</td>
+                    <td style="color:#fbbf24; font-weight:600;">{{ $row['late'] }}</td>
+                    <td style="color:#f87171; font-weight:600;">{{ $row['absent'] }} @if($row['excused'] > 0)<small style="color:#60a5fa;">({{ $row['excused'] }} exc)</small>@endif</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-family:monospace; font-weight:800; color:{{ $row['rate'] >= 80 ? '#34d399' : ($row['rate'] >= 70 ? '#fbbf24' : '#f87171') }};">{{ $row['rate'] }}%</span>
+                            <div style="flex:1; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden; max-width:70px;">
+                                <div style="height:100%; width:{{ $row['rate'] }}%; background:{{ $row['rate'] >= 80 ? '#34d399' : ($row['rate'] >= 70 ? '#fbbf24' : '#f87171') }};"></div>
                             </div>
-                            <span style="font-size:.8rem;font-weight:700;color:{{ $row['rate']>=75?'#16a34a':'#dc2626' }};">{{ $row['rate'] }}%</span>
                         </div>
                     </td>
                 </tr>
                 @empty
-                <tr><td colspan="8"><div class="empty-state"><i class="bi bi-inbox"></i><p>No data.</p></div></td></tr>
+                <tr>
+                    <td colspan="9" style="text-align:center; padding:36px; color:#a38b7d;">
+                        No student attendance records found for your subjects.
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
         </table>
+
         @else
+        <!-- STANDARD RECORDS (Daily, Weekly, Monthly, Range, Late, Absent) -->
         <table class="tch-table">
-            <thead><tr><th>#</th><th>Student</th><th>Subject</th><th>Date</th><th>Status</th><th>Time In</th></tr></thead>
-            <tbody>
-                @forelse($data as $i => $log)
+            <thead>
                 <tr>
-                    <td data-label="#" style="color:#cbd5e1;font-size:.78rem;">{{ $i+1 }}</td>
-                    <td data-label="Student">
-                        <div style="font-weight:600;color:#f8e7d3;">{{ $log->user->name ?? 'â€”' }}</div>
-                        <div style="font-size:.72rem;color:#d8c5a8;">{{ $log->user->student_number ?? '' }}</div>
-                    </td>
-                    <td data-label="Subject" style="font-weight:600;color:#f8e7d3;">{{ $log->subject->name ?? $log->subject_code }}</td>
-                    <td data-label="Date" style="font-size:.85rem;color:#d8c5a8;">{{ \Carbon\Carbon::parse($log->date)->format('M d, Y') }}</td>
-                    <td data-label="Status">
-                        @if($log->status==='Present') <span class="badge-present">Present</span>
-                        @elseif($log->status==='Late')  <span class="badge-late">Late</span>
-                        @else <span class="badge-absent">Absent</span>
+                    <th style="width:40px;">#</th>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($records as $i => $att)
+                <tr>
+                    <td style="color:#b39b82;">{{ $i + 1 }}</td>
+                    <td style="font-weight:700;">{{ $att->date ? (is_string($att->date) ? \Carbon\Carbon::parse($att->date)->format('M d, Y') : $att->date->format('M d, Y')) : 'N/A' }}</td>
+                    <td style="color:#cfa46f; font-family:monospace;">{{ $att->time_in ?? '—' }}</td>
+                    <td style="font-weight:700; color:#f3e7cd;">{{ $att->user->name ?? 'Unknown' }}</td>
+                    <td><span class="saas-badge saas-badge-default" style="font-family:monospace;">{{ $att->user->student_number ?? 'N/A' }}</span></td>
+                    <td><span style="font-weight:700; color:#60a5fa;">{{ $att->subject_code }}</span></td>
+                    <td>
+                        @if($att->excused)
+                            <span class="badge-excused">Excused</span>
+                        @elseif($att->status === 'Present')
+                            <span class="badge-present">Present</span>
+                        @elseif($att->status === 'Late')
+                            <span class="badge-late">Late</span>
+                        @else
+                            <span class="badge-absent">Absent</span>
                         @endif
                     </td>
-                    <td data-label="Time In" style="color:#64748b;">{{ $log->time_in ? \Carbon\Carbon::parse($log->time_in)->format('h:i A') : 'â€”' }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="6"><div class="empty-state"><i class="bi bi-inbox"></i><p>No records for this period.</p></div></td></tr>
+                <tr>
+                    <td colspan="7" style="text-align:center; padding:36px; color:#a38b7d;">
+                        <i class="bi bi-file-earmark-bar-graph" style="font-size:2rem; display:block; margin-bottom:8px; opacity:0.5;"></i>
+                        No attendance records found for this report period.
+                    </td>
+                </tr>
                 @endforelse
             </tbody>
         </table>
         @endif
     </div>
 </div>
-
-<script>
-function openPdfPreview() {
-    const params = new URLSearchParams();
-    params.append('type', '{{ $type }}');
-    
-    @if($type === 'daily')
-        params.append('date', '{{ $date }}');
-    @elseif($type === 'monthly')
-        params.append('month', '{{ $month }}');
-    @endif
-    
-    const url = '{{ route("teacher.reports.pdf") }}?' + params.toString();
-    window.open(url, '_blank');
-}
-
-function exportToExcel() {
-    const params = new URLSearchParams();
-    params.append('type', '{{ $type }}');
-    
-    @if($type === 'daily')
-        params.append('date', '{{ $date }}');
-    @elseif($type === 'monthly')
-        params.append('month', '{{ $month }}');
-    @endif
-    
-    const url = '{{ route("teacher.reports.excel") }}?' + params.toString();
-    window.location.href = url;
-}
-</script>
 @endsection

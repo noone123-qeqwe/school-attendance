@@ -1180,8 +1180,18 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('form:not([data-no-loader])').forEach(form => {
-                form.addEventListener('submit', function() {
+                form.addEventListener('submit', function(e) {
                     if (this.checkValidity() && !this.getAttribute('target') && this.method.toUpperCase() === 'POST') {
+                        if (this.dataset.submitting === 'true') {
+                            e.preventDefault();
+                            return false;
+                        }
+                        this.dataset.submitting = 'true';
+                        const submitBtn = this.querySelector('button[type="submit"]:not([disabled])');
+                        if (submitBtn) {
+                            submitBtn.style.opacity = '0.7';
+                            submitBtn.style.pointerEvents = 'none';
+                        }
                         const loader = document.getElementById('global-loader');
                         if (loader) loader.style.display = 'flex';
                     }

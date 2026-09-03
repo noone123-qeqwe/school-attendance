@@ -57,6 +57,8 @@ class PTController extends Controller
         if ($request->role === 'student') {
             app(DeviceBindingService::class)->bind($user, $request);
             return redirect()->route('home');
+        } elseif ($request->role === 'parent') {
+            return redirect()->route('parent.dashboard');
         } else {
             return redirect()->route('teacher.dashboard');
         }
@@ -92,8 +94,8 @@ class PTController extends Controller
                 ->withErrors(['identifier' => $errorMessage]);
         }
 
-        // Look up the user by student_number, email, or employee_id
-        $user = User::where('student_number', $identifier)
+        // Look up the user by student_number, email, or employee_id (including deactivated)
+        $user = User::withTrashed()->where('student_number', $identifier)
             ->orWhere('email', $identifier)
             ->orWhere('employee_id', $identifier)
             ->orWhereRaw('LOWER(email) = ?', [strtolower($identifier)])
@@ -105,14 +107,31 @@ class PTController extends Controller
         if (!$user) {
             $clean = preg_replace('/[^a-zA-Z0-9]/', '', $identifier);
             if ($clean !== '') {
-                $user = User::whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
+                $user = User::withTrashed()->whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
                     ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean])
                     ->first();
             }
         }
 
+        // Check if account is deactivated
+        if ($user && Hash::check($password, $user->password)) {
+            if (!$user->isActive()) {
+                $errorMessage = 'Your account has been deactivated. Please contact the school administrator.';
+                if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'success' => false,
+                        'message' => $errorMessage,
+                        'account_disabled' => true,
+                    ], 403);
+                }
+                return back()->withInput($request->only('identifier'))
+                    ->withErrors(['identifier' => $errorMessage]);
+            }
+        }
+
         $authenticated = false;
-        if ($user) {
+        if ($user && $user->isActive()) {
             // Attempt login with the found user's email
             $authenticated = Auth::attempt(['email' => $user->email, 'password' => $password], $remember);
         } else {
@@ -121,6 +140,12 @@ class PTController extends Controller
                 || Auth::attempt(['email' => $identifier, 'password' => $password], $remember);
             if ($authenticated) {
                 $user = Auth::user();
+                if (!$user->isActive()) {
+                    Auth::logout();
+                    $authenticated = false;
+                    return back()->withInput($request->only('identifier'))
+                        ->withErrors(['identifier' => 'Your account has been deactivated. Please contact the school administrator.']);
+                }
             }
         }
 
@@ -234,7 +259,7 @@ class PTController extends Controller
     public function updateImage(Request $request)
     {
         $request->validate([
-            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif,svg|max:10240',
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif|max:10240',
         ], [
             'profile_image.required' => 'Please select an image file to upload.',
             'profile_image.image' => 'The selected file must be a valid image.',

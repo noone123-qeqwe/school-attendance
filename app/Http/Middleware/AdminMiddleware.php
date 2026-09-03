@@ -18,6 +18,13 @@ class AdminMiddleware
 
         // Check if user has admin role
         if (!$user->isAdmin()) {
+            if ($user->isTeacher()) {
+                return redirect()->route('teacher.dashboard')->with('error', 'Access denied. Administrator access required.');
+            } elseif ($user->isParent()) {
+                return redirect()->route('parent.dashboard')->with('error', 'Access denied. Administrator access required.');
+            } elseif ($user->isStudent()) {
+                return redirect()->route('home')->with('error', 'Access denied. Administrator access required.');
+            }
             return redirect()->route('login')->with('error', 'Access denied. Admin access required.');
         }
 

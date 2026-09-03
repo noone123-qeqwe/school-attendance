@@ -53,9 +53,8 @@ class SecurityHeaders
         $csp = implode(' ', [
             "default-src 'self';",
 
-            // Scripts: allow self and unsafe-inline so inline event handlers (onclick, onchange)
-            // and view scripts execute reliably across all browsers.
-            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;",
+            // Scripts: per-request nonce plus self and unsafe-inline so inline event handlers and scripts execute securely
+            "script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://cdn.jsdelivr.net;",
 
             // Styles: nonce for inline styles; CDN origins for Bootstrap / Fonts.
             // 'unsafe-inline' kept here because moving every inline style to a

@@ -368,18 +368,7 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        $studentQuery = User::where('role', 'student')
-            ->where('year_level', $subject->year_level)
-            ->where('semester', $subject->semester);
-            
-        if (!empty($subject->course)) {
-            $studentQuery->where('course', $subject->course);
-        }
-        if (!empty($subject->section)) {
-            $studentQuery->where('section', $subject->section);
-        }
-        
-        $students = $studentQuery->get();
+        $students = $subject->getAllStudents();
 
         $todayRecords = Attendance::with('user')
             ->where('subject_code', $session->subject_code)
@@ -458,9 +447,15 @@ class QrAttendanceController extends Controller
                     'latitude' => null,
                     'longitude' => null,
                     'device_id' => 'teacher-override',
-                    'excused' => false
+                    'excused' => false,
+                    'academic_year_id' => \App\Models\AcademicYear::where('is_current', true)->value('id'),
                 ]
             );
+
+            activity()
+                ->performedOn($att)
+                ->causedBy(Auth::user())
+                ->log("Teacher override: {$student->name} marked as {$request->status} for {$session->subject_code}");
 
             event(new TeacherAttendanceUpdated($session->teacher_id, [
                 'type'         => 'clock_in',
@@ -851,25 +846,30 @@ class QrAttendanceController extends Controller
             $startTime = Carbon::parse($todayDate . ' ' . $subject->start_time);
         }
 
-        // Determine status based on timing (15-minute late threshold)
-        $status = 'Present'; // Default to present
+        // Determine status based on timing using configurable late threshold setting
+        $status = 'Present';
+        $lateMinutes = (int) \App\Models\Setting::get('late_threshold', 15);
         if ($startTime) {
-            $lateThreshold = $startTime->copy()->addMinutes(15);
+            $lateThreshold = $startTime->copy()->addMinutes($lateMinutes);
             $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
         }
+
+        $currentAcademicYearId = \App\Models\AcademicYear::where('is_current', true)->value('id');
+
         try {
             $attendance = Attendance::updateOrCreate(
                 ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
                 [
-                    // If attendance is marked Present/Late, it cannot also be "excused" (excused applies only to Absent).
-                    'status'    => $status,
-                    'excused'   => false,
-                    'excuse_note' => null,
-                    'time_in'   => $now->format('H:i:s'),
-                    'latitude'  => $request->latitude,
-                    'longitude' => $request->longitude,
+                    'status'       => $status,
+                    'excused'      => false,
+                    'excuse_note'  => null,
+                    'time_in'      => $now->format('H:i:s'),
+                    'latitude'     => $request->latitude,
+                    'longitude'    => $request->longitude,
                     'gps_accuracy' => $request->filled('accuracy') ? $request->accuracy : null,
-                    'method'    => 'qr',
+                    'method'       => 'qr',
+                    'subject_id'   => $subject->id ?? null,
+                    'academic_year_id' => $currentAcademicYearId,
                 ]
             );
         } catch (\Illuminate\Database\QueryException $e) {
@@ -910,12 +910,7 @@ class QrAttendanceController extends Controller
                 ->whereNotNull('time_in')
                 ->get();
 
-            $totalStudents = User::where('role', 'student')
-                ->where('year_level', $subject->year_level)
-                ->where('semester', $subject->semester)
-                ->when(!empty($subject->course), fn($query) => $query->where('course', $subject->course))
-                ->when(!empty($subject->section), fn($query) => $query->where('section', $subject->section))
-                ->count();
+            $totalStudents = $subject->getAllStudents()->count();
 
             $stats = [
                 'total_present'  => $attendanceRecords->count(),
@@ -977,6 +972,16 @@ class QrAttendanceController extends Controller
             ], 403);
         }
 
+        // Enforce student device binding anti-proxy validation
+        $deviceService = app(\App\Services\DeviceBindingService::class);
+        if (!$deviceService->isCurrentDevice($user, $request)) {
+            return response()->json([
+                'success' => false,
+                'error_type' => 'device_mismatch',
+                'message' => 'This device is not recognized as your registered device. Please log out and sign in from your bound device to record attendance.'
+            ], 403);
+        }
+
         $rawInput = trim((string) ($request->token ?? $request->code ?? ''));
         if (empty($rawInput)) {
             return response()->json([
@@ -1005,6 +1010,14 @@ class QrAttendanceController extends Controller
             })
             ->latest('id')
             ->first();
+
+        // Check if token matches recently rotated token within 60s grace window
+        if (!$session && !empty($rawToken)) {
+            $prevSessionId = Cache::get("session_prev_token_{$rawToken}");
+            if ($prevSessionId) {
+                $session = AttendanceSession::with(['subject.instructor'])->find($prevSessionId);
+            }
+        }
 
         if (!$session) {
             return response()->json([
@@ -1073,7 +1086,15 @@ class QrAttendanceController extends Controller
         $schoolLng = $session->classroom_lng ?? $this->getSchoolLng();
         $radiusMeters = \App\Models\Setting::get('gps_radius', $this->getRadiusMeters());
 
-        if ($request->filled('latitude') && $request->filled('longitude') && $session->classroom_lat !== null) {
+        if ($session->classroom_lat !== null) {
+            if (!$request->filled('latitude') || !$request->filled('longitude')) {
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'location_required',
+                    'message' => 'Location coordinates are required to verify you are present in the classroom. Please enable GPS permissions and try again.'
+                ], 422);
+            }
+
             $distance = $this->distance(
                 (float) $request->latitude,
                 (float) $request->longitude,
@@ -1108,10 +1129,13 @@ class QrAttendanceController extends Controller
         }
 
         $status = 'Present';
+        $lateMinutes = (int) \App\Models\Setting::get('late_threshold', 15);
         if ($startTime) {
-            $lateThreshold = $startTime->copy()->addMinutes(15);
+            $lateThreshold = $startTime->copy()->addMinutes($lateMinutes);
             $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
         }
+
+        $currentAcademicYearId = \App\Models\AcademicYear::where('is_current', true)->value('id');
 
         // 5. Record Attendance in Database
         try {
@@ -1126,6 +1150,8 @@ class QrAttendanceController extends Controller
                     'longitude' => $request->longitude,
                     'gps_accuracy' => $request->accuracy,
                     'method' => $isCodeMethod ? 'code' : 'qr',
+                    'subject_id' => $subject->id ?? null,
+                    'academic_year_id' => $currentAcademicYearId,
                 ]
             );
         } catch (\Exception $e) {

@@ -28,6 +28,11 @@ class CalculateMissedAttendanceAction
         $todayDate = $now->toDateString();
         $currentTime = $now->format('H:i:s');
 
+        $cacheKey = "student_missed_att_{$student->id}_{$todayDate}_" . floor($now->minute / 5);
+        if (!app()->environment('testing') && $subjects === null && \Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            return \Illuminate\Support\Facades\Cache::get($cacheKey);
+        }
+
         // 1. Fetch relevant subjects with preloaded schedules
         if ($subjects === null) {
             $subjects = method_exists($student, 'getAllSubjects') && $student->isStudent()
@@ -51,9 +56,11 @@ class CalculateMissedAttendanceAction
 
         // 2. Resolve tracking start date (with cached academic year start)
         $earliestRecord = Attendance::where('user_id', $student->id)->min('date');
-        $semesterStart = \Illuminate\Support\Facades\Cache::remember('current_academic_year_start', 600, function () {
-            return AcademicYear::where('is_current', true)->value('start_date');
-        });
+        $semesterStart = app()->environment('testing')
+            ? AcademicYear::where('is_current', true)->value('start_date')
+            : \Illuminate\Support\Facades\Cache::remember('current_academic_year_start', 600, function () {
+                return AcademicYear::where('is_current', true)->value('start_date');
+            });
 
         $startDate = $now->copy()->subDays(90);
         if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
@@ -122,6 +129,10 @@ class CalculateMissedAttendanceAction
             $actualRecords = $actualCounts->get($subj->code, 0);
             $misses = max(0, $expectedSessions - $actualRecords);
             $missesPerSubject[$subj->code] = $misses;
+        }
+
+        if ($subjects === null) {
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $missesPerSubject, 300);
         }
 
         return $missesPerSubject;

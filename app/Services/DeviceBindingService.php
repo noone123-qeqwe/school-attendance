@@ -165,8 +165,13 @@ class DeviceBindingService
             return true;
         }
 
-        // Tier 5: Same authenticated user session (prevents cookie loss / PWA partition lockouts)
-        if (auth()->check() && auth()->id() === $user->id) {
+        // Tier 5: Strict fallback — same User-Agent core (same OS/device) AND same IP subnet
+        $newUA = substr((string) $request->userAgent(), 0, 500);
+        if (
+            $binding->user_agent &&
+            $this->extractUACore($binding->user_agent) === $this->extractUACore($newUA) &&
+            ($binding->ip_address === $request->ip() || substr((string)$binding->ip_address, 0, 8) === substr((string)$request->ip(), 0, 8))
+        ) {
             $this->touchBinding($binding, $request);
             return true;
         }

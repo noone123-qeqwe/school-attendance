@@ -31,7 +31,7 @@ class SendParentAttendanceAlert
         }
 
         // We assume attendance has a related user
-        $student = User::find($attendance->user_id);
+        $student = User::with('parents')->find($attendance->user_id);
         if (!$student) {
             return;
         }
@@ -40,16 +40,30 @@ class SendParentAttendanceAlert
         $subjectName = $attendance->subject ? $attendance->subject->name : $attendance->subject_code;
 
         $type = $attendance->status === 'Absent' ? 'absent_alert' : 'late_alert';
-        $message = "Your child, {$student->name}, was marked {$attendance->status} in {$subjectName} on " . \Carbon\Carbon::parse($attendance->date)->format('M d, Y') . ".";
+        $formattedDate = \Carbon\Carbon::parse($attendance->date)->format('M d, Y');
+        $parentMessage = "Your child, {$student->name}, was marked {$attendance->status} in {$subjectName} on {$formattedDate}.";
+        $studentMessage = "You were marked {$attendance->status} in {$subjectName} on {$formattedDate}.";
 
-        // Create the notification for the student (parents view child notifications)
+        // Create the notification for the student
         Notification::create([
             'user_id' => $student->id,
             'sent_by' => $teacherId,
             'type' => $type,
             'subject_code' => $attendance->subject_code,
-            'message' => $message,
+            'message' => $studentMessage,
             'is_read' => false,
         ]);
+
+        // Create the notification for each linked parent/guardian
+        foreach ($student->parents as $parent) {
+            Notification::create([
+                'user_id' => $parent->id,
+                'sent_by' => $teacherId,
+                'type' => $type,
+                'subject_code' => $attendance->subject_code,
+                'message' => $parentMessage,
+                'is_read' => false,
+            ]);
+        }
     }
 }

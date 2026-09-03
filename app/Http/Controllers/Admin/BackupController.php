@@ -69,6 +69,27 @@ class BackupController extends Controller
                     if ($hasRows) fwrite($handle, "\n");
                 }
                 fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
+            } elseif ($driver === 'pgsql') {
+                fwrite($handle, "-- PostgreSQL Database Dump\nSET CONSTRAINTS ALL DEFERRED;\n\n");
+                $tables = DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+                foreach ($tables as $table) {
+                    $tableName = $table->table_name;
+                    fwrite($handle, "-- Dumping data for table \"{$tableName}\"\n\n");
+                    $cursor = DB::table($tableName)->cursor();
+                    $hasRows = false;
+                    foreach ($cursor as $row) {
+                        if (!$hasRows) {
+                            $hasRows = true;
+                        }
+                        $rowArr = (array)$row;
+                        $keys = array_map(fn($k) => "\"{$k}\"", array_keys($rowArr));
+                        $values = array_map(function($v) use ($pdo) {
+                            return is_null($v) ? "NULL" : $pdo->quote((string)$v);
+                        }, array_values($rowArr));
+                        fwrite($handle, "INSERT INTO \"{$tableName}\" (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ");\n");
+                    }
+                    if ($hasRows) fwrite($handle, "\n");
+                }
             } else {
                 fwrite($handle, "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
                 $tables = DB::select('SHOW TABLES');

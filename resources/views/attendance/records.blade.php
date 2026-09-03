@@ -633,20 +633,28 @@
                         </div>
                     </div>
                     
-                    @if($record->status === 'Absent' && !$record->excuseSubmission)
-                        <div class="record-actions">
-                            <button class="excuse-btn" onclick="openExcuseModal({{ $record->id }}, '{{ $record->subject->name ?? $record->subject_code }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')">
+                    <div class="record-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                        @if($record->status === 'Absent' && !$record->excuseSubmission)
+                            <button class="excuse-btn" onclick="openExcuseModal({{ $record->id }}, '{{ addslashes($record->subject->name ?? $record->subject_code) }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')">
                                 <i class="bi bi-file-text"></i> Submit Excuse
                             </button>
-                        </div>
-                    @elseif($record->excuseSubmission)
-                        <div class="record-actions">
+                        @elseif($record->excuseSubmission)
                             <span class="excuse-status excuse-{{ $record->excuseSubmission->status }}">
                                 <i class="bi bi-{{ $record->excuseSubmission->status === 'approved' ? 'check-circle' : ($record->excuseSubmission->status === 'rejected' ? 'x-circle' : 'clock') }}"></i>
-                                {{ ucfirst($record->excuseSubmission->status) }}
+                                Excuse: {{ ucfirst($record->excuseSubmission->status) }}
                             </span>
-                        </div>
-                    @endif
+                        @endif
+
+                        @if($record->correction)
+                            <span class="excuse-status excuse-{{ $record->correction->status }}" style="background:rgba(207,164,111,0.15); color:#fde68a; border:1px solid rgba(207,164,111,0.3);">
+                                <i class="bi bi-patch-question"></i> Appeal: {{ ucfirst($record->correction->status) }}
+                            </span>
+                        @elseif(in_array($record->status, ['Late', 'Absent']))
+                            <button type="button" class="excuse-btn" style="background:rgba(255,255,255,0.06) !important; color:#e2e8f0 !important; border-color:rgba(255,255,255,0.15) !important;" onclick="openCorrectionModal({{ $record->id }}, '{{ addslashes($record->subject->name ?? $record->subject_code) }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}', '{{ $record->status }}')">
+                                <i class="bi bi-pencil-square"></i> Appeal Record
+                            </button>
+                        @endif
+                    </div>
                 </div>
             </div>
             @empty
@@ -661,13 +669,13 @@
 </div>
 
 <!-- Excuse Submission Modal -->
-<div class="modal-overlay" id="excuseModal">
+<div class="modal-overlay" id="excuseModal" role="dialog" aria-modal="true" aria-labelledby="excuseModalTitle">
     <div class="modal-content">
         <div class="modal-header">
-            <div class="modal-title">Submit Excuse</div>
+            <div class="modal-title" id="excuseModalTitle">Submit Excuse</div>
             <button class="modal-close" onclick="closeExcuseModal()">✕</button>
         </div>
-        <form id="excuseForm" method="POST" action="{{ route('excuses.store') }}">
+        <form id="excuseForm" method="POST" action="{{ route('excuses.store') }}" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="attendance_id" id="attendanceId">
             <div class="modal-body">
@@ -690,6 +698,11 @@
                     <label class="form-label" for="description">Detailed Description <span style="color: #dc2626;">*</span></label>
                     <textarea name="description" id="description" class="form-textarea" placeholder="Please provide a detailed explanation of your absence..." required></textarea>
                 </div>
+                <div class="form-group">
+                    <label class="form-label" for="attachments">Medical Certificate / Supporting File (Optional)</label>
+                    <input type="file" name="attachments[]" id="attachments" class="form-input" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" style="padding: 10px 14px; font-size: 0.85rem;">
+                    <small style="color: rgba(245,234,215,0.45); font-size: 0.75rem; margin-top: 4px; display: block;">Supports JPG, PNG, PDF, DOC up to 5MB</small>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeExcuseModal()">
@@ -697,6 +710,35 @@
                 </button>
                 <button type="submit" class="btn excuse-submit-btn" style="background: #800000 !important; color: white !important; border: none !important;">
                     <i class="bi bi-send"></i> Submit Excuse
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Attendance Correction / Appeal Modal -->
+<div class="modal-overlay" id="correctionModal" role="dialog" aria-modal="true" aria-labelledby="corrModalTitle">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title" id="corrModalTitle">Appeal Attendance Record</div>
+            <button class="modal-close" onclick="closeCorrectionModal()">✕</button>
+        </div>
+        <form id="correctionForm" method="POST" action="{{ route('corrections.store') }}">
+            @csrf
+            <input type="hidden" name="attendance_id" id="corrAttendanceId">
+            <div class="modal-body">
+                <div class="excuse-details" id="corrDetails"></div>
+                <div class="form-group">
+                    <label class="form-label" for="corrReason">Reason for Appeal / Correction <span style="color: #dc2626;">*</span></label>
+                    <textarea name="reason" id="corrReason" class="form-textarea" placeholder="Explain why your attendance record should be corrected (e.g., scanner error, verified late arrival, technical glitch)..." required rows="4"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeCorrectionModal()">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button type="submit" class="btn" style="background: linear-gradient(135deg, #cfa46f, #8f6e4a); color: white; font-weight: 700; border: none; border-radius: 12px; padding: 10px 20px;">
+                    <i class="bi bi-send-check"></i> Submit Appeal
                 </button>
             </div>
         </form>
@@ -722,17 +764,45 @@ function closeExcuseModal() {
     document.getElementById('excuseForm').reset();
 }
 
+function openCorrectionModal(attendanceId, subjectName, date, currentStatus) {
+    document.getElementById('corrAttendanceId').value = attendanceId;
+    document.getElementById('corrDetails').innerHTML = `
+        <div style="font-weight: 700; color: #fde68a; margin-bottom: 6px; font-size: 1.05rem;">${subjectName}</div>
+        <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7); margin-bottom: 4px;"><strong style="color: rgba(245,234,215,0.9);">Date:</strong> ${date}</div>
+        <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7);">
+            <strong style="color: rgba(245,234,215,0.9);">Recorded Status:</strong> 
+            <span style="display:inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(245,158,11,0.15); color: #fbbf24; font-weight: 700; margin-left: 4px; font-size: 0.75rem;">${currentStatus}</span>
+        </div>
+    `;
+    document.getElementById('correctionModal').classList.add('active');
+}
+
+function closeCorrectionModal() {
+    document.getElementById('correctionModal').classList.remove('active');
+    document.getElementById('correctionForm').reset();
+}
+
 // Close modal when clicking outside
 document.getElementById('excuseModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeExcuseModal();
     }
 });
+document.getElementById('correctionModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCorrectionModal();
+    }
+});
 
 // Close on Escape key
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('excuseModal').classList.contains('active')) {
-        closeExcuseModal();
+    if (e.key === 'Escape') {
+        if (document.getElementById('excuseModal').classList.contains('active')) {
+            closeExcuseModal();
+        }
+        if (document.getElementById('correctionModal').classList.contains('active')) {
+            closeCorrectionModal();
+        }
     }
 });
 

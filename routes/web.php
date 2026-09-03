@@ -257,8 +257,8 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->name('qr.verify.complete');
     
     // Direct QR Scanner Processing
-    Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process');
-    Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct');
+    Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process')->middleware('device.bound');
+    Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct')->middleware('device.bound');
 });
 
 // Teacher Routes (Teachers only)
@@ -337,6 +337,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     // Reports
     Route::get('/reports', [App\Http\Controllers\TeacherController::class, 'reports'])->name('reports');
     Route::get('/reports/export-pdf', [App\Http\Controllers\TeacherController::class, 'exportPdf'])->name('reports.pdf');
+    Route::get('/reports/export-csv', [App\Http\Controllers\TeacherController::class, 'exportCsv'])->name('reports.csv');
     
     // Profile
     Route::get('/profile', [App\Http\Controllers\TeacherController::class, 'profile'])->name('profile');
@@ -359,6 +360,9 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
 
     // Announcements
     Route::post('/announcements', [App\Http\Controllers\TeacherController::class, 'storeAnnouncement'])->name('announcements.store');
+
+    // Attendance Corrections
+    Route::get('/corrections', [App\Http\Controllers\TeacherController::class, 'corrections'])->name('corrections');
 });
 
 // Guest Excuse Submission (Signed URLs)
@@ -415,6 +419,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
 
     // Attendance Management
     Route::get('/attendance', [App\Http\Controllers\AdminController::class, 'attendanceLogs'])->name('attendance');
+    Route::post('/attendance/{attendance}/override', [App\Http\Controllers\AdminController::class, 'overrideAttendanceRecord'])->name('attendance.override');
     Route::get('/attendance/export-pdf', [App\Http\Controllers\AdminController::class, 'exportAttendancePdf'])->name('attendance.pdf');
     Route::get('/attendance/preview-pdf', [App\Http\Controllers\AdminController::class, 'previewAttendancePdf'])->name('attendance.preview');
     Route::get('/attendance/export-csv', [App\Http\Controllers\AdminController::class, 'exportAttendanceCsv'])->name('attendance.export');
@@ -440,6 +445,8 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/student/{student}/edit', [App\Http\Controllers\AdminController::class, 'editStudent'])->name('student.edit');
     Route::put('/student/{student}', [App\Http\Controllers\AdminController::class, 'updateStudent'])->name('student.update');
     Route::delete('/student/{student}', [App\Http\Controllers\AdminController::class, 'destroyStudent'])->name('student.destroy');
+    Route::patch('/student/{student}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateStudent'])->name('student.deactivate');
+    Route::patch('/student/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateStudent'])->name('student.reactivate');
     Route::post('/student/{student}/reset-device', [App\Http\Controllers\AdminController::class, 'resetDevice'])->name('student.reset_device');
 
     // Subject management
@@ -500,6 +507,8 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/teacher/{teacher}/edit', [App\Http\Controllers\AdminController::class, 'editTeacher'])->name('teacher.edit');
     Route::put('/teacher/{teacher}', [App\Http\Controllers\AdminController::class, 'updateTeacher'])->name('teacher.update');
     Route::delete('/teacher/{teacher}', [App\Http\Controllers\AdminController::class, 'destroyTeacher'])->name('teacher.destroy');
+    Route::patch('/teacher/{teacher}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateTeacher'])->name('teacher.deactivate');
+    Route::patch('/teacher/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateTeacher'])->name('teacher.reactivate');
 
     // Admin Management
     Route::get('/admins', [App\Http\Controllers\AdminController::class, 'admins'])->name('admins');
@@ -508,8 +517,8 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/admin/{admin}/edit', [App\Http\Controllers\AdminController::class, 'editAdmin'])->name('admin.edit');
     Route::put('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'updateAdmin'])->name('admin.update');
     Route::delete('/admin/{admin}', [App\Http\Controllers\AdminController::class, 'destroyAdmin'])->name('admin.destroy');
-
-
+    Route::patch('/admin/{admin}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateAdmin'])->name('admin.deactivate');
+    Route::patch('/admin/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateAdmin'])->name('admin.reactivate');
 
     // Bulk Excuse Approval
     Route::post('/excuses/bulk-approve', [App\Http\Controllers\AdminController::class, 'bulkApproveExcuses'])->name('excuses.bulk.approve');
@@ -518,9 +527,17 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::post('/excuse/{excuseSubmission}/approve', [App\Http\Controllers\AdminController::class, 'approveExcuse'])->name('excuse.approve');
     Route::post('/excuse/{excuseSubmission}/reject', [App\Http\Controllers\AdminController::class, 'rejectExcuse'])->name('excuse.reject');
 
+    // Attendance Corrections
+    Route::get('/corrections', [App\Http\Controllers\AdminController::class, 'corrections'])->name('corrections');
+    Route::post('/corrections/{correction}/approve', [App\Http\Controllers\AdminController::class, 'approveCorrection'])->name('corrections.approve');
+    Route::post('/corrections/{correction}/reject', [App\Http\Controllers\AdminController::class, 'rejectCorrection'])->name('corrections.reject');
+    Route::post('/corrections/bulk-approve', [App\Http\Controllers\AdminController::class, 'bulkApproveCorrections'])->name('corrections.bulk.approve');
+    Route::post('/corrections/bulk-reject', [App\Http\Controllers\AdminController::class, 'bulkRejectCorrections'])->name('corrections.bulk.reject');
 
     
     // New Academic Modules (SaaS Design Expansion)
+    Route::resource('academic-years', App\Http\Controllers\Admin\AcademicYearController::class);
+    Route::post('academic-years/{academic_year}/set-current', [App\Http\Controllers\Admin\AcademicYearController::class, 'setCurrent'])->name('academic-years.set-current');
     Route::resource('departments', App\Http\Controllers\Admin\DepartmentController::class);
     Route::resource('courses', App\Http\Controllers\Admin\CourseController::class);
     Route::resource('sections', App\Http\Controllers\Admin\SectionController::class);
@@ -553,5 +570,10 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     
     // Omni-Search
     Route::get('/search', [App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search');
+
+    // Reports & Analytics
+    Route::get('/reports', [App\Http\Controllers\AdminController::class, 'reports'])->name('reports');
+    Route::get('/reports/pdf', [App\Http\Controllers\AdminController::class, 'exportReportsPdf'])->name('reports.pdf');
+    Route::get('/reports/csv', [App\Http\Controllers\AdminController::class, 'exportReportsCsv'])->name('reports.csv');
 
 });

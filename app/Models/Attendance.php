@@ -117,6 +117,11 @@ class Attendance extends Model
         return $this->hasOne(ExcuseSubmission::class);
     }
 
+    public function correction(): HasOne
+    {
+        return $this->hasOne(AttendanceCorrection::class);
+    }
+
     public function academicYear(): BelongsTo
     {
         return $this->belongsTo(AcademicYear::class);

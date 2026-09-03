@@ -532,6 +532,7 @@
     </div>
 </div>
 
+<script src="{{ asset('js/qrcode.min.js') }}"></script>
 <script nonce="{{ csp_nonce() }}">
 let currentSession = null;
 let refreshInterval = null;
@@ -890,6 +891,8 @@ function startIntervals() {
     resetRefreshTimers();
     startSessionTimer(currentSession.session_end);
     updateClockIns();
+    if (clockinInterval) clearInterval(clockinInterval);
+    clockinInterval = setInterval(updateClockIns, 5000);
 }
 
 // Refresh QR
@@ -981,13 +984,10 @@ function enterGracePeriod() {
 }
 
 function showQRCode(url) {
-    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=' + encodeURIComponent(url);
-    const projQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=' + encodeURIComponent(url);
-    
     qrContainer.innerHTML = `
         <div class="text-center" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <div style="background: #ffffff; padding: 12px; border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); display: inline-block;">
-                <img src="${qrUrl}" alt="Attendance QR Code" style="width: min(380px, 80vw); height: min(380px, 80vw); display: block; margin: 0 auto; border-radius: 8px;">
+            <div style="background: #ffffff; padding: 14px; border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); display: inline-block;">
+                <div id="localQrCanvas" style="display: flex; justify-content: center; align-items: center; min-width: 250px; min-height: 250px;"></div>
             </div>
             <p class="mt-3 mb-0" style="color: #f3e7cd; font-size: 1.05rem; font-weight: 700;">
                 <i class="bi bi-phone me-1" style="color: #cfa46f;"></i> Ask students to scan this QR code
@@ -996,13 +996,36 @@ function showQRCode(url) {
     `;
     qrContainer.classList.add('active');
 
+    const qrTarget = document.getElementById('localQrCanvas');
+    if (qrTarget && typeof QRCode !== 'undefined') {
+        new QRCode(qrTarget, {
+            text: url,
+            width: Math.min(320, Math.floor(window.innerWidth * 0.75)),
+            height: Math.min(320, Math.floor(window.innerWidth * 0.75)),
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+    }
+
     const projContainer = document.getElementById('projectorQrCode');
     if (projContainer) {
         projContainer.innerHTML = `
-            <div style="background: #ffffff; padding: 16px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); display: inline-block;">
-                <img src="${projQrUrl}" alt="Projector QR Code" style="width: min(560px, 85vw); height: min(560px, 85vw); display: block; margin: 0 auto; border-radius: 12px;">
+            <div style="background: #ffffff; padding: 18px; border-radius: 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.7); display: inline-block;">
+                <div id="projQrCanvas" style="display: flex; justify-content: center; align-items: center; min-width: 320px; min-height: 320px;"></div>
             </div>
         `;
+        const projTarget = document.getElementById('projQrCanvas');
+        if (projTarget && typeof QRCode !== 'undefined') {
+            new QRCode(projTarget, {
+                text: url,
+                width: Math.min(500, Math.floor(window.innerWidth * 0.8)),
+                height: Math.min(500, Math.floor(window.innerWidth * 0.8)),
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.M
+            });
+        }
     }
 }
 

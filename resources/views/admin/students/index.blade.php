@@ -52,6 +52,22 @@
 </div>
 @endif
 
+<!-- Student Account Status Filter Tabs -->
+<div style="display:flex; gap:10px; margin-bottom:16px;">
+    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'active'])) }}" 
+       style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? 'active') === 'active' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
+        <i class="bi bi-check-circle-fill me-1"></i> Active Students
+    </a>
+    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'deactivated'])) }}" 
+       style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? '') === 'deactivated' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
+        <i class="bi bi-person-x-fill me-1"></i> Deactivated Accounts
+    </a>
+    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'all'])) }}" 
+       style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? '') === 'all' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
+        All Records
+    </a>
+</div>
+
 <x-card title="Student Directory" icon="bi bi-people">
     <x-slot name="headerActions">
         {{-- Unified filter bar --}}

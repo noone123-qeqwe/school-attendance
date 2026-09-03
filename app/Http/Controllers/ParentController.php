@@ -159,10 +159,11 @@ class ParentController extends Controller
 
         try {
             $this->parentService->initiateLink(Auth::user(), $request->student_number);
+            return response()->json(['success' => true, 'message' => 'An OTP has been sent to the student\'s school email.']);
         } catch (Exception $e) {
             \Illuminate\Support\Facades\Log::error("Parent link failed: " . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
-        return response()->json(['success' => true, 'message' => 'If the student ID is valid, an OTP has been sent to their email.']);
     }
 
     /**
@@ -179,7 +180,7 @@ class ParentController extends Controller
             $this->parentService->verifyAndLink(Auth::user(), $request->student_number, $request->otp);
             return response()->json(['success' => true, 'message' => 'Successfully linked to student!']);
         } catch (Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Invalid student ID or OTP.'], 400);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
     }
 
@@ -620,7 +621,7 @@ class ParentController extends Controller
         $rules = [
             'name' => 'required|string|max:255',
             'phone' => 'nullable|string|max:20',
-            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,heic,heif,svg|max:10240',
+            'profile_image' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif,heic,heif|max:10240',
         ];
 
         if ($request->filled('current_password') || $request->filled('password')) {

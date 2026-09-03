@@ -1,5 +1,5 @@
 <!-- Student QR & Code Scanner Modal Partial -->
-<div id="studentScannerModal" class="scanner-modal-backdrop" style="display: none;">
+<div id="studentScannerModal" class="scanner-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-label="Student Attendance Scanner">
     <div class="scanner-modal-card">
         
         <!-- Header & Top Floating Bar -->
@@ -895,7 +895,9 @@ function toggleTorch() {
             }
         }).catch(() => {
             if (torchBtn) torchBtn.classList.remove('active-torch');
-            alert('Torch / Flashlight is not supported on this camera device.');
+            if (typeof showToast === 'function') {
+                showToast('Flashlight is not supported on this camera/browser.', 'info', 2500);
+            }
         });
     } catch (e) {}
 }

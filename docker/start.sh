@@ -73,6 +73,14 @@ while [ ! -e /var/run/php-fpm.sock ] && [ $RETRY_FPM -lt 10 ]; do
 done
 chmod 666 /var/run/php-fpm.sock 2>/dev/null || true
 
+# Start Laravel scheduler worker in background for automated attendance and warnings
+echo "⏱️ Starting Laravel Scheduler Worker..."
+php artisan schedule:work >> /var/www/html/storage/logs/scheduler.log 2>&1 &
+
+# Start Laravel Queue Worker in background for push notifications and async jobs
+echo "📨 Starting Laravel Queue Worker..."
+php artisan queue:work --sleep=3 --tries=3 --timeout=90 >> /var/www/html/storage/logs/queue.log 2>&1 &
+
 # Start Nginx in the foreground
 echo "🚀 Starting Nginx..."
 exec nginx -g "daemon off;"

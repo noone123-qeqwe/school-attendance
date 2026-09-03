@@ -38,7 +38,7 @@
                     <div class="alert alert-danger">{{ session('error') }}</div>
                 @endif
 
-                <form action="{{ route('guest.excuse.store', $attendance->id) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ request()->hasValidSignature() ? request()->fullUrl() : \Illuminate\Support\Facades\URL::signedRoute('guest.excuse.store', ['attendance' => $attendance->id]) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     
                     <div class="mb-3">

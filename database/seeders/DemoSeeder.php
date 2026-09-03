@@ -15,6 +15,21 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
+        // Seed default active Academic Year & Terms
+        \App\Models\AcademicYear::firstOrCreate(
+            ['name' => '2026-2027', 'semester' => 1],
+            [
+                'start_date' => '2026-08-01',
+                'end_date' => '2026-12-20',
+                'is_current' => true,
+            ]
+        );
+
+        // Seed core school attendance settings
+        \App\Models\Setting::firstOrCreate(['key' => 'late_threshold'], ['value' => '15']);
+        \App\Models\Setting::firstOrCreate(['key' => 'academic_year'], ['value' => '2026-2027']);
+        \App\Models\Setting::firstOrCreate(['key' => 'current_semester'], ['value' => '1']);
+
         // Create Admin User
         $admin = User::firstOrCreate(
             ['email' => 'admin@gmail.com'],
@@ -22,6 +37,7 @@ class DemoSeeder extends Seeder
                 'name' => 'System Administrator',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
+                'is_active' => true,
             ]
         );
 

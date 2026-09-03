@@ -289,7 +289,9 @@ class CalendarController extends Controller
                 '--force' => true,
             ]);
 
-            \Illuminate\Support\Facades\Cache::flush();
+            \Illuminate\Support\Facades\Cache::forget('calendar_events');
+            \Illuminate\Support\Facades\Cache::forget('active_holidays_list');
+            \Illuminate\Support\Facades\Cache::forget('admin_core_counts');
 
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json(['success' => true, 'message' => 'Official Philippine & school holidays auto-populated successfully!']);

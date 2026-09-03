@@ -18,8 +18,10 @@ Broadcast::channel('teacher.{teacherId}', function ($user, $teacherId) {
     return (int) $user->id === (int) $teacherId && $user->isTeacher();
 });
 
-// Public channel — admin dashboard (no auth needed, admin checks on frontend)
-// admin-dashboard is a public Channel so no auth callback needed
+// Private channel — admin dashboard (only authenticated admins can listen)
+Broadcast::channel('admin-dashboard', function ($user) {
+    return $user && $user->isAdmin();
+});
 
 // Private channel — only the teacher themselves can listen on their dashboard
 Broadcast::channel('teacher-dashboard.{teacherId}', function ($user, $teacherId) {

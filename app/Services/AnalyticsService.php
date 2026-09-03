@@ -148,7 +148,7 @@ class AnalyticsService
         // ── At-risk students (optimized eager loading) ──
         $studentStats = Attendance::select('user_id',
             \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
-            \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_sessions'),
+            \Illuminate\Support\Facades\DB::raw("sum(case when status in ('Present', 'Late', 'Excused') then 1 else 0 end) as present_sessions"),
             \Illuminate\Support\Facades\DB::raw('max(date) as last_attendance')
         )
         ->groupBy('user_id')
@@ -444,7 +444,7 @@ class AnalyticsService
 
         $attendanceStats = \App\Models\Attendance::select('subject_code', 
             \Illuminate\Support\Facades\DB::raw('count(*) as total'),
-            \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_count')
+            \Illuminate\Support\Facades\DB::raw("sum(case when status in ('Present', 'Late', 'Excused') then 1 else 0 end) as present_count")
         )
             ->whereIn('subject_code', $todayClasses->pluck('code'))
             ->whereDate('date', $targetDate)
@@ -524,7 +524,7 @@ class AnalyticsService
         if ($subjectCodes->isNotEmpty()) {
             $studentStats = Attendance::select('user_id',
                 \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
-                \Illuminate\Support\Facades\DB::raw('sum(case when status in ("Present", "Late", "Excused") then 1 else 0 end) as present_sessions')
+                \Illuminate\Support\Facades\DB::raw("sum(case when status in ('Present', 'Late', 'Excused') then 1 else 0 end) as present_sessions")
             )
             ->whereIn('subject_code', $subjectCodes)
             ->groupBy('user_id')

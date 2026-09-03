@@ -25,4 +25,12 @@
         <i class="bi bi-file-text-fill"></i>
         <span class="nav-link-text">Excuse Submissions</span>
     </a>
+    <a href="{{ route('teacher.corrections') }}" class="nav-link {{ request()->routeIs('teacher.corrections*') ? 'active' : '' }}">
+        <i class="bi bi-pencil-square"></i>
+        <span class="nav-link-text">Correction Requests</span>
+    </a>
+    <a href="{{ route('teacher.reports') }}" class="nav-link {{ request()->routeIs('teacher.reports*') ? 'active' : '' }}">
+        <i class="bi bi-graph-up"></i>
+        <span class="nav-link-text">Attendance Reports</span>
+    </a>
 </div>

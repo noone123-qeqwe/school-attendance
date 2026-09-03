@@ -724,142 +724,39 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     // REPORTS
     // ─────────────────────────────────────────
-    public function reports(Request $request)
+    public function reports(Request $request, \App\Services\AttendanceReportService $reportService)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->get();
-        
-        $subjectCodes = $teacherSubjects->pluck('code');
-        $type = $request->get('type', 'daily');
-        $date = $request->get('date', today()->toDateString());
-        $month = $request->get('month', today()->format('Y-m'));
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)->get();
+        $subjectCodes = $teacherSubjects->pluck('code')->toArray();
 
-        $data = [];
+        $report = $reportService->generate($request->all(), $subjectCodes);
 
-        if ($type === 'daily') {
-            $data = Attendance::with(['user', 'subject'])
-                ->whereIn('subject_code', $subjectCodes)
-                ->whereDate('date', $date)
-                ->orderBy('date', 'desc')
-                ->get();
-
-        } elseif ($type === 'monthly') {
-            [$year, $mon] = explode('-', $month);
-            $data = Attendance::with(['user', 'subject'])
-                ->whereIn('subject_code', $subjectCodes)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $mon)
-                ->orderBy('date', 'desc')
-                ->get();
-
-        } elseif ($type === 'percentage') {
-            $data = User::where('role', 'student')
-                ->withCount([
-                    'attendances as total_attendances' => function($q) use ($subjectCodes) {
-                        $q->whereIn('subject_code', $subjectCodes);
-                    },
-                    'attendances as present_count' => function($q) use ($subjectCodes) {
-                        $q->whereIn('subject_code', $subjectCodes)->whereIn('status', ['Present', 'Late']);
-                    },
-                    'attendances as absent_count' => function($q) use ($subjectCodes) {
-                        $q->whereIn('subject_code', $subjectCodes)->where('status', 'Absent');
-                    },
-                ])
-                ->get()
-                ->map(function($student) {
-                    $total = $student->total_attendances;
-                    $present = $student->present_count;
-                    
-                    return [
-                        'student' => $student,
-                        'total' => $total,
-                        'present' => $present,
-                        'absent' => $student->absent_count,
-                        'rate' => $total > 0 ? round(($present / $total) * 100) : 0,
-                    ];
-                })
-                ->sortByDesc('rate');
-        }
-
-        return view('teacher.reports', compact('type', 'date', 'month', 'data', 'teacherSubjects'));
+        return view('teacher.reports', array_merge($report, compact('teacherSubjects')));
     }
 
-    public function exportPdf(Request $request)
+    public function exportPdf(Request $request, \App\Services\AttendanceReportService $reportService)
     {
         $teacher = Auth::user();
-        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-            ->get();
-        
-        $subjectCodes = $teacherSubjects->pluck('code');
-        $type = $request->get('type', 'daily');
-        $date = $request->get('date', today()->toDateString());
-        $month = $request->get('month', today()->format('Y-m'));
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)->get();
+        $subjectCodes = $teacherSubjects->pluck('code')->toArray();
 
-        $data = [];
+        $report = $reportService->generate($request->all(), $subjectCodes);
 
-        if ($type === 'daily') {
-            $data = Attendance::with(['user', 'subject'])
-                ->whereIn('subject_code', $subjectCodes)
-                ->whereDate('date', $date)
-                ->orderBy('date', 'desc')
-                ->get();
-
-        } elseif ($type === 'monthly') {
-            [$year, $mon] = explode('-', $month);
-            $data = Attendance::with(['user', 'subject'])
-                ->whereIn('subject_code', $subjectCodes)
-                ->whereYear('date', $year)
-                ->whereMonth('date', $mon)
-                ->orderBy('date', 'desc')
-                ->get();
-
-        } elseif ($type === 'percentage') {
-            $data = User::where('role', 'student')
-                ->withCount([
-                    'attendances as total_attendances' => function($q) use ($subjectCodes) {
-                        $q->whereIn('subject_code', $subjectCodes);
-                    },
-                    'attendances as present_count' => function($q) use ($subjectCodes) {
-                        $q->whereIn('subject_code', $subjectCodes)->whereIn('status', ['Present', 'Late']);
-                    },
-                    'attendances as absent_count' => function($q) use ($subjectCodes) {
-                        $q->whereIn('subject_code', $subjectCodes)->where('status', 'Absent');
-                    },
-                ])
-                ->get()
-                ->map(function($student) {
-                    $total = $student->total_attendances;
-                    $present = $student->present_count;
-                    
-                    return [
-                        'student' => $student,
-                        'total' => $total,
-                        'present' => $present,
-                        'absent' => $student->absent_count,
-                        'rate' => $total > 0 ? round(($present / $total) * 100) : 0,
-                    ];
-                })
-                ->sortByDesc('rate');
-        }
-
-        $options = [
-            'isRemoteEnabled' => true,
-            'dpi' => 150,
-            'isHtml5ParserEnabled' => true,
-        ];
-
-        $pdf = Pdf::setOptions($options)
-            ->setPaper('a4', 'portrait')
-            ->loadView('teacher.reports.pdf', compact('type', 'date', 'month', 'data', 'teacher'));
-        
-        $filename = match($type) {
-            'daily' => "teacher-daily-report-{$date}.pdf",
-            'monthly' => "teacher-monthly-report-{$month}.pdf",
-            'percentage' => "teacher-attendance-percentage-" . now()->format('Y-m-d') . ".pdf",
-        };
-
+        $pdf = Pdf::loadView('admin.reports.pdf', $report);
+        $filename = "teacher-report-{$report['type']}-" . now()->format('Y-m-d') . ".pdf";
         return $pdf->download($filename);
+    }
+
+    public function exportCsv(Request $request, \App\Services\AttendanceReportService $reportService)
+    {
+        $teacher = Auth::user();
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)->get();
+        $subjectCodes = $teacherSubjects->pluck('code')->toArray();
+
+        $report = $reportService->generate($request->all(), $subjectCodes);
+
+        return $reportService->downloadCsv($report);
     }
 
     // ─────────────────────────────────────────
@@ -1503,7 +1400,7 @@ class TeacherController extends Controller
     public function updateImage(Request $request)
     {
         $request->validate([
-            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif,svg|max:10240'
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif|max:10240'
         ], [
             'profile_image.required' => 'Please select an image file to upload.',
             'profile_image.image' => 'The selected file must be a valid image.',
@@ -1556,11 +1453,16 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
 
+        // Only department heads, admins, or authorized faculty can add holidays/no-class events
+        $allowedTypes = ($teacher->isDepartmentHead() || $teacher->isAdmin()) 
+            ? 'in:national,local,school,no_class' 
+            : 'in:no_class';
+
         $request->validate([
             'date' => 'required|date|after_or_equal:today',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
-            'type' => 'required|in:national,local,school,no_class'
+            'type' => 'required|' . $allowedTypes,
         ]);
 
         // Check if holiday already exists for this date
@@ -1579,17 +1481,25 @@ class TeacherController extends Controller
             'created_by' => $teacher->id
         ]);
 
-        return back()->with('success', 'Holiday added successfully!');
+        return back()->with('success', 'Event added successfully!');
     }
 
     public function updateHoliday(Request $request, Holiday $holiday)
     {
         $teacher = Auth::user();
 
+        if ($holiday->created_by !== $teacher->id && !$teacher->isDepartmentHead() && !$teacher->isAdmin()) {
+            abort(403, 'You do not have permission to modify this calendar event.');
+        }
+
+        $allowedTypes = ($teacher->isDepartmentHead() || $teacher->isAdmin()) 
+            ? 'in:national,local,school,no_class' 
+            : 'in:no_class';
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:500',
-            'type' => 'required|in:national,local,school,no_class'
+            'type' => 'required|' . $allowedTypes,
         ]);
 
         $holiday->update([
@@ -1598,13 +1508,19 @@ class TeacherController extends Controller
             'type' => $request->type
         ]);
 
-        return back()->with('success', 'Holiday updated successfully!');
+        return back()->with('success', 'Event updated successfully!');
     }
 
     public function destroyHoliday(Holiday $holiday)
     {
+        $teacher = Auth::user();
+
+        if ($holiday->created_by !== $teacher->id && !$teacher->isDepartmentHead() && !$teacher->isAdmin()) {
+            abort(403, 'You do not have permission to remove this calendar event.');
+        }
+
         $holiday->delete();
-        return back()->with('success', 'Holiday removed successfully!');
+        return back()->with('success', 'Event removed successfully!');
     }
 
     public function getCalendarData(Request $request)
@@ -1886,5 +1802,25 @@ class TeacherController extends Controller
         $logs = $query->orderBy('date', 'desc')->get();
 
         return Excel::download(new AttendanceExport($logs), 'attendance.csv', \Maatwebsite\Excel\Excel::CSV);
+    }
+
+    public function corrections(Request $request)
+    {
+        $teacher = Auth::user();
+        $subjectCodes = $teacher->subjects()->pluck('code');
+
+        $query = \App\Models\AttendanceCorrection::with(['student', 'attendance.subject'])
+            ->whereHas('attendance', function ($q) use ($subjectCodes) {
+                $q->whereIn('subject_code', $subjectCodes);
+            })
+            ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $corrections = $query->paginate(20)->withQueryString();
+
+        return view('teacher.corrections', compact('corrections'));
     }
 }

@@ -36,7 +36,7 @@
     
     <!-- Academics Dropdown -->
     @php
-        $isAcademicsActive = request()->routeIs('admin.departments*') || request()->routeIs('admin.courses*') || request()->routeIs('admin.sections*') || request()->routeIs('admin.subject*') || request()->routeIs('admin.class-schedules*');
+        $isAcademicsActive = request()->routeIs('admin.departments*') || request()->routeIs('admin.courses*') || request()->routeIs('admin.sections*') || request()->routeIs('admin.subject*') || request()->routeIs('admin.class-schedules*') || request()->routeIs('admin.academic-years*');
     @endphp
     <div class="sidebar-dropdown-group {{ $isAcademicsActive ? 'open' : '' }}">
         <button class="nav-link dropdown-toggle-btn" onclick="toggleSidebarDropdown(this)" data-title="Academics">
@@ -45,6 +45,9 @@
             <i class="bi bi-chevron-down ms-auto dropdown-chevron"></i>
         </button>
         <div class="sidebar-submenu">
+            <a href="{{ route('admin.academic-years.index') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.academic-years*') ? 'active' : '' }}">
+                <span class="nav-link-text">Academic Terms</span>
+            </a>
             <a href="{{ route('admin.departments.index') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.departments*') ? 'active' : '' }}">
                 <span class="nav-link-text">Departments</span>
             </a>
@@ -70,7 +73,7 @@
     
     <!-- Operations Dropdown -->
     @php
-        $isOperationsActive = request()->routeIs('admin.early-warnings*') || request()->routeIs('admin.announcements*') || request()->routeIs('admin.excuses*') || request()->routeIs('admin.attendance*');
+        $isOperationsActive = request()->routeIs('admin.reports*') || request()->routeIs('admin.early-warnings*') || request()->routeIs('admin.announcements*') || request()->routeIs('admin.excuses*') || request()->routeIs('admin.corrections*') || request()->routeIs('admin.attendance*');
     @endphp
     <div class="sidebar-dropdown-group {{ $isOperationsActive ? 'open' : '' }}">
         <button class="nav-link dropdown-toggle-btn" onclick="toggleSidebarDropdown(this)" data-title="Operations">
@@ -82,11 +85,17 @@
             <a href="{{ route('admin.attendance') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.attendance*') ? 'active' : '' }}">
                 <span class="nav-link-text">Attendance Logs</span>
             </a>
+            <a href="{{ route('admin.reports') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}">
+                <span class="nav-link-text">Reports & Analytics</span>
+            </a>
             <a href="{{ route('admin.early-warnings') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.early-warnings*') ? 'active' : '' }}">
                 <span class="nav-link-text">Early Warnings</span>
             </a>
             <a href="{{ route('admin.excuses') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.excuses*') ? 'active' : '' }}">
                 <span class="nav-link-text">Excuse Reviews</span>
+            </a>
+            <a href="{{ route('admin.corrections') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.corrections*') ? 'active' : '' }}">
+                <span class="nav-link-text">Correction Requests</span>
             </a>
             <a href="{{ route('admin.announcements.index') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}">
                 <span class="nav-link-text">Announcements</span>

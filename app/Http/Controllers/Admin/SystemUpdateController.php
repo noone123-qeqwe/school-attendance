@@ -45,6 +45,16 @@ class SystemUpdateController extends Controller
                 if ($sqlitePath && File::exists($sqlitePath)) {
                     $dbSizeBytes = filesize($sqlitePath);
                 }
+            } elseif ($driver === 'pgsql') {
+                $dbVersion = 'PostgreSQL ' . (DB::select('SELECT version() as v')[0]->v ?? '15+');
+                $tables = DB::select("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'");
+                $dbTableCount = count($tables);
+                try {
+                    $sizeRes = DB::select('SELECT pg_database_size(current_database()) as size');
+                    $dbSizeBytes = $sizeRes[0]->size ?? 0;
+                } catch (\Exception $e) {
+                    $dbSizeBytes = 0;
+                }
             } else {
                 $dbVersion = 'MySQL ' . (DB::select('SELECT VERSION() as version')[0]->version ?? '8.0');
                 $tables = DB::select('SHOW TABLES');

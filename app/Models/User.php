@@ -70,7 +70,13 @@ class User extends Authenticatable
     'notification_preferences',
     'rfid_tag',
     'kiosk_pin',
+    'is_active',
 ];
+
+    public function isActive(): bool
+    {
+        return (bool) ($this->is_active ?? true) && !$this->trashed();
+    }
 
     public function isAdmin(): bool
     {
@@ -126,6 +132,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'notification_preferences' => 'array',
+            'is_active' => 'boolean',
         ];
     }
 
