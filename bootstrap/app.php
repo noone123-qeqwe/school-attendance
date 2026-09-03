@@ -22,19 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Example .env values:
         //   TRUSTED_PROXIES=*                         (trust all — safe behind managed PaaS)
         //   TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12 (specific CIDR ranges)
-        $rawProxies = env('TRUSTED_PROXIES', '*');
-        $proxies = ($rawProxies === '*' || empty($rawProxies))
-            ? '*'
-            : array_filter(array_map('trim', explode(',', $rawProxies)));
-
-        $middleware->trustProxies(
-            at: $proxies,
-            headers: Request::HEADER_X_FORWARDED_FOR |
-                     Request::HEADER_X_FORWARDED_HOST |
-                     Request::HEADER_X_FORWARDED_PORT |
-                     Request::HEADER_X_FORWARDED_PROTO |
-                     Request::HEADER_X_FORWARDED_PREFIX
-        );
+        $middleware->trustProxies(at: '*');
 
         $middleware->alias([
             'admin'         => \App\Http\Middleware\AdminMiddleware::class,

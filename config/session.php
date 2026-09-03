@@ -18,7 +18,7 @@ return [
     |
     */
 
-    'driver' => env('SESSION_DRIVER', 'database'),
+    'driver' => env('SESSION_DRIVER', 'file'),
 
     /*
     |--------------------------------------------------------------------------
@@ -129,7 +129,7 @@ return [
 
     'cookie' => env(
         'SESSION_COOKIE',
-        Str::slug((string) env('APP_NAME', 'laravel')).'-session'
+        'attendance_prod_session'
     ),
 
     /*
@@ -169,7 +169,9 @@ return [
     |
     */
 
-    'secure' => (env('SESSION_SECURE_COOKIE') === 'null' || env('SESSION_SECURE_COOKIE') === '') ? null : env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE') !== null && env('SESSION_SECURE_COOKIE') !== ''
+        ? filter_var(env('SESSION_SECURE_COOKIE'), FILTER_VALIDATE_BOOLEAN)
+        : null,
 
     /*
     |--------------------------------------------------------------------------
