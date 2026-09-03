@@ -26,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
         // Proxy trust configuration is handled in bootstrap/app.php via
         // Middleware::trustProxies() so X-Forwarded-* headers are applied early.
         // The ngrok URL forcing below is an additional dev convenience.
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        if ($this->app->environment('production') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')) {
             URL::forceScheme('https');
         }
 

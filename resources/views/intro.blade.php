@@ -206,8 +206,8 @@
 
     <!-- Video (Mobile & Desktop native sources) -->
     <video id="introVideo" autoplay muted playsinline preload="auto">
-        <source src="{{ asset('videos/intro_mobile.mp4') }}#t=2.0" type="video/mp4" media="(max-width: 768px)">
-        <source src="{{ asset('videos/intro.mp4') }}#t=2.0" type="video/mp4">
+        <source src="/videos/intro_mobile.mp4" type="video/mp4" media="(max-width: 768px)">
+        <source src="/videos/intro.mp4" type="video/mp4">
     </video>
 
     <!-- Cinematic Overlays -->
