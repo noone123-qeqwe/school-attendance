@@ -488,6 +488,16 @@
             @error('password')
                 <div class="invalid-feedback-custom anim-fade-up anim-d5" style="margin-top:-10px;margin-bottom:12px;">{{ $message }}</div>
             @enderror
+            <!-- Remember Me & Forgot Password Row -->
+            <div class="d-flex align-items-center justify-content-between mb-3 anim-fade-up anim-d5" style="font-size: 0.82rem; padding: 0 2px;">
+                <label style="display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; margin: 0; color: rgba(255,255,255,0.85); font-weight: 500;">
+                    <input type="checkbox" name="remember" id="rememberMe" value="1" checked style="width: 16px; height: 16px; accent-color: #d4af37; cursor: pointer; border-radius: 4px;">
+                    <span>Remember me</span>
+                </label>
+                <a href="{{ route('otp.forgot.form') }}" style="color: rgba(212,175,55,0.9); text-decoration: none; font-weight: 500; transition: color 0.2s;">
+                    Forgot password?
+                </a>
+            </div>
 
             <button type="submit" class="glass-btn glass-btn-primary anim-fade-up anim-d6" id="loginSubmitBtn">
                 <i class="bi bi-box-arrow-in-right me-2"></i>SIGN IN
@@ -513,10 +523,7 @@
         </form>
 
         <div style="text-align:center;margin-top:14px;" class="anim-fade-up anim-d7">
-            <a href="{{ route('otp.forgot.form') }}" class="glass-note-link">
-                <i class="bi bi-lock me-1"></i>Forgot password?
-            </a>
-            <a href="#" onclick="document.getElementById('loginForm').style.display='none'; document.getElementById('recoveryForm').style.display='block'; return false;" class="glass-note-link ms-2">
+            <a href="#" onclick="document.getElementById('loginForm').style.display='none'; document.getElementById('recoveryForm').style.display='block'; return false;" class="glass-note-link">
                 <i class="bi bi-key me-1"></i>Use Recovery Code
             </a>
         </div>
@@ -559,10 +566,30 @@ function toggleEye(inputId, btn) {
     }
 }
 
-// Loading state on form submit
+// Remember identifier in localStorage
+var idInput = document.getElementById('idInput');
+var rememberCheckbox = document.getElementById('rememberMe');
+
+try {
+    var savedId = localStorage.getItem('attendance_saved_identifier');
+    if (savedId && idInput && !idInput.value) {
+        idInput.value = savedId;
+        if (rememberCheckbox) rememberCheckbox.checked = true;
+    }
+} catch (e) {}
+
+// Loading state and remember credentials on submit
 var loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', function() {
+        try {
+            if (rememberCheckbox && rememberCheckbox.checked && idInput && idInput.value) {
+                localStorage.setItem('attendance_saved_identifier', idInput.value.trim());
+            } else if (rememberCheckbox && !rememberCheckbox.checked) {
+                localStorage.removeItem('attendance_saved_identifier');
+            }
+        } catch (e) {}
+
         var btn = document.getElementById('loginSubmitBtn');
         if (btn) {
             btn.disabled = true;

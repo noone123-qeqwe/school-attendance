@@ -34,6 +34,7 @@ class LoginRequest extends FormRequest
             'identifier' => 'required|string',
             'password'   => 'required|string',
             'qr_token'   => 'nullable|string',
+            'remember'   => 'nullable|boolean',
         ];
     }
 }
