@@ -53,11 +53,10 @@ if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ] || [ -n "$DB_URL" ] || [ -n "$MYS
     done
 fi
 
-# Cache config, routes, and views for production performance
-echo "⚡ Optimizing Laravel caches..."
-php artisan optimize:clear || true
-php artisan config:cache || true
-php artisan route:cache || true
+# Cache config, routes, views, and events for production performance
+echo "⚡ Optimizing Laravel for production..."
+php artisan optimize || true
+php artisan event:cache || true
 php artisan view:cache || true
 
 # Start PHP-FPM in daemon mode

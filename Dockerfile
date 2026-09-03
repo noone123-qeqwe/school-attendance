@@ -43,11 +43,14 @@ COPY . .
 
 # Complete composer optimization and build frontend assets
 RUN composer dump-autoload --optimize --no-dev \
-    && npm run build
+    && npm run build \
+    && npm cache clean --force \
+    && rm -rf node_modules
 
-# Configure Nginx, PHP-FPM, and Entrypoint script
+# Configure Nginx, PHP-FPM, PHP production settings, and Entrypoint
 COPY nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/php-fpm.conf /usr/local/etc/php-fpm.d/zz-docker.conf
+COPY docker/php-production.ini /usr/local/etc/php/conf.d/zz-production.ini
 COPY docker/start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
