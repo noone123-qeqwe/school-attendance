@@ -184,6 +184,8 @@
             border-radius: 14px; padding: 18px 10px; text-align: center;
             cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex; flex-direction: column; align-items: center; gap: 10px;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .role-card i { font-size: 1.6rem; color: var(--text-muted); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .role-card span { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -191,13 +193,30 @@
             background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); 
             transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
-        .role-card input:checked + i, .role-card input:checked ~ span,
-        .role-card.selected i, .role-card.selected span { color: var(--accent); transform: scale(1.05); }
-        .role-card:has(input:checked), .role-card.selected {
-            background: rgba(232, 192, 100, 0.08);
-            border-color: var(--accent);
-            box-shadow: inset 0 0 0 1px var(--accent), 0 10px 20px rgba(232,192,100,0.1);
+        /* Selected State: Strictly only when card is selected */
+        .role-card.selected,
+        .role-card:has(input[type="radio"]:checked) {
+            background: rgba(232, 192, 100, 0.08) !important;
+            border-color: var(--accent) !important;
+            box-shadow: inset 0 0 0 1px var(--accent), 0 10px 20px rgba(232,192,100,0.1) !important;
             transform: translateY(-2px);
+        }
+        .role-card.selected i, .role-card.selected span,
+        .role-card:has(input[type="radio"]:checked) i, .role-card:has(input[type="radio"]:checked) span {
+            color: var(--accent) !important;
+            transform: scale(1.05);
+        }
+        /* Strictly unselected: if card does not have .selected AND its radio is not checked */
+        .role-card:not(.selected):not(:has(input[type="radio"]:checked)) {
+            background: rgba(255,255,255,0.02) !important;
+            border-color: rgba(255,255,255,0.06) !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        .role-card:not(.selected):not(:has(input[type="radio"]:checked)) i,
+        .role-card:not(.selected):not(:has(input[type="radio"]:checked)) span {
+            color: var(--text-muted) !important;
+            transform: none !important;
         }
 
         /* Floating Label Inputs */
@@ -438,13 +457,13 @@
 
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: block; font-weight: 500;">I am registering as a:</label>
                         <div class="role-selector">
-                            <label class="role-card {{ old('role', 'student')=='student' ? 'selected' : '' }}" onclick="selectRole('student')" id="role-card-student">
-                                <input type="radio" name="role" value="student" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role', 'student')=='student'?'checked':'' }} required>
+                            <label class="role-card {{ old('role', 'student') == 'student' ? 'selected' : '' }}" onclick="selectRole('student')" id="role-card-student">
+                                <input type="radio" name="role" id="role_student" value="student" style="position:absolute;opacity:0;pointer-events:none;" onchange="selectRole('student')" {{ old('role', 'student') == 'student' ? 'checked' : '' }} required>
                                 <i class="bi bi-mortarboard"></i>
                                 <span>Student</span>
                             </label>
-                            <label class="role-card {{ old('role')=='parent' ? 'selected' : '' }}" onclick="selectRole('parent')" id="role-card-parent">
-                                <input type="radio" name="role" value="parent" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role')=='parent'?'checked':'' }}>
+                            <label class="role-card {{ old('role') == 'parent' ? 'selected' : '' }}" onclick="selectRole('parent')" id="role-card-parent">
+                                <input type="radio" name="role" id="role_parent" value="parent" style="position:absolute;opacity:0;pointer-events:none;" onchange="selectRole('parent')" {{ old('role') == 'parent' ? 'checked' : '' }}>
                                 <i class="bi bi-people"></i>
                                 <span>Parent</span>
                             </label>
@@ -589,10 +608,23 @@
         function hideAlert() { document.getElementById('js-alert').style.display = 'none'; }
 
         function selectRole(role) {
-            const radio = document.querySelector(`input[name="role"][value="${role}"]`);
-            if (radio) {
-                radio.checked = true;
+            const studentRadio = document.getElementById('role_student') || document.querySelector('input[name="role"][value="student"]');
+            const parentRadio  = document.getElementById('role_parent')  || document.querySelector('input[name="role"][value="parent"]');
+            const studentCard  = document.getElementById('role-card-student');
+            const parentCard   = document.getElementById('role-card-parent');
+
+            if (role === 'student') {
+                if (studentRadio) studentRadio.checked = true;
+                if (parentRadio)  parentRadio.checked = false;
+                if (studentCard)  studentCard.classList.add('selected');
+                if (parentCard)   parentCard.classList.remove('selected');
+            } else if (role === 'parent') {
+                if (parentRadio)  parentRadio.checked = true;
+                if (studentRadio) studentRadio.checked = false;
+                if (parentCard)   parentCard.classList.add('selected');
+                if (studentCard)  studentCard.classList.remove('selected');
             }
+
             toggleFields();
         }
 
@@ -602,23 +634,27 @@
             const dynamicFields = document.getElementById('dynamic-fields');
             const studentFields = document.getElementById('student-fields');
 
-            // Sync visual active class for cards
-            document.querySelectorAll('.role-card').forEach(card => {
-                const radio = card.querySelector('input[name="role"]');
-                if (radio && radio.checked) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
+            const studentCard = document.getElementById('role-card-student');
+            const parentCard  = document.getElementById('role-card-parent');
 
-            if (!role) { 
-                if (dynamicFields) dynamicFields.style.display = 'none'; 
-                return; 
+            // Strictly enforce single-selection class
+            if (studentCard) {
+                if (role === 'student') {
+                    studentCard.classList.add('selected');
+                } else {
+                    studentCard.classList.remove('selected');
+                }
             }
-            if (dynamicFields) dynamicFields.style.display = 'block';
+            if (parentCard) {
+                if (role === 'parent') {
+                    parentCard.classList.add('selected');
+                } else {
+                    parentCard.classList.remove('selected');
+                }
+            }
 
             if (role === 'student') {
+                if (dynamicFields) dynamicFields.style.display = 'block';
                 if (studentFields) studentFields.style.display = 'block';
                 const sNum = document.getElementById('student_number');
                 const crs = document.getElementById('course');
@@ -630,6 +666,7 @@
                 if (sem) sem.required = true;
             } else {
                 if (studentFields) studentFields.style.display = 'none';
+                if (dynamicFields) dynamicFields.style.display = 'none';
                 const sNum = document.getElementById('student_number');
                 const crs = document.getElementById('course');
                 const yLvl = document.getElementById('year_level');
@@ -874,7 +911,9 @@
 
         // Init on load
         function initRegisterPage() {
-            toggleFields();
+            const initialRole = document.querySelector('input[name="role"]:checked')?.value || 'student';
+            selectRole(initialRole);
+
             document.querySelectorAll('#step-1 input, #step-1 select').forEach(input => {
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
