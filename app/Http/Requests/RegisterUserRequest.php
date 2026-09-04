@@ -28,8 +28,9 @@ class RegisterUserRequest extends FormRequest
 
         if ($this->has('first_name') && $this->has('surname')) {
             $name = trim($this->first_name);
-            if ($this->filled('middle_name')) {
-                $name .= ' ' . trim($this->middle_name);
+            $middleName = trim((string)$this->middle_name);
+            if (!$this->boolean('no_middle_name') && $this->filled('middle_name') && strtoupper($middleName) !== 'N/A') {
+                $name .= ' ' . $middleName;
             }
             $name .= ' ' . trim($this->surname);
             $this->merge(['name' => $name]);
@@ -39,9 +40,13 @@ class RegisterUserRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed',
+            'name'           => 'required|string|max:255',
+            'first_name'     => 'sometimes|string|max:100',
+            'middle_name'    => 'nullable|string|max:100',
+            'no_middle_name' => 'nullable|boolean',
+            'surname'        => 'sometimes|string|max:100',
+            'email'          => 'required|email|unique:users',
+            'password'       => 'required|min:8|confirmed',
         ];
 
         // Strict role validation based on the route

@@ -268,6 +268,16 @@
         .form-floating-custom.invalid input { border-color: #ef4444; }
         .form-floating-custom.invalid label { color: #ef4444; }
 
+        .form-floating-custom input:disabled {
+            background: rgba(255, 255, 255, 0.02) !important;
+            border-color: rgba(255, 255, 255, 0.05) !important;
+            color: rgba(255, 255, 255, 0.3) !important;
+            cursor: not-allowed !important;
+        }
+        .form-floating-custom input:disabled ~ label {
+            color: rgba(255, 255, 255, 0.35) !important;
+        }
+
         /* Password Toggle */
         .eye-btn {
             position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
@@ -459,9 +469,15 @@
                             <input type="text" name="first_name" id="first_name" placeholder=" " value="{{ old('first_name') }}" oninput="updateFullName()" required>
                             <label for="first_name">First Name</label>
                         </div>
-                        <div class="form-floating-custom mb-3">
+                        <div class="form-floating-custom mb-2">
                             <input type="text" name="middle_name" id="middle_name" placeholder=" " value="{{ old('middle_name') }}" oninput="updateFullName()">
-                            <label for="middle_name">Middle Name</label>
+                            <label for="middle_name">Middle Name (Optional)</label>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-3 px-1" style="user-select: none;">
+                            <input type="checkbox" id="no_middle_name" name="no_middle_name" value="1" {{ old('no_middle_name') ? 'checked' : '' }} onchange="toggleNoMiddleName(this)" style="width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; border-radius: 4px;">
+                            <label for="no_middle_name" style="font-size: 0.82rem; color: var(--text-muted); cursor: pointer; margin: 0; font-weight: 500;">
+                                I do not have a middle name
+                            </label>
                         </div>
                         <div class="form-floating-custom mb-4">
                             <input type="text" name="surname" id="surname" placeholder=" " value="{{ old('surname') }}" oninput="updateFullName()" required>
@@ -659,13 +675,29 @@
 
         function updateFullName() {
             let fn = document.getElementById('first_name')?.value.trim() || '';
-            let mn = document.getElementById('middle_name')?.value.trim() || '';
+            let noMn = document.getElementById('no_middle_name')?.checked;
+            let mn = noMn ? '' : (document.getElementById('middle_name')?.value.trim() || '');
+            if (mn.toUpperCase() === 'N/A') mn = '';
             let sn = document.getElementById('surname')?.value.trim() || '';
             let fullName = fn;
             if (mn) fullName += ' ' + mn;
             if (sn) fullName += ' ' + sn;
             const nameEl = document.getElementById('name');
             if (nameEl) nameEl.value = fullName;
+        }
+
+        function toggleNoMiddleName(checkbox) {
+            const mnInput = document.getElementById('middle_name');
+            if (!mnInput) return;
+            if (checkbox && checkbox.checked) {
+                mnInput.value = 'N/A';
+                mnInput.disabled = true;
+            } else {
+                if (mnInput.value === 'N/A') mnInput.value = '';
+                mnInput.disabled = false;
+                mnInput.focus();
+            }
+            updateFullName();
         }
 
         function validateStep1() {
@@ -939,6 +971,16 @@
             }
 
             toggleFields();
+
+            const noMnCheckbox = document.getElementById('no_middle_name');
+            if (noMnCheckbox) {
+                noMnCheckbox.addEventListener('change', function() {
+                    toggleNoMiddleName(this);
+                });
+                if (noMnCheckbox.checked) {
+                    toggleNoMiddleName(noMnCheckbox);
+                }
+            }
 
             document.querySelectorAll('#step-1 input, #step-1 select').forEach(input => {
                 input.addEventListener('keydown', (e) => {
