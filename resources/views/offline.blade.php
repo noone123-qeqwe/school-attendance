@@ -289,9 +289,9 @@
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                Cached Student Profile
+                <span id="cachedProfileLabel">Cached Profile</span>
             </div>
-            <div class="cached-profile-name" id="cachedName">Student</div>
+            <div class="cached-profile-name" id="cachedName">User</div>
             <div class="cached-profile-meta" id="cachedMeta">Attendance ID: --</div>
         </div>
 
@@ -310,14 +310,22 @@
     <script>
         // Check for cached profile in localStorage
         try {
-            const raw = localStorage.getItem('cached_student_profile');
+            const raw = localStorage.getItem('cached_user_profile') || localStorage.getItem('cached_student_profile');
             if (raw) {
                 const profile = JSON.parse(raw);
                 if (profile && profile.name) {
+                    const role = (profile.role || 'User').toLowerCase();
+                    const roleName = role.charAt(0).toUpperCase() + role.slice(1);
+                    const labelEl = document.getElementById('cachedProfileLabel');
+                    if (labelEl) {
+                        labelEl.textContent = `Cached ${roleName} Profile`;
+                    }
+
                     document.getElementById('cachedName').textContent = profile.name;
                     let metaText = (profile.role ? profile.role.toUpperCase() : 'USER');
                     if (profile.student_number) metaText += ` &bull; ID: ${profile.student_number}`;
                     if (profile.course) metaText += ` &bull; ${profile.course}`;
+                    if (profile.email && !profile.student_number) metaText += ` &bull; ${profile.email}`;
                     document.getElementById('cachedMeta').innerHTML = metaText;
                     document.getElementById('cachedProfileBox').style.display = 'block';
                 }

@@ -10,24 +10,28 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        // Avoid duplicate if already exists
-        if (!User::where('email', 'admin@osmena.edu')->exists()) {
-            User::create([
-                'name'           => 'Admin Teacher',
-                'student_number' => '0000000',
-                'course'         => 'BSCS',
-                'year_level'     => '1',
-                'semester'       => '1',
-                'email'          => 'admin@osmena.edu',
-                'password'       => Hash::make('Admin@1234'),
-                'role'           => 'admin',
-            ]);
+        $admin = User::withTrashed()->where('email', 'admin@osmena.edu')->first();
 
-            echo "Admin account created.\n";
-            echo "Email:    admin@osmena.edu\n";
-            echo "Password: Admin@1234\n";
+        $attributes = [
+            'name'              => 'System Administrator',
+            'email'             => 'admin@osmena.edu',
+            'role'              => 'admin',
+            'department'        => 'College of Computer Studies',
+            'phone'             => '09171234567',
+            'password'          => Hash::make('Admin@1234'),
+            'email_verified_at' => now(),
+            'is_active'         => true,
+        ];
+
+        if ($admin) {
+            if ($admin->trashed()) {
+                $admin->restore();
+            }
+            $admin->update($attributes);
+            $this->command->info('Official Admin account synced: admin@osmena.edu / Admin@1234');
         } else {
-            echo "Admin account already exists.\n";
+            User::create($attributes);
+            $this->command->info('Official Admin account created: admin@osmena.edu / Admin@1234');
         }
     }
 }

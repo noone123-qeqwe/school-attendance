@@ -498,6 +498,10 @@
                         swRegistration.showNotification(notifTitle, notifOptions);
                     } else {
                         new Notification(notifTitle, notifOptions);
+                    }
+                } catch(e) {}
+            }
+
             // 4. Update In-App Notification Bell & Badge in Real-Time
             if (typeof window.refreshNotificationBell === 'function') {
                 try { window.refreshNotificationBell(); } catch(e) {}
@@ -963,6 +967,7 @@
                 year_level: "{{ auth()->user()->year_level ?? '' }}",
                 timestamp: new Date().toISOString()
             };
+            localStorage.setItem('cached_user_profile', JSON.stringify(userProfile));
             localStorage.setItem('cached_student_profile', JSON.stringify(userProfile));
         } catch(e) {}
     @endauth

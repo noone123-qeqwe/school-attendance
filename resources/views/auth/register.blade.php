@@ -28,10 +28,12 @@
             background-color: var(--bg-dark); 
             color: var(--text-main);
             overflow-x: hidden;
+            overflow-y: auto;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 24px 16px;
+            justify-content: flex-start;
+            padding: 84px 20px 48px;
         }
 
         /* Dynamic Background */
@@ -61,12 +63,31 @@
             100% { transform: translate(5%, 10%) scale(1.1); }
         }
 
+        /* Top Bar */
+        .top-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 40px;
+            background: rgba(10, 3, 5, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s ease;
+        }
+        .brand-logo {
+            font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 700; color: white;
+            display: flex; align-items: center; gap: 10px; text-decoration: none;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .brand-logo i { color: var(--accent); font-size: 1.3rem; }
 
         /* Main Container */
         .auth-container {
             position: relative; z-index: 10;
             width: 100%; max-width: 760px;
-            padding: 20px;
+            padding: 0;
+            margin: auto 0;
             perspective: 1000px;
         }
 
@@ -294,12 +315,59 @@
 
         /* Responsive */
         @media (max-width: 576px) {
-            .card-header-premium, .card-body-premium, .stepper { padding-left: 24px; padding-right: 24px; }
+            body { 
+                padding: 68px 12px 28px; 
+            }
+            .card-header-premium { 
+                padding: 32px 20px 20px; 
+            }
+            .card-header-premium h2 { 
+                font-size: 1.55rem; 
+            }
+            .card-header-premium p { 
+                font-size: 0.85rem; 
+            }
+            .card-body-premium { 
+                padding: 16px 20px 36px; 
+            }
+            .stepper { 
+                padding: 20px 16px; 
+            }
+            .top-bar { 
+                padding: 11px 16px; 
+                justify-content: center;
+                background: rgba(10, 3, 5, 0.9);
+                backdrop-filter: blur(20px);
+                -webkit-backdrop-filter: blur(20px);
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            }
+            .brand-logo { 
+                font-size: 0.78rem; 
+                gap: 8px;
+                letter-spacing: 0.3px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+                justify-content: center;
+            }
+            .brand-logo i { 
+                font-size: 1.05rem; 
+            }
             .otp-box { width: 42px; height: 52px; font-size: 1.25rem; gap: 6px; }
             .role-selector { gap: 8px; }
             .role-card { padding: 12px 6px; }
             .role-card i { font-size: 1.2rem; }
             .role-card span { font-size: 0.75rem; }
+        }
+
+        @media (max-width: 380px) {
+            body { padding: 62px 8px 24px; }
+            .top-bar { padding: 9px 12px; }
+            .brand-logo { font-size: 0.71rem; gap: 6px; }
+            .brand-logo i { font-size: 0.95rem; }
+            .card-header-premium h2 { font-size: 1.4rem; }
         }
     </style>
 </head>
@@ -310,7 +378,12 @@
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
 
-
+    <div class="top-bar">
+        <a href="/" class="brand-logo">
+            <i class="bi bi-shield-check"></i>
+            <span>{{ config('app.name') }}</span>
+        </a>
+    </div>
 
     <div class="auth-container">
         <div class="glass-card">
@@ -365,12 +438,12 @@
 
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: block; font-weight: 500;">I am registering as a:</label>
                         <div class="role-selector">
-                            <label class="role-card" onclick="selectRole('student')" id="role-card-student">
+                            <label class="role-card {{ old('role', 'student')=='student' ? 'selected' : '' }}" onclick="selectRole('student')" id="role-card-student">
                                 <input type="radio" name="role" value="student" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role', 'student')=='student'?'checked':'' }} required>
                                 <i class="bi bi-mortarboard"></i>
                                 <span>Student</span>
                             </label>
-                            <label class="role-card" onclick="selectRole('parent')" id="role-card-parent">
+                            <label class="role-card {{ old('role')=='parent' ? 'selected' : '' }}" onclick="selectRole('parent')" id="role-card-parent">
                                 <input type="radio" name="role" value="parent" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role')=='parent'?'checked':'' }}>
                                 <i class="bi bi-people"></i>
                                 <span>Parent</span>
@@ -378,12 +451,12 @@
                         </div>
 
                         <!-- Dynamic Fields -->
-                        <div id="dynamic-fields" style="display:none;">
+                        <div id="dynamic-fields" style="{{ old('role', 'student') == 'student' ? 'display:block;' : 'display:none;' }}">
                             <!-- Student Specific -->
-                            <div id="student-fields" style="display:none;">
+                            <div id="student-fields" style="{{ old('role', 'student') == 'student' ? 'display:block;' : 'display:none;' }}">
                                 <div class="form-floating-custom">
                                     <input type="text" name="student_number" id="student_number" placeholder=" " maxlength="7" value="{{ old('student_number') }}">
-                                    <label for="student_number">Student ID</label>
+                                    <label for="student_number">Student ID (7 chars, e.g. 2101234)</label>
                                 </div>
                                 <div class="row g-3 mb-3">
                                     <div class="col-7">
@@ -395,7 +468,7 @@
                                     <div class="col-5">
                                         <div class="form-floating-custom mb-0">
                                             <select name="year_level" id="year_level" required>
-                                                <option value="" disabled selected></option>
+                                                <option value="" disabled {{ old('year_level') ? '' : 'selected' }}></option>
                                                 @foreach([1,2,3,4] as $y)
                                                 <option value="{{ $y }}" {{ old('year_level')==$y?'selected':'' }}>{{ $y }}{{ $y==1?'st':($y==2?'nd':($y==3?'rd':'th')) }}</option>
                                                 @endforeach
@@ -407,8 +480,8 @@
                                 </div>
                                 <div class="form-floating-custom">
                                     <select name="semester" id="semester" required>
-                                        <option value="" disabled selected></option>
-                                        <option value="1" {{ old('semester')=='1'?'selected':'' }}>1st Semester</option>
+                                        <option value="" disabled {{ old('semester') ? '' : 'selected' }}></option>
+                                        <option value="1" {{ old('semester', '1')=='1'?'selected':'' }}>1st Semester</option>
                                         <option value="2" {{ old('semester')=='2'?'selected':'' }}>2nd Semester</option>
                                         <option value="Summer" {{ old('semester')=='Summer'?'selected':'' }}>Summer</option>
                                     </select>
@@ -419,7 +492,7 @@
                             </div>
                         </div>
 
-                        <button type="button" class="btn-premium btn-primary mt-2" onclick="goToStep(2)">
+                        <button type="button" class="btn-premium btn-primary mt-2" id="btn-continue-step1" onclick="goToStep(2)">
                             Continue <i class="bi bi-arrow-right ms-1"></i>
                         </button>
                     </div>
@@ -524,7 +597,8 @@
         }
 
         function toggleFields() {
-            const role = document.querySelector('input[name="role"]:checked')?.value;
+            const roleRadio = document.querySelector('input[name="role"]:checked');
+            const role = roleRadio ? roleRadio.value : 'student';
             const dynamicFields = document.getElementById('dynamic-fields');
             const studentFields = document.getElementById('student-fields');
 
@@ -568,29 +642,54 @@
         }
 
         function updateFullName() {
-            let fn = document.getElementById('first_name').value.trim();
-            let mn = document.getElementById('middle_name').value.trim();
-            let sn = document.getElementById('surname').value.trim();
+            let fn = document.getElementById('first_name')?.value.trim() || '';
+            let mn = document.getElementById('middle_name')?.value.trim() || '';
+            let sn = document.getElementById('surname')?.value.trim() || '';
             let fullName = fn;
             if (mn) fullName += ' ' + mn;
             if (sn) fullName += ' ' + sn;
-            document.getElementById('name').value = fullName;
+            const nameEl = document.getElementById('name');
+            if (nameEl) nameEl.value = fullName;
         }
 
         function validateStep1() {
             updateFullName();
-            const fn = document.getElementById('first_name')?.value.trim();
-            const sn = document.getElementById('surname')?.value.trim();
+            const fn = document.getElementById('first_name');
+            const sn = document.getElementById('surname');
             const role = document.querySelector('input[name="role"]:checked');
-            if (!fn || !sn) return "Please enter your first name and surname.";
-            if (!role) return "Please select whether you are a Student or Parent.";
+
+            if (!fn || !fn.value.trim()) {
+                fn?.focus();
+                return "Please enter your first name.";
+            }
+            if (!sn || !sn.value.trim()) {
+                sn?.focus();
+                return "Please enter your surname.";
+            }
+            if (!role) {
+                return "Please select whether you are a Student or Parent.";
+            }
 
             if (role.value === 'student') {
-                const sNum = document.getElementById('student_number')?.value.trim();
-                if (!sNum) return "Please enter your 7-character Student ID.";
-                if (!/^[a-zA-Z0-9]{7}$/.test(sNum)) return "Student number must be exactly 7 characters (letters and numbers only).";
-                if (!document.getElementById('course')?.value || !document.getElementById('year_level')?.value || !document.getElementById('semester')?.value) {
-                    return "Please fill in all student details (Year Level and Semester).";
+                const sNum = document.getElementById('student_number');
+                const yLvl = document.getElementById('year_level');
+                const sem = document.getElementById('semester');
+
+                if (!sNum || !sNum.value.trim()) {
+                    sNum?.focus();
+                    return "Please enter your 7-character Student ID.";
+                }
+                if (!/^[a-zA-Z0-9]{7}$/.test(sNum.value.trim())) {
+                    sNum?.focus();
+                    return "Student number must be exactly 7 characters (letters and numbers only).";
+                }
+                if (!yLvl || !yLvl.value) {
+                    yLvl?.focus();
+                    return "Please select your Year Level.";
+                }
+                if (!sem || !sem.value) {
+                    sem?.focus();
+                    return "Please select your Semester.";
                 }
             }
             return null;
@@ -620,6 +719,12 @@
 
             document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
             document.getElementById('step-' + step).classList.add('active');
+
+            // Scroll to top of card so next step is immediately visible
+            const card = document.querySelector('.glass-card');
+            if (card) {
+                card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
 
         function togglePassword(id, btn) {
@@ -768,9 +873,22 @@
         }
 
         // Init on load
-        document.addEventListener('DOMContentLoaded', () => {
+        function initRegisterPage() {
             toggleFields();
-        });
+            document.querySelectorAll('#step-1 input, #step-1 select').forEach(input => {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        goToStep(2);
+                    }
+                });
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initRegisterPage);
+        } else {
+            initRegisterPage();
+        }
     </script>
 </body>
 </html>

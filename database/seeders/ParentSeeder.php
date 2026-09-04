@@ -15,61 +15,37 @@ class ParentSeeder extends Seeder
     public function run(): void
     {
         // ══════════════════════════════════════════════════════════════
-        // 👪 PARENT ACCOUNTS CONFIGURATION
+        // 👪 OFFICIAL PARENT ACCOUNTS (Linked to Capstone Students)
         // ══════════════════════════════════════════════════════════════
         $parentsData = [
             [
-                'name' => 'Eduardo & Teresa Santos',
-                'email' => 'parent@example.com', // Demo parent account
-                'phone' => '09171234567',
-                'student_numbers' => ['2310843', '2024004'], // Mark Angelo Santos & Ana Marie Reyes (Multi-child test)
-            ],
-            [
-                'name' => 'Roberto Garcia',
-                'email' => 'garcia.parent@example.com',
-                'phone' => '09182345678',
-                'student_numbers' => ['2024002'], // Maria Isabel Garcia
-            ],
-            [
-                'name' => 'Elena Cruz',
-                'email' => 'cruz.parent@example.com',
-                'phone' => '09193456789',
-                'student_numbers' => ['2024003'], // Carlos David Cruz
-            ],
-            [
-                'name' => 'Fernando Dela Cruz',
-                'email' => 'delacruz.parent@example.com',
-                'phone' => '09204567890',
-                'student_numbers' => ['2024005'], // Robert James Dela Cruz
-            ],
-            [
-                'name' => 'Nasser Amatos',
-                'email' => 'amatos.parent@example.com',
-                'phone' => '09215678901',
-                'student_numbers' => ['0703250'], // Ibn Kervi J. Amatos
-            ],
-            [
-                'name' => 'Rowena Portugal',
-                'email' => 'portugal.parent@example.com',
-                'phone' => '09226789012',
-                'student_numbers' => ['2312215'], // Karla Villamor Portugal
-            ],
-            [
-                'name' => 'Maricel Herminado',
-                'email' => 'herminado.parent@example.com',
-                'phone' => '09237890123',
-                'student_numbers' => ['2311969'], // Janessa Almosara Herminado
-            ],
-            [
-                'name' => 'Clarito Ole',
-                'email' => 'ole.parent@example.com',
-                'phone' => '09248901234',
+                'name'            => 'Clarito Ole',
+                'email'           => 'clarito.ole@gmail.com',
+                'phone'           => '09248901234',
                 'student_numbers' => ['1234567'], // Jack C. Ole
             ],
             [
-                'name' => 'Merly Espinas',
-                'email' => 'espinas.parent@example.com',
-                'phone' => '09259012345',
+                'name'            => 'Nasser Amatos',
+                'email'           => 'nasser.amatos@gmail.com',
+                'phone'           => '09215678901',
+                'student_numbers' => ['0703250'], // Ibn Kervi J. Amatos
+            ],
+            [
+                'name'            => 'Rowena Portugal',
+                'email'           => 'rowena.portugal@gmail.com',
+                'phone'           => '09226789012',
+                'student_numbers' => ['2312215'], // Karla Villamor Portugal
+            ],
+            [
+                'name'            => 'Maricel Herminado',
+                'email'           => 'maricel.herminado@gmail.com',
+                'phone'           => '09237890123',
+                'student_numbers' => ['2311969'], // Janessa Almosara Herminado
+            ],
+            [
+                'name'            => 'Merly Espinas',
+                'email'           => 'merly.espinas@gmail.com',
+                'phone'           => '09259012345',
                 'student_numbers' => ['17J0053'], // Jolina Mae Astibe Espinas
             ],
         ];
@@ -79,7 +55,7 @@ class ParentSeeder extends Seeder
         $now = now();
 
         foreach ($parentsData as $pData) {
-            $parent = User::where('email', strtolower($pData['email']))->first();
+            $parent = User::withTrashed()->where('email', strtolower($pData['email']))->first();
 
             $attributes = [
                 'name'                     => $pData['name'],
@@ -87,6 +63,7 @@ class ParentSeeder extends Seeder
                 'role'                     => 'parent',
                 'phone'                    => $pData['phone'],
                 'email_verified_at'        => $now,
+                'is_active'                => true,
                 'notification_preferences' => [
                     'email_notifications' => true,
                     'push_notifications'  => true,
@@ -102,7 +79,7 @@ class ParentSeeder extends Seeder
                 }
                 $parent->update($attributes);
             } else {
-                $attributes['password'] = Hash::make('password');
+                $attributes['password'] = Hash::make('parent123');
                 $parent = User::create($attributes);
                 $createdCount++;
             }

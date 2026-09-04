@@ -21,9 +21,9 @@ class SubjectSeeder extends Seeder
         Schema::enableForeignKeyConstraints();
 
         // Retrieve instructors from the database
-        $jovelyn  = User::where('email', 'jovelyn.patalinghug@teacher.com')->first();
-        $sandyMae = User::where('email', 'sandymae.santarosa@school.edu')->first();
-        $joel     = User::where('email', 'joel.salidaga@school.edu')->first();
+        $jovelyn  = User::where('employee_id', 'T-2024-001')->orWhere('email', 'like', '%patalinghug%')->first();
+        $sandyMae = User::where('employee_id', 'T-2024-002')->orWhere('email', 'like', '%santarosa%')->first();
+        $joel     = User::where('employee_id', 'T-2024-004')->orWhere('email', 'like', '%salidaga%')->first();
         $fallback = User::where('role', 'teacher')->first();
 
         $tJovelyn  = $jovelyn ?? $fallback;
