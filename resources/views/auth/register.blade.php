@@ -179,44 +179,57 @@
         .role-selector {
             display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px;
         }
+        .role-radio {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            height: 0;
+            margin: 0;
+        }
         .role-card {
-            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 14px; padding: 18px 10px; text-align: center;
-            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            padding: 18px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
             user-select: none;
             -webkit-user-select: none;
         }
-        .role-card i { font-size: 1.6rem; color: var(--text-muted); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .role-card span { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .role-card:hover { 
-            background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); 
-            transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        .role-card i {
+            font-size: 1.6rem;
+            color: var(--text-muted);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        /* Selected State: Strictly only when card is selected */
-        .role-card.selected,
-        .role-card:has(input[type="radio"]:checked) {
+        .role-card span {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .role-card:hover { 
+            background: rgba(255,255,255,0.05);
+            border-color: rgba(255,255,255,0.2); 
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        /* Single Selected State - Strictly driven by checked radio sibling */
+        .role-radio:checked + .role-card {
             background: rgba(232, 192, 100, 0.08) !important;
             border-color: var(--accent) !important;
             box-shadow: inset 0 0 0 1px var(--accent), 0 10px 20px rgba(232,192,100,0.1) !important;
             transform: translateY(-2px);
         }
-        .role-card.selected i, .role-card.selected span,
-        .role-card:has(input[type="radio"]:checked) i, .role-card:has(input[type="radio"]:checked) span {
+        .role-radio:checked + .role-card i,
+        .role-radio:checked + .role-card span {
             color: var(--accent) !important;
             transform: scale(1.05);
-        }
-        /* Strictly unselected: if card does not have .selected AND its radio is not checked */
-        .role-card:not(.selected):not(:has(input[type="radio"]:checked)) {
-            background: rgba(255,255,255,0.02) !important;
-            border-color: rgba(255,255,255,0.06) !important;
-            box-shadow: none !important;
-            transform: none !important;
-        }
-        .role-card:not(.selected):not(:has(input[type="radio"]:checked)) i,
-        .role-card:not(.selected):not(:has(input[type="radio"]:checked)) span {
-            color: var(--text-muted) !important;
-            transform: none !important;
         }
 
         /* Floating Label Inputs */
@@ -457,13 +470,14 @@
 
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: block; font-weight: 500;">I am registering as a:</label>
                         <div class="role-selector">
-                            <label class="role-card {{ old('role', 'student') == 'student' ? 'selected' : '' }}" onclick="selectRole('student')" id="role-card-student">
-                                <input type="radio" name="role" id="role_student" value="student" style="position:absolute;opacity:0;pointer-events:none;" onchange="selectRole('student')" {{ old('role', 'student') == 'student' ? 'checked' : '' }} required>
+                            <input type="radio" name="role" id="role_student" value="student" class="role-radio" {{ old('role', 'student') == 'student' ? 'checked' : '' }} required onchange="toggleFields('student')">
+                            <label for="role_student" class="role-card" id="role-card-student" onclick="selectRole('student')">
                                 <i class="bi bi-mortarboard"></i>
                                 <span>Student</span>
                             </label>
-                            <label class="role-card {{ old('role') == 'parent' ? 'selected' : '' }}" onclick="selectRole('parent')" id="role-card-parent">
-                                <input type="radio" name="role" id="role_parent" value="parent" style="position:absolute;opacity:0;pointer-events:none;" onchange="selectRole('parent')" {{ old('role') == 'parent' ? 'checked' : '' }}>
+
+                            <input type="radio" name="role" id="role_parent" value="parent" class="role-radio" {{ old('role') == 'parent' ? 'checked' : '' }} onchange="toggleFields('parent')">
+                            <label for="role_parent" class="role-card" id="role-card-parent" onclick="selectRole('parent')">
                                 <i class="bi bi-people"></i>
                                 <span>Parent</span>
                             </label>
@@ -536,7 +550,7 @@
                         </div>
 
                         <div class="btn-group-row">
-                            <button type="button" class="btn-premium btn-secondary" onclick="goToStep(1)">
+                            <button type="button" class="btn-premium btn-secondary" id="btn-back-step2" onclick="goToStep(1)">
                                 <i class="bi bi-arrow-left"></i>
                             </button>
                             <button type="button" class="btn-premium btn-primary" id="btn-verify" onclick="sendOtp()">
@@ -567,7 +581,7 @@
                         </div>
 
                         <div class="btn-group-row">
-                            <button type="button" class="btn-premium btn-secondary" onclick="goToStep(2)">
+                            <button type="button" class="btn-premium btn-secondary" id="btn-back-step3" onclick="goToStep(2)">
                                 <i class="bi bi-arrow-left"></i>
                             </button>
                             <button type="button" class="btn-premium btn-primary" id="btn-submit" onclick="verifyOtpAndSubmit()">
@@ -576,7 +590,7 @@
                         </div>
                         
                         <div class="text-center mt-4">
-                            <a href="#" onclick="sendOtp(); return false;" style="color:var(--text-muted); text-decoration:underline; font-size:0.85rem;">Didn't receive it? Resend</a>
+                            <a href="#" id="btn-resend" onclick="sendOtp(); return false;" style="color:var(--text-muted); text-decoration:underline; font-size:0.85rem;">Didn't receive it? Resend</a>
                         </div>
                     </div>
 
@@ -598,7 +612,7 @@
         </div>
     </div>
 
-    <script>
+    <script @cspNonce>
         function showAlert(msg) {
             const alertEl = document.getElementById('js-alert');
             alertEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill mt-1"></i><div>${msg}</div>`;
@@ -608,50 +622,17 @@
         function hideAlert() { document.getElementById('js-alert').style.display = 'none'; }
 
         function selectRole(role) {
-            const studentRadio = document.getElementById('role_student') || document.querySelector('input[name="role"][value="student"]');
-            const parentRadio  = document.getElementById('role_parent')  || document.querySelector('input[name="role"][value="parent"]');
-            const studentCard  = document.getElementById('role-card-student');
-            const parentCard   = document.getElementById('role-card-parent');
-
-            if (role === 'student') {
-                if (studentRadio) studentRadio.checked = true;
-                if (parentRadio)  parentRadio.checked = false;
-                if (studentCard)  studentCard.classList.add('selected');
-                if (parentCard)   parentCard.classList.remove('selected');
-            } else if (role === 'parent') {
-                if (parentRadio)  parentRadio.checked = true;
-                if (studentRadio) studentRadio.checked = false;
-                if (parentCard)   parentCard.classList.add('selected');
-                if (studentCard)  studentCard.classList.remove('selected');
+            const radio = document.querySelector(`input[name="role"][value="${role}"]`);
+            if (radio) {
+                radio.checked = true;
             }
-
-            toggleFields();
+            toggleFields(role);
         }
 
-        function toggleFields() {
-            const roleRadio = document.querySelector('input[name="role"]:checked');
-            const role = roleRadio ? roleRadio.value : 'student';
+        function toggleFields(explicitRole) {
+            const role = explicitRole || document.querySelector('input[name="role"]:checked')?.value || 'student';
             const dynamicFields = document.getElementById('dynamic-fields');
             const studentFields = document.getElementById('student-fields');
-
-            const studentCard = document.getElementById('role-card-student');
-            const parentCard  = document.getElementById('role-card-parent');
-
-            // Strictly enforce single-selection class
-            if (studentCard) {
-                if (role === 'student') {
-                    studentCard.classList.add('selected');
-                } else {
-                    studentCard.classList.remove('selected');
-                }
-            }
-            if (parentCard) {
-                if (role === 'parent') {
-                    parentCard.classList.add('selected');
-                } else {
-                    parentCard.classList.remove('selected');
-                }
-            }
 
             if (role === 'student') {
                 if (dynamicFields) dynamicFields.style.display = 'block';
@@ -911,8 +892,55 @@
 
         // Init on load
         function initRegisterPage() {
-            const initialRole = document.querySelector('input[name="role"]:checked')?.value || 'student';
-            selectRole(initialRole);
+            const roleStudent = document.getElementById('role_student');
+            const roleParent = document.getElementById('role_parent');
+            const cardStudent = document.getElementById('role-card-student');
+            const cardParent = document.getElementById('role-card-parent');
+
+            if (roleStudent) {
+                roleStudent.addEventListener('change', () => toggleFields('student'));
+            }
+            if (roleParent) {
+                roleParent.addEventListener('change', () => toggleFields('parent'));
+            }
+            if (cardStudent) {
+                cardStudent.addEventListener('click', () => selectRole('student'));
+            }
+            if (cardParent) {
+                cardParent.addEventListener('click', () => selectRole('parent'));
+            }
+
+            const btnStep1 = document.getElementById('btn-continue-step1');
+            if (btnStep1) {
+                btnStep1.addEventListener('click', () => goToStep(2));
+            }
+
+            const btnBack2 = document.getElementById('btn-back-step2');
+            if (btnBack2) {
+                btnBack2.addEventListener('click', () => goToStep(1));
+            }
+
+            const btnBack3 = document.getElementById('btn-back-step3');
+            if (btnBack3) {
+                btnBack3.addEventListener('click', () => goToStep(2));
+            }
+
+            const btnVerify = document.getElementById('btn-verify');
+            if (btnVerify) {
+                btnVerify.addEventListener('click', sendOtp);
+            }
+
+            const btnResend = document.getElementById('btn-resend');
+            if (btnResend) {
+                btnResend.addEventListener('click', sendOtp);
+            }
+
+            const btnSubmit = document.getElementById('btn-submit');
+            if (btnSubmit) {
+                btnSubmit.addEventListener('click', verifyOtpAndSubmit);
+            }
+
+            toggleFields();
 
             document.querySelectorAll('#step-1 input, #step-1 select').forEach(input => {
                 input.addEventListener('keydown', (e) => {
