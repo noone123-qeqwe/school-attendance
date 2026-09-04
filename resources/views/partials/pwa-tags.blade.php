@@ -1,3 +1,8 @@
+@php
+    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '37');
+    $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
+    $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
+@endphp
 <!-- PWA Head Meta Tags -->
 <meta name="theme-color" content="#110A0A">
 <meta name="mobile-web-app-capable" content="yes">
@@ -242,137 +247,279 @@
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    /* System Update Banner Card */
+    /* ── Big Tech / Enterprise System Update Card (Apple / Linear / Slack Style) ── */
     .pwa-update-banner {
         position: fixed;
-        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-        left: 16px;
-        right: 16px;
-        max-width: 400px;
-        margin: 0 auto;
-        background: rgba(18, 12, 10, 0.98);
-        border: 1px solid rgba(74, 222, 128, 0.4);
-        border-radius: 20px;
-        padding: 16px 18px;
-        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.85), 0 0 25px rgba(74, 222, 128, 0.18);
-        backdrop-filter: blur(24px);
-        -webkit-backdrop-filter: blur(24px);
+        bottom: 24px;
+        right: 24px;
+        left: auto;
+        width: 410px;
+        max-width: calc(100vw - 32px);
+        background: rgba(14, 6, 9, 0.94);
+        border: 1px solid rgba(232, 192, 100, 0.28);
+        border-radius: 22px;
+        padding: 18px 20px;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85), 
+                    0 4px 20px rgba(0, 0, 0, 0.5), 
+                    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                    0 0 35px rgba(232, 192, 100, 0.08);
+        backdrop-filter: blur(28px) saturate(180%);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
         z-index: 100000;
         display: none;
         flex-direction: column;
-        gap: 12px;
-        animation: pwaSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        gap: 13px;
+        animation: pwaSlideUpEnterprise 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
     }
 
-    /* On mobile, the floating bottom nav is 64px tall at bottom: 14px, so we push
-       the update popup above it: 14px offset + 64px nav height + 12px breathing room */
-    @media (max-width: 1024px) {
+    /* Ambient Subtle Shimmer Glow */
+    .pwa-update-glow {
+        position: absolute;
+        top: -60px;
+        right: -60px;
+        width: 140px;
+        height: 140px;
+        background: radial-gradient(circle, rgba(232, 192, 100, 0.18) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    @keyframes pwaSlideUpEnterprise {
+        0% {
+            opacity: 0;
+            transform: translateY(30px) scale(0.96);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* On mobile / tablets: Gracefully float above navigation with safe area */
+    @media (max-width: 768px) {
         .pwa-update-banner {
-            bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+            bottom: calc(88px + env(safe-area-inset-bottom, 10px));
             left: 12px;
             right: 12px;
-            max-width: calc(100% - 24px);
-            margin: 0;
+            width: auto;
+            max-width: calc(100vw - 24px);
+            margin: 0 auto;
+            padding: 16px;
+            border-radius: 20px;
         }
     }
 
     .pwa-update-banner-header {
+        position: relative;
+        z-index: 1;
         display: flex;
         align-items: flex-start;
-        gap: 12px;
-        position: relative;
+        gap: 13px;
     }
 
-    .pwa-update-icon-wrapper {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
-        background: rgba(74, 222, 128, 0.12);
-        border: 1px solid rgba(74, 222, 128, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .pwa-update-icon-container {
+        position: relative;
         flex-shrink: 0;
+    }
+
+    .pwa-update-app-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        border: 1px solid rgba(232, 192, 100, 0.35);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        background: #18080c;
+        display: block;
+        object-fit: cover;
+    }
+
+    .pwa-update-pulse-indicator {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        width: 11px;
+        height: 11px;
+        background: #22C55E;
+        border: 2px solid #0e0609;
+        border-radius: 50%;
+        box-shadow: 0 0 10px #22C55E;
+        animation: pwaPulseDot 2s infinite ease-in-out;
+    }
+
+    @keyframes pwaPulseDot {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.75; }
     }
 
     .pwa-update-text-area {
         flex: 1;
         min-width: 0;
-        padding-right: 22px; /* Space for close X */
+        padding-right: 18px;
+    }
+
+    .pwa-update-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 3px;
+    }
+
+    .pwa-update-tag {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.8px;
+        text-transform: uppercase;
+        color: #e8c064;
+        background: rgba(232, 192, 100, 0.12);
+        border: 1px solid rgba(232, 192, 100, 0.25);
+        padding: 2px 7px;
+        border-radius: 6px;
+    }
+
+    .pwa-update-version-badge {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.6);
+        font-variant-numeric: tabular-nums;
     }
 
     .pwa-update-title {
-        font-size: 0.98rem;
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.02rem;
         font-weight: 700;
-        color: #F3E7CD;
+        color: #FFFFFF;
         line-height: 1.25;
-        margin-bottom: 4px;
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
+        letter-spacing: -0.2px;
+        margin-bottom: 3px;
     }
 
     .pwa-update-subtitle {
         font-size: 0.8rem;
-        color: #B39B82;
-        line-height: 1.45;
-        white-space: normal;
+        color: rgba(255, 255, 255, 0.68);
+        line-height: 1.4;
     }
 
     .pwa-update-close-btn {
         position: absolute;
-        top: -4px;
-        right: -4px;
-        background: transparent;
-        border: none;
-        color: #8F7D6D;
-        font-size: 1.35rem;
+        top: -6px;
+        right: -6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.55);
+        font-size: 1.25rem;
         cursor: pointer;
-        width: 28px;
-        height: 28px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         line-height: 1;
         padding: 0;
-        transition: color 0.2s ease;
+        transition: all 0.2s ease;
     }
 
     .pwa-update-close-btn:hover {
-        color: #F3E7CD;
+        background: rgba(255, 255, 255, 0.12);
+        color: #FFFFFF;
+        border-color: rgba(255, 255, 255, 0.25);
+        transform: scale(1.08);
     }
 
-    .pwa-update-banner-actions {
+    /* Highlights Chips */
+    .pwa-update-highlights {
+        position: relative;
+        z-index: 1;
         display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 9px 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+    }
+
+    .pwa-update-chip {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.76rem;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.88);
+    }
+
+    .pwa-update-chip svg {
+        color: #e8c064;
+        flex-shrink: 0;
+    }
+
+    /* Actions */
+    .pwa-update-banner-actions {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
         width: 100%;
+    }
+
+    .pwa-btn-update-later {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 600;
+        font-size: 0.86rem;
+        border-radius: 12px;
+        padding: 11px 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+        white-space: nowrap;
+    }
+
+    .pwa-btn-update-later:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: #FFFFFF;
+        border-color: rgba(255, 255, 255, 0.25);
     }
 
     .pwa-btn-update-apply {
-        width: 100%;
-        background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
-        color: #062412;
+        flex: 1;
+        background: linear-gradient(135deg, #e8c064 0%, #cfa46f 100%);
+        color: #0a0305;
         font-weight: 700;
         font-size: 0.88rem;
         border: none;
         border-radius: 12px;
-        padding: 10px 16px;
+        padding: 11px 20px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        box-shadow: 0 4px 14px rgba(74, 222, 128, 0.35);
-        transition: all 0.2s ease;
+        gap: 8px;
+        box-shadow: 0 4px 18px rgba(232, 192, 100, 0.35);
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         touch-action: manipulation;
+        white-space: nowrap;
     }
 
     .pwa-btn-update-apply:hover {
         filter: brightness(1.08);
-        transform: translateY(-1px);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(232, 192, 100, 0.45);
     }
 
     .pwa-btn-update-apply:active {
         transform: scale(0.97);
+    }
+
+    .pwa-btn-arrow-icon {
+        transition: transform 0.2s ease;
+    }
+
+    .pwa-btn-update-apply:hover .pwa-btn-arrow-icon {
+        transform: translateX(3px);
     }
 
     @keyframes pwaFadeIn {
@@ -401,38 +548,52 @@
     </div>
 </div>
 
-<!-- System Update Available Popup Notification -->
+<!-- Enterprise-Grade System Update Notification (Apple / Linear / Slack style) -->
 <div class="pwa-update-banner" id="pwaSystemUpdatePopup" style="display: none;">
+    <div class="pwa-update-glow"></div>
     <div class="pwa-update-banner-header">
-        <div class="pwa-update-icon-wrapper">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-            </svg>
+        <div class="pwa-update-icon-container">
+            <img src="/images/icons/icon-72x72.png" class="pwa-update-app-icon" alt="Smart Attendance">
+            <span class="pwa-update-pulse-indicator" title="New build ready"></span>
         </div>
         <div class="pwa-update-text-area">
-            <div class="pwa-update-title">System Update Ready</div>
-            <div class="pwa-update-subtitle">A new version is available. Tap Update to refresh and apply the latest changes.</div>
+            <div class="pwa-update-meta">
+                <span class="pwa-update-tag">SYSTEM UPDATE</span>
+                <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">v{{ ltrim((string)$swCacheVer, 'v') }}.0</span>
+            </div>
+            <div class="pwa-update-title">Software Update Available</div>
+            <div class="pwa-update-subtitle">A new version of Smart Attendance is ready with enhanced performance, faster scanning, and security improvements.</div>
         </div>
         <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
     </div>
+
+    <div class="pwa-update-highlights">
+        <div class="pwa-update-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+            <span>Faster Clock-In &amp; Sync</span>
+        </div>
+        <div class="pwa-update-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Latest Security Fixes</span>
+        </div>
+    </div>
+
     <div class="pwa-update-banner-actions">
+        <button type="button" class="pwa-btn-update-later" id="pwaLaterUpdateBtn">
+            Later
+        </button>
         <button type="button" class="pwa-btn-update-apply" id="pwaApplyUpdateBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pwa-update-spin-icon" style="display:none; animation: ptr-spin 0.8s linear infinite;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pwa-update-spin-icon" style="display:none; animation: ptr-spin 0.8s linear infinite;">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
-            <span id="pwaApplyUpdateBtnText">Update Now</span>
+            <span id="pwaApplyUpdateBtnText">Restart &amp; Update</span>
+            <svg class="pwa-btn-arrow-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
     </div>
 </div>
 
 <!-- Real-time Connectivity Toast -->
 <div class="pwa-network-toast" id="pwaNetworkToast"></div>
-
-@php
-    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '37');
-    $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
-    $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
-@endphp
 
 <script @cspNonce>
     // ── 1. Register Service Worker & Handle Real-Time Update Notifications ──
@@ -456,6 +617,11 @@
 
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) {
+            const badge = document.getElementById('pwaUpdateVersionBadge');
+            if (badge && latestDetectedVersion) {
+                const vStr = String(latestDetectedVersion);
+                badge.textContent = vStr.startsWith('v') ? vStr : 'v' + vStr;
+            }
             // Re-trigger slide-up animation by re-inserting the element
             popup.style.display = 'none';
             void popup.offsetHeight; // force reflow
@@ -915,7 +1081,7 @@
         }
 
         // Dismiss Update popup (Dismiss for current session)
-        const dismissUpdateBtn = target.closest('#pwaDismissUpdatePopupBtn');
+        const dismissUpdateBtn = target.closest('#pwaDismissUpdatePopupBtn') || target.closest('#pwaLaterUpdateBtn');
         if (dismissUpdateBtn) {
             e.preventDefault();
             hideAppUpdatePopup(latestDetectedVersion);
