@@ -344,7 +344,7 @@
                 @endif
                 <div id="js-alert" class="alert-modern" style="display:none;"></div>
 
-                <form id="regForm" method="POST" action="{{ route('register.submit') }}">
+                <form id="regForm" method="POST" action="{{ route('register.submit') }}" onsubmit="if(!this.dataset.submitting){ event.preventDefault(); return false; }">
                     @csrf
                     
                     <!-- STEP 1: Basic Info -->
@@ -366,7 +366,7 @@
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: block; font-weight: 500;">I am registering as a:</label>
                         <div class="role-selector">
                             <label class="role-card" onclick="selectRole('student')" id="role-card-student">
-                                <input type="radio" name="role" value="student" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role')=='student'?'checked':'' }} required>
+                                <input type="radio" name="role" value="student" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role', 'student')=='student'?'checked':'' }} required>
                                 <i class="bi bi-mortarboard"></i>
                                 <span>Student</span>
                             </label>
@@ -579,17 +579,18 @@
 
         function validateStep1() {
             updateFullName();
-            const fn = document.getElementById('first_name').value.trim();
-            const sn = document.getElementById('surname').value.trim();
+            const fn = document.getElementById('first_name')?.value.trim();
+            const sn = document.getElementById('surname')?.value.trim();
             const role = document.querySelector('input[name="role"]:checked');
             if (!fn || !sn) return "Please enter your first name and surname.";
-            if (!role) return "Please select a role.";
+            if (!role) return "Please select whether you are a Student or Parent.";
 
             if (role.value === 'student') {
-                const sn = document.getElementById('student_number').value.trim();
-                if (!/^[a-zA-Z0-9]{7}$/.test(sn)) return "Student number must be exactly 7 characters and contain only letters and numbers.";
-                if (!document.getElementById('course').value || !document.getElementById('year_level').value || !document.getElementById('semester').value) {
-                    return "Please fill in all student details.";
+                const sNum = document.getElementById('student_number')?.value.trim();
+                if (!sNum) return "Please enter your 7-character Student ID.";
+                if (!/^[a-zA-Z0-9]{7}$/.test(sNum)) return "Student number must be exactly 7 characters (letters and numbers only).";
+                if (!document.getElementById('course')?.value || !document.getElementById('year_level')?.value || !document.getElementById('semester')?.value) {
+                    return "Please fill in all student details (Year Level and Semester).";
                 }
             }
             return null;
@@ -751,7 +752,9 @@
                     
                     setTimeout(() => {
                         updateFullName(); // Ensure name is up-to-date before submit
-                        document.getElementById('regForm').submit();
+                        const form = document.getElementById('regForm');
+                        form.dataset.submitting = 'true';
+                        form.submit();
                     }, 1200);
                 } else {
                     btn.disabled = false; btn.innerHTML = originalBtnHtml;
