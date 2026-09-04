@@ -31,6 +31,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 24px 16px;
         }
 
         /* Dynamic Background */
@@ -60,18 +61,6 @@
             100% { transform: translate(5%, 10%) scale(1.1); }
         }
 
-        /* Top Bar */
-        .top-bar {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 24px 40px;
-        }
-        .brand-logo {
-            font-family: 'Outfit', sans-serif; font-size: 1.2rem; font-weight: 700; color: white;
-            display: flex; align-items: center; gap: 12px; text-decoration: none;
-            letter-spacing: 0.5px;
-        }
-        .brand-logo i { color: var(--accent); font-size: 1.4rem; }
 
         /* Main Container */
         .auth-container {
@@ -181,8 +170,9 @@
             background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); 
             transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
-        .role-card input:checked + i, .role-card input:checked ~ span { color: var(--accent); transform: scale(1.05); }
-        .role-card:has(input:checked) {
+        .role-card input:checked + i, .role-card input:checked ~ span,
+        .role-card.selected i, .role-card.selected span { color: var(--accent); transform: scale(1.05); }
+        .role-card:has(input:checked), .role-card.selected {
             background: rgba(232, 192, 100, 0.08);
             border-color: var(--accent);
             box-shadow: inset 0 0 0 1px var(--accent), 0 10px 20px rgba(232,192,100,0.1);
@@ -305,7 +295,6 @@
         /* Responsive */
         @media (max-width: 576px) {
             .card-header-premium, .card-body-premium, .stepper { padding-left: 24px; padding-right: 24px; }
-            .top-bar { padding: 16px 20px; }
             .otp-box { width: 42px; height: 52px; font-size: 1.25rem; gap: 6px; }
             .role-selector { gap: 8px; }
             .role-card { padding: 12px 6px; }
@@ -321,12 +310,7 @@
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
 
-    <div class="top-bar">
-        <a href="/" class="brand-logo">
-            <i class="bi bi-shield-check"></i>
-            {{ config('app.name') }}
-        </a>
-    </div>
+
 
     <div class="auth-container">
         <div class="glass-card">
@@ -381,13 +365,13 @@
 
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: block; font-weight: 500;">I am registering as a:</label>
                         <div class="role-selector">
-                            <label class="role-card">
-                                <input type="radio" name="role" value="student" style="display:none;" onchange="toggleFields()" {{ old('role')=='student'?'checked':'' }} required>
+                            <label class="role-card" onclick="selectRole('student')" id="role-card-student">
+                                <input type="radio" name="role" value="student" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role')=='student'?'checked':'' }} required>
                                 <i class="bi bi-mortarboard"></i>
                                 <span>Student</span>
                             </label>
-                            <label class="role-card">
-                                <input type="radio" name="role" value="parent" style="display:none;" onchange="toggleFields()" {{ old('role')=='parent'?'checked':'' }}>
+                            <label class="role-card" onclick="selectRole('parent')" id="role-card-parent">
+                                <input type="radio" name="role" value="parent" style="position:absolute;opacity:0;pointer-events:none;" onchange="toggleFields()" {{ old('role')=='parent'?'checked':'' }}>
                                 <i class="bi bi-people"></i>
                                 <span>Parent</span>
                             </label>
@@ -527,29 +511,59 @@
             const alertEl = document.getElementById('js-alert');
             alertEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill mt-1"></i><div>${msg}</div>`;
             alertEl.style.display = 'flex';
+            alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
         function hideAlert() { document.getElementById('js-alert').style.display = 'none'; }
+
+        function selectRole(role) {
+            const radio = document.querySelector(`input[name="role"][value="${role}"]`);
+            if (radio) {
+                radio.checked = true;
+            }
+            toggleFields();
+        }
 
         function toggleFields() {
             const role = document.querySelector('input[name="role"]:checked')?.value;
             const dynamicFields = document.getElementById('dynamic-fields');
             const studentFields = document.getElementById('student-fields');
 
-            if (!role) { dynamicFields.style.display = 'none'; return; }
-            dynamicFields.style.display = 'block';
+            // Sync visual active class for cards
+            document.querySelectorAll('.role-card').forEach(card => {
+                const radio = card.querySelector('input[name="role"]');
+                if (radio && radio.checked) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+
+            if (!role) { 
+                if (dynamicFields) dynamicFields.style.display = 'none'; 
+                return; 
+            }
+            if (dynamicFields) dynamicFields.style.display = 'block';
 
             if (role === 'student') {
-                studentFields.style.display = 'block';
-                document.getElementById('student_number').required = true;
-                document.getElementById('course').required = true;
-                document.getElementById('year_level').required = true;
-                document.getElementById('semester').required = true;
+                if (studentFields) studentFields.style.display = 'block';
+                const sNum = document.getElementById('student_number');
+                const crs = document.getElementById('course');
+                const yLvl = document.getElementById('year_level');
+                const sem = document.getElementById('semester');
+                if (sNum) sNum.required = true;
+                if (crs) crs.required = true;
+                if (yLvl) yLvl.required = true;
+                if (sem) sem.required = true;
             } else {
-                studentFields.style.display = 'none';
-                document.getElementById('student_number').required = false;
-                document.getElementById('course').required = false;
-                document.getElementById('year_level').required = false;
-                document.getElementById('semester').required = false;
+                if (studentFields) studentFields.style.display = 'none';
+                const sNum = document.getElementById('student_number');
+                const crs = document.getElementById('course');
+                const yLvl = document.getElementById('year_level');
+                const sem = document.getElementById('semester');
+                if (sNum) sNum.required = false;
+                if (crs) crs.required = false;
+                if (yLvl) yLvl.required = false;
+                if (sem) sem.required = false;
             }
         }
 
