@@ -470,7 +470,7 @@
 
                         <label style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px; display: block; font-weight: 500;">I am registering as a:</label>
                         <div class="role-selector">
-                            <input type="radio" name="role" id="role_student" value="student" class="role-radio" {{ old('role', 'student') == 'student' ? 'checked' : '' }} required onchange="toggleFields('student')">
+                            <input type="radio" name="role" id="role_student" value="student" class="role-radio" {{ old('role') == 'student' ? 'checked' : '' }} required onchange="toggleFields('student')">
                             <label for="role_student" class="role-card" id="role-card-student" onclick="selectRole('student')">
                                 <i class="bi bi-mortarboard"></i>
                                 <span>Student</span>
@@ -484,9 +484,9 @@
                         </div>
 
                         <!-- Dynamic Fields -->
-                        <div id="dynamic-fields" style="{{ old('role', 'student') == 'student' ? 'display:block;' : 'display:none;' }}">
+                        <div id="dynamic-fields" style="{{ old('role') == 'student' ? 'display:block;' : 'display:none;' }}">
                             <!-- Student Specific -->
-                            <div id="student-fields" style="{{ old('role', 'student') == 'student' ? 'display:block;' : 'display:none;' }}">
+                            <div id="student-fields" style="{{ old('role') == 'student' ? 'display:block;' : 'display:none;' }}">
                                 <div class="form-floating-custom">
                                     <input type="text" name="student_number" id="student_number" placeholder=" " maxlength="7" value="{{ old('student_number') }}">
                                     <label for="student_number">Student ID (7 chars, e.g. 2101234)</label>
@@ -630,17 +630,19 @@
         }
 
         function toggleFields(explicitRole) {
-            const role = explicitRole || document.querySelector('input[name="role"]:checked')?.value || 'student';
+            const roleRadio = document.querySelector('input[name="role"]:checked');
+            const role = explicitRole || (roleRadio ? roleRadio.value : null);
             const dynamicFields = document.getElementById('dynamic-fields');
             const studentFields = document.getElementById('student-fields');
+
+            const sNum = document.getElementById('student_number');
+            const crs = document.getElementById('course');
+            const yLvl = document.getElementById('year_level');
+            const sem = document.getElementById('semester');
 
             if (role === 'student') {
                 if (dynamicFields) dynamicFields.style.display = 'block';
                 if (studentFields) studentFields.style.display = 'block';
-                const sNum = document.getElementById('student_number');
-                const crs = document.getElementById('course');
-                const yLvl = document.getElementById('year_level');
-                const sem = document.getElementById('semester');
                 if (sNum) sNum.required = true;
                 if (crs) crs.required = true;
                 if (yLvl) yLvl.required = true;
@@ -648,10 +650,6 @@
             } else {
                 if (studentFields) studentFields.style.display = 'none';
                 if (dynamicFields) dynamicFields.style.display = 'none';
-                const sNum = document.getElementById('student_number');
-                const crs = document.getElementById('course');
-                const yLvl = document.getElementById('year_level');
-                const sem = document.getElementById('semester');
                 if (sNum) sNum.required = false;
                 if (crs) crs.required = false;
                 if (yLvl) yLvl.required = false;
