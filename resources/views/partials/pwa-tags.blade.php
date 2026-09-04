@@ -641,11 +641,6 @@
                 navigator.vibrate([100, 50, 100]);
             }
 
-            // 2. In-App Floating Toast Notification
-            if (typeof showToast === 'function') {
-                showToast('🚀 System update ready! Tap below to update.', 'info');
-            }
-
             // 3. Native OS/Browser Push Notification if permitted
             if ('Notification' in window && Notification.permission === 'granted') {
                 try {
@@ -748,7 +743,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=133?v={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });

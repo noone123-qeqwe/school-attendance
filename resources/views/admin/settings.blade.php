@@ -246,15 +246,10 @@ async function checkAdminUpdates() {
             if (reg) {
                 await reg.update();
                 if (reg.waiting) {
-                    feedback.style.background = 'rgba(34, 197, 94, 0.15)';
-                    feedback.style.border = '1px solid rgba(34, 197, 94, 0.3)';
-                    feedback.style.color = '#86efac';
-                    feedback.innerHTML = `
-                        <div style="margin-bottom:6px;"><strong>Update Available!</strong></div>
-                        <button type="button" class="saas-btn saas-btn-primary" onclick="if(navigator.serviceWorker.controller){navigator.serviceWorker.getRegistration().then(r=>r?.waiting?.postMessage({action:'skipWaiting'})); setTimeout(()=>location.reload(), 300);}" style="width:100%; justify-content:center; padding:6px; font-size:0.75rem;">
-                            Reload & Apply
-                        </button>
-                    `;
+                    if (typeof showAppUpdatePopup === 'function') {
+                        showAppUpdatePopup(null, true);
+                    }
+                    feedback.style.display = 'none';
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Update Ready';
                     return;

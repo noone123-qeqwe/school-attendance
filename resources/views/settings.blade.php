@@ -1910,17 +1910,12 @@ async function checkForAppUpdates() {
                 await reg.update();
 
                 if (reg.waiting) {
-                    feedback.style.background = 'rgba(34, 197, 94, 0.15)';
-                    feedback.style.border = '1px solid rgba(34, 197, 94, 0.3)';
-                    feedback.style.color = '#86efac';
-                    feedback.innerHTML = `
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                            <div><i class="bi bi-stars me-2"></i><strong>New update is ready to install!</strong></div>
-                            <button type="button" class="btn btn-sm btn-success fw-bold" onclick="applySwUpdate()" style="border-radius:8px; padding:6px 14px;">Update & Refresh</button>
-                        </div>
-                    `;
+                    if (typeof showAppUpdatePopup === 'function') {
+                        showAppUpdatePopup(null, true);
+                    }
+                    feedback.style.display = 'none';
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Ready';
+                    btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Update Ready';
                     return;
                 }
             }
