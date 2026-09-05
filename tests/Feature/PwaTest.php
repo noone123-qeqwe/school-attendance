@@ -99,11 +99,21 @@ class PwaTest extends TestCase
         $response->assertSee('/manifest.json');
         $response->assertSee('sw.js');
         $response->assertSee('apple-mobile-web-app-capable');
+        $response->assertSee('pwaInstallBanner', false);
         $response->assertSee('pwaIosModal', false);
+        $response->assertSee('pwaResetStateBtn', false);
         $response->assertSee('pwaSystemUpdatePopup', false);
         $response->assertSee('pwaApplyUpdateBtn', false);
         $response->assertSee('pwa-install-trigger', false);
         $response->assertSee('Install Attendance App', false);
+    }
+
+    public function test_register_page_includes_pwa_install_trigger(): void
+    {
+        $response = $this->get('/register');
+        $response->assertStatus(200);
+        $response->assertSee('pwa-install-trigger', false);
+        $response->assertSee('pwaInstallBanner', false);
     }
 
     public function test_sw_file_is_served_with_no_cache_headers(): void
@@ -115,6 +125,16 @@ class PwaTest extends TestCase
         $this->assertStringContainsString('no-store', (string)$response->headers->get('Cache-Control'));
         $this->assertStringContainsString('must-revalidate', (string)$response->headers->get('Cache-Control'));
         $response->assertHeader('Service-Worker-Allowed', '/');
+    }
+
+    public function test_manifest_is_served_with_correct_content_type_and_no_cache_headers(): void
+    {
+        $response = $this->get('/manifest.json');
+        $response->assertStatus(200);
+        $response->assertHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+        $this->assertStringContainsString('no-cache', (string)$response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', (string)$response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('must-revalidate', (string)$response->headers->get('Cache-Control'));
     }
 
     public function test_pwa_version_endpoint_returns_json(): void

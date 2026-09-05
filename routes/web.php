@@ -44,6 +44,21 @@ Route::get('/sw.js', function () {
     ]);
 })->name('pwa.sw');
 
+// Web App Manifest with strict Content-Type and no-cache headers
+Route::get('/manifest.json', function () {
+    $manifestPath = public_path('manifest.json');
+    if (!file_exists($manifestPath)) {
+        abort(404);
+    }
+    $content = file_get_contents($manifestPath);
+    return response($content, 200, [
+        'Content-Type' => 'application/manifest+json; charset=utf-8',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+    ]);
+})->name('pwa.manifest');
+
 // Real-time PWA Version Checker with memory cache
 Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService) {
     // Use sw.js mtime in cache key so any file change (manual edit or bump) instantly busts cache

@@ -93,6 +93,10 @@
                 </div>
 
                 <div class="header-right d-flex align-items-center gap-2">
+                    <button type="button" class="pwa-install-trigger notif-btn" data-display="inline-flex" style="display: none; align-items: center; justify-content: center; gap: 6px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.35); border-radius: 10px; padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.2s;" title="Install Smart Attendance App">
+                        <i class="bi bi-download"></i>
+                        <span class="d-none d-sm-inline pwa-install-text">Install App</span>
+                    </button>
                     <button type="button" onclick="if(window.openCommandPalette) window.openCommandPalette();" class="d-flex d-sm-none notif-btn" aria-label="Search" title="Search">
                         <i class="bi bi-search" style="font-size: 0.85rem;"></i>
                     </button>
@@ -939,6 +943,10 @@
                         <span class="more-sheet-item-label">Settings</span>
                     </a>
                 @endif
+                <button type="button" class="more-sheet-item pwa-install-trigger" data-color="gold" data-display="flex" style="display: none; background: transparent; border: none; cursor: pointer; text-align: center;" onclick="closeMoreSheet();">
+                    <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #CFA46F; border-color: rgba(207,164,111,0.35);"><i class="bi bi-phone-fill"></i></div>
+                    <span class="more-sheet-item-label pwa-install-text">Install App</span>
+                </button>
             </div>
         </div>
         <script @cspNonce>

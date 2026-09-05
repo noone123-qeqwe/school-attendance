@@ -694,6 +694,21 @@
     }
 </style>
 
+<!-- Floating PWA Install Banner -->
+<div class="pwa-install-banner" id="pwaInstallBanner" style="display: none;">
+    <div class="pwa-banner-icon">
+        <img src="/images/icons/icon-72x72.png" alt="Smart Attendance">
+    </div>
+    <div class="pwa-banner-content">
+        <div class="pwa-banner-title">Install Smart Attendance</div>
+        <div class="pwa-banner-subtitle">Fast attendance clock-in, offline mode &amp; alerts</div>
+    </div>
+    <div class="pwa-banner-actions">
+        <button type="button" class="pwa-btn-install pwa-install-trigger" id="pwaBannerInstallBtn">Install</button>
+        <button type="button" class="pwa-btn-close" id="pwaBannerCloseBtn" aria-label="Dismiss">&times;</button>
+    </div>
+</div>
+
 <!-- Universal PWA Install Guide Modal (Android, iOS & In-App Browsers) -->
 <div class="pwa-ios-modal" id="pwaIosModal">
     <div class="pwa-ios-sheet">
@@ -710,7 +725,10 @@
             <!-- Dynamically populated based on device & browser -->
         </div>
 
-        <button type="button" class="pwa-btn-install" id="pwaIosCloseBtn" style="width: 100%;">Understood</button>
+        <div style="display:flex; gap:8px; width:100%; margin-top:14px;">
+            <button type="button" class="pwa-btn-install" id="pwaIosCloseBtn" style="flex:1;">Understood</button>
+            <button type="button" id="pwaResetStateBtn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#F3E7CD; border-radius:10px; padding:9px 14px; font-size:0.82rem; font-weight:600; cursor:pointer; white-space:nowrap; transition:all 0.2s;">Reset &amp; Retry</button>
+        </div>
     </div>
 </div>
 
@@ -973,7 +991,7 @@
     // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──
     function ensurePwaModalsInBody() {
         if (!document.body) return false;
-        ['pwaIosModal', 'pwaSystemUpdatePopup', 'pwaNetworkToast'].forEach(function(id) {
+        ['pwaInstallBanner', 'pwaIosModal', 'pwaSystemUpdatePopup', 'pwaNetworkToast'].forEach(function(id) {
             const el = document.getElementById(id);
             if (el && el.parentElement !== document.body) {
                 document.body.appendChild(el);
@@ -1217,12 +1235,14 @@
 
     async function checkIsAppInstalled() {
         if (checkIsStandalone()) return true;
-        if (localStorage.getItem('pwa_app_installed') === 'true') return true;
+        if (deferredPrompt) {
+            localStorage.removeItem('pwa_app_installed');
+            return false;
+        }
         if ('getInstalledRelatedApps' in navigator) {
             try {
                 const related = await navigator.getInstalledRelatedApps();
                 if (related && related.length > 0) {
-                    localStorage.setItem('pwa_app_installed', 'true');
                     return true;
                 }
             } catch(e) {}
@@ -1230,33 +1250,46 @@
         return false;
     }
 
-    async function syncPwaInstallVisibility() {
+    function scheduleInstallBanner() {
+        if (checkIsStandalone()) return;
+        if (sessionStorage.getItem('pwa_banner_dismissed') === 'true') return;
+        const dismissedUntil = localStorage.getItem('pwa_banner_dismissed_until');
+        if (dismissedUntil && Date.now() < parseInt(dismissedUntil, 10)) return;
+
+        setTimeout(() => {
+            if (checkIsStandalone()) return;
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner && banner.style.display !== 'flex') {
+                banner.style.display = 'flex';
+            }
+        }, 2200);
+    }
+
+    function hideInstallBanner(dismissDays = 0) {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'none';
+        sessionStorage.setItem('pwa_banner_dismissed', 'true');
+        if (dismissDays > 0) {
+            localStorage.setItem('pwa_banner_dismissed_until', String(Date.now() + dismissDays * 86400000));
+        }
+    }
+
+    function syncPwaInstallVisibility() {
         const standalone = checkIsStandalone();
         const triggers = document.querySelectorAll('.pwa-install-trigger');
         if (standalone) {
             triggers.forEach(el => { el.style.display = 'none'; });
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.style.display = 'none';
             return;
         }
 
-        const isInstalled = await checkIsAppInstalled();
         triggers.forEach(el => {
+            if (el.id === 'pwaBannerInstallBtn') return;
             el.style.display = el.getAttribute('data-display') || 'inline-flex';
-            if (isInstalled) {
-                el.setAttribute('data-installed', 'true');
-                const textEl = el.querySelector('.pwa-install-text') || el.querySelector('.nav-link-text');
-                if (textEl) textEl.textContent = 'Open App';
-                const icon = el.querySelector('i');
-                if (icon) icon.className = 'bi bi-box-arrow-up-right';
-            } else {
-                el.removeAttribute('data-installed');
-                const textEl = el.querySelector('.pwa-install-text') || el.querySelector('.nav-link-text');
-                if (textEl) {
-                    textEl.textContent = el.id === 'pwaLoginInstallBtn' || el.classList.contains('pwa-login-btn') 
-                        ? 'Install Attendance App' 
-                        : 'Install App';
-                }
-            }
         });
+
+        scheduleInstallBanner();
     }
 
     // Initialize display when DOM is ready and window loads
@@ -1271,6 +1304,7 @@
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
+        localStorage.removeItem('pwa_app_installed');
         console.log('[PWA] Native install prompt captured and ready.');
         syncPwaInstallVisibility();
     });
@@ -1468,48 +1502,69 @@
         localStorage.setItem('pwa_ios_prompt_dismissed', 'true');
     }
 
+    function resetPwaStateAndRetry() {
+        localStorage.removeItem('pwa_app_installed');
+        localStorage.removeItem('pwa_prompt_dismissed');
+        localStorage.removeItem('pwa_ios_prompt_dismissed');
+        localStorage.removeItem('pwa_banner_dismissed_until');
+        sessionStorage.removeItem('pwa_banner_dismissed');
+        window.__pwaWaitedBeforePrompt = false;
+        closePwaGuideModal();
+        showNetworkToast('PWA installer state reset. Checking...', 'online');
+        if ('serviceWorker' in navigator && swRegistration) {
+            try { swRegistration.update(); } catch(e) {}
+        }
+        syncPwaInstallVisibility();
+        if (deferredPrompt) {
+            triggerPwaInstall();
+        } else {
+            setTimeout(() => {
+                if (deferredPrompt) {
+                    triggerPwaInstall();
+                } else {
+                    showPwaGuideModal();
+                }
+            }, 600);
+        }
+    }
+
     // ── 6. Universal Trigger Install Handler ──
     async function triggerPwaInstall(triggerEl) {
         if (window.__pwaActionInProgress) return;
         window.__pwaActionInProgress = true;
         setTimeout(() => { window.__pwaActionInProgress = false; }, 1500);
 
-        // 1. Check if open in standalone
+        // 1. Check if ALREADY open in standalone window
         if (checkIsStandalone()) {
             showPwaGuideModal('already_installed');
             return;
         }
 
-        // 2. Check if installed
-        const isInstalled = await checkIsAppInstalled();
-        if (isInstalled) {
-            showPwaGuideModal('already_installed');
-            return;
-        }
-
-        // 3. Security / HTTPS check
+        // 2. Security / HTTPS check
         const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         if (!isSecure) {
             showPwaGuideModal('insecure_context');
             return;
         }
 
-        // 4. Native prompt immediately available
+        // 3. Native prompt immediately available: ALWAYS prioritize native prompt
         if (deferredPrompt) {
             try {
                 if (triggerEl) triggerEl.classList.add('pwa-btn-loading');
-                deferredPrompt.prompt();
-                const choice = await deferredPrompt.userChoice;
-                if (triggerEl) triggerEl.classList.remove('pwa-btn-loading');
+                const promptEvent = deferredPrompt;
                 deferredPrompt = null;
+                promptEvent.prompt();
+                const choice = await promptEvent.userChoice;
+                if (triggerEl) triggerEl.classList.remove('pwa-btn-loading');
                 
                 if (choice && choice.outcome === 'accepted') {
                     localStorage.setItem('pwa_app_installed', 'true');
+                    hideInstallBanner(30);
                     showNetworkToast('✓ Smart Attendance installed successfully!', 'online');
                     syncPwaInstallVisibility();
                     return;
                 } else {
-                    showNetworkToast('Installation cancelled.', 'offline');
+                    showNetworkToast('Installation postponed. You can install anytime from the menu.', 'offline');
                     return;
                 }
             } catch(err) {
@@ -1518,14 +1573,14 @@
             }
         }
 
-        // 5. If deferredPrompt not yet available, wait briefly in case beforeinstallprompt is in flight
+        // 4. If deferredPrompt not yet available, wait briefly in case beforeinstallprompt is in flight
         const ua = (window.navigator.userAgent || '').toLowerCase();
         const isIos = /iphone|ipad|ipod/.test(ua);
         if (!deferredPrompt && !isIos && isSecure && !window.__pwaWaitedBeforePrompt) {
             window.__pwaWaitedBeforePrompt = true;
             if (triggerEl) {
                 const originalHtml = triggerEl.innerHTML;
-                triggerEl.innerHTML = '<span class="pwa-spinner"></span> Loading installer...';
+                triggerEl.innerHTML = '<span class="pwa-spinner"></span> Opening installer...';
                 triggerEl.classList.add('pwa-btn-loading');
 
                 const promptFired = await Promise.race([
@@ -1544,16 +1599,18 @@
 
                 if (promptFired && deferredPrompt) {
                     try {
-                        deferredPrompt.prompt();
-                        const choice = await deferredPrompt.userChoice;
+                        const promptEvent = deferredPrompt;
                         deferredPrompt = null;
+                        promptEvent.prompt();
+                        const choice = await promptEvent.userChoice;
                         if (choice && choice.outcome === 'accepted') {
                             localStorage.setItem('pwa_app_installed', 'true');
+                            hideInstallBanner(30);
                             showNetworkToast('✓ Smart Attendance installed successfully!', 'online');
                             syncPwaInstallVisibility();
                             return;
                         } else {
-                            showNetworkToast('Installation cancelled.', 'offline');
+                            showNetworkToast('Installation postponed.', 'offline');
                             return;
                         }
                     } catch(e) {}
@@ -1561,7 +1618,7 @@
             }
         }
 
-        // 6. Show browser-tailored guide modal
+        // 5. Show browser-tailored guide modal (iOS Safari, desktop address bar, Android menu, etc.)
         showPwaGuideModal();
     }
 
@@ -1582,6 +1639,22 @@
             e.preventDefault();
             e.stopPropagation();
             triggerPwaInstall(installTrigger);
+            return;
+        }
+
+        // Close floating banner
+        const closeBannerTrigger = target.closest('#pwaBannerCloseBtn');
+        if (closeBannerTrigger) {
+            e.preventDefault();
+            hideInstallBanner(3);
+            return;
+        }
+
+        // Reset & retry button in modal
+        const resetTrigger = target.closest('#pwaResetStateBtn');
+        if (resetTrigger) {
+            e.preventDefault();
+            resetPwaStateAndRetry();
             return;
         }
 
