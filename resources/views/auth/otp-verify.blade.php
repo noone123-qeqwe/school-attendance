@@ -113,37 +113,25 @@
 
 <div class="otp-wrapper">
     <div class="otp-card">
-            <div class="otp-icon"><i class="bi bi-shield-lock-fill"></i></div>
-            <div class="text-center mb-4">
-                <h2 class="reset-title">Enter OTP</h2>
-                @php
-                    $effectiveIdentifier = $identifier ?? session('otp_identifier') ?? old('identifier', old('email', ''));
-                @endphp
-                <p class="reset-subtitle">
-                    We sent a 6-digit code to your registered email.
-                    @if(!empty($effectiveIdentifier))
-                    <br><strong style="color: #f8e7d3;">({{ $effectiveIdentifier }})</strong>
-                    @endif
-                    <br>It expires in <strong>10 minutes</strong>.
-                    <br><span style="font-size:0.8rem; color:rgba(248,231,211,0.7); display:inline-block; margin-top:6px;">
-                        ⚠️ Check your <strong>Spam / Junk folder</strong> if you don't see it in your inbox.
-                    </span>
-                </p>
-            </div>
-
-        @if(app()->environment('local', 'testing') && session('dev_otp'))
-        <div class="dev-otp-card" style="background: rgba(216, 179, 92, 0.15); border: 1px solid rgba(216, 179, 92, 0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 20px; text-align: center;">
-            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: #d8b35c; font-weight: 700; margin-bottom: 4px;">
-                <i class="bi bi-code-slash me-1"></i> Local Dev OTP Helper
-            </div>
-            <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: 5px; color: #fff; font-family: monospace;">
-                {{ session('dev_otp') }}
-            </div>
-            <button type="button" onclick="autofillDevOtp('{{ session('dev_otp') }}')" style="margin-top: 8px; font-size: 0.78rem; padding: 5px 14px; border-radius: 8px; background: rgba(216, 179, 92, 0.3); border: 1px solid rgba(216, 179, 92, 0.5); color: #f8e7d3; cursor: pointer; font-weight: 600;">
-                <i class="bi bi-box-arrow-in-down me-1"></i> Click to Autofill
-            </button>
+        <div class="otp-icon"><i class="bi bi-shield-check"></i></div>
+        <div class="text-center mb-4">
+            <h2 class="reset-title" style="font-size:1.4rem; font-weight:800; letter-spacing:0.5px;">VERIFY YOUR EMAIL</h2>
+            @php
+                $effectiveIdentifier = $identifier ?? session('otp_identifier') ?? old('identifier', old('email', ''));
+            @endphp
+            <p class="reset-subtitle" style="font-size:0.92rem; color:rgba(248,231,211,0.8); line-height:1.5; margin-top:8px;">
+                We sent a verification code to:
+                @if(!empty($effectiveIdentifier))
+                <br><strong style="color:#ffffff; font-size:1.05rem;">{{ $effectiveIdentifier }}</strong>
+                @endif
+            </p>
+            <p style="font-size:0.8rem; color:rgba(248,231,211,0.65); margin-top:6px;">
+                ⚠️ Check your <strong>Spam / Junk folder</strong> if the email does not appear in your inbox.
+            </p>
         </div>
-        @endif
+
+        <div id="verify-alert" class="alert-err" style="display:none;"></div>
+        <div id="verify-success" class="alert-info" style="display:none; background:rgba(34,197,94,0.18); border-color:rgba(34,197,94,0.4); color:#86efac;"></div>
 
         @if(session('info'))
         <div class="alert-info"><i class="bi bi-info-circle me-2"></i>{{ session('info') }}</div>
@@ -172,28 +160,32 @@
                 @endfor
             </div>
 
-            <button type="submit" class="submit-btn">
-                <i class="bi bi-check2-circle me-2"></i>Verify OTP
+            <div class="text-center mb-3" style="font-size:0.85rem; color:rgba(248,231,211,0.7);">
+                Code expires in <span id="expiry-timer" style="color:#d8b35c; font-weight:700; font-variant-numeric: tabular-nums;">10:00</span>
+            </div>
+
+            <button type="submit" class="submit-btn" id="verifyBtn">
+                <i class="bi bi-check2-circle me-2"></i>VERIFY
             </button>
         </form>
 
-        <div class="resend-link">
-            Didn't receive it? <a href="{{ $purpose === 'forgot_password' ? route('otp.forgot.form') : route('settings') }}">Request a new code</a>
+        <div class="text-center mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.08);">
+            <p style="font-size: 0.85rem; color: rgba(248,231,211,0.7); margin-bottom: 8px;">Didn't receive the code?</p>
+            <button type="button" class="submit-btn d-inline-flex align-items-center justify-content-center" id="btn-resend-forgot" onclick="resendForgotOtp()" style="background:rgba(255,255,255,0.08); color:#f8e7d3; border:1px solid rgba(255,255,255,0.18); width:auto; padding:10px 24px; font-size:0.88rem; box-shadow:none; margin:0 auto;">
+                <i class="bi bi-arrow-clockwise me-1"></i> RESEND OTP
+            </button>
+            <div id="resend-cooldown-text" style="font-size:0.82rem; color:#d8b35c; margin-top:8px; display:none; font-weight:500;">
+                Resend available in <span id="resend-seconds" style="font-weight:700;">30</span> seconds
+            </div>
+        </div>
+
+        <div class="resend-link mt-3">
+            <a href="{{ route('login') }}" style="color:rgba(248,231,211,0.6); font-size:0.85rem;"><i class="bi bi-arrow-left me-1"></i>Back to Sign In</a>
         </div>
     </div>
 </div>
 
 <script>
-function autofillDevOtp(code) {
-    if (!code) return;
-    const digits = document.querySelectorAll('.otp-digit');
-    code.split('').forEach((ch, idx) => {
-        if (digits[idx]) digits[idx].value = ch;
-    });
-    updateHidden();
-    if (digits[5]) digits[5].focus();
-}
-// Auto-advance between digit boxes
 const digits = document.querySelectorAll('.otp-digit');
 digits.forEach((input, idx) => {
     input.addEventListener('input', (e) => {
@@ -209,6 +201,7 @@ digits.forEach((input, idx) => {
         paste.split('').forEach((ch, i) => { if (digits[i]) digits[i].value = ch; });
         updateHidden();
         e.preventDefault();
+        if (digits[5]) digits[5].focus();
     });
 });
 
@@ -219,10 +212,143 @@ function updateHidden() {
 document.getElementById('otpForm').addEventListener('submit', (e) => {
     updateHidden();
     const otp = document.getElementById('otpHidden').value;
-    if (otp.length !== 6) { e.preventDefault(); alert('Please enter all 6 digits.'); }
+    if (otp.length !== 6) { 
+        e.preventDefault(); 
+        showVerifyError('Please enter all 6 digits of your verification code.'); 
+        return;
+    }
+    const btn = document.getElementById('verifyBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying...';
 });
 
-// Auto-focus first box
+function showVerifyError(msg) {
+    const errEl = document.getElementById('verify-alert');
+    const succEl = document.getElementById('verify-success');
+    if (succEl) succEl.style.display = 'none';
+    if (!errEl) return;
+    errEl.innerHTML = `<i class="bi bi-exclamation-circle me-2"></i>${msg}`;
+    errEl.style.display = 'block';
+}
+
+function showVerifySuccess(msg) {
+    const errEl = document.getElementById('verify-alert');
+    const succEl = document.getElementById('verify-success');
+    if (errEl) errEl.style.display = 'none';
+    if (!succEl) return;
+    succEl.innerHTML = `<i class="bi bi-check-circle me-2"></i>${msg}`;
+    succEl.style.display = 'block';
+}
+
+// 10-minute expiry timer
+let expiryInterval;
+function startExpiryTimer(duration = 600) {
+    clearInterval(expiryInterval);
+    let time = duration;
+    const display = document.getElementById('expiry-timer');
+    if (!display) return;
+    display.style.color = '#d8b35c';
+    const update = () => {
+        const m = Math.floor(time / 60);
+        const s = time % 60;
+        display.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    };
+    update();
+    expiryInterval = setInterval(() => {
+        time--;
+        if (time < 0) {
+            clearInterval(expiryInterval);
+            display.textContent = 'Expired';
+            display.style.color = '#ef4444';
+        } else {
+            update();
+        }
+    }, 1000);
+}
+
+// 30-second resend cooldown timer
+let cooldownInterval;
+function startResendCooldown(seconds = 30) {
+    clearInterval(cooldownInterval);
+    const resendBtn = document.getElementById('btn-resend-forgot');
+    const cooldownText = document.getElementById('resend-cooldown-text');
+    const secondsSpan = document.getElementById('resend-seconds');
+
+    if (!resendBtn || !cooldownText || !secondsSpan) return;
+
+    resendBtn.disabled = true;
+    cooldownText.style.display = 'block';
+    let remaining = seconds;
+    secondsSpan.textContent = remaining;
+
+    cooldownInterval = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(cooldownInterval);
+            resendBtn.disabled = false;
+            cooldownText.style.display = 'none';
+        } else {
+            secondsSpan.textContent = remaining;
+        }
+    }, 1000);
+}
+
+function resendForgotOtp() {
+    const identifier = document.getElementById('identifierInput')?.value?.trim();
+    if (!identifier) {
+        showVerifyError('Please specify your registered email or identifier.');
+        return;
+    }
+
+    const resendBtn = document.getElementById('btn-resend-forgot');
+    const originalHtml = resendBtn.innerHTML;
+    resendBtn.disabled = true;
+    resendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending...';
+
+    fetch('{{ route("otp.forgot.send") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ identifier: identifier })
+    }).then(async r => {
+        const isJson = r.headers.get('content-type')?.includes('application/json');
+        const data = isJson ? await r.json() : null;
+        if (!r.ok) {
+            const errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+            const err = new Error(errorMsg);
+            err.cooldown = data && data.cooldown ? data.cooldown : null;
+            throw err;
+        }
+        return data;
+    }).then(data => {
+        resendBtn.innerHTML = originalHtml;
+        if (data.success) {
+            showVerifySuccess('A new verification code has been sent.');
+            startExpiryTimer(600);
+            startResendCooldown(data.cooldown || 30);
+            digits.forEach(d => d.value = '');
+            digits[0].focus();
+        } else {
+            resendBtn.disabled = false;
+            showVerifyError(data.message || 'Unable to send verification code. Please try again.');
+        }
+    }).catch(err => {
+        resendBtn.innerHTML = originalHtml;
+        showVerifyError(err.message || 'Unable to send verification code. Please try again.');
+        if (err.cooldown) {
+            startResendCooldown(err.cooldown);
+        } else {
+            resendBtn.disabled = false;
+        }
+    });
+}
+
+// Auto-focus and start timer
 digits[0].focus();
+startExpiryTimer(600);
+startResendCooldown(30);
 </script>
 @endsection

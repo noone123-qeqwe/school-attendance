@@ -458,6 +458,7 @@
                     </div>
                 @endif
                 <div id="js-alert" class="alert-modern" style="display:none;"></div>
+                <div id="js-success" class="alert-modern" style="display:none; background:rgba(34,197,94,0.12); border-left:4px solid #22c55e; color:#86efac;"></div>
 
                 <form id="regForm" method="POST" action="{{ route('register.submit') }}" onsubmit="if(!this.dataset.submitting){ event.preventDefault(); return false; }">
                     @csrf
@@ -579,33 +580,22 @@
                     <div id="step-3" class="form-step">
                         <div class="text-center mb-4">
                             <div style="display:inline-flex; padding:16px; border-radius:50%; background:rgba(232, 192, 100, 0.15); color:var(--accent); margin-bottom:16px;">
-                                <i class="bi bi-envelope-paper" style="font-size:2rem; line-height:1;"></i>
+                                <i class="bi bi-shield-check" style="font-size:2rem; line-height:1;"></i>
                             </div>
-                            <h4 style="font-family:'Outfit'; font-weight:700; font-size:1.2rem;">Check your inbox</h4>
-                            <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">We sent a 6-digit code to <br><b id="display-email" style="color:white;"></b></p>
+                            <h4 style="font-family:'Outfit'; font-weight:700; font-size:1.3rem; letter-spacing:0.5px;">VERIFY YOUR EMAIL</h4>
+                            <p style="color:var(--text-muted); font-size:0.92rem; margin:6px 0 0;">We sent a verification code to:<br><b id="display-email" style="color:white; font-size:1.05rem;"></b></p>
                             <p style="color:rgba(255,255,255,0.65); font-size:0.8rem; margin-top:6px;">⚠️ Check your <strong>Spam / Junk folder</strong> if the email does not appear in your inbox.</p>
-                        </div>
-
-                        <!-- Local Development Helper -->
-                        <div id="regDevOtpBanner" style="display:none; background:rgba(232, 192, 100, 0.15); border:1px solid rgba(232, 192, 100, 0.4); border-radius:14px; padding:12px 16px; margin: 0 auto 20px; max-width: 380px; text-align:center;">
-                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.8px; color:var(--accent); font-weight:700; margin-bottom:4px;">
-                                <i class="bi bi-code-slash me-1"></i> Local Dev OTP Helper
-                            </div>
-                            <div id="regDevOtpCode" style="font-size:1.5rem; font-weight:800; letter-spacing:5px; color:#fff; font-family:monospace;"></div>
-                            <button type="button" id="regDevOtpBtn" style="margin-top:8px; font-size:0.78rem; padding:5px 14px; border-radius:8px; background:rgba(232, 192, 100, 0.3); border:1px solid rgba(232, 192, 100, 0.5); color:#f8e7d3; cursor:pointer; font-weight:600;">
-                                <i class="bi bi-box-arrow-in-down me-1"></i> Click to Autofill
-                            </button>
                         </div>
 
                         <div class="otp-container">
                             @for($i=1; $i<=6; $i++)
-                                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="otp-{{$i}}">
+                                <input type="text" class="otp-box" maxlength="1" inputmode="numeric" id="otp-{{$i}}" autocomplete="off">
                             @endfor
                         </div>
                         <input type="hidden" name="email_otp" id="hidden_otp">
 
                         <div class="text-center mb-4 mt-3" style="font-size:0.85rem; color:var(--text-muted);">
-                            Code expires in <span id="timer" style="color:var(--accent); font-weight:600; font-variant-numeric: tabular-nums;">10:00</span>
+                            Code expires in <span id="timer" style="color:var(--accent); font-weight:700; font-variant-numeric: tabular-nums;">10:00</span>
                         </div>
 
                         <div class="btn-group-row">
@@ -613,12 +603,18 @@
                                 <i class="bi bi-arrow-left"></i>
                             </button>
                             <button type="button" class="btn-premium btn-primary" id="btn-submit" onclick="verifyOtpAndSubmit()">
-                                Complete Registration <i class="bi bi-check-circle ms-1"></i>
+                                VERIFY <i class="bi bi-check-circle ms-1"></i>
                             </button>
                         </div>
                         
-                        <div class="text-center mt-4">
-                            <a href="#" id="btn-resend" onclick="sendOtp(); return false;" style="color:var(--text-muted); text-decoration:underline; font-size:0.85rem;">Didn't receive it? Resend</a>
+                        <div class="text-center mt-4 pt-3" style="border-top: 1px solid rgba(255,255,255,0.06);">
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">Didn't receive the code?</p>
+                            <button type="button" class="btn-premium btn-secondary py-2 px-4 d-inline-flex align-items-center justify-content-center" id="btn-resend-otp" onclick="resendOtp()" style="width:auto; font-size:0.9rem; margin:0 auto;">
+                                <i class="bi bi-arrow-clockwise me-1"></i> RESEND OTP
+                            </button>
+                            <div id="resend-cooldown-text" style="font-size:0.82rem; color:var(--accent); margin-top:8px; display:none; font-weight:500;">
+                                Resend available in <span id="resend-seconds" style="font-weight:700;">30</span> seconds
+                            </div>
                         </div>
                     </div>
 
@@ -643,11 +639,28 @@
     <script @cspNonce>
         function showAlert(msg) {
             const alertEl = document.getElementById('js-alert');
+            const successEl = document.getElementById('js-success');
+            if (successEl) successEl.style.display = 'none';
+            if (!alertEl) return;
             alertEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill mt-1"></i><div>${msg}</div>`;
             alertEl.style.display = 'flex';
             alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        function hideAlert() { document.getElementById('js-alert').style.display = 'none'; }
+        function hideAlert() { 
+            const alertEl = document.getElementById('js-alert');
+            const successEl = document.getElementById('js-success');
+            if (alertEl) alertEl.style.display = 'none';
+            if (successEl) successEl.style.display = 'none';
+        }
+        function showSuccessAlert(msg) {
+            const alertEl = document.getElementById('js-alert');
+            const successEl = document.getElementById('js-success');
+            if (alertEl) alertEl.style.display = 'none';
+            if (!successEl) return;
+            successEl.innerHTML = `<i class="bi bi-check-circle-fill mt-1"></i><div>${msg}</div>`;
+            successEl.style.display = 'flex';
+            successEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
 
         function selectRole(role) {
             const radio = document.querySelector(`input[name="role"][value="${role}"]`);
@@ -815,33 +828,54 @@
         });
 
         let timerInterval;
-        function startTimer() {
+        function startTimer(duration = 600) {
             clearInterval(timerInterval);
-            let time = 600;
+            let time = duration;
             const display = document.getElementById('timer');
+            if (!display) return;
             display.style.color = 'var(--accent)';
-            timerInterval = setInterval(() => {
+            const updateDisplay = () => {
                 const m = Math.floor(time / 60);
                 const s = time % 60;
                 display.textContent = m + ':' + (s < 10 ? '0' : '') + s;
-                if (--time < 0) {
+            };
+            updateDisplay();
+            timerInterval = setInterval(() => {
+                time--;
+                if (time < 0) {
                     clearInterval(timerInterval);
                     display.textContent = 'Expired';
                     display.style.color = '#ef4444';
+                } else {
+                    updateDisplay();
                 }
             }, 1000);
         }
 
-        function autofillRegOtp(code) {
-            if (!code) return;
-            const str = String(code).trim();
-            for (let i = 0; i < 6; i++) {
-                const box = document.getElementById('otp-' + (i + 1));
-                if (box && str[i]) {
-                    box.value = str[i];
+        let resendCooldownInterval;
+        function startResendCooldown(seconds = 30) {
+            clearInterval(resendCooldownInterval);
+            const resendBtn = document.getElementById('btn-resend-otp');
+            const cooldownText = document.getElementById('resend-cooldown-text');
+            const cooldownSecondsSpan = document.getElementById('resend-seconds');
+
+            if (!resendBtn || !cooldownText || !cooldownSecondsSpan) return;
+
+            resendBtn.disabled = true;
+            cooldownText.style.display = 'block';
+            let remaining = seconds;
+            cooldownSecondsSpan.textContent = remaining;
+
+            resendCooldownInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(resendCooldownInterval);
+                    resendBtn.disabled = false;
+                    cooldownText.style.display = 'none';
+                } else {
+                    cooldownSecondsSpan.textContent = remaining;
                 }
-            }
-            if (otpBoxes[5]) otpBoxes[5].focus();
+            }, 1000);
         }
 
         function sendOtp() {
@@ -856,7 +890,8 @@
 
             const btn = document.getElementById('btn-verify');
             const originalBtnHtml = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Sending...';
+            btn.disabled = true; 
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Sending verification code...';
 
             fetch('{{ route("otp.register.send") }}', {
                 method: 'POST',
@@ -870,48 +905,95 @@
                 const isJson = r.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await r.json() : null;
                 if (!r.ok) {
-                    const errorMsg = data && data.message ? data.message : 'Server error ' + r.status;
-                    throw new Error(errorMsg);
+                    const errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+                    const err = new Error(errorMsg);
+                    err.cooldown = data && data.cooldown ? data.cooldown : null;
+                    throw err;
                 }
                 return data;
             }).then(data => {
-                btn.disabled = false; btn.innerHTML = originalBtnHtml;
+                btn.disabled = false; 
+                btn.innerHTML = originalBtnHtml;
                 if (data.success) {
                     document.getElementById('display-email').textContent = email;
                     goToStep(3);
-                    startTimer();
-                    const devBanner = document.getElementById('regDevOtpBanner');
-                    const devCode = document.getElementById('regDevOtpCode');
-                    const devBtn = document.getElementById('regDevOtpBtn');
-                    if (data.dev_otp && devBanner && devCode) {
-                        devCode.textContent = data.dev_otp;
-                        devBanner.style.display = 'block';
-                        if (devBtn) {
-                            devBtn.onclick = function() { autofillRegOtp(data.dev_otp); };
-                        }
-                    } else if (devBanner) {
-                        devBanner.style.display = 'none';
-                    }
-                    otpBoxes[0].focus();
+                    startTimer(600);
+                    startResendCooldown(data.cooldown || 30);
+                    otpBoxes.forEach(b => b.value = '');
+                    if (otpBoxes[0]) otpBoxes[0].focus();
                 } else {
-                    showAlert(data.message || 'Failed to send OTP.');
+                    showAlert(data.message || 'Unable to send verification code. Please try again.');
                 }
             }).catch((err) => {
-                btn.disabled = false; btn.innerHTML = originalBtnHtml;
+                btn.disabled = false; 
+                btn.innerHTML = originalBtnHtml;
                 console.error('OTP send error:', err);
-                showAlert(err.message || "Network error. Please try again.");
+                showAlert(err.message || "Unable to send verification code. Please try again.");
+            });
+        }
+
+        function resendOtp() {
+            hideAlert();
+            const email = document.getElementById('email').value.trim();
+            if (!email) { showAlert("Email address is required."); return; }
+
+            const resendBtn = document.getElementById('btn-resend-otp');
+            const originalHtml = resendBtn.innerHTML;
+            resendBtn.disabled = true;
+            resendBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Sending new code...';
+
+            fetch('{{ route("otp.register.send") }}', {
+                method: 'POST',
+                headers: { 
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email: email })
+            }).then(async r => {
+                const isJson = r.headers.get('content-type')?.includes('application/json');
+                const data = isJson ? await r.json() : null;
+                if (!r.ok) {
+                    const errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+                    const err = new Error(errorMsg);
+                    err.cooldown = data && data.cooldown ? data.cooldown : null;
+                    throw err;
+                }
+                return data;
+            }).then(data => {
+                resendBtn.innerHTML = originalHtml;
+                if (data.success) {
+                    showSuccessAlert("A new verification code has been sent.");
+                    startTimer(600);
+                    startResendCooldown(data.cooldown || 30);
+                    otpBoxes.forEach(b => b.value = '');
+                    if (otpBoxes[0]) otpBoxes[0].focus();
+                } else {
+                    resendBtn.disabled = false;
+                    showAlert(data.message || 'Unable to send verification code. Please try again.');
+                }
+            }).catch((err) => {
+                resendBtn.innerHTML = originalHtml;
+                console.error('Resend OTP error:', err);
+                showAlert(err.message || 'Unable to send verification code. Please try again.');
+                if (err.cooldown) {
+                    startResendCooldown(err.cooldown);
+                } else {
+                    resendBtn.disabled = false;
+                }
             });
         }
 
         function verifyOtpAndSubmit() {
             hideAlert();
             const otp = Array.from(otpBoxes).map(b => b.value).join('');
-            if (otp.length !== 6) { showAlert("Please enter the full 6-digit code."); return; }
+            if (otp.length !== 6) { showAlert("Please enter the full 6-digit verification code."); return; }
 
             const email = document.getElementById('email').value.trim();
             const btn = document.getElementById('btn-submit');
             const originalBtnHtml = btn.innerHTML;
-            btn.disabled = true; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Verifying...';
+            btn.disabled = true; 
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Verifying...';
 
             fetch('{{ route("otp.register.verify") }}', {
                 method: 'POST',
@@ -925,7 +1007,7 @@
                 const isJson = r.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await r.json() : null;
                 if (!r.ok) {
-                    const errorMsg = data && data.message ? data.message : 'Server error ' + r.status;
+                    const errorMsg = data && data.message ? data.message : 'Invalid verification code.';
                     throw new Error(errorMsg);
                 }
                 return data;
@@ -933,6 +1015,8 @@
                 if (data.success) {
                     document.getElementById('hidden_otp').value = otp;
                     clearInterval(timerInterval);
+                    clearInterval(resendCooldownInterval);
+                    showSuccessAlert("Email verified successfully.");
                     document.getElementById('indicator-3').classList.add('completed');
                     
                     document.querySelectorAll('.form-step').forEach(el => el.classList.remove('active'));
@@ -940,19 +1024,21 @@
                     document.getElementById('step-desc').textContent = "Almost there...";
                     
                     setTimeout(() => {
-                        updateFullName(); // Ensure name is up-to-date before submit
+                        updateFullName();
                         const form = document.getElementById('regForm');
                         form.dataset.submitting = 'true';
                         form.submit();
-                    }, 1200);
+                    }, 1000);
                 } else {
-                    btn.disabled = false; btn.innerHTML = originalBtnHtml;
-                    showAlert(data.message || 'Invalid OTP.');
+                    btn.disabled = false; 
+                    btn.innerHTML = originalBtnHtml;
+                    showAlert(data.message || 'Invalid verification code.');
                 }
             }).catch((err) => {
-                btn.disabled = false; btn.innerHTML = originalBtnHtml;
+                btn.disabled = false; 
+                btn.innerHTML = originalBtnHtml;
                 console.error('OTP verify error:', err);
-                showAlert(err.message || "Network error. Please try again.");
+                showAlert(err.message || "Invalid verification code.");
             });
         }
 
@@ -996,9 +1082,9 @@
                 btnVerify.addEventListener('click', sendOtp);
             }
 
-            const btnResend = document.getElementById('btn-resend');
+            const btnResend = document.getElementById('btn-resend-otp');
             if (btnResend) {
-                btnResend.addEventListener('click', sendOtp);
+                btnResend.addEventListener('click', resendOtp);
             }
 
             const btnSubmit = document.getElementById('btn-submit');

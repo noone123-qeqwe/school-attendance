@@ -20,21 +20,14 @@ class OtpMail extends Mailable
 
     public function envelope(): Envelope
     {
-        if ($this->purpose === 'forgot_password') {
-            $subject = 'Your Password Reset OTP — Smart Classroom System';
-        } elseif ($this->purpose === 'register') {
-            $subject = 'Your Registration OTP — Smart Classroom System';
-        } elseif ($this->purpose === 'change_email') {
-            $subject = 'Your Email Change OTP — Smart Classroom System';
-        } else {
-            $subject = 'Your Password Change OTP — Smart Classroom System';
-        }
-
-        return new Envelope(subject: $subject);
+        return new Envelope(subject: 'Your Verification Code');
     }
 
     public function content(): Content
     {
-        return new Content(view: 'emails.otp');
+        return new Content(
+            view: 'emails.otp',
+            text: 'emails.otp_plain',
+        );
     }
 }

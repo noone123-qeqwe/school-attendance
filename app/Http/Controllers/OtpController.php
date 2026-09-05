@@ -4,15 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Otp;
 use App\Models\User;
-use App\Mail\OtpMail;
+use App\Services\OtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
 class OtpController extends Controller
 {
+    protected OtpService $otpService;
+
+    public function __construct(OtpService $otpService)
+    {
+        $this->otpService = $otpService;
+    }
+
     /**
      * Resolve the role-based profile redirect for the authenticated user.
      */
@@ -35,51 +41,29 @@ class OtpController extends Controller
         $emailClean = strtolower(trim((string) $request->email));
         $scope = $request->input('scope', 'register');
         $sessionPrefix = $scope === 'admin_student' ? 'admin_reg' : 'reg';
-        $ip = $request->ip() ?: 'unknown';
 
-        $cooldown = max(
-            Otp::getCooldownRemaining($emailClean, 'register'),
-            Otp::getCooldownRemaining($ip, 'register')
-        );
-        if ($cooldown > 0) {
+        try {
+            $result = $this->otpService->sendOtp($emailClean, 'register');
+            session([
+                "{$sessionPrefix}_otp_email" => $emailClean,
+            ]);
+
+            return response()->json([
+                'success'  => true,
+                'message'  => 'Verification code sent to ' . $emailClean,
+                'cooldown' => $result['cooldown'],
+            ]);
+        } catch (\Exception $e) {
+            $status = $e->getCode() === 429 ? 429 : 500;
             return response()->json([
                 'success'  => false,
                 'status'   => 'error',
-                'message'  => "Please wait {$cooldown} seconds before requesting another verification code.",
-                'cooldown' => $cooldown,
-            ], 429);
-        }
-
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        session([
-            "{$sessionPrefix}_otp_code"    => $code,
-            "{$sessionPrefix}_otp_email"   => $emailClean,
-            "{$sessionPrefix}_otp_expires" => now()->addMinutes(10)->timestamp,
-        ]);
-        Otp::setCooldown($emailClean, 'register');
-        Otp::setCooldown($ip, 'register');
-
-        Log::info("Register OTP generated for [{$emailClean}]: {$code} (scope: {$scope})");
-
-        try {
-            Mail::to($emailClean)->send(new OtpMail($code, 'register', 'New User'));
-            $resp = ['success' => true, 'message' => 'OTP sent to ' . $emailClean];
-            if (app()->environment('local', 'testing')) {
-                $resp['dev_otp'] = $code;
-            }
-            return response()->json($resp);
-        } catch (\Exception $e) {
-            Log::error('Register OTP mail failed: ' . $e->getMessage());
-            // In local/testing mode, preserve session OTP and provide code so testing is never blocked by SMTP issues
-            if (app()->environment('local', 'testing')) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'OTP generated (Email delivery failed: ' . $e->getMessage() . ')',
-                    'dev_otp' => $code,
-                ]);
-            }
-            session()->forget(["{$sessionPrefix}_otp_code", "{$sessionPrefix}_otp_email", "{$sessionPrefix}_otp_expires"]);
-            return response()->json(['success' => false, 'message' => 'Failed to send OTP. Please try again.'], 500);
+                'message'  => $e->getMessage() ?: 'Unable to send verification code. Please try again.',
+                'cooldown' => $status === 429 ? max(
+                    Otp::getCooldownRemaining($emailClean, 'register'),
+                    Otp::getCooldownRemaining(request()->ip() ?: 'unknown', 'register')
+                ) : 0,
+            ], $status);
         }
     }
 
@@ -93,39 +77,23 @@ class OtpController extends Controller
         $scope = $request->input('scope', 'register');
         $sessionPrefix = $scope === 'admin_student' ? 'admin_reg' : 'reg';
 
-        $sessionCode    = session("{$sessionPrefix}_otp_code");
-        $sessionEmail   = session("{$sessionPrefix}_otp_email");
-        $sessionExpires = session("{$sessionPrefix}_otp_expires");
+        $result = $this->otpService->verifyOtp($emailClean, $otpClean, 'register');
 
-        $sessionEmailClean = strtolower(trim((string) $sessionEmail));
-        $sessionCodeClean  = trim((string) $sessionCode);
-
-        if (
-            !$sessionCodeClean ||
-            $emailClean !== $sessionEmailClean ||
-            $otpClean   !== $sessionCodeClean  ||
-            now()->timestamp > $sessionExpires
-        ) {
-            $fails = Otp::recordFailedVerify($emailClean, 'register');
-            if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
-                session()->forget(["{$sessionPrefix}_otp_code", "{$sessionPrefix}_otp_email", "{$sessionPrefix}_otp_expires"]);
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Too many failed attempts. This OTP has been invalidated. Please request a new one.'
-                ], 422);
-            }
+        if (!$result['success']) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid or expired OTP. (' . (Otp::MAX_VERIFY_ATTEMPTS - $fails) . ' attempts remaining)'
+                'status'  => $result['status'],
+                'message' => $result['message'],
             ], 422);
         }
 
-        Otp::clearFailedVerify($emailClean, 'register');
-        // Consume the OTP — single-use
-        session()->forget(["{$sessionPrefix}_otp_code", "{$sessionPrefix}_otp_expires"]);
+        // Store confirmed verified email in session for registration submission
         session(["{$sessionPrefix}_email_verified" => $emailClean]);
-        Log::info("Register OTP successfully verified for [{$emailClean}] (scope: {$scope})");
-        return response()->json(['success' => true]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Email verified successfully.',
+        ]);
     }
 
     // ─────────────────────────────────────────
@@ -153,46 +121,58 @@ class OtpController extends Controller
             Otp::getCooldownRemaining($ip, 'forgot_password')
         );
         if ($cooldown > 0) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success'  => false,
+                    'message'  => "Please wait {$cooldown} seconds before requesting a new verification code.",
+                    'cooldown' => $cooldown,
+                ], 429);
+            }
             return back()->withInput()->withErrors([
-                'identifier' => "Please wait {$cooldown} seconds before requesting a new password reset code."
+                'identifier' => "Please wait {$cooldown} seconds before requesting a new verification code."
             ]);
         }
-
-        // Always set cooldown BEFORE user lookup — prevents timing-based enumeration
-        Otp::setCooldown($identifier, 'forgot_password');
-        Otp::setCooldown($ip, 'forgot_password');
 
         $user = User::where('email', $identifier)
             ->orWhere('student_number', $identifier)
             ->orWhere('employee_id', $identifier)
             ->first();
 
-        if ($user) {
-            $otp = Otp::generate($user->id, 'forgot_password');
-            Log::info("Forgot password OTP generated for user #{$user->id} ({$user->email}, identifier: {$identifier}): {$otp->code}");
-            
-            if (app()->environment('local', 'testing')) {
-                session()->flash('dev_otp', $otp->code);
-            }
+        // Store identifier stably in session
+        session(['otp_identifier' => $identifier]);
 
+        if ($user) {
             try {
-                Mail::to($user->email)->send(new OtpMail($otp->code, 'forgot_password', $user->name));
+                $this->otpService->sendOtp($user->email, 'forgot_password', $user->id, $user->name);
             } catch (\Exception $e) {
-                Log::error("Forgot password mail failed: " . $e->getMessage());
-                if (app()->environment('local', 'testing')) {
-                    session()->flash('dev_otp', $otp->code);
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Unable to send verification code. Please try again.',
+                    ], 500);
                 }
+                return back()->withInput()->withErrors([
+                    'identifier' => 'Unable to send verification code. Please try again.'
+                ]);
             }
         } else {
+            // Mitigate user enumeration
+            Otp::setCooldown($identifier, 'forgot_password');
+            Otp::setCooldown($ip, 'forgot_password');
             Log::warning("Forgot password OTP requested for non-existent identifier: {$identifier}");
         }
 
-        // Store identifier stably in session so page refreshes or retries don't lose it
-        session(['otp_identifier' => $identifier]);
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success'  => true,
+                'message'  => 'If your account is registered, a verification code has been sent.',
+                'cooldown' => Otp::COOLDOWN_SECONDS,
+            ]);
+        }
 
-        // Always return the same neutral message regardless of whether the user exists
+        // Always return the same neutral message regardless of whether user exists
         return redirect()->route('otp.verify.form', ['purpose' => 'forgot_password'])
-                         ->with('info', 'If your account is registered, an OTP has been sent.');
+                         ->with('info', 'If your account is registered, a verification code has been sent.');
     }
 
     // ─────────────────────────────────────────
@@ -223,68 +203,15 @@ class OtpController extends Controller
             'purpose' => 'required|in:forgot_password,change_password',
         ]);
 
-        $user = User::where('email', $identifier)
-            ->orWhere('student_number', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->first();
+        $result = $this->otpService->verifyOtp($identifier, $otpClean, $request->purpose);
 
-        // Treat "user not found" the same as "wrong OTP" — no enumeration
-        if (!$user) {
-            $fails = Otp::recordFailedVerify($identifier, $request->purpose);
-            if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
-                return back()->with('otp_identifier', $identifier)
-                             ->withErrors(['otp' => 'Too many failed verification attempts. Please request a new code.'])
-                             ->withInput();
-            }
+        if (!$result['success']) {
             return back()->with('otp_identifier', $identifier)
-                         ->withErrors([
-                             'otp' => 'Invalid or expired OTP. (' . (Otp::MAX_VERIFY_ATTEMPTS - $fails) . ' attempts remaining)'
-                         ])->withInput();
+                         ->withErrors(['otp' => $result['message']])
+                         ->withInput();
         }
 
-        $otpRecord = Otp::where('user_id', $user->id)
-                        ->where('code', $otpClean)
-                        ->where('purpose', $request->purpose)
-                        ->where('used', false)
-                        ->where('expires_at', '>', now())
-                        ->latest()
-                        ->first();
-
-        if (!$otpRecord) {
-            // In local/testing mode, re-flash the valid OTP code to make testing easy
-            if (app()->environment('local', 'testing')) {
-                $latestUnused = Otp::where('user_id', $user->id)
-                    ->where('purpose', $request->purpose)
-                    ->where('used', false)
-                    ->where('expires_at', '>', now())
-                    ->latest()
-                    ->first();
-                if ($latestUnused) {
-                    session()->flash('dev_otp', $latestUnused->code);
-                }
-            }
-
-            $fails = Otp::recordFailedVerify($user->id, $request->purpose);
-            if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
-                Otp::where('user_id', $user->id)
-                   ->where('purpose', $request->purpose)
-                   ->update(['used' => true]);
-                return back()->with('otp_identifier', $identifier)
-                             ->withErrors([
-                                 'otp' => 'Too many failed verification attempts. This code has been invalidated. Please request a new one.'
-                             ])->withInput();
-            }
-            return back()->with('otp_identifier', $identifier)
-                         ->withErrors([
-                             'otp' => 'Invalid or expired OTP. (' . (Otp::MAX_VERIFY_ATTEMPTS - $fails) . ' attempts remaining)'
-                         ])->withInput();
-        }
-
-        Otp::clearFailedVerify($user->id, $request->purpose);
-        $otpRecord->update(['used' => true]);
-        session(['otp_verified_user' => $user->id, 'otp_purpose' => $request->purpose]);
-
-        Log::info("OTP successfully verified for user #{$user->id} ({$user->email}, purpose: {$request->purpose})");
+        session(['otp_verified_user' => $result['user_id'], 'otp_purpose' => $request->purpose]);
 
         return redirect()->route('otp.reset.form');
     }
@@ -326,45 +253,21 @@ class OtpController extends Controller
     public function sendEmailChangeOtp(Request $request)
     {
         $user = Auth::user();
-        $ip   = $request->ip() ?: 'unknown';
-
-        $cooldown = max(
-            Otp::getCooldownRemaining($user->id, 'change_email'),
-            Otp::getCooldownRemaining($ip, 'change_email')
-        );
-        if ($cooldown > 0) {
-            return response()->json([
-                'success'  => false,
-                'status'   => 'error',
-                'message'  => "Please wait {$cooldown} seconds before requesting a new code.",
-                'cooldown' => $cooldown,
-            ], 429);
-        }
-
-        $otp = Otp::generate($user->id, 'change_email');
-        Otp::setCooldown($user->id, 'change_email');
-        Otp::setCooldown($ip, 'change_email');
-
-        Log::info("Change email OTP generated for user #{$user->id} ({$user->email}): {$otp->code}");
 
         try {
-            Mail::to($user->email)->send(new OtpMail($otp->code, 'change_email', $user->name));
-            $resp = ['success' => true, 'message' => 'OTP sent to your current email.'];
-            if (app()->environment('local', 'testing')) {
-                $resp['dev_otp'] = $otp->code;
-            }
-            return response()->json($resp);
+            $res = $this->otpService->sendOtp($user->email, 'change_email', $user->id, $user->name);
+            return response()->json([
+                'success'  => true,
+                'message'  => 'Verification code sent to your current email.',
+                'cooldown' => $res['cooldown'],
+            ]);
         } catch (\Exception $e) {
-            Log::error('Change email OTP mail failed: ' . $e->getMessage());
-            if (app()->environment('local', 'testing')) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'OTP generated (Email delivery failed: ' . $e->getMessage() . ')',
-                    'dev_otp' => $otp->code,
-                ]);
-            }
-            $otp->update(['used' => true]);
-            return response()->json(['success' => false, 'message' => 'Failed to send OTP. Please try again.'], 500);
+            $status = $e->getCode() === 429 ? 429 : 500;
+            return response()->json([
+                'success'  => false,
+                'message'  => $e->getMessage() ?: 'Unable to send verification code. Please try again.',
+                'cooldown' => $status === 429 ? Otp::getCooldownRemaining($user->id, 'change_email') : 0,
+            ], $status);
         }
     }
 
@@ -381,25 +284,12 @@ class OtpController extends Controller
         $user = Auth::user();
         $otpClean = trim((string) $request->otp);
 
-        $otpRecord = Otp::where('user_id', $user->id)
-                        ->where('code', $otpClean)
-                        ->where('purpose', 'change_email')
-                        ->where('used', false)
-                        ->where('expires_at', '>', now())
-                        ->latest()
-                        ->first();
+        $result = $this->otpService->verifyOtp($user->email, $otpClean, 'change_email', $user->id);
 
-        if (!$otpRecord) {
-            $fails = Otp::recordFailedVerify($user->id, 'change_email');
-            if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
-                Otp::where('user_id', $user->id)->where('purpose', 'change_email')->update(['used' => true]);
-                return back()->withErrors(['otp' => 'Too many failed attempts. Code invalidated. Please request a new one.'])->withInput();
-            }
-            return back()->withErrors(['otp' => 'Invalid or expired OTP.'])->withInput();
+        if (!$result['success']) {
+            return back()->withErrors(['otp' => $result['message']])->withInput();
         }
 
-        Otp::clearFailedVerify($user->id, 'change_email');
-        $otpRecord->update(['used' => true]);
         $user->update(['email' => strtolower(trim($request->new_email))]);
 
         return redirect()->route($this->roleRedirect())->with('success', 'Email address updated successfully!');
@@ -411,45 +301,21 @@ class OtpController extends Controller
     public function sendChangeOtp(Request $request)
     {
         $user = Auth::user();
-        $ip   = $request->ip() ?: 'unknown';
-
-        $cooldown = max(
-            Otp::getCooldownRemaining($user->id, 'change_password'),
-            Otp::getCooldownRemaining($ip, 'change_password')
-        );
-        if ($cooldown > 0) {
-            return response()->json([
-                'success'  => false,
-                'status'   => 'error',
-                'message'  => "Please wait {$cooldown} seconds before requesting a new code.",
-                'cooldown' => $cooldown,
-            ], 429);
-        }
-
-        $otp = Otp::generate($user->id, 'change_password');
-        Otp::setCooldown($user->id, 'change_password');
-        Otp::setCooldown($ip, 'change_password');
-
-        Log::info("Change password OTP generated for user #{$user->id} ({$user->email}): {$otp->code}");
 
         try {
-            Mail::to($user->email)->send(new OtpMail($otp->code, 'change_password', $user->name));
-            $resp = ['success' => true, 'message' => 'OTP sent to your registered email.'];
-            if (app()->environment('local', 'testing')) {
-                $resp['dev_otp'] = $otp->code;
-            }
-            return response()->json($resp);
+            $res = $this->otpService->sendOtp($user->email, 'change_password', $user->id, $user->name);
+            return response()->json([
+                'success'  => true,
+                'message'  => 'Verification code sent to your registered email.',
+                'cooldown' => $res['cooldown'],
+            ]);
         } catch (\Exception $e) {
-            Log::error('Change password OTP mail failed: ' . $e->getMessage());
-            if (app()->environment('local', 'testing')) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'OTP generated (Email delivery failed: ' . $e->getMessage() . ')',
-                    'dev_otp' => $otp->code,
-                ]);
-            }
-            $otp->update(['used' => true]);
-            return response()->json(['success' => false, 'message' => 'Failed to send OTP. Please try again.'], 500);
+            $status = $e->getCode() === 429 ? 429 : 500;
+            return response()->json([
+                'success'  => false,
+                'message'  => $e->getMessage() ?: 'Unable to send verification code. Please try again.',
+                'cooldown' => $status === 429 ? Otp::getCooldownRemaining($user->id, 'change_password') : 0,
+            ], $status);
         }
     }
 
@@ -467,25 +333,12 @@ class OtpController extends Controller
         $user = Auth::user();
         $otpClean = trim((string) $request->otp);
 
-        $otpRecord = Otp::where('user_id', $user->id)
-                        ->where('code', $otpClean)
-                        ->where('purpose', 'change_password')
-                        ->where('used', false)
-                        ->where('expires_at', '>', now())
-                        ->latest()
-                        ->first();
+        $result = $this->otpService->verifyOtp($user->email, $otpClean, 'change_password', $user->id);
 
-        if (!$otpRecord) {
-            $fails = Otp::recordFailedVerify($user->id, 'change_password');
-            if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
-                Otp::where('user_id', $user->id)->where('purpose', 'change_password')->update(['used' => true]);
-                return back()->withErrors(['otp' => 'Too many failed attempts. Code invalidated. Please request a new one.'])->withInput();
-            }
-            return back()->withErrors(['otp' => 'Invalid or expired OTP.'])->withInput();
+        if (!$result['success']) {
+            return back()->withErrors(['otp' => $result['message']])->withInput();
         }
 
-        Otp::clearFailedVerify($user->id, 'change_password');
-        $otpRecord->update(['used' => true]);
         $user->update(['password' => Hash::make($request->password)]);
 
         return redirect()->route($this->roleRedirect())->with('success', 'Password changed successfully!');
@@ -523,25 +376,12 @@ class OtpController extends Controller
             return back()->withErrors(['error' => 'Unauthorized.'])->withInput();
         }
 
-        $otpRecord = Otp::where('user_id', $user->id)
-                        ->where('code', $request->otp)
-                        ->where('purpose', 'change_password')
-                        ->where('used', false)
-                        ->where('expires_at', '>', now())
-                        ->latest()
-                        ->first();
+        $result = $this->otpService->verifyOtp($user->email, $request->otp, 'change_password', $user->id);
 
-        if (!$otpRecord) {
-            $fails = Otp::recordFailedVerify($user->id, 'change_password');
-            if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
-                Otp::where('user_id', $user->id)->where('purpose', 'change_password')->update(['used' => true]);
-                return back()->withErrors(['otp' => 'Too many failed attempts. Code invalidated. Please request a new one.'])->withInput();
-            }
-            return back()->withErrors(['otp' => 'Invalid or expired OTP.'])->withInput();
+        if (!$result['success']) {
+            return back()->withErrors(['otp' => $result['message']])->withInput();
         }
 
-        Otp::clearFailedVerify($user->id, 'change_password');
-        $otpRecord->update(['used' => true]);
         $user->update(['password' => Hash::make($request->password)]);
 
         return redirect()->route('teacher.profile')->with('success', 'Password changed successfully!');

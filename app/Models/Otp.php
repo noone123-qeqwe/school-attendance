@@ -8,10 +8,10 @@ use Carbon\Carbon;
 
 class Otp extends Model
 {
-    public const COOLDOWN_SECONDS = 60;
+    public const COOLDOWN_SECONDS = 30;
     public const MAX_VERIFY_ATTEMPTS = 5;
 
-    protected $fillable = ['user_id', 'code', 'purpose', 'used', 'expires_at'];
+    protected $fillable = ['user_id', 'email', 'code', 'purpose', 'used', 'expires_at'];
 
     protected $casts = ['expires_at' => 'datetime', 'used' => 'boolean'];
 
@@ -77,20 +77,61 @@ class Otp extends Model
     }
 
     /**
-     * Generate a fresh 6-digit OTP for a user, invalidating any previous ones.
+     * Invalidate any active, unused OTPs for the specified user or email + purpose.
+     */
+    public static function invalidatePrevious(string|int|null $identifier, string $purpose): void
+    {
+        $clean = strtolower(trim((string) $identifier));
+        if ($clean === '') {
+            return;
+        }
+
+        static::query()
+            ->where('purpose', $purpose)
+            ->where('used', false)
+            ->where(function ($query) use ($clean, $identifier) {
+                $query->where('email', $clean);
+                if (is_numeric($identifier)) {
+                    $query->orWhere('user_id', (int) $identifier);
+                }
+            })
+            ->update(['used' => true]);
+    }
+
+    /**
+     * Generate a fresh 6-digit OTP for a user ID, invalidating any previous ones.
      */
     public static function generate(int $userId, string $purpose): self
     {
-        // Invalidate old OTPs for this user + purpose
-        static::where('user_id', $userId)
-              ->where('purpose', $purpose)
-              ->update(['used' => true]);
-
+        self::invalidatePrevious($userId, $purpose);
         static::setCooldown($userId, $purpose);
 
         return static::create([
             'user_id'    => $userId,
-            'code'       => str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT),
+            'code'       => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
+            'purpose'    => $purpose,
+            'expires_at' => Carbon::now()->addMinutes(10),
+        ]);
+    }
+
+    /**
+     * Generate a fresh 6-digit OTP for an email address, invalidating any previous ones.
+     */
+    public static function generateForEmail(string $email, string $purpose, ?int $userId = null): self
+    {
+        $cleanEmail = strtolower(trim($email));
+
+        self::invalidatePrevious($cleanEmail, $purpose);
+        if ($userId) {
+            self::invalidatePrevious($userId, $purpose);
+            static::setCooldown($userId, $purpose);
+        }
+        static::setCooldown($cleanEmail, $purpose);
+
+        return static::create([
+            'user_id'    => $userId,
+            'email'      => $cleanEmail,
+            'code'       => str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT),
             'purpose'    => $purpose,
             'expires_at' => Carbon::now()->addMinutes(10),
         ]);

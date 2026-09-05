@@ -41,13 +41,13 @@ return [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
-            'encryption' => env('MAIL_ENCRYPTION', env('MAIL_SCHEME')),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
-            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'host' => env('MAIL_HOST', env('EMAIL_HOST', '127.0.0.1')),
+            'port' => (int) env('MAIL_PORT', env('EMAIL_PORT', 2525)),
+            'encryption' => env('MAIL_ENCRYPTION', env('MAIL_SCHEME', env('EMAIL_ENCRYPTION'))),
+            'username' => env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME'))),
+            'password' => env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY'))),
+            'timeout' => 15,
+            'local_domain' => env('MAIL_EHLO_DOMAIN', 'gmail.com'),
         ],
 
         'ses' => [
@@ -112,8 +112,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'address' => env('MAIL_FROM_ADDRESS', env('EMAIL_FROM', env('MAIL_USERNAME', 'hello@example.com'))),
+        'name' => env('MAIL_FROM_NAME', env('EMAIL_FROM_NAME', env('APP_NAME', 'Smart Classroom Attendance System'))),
     ],
 
 ];
