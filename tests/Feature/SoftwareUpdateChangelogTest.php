@@ -119,18 +119,20 @@ class SoftwareUpdateChangelogTest extends TestCase
         $this->assertEmpty($data['changelog']['security']);
     }
 
-    public function test_rendered_pwa_banner_contains_dynamic_changelog_and_no_hardcoded_chips(): void
+    public function test_rendered_pwa_banner_is_clean_and_omits_update_notes(): void
     {
         $response = $this->get('/login');
 
         $response->assertStatus(200);
 
-        // Verify dynamic changelog container and elements
+        // Verify dynamic popup and essential header elements
         $response->assertSee('pwaSystemUpdatePopup', false);
-        $response->assertSee('pwaUpdateChangelogContainer', false);
         $response->assertSee('pwaUpdateTitle', false);
         $response->assertSee('pwaUpdateSubtitle', false);
         $response->assertSee('pwaUpdateVersionBadge', false);
+        $response->assertSee('pwaApplyUpdateBtn', false);
+        $response->assertSee('pwaLaterUpdateBtn', false);
+        $response->assertSee('pwaDismissUpdatePopupBtn', false);
 
         // Verify version meta tags for both desktop and mobile
         $response->assertSee('name="app-installed-version" content="1.4.2"', false);
@@ -140,14 +142,10 @@ class SoftwareUpdateChangelogTest extends TestCase
         $response->assertSee('z-index: 100005 !important;', false);
         $response->assertSee('calc(84px + env(safe-area-inset-bottom, 12px))', false);
 
-        // Verify categories are present
-        $response->assertSee('NEW FEATURES', false);
-        $response->assertSee('IMPROVEMENTS', false);
-        $response->assertSee('BUG FIXES', false);
-
-        // Verify hardcoded generic strings are completely absent
-        $response->assertDontSee('Faster Clock-In & Sync');
-        $response->assertDontSee('Faster Clock-In &amp; Sync', false);
-        $response->assertDontSee('Latest Security Fixes');
+        // Verify update notes container and categories are omitted from the popup
+        $response->assertDontSee('pwaUpdateChangelogContainer', false);
+        $response->assertDontSee('NEW FEATURES', false);
+        $response->assertDontSee('IMPROVEMENTS', false);
+        $response->assertDontSee('BUG FIXES', false);
     }
 }

@@ -46,7 +46,6 @@ class MobileSoftwareUpdatePopupTest extends TestCase
         $response->assertSee('z-index: 100005 !important;', false);
         $response->assertSee('bottom: calc(84px + env(safe-area-inset-bottom, 12px)) !important;', false);
         $response->assertSee('max-height: min(520px, calc(100dvh - 96px - env(safe-area-inset-bottom, 12px))) !important;', false);
-        $response->assertSee('-webkit-overflow-scrolling: touch !important;', false);
 
         // Meta tags for update comparison
         $response->assertSee('<meta name="app-installed-version" content="1.4.2">', false);
