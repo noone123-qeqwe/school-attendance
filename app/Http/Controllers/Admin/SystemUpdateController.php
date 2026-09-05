@@ -741,8 +741,7 @@ class SystemUpdateController extends Controller
         $tagsPath = resource_path('views/partials/pwa-tags.blade.php');
         if (File::exists($tagsPath)) {
             $tagsContent = File::get($tagsPath);
-            $numOnly = filter_var($newVersion, FILTER_SANITIZE_NUMBER_INT);
-            $tagsContent = preg_replace('/\/sw\.js(?:\?v=\d+)?/', "/sw.js?v=" . $numOnly, $tagsContent);
+            $tagsContent = preg_replace('/\/sw\.js(?:\?[^"\']*)?/', '/sw.js?v={{ $swQueryVer }}', $tagsContent);
             File::put($tagsPath, $tagsContent);
         }
 

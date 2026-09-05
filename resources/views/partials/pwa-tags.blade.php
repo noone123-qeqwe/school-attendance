@@ -1,7 +1,8 @@
 @php
-    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '37');
+    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '143');
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
+    $initialChangelog = app(\App\Services\ChangelogService::class)->getRelease((string)$swCacheVer);
 @endphp
 <!-- PWA Head Meta Tags -->
 <meta name="theme-color" content="#110A0A">
@@ -471,31 +472,115 @@
         transform: scale(1.08);
     }
 
-    /* Highlights Chips */
-    .pwa-update-highlights {
+    /* Dynamic Changelog Box & Categorized Sections */
+    .pwa-update-changelog-box {
         position: relative;
         z-index: 1;
         display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 9px 12px;
+        flex-direction: column;
+        gap: 12px;
+        max-height: 220px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding: 12px 14px;
         background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        border-radius: 12px;
+        border: 1px solid rgba(232, 192, 100, 0.14);
+        border-radius: 14px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(232, 192, 100, 0.35) transparent;
     }
 
-    .pwa-update-chip {
+    .pwa-update-changelog-box::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .pwa-update-changelog-box::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .pwa-update-changelog-box::-webkit-scrollbar-thumb {
+        background: rgba(232, 192, 100, 0.35);
+        border-radius: 4px;
+    }
+
+    .pwa-changelog-group {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .pwa-changelog-group-header {
         display: flex;
         align-items: center;
         gap: 6px;
-        font-size: 0.76rem;
-        font-weight: 500;
-        color: rgba(255, 255, 255, 0.88);
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.7px;
+        text-transform: uppercase;
+        color: #e8c064;
     }
 
-    .pwa-update-chip svg {
+    .pwa-changelog-group.features .pwa-changelog-group-header {
         color: #e8c064;
+    }
+
+    .pwa-changelog-group.improvements .pwa-changelog-group-header {
+        color: #60a5fa;
+    }
+
+    .pwa-changelog-group.bugfixes .pwa-changelog-group-header {
+        color: #34d399;
+    }
+
+    .pwa-changelog-group.security .pwa-changelog-group-header {
+        color: #f87171;
+    }
+
+    .pwa-changelog-list {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .pwa-changelog-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        font-size: 0.77rem;
+        line-height: 1.35;
+        color: rgba(255, 255, 255, 0.86);
+    }
+
+    .pwa-changelog-bullet {
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: rgba(232, 192, 100, 0.85);
+        margin-top: 6px;
         flex-shrink: 0;
+    }
+
+    .pwa-changelog-group.features .pwa-changelog-bullet {
+        background: rgba(232, 192, 100, 0.85);
+    }
+
+    .pwa-changelog-group.improvements .pwa-changelog-bullet {
+        background: rgba(96, 165, 250, 0.85);
+    }
+
+    .pwa-changelog-group.bugfixes .pwa-changelog-bullet {
+        background: rgba(52, 211, 153, 0.85);
+    }
+
+    .pwa-changelog-group.security .pwa-changelog-bullet {
+        background: rgba(248, 113, 113, 0.85);
+    }
+
+    .pwa-changelog-item-text {
+        flex: 1;
     }
 
     /* Actions */
@@ -592,7 +677,7 @@
     </div>
 </div>
 
-<!-- Enterprise-Grade System Update Notification (Apple / Linear / Slack style) -->
+<!-- Enterprise-Grade System Update Notification (Dynamic Version-Based Changelog) -->
 <div class="pwa-update-banner" id="pwaSystemUpdatePopup" style="display: none;">
     <div class="pwa-update-glow"></div>
     <div class="pwa-update-banner-header">
@@ -603,23 +688,86 @@
         <div class="pwa-update-text-area">
             <div class="pwa-update-meta">
                 <span class="pwa-update-tag">SYSTEM UPDATE</span>
-                <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">v{{ ltrim((string)$swCacheVer, 'v') }}.0</span>
+                <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">{{ $initialChangelog['version_display'] ?? ('VERSION ' . ltrim((string)$swCacheVer, 'v')) }}</span>
             </div>
-            <div class="pwa-update-title">Software Update Available</div>
-            <div class="pwa-update-subtitle">A new version of Smart Attendance is ready with enhanced performance, faster scanning, and security improvements.</div>
+            <div class="pwa-update-title" id="pwaUpdateTitle">{{ $initialChangelog['title'] ?? 'Software Update Available' }}</div>
+            <div class="pwa-update-subtitle" id="pwaUpdateSubtitle">{{ $initialChangelog['description'] ?? 'A new version of Smart Attendance is ready.' }}</div>
         </div>
         <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
     </div>
 
-    <div class="pwa-update-highlights">
-        <div class="pwa-update-chip">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-            <span>Faster Clock-In &amp; Sync</span>
-        </div>
-        <div class="pwa-update-chip">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span>Latest Security Fixes</span>
-        </div>
+    <!-- Dynamic Version-Based Changelog Container -->
+    <div class="pwa-update-changelog-box" id="pwaUpdateChangelogContainer">
+        @if(!empty($initialChangelog['features']))
+            <div class="pwa-changelog-group features">
+                <div class="pwa-changelog-group-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6.4-4.8-6.4 4.8 2.4-7.2-6-4.8h7.6z"/></svg>
+                    <span>NEW FEATURES</span>
+                </div>
+                <ul class="pwa-changelog-list">
+                    @foreach($initialChangelog['features'] as $item)
+                        <li class="pwa-changelog-item">
+                            <span class="pwa-changelog-bullet"></span>
+                            <span class="pwa-changelog-item-text">{{ $item }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if(!empty($initialChangelog['improvements']))
+            <div class="pwa-changelog-group improvements">
+                <div class="pwa-changelog-group-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    <span>IMPROVEMENTS</span>
+                </div>
+                <ul class="pwa-changelog-list">
+                    @foreach($initialChangelog['improvements'] as $item)
+                        <li class="pwa-changelog-item">
+                            <span class="pwa-changelog-bullet"></span>
+                            <span class="pwa-changelog-item-text">{{ $item }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @php
+            $initFixes = $initialChangelog['bugFixes'] ?? $initialChangelog['bug_fixes'] ?? [];
+        @endphp
+        @if(!empty($initFixes))
+            <div class="pwa-changelog-group bugfixes">
+                <div class="pwa-changelog-group-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <span>BUG FIXES</span>
+                </div>
+                <ul class="pwa-changelog-list">
+                    @foreach($initFixes as $item)
+                        <li class="pwa-changelog-item">
+                            <span class="pwa-changelog-bullet"></span>
+                            <span class="pwa-changelog-item-text">{{ $item }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @if(!empty($initialChangelog['security']))
+            <div class="pwa-changelog-group security">
+                <div class="pwa-changelog-group-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+                    <span>SECURITY FIXES</span>
+                </div>
+                <ul class="pwa-changelog-list">
+                    @foreach($initialChangelog['security'] as $item)
+                        <li class="pwa-changelog-item">
+                            <span class="pwa-changelog-bullet"></span>
+                            <span class="pwa-changelog-item-text">{{ $item }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
     </div>
 
     <div class="pwa-update-banner-actions">
@@ -644,12 +792,92 @@
     let swRegistration = null;
     let deferredPrompt = null;
     let latestDetectedVersion = null;
+    let currentChangelogData = null;
 
     // Track which specific version we already notified about (not just a boolean)
     // so that a NEW version from the server always triggers a fresh popup
     let lastNotifiedVersion = null;
 
-    function showAppUpdatePopup(version, force = false) {
+    function escapeChangelogHtml(str) {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    function renderChangelogSection(title, badgeClass, iconSvg, items) {
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return '';
+        }
+        const listItems = items.map(function(item) {
+            return '<li class="pwa-changelog-item">' +
+                '<span class="pwa-changelog-bullet"></span>' +
+                '<span class="pwa-changelog-item-text">' + escapeChangelogHtml(item) + '</span>' +
+            '</li>';
+        }).join('');
+
+        return '<div class="pwa-changelog-group ' + badgeClass + '">' +
+            '<div class="pwa-changelog-group-header">' +
+                iconSvg +
+                '<span>' + escapeChangelogHtml(title) + '</span>' +
+            '</div>' +
+            '<ul class="pwa-changelog-list">' + listItems + '</ul>' +
+        '</div>';
+    }
+
+    function updateChangelogUI(changelog) {
+        if (!changelog) return;
+        currentChangelogData = changelog;
+
+        const badge = document.getElementById('pwaUpdateVersionBadge');
+        if (badge) {
+            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '1.4.3'));
+        }
+
+        const titleEl = document.getElementById('pwaUpdateTitle');
+        if (titleEl && changelog.title) {
+            titleEl.textContent = changelog.title;
+        }
+
+        const subEl = document.getElementById('pwaUpdateSubtitle');
+        if (subEl && changelog.description) {
+            subEl.textContent = changelog.description;
+        }
+
+        const container = document.getElementById('pwaUpdateChangelogContainer');
+        if (!container) return;
+
+        let html = '';
+
+        // 1. New Features (2-4 actual new features)
+        if (changelog.features && changelog.features.length > 0) {
+            const sparkSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6.4-4.8-6.4 4.8 2.4-7.2-6-4.8h7.6z"/></svg>';
+            html += renderChangelogSection('NEW FEATURES', 'features', sparkSvg, changelog.features);
+        }
+
+        // 2. Improvements
+        if (changelog.improvements && changelog.improvements.length > 0) {
+            const rocketSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>';
+            html += renderChangelogSection('IMPROVEMENTS', 'improvements', rocketSvg, changelog.improvements);
+        }
+
+        // 3. Bug Fixes
+        const fixes = changelog.bugFixes || changelog.bug_fixes || [];
+        if (fixes && fixes.length > 0) {
+            const checkSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+            html += renderChangelogSection('BUG FIXES', 'bugfixes', checkSvg, fixes);
+        }
+
+        // 4. Security Fixes (ONLY WHEN APPLICABLE)
+        if (changelog.security && Array.isArray(changelog.security) && changelog.security.length > 0) {
+            const shieldSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>';
+            html += renderChangelogSection('SECURITY FIXES', 'security', shieldSvg, changelog.security);
+        }
+
+        container.innerHTML = html;
+    }
+
+    function showAppUpdatePopup(version, force = false, changelog = null) {
         if (version) latestDetectedVersion = version;
         
         const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
@@ -659,13 +887,23 @@
             return;
         }
 
+        if (changelog) {
+            updateChangelogUI(changelog);
+        } else if (version) {
+            // Asynchronously fetch changelog if not already loaded
+            const verParam = '?v=' + encodeURIComponent(version);
+            fetch('/pwa/version' + verParam, { cache: 'no-store' })
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    if (d && d.changelog) {
+                        updateChangelogUI(d.changelog);
+                    }
+                })
+                .catch(function() {});
+        }
+
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) {
-            const badge = document.getElementById('pwaUpdateVersionBadge');
-            if (badge && latestDetectedVersion) {
-                const vStr = String(latestDetectedVersion);
-                badge.textContent = vStr.startsWith('v') ? vStr : 'v' + vStr;
-            }
             // Re-trigger slide-up animation by re-inserting the element
             popup.style.display = 'none';
             void popup.offsetHeight; // force reflow
@@ -747,11 +985,10 @@
             if (data && data.version) {
                 const serverVersion = data.version;
                 const currentVer = localStorage.getItem('pwa_app_version');
+                const changelog = data.changelog || null;
 
-                // If server version differs from what we previously notified about,
-                // clear the dismiss guard so the new update can show
-                if (serverVersion !== sessionStorage.getItem('pwa_update_dismissed_ver')) {
-                    // New version from server — allow popup to show
+                if (changelog) {
+                    updateChangelogUI(changelog);
                 }
 
                 latestDetectedVersion = serverVersion;
@@ -760,7 +997,7 @@
                     // First time load: establish current version baseline
                     localStorage.setItem('pwa_app_version', serverVersion);
                     if (swRegistration && swRegistration.waiting) {
-                        showAppUpdatePopup(serverVersion, true);
+                        showAppUpdatePopup(serverVersion, true, changelog);
                     }
                 } else if (currentVer !== serverVersion) {
                     // Server has a newer version than what we last applied
@@ -773,9 +1010,9 @@
                     if (swRegistration) {
                         try { swRegistration.update(); } catch(e) {}
                     }
-                    showAppUpdatePopup(serverVersion, true);
+                    showAppUpdatePopup(serverVersion, true, changelog);
                 } else if (force && swRegistration && swRegistration.waiting) {
-                    showAppUpdatePopup(serverVersion, true);
+                    showAppUpdatePopup(serverVersion, true, changelog);
                 }
             }
         } catch (e) {}
@@ -787,7 +1024,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=143?v={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });

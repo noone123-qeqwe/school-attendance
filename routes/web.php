@@ -45,20 +45,24 @@ Route::get('/sw.js', function () {
 })->name('pwa.sw');
 
 // Real-time PWA Version Checker with memory cache
-Route::get('/pwa/version', function () {
+Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService) {
     // Use sw.js mtime in cache key so any file change (manual edit or bump) instantly busts cache
     $swPath = public_path('sw.js');
     $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
-    $cacheKey = 'pwa_version_response_' . $swMtime;
+    $requestedVer = $request->query('v');
+    $cacheKey = 'pwa_version_response_' . $swMtime . ($requestedVer ? '_' . preg_replace('/[^a-zA-Z0-9_.]/', '', $requestedVer) : '');
 
-    $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime) {
-        $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '15');
+    $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime, $requestedVer, $changelogService) {
+        $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '143');
         $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
+        $targetVer = $requestedVer ?: (string)$ver;
+        $changelog = $changelogService->getRelease($targetVer);
 
         return [
             'version' => $versionTag,
             'sw_version' => (string)$ver,
-            'timestamp' => $swMtime
+            'timestamp' => $swMtime,
+            'changelog' => $changelog,
         ];
     });
 
