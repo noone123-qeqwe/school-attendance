@@ -81,7 +81,7 @@ class EmailDeliveryService
             return EmailDeliveryResult::rejected($providerName, $errorMsg, 500);
         }
 
-        // 2. Transmit email via Laravel Mailer
+        // 2. Transmit email via Laravel Mailer (with automatic port 465 SSL fallback)
         try {
             $mailable = new OtpMail($otpCode, $purpose, $recipientName);
             $sentMessage = Mail::to($recipientEmail)->send($mailable);
@@ -100,8 +100,37 @@ class EmailDeliveryService
                 ]
             );
         } catch (Throwable $e) {
-            $maskedError = $this->sanitizeErrorMessage($e->getMessage());
-            Log::error("Email delivery failed [provider: {$providerName}]: {$maskedError}", [
+            $primaryError = $this->sanitizeErrorMessage($e->getMessage());
+            Log::warning("Primary email delivery attempt failed [provider: {$providerName}]: {$primaryError}. Attempting SSL fallback on port 465...");
+
+            // Automatic Port 465 SSL fallback if primary SMTP (port 587) timed out or encountered connection issues
+            if (config('mail.default') === 'smtp' && !app()->runningUnitTests()) {
+                try {
+                    $mailable = new OtpMail($otpCode, $purpose, $recipientName);
+                    $sentMessage = Mail::mailer('smtp_ssl')->to($recipientEmail)->send($mailable);
+
+                    $messageId = $this->extractMessageId($sentMessage);
+                    $debugResponse = $this->extractDebugResponse($sentMessage);
+
+                    Log::info("Email delivery succeeded via SSL fallback on port 465");
+                    return EmailDeliveryResult::accepted(
+                        provider: 'smtp (smtp.gmail.com:465, ssl)',
+                        messageId: $messageId,
+                        response: $debugResponse,
+                        diagnostics: [
+                            'mailer'     => 'smtp_ssl',
+                            'fallback'   => 'port_465_ssl',
+                            'request_id' => $requestId,
+                            'timestamp'  => now()->toIso8601String(),
+                        ]
+                    );
+                } catch (Throwable $fallbackErr) {
+                    $fallbackError = $this->sanitizeErrorMessage($fallbackErr->getMessage());
+                    Log::error("SSL fallback on port 465 also failed: {$fallbackError}");
+                }
+            }
+
+            Log::error("Email delivery failed [provider: {$providerName}]: {$primaryError}", [
                 'exception_class' => get_class($e),
                 'code'            => $e->getCode(),
             ]);
@@ -111,7 +140,7 @@ class EmailDeliveryService
                 error: 'Unable to send verification code. Please try again.',
                 statusCode: 500,
                 diagnostics: [
-                    'internal_error' => $maskedError,
+                    'internal_error' => $primaryError,
                     'exception_type' => get_class($e),
                 ]
             );
@@ -130,6 +159,11 @@ class EmailDeliveryService
             $appName = config('app.name', 'Smart Classroom Attendance System');
             $timestamp = now()->toIso8601String();
 
+            $sendCallback = function ($message) use ($recipientEmail, $appName) {
+                $message->to($recipientEmail)
+                    ->subject("{$appName} - Diagnostic Delivery Test (" . date('H:i:s') . ")");
+            };
+
             $sentMessage = Mail::raw(
                 "Hello,\n\nThis is an automated diagnostic test email from {$appName}.\n\n" .
                 "Diagnostic Details:\n" .
@@ -137,10 +171,7 @@ class EmailDeliveryService
                 "- Active Provider: {$providerName}\n" .
                 "- Server Time: " . now()->format('Y-m-d H:i:s T') . "\n\n" .
                 "If you are reading this in Gmail, your email delivery pipeline is working correctly.\n",
-                function ($message) use ($recipientEmail, $appName) {
-                    $message->to($recipientEmail)
-                        ->subject("{$appName} - Diagnostic Delivery Test (" . date('H:i:s') . ")");
-                }
+                $sendCallback
             );
 
             $messageId = $this->extractMessageId($sentMessage);
@@ -157,6 +188,36 @@ class EmailDeliveryService
                 ]
             );
         } catch (Throwable $e) {
+            if (config('mail.default') === 'smtp' && !app()->runningUnitTests()) {
+                try {
+                    $appName = config('app.name', 'Smart Classroom Attendance System');
+                    $sendCallback = function ($message) use ($recipientEmail, $appName) {
+                        $message->to($recipientEmail)
+                            ->subject("{$appName} - Diagnostic Delivery Test (" . date('H:i:s') . ")");
+                    };
+                    $sentMessage = Mail::mailer('smtp_ssl')->raw(
+                        "Hello,\n\nThis is an automated diagnostic test email from {$appName} (via SSL fallback on port 465).\n\n" .
+                        "If you are reading this in Gmail, your email delivery pipeline is working correctly.\n",
+                        $sendCallback
+                    );
+
+                    $messageId = $this->extractMessageId($sentMessage);
+                    $debugResponse = $this->extractDebugResponse($sentMessage);
+
+                    return EmailDeliveryResult::accepted(
+                        provider: 'smtp (smtp.gmail.com:465, ssl)',
+                        messageId: $messageId,
+                        response: $debugResponse,
+                        diagnostics: [
+                            'mailer'    => 'smtp_ssl',
+                            'fallback'  => 'port_465_ssl',
+                            'recipient' => $recipientEmail,
+                            'timestamp' => now()->toIso8601String(),
+                        ]
+                    );
+                } catch (Throwable $e2) {}
+            }
+
             $maskedError = $this->sanitizeErrorMessage($e->getMessage());
             return EmailDeliveryResult::rejected(
                 provider: $providerName,

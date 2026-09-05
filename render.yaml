@@ -63,7 +63,7 @@ services:
       - key: MAIL_USERNAME
         value: osmenacolleges.attendance@gmail.com
       - key: MAIL_PASSWORD
-        value: "zsku lbsw pldm xqfp"
+        value: "zskulbswpldmxqfp"
       - key: MAIL_FROM_ADDRESS
         value: osmenacolleges.attendance@gmail.com
       - key: MAIL_FROM_NAME

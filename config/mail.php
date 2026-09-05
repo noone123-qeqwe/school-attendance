@@ -45,9 +45,19 @@ return [
             'port' => (int) env('MAIL_PORT', env('EMAIL_PORT', 587)),
             'encryption' => env('MAIL_ENCRYPTION', env('MAIL_SCHEME', env('EMAIL_ENCRYPTION', 'tls'))),
             'username' => env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com'))),
-            'password' => env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp'))),
+            'password' => preg_replace('/\s+/', '', (string) env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp')))),
             'timeout' => 15,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
+        ],
+
+        'smtp_ssl' => [
+            'transport' => 'smtp',
+            'host' => env('MAIL_HOST', env('EMAIL_HOST', 'smtp.gmail.com')),
+            'port' => 465,
+            'encryption' => 'ssl',
+            'username' => env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com'))),
+            'password' => preg_replace('/\s+/', '', (string) env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp')))),
+            'timeout' => 15,
         ],
 
         'ses' => [
