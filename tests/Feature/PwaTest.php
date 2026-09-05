@@ -57,6 +57,20 @@ class PwaTest extends TestCase
         }
     }
 
+    public function test_pwa_screenshot_assets_exist(): void
+    {
+        $screenshots = [
+            'dashboard.png',
+            'desktop.png',
+        ];
+
+        foreach ($screenshots as $ss) {
+            $path = public_path("images/screenshots/{$ss}");
+            $this->assertFileExists($path, "Expected screenshot {$ss} to exist");
+            $this->assertGreaterThan(0, filesize($path), "Screenshot {$ss} must not be empty");
+        }
+    }
+
     public function test_service_worker_file_exists_and_contains_modern_handlers(): void
     {
         $swPath = public_path('sw.js');

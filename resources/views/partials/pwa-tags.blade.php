@@ -134,19 +134,63 @@
         color: #F3E7CD;
     }
 
-    /* iOS Safari Install Sheet */
+    /* Universal PWA Install Guide Modal */
     .pwa-ios-modal {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        background: rgba(0, 0, 0, 0.75);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         z-index: 100000;
         display: none;
         align-items: flex-end;
         justify-content: center;
         padding: 20px;
         animation: pwaFadeIn 0.3s ease;
+    }
+
+    @media (min-width: 769px) {
+        .pwa-ios-modal {
+            align-items: center;
+        }
+    }
+
+    .pwa-ios-arrow-pointer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px dashed rgba(207, 164, 111, 0.25);
+    }
+
+    @keyframes pwaBounceDown {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(6px); }
+    }
+    .pwa-bounce-anim {
+        animation: pwaBounceDown 1.3s infinite ease-in-out;
+    }
+
+    .pwa-btn-loading {
+        opacity: 0.8 !important;
+        pointer-events: none !important;
+        cursor: wait !important;
+    }
+    .pwa-spinner {
+        display: inline-block;
+        width: 13px;
+        height: 13px;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 50%;
+        animation: pwaSpin 0.75s linear infinite;
+        vertical-align: -2px;
+        margin-right: 6px;
+    }
+    @keyframes pwaSpin {
+        to { transform: rotate(360deg); }
     }
 
     .pwa-ios-sheet {
@@ -743,7 +787,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=137?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });
@@ -807,7 +851,22 @@
         });
     }
 
-    // ── 2. Standalone State & Universal Install Display Logic ──
+    // ── 2. DOM Health: Ensure PWA Modals & Overlays live in document.body ──
+    function ensurePwaModalsInBody() {
+        ['pwaIosModal', 'pwaSystemUpdatePopup', 'pwaNetworkToast'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el && document.body && el.parentElement !== document.body) {
+                document.body.appendChild(el);
+            }
+        });
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensurePwaModalsInBody);
+    } else {
+        ensurePwaModalsInBody();
+    }
+
+    // ── 3. Standalone State & Universal Install Display Logic ──
     function checkIsStandalone() {
         return window.matchMedia('(display-mode: standalone)').matches ||
                window.navigator.standalone === true ||
@@ -816,14 +875,46 @@
                window.matchMedia('(display-mode: minimal-ui)').matches;
     }
 
-    function syncPwaInstallVisibility() {
+    async function checkIsAppInstalled() {
+        if (checkIsStandalone()) return true;
+        if (localStorage.getItem('pwa_app_installed') === 'true') return true;
+        if ('getInstalledRelatedApps' in navigator) {
+            try {
+                const related = await navigator.getInstalledRelatedApps();
+                if (related && related.length > 0) {
+                    localStorage.setItem('pwa_app_installed', 'true');
+                    return true;
+                }
+            } catch(e) {}
+        }
+        return false;
+    }
+
+    async function syncPwaInstallVisibility() {
         const standalone = checkIsStandalone();
         const triggers = document.querySelectorAll('.pwa-install-trigger');
+        if (standalone) {
+            triggers.forEach(el => { el.style.display = 'none'; });
+            return;
+        }
+
+        const isInstalled = await checkIsAppInstalled();
         triggers.forEach(el => {
-            if (standalone) {
-                el.style.display = 'none';
+            el.style.display = el.getAttribute('data-display') || 'inline-flex';
+            if (isInstalled) {
+                el.setAttribute('data-installed', 'true');
+                const textEl = el.querySelector('.pwa-install-text') || el.querySelector('.nav-link-text');
+                if (textEl) textEl.textContent = 'Open App';
+                const icon = el.querySelector('i');
+                if (icon) icon.className = 'bi bi-box-arrow-up-right';
             } else {
-                el.style.display = el.getAttribute('data-display') || 'inline-flex';
+                el.removeAttribute('data-installed');
+                const textEl = el.querySelector('.pwa-install-text') || el.querySelector('.nav-link-text');
+                if (textEl) {
+                    textEl.textContent = el.id === 'pwaLoginInstallBtn' || el.classList.contains('pwa-login-btn') 
+                        ? 'Install Attendance App' 
+                        : 'Install App';
+                }
             }
         });
     }
@@ -836,21 +927,28 @@
     }
     window.addEventListener('load', syncPwaInstallVisibility);
 
-    // ── 3. Capture Native beforeinstallprompt Event ──
+    // ── 4. Capture Native beforeinstallprompt Event ──
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
+        console.log('[PWA] Native install prompt captured and ready.');
         syncPwaInstallVisibility();
     });
 
-    // ── 4. Guide Modal Builder for iOS, Android & In-App Browsers ──
-    function showPwaGuideModal() {
+    // ── 5. Guide Modal Builder for iOS, Android, Insecure Context & Desktops ──
+    function showPwaGuideModal(forceMode = null) {
+        ensurePwaModalsInBody();
         const modal = document.getElementById('pwaIosModal');
         const titleEl = document.getElementById('pwaModalTitle');
         const subEl = document.getElementById('pwaModalSub');
         const stepsEl = document.getElementById('pwaModalSteps');
+        const actionBtn = document.getElementById('pwaIosCloseBtn');
 
         if (!modal || !stepsEl) return;
+
+        // Clean up previous dynamically inserted pointer or rows
+        const existingPointer = modal.querySelector('.pwa-ios-arrow-pointer');
+        if (existingPointer) existingPointer.remove();
 
         const ua = (window.navigator.userAgent || '').toLowerCase();
         const isIos = /iphone|ipad|ipod/.test(ua);
@@ -858,8 +956,59 @@
         const isInApp = /fban|fbav|fb_iab|fbios|instagram|line\/|twitter|snapchat|micromessenger|tiktok|kakaotalk|threads/i.test(ua);
         const isSamsung = ua.includes('samsungbrowser');
         const isAndroid = /android/.test(ua);
+        const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
-        if (isInApp) {
+        // Default close behavior
+        if (actionBtn) {
+            actionBtn.textContent = 'Got It';
+            actionBtn.onclick = (e) => {
+                e.preventDefault();
+                closePwaGuideModal();
+            };
+        }
+
+        if (forceMode === 'already_installed') {
+            if (titleEl) titleEl.textContent = 'App Already Installed';
+            if (subEl) subEl.textContent = 'Smart Attendance is already installed and ready on this device:';
+            stepsEl.innerHTML = `
+                <div class="pwa-ios-step">
+                    <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">✓</div>
+                    <div>Launch directly from your <strong>Home Screen</strong>, <strong>App Drawer</strong>, or <strong>Windows Start Menu</strong></div>
+                </div>
+                <div class="pwa-ios-step">
+                    <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">⚡</div>
+                    <div>Enjoy fast offline scanning, biometric clock-in, and instant school alerts</div>
+                </div>
+            `;
+            if (actionBtn) {
+                actionBtn.textContent = 'Open Application';
+                actionBtn.onclick = (e) => {
+                    e.preventDefault();
+                    closePwaGuideModal();
+                    window.location.href = '/home';
+                };
+            }
+        } else if (forceMode === 'insecure_context' || !isSecure) {
+            if (titleEl) titleEl.textContent = 'Secure Connection (HTTPS) Required';
+            if (subEl) subEl.textContent = 'Browsers strictly require a secure HTTPS connection or localhost to install web applications:';
+            stepsEl.innerHTML = `
+                <div class="pwa-ios-step" style="border-left: 3px solid #EF4444; padding-left: 10px; background: rgba(239, 68, 68, 0.08); border-radius: 8px;">
+                    <div class="pwa-ios-step-num" style="background:#EF4444;color:#FFFFFF;">!</div>
+                    <div>Connected via <strong>${window.location.protocol}//${window.location.host}</strong> (unencrypted HTTP)</div>
+                </div>
+                <div class="pwa-ios-step">
+                    <div class="pwa-ios-step-num">1</div>
+                    <div><strong>On PC / Laptop:</strong> Access using <code>http://localhost:8002</code> or <code>http://127.0.0.1:8002</code> instead of a local network IP</div>
+                </div>
+                <div class="pwa-ios-step">
+                    <div class="pwa-ios-step-num">2</div>
+                    <div><strong>On Mobile (Wi-Fi):</strong> Connect via an HTTPS tunnel (such as Cloudflare or ngrok), or tap browser menu (⋮) &gt; <strong>Add to Home screen</strong> for a quick bookmark shortcut</div>
+                </div>
+            `;
+            if (actionBtn) {
+                actionBtn.textContent = 'Close';
+            }
+        } else if (isInApp) {
             if (titleEl) titleEl.textContent = 'Open in Browser to Install';
             if (subEl) subEl.textContent = 'In-app browsers do not support direct app installation. Please open this page in Chrome or Safari:';
             stepsEl.innerHTML = `
@@ -878,21 +1027,28 @@
             `;
         } else if (isIosSafari) {
             if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'Add Smart Attendance to your Home Screen in 3 quick steps:';
+            if (subEl) subEl.textContent = 'Add Smart Attendance to your iOS Home Screen in 3 easy steps:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">1</div>
-                    <div>Tap the <strong>Share</strong> button <svg style="display:inline;vertical-align:middle;margin:0 2px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CFA46F" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in the bottom bar</div>
+                    <div>Tap the <strong>Share</strong> button <svg style="display:inline;vertical-align:middle;margin:0 2px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CFA46F" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's toolbar</div>
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">2</div>
-                    <div>Scroll down and tap <strong>Add to Home Screen</strong></div>
+                    <div>Scroll down and tap <strong>Add to Home Screen</strong> <svg style="display:inline;vertical-align:middle;margin:0 2px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CFA46F" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">3</div>
                     <div>Tap <strong>Add</strong> in the top right corner to complete</div>
                 </div>
             `;
+            const pointer = document.createElement('div');
+            pointer.className = 'pwa-ios-arrow-pointer';
+            pointer.innerHTML = `
+                <span style="font-size:0.75rem; color:#CFA46F; font-weight:700; letter-spacing:0.3px;">Tap Safari's Share button below</span>
+                <svg class="pwa-bounce-anim" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#CFA46F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+            `;
+            stepsEl.after(pointer);
         } else if (isIos) {
             if (titleEl) titleEl.textContent = 'Install Smart Attendance';
             if (subEl) subEl.textContent = 'To install on iOS from this browser:';
@@ -903,7 +1059,7 @@
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">2</div>
-                    <div>Select <strong>Add to Home Screen</strong> (or open in Safari for full PWA features)</div>
+                    <div>Select <strong>Add to Home Screen</strong> (or open in Safari for full PWA capabilities)</div>
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">3</div>
@@ -946,19 +1102,19 @@
             `;
         } else {
             if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'Install on your computer or mobile device:';
+            if (subEl) subEl.textContent = 'Install directly on your computer:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">1</div>
-                    <div>Look for the <strong>Install App icon (⊕ or ⬇)</strong> in your browser address bar</div>
+                    <div>Look at the right side of the <strong>URL address bar</strong> at the top of your browser</div>
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">2</div>
-                    <div>Or open the browser menu (⋮) and select <strong>Install Attendance App</strong></div>
+                    <div>Click the <strong>Install App icon</strong> <span style="background:rgba(207,164,111,0.2);padding:2px 7px;border-radius:6px;color:#CFA46F;font-size:0.8rem;font-weight:700;display:inline-block;margin-left:4px;">⊕ or ⬇</span></div>
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">3</div>
-                    <div>Click <strong>Install</strong> to add the app</div>
+                    <div>Or click <strong>Menu (⋮) &gt; Save and share &gt; Install Smart Attendance</strong></div>
                 </div>
             `;
         }
@@ -972,30 +1128,110 @@
         localStorage.setItem('pwa_ios_prompt_dismissed', 'true');
     }
 
-    // ── 5. Universal Trigger Install Handler ──
-    async function triggerPwaInstall() {
+    // ── 6. Universal Trigger Install Handler ──
+    async function triggerPwaInstall(triggerEl) {
+        if (window.__pwaActionInProgress) return;
+        window.__pwaActionInProgress = true;
+        setTimeout(() => { window.__pwaActionInProgress = false; }, 1500);
+
+        // 1. Check if open in standalone
+        if (checkIsStandalone()) {
+            showPwaGuideModal('already_installed');
+            return;
+        }
+
+        // 2. Check if installed
+        const isInstalled = await checkIsAppInstalled();
+        if (isInstalled) {
+            showPwaGuideModal('already_installed');
+            return;
+        }
+
+        // 3. Security / HTTPS check
+        const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (!isSecure) {
+            showPwaGuideModal('insecure_context');
+            return;
+        }
+
+        // 4. Native prompt immediately available
         if (deferredPrompt) {
             try {
+                if (triggerEl) triggerEl.classList.add('pwa-btn-loading');
                 deferredPrompt.prompt();
                 const choice = await deferredPrompt.userChoice;
+                if (triggerEl) triggerEl.classList.remove('pwa-btn-loading');
                 deferredPrompt = null;
+                
                 if (choice && choice.outcome === 'accepted') {
-                    const installBanner = document.getElementById('pwaInstallBanner');
-                    if (installBanner) installBanner.style.display = 'none';
-                    document.querySelectorAll('.pwa-install-trigger').forEach(el => {
-                        el.style.display = 'none';
-                    });
+                    localStorage.setItem('pwa_app_installed', 'true');
+                    showNetworkToast('✓ Smart Attendance installed successfully!', 'online');
+                    syncPwaInstallVisibility();
+                    return;
+                } else {
+                    showNetworkToast('Installation cancelled.', 'offline');
                     return;
                 }
             } catch(err) {
-                console.warn('Native install prompt failed, falling back to guide modal:', err);
+                console.warn('[PWA] Prompt error:', err);
+                if (triggerEl) triggerEl.classList.remove('pwa-btn-loading');
             }
         }
 
+        // 5. If deferredPrompt not yet available, wait briefly in case beforeinstallprompt is in flight
+        const ua = (window.navigator.userAgent || '').toLowerCase();
+        const isIos = /iphone|ipad|ipod/.test(ua);
+        if (!deferredPrompt && !isIos && isSecure && !window.__pwaWaitedBeforePrompt) {
+            window.__pwaWaitedBeforePrompt = true;
+            if (triggerEl) {
+                const originalHtml = triggerEl.innerHTML;
+                triggerEl.innerHTML = '<span class="pwa-spinner"></span> Loading installer...';
+                triggerEl.classList.add('pwa-btn-loading');
+
+                const promptFired = await Promise.race([
+                    new Promise(resolve => {
+                        const handler = () => {
+                            window.removeEventListener('beforeinstallprompt', handler);
+                            resolve(true);
+                        };
+                        window.addEventListener('beforeinstallprompt', handler, { once: true });
+                    }),
+                    new Promise(resolve => setTimeout(() => resolve(false), 900))
+                ]);
+
+                triggerEl.innerHTML = originalHtml;
+                triggerEl.classList.remove('pwa-btn-loading');
+
+                if (promptFired && deferredPrompt) {
+                    try {
+                        deferredPrompt.prompt();
+                        const choice = await deferredPrompt.userChoice;
+                        deferredPrompt = null;
+                        if (choice && choice.outcome === 'accepted') {
+                            localStorage.setItem('pwa_app_installed', 'true');
+                            showNetworkToast('✓ Smart Attendance installed successfully!', 'online');
+                            syncPwaInstallVisibility();
+                            return;
+                        } else {
+                            showNetworkToast('Installation cancelled.', 'offline');
+                            return;
+                        }
+                    } catch(e) {}
+                }
+            }
+        }
+
+        // 6. Show browser-tailored guide modal
         showPwaGuideModal();
     }
 
-    // ── 6. Global Event Delegation (Guarantees ALL install buttons work anytime) ──
+    // ── 7. Global Event Delegation (Guarantees ALL install buttons work anytime) ──
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closePwaGuideModal();
+        }
+    });
+
     document.addEventListener('click', (e) => {
         const target = e.target;
         if (!target) return;
@@ -1005,7 +1241,7 @@
         if (installTrigger) {
             e.preventDefault();
             e.stopPropagation();
-            triggerPwaInstall();
+            triggerPwaInstall(installTrigger);
             return;
         }
 
