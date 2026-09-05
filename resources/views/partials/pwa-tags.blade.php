@@ -2,7 +2,9 @@
     $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '143');
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
-    $initialChangelog = app(\App\Services\ChangelogService::class)->getRelease((string)$swCacheVer);
+    $installedVersion = config('changelog.installed_version', '1.4.2');
+    $latestVersion = config('changelog.default_version', '1.4.3');
+    $initialChangelog = app(\App\Services\ChangelogService::class)->getRelease((string)$latestVersion);
 @endphp
 <!-- PWA Head Meta Tags -->
 <meta name="theme-color" content="#110A0A">
@@ -13,6 +15,8 @@
 <meta name="application-name" content="Smart Attendance">
 <meta name="msapplication-TileColor" content="#110A0A">
 <meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
+<meta name="app-installed-version" content="{{ $installedVersion }}">
+<meta name="app-latest-version" content="{{ $latestVersion }}">
 
 <!-- PWA Manifest & Icons -->
 <link rel="manifest" href="/manifest.json">
@@ -310,12 +314,13 @@
                     0 0 35px rgba(232, 192, 100, 0.08);
         backdrop-filter: blur(28px) saturate(180%);
         -webkit-backdrop-filter: blur(28px) saturate(180%);
-        z-index: 100000;
+        z-index: 100005 !important;
         display: none;
         flex-direction: column;
         gap: 13px;
         animation: pwaSlideUpEnterprise 0.45s cubic-bezier(0.16, 1, 0.3, 1);
         overflow: hidden;
+        box-sizing: border-box;
     }
 
     /* Ambient Subtle Shimmer Glow */
@@ -341,17 +346,49 @@
         }
     }
 
-    /* On mobile / tablets: Gracefully float above navigation with safe area */
+    /* On mobile / tablets: Gracefully float above bottom navigation capsule with safe area */
     @media (max-width: 768px) {
         .pwa-update-banner {
-            bottom: calc(88px + env(safe-area-inset-bottom, 10px));
-            left: 12px;
-            right: 12px;
-            width: auto;
-            max-width: calc(100vw - 24px);
-            margin: 0 auto;
-            padding: 16px;
-            border-radius: 20px;
+            bottom: calc(84px + env(safe-area-inset-bottom, 12px)) !important;
+            left: 12px !important;
+            right: 12px !important;
+            width: auto !important;
+            max-width: calc(100vw - 24px) !important;
+            margin: 0 auto !important;
+            padding: 16px 18px !important;
+            border-radius: 20px !important;
+            max-height: min(520px, calc(100dvh - 96px - env(safe-area-inset-bottom, 12px))) !important;
+            box-sizing: border-box !important;
+            z-index: 100005 !important;
+        }
+
+        .pwa-update-changelog-box {
+            max-height: 160px !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+
+        .pwa-update-banner-actions {
+            flex-direction: row !important;
+            gap: 10px !important;
+        }
+
+        .pwa-btn-update-later,
+        .pwa-btn-update-apply {
+            min-height: 44px !important;
+            touch-action: manipulation !important;
+        }
+    }
+
+    /* Small screens / landscape mobile phones: keep content accessible within viewport */
+    @media (max-width: 768px) and (max-height: 540px) {
+        .pwa-update-banner {
+            top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+            bottom: auto !important;
+            max-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px)) !important;
+        }
+
+        .pwa-update-changelog-box {
+            max-height: 105px !important;
         }
     }
 
@@ -877,9 +914,92 @@
         container.innerHTML = html;
     }
 
+    // ── 1.1 Semantic Version Comparison (Latest Version > Installed Version) ──
+    function parseSemver(v) {
+        if (!v) return [0, 0, 0];
+        let cleaned = String(v).trim().replace(/^[vV]/, '');
+        if (cleaned.includes('_')) {
+            cleaned = cleaned.split('_')[0];
+        }
+        if (/^\d{2,3}$/.test(cleaned)) {
+            cleaned = cleaned.split('').join('.');
+        }
+        const parts = cleaned.split('.').map(function(p) {
+            const num = parseInt(p.replace(/[^\d]/g, ''), 10);
+            return isNaN(num) ? 0 : num;
+        });
+        while (parts.length < 3) parts.push(0);
+        return parts.slice(0, 3);
+    }
+
+    function compareSemver(v1, v2) {
+        const p1 = parseSemver(v1);
+        const p2 = parseSemver(v2);
+        for (let i = 0; i < 3; i++) {
+            if (p1[i] > p2[i]) return 1;
+            if (p1[i] < p2[i]) return -1;
+        }
+        return 0;
+    }
+
+    function getInstalledVersion() {
+        const storedInstalled = localStorage.getItem('pwa_installed_version');
+        if (storedInstalled) return storedInstalled;
+
+        const legacyVer = localStorage.getItem('pwa_app_version');
+        if (legacyVer && !legacyVer.includes('_') && /^\d/.test(legacyVer)) {
+            return legacyVer;
+        }
+
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content;
+        return metaInstalled || '1.4.2';
+    }
+
+    function getLatestVersion(serverData = null) {
+        if (serverData && serverData.latest_version) {
+            return serverData.latest_version;
+        }
+        if (serverData && serverData.changelog && serverData.changelog.version) {
+            return serverData.changelog.version;
+        }
+        if (serverData && serverData.sw_version) {
+            const parsed = parseSemver(serverData.sw_version);
+            return parsed.join('.');
+        }
+        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content;
+        return metaLatest || '1.4.3';
+    }
+
+    // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──
+    function ensurePwaModalsInBody() {
+        if (!document.body) return false;
+        ['pwaIosModal', 'pwaSystemUpdatePopup', 'pwaNetworkToast'].forEach(function(id) {
+            const el = document.getElementById(id);
+            if (el && el.parentElement !== document.body) {
+                document.body.appendChild(el);
+            }
+        });
+        return true;
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensurePwaModalsInBody);
+    } else {
+        ensurePwaModalsInBody();
+    }
+
     function showAppUpdatePopup(version, force = false, changelog = null) {
         if (version) latestDetectedVersion = version;
-        
+
+        // Ensure modal is attached to document.body so mobile WebKit/Blink renders it
+        if (!ensurePwaModalsInBody() && document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                ensurePwaModalsInBody();
+                showAppUpdatePopup(version, force, changelog);
+            }, { once: true });
+            return;
+        }
+
         const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
 
         // Only block if this EXACT version was dismissed AND not forced
@@ -890,7 +1010,6 @@
         if (changelog) {
             updateChangelogUI(changelog);
         } else if (version) {
-            // Asynchronously fetch changelog if not already loaded
             const verParam = '?v=' + encodeURIComponent(version);
             fetch('/pwa/version' + verParam, { cache: 'no-store' })
                 .then(function(r) { return r.json(); })
@@ -904,26 +1023,22 @@
 
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) {
-            // Re-trigger slide-up animation by re-inserting the element
             popup.style.display = 'none';
             void popup.offsetHeight; // force reflow
             popup.style.display = 'flex';
         }
 
         // Trigger multi-channel update alerts ONCE PER NEW VERSION
-        // If the server version changed, this is a new update — always notify again
         const isNewVersion = !lastNotifiedVersion || lastNotifiedVersion !== latestDetectedVersion;
         if (isNewVersion) {
             lastNotifiedVersion = latestDetectedVersion;
 
-            // 1. Mobile Haptic Vibration Feedback
             if (window.triggerHaptic) {
                 window.triggerHaptic('success');
             } else if (navigator.vibrate) {
                 navigator.vibrate([100, 50, 100]);
             }
 
-            // 3. Native OS/Browser Push Notification if permitted
             if ('Notification' in window && Notification.permission === 'granted') {
                 try {
                     const notifTitle = '🚀 Smart Attendance Update Available';
@@ -945,7 +1060,6 @@
                 } catch(e) {}
             }
 
-            // 4. Update In-App Notification Bell & Badge in Real-Time
             if (typeof window.refreshNotificationBell === 'function') {
                 try { window.refreshNotificationBell(); } catch(e) {}
             }
@@ -955,9 +1069,7 @@
     function hideAppUpdatePopup(version) {
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) popup.style.display = 'none';
-        
-        // Only dismiss THIS specific version — a new version from the server
-        // will have a different string and bypass this guard automatically
+
         const targetVersion = version || latestDetectedVersion;
         if (targetVersion) {
             sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
@@ -965,7 +1077,7 @@
     }
 
     let lastVersionCheckTime = 0;
-    const VERSION_CHECK_COOLDOWN_MS = 10000; // 10s cooldown for immediate mobile responsiveness
+    const VERSION_CHECK_COOLDOWN_MS = 5000;
 
     async function checkServerVersion(force = false) {
         const now = Date.now();
@@ -974,51 +1086,50 @@
         }
         lastVersionCheckTime = now;
 
+        const installedVer = getInstalledVersion();
+        let latestVer = getLatestVersion();
+
         if (swRegistration) {
             try { swRegistration.update(); } catch(e) {}
         }
 
+        let isUpdateAvailable = false;
+        let updateChangelog = currentChangelogData;
+
         try {
             const res = await fetch('/pwa/version?_t=' + now, { cache: 'no-store' });
-            if (!res.ok) return;
-            const data = await res.json();
-            if (data && data.version) {
-                const serverVersion = data.version;
-                const currentVer = localStorage.getItem('pwa_app_version');
-                const changelog = data.changelog || null;
-
-                if (changelog) {
-                    updateChangelogUI(changelog);
-                }
-
-                latestDetectedVersion = serverVersion;
-
-                if (!currentVer) {
-                    // First time load: establish current version baseline
-                    localStorage.setItem('pwa_app_version', serverVersion);
-                    if (swRegistration && swRegistration.waiting) {
-                        showAppUpdatePopup(serverVersion, true, changelog);
-                    }
-                } else if (currentVer !== serverVersion) {
-                    // Server has a newer version than what we last applied
-                    // Clear any previous dismiss for an old version
-                    const prevDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
-                    if (prevDismissed && prevDismissed !== serverVersion) {
-                        sessionStorage.removeItem('pwa_update_dismissed_ver');
+            if (res.ok) {
+                const data = await res.json();
+                if (data) {
+                    latestVer = getLatestVersion(data);
+                    latestDetectedVersion = latestVer;
+                    if (data.changelog) {
+                        updateChangelog = data.changelog;
+                        updateChangelogUI(updateChangelog);
                     }
 
-                    if (swRegistration) {
-                        try { swRegistration.update(); } catch(e) {}
+                    // Semantic comparison: Latest Version > Installed Version
+                    if (compareSemver(latestVer, installedVer) > 0) {
+                        isUpdateAvailable = true;
+                    } else if (swRegistration && swRegistration.waiting) {
+                        isUpdateAvailable = true;
                     }
-                    showAppUpdatePopup(serverVersion, true, changelog);
-                } else if (force && swRegistration && swRegistration.waiting) {
-                    showAppUpdatePopup(serverVersion, true, changelog);
+
+                    if (isUpdateAvailable) {
+                        showAppUpdatePopup(latestVer, force, updateChangelog);
+                        return;
+                    }
                 }
             }
         } catch (e) {}
+
+        // Fallback check if offline or network error: compare local metadata
+        if (compareSemver(latestVer, installedVer) > 0 || (force && swRegistration && swRegistration.waiting)) {
+            showAppUpdatePopup(latestVer, force, updateChangelog);
+        }
     }
 
-    // Run check immediately on script evaluation
+    // Run check immediately on evaluation
     checkServerVersion();
 
     if ('serviceWorker' in navigator) {
@@ -1034,7 +1145,7 @@
                 try { reg.update(); } catch(e) {}
                 checkServerVersion(true);
 
-                // 2. Periodic check every 30s for real-time mobile background detection
+                // 2. Periodic check every 30s for real-time background detection
                 setInterval(() => {
                     if (document.visibilityState === 'visible') {
                         if (swRegistration) try { swRegistration.update(); } catch(e) {}
@@ -1044,7 +1155,7 @@
 
                 // 3. If an update is already downloaded and waiting in background, trigger popup immediately
                 if (reg.waiting) {
-                    showAppUpdatePopup(latestDetectedVersion || 'new', true);
+                    showAppUpdatePopup(latestDetectedVersion || getLatestVersion(), true);
                 }
 
                 // 4. When a new update is found and finishes installing in the background
@@ -1054,7 +1165,7 @@
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
-                                    showAppUpdatePopup(latestDetectedVersion || 'new', true);
+                                    showAppUpdatePopup(latestDetectedVersion || getLatestVersion(), true);
                                 } else {
                                     checkServerVersion(true);
                                 }
@@ -1066,12 +1177,16 @@
                 // 5. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
-                        showAppUpdatePopup(event.data.version || latestDetectedVersion || 'new', true);
+                        showAppUpdatePopup(event.data.version || latestDetectedVersion || getLatestVersion(), true);
                     }
                 });
 
-                // 6. On app focus, unlock, or tab switch, immediately check for updates on mobile
+                // 6. Mobile & desktop lifecycle: focus, pageshow (bfcache restore), visibilitychange, and online
                 window.addEventListener('focus', () => {
+                    if (swRegistration) try { swRegistration.update(); } catch(e) {}
+                    checkServerVersion(true);
+                });
+                window.addEventListener('pageshow', () => {
                     if (swRegistration) try { swRegistration.update(); } catch(e) {}
                     checkServerVersion(true);
                 });
@@ -1081,26 +1196,14 @@
                         checkServerVersion(true);
                     }
                 });
+                window.addEventListener('online', () => {
+                    checkServerVersion(true);
+                });
 
             } catch (err) {
                 console.warn('PWA service worker registration failed:', err);
             }
         });
-    }
-
-    // ── 2. DOM Health: Ensure PWA Modals & Overlays live in document.body ──
-    function ensurePwaModalsInBody() {
-        ['pwaIosModal', 'pwaSystemUpdatePopup', 'pwaNetworkToast'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el && document.body && el.parentElement !== document.body) {
-                document.body.appendChild(el);
-            }
-        });
-    }
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', ensurePwaModalsInBody);
-    } else {
-        ensurePwaModalsInBody();
     }
 
     // ── 3. Standalone State & Universal Install Display Logic ──
@@ -1508,22 +1611,21 @@
             applyUpdateBtn.style.opacity = '0.85';
             applyUpdateBtn.style.pointerEvents = 'none';
 
-            if (latestDetectedVersion) {
-                localStorage.setItem('pwa_app_version', latestDetectedVersion);
-                localStorage.removeItem('pwa_update_dismissed_ver');
-                localStorage.removeItem('pwa_update_prompted_ver');
-                sessionStorage.removeItem('pwa_update_dismissed_ver');
-            }
+            const targetVer = latestDetectedVersion || getLatestVersion();
+            localStorage.setItem('pwa_installed_version', targetVer);
+            localStorage.setItem('pwa_app_version', targetVer);
+            localStorage.removeItem('pwa_update_dismissed_ver');
+            localStorage.removeItem('pwa_update_prompted_ver');
+            sessionStorage.removeItem('pwa_update_dismissed_ver');
 
             try {
                 fetch('/pwa/version', { cache: 'no-store' })
                     .then(r => r.json())
                     .then(d => { 
-                        if (d?.version) {
-                            localStorage.setItem('pwa_app_version', d.version);
-                            localStorage.removeItem('pwa_update_dismissed_ver');
-                            localStorage.removeItem('pwa_update_prompted_ver');
-                            sessionStorage.removeItem('pwa_update_dismissed_ver');
+                        const v = d?.latest_version || d?.changelog?.version || d?.version;
+                        if (v) {
+                            localStorage.setItem('pwa_installed_version', v);
+                            localStorage.setItem('pwa_app_version', v);
                         }
                     })
                     .catch(() => {});

@@ -58,9 +58,15 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
         $targetVer = $requestedVer ?: (string)$ver;
         $changelog = $changelogService->getRelease($targetVer);
 
+        $latestVersion = config('changelog.default_version', '1.4.3');
+        $installedVersion = config('changelog.installed_version', '1.4.2');
+
         return [
             'version' => $versionTag,
             'sw_version' => (string)$ver,
+            'latest_version' => $latestVersion,
+            'installed_version' => $installedVersion,
+            'current_version' => $installedVersion,
             'timestamp' => $swMtime,
             'changelog' => $changelog,
         ];

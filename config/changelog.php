@@ -3,10 +3,11 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Default / Current Application Version
+    | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'default_version' => '1.4.3',
+    'installed_version' => env('APP_INSTALLED_VERSION', '1.4.2'),
+    'default_version' => env('APP_LATEST_VERSION', '1.4.3'),
 
     /*
     |--------------------------------------------------------------------------

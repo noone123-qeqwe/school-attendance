@@ -1859,7 +1859,7 @@
                         <div style="flex:1;min-width:0;">
                             <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 <span>Software Updates & PWA Assets</span>
-                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v2.1.0</span>
+                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ config('changelog.default_version', '1.4.3') }}</span>
                             </div>
                             <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
                         </div>
@@ -1904,29 +1904,34 @@ async function checkForAppUpdates() {
     }
 
     try {
-        if ('serviceWorker' in navigator) {
+        if (typeof checkServerVersion === 'function') {
+            await checkServerVersion(true);
+        } else if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.getRegistration();
             if (reg) {
                 await reg.update();
-
-                if (reg.waiting) {
-                    if (typeof showAppUpdatePopup === 'function') {
-                        showAppUpdatePopup(null, true);
-                    }
-                    feedback.style.display = 'none';
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Update Ready';
-                    return;
+                if (reg.waiting && typeof showAppUpdatePopup === 'function') {
+                    showAppUpdatePopup(null, true);
                 }
             }
         }
 
-        await new Promise(r => setTimeout(r, 800));
+        await new Promise(r => setTimeout(r, 600));
 
-        feedback.style.background = 'rgba(16, 185, 129, 0.1)';
-        feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-        feedback.style.color = '#6ee7b7';
-        feedback.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Your application is up to date (v2.1.0). You have the latest version installed.';
+        const popup = document.getElementById('pwaSystemUpdatePopup');
+        const popupVisible = popup && window.getComputedStyle(popup).display !== 'none';
+
+        if (popupVisible) {
+            feedback.style.background = 'rgba(207, 164, 111, 0.12)';
+            feedback.style.border = '1px solid rgba(207, 164, 111, 0.35)';
+            feedback.style.color = '#f3e7cd';
+            feedback.innerHTML = '<i class="bi bi-stars me-2"></i>A new software update is available! Tap "Restart & Update" on the notification to install.';
+        } else {
+            feedback.style.background = 'rgba(16, 185, 129, 0.1)';
+            feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            feedback.style.color = '#6ee7b7';
+            feedback.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Your application is up to date (v{{ config('changelog.default_version', '1.4.3') }}). You have the latest version installed.';
+        }
         if (statusText) statusText.textContent = 'Last checked: Just now';
     } catch (e) {
         feedback.style.background = 'rgba(239, 68, 68, 0.1)';

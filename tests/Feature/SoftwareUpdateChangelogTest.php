@@ -84,6 +84,9 @@ class SoftwareUpdateChangelogTest extends TestCase
         $response->assertJsonStructure([
             'version',
             'sw_version',
+            'latest_version',
+            'installed_version',
+            'current_version',
             'timestamp',
             'changelog' => [
                 'version',
@@ -100,6 +103,8 @@ class SoftwareUpdateChangelogTest extends TestCase
         ]);
 
         $data = $response->json();
+        $this->assertEquals('1.4.3', $data['latest_version']);
+        $this->assertEquals('1.4.2', $data['installed_version']);
         $this->assertNotEmpty($data['changelog']['features']);
         $this->assertNotEmpty($data['changelog']['title']);
     }
@@ -126,6 +131,14 @@ class SoftwareUpdateChangelogTest extends TestCase
         $response->assertSee('pwaUpdateTitle', false);
         $response->assertSee('pwaUpdateSubtitle', false);
         $response->assertSee('pwaUpdateVersionBadge', false);
+
+        // Verify version meta tags for both desktop and mobile
+        $response->assertSee('name="app-installed-version" content="1.4.2"', false);
+        $response->assertSee('name="app-latest-version" content="1.4.3"', false);
+
+        // Verify mobile-optimized layout CSS rules
+        $response->assertSee('z-index: 100005 !important;', false);
+        $response->assertSee('calc(84px + env(safe-area-inset-bottom, 12px))', false);
 
         // Verify categories are present
         $response->assertSee('NEW FEATURES', false);
