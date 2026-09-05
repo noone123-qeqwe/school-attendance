@@ -9,10 +9,15 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use App\Services\Email\EmailDeliveryService;
 use Exception;
 
 class OtpService
 {
+    public function __construct(
+        protected EmailDeliveryService $emailDeliveryService
+    ) {}
+
     /**
      * Mask email address for secure server-side logging (e.g. j***e@gmail.com).
      */
@@ -64,7 +69,10 @@ class OtpService
         string $ip,
         int $cooldown,
         string $emailProvider,
-        string $outcome
+        string $otpGenerated = 'YES',
+        string $providerAccepted = 'UNKNOWN',
+        ?string $messageId = null,
+        string $outcome = 'SUCCESS'
     ): void {
         $maskedEmail = self::maskEmail($email);
         $maskedIp = self::maskIp($ip);
@@ -77,14 +85,17 @@ class OtpService
             "Endpoint: " . (request()->path() ?: 'internal'),
             "Client IP: " . $maskedIp,
             "Cooldown: " . $cooldown,
+            "OTP generated: " . $otpGenerated,
             "Email provider: " . $emailProvider,
+            "Provider accepted: " . $providerAccepted,
+            "Message ID: " . ($messageId ?: 'N/A'),
             "Result: " . $outcome,
         ]));
     }
 
     /**
      * Generate, store, and deliver an OTP to the given email address.
-     * Enforces per-email 30-second cooldown, server-side idempotency, and structured logging.
+     * Enforces per-email 30-second cooldown, server-side idempotency, provider verification, and structured logging.
      *
      * @throws Exception if sending fails or cooldown is active.
      */
@@ -133,7 +144,6 @@ class OtpService
             }
 
             // 3. Enforce cooldown strictly per-email and per-user (NOT on the entire IP)
-            // Shared networks (cellular CGNAT, university WiFi) must not lock out different users.
             $cooldown = max(
                 Otp::getCooldownRemaining($cleanEmail, $purpose),
                 $userId ? Otp::getCooldownRemaining($userId, $purpose) : 0
@@ -147,6 +157,8 @@ class OtpService
                     ip: $ip,
                     cooldown: $cooldown,
                     emailProvider: 'SKIPPED',
+                    otpGenerated: 'NO',
+                    providerAccepted: 'NO',
                     outcome: 'RATE_LIMITED'
                 );
 
@@ -172,19 +184,27 @@ class OtpService
                 }
             }
 
-            // 6. Send email via configured provider
-            try {
-                Mail::to($cleanEmail)->send(new OtpMail($otp->code, $purpose, $recipientName));
+            // 6. Deliver email through decoupled EmailDeliveryService
+            $delivery = $this->emailDeliveryService->sendOtp(
+                recipientEmail: $cleanEmail,
+                otpCode: $otp->code,
+                purpose: $purpose,
+                recipientName: $recipientName,
+                requestId: $resolvedRequestId
+            );
 
+            if ($delivery->success) {
                 $result = [
                     'success'    => true,
                     'message'    => 'Verification code sent to ' . $cleanEmail,
                     'cooldown'   => Otp::COOLDOWN_SECONDS,
                     'retryAfter' => Otp::COOLDOWN_SECONDS,
                     'request_id' => $resolvedRequestId,
+                    'provider'   => $delivery->provider,
+                    'message_id' => $delivery->messageId,
                 ];
 
-                // Cache successful response for idempotency window if request ID was supplied
+                // Cache successful response for idempotency window
                 if ($idempotencyKey) {
                     Cache::put($idempotencyKey, $result, 30);
                 }
@@ -195,32 +215,36 @@ class OtpService
                     purpose: $purpose,
                     ip: $ip,
                     cooldown: Otp::COOLDOWN_SECONDS,
-                    emailProvider: 'ACCEPTED',
+                    emailProvider: $delivery->provider,
+                    otpGenerated: 'YES',
+                    providerAccepted: 'YES',
+                    messageId: $delivery->messageId,
                     outcome: 'SUCCESS'
                 );
 
                 return $result;
-            } catch (\Throwable $e) {
-                Log::error("Email delivery failed [recipient: {$maskedEmail}]: " . $e->getMessage());
-
-                // Invalidate the unreceived OTP so it cannot be guessed
-                $otp->update(['used' => true]);
-
-                // Set brief 5s buffer on provider crash so user isn't stuck with 30s lock
-                Otp::setCooldown($cleanEmail, $purpose, 5);
-
-                $this->logStructuredRequest(
-                    requestId: $logRequestId,
-                    email: $cleanEmail,
-                    purpose: $purpose,
-                    ip: $ip,
-                    cooldown: 5,
-                    emailProvider: 'REJECTED_OR_FAILED',
-                    outcome: 'FAILED'
-                );
-
-                throw new Exception('Unable to send verification code. Please try again.', 500);
             }
+
+            // Delivery failed: Invalidate the unreceived OTP so it cannot be guessed
+            $otp->update(['used' => true]);
+
+            // Set brief 5s buffer on provider crash so user isn't stuck with 30s lock
+            Otp::setCooldown($cleanEmail, $purpose, 5);
+
+            $this->logStructuredRequest(
+                requestId: $logRequestId,
+                email: $cleanEmail,
+                purpose: $purpose,
+                ip: $ip,
+                cooldown: 5,
+                emailProvider: $delivery->provider,
+                otpGenerated: 'YES',
+                providerAccepted: 'NO',
+                messageId: null,
+                outcome: 'FAILED'
+            );
+
+            throw new Exception($delivery->error ?: 'Unable to send verification code. Please try again.', $delivery->statusCode ?: 500);
         } finally {
             $lock->release();
         }

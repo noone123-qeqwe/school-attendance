@@ -20,7 +20,10 @@ class OtpMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: 'Your Verification Code');
+        $appName = config('app.name', 'Smart Classroom Attendance System');
+        return new Envelope(
+            subject: "Your {$appName} Verification Code",
+        );
     }
 
     public function content(): Content

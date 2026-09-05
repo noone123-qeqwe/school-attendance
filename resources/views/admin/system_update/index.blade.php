@@ -774,6 +774,11 @@
                     <div class="diag-meta-line"><span>Mailer:</span> <strong>{{ config('mail.default') }}</strong></div>
                     <div class="diag-meta-line"><span>Host:</span> <strong class="font-mono">{{ $mailHost }}</strong></div>
                     <div class="diag-meta-line"><span>Sender:</span> <strong class="font-mono" title="{{ config('mail.from.address') }}">{{ config('mail.from.address') }}</strong></div>
+                    <div class="mt-2 pt-2 border-top border-secondary border-opacity-25">
+                        <button type="button" class="btn btn-sm btn-outline-warning w-100 py-1" onclick="openDiagnosticTestEmailPrompt()" style="font-size:0.75rem; border-radius:8px;">
+                            <i class="bi bi-send-check me-1"></i> Send Diagnostic Test Email
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -3668,6 +3673,39 @@ async function triggerHealthScan() {
         if (btn) btn.innerHTML = '<i class="bi bi-search"></i> <span>Scan Subsystems</span>';
         if (quickBtn) quickBtn.disabled = false;
         if (healthScanBtn) healthScanBtn.innerHTML = '<i class="bi bi-activity me-1"></i> <span>Execute Full Diagnostics Scan</span>';
+    }
+}
+
+// Interactive Outbound Email Diagnostic Prompt
+async function openDiagnosticTestEmailPrompt() {
+    const defaultEmail = "{{ auth()->user()->email ?? config('mail.from.address') }}";
+    const targetEmail = prompt("Enter the destination email address (e.g. your Gmail) for this diagnostic delivery test:", defaultEmail);
+    if (!targetEmail || !targetEmail.trim()) return;
+
+    showToast(`Initiating SMTP handshake to ${targetEmail.trim()}...`, 'info');
+
+    try {
+        const res = await fetch('{{ route("admin.system-update.test-email") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ email: targetEmail.trim() })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+            showToast(`✔ Provider Accepted! Message ID: ${data.message_id || 'N/A'}`, 'success');
+            alert(`SUCCESS: Email accepted by provider!\n\nRecipient: ${targetEmail.trim()}\nProvider: ${data.provider}\nMessage ID: ${data.message_id || 'N/A'}\n\nPlease check your Inbox / Spam folder.`);
+        } else {
+            showToast(`✖ Email Failed: ${data.message}`, 'error');
+            alert(`FAILURE: Email provider rejected or failed to deliver.\n\nError: ${data.message}\nProvider: ${data.provider || 'N/A'}`);
+        }
+    } catch (e) {
+        showToast('Network error testing email delivery: ' + e.message, 'error');
+        alert('Network error testing email delivery: ' + e.message);
     }
 }
 </script>

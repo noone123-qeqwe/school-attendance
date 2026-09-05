@@ -62,7 +62,7 @@ class OtpDeliveryAndVerificationFlowTest extends TestCase
         $mailable = new OtpMail('482915', 'register', 'Test User');
         $envelope = $mailable->envelope();
 
-        $this->assertEquals('Your Verification Code', $envelope->subject);
+        $this->assertStringContainsString('Verification Code', $envelope->subject);
 
         $renderedHtml = $mailable->render();
         $this->assertStringContainsString('482915', $renderedHtml);
@@ -374,5 +374,53 @@ class OtpDeliveryAndVerificationFlowTest extends TestCase
         ]);
         $this->assertNotNull($res2->json('retryAfter'));
         $this->assertStringContainsString('Please wait', $res2->json('message'));
+    }
+
+    /**
+     * 14. Email delivery failure invalidates unreceived OTP and returns actual error (no false success).
+     */
+    public function test_email_delivery_failure_invalidates_otp_and_returns_error()
+    {
+        $email = 'failedprovider@gmail.com';
+
+        // Mock EmailDeliveryService to simulate provider rejection
+        $mockService = \Mockery::mock(\App\Services\Email\EmailDeliveryService::class);
+        $mockService->shouldReceive('sendOtp')
+            ->once()
+            ->andReturn(\App\Services\Email\EmailDeliveryResult::rejected('smtp', 'SMTP connection timeout', 500));
+
+        $this->app->instance(\App\Services\Email\EmailDeliveryService::class, $mockService);
+
+        $response = $this->postJson('/otp/send-register', ['email' => $email]);
+
+        $response->assertStatus(500);
+        $response->assertJson([
+            'success' => false,
+            'error'   => 'OTP_SEND_FAILED',
+        ]);
+
+        // The generated OTP must be invalidated immediately so it cannot be guessed
+        $otp = Otp::where('email', $email)->where('purpose', 'register')->latest()->first();
+        $this->assertNotNull($otp);
+        $this->assertTrue($otp->used);
+    }
+
+    /**
+     * 15. Diagnostic test email artisan command executes and reports provider details.
+     */
+    public function test_artisan_email_test_command_runs_successfully()
+    {
+        $mockService = \Mockery::mock(\App\Services\Email\EmailDeliveryService::class);
+        $mockService->shouldReceive('getActiveProviderName')->andReturn('smtp (smtp.gmail.com:587, tls)');
+        $mockService->shouldReceive('sendDiagnosticTestEmail')
+            ->with('admin@school.edu')
+            ->once()
+            ->andReturn(\App\Services\Email\EmailDeliveryResult::accepted('smtp', 'msg-12345', '250 OK'));
+
+        $this->app->instance(\App\Services\Email\EmailDeliveryService::class, $mockService);
+
+        $this->artisan('email:test', ['email' => 'admin@school.edu'])
+            ->assertExitCode(0)
+            ->expectsOutputToContain('SUCCESS: Email accepted by provider!');
     }
 }

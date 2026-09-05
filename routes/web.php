@@ -574,6 +574,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
         Route::post('/system-update/pwa-bump', [App\Http\Controllers\Admin\SystemUpdateController::class, 'bumpPwaVersion'])->name('system-update.pwa-bump');
         Route::post('/system-update/maintenance-toggle', [App\Http\Controllers\Admin\SystemUpdateController::class, 'toggleMaintenance'])->name('system-update.maintenance-toggle');
         Route::post('/system-update/health-check', [App\Http\Controllers\Admin\SystemUpdateController::class, 'runHealthCheck'])->name('system-update.health-check');
+        Route::post('/system-update/test-email', [App\Http\Controllers\Admin\SystemUpdateController::class, 'sendTestEmail'])->name('system-update.test-email');
 
         Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
     });

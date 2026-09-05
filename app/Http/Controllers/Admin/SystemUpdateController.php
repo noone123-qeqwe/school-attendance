@@ -755,4 +755,28 @@ class SystemUpdateController extends Controller
 
         return $newVersion;
     }
+
+    /**
+     * Send an independent diagnostic test email (Super Admin tool).
+     */
+    public function sendTestEmail(Request $request, \App\Services\Email\EmailDeliveryService $emailDeliveryService)
+    {
+        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+
+        $request->validate(['email' => 'required|email']);
+        $email = trim((string) $request->input('email'));
+
+        $result = $emailDeliveryService->sendDiagnosticTestEmail($email);
+
+        return response()->json([
+            'success'     => $result->success,
+            'provider'    => $result->provider,
+            'message_id'  => $result->messageId,
+            'response'    => $result->response,
+            'message'     => $result->success 
+                ? "Diagnostic test email successfully delivered to {$email} via {$result->provider}."
+                : ($result->error ?: "Failed to deliver test email."),
+            'diagnostics' => $result->diagnostics,
+        ], $result->success ? 200 : 500);
+    }
 }

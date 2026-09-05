@@ -52,3 +52,19 @@ services:
         fromDatabase:
           name: attendance-db
           property: connectionString
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_USERNAME
+        value: osmenacolleges.attendance@gmail.com
+      - key: MAIL_PASSWORD
+        value: "zsku lbsw pldm xqfp"
+      - key: MAIL_FROM_ADDRESS
+        value: osmenacolleges.attendance@gmail.com
+      - key: MAIL_FROM_NAME
+        value: "Smart Classroom Attendance System"

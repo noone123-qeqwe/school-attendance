@@ -74,6 +74,14 @@ Scroll down to the **Environment Variables** section and add the following:
 | `LOG_LEVEL` | `error` | Production log level |
 | `QUEUE_CONNECTION` | `sync` | Sync queue handling |
 | `CACHE_STORE` | `database` | Cache store |
+| `MAIL_MAILER` | `smtp` | SMTP email transport |
+| `MAIL_HOST` | `smtp.gmail.com` | Gmail SMTP host |
+| `MAIL_PORT` | `587` | TLS port |
+| `MAIL_ENCRYPTION` | `tls` | TLS encryption |
+| `MAIL_USERNAME` | `osmenacolleges.attendance@gmail.com` | Authenticated sender Gmail address |
+| `MAIL_PASSWORD` | `zsku lbsw pldm xqfp` | 16-character Google App Password |
+| `MAIL_FROM_ADDRESS` | `osmenacolleges.attendance@gmail.com` | From email address |
+| `MAIL_FROM_NAME` | `Smart Classroom Attendance System` | Sender display name |
 
 #### Step 3: Configure Database Variables
 
