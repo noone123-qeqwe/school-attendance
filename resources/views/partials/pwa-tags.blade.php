@@ -787,7 +787,7 @@
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
             try {
-                const reg = await navigator.serviceWorker.register('/sw.js?v=140?v={{ $swQueryVer }}', { 
+                const reg = await navigator.serviceWorker.register('/sw.js?v=143?v={{ $swQueryVer }}', { 
                     scope: '/',
                     updateViaCache: 'none'
                 });

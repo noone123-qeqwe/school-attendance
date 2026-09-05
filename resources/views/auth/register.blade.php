@@ -878,7 +878,14 @@
             }, 1000);
         }
 
+        let isSendingOtp = false;
+
         function sendOtp() {
+            if (isSendingOtp) {
+                console.warn('OTP send already in progress. Ignoring duplicate click.');
+                return;
+            }
+
             hideAlert();
             const email = document.getElementById('email').value.trim();
             const pass = document.getElementById('password').value;
@@ -888,6 +895,13 @@
             if (pass !== passConf) { showAlert("Passwords do not match."); return; }
             if (pass.length < 8) { showAlert("Password must be at least 8 characters."); return; }
 
+            const requestId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+            console.log("OTP REQUEST START\nRequest ID: " + requestId);
+
+            isSendingOtp = true;
             const btn = document.getElementById('btn-verify');
             const originalBtnHtml = btn.innerHTML;
             btn.disabled = true; 
@@ -897,34 +911,42 @@
                 method: 'POST',
                 headers: { 
                     'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                    'X-Request-Id': requestId,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ email: email })
+                body: JSON.stringify({ email: email, request_id: requestId })
             }).then(async r => {
                 const isJson = r.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await r.json() : null;
                 if (!r.ok) {
-                    const errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+                    const retrySecs = data ? (data.retryAfter || data.retry_after || data.cooldown) : null;
+                    let errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+                    if (r.status === 429 && retrySecs) {
+                        errorMsg = `Please wait ${retrySecs} seconds before requesting another code.`;
+                    }
                     const err = new Error(errorMsg);
-                    err.cooldown = data && data.cooldown ? data.cooldown : null;
+                    err.status = r.status;
+                    err.cooldown = retrySecs;
                     throw err;
                 }
                 return data;
             }).then(data => {
+                isSendingOtp = false;
                 btn.disabled = false; 
                 btn.innerHTML = originalBtnHtml;
                 if (data.success) {
                     document.getElementById('display-email').textContent = email;
                     goToStep(3);
                     startTimer(600);
-                    startResendCooldown(data.cooldown || 30);
+                    startResendCooldown(data.cooldown || data.retryAfter || 30);
                     otpBoxes.forEach(b => b.value = '');
                     if (otpBoxes[0]) otpBoxes[0].focus();
                 } else {
                     showAlert(data.message || 'Unable to send verification code. Please try again.');
                 }
             }).catch((err) => {
+                isSendingOtp = false;
                 btn.disabled = false; 
                 btn.innerHTML = originalBtnHtml;
                 console.error('OTP send error:', err);
@@ -933,10 +955,22 @@
         }
 
         function resendOtp() {
+            if (isSendingOtp) {
+                console.warn('OTP send already in progress. Ignoring duplicate click.');
+                return;
+            }
+
             hideAlert();
             const email = document.getElementById('email').value.trim();
             if (!email) { showAlert("Email address is required."); return; }
 
+            const requestId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+            console.log("OTP REQUEST START\nRequest ID: " + requestId);
+
+            isSendingOtp = true;
             const resendBtn = document.getElementById('btn-resend-otp');
             const originalHtml = resendBtn.innerHTML;
             resendBtn.disabled = true;
@@ -946,26 +980,33 @@
                 method: 'POST',
                 headers: { 
                     'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                    'X-Request-Id': requestId,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ email: email })
+                body: JSON.stringify({ email: email, request_id: requestId })
             }).then(async r => {
                 const isJson = r.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await r.json() : null;
                 if (!r.ok) {
-                    const errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+                    const retrySecs = data ? (data.retryAfter || data.retry_after || data.cooldown) : null;
+                    let errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+                    if (r.status === 429 && retrySecs) {
+                        errorMsg = `Please wait ${retrySecs} seconds before requesting another code.`;
+                    }
                     const err = new Error(errorMsg);
-                    err.cooldown = data && data.cooldown ? data.cooldown : null;
+                    err.status = r.status;
+                    err.cooldown = retrySecs;
                     throw err;
                 }
                 return data;
             }).then(data => {
+                isSendingOtp = false;
                 resendBtn.innerHTML = originalHtml;
                 if (data.success) {
                     showSuccessAlert("A new verification code has been sent.");
                     startTimer(600);
-                    startResendCooldown(data.cooldown || 30);
+                    startResendCooldown(data.cooldown || data.retryAfter || 30);
                     otpBoxes.forEach(b => b.value = '');
                     if (otpBoxes[0]) otpBoxes[0].focus();
                 } else {
@@ -973,6 +1014,7 @@
                     showAlert(data.message || 'Unable to send verification code. Please try again.');
                 }
             }).catch((err) => {
+                isSendingOtp = false;
                 resendBtn.innerHTML = originalHtml;
                 console.error('Resend OTP error:', err);
                 showAlert(err.message || 'Unable to send verification code. Please try again.');
@@ -1062,35 +1104,8 @@
                 cardParent.addEventListener('click', () => selectRole('parent'));
             }
 
-            const btnStep1 = document.getElementById('btn-continue-step1');
-            if (btnStep1) {
-                btnStep1.addEventListener('click', () => goToStep(2));
-            }
-
-            const btnBack2 = document.getElementById('btn-back-step2');
-            if (btnBack2) {
-                btnBack2.addEventListener('click', () => goToStep(1));
-            }
-
-            const btnBack3 = document.getElementById('btn-back-step3');
-            if (btnBack3) {
-                btnBack3.addEventListener('click', () => goToStep(2));
-            }
-
-            const btnVerify = document.getElementById('btn-verify');
-            if (btnVerify) {
-                btnVerify.addEventListener('click', sendOtp);
-            }
-
-            const btnResend = document.getElementById('btn-resend-otp');
-            if (btnResend) {
-                btnResend.addEventListener('click', resendOtp);
-            }
-
-            const btnSubmit = document.getElementById('btn-submit');
-            if (btnSubmit) {
-                btnSubmit.addEventListener('click', verifyOtpAndSubmit);
-            }
+            // Note: Step navigation & submit buttons already have explicit onclick handlers in the Blade HTML.
+            // Duplicate addEventListener calls have been removed to prevent double-event firing on mobile.
 
             toggleFields();
 

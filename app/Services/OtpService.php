@@ -6,6 +6,7 @@ use App\Mail\OtpMail;
 use App\Models\Otp;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Exception;
@@ -35,14 +36,55 @@ class OtpService
     }
 
     /**
+     * Mask IP address for privacy while maintaining diagnostic utility.
+     */
+    public static function maskIp(?string $ip): string
+    {
+        if (!$ip || $ip === 'unknown') {
+            return 'unknown';
+        }
+        if (str_contains($ip, ':')) {
+            $parts = explode(':', $ip);
+            return ($parts[0] ?? '') . ':' . ($parts[1] ?? '') . ':****:****';
+        }
+        $parts = explode('.', $ip);
+        if (count($parts) === 4) {
+            return $parts[0] . '.' . $parts[1] . '.***.***';
+        }
+        return '***.***';
+    }
+
+    /**
+     * Log structured server-side OTP telemetry without exposing raw codes or credentials.
+     */
+    public function logStructuredRequest(
+        string $requestId,
+        string $email,
+        string $purpose,
+        string $ip,
+        int $cooldown,
+        string $emailProvider,
+        string $outcome
+    ): void {
+        $maskedEmail = self::maskEmail($email);
+        $maskedIp = self::maskIp($ip);
+
+        Log::info("OTP REQUEST\n" . implode("\n", [
+            "Request ID: " . $requestId,
+            "Email: " . $maskedEmail,
+            "Timestamp: " . now()->toIso8601String(),
+            "Purpose: " . $purpose,
+            "Endpoint: " . (request()->path() ?: 'internal'),
+            "Client IP: " . $maskedIp,
+            "Cooldown: " . $cooldown,
+            "Email provider: " . $emailProvider,
+            "Result: " . $outcome,
+        ]));
+    }
+
+    /**
      * Generate, store, and deliver an OTP to the given email address.
-     *
-     * Logging sequence (without logging sensitive credentials or OTP values):
-     * 1. OTP request received
-     * 2. OTP generated
-     * 3. OTP stored
-     * 4. Email send initiated
-     * 5. Email provider accepted request
+     * Enforces per-email 30-second cooldown, server-side idempotency, and structured logging.
      *
      * @throws Exception if sending fails or cooldown is active.
      */
@@ -50,69 +92,137 @@ class OtpService
         string $email,
         string $purpose,
         ?int $userId = null,
-        ?string $recipientName = null
+        ?string $recipientName = null,
+        ?string $requestId = null
     ): array {
         $cleanEmail = strtolower(trim($email));
         $maskedEmail = self::maskEmail($cleanEmail);
         $ip = request()->ip() ?: 'unknown';
 
-        // Enforce cooldown
-        $cooldown = max(
-            Otp::getCooldownRemaining($cleanEmail, $purpose),
-            Otp::getCooldownRemaining($ip, $purpose),
-            $userId ? Otp::getCooldownRemaining($userId, $purpose) : 0
-        );
+        // Resolve client-supplied unique request ID for idempotency (if provided)
+        $resolvedRequestId = $requestId 
+            ?: request()->header('X-Request-Id') 
+            ?: request()->input('request_id');
+        $logRequestId = $resolvedRequestId ?: ('srv_' . substr(sha1(uniqid('', true)), 0, 8));
 
-        if ($cooldown > 0) {
-            throw new Exception("Please wait {$cooldown} seconds before requesting another verification code.", 429);
+        // 1. Idempotency Check: return existing result if exact client request ID was already processed
+        $idempotencyKey = $resolvedRequestId ? ('otp_idemp:' . sha1($resolvedRequestId)) : null;
+        if ($idempotencyKey && ($cached = Cache::get($idempotencyKey))) {
+            Log::info("OTP REQUEST (DUPLICATE IDEMPOTENT)\nRequest ID: {$resolvedRequestId}\nEmail: {$maskedEmail}\nResult: RETURNING_CACHED_RESULT");
+            return $cached;
         }
 
-        // Set cooldown on both email and IP immediately to prevent flood
-        Otp::setCooldown($cleanEmail, $purpose);
-        Otp::setCooldown($ip, $purpose);
-        if ($userId) {
-            Otp::setCooldown($userId, $purpose);
-        }
-
-        // 1. Log request received
-        Log::info("OTP request received [purpose: {$purpose}, recipient: {$maskedEmail}]");
-
-        // 2. Invalidate previous OTPs & generate new 6-digit code
-        $otp = Otp::generateForEmail($cleanEmail, $purpose, $userId);
-        Log::info("OTP generated [purpose: {$purpose}]");
-
-        // 3. Log OTP stored
-        Log::info("OTP stored [purpose: {$purpose}]");
-
-        // Resolve name if not explicitly passed
-        if (!$recipientName) {
-            if ($userId) {
-                $recipientName = User::find($userId)?->name ?? 'User';
-            } else {
-                $user = User::where('email', $cleanEmail)->first();
-                $recipientName = $user?->name ?? 'User';
-            }
-        }
-
-        // 4. Send email
-        Log::info("Email send initiated [recipient: {$maskedEmail}]");
+        // 2. Concurrency Lock per email+purpose to serialize parallel double-clicks
+        $lockKey = 'otp_lock:' . sha1($cleanEmail . ':' . $purpose);
+        $lock = Cache::lock($lockKey, 10);
 
         try {
-            Mail::to($cleanEmail)->send(new OtpMail($otp->code, $purpose, $recipientName));
-            // 5. Email provider accepted request
-            Log::info("Email provider accepted request [recipient: {$maskedEmail}]");
+            // Wait up to 2 seconds if a concurrent thread is already processing this email
+            $lock->block(2);
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException $e) {
+            if ($idempotencyKey && ($cached = Cache::get($idempotencyKey))) {
+                return $cached;
+            }
+            throw new Exception("Please wait a moment before requesting another verification code.", 429);
+        }
 
-            return [
-                'success'  => true,
-                'message'  => 'Verification code sent to ' . $cleanEmail,
-                'cooldown' => Otp::COOLDOWN_SECONDS,
-            ];
-        } catch (\Throwable $e) {
-            Log::error("Email delivery failed [recipient: {$maskedEmail}]: " . $e->getMessage());
-            // Invalidate the OTP so unreceived code cannot be exploited
-            $otp->update(['used' => true]);
+        try {
+            // Re-check idempotency cache after acquiring lock
+            if ($idempotencyKey && ($cached = Cache::get($idempotencyKey))) {
+                return $cached;
+            }
 
-            throw new Exception('Unable to send verification code. Please try again.', 500);
+            // 3. Enforce cooldown strictly per-email and per-user (NOT on the entire IP)
+            // Shared networks (cellular CGNAT, university WiFi) must not lock out different users.
+            $cooldown = max(
+                Otp::getCooldownRemaining($cleanEmail, $purpose),
+                $userId ? Otp::getCooldownRemaining($userId, $purpose) : 0
+            );
+
+            if ($cooldown > 0) {
+                $this->logStructuredRequest(
+                    requestId: $logRequestId,
+                    email: $cleanEmail,
+                    purpose: $purpose,
+                    ip: $ip,
+                    cooldown: $cooldown,
+                    emailProvider: 'SKIPPED',
+                    outcome: 'RATE_LIMITED'
+                );
+
+                throw new Exception("Please wait {$cooldown} seconds before requesting another verification code.", 429);
+            }
+
+            // 4. Set cooldown timer for this specific email (and user)
+            Otp::setCooldown($cleanEmail, $purpose);
+            if ($userId) {
+                Otp::setCooldown($userId, $purpose);
+            }
+
+            // 5. Invalidate previous OTPs & generate new 6-digit code
+            $otp = Otp::generateForEmail($cleanEmail, $purpose, $userId);
+
+            // Resolve name if not explicitly passed
+            if (!$recipientName) {
+                if ($userId) {
+                    $recipientName = User::find($userId)?->name ?? 'User';
+                } else {
+                    $user = User::where('email', $cleanEmail)->first();
+                    $recipientName = $user?->name ?? 'User';
+                }
+            }
+
+            // 6. Send email via configured provider
+            try {
+                Mail::to($cleanEmail)->send(new OtpMail($otp->code, $purpose, $recipientName));
+
+                $result = [
+                    'success'    => true,
+                    'message'    => 'Verification code sent to ' . $cleanEmail,
+                    'cooldown'   => Otp::COOLDOWN_SECONDS,
+                    'retryAfter' => Otp::COOLDOWN_SECONDS,
+                    'request_id' => $resolvedRequestId,
+                ];
+
+                // Cache successful response for idempotency window if request ID was supplied
+                if ($idempotencyKey) {
+                    Cache::put($idempotencyKey, $result, 30);
+                }
+
+                $this->logStructuredRequest(
+                    requestId: $logRequestId,
+                    email: $cleanEmail,
+                    purpose: $purpose,
+                    ip: $ip,
+                    cooldown: Otp::COOLDOWN_SECONDS,
+                    emailProvider: 'ACCEPTED',
+                    outcome: 'SUCCESS'
+                );
+
+                return $result;
+            } catch (\Throwable $e) {
+                Log::error("Email delivery failed [recipient: {$maskedEmail}]: " . $e->getMessage());
+
+                // Invalidate the unreceived OTP so it cannot be guessed
+                $otp->update(['used' => true]);
+
+                // Set brief 5s buffer on provider crash so user isn't stuck with 30s lock
+                Otp::setCooldown($cleanEmail, $purpose, 5);
+
+                $this->logStructuredRequest(
+                    requestId: $logRequestId,
+                    email: $cleanEmail,
+                    purpose: $purpose,
+                    ip: $ip,
+                    cooldown: 5,
+                    emailProvider: 'REJECTED_OR_FAILED',
+                    outcome: 'FAILED'
+                );
+
+                throw new Exception('Unable to send verification code. Please try again.', 500);
+            }
+        } finally {
+            $lock->release();
         }
     }
 

@@ -41,28 +41,39 @@ class OtpController extends Controller
         $emailClean = strtolower(trim((string) $request->email));
         $scope = $request->input('scope', 'register');
         $sessionPrefix = $scope === 'admin_student' ? 'admin_reg' : 'reg';
+        $requestId = $request->header('X-Request-Id') ?: $request->input('request_id');
 
         try {
-            $result = $this->otpService->sendOtp($emailClean, 'register');
+            $result = $this->otpService->sendOtp($emailClean, 'register', null, null, $requestId);
             session([
                 "{$sessionPrefix}_otp_email" => $emailClean,
             ]);
 
             return response()->json([
-                'success'  => true,
-                'message'  => 'Verification code sent to ' . $emailClean,
-                'cooldown' => $result['cooldown'],
+                'success'    => true,
+                'message'    => 'Verification code sent to ' . $emailClean,
+                'cooldown'   => $result['cooldown'] ?? Otp::COOLDOWN_SECONDS,
+                'retryAfter' => $result['cooldown'] ?? Otp::COOLDOWN_SECONDS,
+                'retry_after'=> $result['cooldown'] ?? Otp::COOLDOWN_SECONDS,
+                'request_id' => $result['request_id'] ?? $requestId,
             ]);
         } catch (\Exception $e) {
             $status = $e->getCode() === 429 ? 429 : 500;
+            $cooldown = $status === 429 ? Otp::getCooldownRemaining($emailClean, 'register') : 0;
+            if ($cooldown <= 0 && $status === 429) {
+                $cooldown = Otp::COOLDOWN_SECONDS;
+            }
+
             return response()->json([
-                'success'  => false,
-                'status'   => 'error',
-                'message'  => $e->getMessage() ?: 'Unable to send verification code. Please try again.',
-                'cooldown' => $status === 429 ? max(
-                    Otp::getCooldownRemaining($emailClean, 'register'),
-                    Otp::getCooldownRemaining(request()->ip() ?: 'unknown', 'register')
-                ) : 0,
+                'success'    => false,
+                'status'     => 'error',
+                'error'      => $status === 429 ? 'OTP_RATE_LIMITED' : 'OTP_SEND_FAILED',
+                'message'    => $status === 429
+                    ? "Please wait {$cooldown} seconds before requesting another code."
+                    : ($e->getMessage() ?: 'Unable to send verification code. Please try again.'),
+                'cooldown'   => $cooldown,
+                'retryAfter' => $cooldown,
+                'retry_after'=> $cooldown,
             ], $status);
         }
     }
@@ -114,22 +125,23 @@ class OtpController extends Controller
         ]);
 
         $identifier = strtolower(trim((string) $request->input('identifier', $request->input('email', ''))));
-        $ip = $request->ip() ?: 'unknown';
+        $requestId  = $request->header('X-Request-Id') ?: $request->input('request_id');
 
-        $cooldown = max(
-            Otp::getCooldownRemaining($identifier, 'forgot_password'),
-            Otp::getCooldownRemaining($ip, 'forgot_password')
-        );
+        $cooldown = Otp::getCooldownRemaining($identifier, 'forgot_password');
         if ($cooldown > 0) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
-                    'success'  => false,
-                    'message'  => "Please wait {$cooldown} seconds before requesting a new verification code.",
-                    'cooldown' => $cooldown,
+                    'success'    => false,
+                    'status'     => 'error',
+                    'error'      => 'OTP_RATE_LIMITED',
+                    'message'    => "Please wait {$cooldown} seconds before requesting another code.",
+                    'cooldown'   => $cooldown,
+                    'retryAfter' => $cooldown,
+                    'retry_after'=> $cooldown,
                 ], 429);
             }
             return back()->withInput()->withErrors([
-                'identifier' => "Please wait {$cooldown} seconds before requesting a new verification code."
+                'identifier' => "Please wait {$cooldown} seconds before requesting another code."
             ]);
         }
 
@@ -143,13 +155,21 @@ class OtpController extends Controller
 
         if ($user) {
             try {
-                $this->otpService->sendOtp($user->email, 'forgot_password', $user->id, $user->name);
+                $this->otpService->sendOtp($user->email, 'forgot_password', $user->id, $user->name, $requestId);
             } catch (\Exception $e) {
                 if ($request->expectsJson() || $request->ajax()) {
+                    $status = $e->getCode() === 429 ? 429 : 500;
+                    $cooldownRem = $status === 429 ? Otp::getCooldownRemaining($user->email, 'forgot_password') : 0;
                     return response()->json([
-                        'success' => false,
-                        'message' => 'Unable to send verification code. Please try again.',
-                    ], 500);
+                        'success'    => false,
+                        'status'     => 'error',
+                        'error'      => $status === 429 ? 'OTP_RATE_LIMITED' : 'OTP_SEND_FAILED',
+                        'message'    => $status === 429 
+                            ? "Please wait {$cooldownRem} seconds before requesting another code." 
+                            : 'Unable to send verification code. Please try again.',
+                        'cooldown'   => $cooldownRem,
+                        'retryAfter' => $cooldownRem,
+                    ], $status);
                 }
                 return back()->withInput()->withErrors([
                     'identifier' => 'Unable to send verification code. Please try again.'
@@ -158,15 +178,15 @@ class OtpController extends Controller
         } else {
             // Mitigate user enumeration
             Otp::setCooldown($identifier, 'forgot_password');
-            Otp::setCooldown($ip, 'forgot_password');
             Log::warning("Forgot password OTP requested for non-existent identifier: {$identifier}");
         }
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
-                'success'  => true,
-                'message'  => 'If your account is registered, a verification code has been sent.',
-                'cooldown' => Otp::COOLDOWN_SECONDS,
+                'success'    => true,
+                'message'    => 'If your account is registered, a verification code has been sent.',
+                'cooldown'   => Otp::COOLDOWN_SECONDS,
+                'retryAfter' => Otp::COOLDOWN_SECONDS,
             ]);
         }
 

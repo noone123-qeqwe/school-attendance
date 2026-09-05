@@ -1164,24 +1164,22 @@ class AdminController extends Controller
         $user = Auth::user();
         if (!$user || !$user->isAdmin()) return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
 
-        $ip = $request->ip() ?: 'unknown';
-        $cooldown = max(
-            \App\Models\Otp::getCooldownRemaining($user->id, 'admin_login'),
-            \App\Models\Otp::getCooldownRemaining($ip, 'admin_login')
-        );
+        $cooldown = \App\Models\Otp::getCooldownRemaining($user->id, 'admin_login');
         if ($cooldown > 0) {
             return response()->json([
-                'success' => false,
-                'status' => 'error',
-                'message' => "Please wait {$cooldown} seconds before requesting a new verification code.",
-                'cooldown' => $cooldown,
+                'success'    => false,
+                'status'     => 'error',
+                'error'      => 'OTP_RATE_LIMITED',
+                'message'    => "Please wait {$cooldown} seconds before requesting a new verification code.",
+                'cooldown'   => $cooldown,
+                'retryAfter' => $cooldown,
+                'retry_after'=> $cooldown,
             ], 429);
         }
 
         $otp = \App\Models\Otp::generate($user->id, 'admin_login');
         \App\Models\Otp::setCooldown($user->id, 'admin_login');
-        \App\Models\Otp::setCooldown($ip, 'admin_login');
-        \Illuminate\Support\Facades\Log::info("Admin 2FA OTP resent for user #{$user->id} ({$user->email}): {$otp->code}");
+        \Illuminate\Support\Facades\Log::info("Admin 2FA OTP resent for user #{$user->id}");
 
         try {
             \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));

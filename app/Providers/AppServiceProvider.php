@@ -81,20 +81,25 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
-        // 2. OTP send: Max 3/min per IP, max 2/min per email/identifier to prevent spam/bombing
+        // 2. OTP send: Enforce per-email 30s cooldown pace (2/min), while providing a realistic 20/min ceiling for shared IPs (mobile carrier CGNAT, campus WiFi)
         RateLimiter::for('otp.send', function (Request $request) {
             $email = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', $request->input('phone', $request->user()?->email ?? ''))))));
             $ip = $request->ip() ?: 'unknown';
 
             return [
-                Limit::perMinute(3)->by('otp_send_ip:' . $ip)->response(function (Request $request, array $headers) {
-                    return $this->format429Response($request, 'Too many OTP requests from this IP. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
-                }),
+                // Per-account limit: Max 2/min (permits initial send + 30s cooldown resend)
                 Limit::perMinute(2)->by('otp_send_id:' . ($email ?: $ip))->response(function (Request $request, array $headers) {
-                    return $this->format429Response($request, 'Too many OTP requests for this account. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
+                    $retryAfter = (int) ($headers['Retry-After'] ?? 30);
+                    return $this->format429Response($request, 'Please wait ' . $retryAfter . ' seconds before requesting another code.', $headers);
                 }),
-                Limit::perHour(20)->by('otp_send_ip_hr:' . $ip)->response(function (Request $request, array $headers) {
-                    return $this->format429Response($request, 'Hourly OTP request limit exceeded for this IP address. Please try again later.', $headers);
+                // Per-IP limit: Max 10/min to safely support legitimate users on shared networks while blocking flood attacks
+                Limit::perMinute(10)->by('otp_send_ip:' . $ip)->response(function (Request $request, array $headers) {
+                    $retryAfter = (int) ($headers['Retry-After'] ?? 60);
+                    return $this->format429Response($request, 'Too many OTP requests from this network. Please wait ' . $retryAfter . ' seconds.', $headers);
+                }),
+                // Hourly burst ceiling per IP: Max 100/hr
+                Limit::perHour(100)->by('otp_send_ip_hr:' . $ip)->response(function (Request $request, array $headers) {
+                    return $this->format429Response($request, 'Hourly OTP request limit exceeded for this network. Please try again later.', $headers);
                 }),
             ];
         });
@@ -108,8 +113,8 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(5)->by('otp_verify_id:' . ($email ?: $ip))->response(function (Request $request, array $headers) {
                     return $this->format429Response($request, 'Too many OTP verification attempts. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
                 }),
-                Limit::perMinute(10)->by('otp_verify_ip:' . $ip)->response(function (Request $request, array $headers) {
-                    return $this->format429Response($request, 'Too many attempts from this IP address.', $headers);
+                Limit::perMinute(20)->by('otp_verify_ip:' . $ip)->response(function (Request $request, array $headers) {
+                    return $this->format429Response($request, 'Too many verification attempts from this network. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
                 }),
             ];
         });
@@ -123,8 +128,8 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(2)->by('pw_reset_id:' . ($email ?: $ip))->response(function (Request $request, array $headers) {
                     return $this->format429Response($request, 'Too many password reset requests. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
                 }),
-                Limit::perMinute(5)->by('pw_reset_ip:' . $ip)->response(function (Request $request, array $headers) {
-                    return $this->format429Response($request, 'Too many requests from this IP address.', $headers);
+                Limit::perMinute(10)->by('pw_reset_ip:' . $ip)->response(function (Request $request, array $headers) {
+                    return $this->format429Response($request, 'Too many requests from this network.', $headers);
                 }),
             ];
         });
@@ -142,13 +147,13 @@ class AppServiceProvider extends ServiceProvider
             $ip = $request->ip() ?: 'unknown';
 
             return [
-                Limit::perMinute(3)->by('email_verify_ip:' . $ip)->response(function (Request $request, array $headers) {
-                    return $this->format429Response($request, 'Too many email requests from this IP. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
-                }),
                 Limit::perMinute(2)->by('email_verify_id:' . ($email ?: $ip))->response(function (Request $request, array $headers) {
-                    return $this->format429Response($request, 'Too many email requests for this account.', $headers);
+                    return $this->format429Response($request, 'Please wait ' . ($headers['Retry-After'] ?? 30) . ' seconds before requesting another verification email.', $headers);
                 }),
-                Limit::perHour(20)->by('email_verify_ip_hr:' . $ip)->response(function (Request $request, array $headers) {
+                Limit::perMinute(20)->by('email_verify_ip:' . $ip)->response(function (Request $request, array $headers) {
+                    return $this->format429Response($request, 'Too many email requests from this network. Please wait ' . ($headers['Retry-After'] ?? 60) . ' seconds.', $headers);
+                }),
+                Limit::perHour(100)->by('email_verify_ip_hr:' . $ip)->response(function (Request $request, array $headers) {
                     return $this->format429Response($request, 'Hourly email verification request limit exceeded.', $headers);
                 }),
             ];
@@ -163,8 +168,11 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(60)->by('api_ip:' . $ip)->response(function (Request $request, array $headers) {
                     return response()->json([
                         'status' => 'error',
+                        'error' => 'API_RATE_LIMITED',
                         'message' => 'API rate limit exceeded. Too many requests. Please retry in ' . ($headers['Retry-After'] ?? 60) . ' seconds.',
+                        'retryAfter' => (int) ($headers['Retry-After'] ?? 60),
                         'retry_after' => (int) ($headers['Retry-After'] ?? 60),
+                        'cooldown' => (int) ($headers['Retry-After'] ?? 60),
                     ], 429, $headers);
                 }),
             ];
@@ -173,8 +181,11 @@ class AppServiceProvider extends ServiceProvider
                 $limits[] = Limit::perMinute(60)->by('api_' . $userKey)->response(function (Request $request, array $headers) {
                     return response()->json([
                         'status' => 'error',
+                        'error' => 'API_RATE_LIMITED',
                         'message' => 'API rate limit exceeded for this account. Please retry in ' . ($headers['Retry-After'] ?? 60) . ' seconds.',
+                        'retryAfter' => (int) ($headers['Retry-After'] ?? 60),
                         'retry_after' => (int) ($headers['Retry-After'] ?? 60),
+                        'cooldown' => (int) ($headers['Retry-After'] ?? 60),
                     ], 429, $headers);
                 });
             }
@@ -184,16 +195,21 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Helper to return a JSON 429 response or redirect with error for Web requests.
+     * Helper to return a structured JSON 429 response or redirect with error for Web requests.
      */
     private function format429Response(Request $request, string $message, array $headers)
     {
+        $retryAfter = (int) ($headers['Retry-After'] ?? 60);
+
         if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
             return response()->json([
                 'status' => 'error',
                 'success' => false,
+                'error' => 'OTP_RATE_LIMITED',
                 'message' => $message,
-                'retry_after' => (int) ($headers['Retry-After'] ?? 60),
+                'retryAfter' => $retryAfter,
+                'retry_after' => $retryAfter,
+                'cooldown' => $retryAfter,
             ], 429, $headers);
         }
 

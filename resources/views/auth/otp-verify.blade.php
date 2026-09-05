@@ -293,13 +293,27 @@ function startResendCooldown(seconds = 30) {
     }, 1000);
 }
 
+let isResendingForgot = false;
+
 function resendForgotOtp() {
+    if (isResendingForgot) {
+        console.warn('OTP resend already in progress. Ignoring duplicate click.');
+        return;
+    }
+
     const identifier = document.getElementById('identifierInput')?.value?.trim();
     if (!identifier) {
         showVerifyError('Please specify your registered email or identifier.');
         return;
     }
 
+    const requestId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+
+    console.log("OTP REQUEST START\nRequest ID: " + requestId);
+
+    isResendingForgot = true;
     const resendBtn = document.getElementById('btn-resend-forgot');
     const originalHtml = resendBtn.innerHTML;
     resendBtn.disabled = true;
@@ -309,26 +323,33 @@ function resendForgotOtp() {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'X-Request-Id': requestId,
             'Content-Type': 'application/json',
             'Accept': 'application/json'
         },
-        body: JSON.stringify({ identifier: identifier })
+        body: JSON.stringify({ identifier: identifier, request_id: requestId })
     }).then(async r => {
         const isJson = r.headers.get('content-type')?.includes('application/json');
         const data = isJson ? await r.json() : null;
         if (!r.ok) {
-            const errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+            const retrySecs = data ? (data.retryAfter || data.retry_after || data.cooldown) : null;
+            let errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+            if (r.status === 429 && retrySecs) {
+                errorMsg = `Please wait ${retrySecs} seconds before requesting another code.`;
+            }
             const err = new Error(errorMsg);
-            err.cooldown = data && data.cooldown ? data.cooldown : null;
+            err.status = r.status;
+            err.cooldown = retrySecs;
             throw err;
         }
         return data;
     }).then(data => {
+        isResendingForgot = false;
         resendBtn.innerHTML = originalHtml;
         if (data.success) {
             showVerifySuccess('A new verification code has been sent.');
             startExpiryTimer(600);
-            startResendCooldown(data.cooldown || 30);
+            startResendCooldown(data.cooldown || data.retryAfter || 30);
             digits.forEach(d => d.value = '');
             digits[0].focus();
         } else {
@@ -336,6 +357,7 @@ function resendForgotOtp() {
             showVerifyError(data.message || 'Unable to send verification code. Please try again.');
         }
     }).catch(err => {
+        isResendingForgot = false;
         resendBtn.innerHTML = originalHtml;
         showVerifyError(err.message || 'Unable to send verification code. Please try again.');
         if (err.cooldown) {

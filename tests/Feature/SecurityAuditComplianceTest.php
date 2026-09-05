@@ -280,17 +280,18 @@ class SecurityAuditComplianceTest extends TestCase
     }
 
     /**
-     * Anti-Spam: Web Registration OTP IP cooldown & flood prevention
+     * Anti-Spam: Web Registration OTP IP flood prevention
      */
     public function test_web_registration_otp_ip_flood_blocked()
     {
-        $res1 = $this->postJson('/otp/send-register', ['email' => 'newstudent1@school.edu']);
-        $res1->assertStatus(200);
+        for ($i = 1; $i <= 10; $i++) {
+            $this->postJson('/otp/send-register', ['email' => "flood_student_{$i}@school.edu"]);
+        }
 
-        // Immediate second attempt with different email from same IP should be blocked by IP cooldown
-        $res2 = $this->postJson('/otp/send-register', ['email' => 'newstudent2@school.edu']);
-        $res2->assertStatus(429);
-        $res2->assertJsonFragment(['status' => 'error']);
+        // Exceeding per-IP rate limit ceiling triggers 429
+        $overflow = $this->postJson('/otp/send-register', ['email' => 'flood_overflow@school.edu']);
+        $overflow->assertStatus(429);
+        $overflow->assertJsonFragment(['status' => 'error']);
     }
 
     /**
@@ -314,12 +315,13 @@ class SecurityAuditComplianceTest extends TestCase
      */
     public function test_api_otp_cycling_emails_from_single_ip_is_blocked()
     {
-        $res1 = $this->postJson('/api/otp', ['email' => 'bot_user_1@domain.com']);
-        $res1->assertStatus(200);
+        for ($i = 1; $i <= 10; $i++) {
+            $this->postJson('/api/otp', ['email' => "bot_user_{$i}@domain.com"]);
+        }
 
-        // Immediate subsequent request with different email should be blocked by IP cooldown
-        $res2 = $this->postJson('/api/otp', ['email' => 'bot_user_2@domain.com']);
-        $res2->assertStatus(429);
-        $res2->assertJsonFragment(['status' => 'error']);
+        // Exceeding per-IP rate limit ceiling triggers 429
+        $overflow = $this->postJson('/api/otp', ['email' => 'bot_user_overflow@domain.com']);
+        $overflow->assertStatus(429);
+        $overflow->assertJsonFragment(['status' => 'error']);
     }
 }

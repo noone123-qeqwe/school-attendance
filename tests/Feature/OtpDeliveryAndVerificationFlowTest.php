@@ -304,4 +304,75 @@ class OtpDeliveryAndVerificationFlowTest extends TestCase
         $user->refresh();
         $this->assertTrue(Hash::check('NewPassword123!', $user->password));
     }
+
+    /**
+     * 11. Idempotent requests with matching request_id return cached response and send only 1 email.
+     */
+    public function test_idempotent_request_returns_cached_response_and_does_not_send_second_email()
+    {
+        $email = 'idempotent@gmail.com';
+        $reqId = 'req_test_idemp_12345';
+
+        // 1st request
+        $res1 = $this->postJson('/otp/send-register', [
+            'email'      => $email,
+            'request_id' => $reqId,
+        ]);
+        $res1->assertStatus(200);
+        $res1->assertJson(['success' => true]);
+
+        // 2nd request with exact same request_id (e.g. cellular network retry or double-click)
+        $res2 = $this->postJson('/otp/send-register', [
+            'email'      => $email,
+            'request_id' => $reqId,
+        ]);
+        $res2->assertStatus(200);
+        $res2->assertJson(['success' => true]);
+
+        // Exactly one email sent
+        Mail::assertSent(OtpMail::class, 1);
+    }
+
+    /**
+     * 12. Multiple different users sharing the same IP (cellular CGNAT, campus WiFi) are NOT locked out by each other.
+     */
+    public function test_different_emails_on_same_ip_are_not_locked_out_by_cooldown()
+    {
+        $ip = '112.198.100.55'; // Typical mobile carrier CGNAT IP
+
+        // User A requests OTP
+        $resA = $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                     ->postJson('/otp/send-register', ['email' => 'student_a@gmail.com']);
+        $resA->assertStatus(200);
+
+        // User B immediately requests OTP from the same cellular IP
+        $resB = $this->withServerVariables(['REMOTE_ADDR' => $ip])
+                     ->postJson('/otp/send-register', ['email' => 'student_b@gmail.com']);
+        $resB->assertStatus(200);
+        $resB->assertJson(['success' => true]);
+
+        // Both emails received their OTP
+        Mail::assertSent(OtpMail::class, 2);
+    }
+
+    /**
+     * 13. Rate-limited response returns structured payload with error code and retryAfter.
+     */
+    public function test_rate_limited_response_returns_structured_json()
+    {
+        $email = 'structured429@gmail.com';
+
+        // 1st request
+        $this->postJson('/otp/send-register', ['email' => $email])->assertStatus(200);
+
+        // 2nd request without waiting 30s
+        $res2 = $this->postJson('/otp/send-register', ['email' => $email]);
+        $res2->assertStatus(429);
+        $res2->assertJson([
+            'success' => false,
+            'error'   => 'OTP_RATE_LIMITED',
+        ]);
+        $this->assertNotNull($res2->json('retryAfter'));
+        $this->assertStringContainsString('Please wait', $res2->json('message'));
+    }
 }
