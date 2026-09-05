@@ -1305,7 +1305,7 @@
                 if (choice && choice.outcome === 'accepted') {
                     localStorage.setItem('pwa_app_installed', 'true');
                     hideInstallBanner(30);
-                    showNetworkToast('✓ Smart Attendance installed successfully!', 'online');
+                    showNetworkToast('✓ Smart Attendance installed! Check your App Drawer (swipe up) or Home screen.', 'online');
                     syncPwaInstallVisibility();
                     return;
                 } else {
@@ -1351,7 +1351,7 @@
                         if (choice && choice.outcome === 'accepted') {
                             localStorage.setItem('pwa_app_installed', 'true');
                             hideInstallBanner(30);
-                            showNetworkToast('✓ Smart Attendance installed successfully!', 'online');
+                            showNetworkToast('✓ Smart Attendance installed! Check your App Drawer (swipe up) or Home screen.', 'online');
                             syncPwaInstallVisibility();
                             return;
                         } else {
