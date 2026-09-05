@@ -277,7 +277,12 @@
 
             const data = await response.json();
             if (data.success) {
-                setStatus(data.message || 'OTP sent successfully. Check the student email.', '#16a34a');
+                let msg = data.message || 'OTP sent successfully. Check the student email.';
+                if (data.dev_otp) {
+                    msg += ` [Local Dev OTP: ${data.dev_otp}]`;
+                    emailOtpInput.value = data.dev_otp;
+                }
+                setStatus(msg, '#16a34a');
                 emailOtpVerifySection.style.display = 'block';
                 emailOtpInput.focus();
             } else {

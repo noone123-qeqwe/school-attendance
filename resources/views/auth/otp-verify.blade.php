@@ -116,10 +116,34 @@
             <div class="otp-icon"><i class="bi bi-shield-lock-fill"></i></div>
             <div class="text-center mb-4">
                 <h2 class="reset-title">Enter OTP</h2>
+                @php
+                    $effectiveIdentifier = $identifier ?? session('otp_identifier') ?? old('identifier', old('email', ''));
+                @endphp
                 <p class="reset-subtitle">
-                    We sent a 6-digit code to your email.<br>It expires in <strong>10 minutes</strong>.
+                    We sent a 6-digit code to your registered email.
+                    @if(!empty($effectiveIdentifier))
+                    <br><strong style="color: #f8e7d3;">({{ $effectiveIdentifier }})</strong>
+                    @endif
+                    <br>It expires in <strong>10 minutes</strong>.
+                    <br><span style="font-size:0.8rem; color:rgba(248,231,211,0.7); display:inline-block; margin-top:6px;">
+                        ⚠️ Check your <strong>Spam / Junk folder</strong> if you don't see it in your inbox.
+                    </span>
                 </p>
             </div>
+
+        @if(app()->environment('local', 'testing') && session('dev_otp'))
+        <div class="dev-otp-card" style="background: rgba(216, 179, 92, 0.15); border: 1px solid rgba(216, 179, 92, 0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: #d8b35c; font-weight: 700; margin-bottom: 4px;">
+                <i class="bi bi-code-slash me-1"></i> Local Dev OTP Helper
+            </div>
+            <div style="font-size: 1.5rem; font-weight: 800; letter-spacing: 5px; color: #fff; font-family: monospace;">
+                {{ session('dev_otp') }}
+            </div>
+            <button type="button" onclick="autofillDevOtp('{{ session('dev_otp') }}')" style="margin-top: 8px; font-size: 0.78rem; padding: 5px 14px; border-radius: 8px; background: rgba(216, 179, 92, 0.3); border: 1px solid rgba(216, 179, 92, 0.5); color: #f8e7d3; cursor: pointer; font-weight: 600;">
+                <i class="bi bi-box-arrow-in-down me-1"></i> Click to Autofill
+            </button>
+        </div>
+        @endif
 
         @if(session('info'))
         <div class="alert-info"><i class="bi bi-info-circle me-2"></i>{{ session('info') }}</div>
@@ -131,13 +155,13 @@
         <form method="POST" action="{{ route('otp.verify') }}" id="otpForm">
             @csrf
             <input type="hidden" name="purpose" value="{{ $purpose }}">
-            <input type="hidden" name="identifier" id="identifierInput" value="{{ session('otp_identifier') ?? old('identifier', old('email')) }}">
+            <input type="hidden" name="identifier" id="identifierInput" value="{{ $effectiveIdentifier }}">
             <input type="hidden" name="otp" id="otpHidden">
 
-            @if(!session('otp_identifier'))
+            @if(empty($effectiveIdentifier))
             <div style="margin-bottom:16px;">
                 <label class="field-label">Email / Student Number / Employee ID</label>
-                <input type="text" class="field-input" id="identifierVisible" placeholder="Email, student no., or employee ID" value="{{ old('identifier', old('email')) }}" oninput="document.getElementById('identifierInput').value=this.value" autocomplete="username">
+                <input type="text" class="field-input" id="identifierVisible" placeholder="Email, student no., or employee ID" value="{{ old('identifier', old('email')) }}" oninput="document.getElementById('identifierInput').value=this.value" autocomplete="username" required>
             </div>
             @endif
 
@@ -154,12 +178,21 @@
         </form>
 
         <div class="resend-link">
-            Didn't receive it? <a href="{{ $purpose === 'forgot_password' ? route('otp.forgot.form') : route('settings') }}">Try again</a>
+            Didn't receive it? <a href="{{ $purpose === 'forgot_password' ? route('otp.forgot.form') : route('settings') }}">Request a new code</a>
         </div>
     </div>
 </div>
 
 <script>
+function autofillDevOtp(code) {
+    if (!code) return;
+    const digits = document.querySelectorAll('.otp-digit');
+    code.split('').forEach((ch, idx) => {
+        if (digits[idx]) digits[idx].value = ch;
+    });
+    updateHidden();
+    if (digits[5]) digits[5].focus();
+}
 // Auto-advance between digit boxes
 const digits = document.querySelectorAll('.otp-digit');
 digits.forEach((input, idx) => {

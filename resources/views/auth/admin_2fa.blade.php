@@ -99,8 +99,35 @@
             <h2 class="reset-title">Admin Authentication</h2>
             <p class="reset-subtitle">
                 Please enter the 6-digit code sent to your email to verify your identity.
+                <br><span style="font-size:0.8rem; color:rgba(248,231,211,0.7); display:inline-block; margin-top:6px;">
+                    ⚠️ Check your <strong>Spam / Junk folder</strong> if you don't see it in your inbox.
+                </span>
             </p>
         </div>
+
+        @if(app()->environment('local', 'testing') && session('dev_otp'))
+        <div id="adminDevOtpBanner" style="background: rgba(216, 179, 92, 0.15); border: 1px solid rgba(216, 179, 92, 0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: #d8b35c; font-weight: 700; margin-bottom: 4px;">
+                <i class="bi bi-code-slash me-1"></i> Local Dev 2FA OTP
+            </div>
+            <div id="adminDevOtpCode" style="font-size: 1.5rem; font-weight: 800; letter-spacing: 5px; color: #fff; font-family: monospace;">
+                {{ session('dev_otp') }}
+            </div>
+            <button type="button" onclick="autofillAdminOtp('{{ session('dev_otp') }}')" style="margin-top: 8px; font-size: 0.78rem; padding: 5px 14px; border-radius: 8px; background: rgba(216, 179, 92, 0.3); border: 1px solid rgba(216, 179, 92, 0.5); color: #f8e7d3; cursor: pointer; font-weight: 600;">
+                <i class="bi bi-box-arrow-in-down me-1"></i> Click to Autofill
+            </button>
+        </div>
+        @else
+        <div id="adminDevOtpBanner" style="display: none; background: rgba(216, 179, 92, 0.15); border: 1px solid rgba(216, 179, 92, 0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 20px; text-align: center;">
+            <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: #d8b35c; font-weight: 700; margin-bottom: 4px;">
+                <i class="bi bi-code-slash me-1"></i> Local Dev 2FA OTP
+            </div>
+            <div id="adminDevOtpCode" style="font-size: 1.5rem; font-weight: 800; letter-spacing: 5px; color: #fff; font-family: monospace;"></div>
+            <button type="button" id="adminDevOtpBtn" style="margin-top: 8px; font-size: 0.78rem; padding: 5px 14px; border-radius: 8px; background: rgba(216, 179, 92, 0.3); border: 1px solid rgba(216, 179, 92, 0.5); color: #f8e7d3; cursor: pointer; font-weight: 600;">
+                <i class="bi bi-box-arrow-in-down me-1"></i> Click to Autofill
+            </button>
+        </div>
+        @endif
 
         @if(session('info'))
         <div class="alert-info"><i class="bi bi-info-circle me-2"></i>{{ session('info') }}</div>
@@ -137,6 +164,15 @@
 </div>
 
 <script>
+function autofillAdminOtp(code) {
+    if (!code) return;
+    const digits = document.querySelectorAll('.otp-digit');
+    code.split('').forEach((ch, idx) => {
+        if (digits[idx]) digits[idx].value = ch;
+    });
+    updateHidden();
+    if (digits[5]) digits[5].focus();
+}
 const digits = document.querySelectorAll('.otp-digit');
 digits.forEach((input, idx) => {
     input.addEventListener('input', (e) => {
@@ -188,6 +224,18 @@ document.getElementById('resendBtn').addEventListener('click', async function(e)
         alertBox.innerHTML = '<i class="bi bi-info-circle me-2"></i>' + data.message;
         
         if(data.success) {
+            const devBanner = document.getElementById('adminDevOtpBanner');
+            const devCode = document.getElementById('adminDevOtpCode');
+            const devBtn = document.getElementById('adminDevOtpBtn');
+            if (data.dev_otp && devBanner && devCode) {
+                devCode.textContent = data.dev_otp;
+                devBanner.style.display = 'block';
+                const autofillAction = function() { autofillAdminOtp(data.dev_otp); };
+                if (devBtn) devBtn.onclick = autofillAction;
+                const existingBtn = devBanner.querySelector('button');
+                if (existingBtn) existingBtn.onclick = autofillAction;
+            }
+
             let countdown = 60;
             const btn = this;
             const timer = setInterval(() => {

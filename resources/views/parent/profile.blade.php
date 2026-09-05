@@ -895,6 +895,11 @@ function requestOtp() {
         if (data.success) {
             document.getElementById('otpStep1').style.display = 'none';
             document.getElementById('otpStep2').style.display = 'block';
+            if (data.dev_otp && sDigits) {
+                const str = String(data.dev_otp).trim();
+                sDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
+                document.getElementById('otpHidden').value = str;
+            }
             if (sDigits[0]) sDigits[0].focus();
         } else {
             btn.disabled = false;
@@ -950,6 +955,11 @@ function requestEmailOtp() {
         if (data.success) {
             document.getElementById('emailStep1').style.display = 'none';
             document.getElementById('emailStep2').style.display = 'block';
+            if (data.dev_otp && eDigits) {
+                const str = String(data.dev_otp).trim();
+                eDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
+                document.getElementById('emailOtpHidden').value = str;
+            }
             if (eDigits[0]) eDigits[0].focus();
         } else {
             btn.disabled = false;

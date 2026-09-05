@@ -413,6 +413,11 @@ function admRequestOtp() {
         if (data.success) {
             document.getElementById('admOtpStep1').style.display = 'none';
             document.getElementById('admOtpStep2').style.display = 'block';
+            if (data.dev_otp && admDigits) {
+                const str = String(data.dev_otp).trim();
+                admDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
+                admCollectOtp();
+            }
             if (admDigits[0]) admDigits[0].focus();
         } else {
             btn.disabled = false;
@@ -455,6 +460,11 @@ function admRequestEmailOtp() {
         if (data.success) {
             document.getElementById('admEmailStep1').style.display = 'none';
             document.getElementById('admEmailStep2').style.display = 'block';
+            if (data.dev_otp && admEmailDigits) {
+                const str = String(data.dev_otp).trim();
+                admEmailDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
+                admCollectEmailOtp();
+            }
             if (admEmailDigits[0]) admEmailDigits[0].focus();
         } else {
             btn.disabled = false;

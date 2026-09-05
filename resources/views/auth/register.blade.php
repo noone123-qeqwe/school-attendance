@@ -583,6 +583,18 @@
                             </div>
                             <h4 style="font-family:'Outfit'; font-weight:700; font-size:1.2rem;">Check your inbox</h4>
                             <p style="color:var(--text-muted); font-size:0.9rem; margin:0;">We sent a 6-digit code to <br><b id="display-email" style="color:white;"></b></p>
+                            <p style="color:rgba(255,255,255,0.65); font-size:0.8rem; margin-top:6px;">⚠️ Check your <strong>Spam / Junk folder</strong> if the email does not appear in your inbox.</p>
+                        </div>
+
+                        <!-- Local Development Helper -->
+                        <div id="regDevOtpBanner" style="display:none; background:rgba(232, 192, 100, 0.15); border:1px solid rgba(232, 192, 100, 0.4); border-radius:14px; padding:12px 16px; margin: 0 auto 20px; max-width: 380px; text-align:center;">
+                            <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.8px; color:var(--accent); font-weight:700; margin-bottom:4px;">
+                                <i class="bi bi-code-slash me-1"></i> Local Dev OTP Helper
+                            </div>
+                            <div id="regDevOtpCode" style="font-size:1.5rem; font-weight:800; letter-spacing:5px; color:#fff; font-family:monospace;"></div>
+                            <button type="button" id="regDevOtpBtn" style="margin-top:8px; font-size:0.78rem; padding:5px 14px; border-radius:8px; background:rgba(232, 192, 100, 0.3); border:1px solid rgba(232, 192, 100, 0.5); color:#f8e7d3; cursor:pointer; font-weight:600;">
+                                <i class="bi bi-box-arrow-in-down me-1"></i> Click to Autofill
+                            </button>
                         </div>
 
                         <div class="otp-container">
@@ -820,6 +832,18 @@
             }, 1000);
         }
 
+        function autofillRegOtp(code) {
+            if (!code) return;
+            const str = String(code).trim();
+            for (let i = 0; i < 6; i++) {
+                const box = document.getElementById('otp-' + (i + 1));
+                if (box && str[i]) {
+                    box.value = str[i];
+                }
+            }
+            if (otpBoxes[5]) otpBoxes[5].focus();
+        }
+
         function sendOtp() {
             hideAlert();
             const email = document.getElementById('email').value.trim();
@@ -856,6 +880,18 @@
                     document.getElementById('display-email').textContent = email;
                     goToStep(3);
                     startTimer();
+                    const devBanner = document.getElementById('regDevOtpBanner');
+                    const devCode = document.getElementById('regDevOtpCode');
+                    const devBtn = document.getElementById('regDevOtpBtn');
+                    if (data.dev_otp && devBanner && devCode) {
+                        devCode.textContent = data.dev_otp;
+                        devBanner.style.display = 'block';
+                        if (devBtn) {
+                            devBtn.onclick = function() { autofillRegOtp(data.dev_otp); };
+                        }
+                    } else if (devBanner) {
+                        devBanner.style.display = 'none';
+                    }
                     otpBoxes[0].focus();
                 } else {
                     showAlert(data.message || 'Failed to send OTP.');

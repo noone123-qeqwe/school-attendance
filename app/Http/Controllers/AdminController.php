@@ -1097,22 +1097,29 @@ class AdminController extends Controller
     public function twoFactorForm()
     {
         $user = Auth::user();
+        if (!$user || !$user->isAdmin()) return redirect()->route('login');
         
         // Only send a new OTP if no valid unexpired one exists (prevents spam on page refresh)
-        $hasValidOtp = \App\Models\Otp::where('user_id', $user->id)
+        $validOtp = \App\Models\Otp::where('user_id', $user->id)
             ->where('purpose', 'admin_login')
             ->where('used', false)
             ->where('expires_at', '>', now())
-            ->exists();
+            ->latest()
+            ->first();
 
-        if (!$hasValidOtp) {
-            $otp = \App\Models\Otp::generate($user->id, 'admin_login');
-            
+        if (!$validOtp) {
+            $validOtp = \App\Models\Otp::generate($user->id, 'admin_login');
+            \Illuminate\Support\Facades\Log::info("Admin 2FA OTP generated for user #{$user->id} ({$user->email}): {$validOtp->code}");
+
             try {
-                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
+                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($validOtp->code, 'admin_login', $user->name));
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Failed to send 2FA OTP: ' . $e->getMessage());
             }
+        }
+
+        if (app()->environment('local', 'testing') && $validOtp) {
+            session()->flash('dev_otp', $validOtp->code);
         }
         
         return view('auth.admin_2fa');
@@ -1125,14 +1132,24 @@ class AdminController extends Controller
         $user = Auth::user();
         if (!$user || !$user->isAdmin()) return redirect()->route('login');
 
+        $otpClean = trim((string) $request->otp);
+
         $otpRecord = \App\Models\Otp::where('user_id', $user->id)
-            ->where('code', $request->otp)
+            ->where('code', $otpClean)
             ->where('purpose', 'admin_login')
             ->where('used', false)
             ->where('expires_at', '>', now())
             ->latest()->first();
 
         if (!$otpRecord) {
+            if (app()->environment('local', 'testing')) {
+                $latest = \App\Models\Otp::where('user_id', $user->id)
+                    ->where('purpose', 'admin_login')
+                    ->where('used', false)
+                    ->where('expires_at', '>', now())
+                    ->latest()->first();
+                if ($latest) session()->flash('dev_otp', $latest->code);
+            }
             return back()->withErrors(['otp' => 'Invalid or expired OTP. Please try again.']);
         }
 
@@ -1164,11 +1181,23 @@ class AdminController extends Controller
         $otp = \App\Models\Otp::generate($user->id, 'admin_login');
         \App\Models\Otp::setCooldown($user->id, 'admin_login');
         \App\Models\Otp::setCooldown($ip, 'admin_login');
+        \Illuminate\Support\Facades\Log::info("Admin 2FA OTP resent for user #{$user->id} ({$user->email}): {$otp->code}");
 
         try {
             \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
-            return response()->json(['success' => true, 'message' => 'OTP has been resent to your email.']);
+            $resp = ['success' => true, 'message' => 'OTP has been resent to your email.'];
+            if (app()->environment('local', 'testing')) {
+                $resp['dev_otp'] = $otp->code;
+            }
+            return response()->json($resp);
         } catch (\Exception $e) {
+            if (app()->environment('local', 'testing')) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'OTP generated (Email delivery failed: ' . $e->getMessage() . ')',
+                    'dev_otp' => $otp->code,
+                ]);
+            }
             return response()->json(['success' => false, 'message' => 'Failed to send OTP.'], 500);
         }
     }

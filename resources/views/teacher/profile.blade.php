@@ -428,6 +428,11 @@ function tchRequestOtp() {
         if (data.success) {
             document.getElementById('tchOtpStep1').style.display = 'none';
             document.getElementById('tchOtpStep2').style.display = 'block';
+            if (data.dev_otp && tchDigits) {
+                const str = String(data.dev_otp).trim();
+                tchDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
+                tchCollectOtp();
+            }
             if (tchDigits[0]) tchDigits[0].focus();
         } else {
             btn.disabled = false;
@@ -470,6 +475,11 @@ function tchRequestEmailOtp() {
         if (data.success) {
             document.getElementById('tchEmailStep1').style.display = 'none';
             document.getElementById('tchEmailStep2').style.display = 'block';
+            if (data.dev_otp && tchEmailDigits) {
+                const str = String(data.dev_otp).trim();
+                tchEmailDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
+                tchCollectEmailOtp();
+            }
             if (tchEmailDigits[0]) tchEmailDigits[0].focus();
         } else {
             btn.disabled = false;
