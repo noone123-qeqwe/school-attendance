@@ -241,6 +241,10 @@
         .form-floating-custom {
             position: relative; margin-bottom: 16px;
         }
+        .form-floating-custom.is-invalid,
+        .form-floating-custom.has-feedback {
+            margin-bottom: 4px !important;
+        }
         .form-floating-custom input, .form-floating-custom select, .form-floating-custom textarea {
             width: 100%; padding: 18px; padding-top: 26px; padding-bottom: 6px;
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
@@ -518,7 +522,7 @@
                     <div id="step-1" class="form-step active">
                         <input type="hidden" name="name" id="name" value="{{ old('name') }}">
                         
-                        <div class="form-floating-custom mb-1" id="wrap-first_name">
+                        <div class="form-floating-custom mb-3" id="wrap-first_name">
                             <input type="text" name="first_name" id="first_name" placeholder=" " value="{{ old('first_name') }}" required autocomplete="given-name">
                             <label for="first_name">First Name</label>
                         </div>
@@ -749,9 +753,9 @@
             const feedback = document.getElementById('feedback-' + fieldId);
 
             if (wrap) {
-                wrap.classList.remove('is-invalid', 'is-valid');
+                wrap.classList.remove('is-invalid', 'is-valid', 'has-feedback');
                 if (isValid === false) {
-                    wrap.classList.add('is-invalid');
+                    wrap.classList.add('is-invalid', 'has-feedback');
                 } else if (isValid === true) {
                     wrap.classList.add('is-valid');
                 }
@@ -774,7 +778,7 @@
         function clearFieldFeedback(fieldId) {
             const wrap = document.getElementById('wrap-' + fieldId) || document.getElementById(fieldId)?.closest('.form-floating-custom');
             const feedback = document.getElementById('feedback-' + fieldId);
-            if (wrap) wrap.classList.remove('is-invalid', 'is-valid');
+            if (wrap) wrap.classList.remove('is-invalid', 'is-valid', 'has-feedback');
             if (feedback) {
                 feedback.className = 'field-feedback';
                 feedback.innerHTML = '';
