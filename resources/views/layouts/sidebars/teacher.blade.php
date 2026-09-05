@@ -33,4 +33,8 @@
         <i class="bi bi-graph-up"></i>
         <span class="nav-link-text">Attendance Reports</span>
     </a>
+    <a href="{{ route('teacher.profile') }}" class="nav-link">
+        <i class="bi bi-fingerprint" style="color: #4ade80;"></i>
+        <span class="nav-link-text">Biometric Login</span>
+    </a>
 </div>

@@ -621,12 +621,14 @@ async function loadDevices() {
     const unsupported = document.getElementById('webauthnUnsupported');
 
     if (!window.PublicKeyCredential) {
-        if (regBtn) regBtn.style.display = 'none';
         if (unsupported) {
             unsupported.style.display = 'block';
             var msgEl = document.getElementById('webauthnUnsupportedMsg');
             var openBtn = document.getElementById('openInBrowserBtn');
-            if (inApp) {
+            if (!window.isSecureContext) {
+                msgEl.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If accessing from mobile, please open via HTTPS.';
+                if (openBtn) openBtn.style.display = 'none';
+            } else if (inApp) {
                 msgEl.innerHTML = 'You\'re using an in-app browser that doesn\'t support fingerprint login. Tap the button below to open this page in <strong>Chrome</strong> or <strong>Safari</strong>.';
                 if (openBtn) openBtn.style.display = 'inline-flex';
             } else {
@@ -634,7 +636,16 @@ async function loadDevices() {
                 if (openBtn) openBtn.style.display = 'none';
             }
         }
-        return;
+        if (regBtn) {
+            regBtn.style.display = 'inline-flex';
+            regBtn.onclick = function() {
+                if (!window.isSecureContext) {
+                    alert('Biometric registration requires HTTPS (secure context). Please open via HTTPS or localhost.');
+                } else {
+                    alert('Biometric authentication is not supported by your browser or device.');
+                }
+            };
+        }
     }
     try {
         const res = await fetch('{{ route("webauthn.devices") }}');

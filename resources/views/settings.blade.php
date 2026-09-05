@@ -2093,13 +2093,15 @@ async function loadDevices() {
     const unsupported = document.getElementById('webauthnUnsupported');
 
     if (!window.PublicKeyCredential) {
-        if (regBtn) regBtn.style.display = 'none';
-        if (badge) { badge.textContent = 'Unsupported'; badge.style.color = '#f87171'; }
+        if (badge) { badge.textContent = !window.isSecureContext ? 'Requires HTTPS' : 'Unsupported'; badge.style.color = '#f87171'; }
         if (unsupported) {
             unsupported.style.display = 'block';
             var msgEl = document.getElementById('webauthnUnsupportedMsg');
             var openBtn = document.getElementById('openInBrowserBtn');
-            if (inApp) {
+            if (!window.isSecureContext) {
+                msgEl.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If testing on mobile over Wi-Fi, please open this app using an HTTPS URL.';
+                if (openBtn) openBtn.style.display = 'none';
+            } else if (inApp) {
                 msgEl.innerHTML = 'You\'re using an in-app browser (like Messenger or Facebook) that doesn\'t support fingerprint login. Tap the button below to open this page in <strong>Chrome</strong> or <strong>Safari</strong>.';
                 if (openBtn) openBtn.style.display = 'inline-flex';
             } else {
@@ -2107,7 +2109,16 @@ async function loadDevices() {
                 if (openBtn) openBtn.style.display = 'none';
             }
         }
-        return;
+        if (regBtn) {
+            regBtn.style.display = 'inline-flex';
+            regBtn.onclick = function() {
+                if (!window.isSecureContext) {
+                    alert('Biometric registration requires a secure HTTPS connection. Please access via HTTPS or localhost.');
+                } else {
+                    alert('Biometric APIs are not supported by your current browser or device.');
+                }
+            };
+        }
     }
 
     try {

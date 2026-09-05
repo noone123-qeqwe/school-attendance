@@ -194,12 +194,27 @@
             <div class="sdot pending" id="dot3">3</div>
         </div>
 
+        @if(isset($status) && $status === 'setup')
+        <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:18px;padding:22px 18px;margin-bottom:18px;text-align:center;">
+            <div style="width:56px;height:56px;border-radius:50%;background:rgba(245,158,11,0.15);color:#d97706;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 12px;">
+                <i class="bi bi-fingerprint"></i>
+            </div>
+            <div style="font-size:1.1rem;font-weight:800;color:#92400e;margin-bottom:6px;">Fingerprint Setup Required</div>
+            <p style="font-size:0.85rem;color:#b45309;line-height:1.45;margin-bottom:16px;">
+                {{ $message ?? 'You must register your fingerprint on this device before clocking in with QR attendance.' }}
+            </p>
+            <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" class="btn w-100" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:white;font-weight:700;padding:12px;border-radius:12px;text-decoration:none;display:block;">
+                <i class="bi bi-fingerprint me-1"></i> Register Fingerprint Now
+            </a>
+        </div>
+        @endif
+
         {{-- Dynamic content area --}}
-        <div id="vIcon"  class="v-icon" style="background:#eff6ff;">
+        <div id="vIcon"  class="v-icon" style="background:#eff6ff; @if(isset($status) && $status === 'setup') display:none; @endif">
             <i class="bi bi-geo-alt-fill" style="color:#2563eb;"></i>
         </div>
-        <div class="v-title" id="vTitle">Checking Location</div>
-        <div class="v-sub"   id="vSub">Verifying you are inside the classroom...</div>
+        <div class="v-title" id="vTitle" style="@if(isset($status) && $status === 'setup') display:none; @endif">Checking Location</div>
+        <div class="v-sub"   id="vSub" style="@if(isset($status) && $status === 'setup') display:none; @endif">Verifying you are inside the classroom...</div>
         <div class="v-msg"   id="vMsg"></div>
 
         {{-- Retry fingerprint button (shown only on fp error) --}}
@@ -343,7 +358,12 @@ const GPS_MAX_FAST_ACCEPT = 85;          // Accept a decent location after a sho
 const GPS_MAX_ACCEPTABLE_ACCURACY = 2500; // Accept weaker signal after a full timeout
 const GPS_HARD_ACCURACY_LIMIT = 5000;     // Reject only if accuracy is worse than this
 
-window.addEventListener('load', function() { startGPS(); });
+var PAGE_STATUS = '{{ $status ?? "ready" }}';
+window.addEventListener('load', function() { 
+    if (PAGE_STATUS !== 'setup') {
+        startGPS(); 
+    }
+});
 
 function startGPS() {
     geoRetryDowngraded = false;

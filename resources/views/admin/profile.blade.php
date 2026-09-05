@@ -533,9 +533,27 @@ async function loadDevices() {
     const unsupported = document.getElementById('webauthnUnsupported');
 
     if (!window.PublicKeyCredential) {
-        if (btn) btn.style.display = 'none';
-        if (unsupported) unsupported.style.display = 'block';
-        return;
+        if (unsupported) {
+            unsupported.style.display = 'block';
+            const msgEl = document.getElementById('webauthnUnsupportedMsg');
+            if (msgEl) {
+                if (!window.isSecureContext) {
+                    msgEl.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If accessing from mobile, please open via HTTPS.';
+                } else {
+                    msgEl.innerHTML = 'Biometric login is not supported by your current browser or device.';
+                }
+            }
+        }
+        if (btn) {
+            btn.style.display = 'inline-flex';
+            btn.onclick = function() {
+                if (!window.isSecureContext) {
+                    alert('Biometric registration requires HTTPS (secure context). Please open via HTTPS or localhost.');
+                } else {
+                    alert('Biometric authentication is not supported by your browser or device.');
+                }
+            };
+        }
     }
     try {
         const res = await fetch('{{ route("webauthn.devices") }}');

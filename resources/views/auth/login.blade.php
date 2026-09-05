@@ -336,8 +336,8 @@
             animation: fadeIn 0.3s ease;
         }
 
-        /* Hidden fingerprint section by default */
-        #fingerprintSection { display: none; }
+        /* Fingerprint section */
+        #fingerprintSection { display: block; }
 
         /* Mobile and Responsive */
         @media (max-width: 768px) {
@@ -598,26 +598,26 @@ if (loginForm) {
     });
 }
 
-// Fingerprint visibility — only hide when typing an email address
+// Fingerprint section visibility - keep visible across desktop and mobile
 var idInput = document.getElementById('idInput');
 var fpSec   = document.getElementById('fingerprintSection');
 
-function updateFpVisibility() {
-    if (!window.PublicKeyCredential) return;
+if (fpSec) {
     fpSec.style.display = 'block';
 }
 
-// Show on page load
-if (window.PublicKeyCredential) {
-    fpSec.style.display = 'block';
+function updateFpVisibility() {
+    if (fpSec) fpSec.style.display = 'block';
 }
 
 idInput.addEventListener('input', updateFpVisibility);
 
 // Restore identifier on validation error
 @if(old('identifier'))
-    idInput.value = '{{ old('identifier') }}';
-    updateFpVisibility();
+    if (idInput) {
+        idInput.value = '{{ old('identifier') }}';
+        updateFpVisibility();
+    }
 @endif
 
 // -- Fingerprint login --
@@ -648,8 +648,13 @@ function bufferToBase64Url(buffer) {
 }
 
 async function fingerprintLogin() {
+    if (!window.isSecureContext) {
+        showFpError('Biometric sensor requires a secure connection (HTTPS or localhost). If testing on mobile, please open using HTTPS.');
+        return;
+    }
+
     if (!window.PublicKeyCredential) {
-        showFpError('Biometric authentication is not supported by your browser or device.');
+        showFpError('Biometric authentication is not supported by your current browser or device. Please use Chrome, Safari, or Edge.');
         return;
     }
 

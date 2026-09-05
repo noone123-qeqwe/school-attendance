@@ -122,6 +122,9 @@
             <a href="{{ route('admin.activity.log') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.activity.log') ? 'active' : '' }}">
                 <span class="nav-link-text">Audit Logs</span>
             </a>
+            <a href="{{ route('admin.profile') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.profile') ? 'active' : '' }}">
+                <span class="nav-link-text">Biometric & Profile</span>
+            </a>
         </div>
     </div>
 </div>

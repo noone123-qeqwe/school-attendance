@@ -278,6 +278,13 @@
                                 </div>
                             </div>
                             <hr class="my-2" style="border-color:#f1f5f9;">
+                            @php
+                                $fpRoute = Auth::user()->isTeacher() ? route('teacher.profile') : (Auth::user()->isAdmin() ? route('admin.profile') : (Auth::user()->isParent() ? route('parent.profile') : route('settings').'#tab-fingerprint'));
+                            @endphp
+                            <a class="fb-dropdown-item" href="{{ $fpRoute }}" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');">
+                                <div class="fb-icon-circle" style="background:rgba(34,197,94,0.15);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
+                                <span>Fingerprint Login</span>
+                            </a>
                             @if(Auth::user()->isTeacher())
                             <a class="fb-dropdown-item" href="{{ route('teacher.profile') }}">
                                 <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
@@ -834,6 +841,10 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
                     </a>
+                    <a href="{{ route('admin.profile') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon" style="background: rgba(34,197,94,0.18); color: #4ade80; border-color: rgba(34,197,94,0.35);"><i class="bi bi-fingerprint"></i></div>
+                        <span class="more-sheet-item-label">Biometrics</span>
+                    </a>
                 @elseif(Auth::user()->isTeacher())
                     <a href="{{ route('teacher.subjects') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
@@ -873,6 +884,10 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
                         <span class="more-sheet-item-label">Attendance</span>
                     </a>
+                    <a href="{{ route('teacher.profile') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon" style="background: rgba(34,197,94,0.18); color: #4ade80; border-color: rgba(34,197,94,0.35);"><i class="bi bi-fingerprint"></i></div>
+                        <span class="more-sheet-item-label">Biometrics</span>
+                    </a>
                 @elseif(Auth::user()->isParent())
                     <a href="{{ route('parent.link.form') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-link-45deg"></i></div>
@@ -894,6 +909,10 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
                     </a>
+                    <a href="{{ route('parent.profile') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon" style="background: rgba(34,197,94,0.18); color: #4ade80; border-color: rgba(34,197,94,0.35);"><i class="bi bi-fingerprint"></i></div>
+                        <span class="more-sheet-item-label">Biometrics</span>
+                    </a>
                 @else
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
@@ -910,6 +929,10 @@
                     <a href="{{ route('notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
+                    </a>
+                    <a href="{{ route('settings') }}#tab-fingerprint" class="more-sheet-item" data-color="green" onclick="localStorage.setItem('active_settings_tab', 'fingerprint'); closeMoreSheet();">
+                        <div class="more-sheet-item-icon" style="background: rgba(34,197,94,0.18); color: #4ade80; border-color: rgba(34,197,94,0.35);"><i class="bi bi-fingerprint"></i></div>
+                        <span class="more-sheet-item-label">Fingerprint</span>
                     </a>
                     <a href="{{ route('settings') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>

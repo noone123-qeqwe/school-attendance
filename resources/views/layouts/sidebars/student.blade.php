@@ -38,4 +38,8 @@
         <i class="bi bi-file-text-fill"></i>
         <span class="nav-link-text">Excuse Submissions</span>
     </a>
+    <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" class="nav-link">
+        <i class="bi bi-fingerprint" style="color: #4ade80;"></i>
+        <span class="nav-link-text">Biometric Fingerprint</span>
+    </a>
 </div>
