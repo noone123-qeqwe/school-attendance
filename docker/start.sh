@@ -28,6 +28,16 @@ if [ -z "$APP_KEY" ]; then
     export APP_KEY=$(php artisan key:generate --show)
 fi
 
+# Ensure outbound SMTP defaults for production OTP delivery if not explicitly set
+export MAIL_MAILER="${MAIL_MAILER:-smtp}"
+export MAIL_HOST="${MAIL_HOST:-smtp.gmail.com}"
+export MAIL_PORT="${MAIL_PORT:-587}"
+export MAIL_ENCRYPTION="${MAIL_ENCRYPTION:-tls}"
+export MAIL_USERNAME="${MAIL_USERNAME:-osmenacolleges.attendance@gmail.com}"
+export MAIL_PASSWORD="${MAIL_PASSWORD:-zskulbswpldmxqfp}"
+export MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-osmenacolleges.attendance@gmail.com}"
+export MAIL_FROM_NAME="${MAIL_FROM_NAME:-Smart Classroom Attendance System}"
+
 # Run storage symlink
 echo "🔗 Ensuring storage symlink..."
 php artisan storage:link || true

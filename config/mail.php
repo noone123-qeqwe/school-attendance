@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'smtp'),
 
     /*
     |--------------------------------------------------------------------------
@@ -44,8 +44,8 @@ return [
             'host' => env('MAIL_HOST', env('EMAIL_HOST', 'smtp.gmail.com')),
             'port' => (int) env('MAIL_PORT', env('EMAIL_PORT', 587)),
             'encryption' => env('MAIL_ENCRYPTION', env('MAIL_SCHEME', env('EMAIL_ENCRYPTION', 'tls'))),
-            'username' => env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME'))),
-            'password' => env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY'))),
+            'username' => env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com'))),
+            'password' => env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp'))),
             'timeout' => 15,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
@@ -112,7 +112,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', env('EMAIL_FROM', env('MAIL_USERNAME', 'hello@example.com'))),
+        'address' => env('MAIL_FROM_ADDRESS', env('EMAIL_FROM', env('MAIL_USERNAME', 'osmenacolleges.attendance@gmail.com'))),
         'name' => env('MAIL_FROM_NAME', env('EMAIL_FROM_NAME', env('APP_NAME', 'Smart Classroom Attendance System'))),
     ],
 
