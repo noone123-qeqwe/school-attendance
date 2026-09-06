@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -14,7 +14,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* ── ENTRANCE ANIMATIONS ── */
+        /* â”€â”€ ENTRANCE ANIMATIONS â”€â”€ */
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(22px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -65,7 +65,7 @@
             overflow-y: auto;
         }
 
-        /* â”€â”€ FULL-SCREEN BACKGROUND â”€â”€ */
+        /* Ã¢â€â‚¬Ã¢â€â‚¬ FULL-SCREEN BACKGROUND Ã¢â€â‚¬Ã¢â€â‚¬ */
         .bg-scene {
             position: fixed; inset: 0;
             background: url('/images/background.jpg') center center / cover no-repeat;
@@ -88,9 +88,9 @@
             );
         }
 
-        /* background video removed from login — intro handled separately */
+        /* background video removed from login â€” intro handled separately */
 
-        /* â”€â”€ TOP BAR â”€â”€ */
+        /* Ã¢â€â‚¬Ã¢â€â‚¬ TOP BAR Ã¢â€â‚¬Ã¢â€â‚¬ */
         .top-bar {
             position: fixed; top: 0; left: 0; right: 0;
             z-index: 100;
@@ -105,7 +105,7 @@
         }
         .top-bar-brand i { font-size: 1.1rem; }
 
-        /* â”€â”€ BOTTOM BAR â”€â”€ */
+        /* Ã¢â€â‚¬Ã¢â€â‚¬ BOTTOM BAR Ã¢â€â‚¬Ã¢â€â‚¬ */
         .bottom-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             z-index: 5;
@@ -122,7 +122,7 @@
         .bottom-bar span { pointer-events: none; }
         .bottom-links { display: flex; gap: 20px; }
 
-        /* â”€â”€ CENTERED LAYOUT â”€â”€ */
+        /* Ã¢â€â‚¬Ã¢â€â‚¬ CENTERED LAYOUT Ã¢â€â‚¬Ã¢â€â‚¬ */
         .auth-scene {
             position: relative; z-index: 10;
             min-height: 100vh;
@@ -130,7 +130,7 @@
             padding: 56px 20px 48px;
         }
 
-        /* ── GLASS CARD ── */
+        /* â”€â”€ GLASS CARD â”€â”€ */
         .glass-card {
             width: 100%; 
             max-width: 500px;
@@ -479,7 +479,7 @@
 
 <!-- Bottom bar -->
 <div class="bottom-bar">
-    <span>© {{ date('Y') }} Smart Classroom Attendance System. All rights reserved.</span>
+    <span>Â© {{ date('Y') }} Smart Classroom Attendance System. All rights reserved.</span>
     <div class="bottom-links">
         <a href="#">Privacy Policy</a>
         <a href="#">Terms of Service</a>
@@ -618,18 +618,19 @@
             </span>
         </div>
 
-        {{-- Smart Install App Button - Mobile: inside card, Desktop: handled by floating button --}}
-        <div id="smartAppDownloadRow" style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); display: none;">
-            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">📱 Install for quick access</div>
+        {{-- Install App Button â€” Mobile only (hidden on desktop via d-md-none), always visible unless already installed --}}
+        <div id="smartAppDownloadRow" class="d-md-none" style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">ðŸ“± Install for quick access</div>
             <button id="downloadAppBtn" type="button"
-                style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-                       background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(207,164,111,0.12));
+                style="display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+                       background: linear-gradient(135deg, rgba(212,175,55,0.22), rgba(207,164,111,0.15));
                        color: #CFA46F;
-                       border: 1px solid rgba(207,164,111,0.45); border-radius: 12px;
-                       padding: 11px 26px; font-size: 0.85rem; font-weight: 700;
-                       cursor: pointer; transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
-                       box-shadow: 0 4px 14px rgba(0,0,0,0.25); letter-spacing: 0.3px;">
-                <i class="bi bi-download" style="font-size: 1rem;"></i>
+                       border: 1.5px solid rgba(207,164,111,0.55); border-radius: 14px;
+                       padding: 13px 30px; font-size: 0.9rem; font-weight: 700;
+                       cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+                       box-shadow: 0 4px 16px rgba(0,0,0,0.3); letter-spacing: 0.3px;
+                       -webkit-tap-highlight-color: transparent;">
+                <i class="bi bi-arrow-bar-down" style="font-size: 1.1rem;"></i>
                 <span id="downloadAppBtnText">Install App</span>
             </button>
         </div>
@@ -661,7 +662,7 @@
 </style>
 
 <script>
-// ── PWA INSTALL BUTTON FOR WEB/DESKTOP - Bottom Right ──────────────────────────
+// â”€â”€ PWA INSTALL BUTTON FOR WEB/DESKTOP - Bottom Right â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 (function() {
     var webInstallContainer = document.getElementById('webInstallAppBtn');
     var pwaInstallBtn = document.getElementById('pwaInstallBtn');
@@ -680,15 +681,8 @@
                document.referrer.includes('android-app://');
     }
     
-    // Show install button on desktop (not mobile) if app isn't already installed
-    console.log('[PWA Install] Checking display conditions...');
-    console.log('[PWA Install] Is mobile:', isMobileDevice());
-    console.log('[PWA Install] Is installed:', isAppInstalled());
-    console.log('[PWA Install] Container exists:', !!webInstallContainer);
-    
+    // Detect if browser supports installation
     if (!isMobileDevice() && !isAppInstalled() && webInstallContainer) {
-        console.log('[PWA Install] Showing install button (desktop)');
-        // Show immediately — don't wait for beforeinstallprompt
         webInstallContainer.style.display = 'block';
         
         // Add hover effects via JavaScript
@@ -703,28 +697,18 @@
             this.style.transform = 'translateY(0) scale(1)';
             this.style.boxShadow = '0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,175,55,0.3)';
         });
-    } else {
-        console.log('[PWA Install] Install button hidden - conditions not met (mobile or already installed)');
     }
     
     // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', function(e) {
-        // Prevent the mini-infobar from appearing on mobile
         e.preventDefault();
-        
-        // Stash the event so it can be triggered later
         deferredPrompt = e;
-        
-        console.log('[PWA Install] Install prompt available');
     });
     
     // Handle install button click
     if (pwaInstallBtn) {
         pwaInstallBtn.addEventListener('click', async function() {
             if (!deferredPrompt) {
-                console.log('[PWA Install] No install prompt available');
-                
-                // Show instructions for manual installation
                 var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
                 var isEdge = /Edg/.test(navigator.userAgent);
                 var isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
@@ -732,193 +716,107 @@
                 var instructions = 'To install this app:\n\n';
                 
                 if (isChrome || isEdge) {
-                    instructions += 'Chrome/Edge:\n';
-                    instructions += '1. Click the ⋮ menu (top right)\n';
-                    instructions += '2. Select "Install app" or "Install ' + (document.title || 'Attendance') + '"\n';
-                    instructions += '3. Click "Install" in the popup';
+                    instructions += 'Chrome/Edge:\n1. Click the â‹® menu (top right)\n2. Select "Install app"\n3. Click "Install"';
                 } else if (isSafari) {
-                    instructions += 'Safari:\n';
-                    instructions += '1. Click the Share button\n';
-                    instructions += '2. Scroll down and tap "Add to Dock"\n';
-                    instructions += '3. Click "Add"';
+                    instructions += 'Safari:\n1. Click the Share button\n2. Scroll down and tap "Add to Dock"\n3. Click "Add"';
                 } else {
-                    instructions += '1. Look for an install icon in your browser\'s address bar\n';
-                    instructions += '2. Or check your browser menu for "Install app" option';
+                    instructions += 'Look for an install icon in your browser\'s address bar or menu.';
                 }
                 
                 alert(instructions);
                 return;
             }
             
-            // Show the install prompt
             deferredPrompt.prompt();
-            
-            // Update button text
-            if (pwaInstallBtnText) {
-                pwaInstallBtnText.textContent = 'Installing...';
-            }
+            if (pwaInstallBtnText) pwaInstallBtnText.textContent = 'Installing...';
             pwaInstallBtn.disabled = true;
             
-            // Wait for the user to respond to the prompt
             const { outcome } = await deferredPrompt.userChoice;
-            
-            console.log('[PWA Install] User choice:', outcome);
-            
             if (outcome === 'accepted') {
-                console.log('[PWA Install] User accepted the install prompt');
-                
-                // Hide the button after successful install
-                if (webInstallContainer) {
-                    webInstallContainer.style.animation = 'fadeOut 0.3s ease';
-                    setTimeout(function() {
-                        webInstallContainer.style.display = 'none';
-                    }, 300);
-                }
+                if (webInstallContainer) webInstallContainer.style.display = 'none';
             } else {
-                console.log('[PWA Install] User dismissed the install prompt');
-                
-                // Reset button
-                if (pwaInstallBtnText) {
-                    pwaInstallBtnText.textContent = 'Install App';
-                }
+                if (pwaInstallBtnText) pwaInstallBtnText.textContent = 'Install App';
                 pwaInstallBtn.disabled = false;
             }
-            
-            // Clear the deferred prompt
             deferredPrompt = null;
         });
     }
     
-    // Listen for successful app installation
     window.addEventListener('appinstalled', function() {
-        console.log('[PWA Install] App was installed successfully');
-        
-        // Hide the install button
-        if (webInstallContainer) {
-            webInstallContainer.style.display = 'none';
-        }
+        if (webInstallContainer) webInstallContainer.style.display = 'none';
     });
-    
-    // Hide button if app is already installed
-    if (isAppInstalled() && webInstallContainer) {
-        webInstallContainer.style.display = 'none';
-    }
 })();
 
-// ── SMART APP DOWNLOAD BUTTON - Detects Actual Installation State ──────────────
+// -- SMART APP DOWNLOAD BUTTON - Hide if already installed as PWA --
 (function() {
     var downloadRow = document.getElementById('smartAppDownloadRow');
     var downloadBtn = document.getElementById('downloadAppBtn');
-    var btnText = document.getElementById('downloadAppBtnText');
-    
-    // Configuration - update this URL to your official app download location
-    var ANDROID_APP_URL = '/download/apk'; // or Google Play URL
-    var IOS_APP_URL = '#'; // App Store URL if available
-    
-    // Detect if user is on mobile device
-    function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-    
-    // Detect if running in standalone mode (app is installed and opened)
+
+    var ANDROID_APP_URL = '/download/apk';
+
     function isAppInstalled() {
-        // PWA standalone mode detection
-        var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          window.navigator.standalone === true ||
-                          document.referrer.includes('android-app://');
-        
-        return isStandalone;
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               document.referrer.includes('android-app://');
     }
-    
-    // Detect platform
+
     function getPlatform() {
         var ua = navigator.userAgent;
         if (/android/i.test(ua)) return 'android';
         if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
-        return 'desktop';
+        return 'other';
     }
-    
-    // Check if app is available for installation
-    function checkAppAvailability() {
-        var platform = getPlatform();
-        var installed = isAppInstalled();
-        var mobile = isMobileDevice();
-        
-        console.log('[Smart Download] Platform:', platform, 'Mobile:', mobile, 'Installed:', installed);
-        
-        // Hide on desktop (desktop uses the floating button instead)
-        if (!mobile || platform === 'desktop') {
-            if (downloadRow) downloadRow.style.display = 'none';
-            return;
-        }
-        
-        // Hide if app is already installed (running in standalone mode)
-        if (installed) {
-            if (downloadRow) downloadRow.style.display = 'none';
-            return;
-        }
-        
-        // Show install button for mobile users without app
-        if (downloadRow) {
-            downloadRow.style.display = 'block';
-            
-            // Set appropriate install action based on platform
-            if (downloadBtn) {
-                downloadBtn.onclick = function() {
-                    var url = platform === 'android' ? ANDROID_APP_URL : IOS_APP_URL;
-                    
-                    if (platform === 'android') {
-                        // For Android: download APK or open Play Store
-                        window.location.href = url;
-                    } else if (platform === 'ios') {
-                        // For iOS, show PWA add-to-homescreen instructions
-                        alert('To install this app on your iPhone:\n\n1. Tap the Share button (the box with arrow at the bottom of Safari)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" — the app will appear on your home screen!');
-                    }
-                };
-            }
-        }
-    }
-    
-    // Initial check
-    checkAppAvailability();
-    
-    // Re-check when page becomes visible (user returns from installer)
-    document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) {
-            console.log('[Smart Download] Page visible, rechecking installation state...');
-            setTimeout(checkAppAvailability, 500);
-        }
-    });
-    
-    // Re-check when page gains focus
-    window.addEventListener('focus', function() {
-        console.log('[Smart Download] Page focused, rechecking installation state...');
-        setTimeout(checkAppAvailability, 500);
-    });
-    
-    // Listen for app installed event
-    window.addEventListener('appinstalled', function() {
-        console.log('[Smart Download] App installed event fired');
+
+    // Hide if already installed as PWA
+    if (isAppInstalled()) {
         if (downloadRow) downloadRow.style.display = 'none';
-    });
-    
-    // Check for beforeinstallprompt (PWA available)
+    }
+
+    // Set up click handler
+    if (downloadBtn) {
+        downloadBtn.onclick = function() {
+            var platform = getPlatform();
+            if (platform === 'ios') {
+                if (typeof showFpMessage === 'function') {
+                    showFpMessage('info',
+                        '<i class="bi bi-share me-2"></i>' +
+                        '<strong>Install on iPhone:</strong><br>' +
+                        '1. Tap the <strong>Share</strong> button in Safari<br>' +
+                        '2. Tap <strong>"Add to Home Screen"</strong><br>' +
+                        '3. Tap <strong>Add</strong>'
+                    );
+                } else {
+                    alert('To install: Tap Share button then Add to Home Screen');
+                }
+            } else {
+                window.location.href = ANDROID_APP_URL;
+            }
+        };
+    }
+
+    // Override with native PWA prompt if available
     window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
-        console.log('[Smart Download] PWA installation available');
-        
-        // If PWA is available, use native prompt
         if (downloadBtn) {
             downloadBtn.onclick = function() {
                 e.prompt();
                 e.userChoice.then(function(choice) {
-                    if (choice.outcome === 'accepted') {
-                        console.log('[Smart Download] User accepted PWA install');
-                        if (downloadRow) downloadRow.style.display = 'none';
+                    if (choice.outcome === 'accepted' && downloadRow) {
+                        downloadRow.style.display = 'none';
                     }
                 });
             };
         }
+    });
+
+    // Hide when installed
+    window.addEventListener('appinstalled', function() {
+        if (downloadRow) downloadRow.style.display = 'none';
+    });
+
+    // Re-check on focus
+    window.addEventListener('focus', function() {
+        if (isAppInstalled() && downloadRow) downloadRow.style.display = 'none';
     });
 })();
 </script>
@@ -981,7 +879,7 @@ if (loginForm) {
     });
 }
 
-// ── INTELLIGENT BIOMETRIC BUTTON MANAGEMENT ──────────────────────────────
+// â”€â”€ INTELLIGENT BIOMETRIC BUTTON MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 var idInput = document.getElementById('idInput');
 var fpSec = document.getElementById('fingerprintSection');
 var fpRowBtn = document.getElementById('fpRowBtn');
@@ -1175,7 +1073,7 @@ async function handleBiometricLogin() {
     }
     
     if (!biometricState.hasCredentials) {
-        // User hasn't registered biometrics yet — show inline message
+        // User hasn't registered biometrics yet â€” show inline message
         showBiometricInfo();
         return;
     }
@@ -1253,7 +1151,7 @@ window.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ── BIOMETRIC AUTHENTICATION IMPLEMENTATION ──────────────────────────────
+// â”€â”€ BIOMETRIC AUTHENTICATION IMPLEMENTATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function normalizeBase64(base64) {
     base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
     var padding = base64.length % 4;
@@ -1414,7 +1312,7 @@ async function performBiometricLogin() {
             console.log('Login successful! Redirecting...');
             
             // Update button to show success
-            if (fpLabel) fpLabel.textContent = '✓ Authenticated! Redirecting...';
+            if (fpLabel) fpLabel.textContent = 'âœ“ Authenticated! Redirecting...';
             if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill';
             if (fpArrow) fpArrow.className = 'bi bi-check2 fp-row-arrow';
             if (fpRowBtn) fpRowBtn.style.opacity = '1';
@@ -1462,7 +1360,7 @@ function focusPasswordField() {
     }
 }
 
-// Show biometric error message — uses the unified fpMessage inline element
+// Show biometric error message â€” uses the unified fpMessage inline element
 function showBiometricError(msg) {
     showFpMessage('error', '<i class="bi bi-exclamation-circle me-2"></i>' + msg);
 }
