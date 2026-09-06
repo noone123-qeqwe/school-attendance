@@ -1112,7 +1112,7 @@ class AdminController extends Controller
             \Illuminate\Support\Facades\Log::info("Admin 2FA OTP generated for user #{$user->id} ({$user->email}): {$validOtp->code}");
 
             try {
-                \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($validOtp->code, 'admin_login', $user->name));
+                app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $validOtp->code, 'admin_login', $user->name);
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Failed to send 2FA OTP: ' . $e->getMessage());
             }
@@ -1182,7 +1182,7 @@ class AdminController extends Controller
         \Illuminate\Support\Facades\Log::info("Admin 2FA OTP resent for user #{$user->id}");
 
         try {
-            \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
+            app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'admin_login', $user->name);
             $resp = ['success' => true, 'message' => 'OTP has been resent to your email.'];
             if (app()->environment('local', 'testing')) {
                 $resp['dev_otp'] = $otp->code;

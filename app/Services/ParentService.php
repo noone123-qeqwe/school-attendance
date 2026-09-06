@@ -34,7 +34,7 @@ class ParentService
         Otp::setCooldown($student->id, 'parent_link');
 
         // Send OTP to student email
-        Mail::to($student->email)->send(new OtpMail($otp->code, 'parent_link', $student->name));
+        app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($student->email, $otp->code, 'parent_link', $student->name);
     }
 
     /**

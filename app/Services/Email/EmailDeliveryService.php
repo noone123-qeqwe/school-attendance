@@ -4,6 +4,7 @@ namespace App\Services\Email;
 
 use App\Mail\OtpMail;
 use Illuminate\Mail\SentMessage;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Throwable;
@@ -36,6 +37,11 @@ class EmailDeliveryService
     {
         // Unit tests using Mail::fake() or array transport are always permitted
         if (app()->runningUnitTests() || app()->environment('testing')) {
+            return true;
+        }
+
+        // Outbound HTTP API keys (Resend / Brevo) work on any cloud environment without SMTP restrictions
+        if (!empty(config('services.resend.key')) || !empty(env('RESEND_API_KEY')) || !empty(env('BREVO_API_KEY')) || !empty(config('services.brevo.key'))) {
             return true;
         }
 
@@ -74,14 +80,33 @@ class EmailDeliveryService
     ): EmailDeliveryResult {
         $providerName = $this->getActiveProviderName();
 
-        // 1. Guard against unconfigured or dummy email drivers (prevents false success)
+        // 1. Check HTTP API providers first (works over HTTPS port 443; never blocked on cloud/Render free tier)
+        $resendKey = config('services.resend.key') ?: env('RESEND_API_KEY');
+        if (!empty($resendKey) && !app()->runningUnitTests()) {
+            $httpRes = $this->sendViaResendHttp($recipientEmail, $otpCode, $purpose, $recipientName, $resendKey, $requestId);
+            if ($httpRes->success) {
+                return $httpRes;
+            }
+            Log::warning("Resend HTTP delivery failed, falling back to standard mailer: {$httpRes->error}");
+        }
+
+        $brevoKey = config('services.brevo.key') ?: env('BREVO_API_KEY');
+        if (!empty($brevoKey) && !app()->runningUnitTests()) {
+            $httpRes = $this->sendViaBrevoHttp($recipientEmail, $otpCode, $purpose, $recipientName, $brevoKey, $requestId);
+            if ($httpRes->success) {
+                return $httpRes;
+            }
+            Log::warning("Brevo HTTP delivery failed, falling back to standard mailer: {$httpRes->error}");
+        }
+
+        // 2. Guard against unconfigured or dummy email drivers (prevents false success)
         if (!$this->isOutboundDeliveryConfigured()) {
             $errorMsg = 'Outbound email delivery is not configured. Please configure valid SMTP or API credentials in your environment.';
             Log::error("Email delivery aborted [provider: {$providerName}]: {$errorMsg}");
             return EmailDeliveryResult::rejected($providerName, $errorMsg, 500);
         }
 
-        // 2. Transmit email via Laravel Mailer (with automatic port 465 SSL fallback)
+        // 3. Transmit email via Laravel Mailer (with automatic port 465 SSL fallback)
         try {
             $mailable = new OtpMail($otpCode, $purpose, $recipientName);
             $sentMessage = Mail::to($recipientEmail)->send($mailable);
@@ -128,6 +153,12 @@ class EmailDeliveryService
                     $fallbackError = $this->sanitizeErrorMessage($fallbackErr->getMessage());
                     Log::error("SSL fallback on port 465 also failed: {$fallbackError}");
                 }
+            }
+
+            // Cloud provider diagnostic alert
+            $isCloud = env('RENDER') || env('RENDER_SERVICE_ID') || env('RAILWAY_ENVIRONMENT');
+            if ($isCloud && (str_contains($primaryError, 'timed out') || str_contains($primaryError, 'Connection refused') || str_contains($primaryError, '110'))) {
+                Log::error("Cloud host blocked SMTP traffic. Note: Render Free Tier blocks outbound SMTP traffic on ports 25, 465, and 587. Configure an HTTP API key (e.g. RESEND_API_KEY or BREVO_API_KEY) or upgrade to a Render paid instance.");
             }
 
             Log::error("Email delivery failed [provider: {$providerName}]: {$primaryError}", [
@@ -289,5 +320,112 @@ class EmailDeliveryService
         $sanitized = preg_replace('/password=[^\s&]+/i', 'password=***', $message);
         $sanitized = preg_replace('/key=[^\s&]+/i', 'key=***', $sanitized ?? $message);
         return $sanitized ?? $message;
+    }
+
+    /**
+     * Deliver OTP via Resend HTTP API (HTTPS port 443; never blocked on cloud free tiers).
+     */
+    protected function sendViaResendHttp(
+        string $recipientEmail,
+        string $otpCode,
+        string $purpose,
+        string $recipientName,
+        string $apiKey,
+        ?string $requestId
+    ): EmailDeliveryResult {
+        try {
+            $mailable = new OtpMail($otpCode, $purpose, $recipientName);
+            $appName = config('app.name', 'Smart Classroom Attendance System');
+            $fromAddress = env('RESEND_FROM', 'onboarding@resend.dev');
+
+            $response = Http::withToken($apiKey)
+                ->timeout(10)
+                ->post('https://api.resend.com/emails', [
+                    'from'    => "{$appName} <{$fromAddress}>",
+                    'to'      => [$recipientEmail],
+                    'subject' => "Your {$appName} Verification Code",
+                    'html'    => $mailable->render(),
+                ]);
+
+            if ($response->successful()) {
+                $json = $response->json();
+                return EmailDeliveryResult::accepted(
+                    provider: 'resend (http api, port 443)',
+                    messageId: $json['id'] ?? null,
+                    response: 'HTTP 200 OK',
+                    diagnostics: [
+                        'transport'  => 'resend_http',
+                        'request_id' => $requestId,
+                        'timestamp'  => now()->toIso8601String(),
+                    ]
+                );
+            }
+
+            return EmailDeliveryResult::rejected(
+                provider: 'resend (http api, port 443)',
+                error: $response->body() ?: 'Resend API returned an error',
+                statusCode: $response->status()
+            );
+        } catch (Throwable $e) {
+            return EmailDeliveryResult::rejected(
+                provider: 'resend (http api, port 443)',
+                error: $this->sanitizeErrorMessage($e->getMessage()),
+                statusCode: 500
+            );
+        }
+    }
+
+    /**
+     * Deliver OTP via Brevo HTTP API (HTTPS port 443; never blocked on cloud free tiers).
+     */
+    protected function sendViaBrevoHttp(
+        string $recipientEmail,
+        string $otpCode,
+        string $purpose,
+        string $recipientName,
+        string $apiKey,
+        ?string $requestId
+    ): EmailDeliveryResult {
+        try {
+            $mailable = new OtpMail($otpCode, $purpose, $recipientName);
+            $appName = config('app.name', 'Smart Classroom Attendance System');
+            $fromAddress = config('mail.from.address', 'osmenacolleges.attendance@gmail.com');
+
+            $response = Http::withHeaders([
+                'api-key'      => $apiKey,
+                'Content-Type' => 'application/json',
+            ])->timeout(10)->post('https://api.brevo.com/v3/smtp/email', [
+                'sender'      => ['name' => $appName, 'email' => $fromAddress],
+                'to'          => [['email' => $recipientEmail, 'name' => $recipientName]],
+                'subject'     => "Your {$appName} Verification Code",
+                'htmlContent' => $mailable->render(),
+            ]);
+
+            if ($response->successful()) {
+                $json = $response->json();
+                return EmailDeliveryResult::accepted(
+                    provider: 'brevo (http api, port 443)',
+                    messageId: $json['messageId'] ?? null,
+                    response: 'HTTP 201 Created',
+                    diagnostics: [
+                        'transport'  => 'brevo_http',
+                        'request_id' => $requestId,
+                        'timestamp'  => now()->toIso8601String(),
+                    ]
+                );
+            }
+
+            return EmailDeliveryResult::rejected(
+                provider: 'brevo (http api, port 443)',
+                error: $response->body() ?: 'Brevo API returned an error',
+                statusCode: $response->status()
+            );
+        } catch (Throwable $e) {
+            return EmailDeliveryResult::rejected(
+                provider: 'brevo (http api, port 443)',
+                error: $this->sanitizeErrorMessage($e->getMessage()),
+                statusCode: 500
+            );
+        }
     }
 }

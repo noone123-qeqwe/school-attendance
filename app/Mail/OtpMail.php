@@ -21,7 +21,14 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         $appName = config('app.name', 'Smart Classroom Attendance System');
+        $fromAddress = config('mail.from.address', 'osmenacolleges.attendance@gmail.com');
+        $fromName = config('mail.from.name', $appName);
+
         return new Envelope(
+            from: new \Illuminate\Mail\Mailables\Address($fromAddress, $fromName),
+            replyTo: [
+                new \Illuminate\Mail\Mailables\Address($fromAddress, $fromName),
+            ],
             subject: "Your {$appName} Verification Code",
         );
     }
@@ -31,6 +38,17 @@ class OtpMail extends Mailable
         return new Content(
             view: 'emails.otp',
             text: 'emails.otp_plain',
+        );
+    }
+
+    public function headers(): \Illuminate\Mail\Mailables\Headers
+    {
+        return new \Illuminate\Mail\Mailables\Headers(
+            text: [
+                'X-Priority' => '1',
+                'X-MSMail-Priority' => 'High',
+                'Importance' => 'High',
+            ],
         );
     }
 }

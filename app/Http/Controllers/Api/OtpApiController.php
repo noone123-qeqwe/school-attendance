@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use App\Services\Email\EmailDeliveryService;
 class OtpApiController extends Controller
 {
     /**
@@ -60,7 +61,7 @@ class OtpApiController extends Controller
             $otp = Otp::generate($user->id, $purpose);
 
             try {
-                Mail::to($user->email)->send(new OtpMail($otp->code, $purpose, $user->name));
+                app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, $purpose, $user->name);
             } catch (\Exception $e) {
                 Log::error("API OTP Mail failed: " . $e->getMessage());
             }
@@ -73,7 +74,7 @@ class OtpApiController extends Controller
 
             try {
                 if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-                    Mail::to($identifier)->send(new OtpMail($code, $purpose, 'User'));
+                    app(EmailDeliveryService::class)->sendOtp($identifier, $code, $purpose, 'User');
                 }
             } catch (\Exception $e) {
                 Log::error("API Guest OTP Mail failed: " . $e->getMessage());
@@ -212,7 +213,7 @@ class OtpApiController extends Controller
             $otp = Otp::generate($user->id, 'forgot_password');
 
             try {
-                Mail::to($user->email)->send(new OtpMail($otp->code, 'forgot_password', $user->name));
+                app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'forgot_password', $user->name);
             } catch (\Exception $e) {
                 Log::error("API Password Reset Mail failed: " . $e->getMessage());
             }
@@ -337,7 +338,7 @@ class OtpApiController extends Controller
         }
 
         try {
-            Mail::to($email)->send(new OtpMail($code, 'email_verify', $user ? $user->name : 'User'));
+            app(EmailDeliveryService::class)->sendOtp($email, $code, 'email_verify', $user ? $user->name : 'User');
         } catch (\Exception $e) {
             Log::error("Email verify mail failed: " . $e->getMessage());
             // Do not reveal mail delivery failure to client

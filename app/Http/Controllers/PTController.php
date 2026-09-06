@@ -189,7 +189,7 @@ class PTController extends Controller
 
                 $otp = \App\Models\Otp::generate($user->id, 'admin_login');
                 try {
-                    \Illuminate\Support\Facades\Mail::to($user->email)->send(new \App\Mail\OtpMail($otp->code, 'admin_login', $user->name));
+                    app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'admin_login', $user->name);
                 } catch (\Exception $e) {
                     Log::error('Failed to send admin 2FA OTP: ' . $e->getMessage());
                 }
