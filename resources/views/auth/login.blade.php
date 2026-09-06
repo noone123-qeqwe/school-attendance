@@ -271,6 +271,24 @@
         .fp-row-arrow { color: rgba(255,255,255,0.35); font-size: 0.82rem; transition: all 0.2s; }
         
         /* Biometric button states */
+        .fp-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 13px;
+            border-radius: 11px;
+            border: 1.5px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+        .fp-row:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.35); }
+        .fp-row:active { transform: scale(0.98); }
+        .fp-row-left { display: flex; align-items: center; gap: 10px; }
+        .fp-row-left i { font-size: 1.2rem; color: rgba(255,255,255,0.8); transition: all 0.3s; }
+        .fp-row-label { font-size: 0.85rem; font-weight: 600; color: white; transition: all 0.2s; }
+        .fp-row-hint { font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 1px; transition: all 0.2s; }
+        .fp-row-arrow { color: rgba(255,255,255,0.35); font-size: 0.82rem; transition: all 0.2s; }
+        
         .fp-row[data-state="checking"] {
             opacity: 0.6;
             pointer-events: none;
