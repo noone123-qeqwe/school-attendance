@@ -105,7 +105,7 @@
                 <button type="button" id="codeSubmitBtn" class="btn scanner-primary-action-btn w-100" onclick="submitDirectCode()">
                     <i class="bi bi-check2-circle me-1"></i> Record Attendance
                 </button>
-                <button type="button" class="btn scanner-secondary-action-btn w-100" onclick="switchScannerMode('scan')">
+                <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" onclick="switchScannerMode('scan')">
                     <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
                 </button>
             </div>
@@ -1087,7 +1087,33 @@ function submitDirectCode() {
 function openStudentScanner(initialMode = 'scan') {
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
+    
+    // Detect if user is on desktop - if so, force code mode
+    const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && 
+                      window.innerWidth >= 1024;
+    
+    // On desktop, always use code entry mode (no camera scanning)
+    if (isDesktop) {
+        initialMode = 'code';
+        console.log('[Scanner] Desktop detected - switching to code entry mode');
+    }
     modal.style.display = 'flex';
+    
+    // Hide QR scan tab and camera controls on desktop
+    if (isDesktop) {
+        const scanTab = document.getElementById('tabScanMode');
+        const modeSwitcher = document.querySelector('.scanner-mode-switcher');
+        const torchBtn = document.getElementById('torchCameraBtn');
+        const flipBtn = document.getElementById('flipCameraBtn');
+        const switchCamBtn = document.getElementById('switchToCameraBtn');
+        
+        if (scanTab) scanTab.style.display = 'none';
+        if (modeSwitcher && modeSwitcher.children.length <= 1) modeSwitcher.style.display = 'none';
+        if (torchBtn) torchBtn.style.display = 'none';
+        if (flipBtn) flipBtn.style.display = 'none';
+        if (switchCamBtn) switchCamBtn.style.display = 'none';
+    }
+    
     resetScannerView();
 
     switchScannerMode(initialMode);
