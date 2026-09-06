@@ -670,7 +670,13 @@
     }
     
     // Show install button on desktop (not mobile) if app isn't already installed
+    console.log('[PWA Install] Checking display conditions...');
+    console.log('[PWA Install] Is mobile:', isMobileDevice());
+    console.log('[PWA Install] Is installed:', isAppInstalled());
+    console.log('[PWA Install] Container exists:', !!webInstallContainer);
+    
     if (!isMobileDevice() && !isAppInstalled() && webInstallContainer) {
+        console.log('[PWA Install] Showing install button');
         webInstallContainer.style.display = 'block';
         
         // Add hover effects via JavaScript
@@ -685,6 +691,8 @@
             this.style.transform = 'translateY(0) scale(1)';
             this.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
         });
+    } else {
+        console.log('[PWA Install] Install button hidden - conditions not met');
     }
     
     // Listen for the beforeinstallprompt event
@@ -1168,8 +1176,12 @@ if (idInput) {
 
 // Initial check if identifier is prefilled
 window.addEventListener('DOMContentLoaded', function() {
+    console.log('[Biometric] DOMContentLoaded - checking for prefilled identifier');
     if (idInput && idInput.value.trim()) {
+        console.log('[Biometric] Prefilled identifier found:', idInput.value.trim());
         checkBiometricAvailability(idInput.value.trim());
+    } else {
+        console.log('[Biometric] No prefilled identifier');
     }
 });
 
