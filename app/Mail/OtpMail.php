@@ -3,14 +3,25 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class OtpMail extends Mailable
+class OtpMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
+
+    /**
+     * The number of seconds before the job should timeout.
+     */
+    public $timeout = 30;
+
+    /**
+     * The number of times the job may be attempted.
+     */
+    public $tries = 3;
 
     public function __construct(
         public string $otp,

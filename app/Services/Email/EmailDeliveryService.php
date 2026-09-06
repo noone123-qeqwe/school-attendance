@@ -110,22 +110,29 @@ class EmailDeliveryService
             return EmailDeliveryResult::rejected($providerName, $errorMsg, 500);
         }
 
-        // 3. Transmit email via Laravel Mailer (with automatic port 465 SSL fallback)
+        // 3. Transmit email via Laravel Mailer (queued for instant response)
         try {
             $mailable = new OtpMail($otpCode, $purpose, $recipientName);
-            $sentMessage = Mail::to($recipientEmail)->send($mailable);
-
-            $messageId = $this->extractMessageId($sentMessage);
-            $debugResponse = $this->extractDebugResponse($sentMessage);
+            
+            // Use queue for async sending (instant response to user)
+            if (config('queue.default') !== 'sync') {
+                Mail::to($recipientEmail)->queue($mailable);
+                $messageId = 'queued_' . time();
+            } else {
+                // Fallback to sync send if queue is not configured
+                $sentMessage = Mail::to($recipientEmail)->send($mailable);
+                $messageId = $this->extractMessageId($sentMessage);
+            }
 
             return EmailDeliveryResult::accepted(
                 provider: $providerName,
                 messageId: $messageId,
-                response: $debugResponse,
+                response: 'QUEUED',
                 diagnostics: [
                     'mailer'     => config('mail.default'),
                     'request_id' => $requestId,
                     'timestamp'  => now()->toIso8601String(),
+                    'queued'     => config('queue.default') !== 'sync',
                 ]
             );
         } catch (Throwable $e) {

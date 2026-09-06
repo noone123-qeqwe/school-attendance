@@ -46,7 +46,7 @@ return [
             'encryption' => trim((string) env('MAIL_ENCRYPTION', env('MAIL_SCHEME', env('EMAIL_ENCRYPTION', 'tls')))),
             'username' => trim((string) env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com')))),
             'password' => preg_replace('/\s+/', '', (string) env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp')))),
-            'timeout' => 15,
+            'timeout' => (int) env('MAIL_TIMEOUT', 10),
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
 
@@ -57,7 +57,7 @@ return [
             'encryption' => 'ssl',
             'username' => trim((string) env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com')))),
             'password' => preg_replace('/\s+/', '', (string) env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp')))),
-            'timeout' => 15,
+            'timeout' => (int) env('MAIL_TIMEOUT', 10),
         ],
 
         'ses' => [
