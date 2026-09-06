@@ -162,8 +162,8 @@
     <!-- Bottom Navigation -->
     @include('components.mobile.bottom-nav')
 
-    <!-- Install Prompt (only shows in browser mode) -->
-    {{-- @include('components.mobile.install-prompt') --}}
+    <!-- Install Prompt (only shows in browser mode, hidden when installed) -->
+    @include('components.mobile.install-prompt')
 
     <!-- Scripts -->
     <script>

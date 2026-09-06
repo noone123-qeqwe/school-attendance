@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '1.4.2'),
-    'default_version' => env('APP_LATEST_VERSION', '1.4.3'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.2.0'),
+    'default_version' => env('APP_LATEST_VERSION', '2.2.0'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,30 @@ return [
     |
     */
     'releases' => [
+        '2.2.0' => [
+            'version' => '2.2.0',
+            'version_tag' => 'v2.2.0',
+            'title' => 'Mobile App Experience & Icon Update',
+            'description' => 'Major mobile redesign with native app experience, improved PWA icon, and fullscreen support.',
+            'features' => [
+                'True fullscreen mode when installed as PWA',
+                'Updated app icon with better text display',
+                'Mobile-first navigation with bottom tab bar',
+                'Role-based mobile dashboards',
+            ],
+            'improvements' => [
+                'Optimized manifest for better mobile installation',
+                'Enhanced app naming for home screen display',
+                'Improved safe area handling for notched devices',
+            ],
+            'bugFixes' => [
+                'Fixed app icon text being cut off',
+                'Fixed status bar visibility in installed mode',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-06',
+        ],
+
         '1.4.3' => [
             'version' => '1.4.3',
             'version_tag' => 'v1.4.3',
