@@ -539,13 +539,13 @@
             @enderror
 
             <!-- Biometric Authentication (WebAuthn supported) -->
-            <div id="fingerprintSection" style="display: none;">
+            <div id="fingerprintSection" style="display: block;">
                 <div class="fp-row anim-fade-up anim-d5" onclick="handleBiometricLogin()" id="fpRowBtn">
                     <div class="fp-row-left">
                         <i class="bi bi-fingerprint" id="fpIcon"></i>
                         <div>
                             <div class="fp-row-label" id="fpLabel">Sign in with Biometrics</div>
-                            <div class="fp-row-hint" id="fpHint">Touch sensor, Face ID, or device security</div>
+                            <div class="fp-row-hint" id="fpHint">Fingerprint, Face ID, or device security</div>
                         </div>
                     </div>
                     <i class="bi bi-chevron-right fp-row-arrow" id="fpArrow"></i>
@@ -616,17 +616,19 @@
             </span>
         </div>
 
-        {{-- Smart Download App Button - Mobile Only, Detects Installation State --}}
-        <div id="smartAppDownloadRow" style="text-align: center; margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); display: none;">
-            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Using a phone?</div>
+        {{-- Smart Install App Button - Mobile: inside card, Desktop: handled by floating button --}}
+        <div id="smartAppDownloadRow" style="text-align: center; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); display: none;">
+            <div style="font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">📱 Install for quick access</div>
             <button id="downloadAppBtn" type="button"
                 style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-                       background: rgba(207,164,111,0.12); color: #CFA46F;
-                       border: 1px solid rgba(207,164,111,0.35); border-radius: 12px;
-                       padding: 10px 24px; font-size: 0.85rem; font-weight: 700;
-                       cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
-                       box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
-                <i class="bi bi-download"></i> <span id="downloadAppBtnText">Download App</span>
+                       background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(207,164,111,0.12));
+                       color: #CFA46F;
+                       border: 1px solid rgba(207,164,111,0.45); border-radius: 12px;
+                       padding: 11px 26px; font-size: 0.85rem; font-weight: 700;
+                       cursor: pointer; transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+                       box-shadow: 0 4px 14px rgba(0,0,0,0.25); letter-spacing: 0.3px;">
+                <i class="bi bi-download" style="font-size: 1rem;"></i>
+                <span id="downloadAppBtnText">Install App</span>
             </button>
         </div>
 
@@ -637,17 +639,24 @@
 <div id="webInstallAppBtn" style="position: fixed; bottom: 20px; right: 20px; z-index: 999; display: none;">
     <button type="button" id="pwaInstallBtn"
         style="display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-               background: rgba(212, 175, 55, 0.95); color: #1a0a0a;
-               border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 14px;
-               padding: 14px 24px; font-size: 0.9rem; font-weight: 700;
+               background: linear-gradient(135deg, rgba(212,175,55,0.98), rgba(180,140,30,0.95)); color: #1a0a0a;
+               border: 2px solid rgba(255, 255, 255, 0.35); border-radius: 16px;
+               padding: 13px 22px; font-size: 0.88rem; font-weight: 800;
                cursor: pointer; transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
-               box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+               box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,175,55,0.3);
                letter-spacing: 0.5px; text-transform: uppercase;
-               backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-        <i class="bi bi-download" style="font-size: 1.1rem;"></i>
+               backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+               animation: pwaButtonPulse 3s ease-in-out infinite;">
+        <i class="bi bi-arrow-bar-down" style="font-size: 1.15rem;"></i>
         <span id="pwaInstallBtnText">Install App</span>
     </button>
 </div>
+<style>
+@keyframes pwaButtonPulse {
+    0%, 100% { box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,175,55,0.3); }
+    50% { box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 5px rgba(212,175,55,0.15), 0 0 20px rgba(212,175,55,0.2); }
+}
+</style>
 
 <script>
 // ── PWA INSTALL BUTTON FOR WEB/DESKTOP - Bottom Right ──────────────────────────
@@ -676,23 +685,24 @@
     console.log('[PWA Install] Container exists:', !!webInstallContainer);
     
     if (!isMobileDevice() && !isAppInstalled() && webInstallContainer) {
-        console.log('[PWA Install] Showing install button');
+        console.log('[PWA Install] Showing install button (desktop)');
+        // Show immediately — don't wait for beforeinstallprompt
         webInstallContainer.style.display = 'block';
         
         // Add hover effects via JavaScript
         pwaInstallBtn.addEventListener('mouseenter', function() {
-            this.style.background = 'rgba(212, 175, 55, 1)';
-            this.style.transform = 'translateY(-3px) scale(1.05)';
-            this.style.boxShadow = '0 12px 32px rgba(0,0,0,0.5)';
+            this.style.background = 'linear-gradient(135deg, rgba(212,175,55,1), rgba(200,160,40,1))';
+            this.style.transform = 'translateY(-3px) scale(1.06)';
+            this.style.boxShadow = '0 14px 36px rgba(0,0,0,0.55), 0 0 0 6px rgba(212,175,55,0.2)';
         });
         
         pwaInstallBtn.addEventListener('mouseleave', function() {
-            this.style.background = 'rgba(212, 175, 55, 0.95)';
+            this.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.98), rgba(180,140,30,0.95))';
             this.style.transform = 'translateY(0) scale(1)';
-            this.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
+            this.style.boxShadow = '0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,175,55,0.3)';
         });
     } else {
-        console.log('[PWA Install] Install button hidden - conditions not met');
+        console.log('[PWA Install] Install button hidden - conditions not met (mobile or already installed)');
     }
     
     // Listen for the beforeinstallprompt event
@@ -834,33 +844,33 @@
         
         console.log('[Smart Download] Platform:', platform, 'Mobile:', mobile, 'Installed:', installed);
         
-        // Hide on desktop
+        // Hide on desktop (desktop uses the floating button instead)
         if (!mobile || platform === 'desktop') {
             if (downloadRow) downloadRow.style.display = 'none';
             return;
         }
         
-        // Hide if app is already installed
+        // Hide if app is already installed (running in standalone mode)
         if (installed) {
             if (downloadRow) downloadRow.style.display = 'none';
             return;
         }
         
-        // Show download button for mobile users without app
+        // Show install button for mobile users without app
         if (downloadRow) {
             downloadRow.style.display = 'block';
             
-            // Set appropriate download URL based on platform
+            // Set appropriate install action based on platform
             if (downloadBtn) {
                 downloadBtn.onclick = function() {
                     var url = platform === 'android' ? ANDROID_APP_URL : IOS_APP_URL;
                     
                     if (platform === 'android') {
-                        // For Android, download APK or open Play Store
+                        // For Android: download APK or open Play Store
                         window.location.href = url;
                     } else if (platform === 'ios') {
-                        // For iOS, show install instructions
-                        alert('To install:\n\n1. Tap the Share button (□↑)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to install');
+                        // For iOS, show PWA add-to-homescreen instructions
+                        alert('To install this app on your iPhone:\n\n1. Tap the Share button (the box with arrow at the bottom of Safari)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" — the app will appear on your home screen!');
                     }
                 };
             }
@@ -1009,12 +1019,13 @@ function debounce(func, wait) {
 // Check if user has registered biometric credentials
 async function checkBiometricAvailability(identifier) {
     if (!identifier || identifier.length < 3) {
-        hideBiometricButton();
+        // Show default state when no identifier entered yet
+        showBiometricButton('default');
         return;
     }
 
     if (!isBiometricSupported()) {
-        hideBiometricButton();
+        showBiometricButton('not-supported');
         return;
     }
 
@@ -1071,9 +1082,19 @@ var debouncedCheck = debounce(function() {
 function showBiometricButton(state) {
     if (!fpSec) return;
 
+    // Always keep section visible
     fpSec.style.display = 'block';
 
-    if (state === 'checking') {
+    if (state === 'default') {
+        fpRowBtn.setAttribute('data-state', 'ready');
+        fpRowBtn.style.opacity = '1';
+        fpRowBtn.style.pointerEvents = '';
+        fpLabel.textContent = 'Sign in with Biometrics';
+        fpHint.textContent = 'Fingerprint, Face ID, or device security';
+        fpIcon.className = 'bi bi-fingerprint';
+        fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
+        fpRowBtn.style.cursor = 'pointer';
+    } else if (state === 'checking') {
         fpRowBtn.setAttribute('data-state', 'checking');
         fpRowBtn.style.opacity = '0.6';
         fpRowBtn.style.pointerEvents = 'none';
@@ -1086,27 +1107,35 @@ function showBiometricButton(state) {
         fpRowBtn.style.opacity = '1';
         fpRowBtn.style.pointerEvents = '';
         fpLabel.textContent = 'Sign in with Biometrics';
-        fpHint.textContent = 'Touch sensor, Face ID, or device security';
+        fpHint.textContent = 'Fingerprint, Face ID, or device security';
         fpIcon.className = 'bi bi-fingerprint';
         fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
         fpRowBtn.style.cursor = 'pointer';
     } else if (state === 'not-registered') {
         fpRowBtn.setAttribute('data-state', 'not-registered');
-        fpRowBtn.style.opacity = '0.7';
+        fpRowBtn.style.opacity = '0.75';
         fpRowBtn.style.pointerEvents = '';
-        fpLabel.textContent = 'Set up biometric login';
+        fpLabel.textContent = 'Set up Biometric Login';
         fpHint.textContent = 'Sign in first, then enable in your profile';
-        fpIcon.className = 'bi bi-info-circle';
+        fpIcon.className = 'bi bi-fingerprint';
         fpArrow.className = 'bi bi-arrow-right fp-row-arrow';
         fpRowBtn.style.cursor = 'help';
+    } else if (state === 'not-supported') {
+        fpRowBtn.setAttribute('data-state', 'not-registered');
+        fpRowBtn.style.opacity = '0.4';
+        fpRowBtn.style.pointerEvents = 'none';
+        fpLabel.textContent = 'Biometrics Not Available';
+        fpHint.textContent = 'Not supported on this browser or connection';
+        fpIcon.className = 'bi bi-fingerprint';
+        fpArrow.className = 'bi bi-x-circle fp-row-arrow';
+        fpRowBtn.style.cursor = 'default';
     }
 }
 
-// Hide biometric button
+// Hide biometric button (kept for error cases - now just dims instead of hides)
 function hideBiometricButton() {
-    if (fpSec) {
-        fpSec.style.display = 'none';
-    }
+    // Keep visible but show default state rather than hiding
+    showBiometricButton('default');
     biometricState.available = false;
     biometricState.hasCredentials = false;
 }
