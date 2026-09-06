@@ -717,6 +717,80 @@
     </div>
 
     <script @cspNonce>
+        // CSRF Token Expiration Handler for Mobile WebView
+        // Automatically refreshes page on 419 errors to get fresh token
+        let csrfRetryCount = 0;
+        const MAX_CSRF_RETRIES = 1;
+        
+        // Intercept all fetch requests to handle CSRF errors globally
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            try {
+                const response = await originalFetch(...args);
+                
+                // Handle CSRF token expiration (419)
+                if (response.status === 419 && csrfRetryCount < MAX_CSRF_RETRIES) {
+                    console.warn('CSRF token expired. Refreshing page once to get fresh token...');
+                    csrfRetryCount++;
+                    
+                    // Save current form state if on registration
+                    const emailInput = document.getElementById('email');
+                    const passwordInput = document.getElementById('password');
+                    const passwordConfInput = document.getElementById('password_confirmation');
+                    
+                    if (emailInput && passwordInput && passwordConfInput) {
+                        sessionStorage.setItem('regFormData', JSON.stringify({
+                            email: emailInput.value,
+                            password: passwordInput.value,
+                            password_confirmation: passwordConfInput.value,
+                            timestamp: Date.now()
+                        }));
+                    }
+                    
+                    // Reload page
+                    setTimeout(() => window.location.reload(), 300);
+                    
+                    // Return a fake pending response to prevent error handling
+                    return new Response(JSON.stringify({ message: 'Refreshing session...' }), {
+                        status: 200,
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                }
+                
+                return response;
+            } catch (error) {
+                throw error;
+            }
+        };
+        
+        // Restore form data after page reload (if exists)
+        window.addEventListener('load', function() {
+            const savedData = sessionStorage.getItem('regFormData');
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    // Only restore if less than 30 seconds old
+                    if (Date.now() - data.timestamp < 30000) {
+                        setTimeout(() => {
+                            const emailInput = document.getElementById('email');
+                            const passwordInput = document.getElementById('password');
+                            const passwordConfInput = document.getElementById('password_confirmation');
+                            
+                            if (emailInput) emailInput.value = data.email || '';
+                            if (passwordInput) passwordInput.value = data.password || '';
+                            if (passwordConfInput) passwordConfInput.value = data.password_confirmation || '';
+                            
+                            console.log('Form data restored after CSRF refresh');
+                        }, 100);
+                    }
+                    // Clear the saved data
+                    sessionStorage.removeItem('regFormData');
+                } catch (e) {
+                    console.error('Failed to restore form data:', e);
+                }
+            }
+        });
+        
         // Alert helpers
         function showAlert(msg) {
             const alertEl = document.getElementById('js-alert');
