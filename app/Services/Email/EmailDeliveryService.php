@@ -80,8 +80,12 @@ class EmailDeliveryService
     ): EmailDeliveryResult {
         $providerName = $this->getActiveProviderName();
 
+        // Log the recipient for transparency — ensures no silent redirection
+        Log::info("EmailDeliveryService: Sending OTP [purpose: {$purpose}, recipient: {$recipientEmail}, provider: {$providerName}]");
+
         // 1. Check HTTP API providers first (works over HTTPS port 443; never blocked on cloud/Render free tier)
         $resendKey = config('services.resend.key') ?: env('RESEND_API_KEY');
+
         if (!empty($resendKey) && !app()->runningUnitTests()) {
             $httpRes = $this->sendViaResendHttp($recipientEmail, $otpCode, $purpose, $recipientName, $resendKey, $requestId);
             if ($httpRes->success) {
