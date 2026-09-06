@@ -236,36 +236,40 @@ class User extends Authenticatable
 
     /**
      * Generate a unique student number automatically.
-     * Format: YYYY-NNNNNN (e.g., 2026-000001)
-     * Where YYYY is current year and NNNNNN is sequential number
+     * Format: YYYYNNN (e.g., 2026001, 2026002)
+     * Where YYYY is current year and NNN is sequential 3-digit number
      */
     public static function generateStudentNumber(): string
     {
         $year = date('Y');
-        $prefix = $year . '-';
         
         // Find the latest student number for this year
-        $latestStudent = static::where('student_number', 'LIKE', $prefix . '%')
+        $latestStudent = static::where('student_number', 'LIKE', $year . '%')
             ->where('role', 'student')
-            ->orderByRaw('CAST(SUBSTRING(student_number, ' . (strlen($prefix) + 1) . ') AS UNSIGNED) DESC')
+            ->orderByRaw('CAST(student_number AS UNSIGNED) DESC')
             ->first();
         
         if ($latestStudent && $latestStudent->student_number) {
-            // Extract the numeric part and increment
-            $lastNumber = (int) substr($latestStudent->student_number, strlen($prefix));
-            $newNumber = $lastNumber + 1;
+            // Extract the numeric part after the year and increment
+            $studentNumberStr = (string) $latestStudent->student_number;
+            if (strlen($studentNumberStr) >= 4 && substr($studentNumberStr, 0, 4) === $year) {
+                $lastNumber = (int) substr($studentNumberStr, 4);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
         } else {
             // Start from 1 if no students exist for this year
             $newNumber = 1;
         }
         
-        // Format with leading zeros (6 digits)
-        $studentNumber = $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        // Format: YYYY + 3-digit number (e.g., 2026001)
+        $studentNumber = $year . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
         
         // Ensure uniqueness (in case of race conditions)
         while (static::where('student_number', $studentNumber)->exists()) {
             $newNumber++;
-            $studentNumber = $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+            $studentNumber = $year . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
         }
         
         return $studentNumber;
