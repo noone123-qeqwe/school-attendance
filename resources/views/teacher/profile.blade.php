@@ -197,13 +197,13 @@
             </div>
         </div>
 
-        <!-- Edit Profile Information Card -->
-        <div class="tch-info-card" style="margin-top: 24px;">
+        <!-- Edit Profile Card -->
+        <div class="tch-info-card" style="margin-top: 20px;">
             <div class="tch-info-card-head">
                 <div class="tch-info-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;"><i class="bi bi-pencil-square"></i></div>
                 <div>
-                    <div class="tch-info-card-title">Edit Profile Information</div>
-                    <div class="tch-info-card-sub">Update your personal and professional details</div>
+                    <div class="tch-info-card-title">Edit Profile</div>
+                    <div class="tch-info-card-sub">Update your personal information</div>
                 </div>
             </div>
             <div class="tch-info-card-body" style="padding-top:16px;">
@@ -212,37 +212,36 @@
                     
                     <div class="mb-3">
                         <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Full Name *</label>
-                        <input type="text" name="name" class="tch-form-input" value="{{ old('name', $teacher->name) }}" required placeholder="John Doe">
+                        <input type="text" name="name" class="tch-form-input" value="{{ old('name', $teacher->name) }}" required>
                     </div>
 
                     <div class="mb-3">
-                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Email Address *</label>
-                        <input type="email" name="email" class="tch-form-input" value="{{ old('email', $teacher->email) }}" required placeholder="john.doe@example.com">
-                        <div style="font-size:0.75rem;color:#64748b;margin-top:4px;"><i class="bi bi-info-circle me-1"></i>Used for account login and notifications</div>
+                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Email *</label>
+                        <input type="email" name="email" class="tch-form-input" value="{{ old('email', $teacher->email) }}" required>
                     </div>
 
                     <div class="mb-3">
-                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Phone Number</label>
-                        <input type="tel" name="phone" class="tch-form-input" value="{{ old('phone', $teacher->phone) }}" placeholder="+63 912 345 6789">
+                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Phone</label>
+                        <input type="text" name="phone" class="tch-form-input" value="{{ old('phone', $teacher->phone) }}">
                     </div>
 
                     <div class="mb-3">
                         <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Department</label>
-                        <input type="text" name="department" class="tch-form-input" value="{{ old('department', $teacher->department) }}" placeholder="e.g., Computer Science, Mathematics">
+                        <input type="text" name="department" class="tch-form-input" value="{{ old('department', $teacher->department) }}">
                     </div>
 
                     <div class="mb-3">
-                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Position/Title</label>
-                        <input type="text" name="position" class="tch-form-input" value="{{ old('position', $teacher->position) }}" placeholder="e.g., Associate Professor, Instructor">
+                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Position</label>
+                        <input type="text" name="position" class="tch-form-input" value="{{ old('position', $teacher->position) }}">
                     </div>
 
                     <div class="mb-4">
-                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Specialization/Expertise</label>
-                        <textarea name="specialization" class="tch-form-input" rows="3" placeholder="e.g., Data Structures, Algorithms, Web Development">{{ old('specialization', $teacher->specialization) }}</textarea>
+                        <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Specialization</label>
+                        <textarea name="specialization" class="tch-form-input" rows="3">{{ old('specialization', $teacher->specialization) }}</textarea>
                     </div>
 
                     <button type="submit" class="tch-save-btn w-100">
-                        <i class="bi bi-check2-circle me-2"></i>Save Profile Changes
+                        <i class="bi bi-check2-circle me-2"></i>Update Profile
                     </button>
                 </form>
             </div>
@@ -250,7 +249,7 @@
     </div>
 
     <!-- RIGHT: Update Security -->
-    <div class="col-lg-5"
+    <div class="col-lg-5">
         <div class="tch-info-card">
             <div class="tch-info-card-head">
                 <div class="tch-info-card-icon" style="background:rgba(255,235,190,0.08);color:#f3e7cd;"><i class="bi bi-shield-lock-fill"></i></div>
