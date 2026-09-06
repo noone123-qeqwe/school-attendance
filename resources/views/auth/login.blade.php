@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -966,7 +966,10 @@ async function checkBiometricAvailability(identifier) {
         }
     } catch (error) {
         console.log('Biometric check failed:', error);
-        hideBiometricButton();
+        // Still mark as checked so button click shows a message instead of looping
+        biometricState.available = true;
+        biometricState.hasCredentials = false;
+        showBiometricButton('not-registered');
     } finally {
         biometricState.checking = false;
     }
@@ -1063,6 +1066,13 @@ async function handleBiometricLogin() {
     if (!identifier) {
         showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
         if (idInput) { idInput.focus(); idInput.style.borderColor = '#d4af37'; setTimeout(function(){ idInput.style.borderColor=''; }, 2000); }
+        return;
+    }
+    
+    // If button is already in 'not-registered' state — show setup instructions immediately (no async needed)
+    var currentState = fpRowBtn ? fpRowBtn.getAttribute('data-state') : '';
+    if (currentState === 'not-registered') {
+        showBiometricInfo();
         return;
     }
     
