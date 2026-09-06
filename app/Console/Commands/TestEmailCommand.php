@@ -11,7 +11,8 @@ class TestEmailCommand extends Command
      * The name and signature of the console command.
      */
     protected $signature = 'email:test 
-                            {email : The destination email address to send the diagnostic email to}';
+                            {email : The destination email address to send the diagnostic email to}
+                            {--otp : Send an actual OTP email using OtpMail to test verification template}';
 
     /**
      * The console command description.
@@ -41,7 +42,12 @@ class TestEmailCommand extends Command
         $this->line("Initiating test transmission...");
 
         $start = microtime(true);
-        $result = $emailDeliveryService->sendDiagnosticTestEmail($recipient);
+        if ($this->option('otp')) {
+            $this->line("Sending real OtpMail template...");
+            $result = $emailDeliveryService->sendOtp($recipient, '654321', 'verification', 'Valued User');
+        } else {
+            $result = $emailDeliveryService->sendDiagnosticTestEmail($recipient);
+        }
         $duration = round((microtime(true) - $start) * 1000, 2);
 
         $this->newLine();
