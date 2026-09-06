@@ -376,28 +376,7 @@
                 </div>
             </div>
 
-            <!-- Install on Phone / APK Download Card -->
-            <div class="info-card" id="apkDownloadCard">
-                <div class="info-card-header">
-                    <div class="info-card-header-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">
-                        <i class="bi bi-android2"></i>
-                    </div>
-                    <div class="info-card-title">Install on Your Phone</div>
-                </div>
-                <div class="info-card-body">
-                    <p style="font-size:.83rem;color:#b39b82;line-height:1.5;margin-bottom:14px;">
-                        Get the full native app experience. Download and install the APK to add Smart Attendance directly to your Android home screen.
-                    </p>
-                    <a href="/download/apk" download="SmartAttendance.apk"
-                       style="display:flex;align-items:center;justify-content:center;gap:10px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;font-weight:700;font-size:.88rem;padding:12px 18px;border-radius:12px;text-decoration:none;box-shadow:0 4px 14px rgba(22,163,74,.25);transition:opacity .2s;"
-                       onmouseover="this.style.opacity='.88'" onmouseout="this.style.opacity='1'">
-                        <i class="bi bi-download"></i> Download Android APK (~4 MB)
-                    </a>
-                    <div style="margin-top:10px;font-size:.74rem;color:#6b7280;text-align:center;">
-                        After downloading, open the file and tap <strong style="color:#86EFAC;">Install</strong>. Enable <em>"Install from unknown sources"</em> if prompted.
-                    </div>
-                </div>
-            </div>
+            <!-- APK Download Card removed - users can install via PWA prompt -->
 
             <!-- Quick Actions -->
             <div class="info-card">

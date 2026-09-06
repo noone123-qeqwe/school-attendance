@@ -544,42 +544,12 @@
             </button>
         </div>
 
-        {{-- Download APK (hidden once downloaded) --}}
-        <div id="apkDownloadRow" style="text-align: center; margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <a id="apkDownloadBtn" href="/download/apk" download="SmartAttendance.apk"
-               style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-                      background: linear-gradient(135deg,rgba(34,197,94,0.15) 0%,rgba(22,163,74,0.15) 100%);
-                      color: #86EFAC; border: 1px solid rgba(34,197,94,0.35);
-                      border-radius: 99px; padding: 9px 20px; font-size: 0.82rem; font-weight: 700;
-                      text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.2);">
-                <i class="bi bi-android2"></i> Download Android APK
-            </a>
-        </div>
+        {{-- Download APK button removed - only PWA install popup remains --}}
 
     </div>
 </div>
 
 <script>
-// ── PWA: Hide APK button if already downloaded ──────────────────────────────
-(function() {
-    try {
-        if (localStorage.getItem('apk_downloaded') === '1') {
-            var row = document.getElementById('apkDownloadRow');
-            if (row) row.style.display = 'none';
-        }
-    } catch(e) {}
-    var apkBtn = document.getElementById('apkDownloadBtn');
-    if (apkBtn) {
-        apkBtn.addEventListener('click', function() {
-            try { localStorage.setItem('apk_downloaded', '1'); } catch(e) {}
-            setTimeout(function() {
-                var row = document.getElementById('apkDownloadRow');
-                if (row) { row.style.opacity='0'; row.style.transition='opacity 0.4s'; setTimeout(function(){ row.style.display='none'; }, 420); }
-            }, 1200);
-        });
-    }
-})();
-
 // ── PWA: Add to Home Screen Install Prompt ───────────────────────────────────
 (function() {
     var deferredPrompt = null;
