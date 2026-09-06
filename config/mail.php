@@ -41,10 +41,10 @@ return [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
             'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', env('EMAIL_HOST', 'smtp.gmail.com')),
+            'host' => trim((string) env('MAIL_HOST', env('EMAIL_HOST', 'smtp.gmail.com'))),
             'port' => (int) env('MAIL_PORT', env('EMAIL_PORT', 587)),
-            'encryption' => env('MAIL_ENCRYPTION', env('MAIL_SCHEME', env('EMAIL_ENCRYPTION', 'tls'))),
-            'username' => env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com'))),
+            'encryption' => trim((string) env('MAIL_ENCRYPTION', env('MAIL_SCHEME', env('EMAIL_ENCRYPTION', 'tls')))),
+            'username' => trim((string) env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com')))),
             'password' => preg_replace('/\s+/', '', (string) env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp')))),
             'timeout' => 15,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
@@ -52,10 +52,10 @@ return [
 
         'smtp_ssl' => [
             'transport' => 'smtp',
-            'host' => env('MAIL_HOST', env('EMAIL_HOST', 'smtp.gmail.com')),
+            'host' => trim((string) env('MAIL_HOST', env('EMAIL_HOST', 'smtp.gmail.com'))),
             'port' => 465,
             'encryption' => 'ssl',
-            'username' => env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com'))),
+            'username' => trim((string) env('MAIL_USERNAME', env('EMAIL_USER', env('EMAIL_USERNAME', 'osmenacolleges.attendance@gmail.com')))),
             'password' => preg_replace('/\s+/', '', (string) env('MAIL_PASSWORD', env('EMAIL_PASSWORD', env('EMAIL_API_KEY', 'zskulbswpldmxqfp')))),
             'timeout' => 15,
         ],
@@ -122,8 +122,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', env('EMAIL_FROM', env('MAIL_USERNAME', 'osmenacolleges.attendance@gmail.com'))),
-        'name' => env('MAIL_FROM_NAME', env('EMAIL_FROM_NAME', env('APP_NAME', 'Smart Classroom Attendance System'))),
+        'address' => trim((string) env('MAIL_FROM_ADDRESS', env('EMAIL_FROM', env('MAIL_USERNAME', 'osmenacolleges.attendance@gmail.com')))),
+        'name' => trim((string) env('MAIL_FROM_NAME', env('EMAIL_FROM_NAME', env('APP_NAME', 'Smart Classroom Attendance System')))),
     ],
 
 ];
