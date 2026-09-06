@@ -540,6 +540,8 @@
 
             <!-- Biometric Authentication (WebAuthn supported) -->
             <div id="fingerprintSection" style="display: block;">
+                <!-- Inline message area for biometric feedback -->
+                <div id="fpMessage" style="display:none; border-radius:10px; padding:10px 14px; font-size:0.8rem; margin-bottom:8px; line-height:1.4;"></div>
                 <div class="fp-row anim-fade-up anim-d5" onclick="handleBiometricLogin()" id="fpRowBtn">
                     <div class="fp-row-left">
                         <i class="bi bi-fingerprint" id="fpIcon"></i>
@@ -1154,8 +1156,26 @@ function resetBiometricButton() {
 
 // Handle biometric login button click
 async function handleBiometricLogin() {
+    // Clear any previous messages
+    hideFpMessage();
+    
+    var identifier = idInput ? idInput.value.trim() : '';
+    
+    // If no identifier entered, prompt user
+    if (!identifier) {
+        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
+        if (idInput) { idInput.focus(); idInput.style.borderColor = '#d4af37'; setTimeout(function(){ idInput.style.borderColor=''; }, 2000); }
+        return;
+    }
+    
+    // If we haven't checked yet (default state), trigger check now
+    if (!biometricState.available && !biometricState.checking) {
+        showBiometricButton('checking');
+        await checkBiometricAvailability(identifier);
+    }
+    
     if (!biometricState.hasCredentials) {
-        // User hasn't registered biometrics yet
+        // User hasn't registered biometrics yet — show inline message
         showBiometricInfo();
         return;
     }
@@ -1164,22 +1184,41 @@ async function handleBiometricLogin() {
     await performBiometricLogin();
 }
 
-// Show info modal for unregistered users
+// Show inline info message for unregistered users
 function showBiometricInfo() {
-    var msg = 'Biometric login is not set up yet.\n\n' +
-              'To enable it:\n' +
-              '1. Sign in with your password below\n' +
-              '2. Go to your Profile page\n' +
-              '3. Find "Fingerprint / Biometric Login" section\n' +
-              '4. Register your device\n' +
-              '5. Next time you can use biometric login!';
-    
-    alert(msg);
-    
+    showFpMessage('info',
+        '<i class="bi bi-info-circle-fill me-2"></i>' +
+        '<strong>Biometric login not set up.</strong><br>' +
+        'Sign in with your password below, then go to your <strong>Profile</strong> page to register your fingerprint or Face ID.'
+    );
     var passInput = document.getElementById('loginPassword');
     if (passInput) {
         passInput.focus();
+        passInput.style.borderColor = '#d4af37';
+        setTimeout(function() { if (passInput) passInput.style.borderColor = ''; }, 3000);
     }
+}
+
+// Show inline fingerprint message
+function showFpMessage(type, html) {
+    var el = document.getElementById('fpMessage');
+    if (!el) return;
+    var styles = {
+        info:    'background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:#f3e7cd;',
+        warning: 'background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);color:#fca5a5;',
+        error:   'background:rgba(220,38,38,0.2);border:1px solid rgba(220,38,38,0.4);color:#fca5a5;',
+        success: 'background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.4);color:#86efac;'
+    };
+    el.style.cssText = (styles[type] || styles.info) + 'display:block;border-radius:10px;padding:10px 14px;font-size:0.8rem;margin-bottom:8px;line-height:1.5;';
+    el.innerHTML = html;
+    // Auto-hide after 8 seconds
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function() { el.style.display = 'none'; }, 8000);
+}
+
+function hideFpMessage() {
+    var el = document.getElementById('fpMessage');
+    if (el) { el.style.display = 'none'; clearTimeout(el._timer); }
 }
 
 // Listen to identifier input
@@ -1423,27 +1462,9 @@ function focusPasswordField() {
     }
 }
 
-// Show biometric error message
+// Show biometric error message — uses the unified fpMessage inline element
 function showBiometricError(msg) {
-    var err = document.getElementById('biometricError');
-    if (!err) {
-        err = document.createElement('div');
-        err.id = 'biometricError';
-        err.className = 'glass-alert';
-        err.style.marginBottom = '10px';
-        if (fpSec) {
-            fpSec.insertBefore(err, fpSec.firstChild);
-        }
-    }
-    err.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + msg;
-    err.style.display = 'block';
-    
-    // Auto-hide after 8 seconds
-    setTimeout(function() { 
-        if (err && err.parentNode) {
-            err.style.display = 'none';
-        }
-    }, 8000);
+    showFpMessage('error', '<i class="bi bi-exclamation-circle me-2"></i>' + msg);
 }
 </script>
 </body>
