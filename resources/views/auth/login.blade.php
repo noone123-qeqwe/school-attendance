@@ -49,6 +49,10 @@
             70% { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 10px rgba(212, 175, 55, 0); }
             100% { box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 0 rgba(212, 175, 55, 0); }
         }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: scale(1); }
+            to { opacity: 0; transform: scale(0.9); }
+        }
 
         .glass-alert { animation: shakeError 0.5s ease; }
         .btn-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,0,0,0.2); border-top-color: #800000; border-radius: 50%; animation: spinLoader 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
@@ -413,6 +417,33 @@
             .glass-title { font-size: 1.3rem; }
             .top-bar, .bottom-bar { display: none; }
         }
+
+        /* Desktop Install Button Responsiveness */
+        @media (max-width: 768px) {
+            #webInstallAppBtn {
+                bottom: 15px !important;
+                right: 15px !important;
+            }
+            #pwaInstallBtn {
+                padding: 12px 20px !important;
+                font-size: 0.85rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #webInstallAppBtn {
+                bottom: 10px !important;
+                right: 10px !important;
+            }
+            #pwaInstallBtn {
+                padding: 10px 16px !important;
+                font-size: 0.8rem !important;
+                gap: 8px !important;
+            }
+            #pwaInstallBtn i {
+                font-size: 0.95rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -584,7 +615,163 @@
     </div>
 </div>
 
+<!-- Desktop/Web Install App Button - Fixed Bottom Right -->
+<div id="webInstallAppBtn" style="position: fixed; bottom: 20px; right: 20px; z-index: 999; display: none;">
+    <button type="button" id="pwaInstallBtn"
+        style="display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+               background: rgba(212, 175, 55, 0.95); color: #1a0a0a;
+               border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 14px;
+               padding: 14px 24px; font-size: 0.9rem; font-weight: 700;
+               cursor: pointer; transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+               box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+               letter-spacing: 0.5px; text-transform: uppercase;
+               backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+        <i class="bi bi-download" style="font-size: 1.1rem;"></i>
+        <span id="pwaInstallBtnText">Install App</span>
+    </button>
+</div>
+
 <script>
+// ── PWA INSTALL BUTTON FOR WEB/DESKTOP - Bottom Right ──────────────────────────
+(function() {
+    var webInstallContainer = document.getElementById('webInstallAppBtn');
+    var pwaInstallBtn = document.getElementById('pwaInstallBtn');
+    var pwaInstallBtnText = document.getElementById('pwaInstallBtnText');
+    var deferredPrompt;
+    
+    // Detect if user is on mobile device
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    // Detect if running in standalone mode (app is already installed)
+    function isAppInstalled() {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               document.referrer.includes('android-app://');
+    }
+    
+    // Listen for the beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', function(e) {
+        // Prevent the mini-infobar from appearing on mobile
+        e.preventDefault();
+        
+        // Stash the event so it can be triggered later
+        deferredPrompt = e;
+        
+        console.log('[PWA Install] Install prompt available');
+        
+        // Don't show on mobile devices (they have the in-card button)
+        if (isMobileDevice()) {
+            return;
+        }
+        
+        // Show the install button for desktop/web users
+        if (webInstallContainer && !isAppInstalled()) {
+            webInstallContainer.style.display = 'block';
+            
+            // Add hover effects via JavaScript
+            pwaInstallBtn.addEventListener('mouseenter', function() {
+                this.style.background = 'rgba(212, 175, 55, 1)';
+                this.style.transform = 'translateY(-3px) scale(1.05)';
+                this.style.boxShadow = '0 12px 32px rgba(0,0,0,0.5)';
+            });
+            
+            pwaInstallBtn.addEventListener('mouseleave', function() {
+                this.style.background = 'rgba(212, 175, 55, 0.95)';
+                this.style.transform = 'translateY(0) scale(1)';
+                this.style.boxShadow = '0 8px 24px rgba(0,0,0,0.4)';
+            });
+        }
+    });
+    
+    // Handle install button click
+    if (pwaInstallBtn) {
+        pwaInstallBtn.addEventListener('click', async function() {
+            if (!deferredPrompt) {
+                console.log('[PWA Install] No install prompt available');
+                
+                // Show instructions for manual installation
+                var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+                var isEdge = /Edg/.test(navigator.userAgent);
+                var isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+                
+                var instructions = 'To install this app:\n\n';
+                
+                if (isChrome || isEdge) {
+                    instructions += 'Chrome/Edge:\n';
+                    instructions += '1. Click the ⋮ menu (top right)\n';
+                    instructions += '2. Select "Install app" or "Install ' + (document.title || 'Attendance') + '"\n';
+                    instructions += '3. Click "Install" in the popup';
+                } else if (isSafari) {
+                    instructions += 'Safari:\n';
+                    instructions += '1. Click the Share button\n';
+                    instructions += '2. Scroll down and tap "Add to Dock"\n';
+                    instructions += '3. Click "Add"';
+                } else {
+                    instructions += '1. Look for an install icon in your browser\'s address bar\n';
+                    instructions += '2. Or check your browser menu for "Install app" option';
+                }
+                
+                alert(instructions);
+                return;
+            }
+            
+            // Show the install prompt
+            deferredPrompt.prompt();
+            
+            // Update button text
+            if (pwaInstallBtnText) {
+                pwaInstallBtnText.textContent = 'Installing...';
+            }
+            pwaInstallBtn.disabled = true;
+            
+            // Wait for the user to respond to the prompt
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            console.log('[PWA Install] User choice:', outcome);
+            
+            if (outcome === 'accepted') {
+                console.log('[PWA Install] User accepted the install prompt');
+                
+                // Hide the button after successful install
+                if (webInstallContainer) {
+                    webInstallContainer.style.animation = 'fadeOut 0.3s ease';
+                    setTimeout(function() {
+                        webInstallContainer.style.display = 'none';
+                    }, 300);
+                }
+            } else {
+                console.log('[PWA Install] User dismissed the install prompt');
+                
+                // Reset button
+                if (pwaInstallBtnText) {
+                    pwaInstallBtnText.textContent = 'Install App';
+                }
+                pwaInstallBtn.disabled = false;
+            }
+            
+            // Clear the deferred prompt
+            deferredPrompt = null;
+        });
+    }
+    
+    // Listen for successful app installation
+    window.addEventListener('appinstalled', function() {
+        console.log('[PWA Install] App was installed successfully');
+        
+        // Hide the install button
+        if (webInstallContainer) {
+            webInstallContainer.style.display = 'none';
+        }
+    });
+    
+    // Hide button if app is already installed
+    if (isAppInstalled() && webInstallContainer) {
+        webInstallContainer.style.display = 'none';
+    }
+})();
+
 // ── SMART APP DOWNLOAD BUTTON - Detects Actual Installation State ──────────────
 (function() {
     var downloadRow = document.getElementById('smartAppDownloadRow');
