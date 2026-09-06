@@ -268,25 +268,36 @@ class OtpController extends Controller
     }
 
     // ─────────────────────────────────────────
-    // CHANGE EMAIL — Send OTP to CURRENT email
+    // CHANGE EMAIL — Send OTP to ANY specified email or current email
     // ─────────────────────────────────────────
     public function sendEmailChangeOtp(Request $request)
     {
         $user = Auth::user();
 
+        // Allow sending OTP directly to any new email address specified by the user, or current email
+        $targetEmail = $user->email;
+        if ($request->filled('new_email')) {
+            $request->validate([
+                'new_email' => 'required|email|unique:users,email,' . $user->id,
+            ]);
+            $targetEmail = strtolower(trim((string) $request->new_email));
+            session(['pending_new_email' => $targetEmail]);
+        }
+
         try {
-            $res = $this->otpService->sendOtp($user->email, 'change_email', $user->id, $user->name);
+            $res = $this->otpService->sendOtp($targetEmail, 'change_email', $user->id, $user->name);
             return response()->json([
-                'success'  => true,
-                'message'  => 'Verification code sent to your current email.',
-                'cooldown' => $res['cooldown'],
+                'success'      => true,
+                'message'      => 'Verification code sent to ' . $targetEmail . '.',
+                'target_email' => $targetEmail,
+                'cooldown'     => $res['cooldown'],
             ]);
         } catch (\Exception $e) {
             $status = $e->getCode() === 429 ? 429 : 500;
             return response()->json([
                 'success'  => false,
                 'message'  => $e->getMessage() ?: 'Unable to send verification code. Please try again.',
-                'cooldown' => $status === 429 ? Otp::getCooldownRemaining($user->id, 'change_email') : 0,
+                'cooldown' => $status === 429 ? Otp::getCooldownRemaining($targetEmail, 'change_email') : 0,
             ], $status);
         }
     }
@@ -303,14 +314,20 @@ class OtpController extends Controller
 
         $user = Auth::user();
         $otpClean = trim((string) $request->otp);
+        $newEmail = strtolower(trim((string) $request->new_email));
 
-        $result = $this->otpService->verifyOtp($user->email, $otpClean, 'change_email', $user->id);
+        // Check if OTP was verified against new_email or current user email
+        $result = $this->otpService->verifyOtp($newEmail, $otpClean, 'change_email', $user->id);
+        if (!$result['success']) {
+            $result = $this->otpService->verifyOtp($user->email, $otpClean, 'change_email', $user->id);
+        }
 
         if (!$result['success']) {
             return back()->withErrors(['otp' => $result['message']])->withInput();
         }
 
-        $user->update(['email' => strtolower(trim($request->new_email))]);
+        $user->update(['email' => $newEmail]);
+        session()->forget('pending_new_email');
 
         return redirect()->route($this->roleRedirect())->with('success', 'Email address updated successfully!');
     }

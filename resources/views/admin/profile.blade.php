@@ -245,17 +245,21 @@
                             <i class="bi bi-envelope-fill" style="color:#b39b82;"></i>
                             <span style="font-size:.875rem;font-weight:600;color:#f3e7cd;">{{ $user->email }}</span>
                         </div>
+                        <div style="margin-bottom:12px;">
+                            <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Email Address (where OTP will be sent)</label>
+                            <input type="email" id="admInputNewEmail" class="adm-input" placeholder="Enter new email (e.g. yourname@gmail.com)" style="width:100%;padding:10px 14px;background:rgba(255,235,190,0.04);border:1.5px solid rgba(255,215,145,0.15);border-radius:10px;color:#f3e7cd;font-size:.875rem;outline:none;">
+                        </div>
                         <p style="font-size:.85rem;color:#64748b;margin-bottom:12px;">
-                            An OTP will be sent to your <strong>current email</strong> to verify it's you before changing.
+                            A 6-digit security code will be sent to this email address to verify ownership before updating.
                         </p>
                         <button type="button" onclick="admRequestEmailOtp()" id="admSendEmailOtpBtn" class="adm-save-btn">
-                            <i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email
+                            <i class="bi bi-send-fill me-2"></i>Send Verification OTP
                         </button>
                     </div>
 
                     <div id="admEmailStep2" style="display:none;">
                         <div style="background:rgba(255,235,190,0.06);border:1px solid rgba(255,215,145,0.12);color:#f3e7cd;border-radius:10px;padding:10px 14px;font-size:.82rem;margin-bottom:14px;">
-                            <i class="bi bi-envelope-check me-2"></i>OTP sent to <strong>{{ $user->email }}</strong>
+                            <i class="bi bi-envelope-check me-2"></i>OTP sent to <strong id="admEmailSentDest">{{ $user->email }}</strong>
                         </div>
                         <form action="{{ route('otp.email.change') }}" method="POST">
                             @csrf
@@ -268,7 +272,7 @@
                             <input type="hidden" name="otp" id="admEmailOtpHidden">
                             <div class="mb-3">
                                 <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Email Address</label>
-                                <input type="email" name="new_email" class="adm-form-input" placeholder="newemail@example.com" required>
+                                <input type="email" name="new_email" id="admConfirmNewEmailInput" class="adm-input" placeholder="name@example.com" required style="width:100%;padding:10px 14px;background:rgba(255,235,190,0.04);border:1.5px solid rgba(255,215,145,0.12);border-radius:10px;color:#f3e7cd;font-size:.875rem;outline:none;">
                             </div>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="admCancelEmailOtp()" style="padding:11px 20px;background:rgba(255,235,190,0.06);color:#f3e7cd;border:1.5px solid rgba(255,215,145,0.12);border-radius:10px;font-weight:600;font-size:.875rem;cursor:pointer;">Cancel</button>
@@ -450,16 +454,28 @@ function admCollectEmailOtp() {
 }
 
 function admRequestEmailOtp() {
+    const newEmailInput = document.getElementById('admInputNewEmail');
+    const newEmail = newEmailInput ? newEmailInput.value.trim() : '';
+    if (newEmailInput && !newEmail) {
+        alert('Please enter your new email address.');
+        newEmailInput.focus();
+        return;
+    }
     const btn = document.getElementById('admSendEmailOtpBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
     fetch('{{ route("otp.email.send") }}', {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_email: newEmail })
     }).then(r => r.json()).then(data => {
         if (data.success) {
             document.getElementById('admEmailStep1').style.display = 'none';
             document.getElementById('admEmailStep2').style.display = 'block';
+            const destEl = document.getElementById('admEmailSentDest');
+            if (destEl) destEl.textContent = data.target_email || newEmail || '{{ $user->email }}';
+            const confirmInput = document.getElementById('admConfirmNewEmailInput');
+            if (confirmInput && newEmail) confirmInput.value = newEmail;
             if (data.dev_otp && admEmailDigits) {
                 const str = String(data.dev_otp).trim();
                 admEmailDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
@@ -468,12 +484,12 @@ function admRequestEmailOtp() {
             if (admEmailDigits[0]) admEmailDigits[0].focus();
         } else {
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
+            btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Verification OTP';
             alert(data.message || 'Failed to send OTP.');
         }
     }).catch(() => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
+        btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Verification OTP';
         alert('Network error. Please try again.');
     });
 }

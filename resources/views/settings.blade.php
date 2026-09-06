@@ -1344,15 +1344,19 @@
 
                 <div class="sec-card-content">
                     <div id="emailStep1">
-                        <div class="sec-input-display">
+                        <div class="sec-input-display mb-2">
                             <i class="bi bi-envelope-at-fill text-primary me-2"></i>
                             <span class="sec-input-val" id="displayUserEmail">{{ Auth::user()->email }}</span>
                             <button type="button" onclick="navigator.clipboard.writeText('{{ Auth::user()->email }}'); if(typeof showToast==='function') showToast('Email address copied!','info');" class="sec-copy-btn" title="Copy email">
                                 <i class="bi bi-clipboard"></i>
                             </button>
                         </div>
+                        <div style="margin: 10px 0 12px;">
+                            <label class="sl" style="font-size:0.75rem;margin-bottom:4px;color:#f3e7cd;display:block;">New Email Address (where OTP will be sent)</label>
+                            <input type="email" id="inputNewEmail" class="si" placeholder="Enter new email address (e.g. name@gmail.com)" style="padding:9px 12px;font-size:0.84rem;width:100%;">
+                        </div>
                         <p class="sec-card-hint">
-                            A 6-digit security code will be sent to your current email before updating.
+                            A 6-digit security code will be sent to this email address to verify ownership before updating.
                         </p>
                         <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sec-action-btn sec-btn-blue">
                             <i class="bi bi-send-fill me-2"></i>Send Verification OTP
@@ -1362,7 +1366,7 @@
                     <div id="emailStep2" style="display:none;">
                         <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
                             <i class="bi bi-envelope-check-fill" style="font-size:1.05rem;"></i>
-                            <span>Code sent to <strong>{{ Auth::user()->email }}</strong></span>
+                            <span>Code sent to <strong id="emailSentDestination">{{ Auth::user()->email }}</strong></span>
                         </div>
                         <form action="{{ route('otp.email.change') }}" method="POST">
                             @csrf
@@ -1374,7 +1378,7 @@
                             </div>
                             <input type="hidden" name="otp" id="emailOtpHidden">
                             <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Email Address</label>
-                            <input type="email" name="new_email" class="si" placeholder="name@example.com" style="margin-bottom:12px;padding:9px 12px;font-size:0.84rem;" required>
+                            <input type="email" name="new_email" id="confirmNewEmailInput" class="si" placeholder="name@example.com" style="margin-bottom:12px;padding:9px 12px;font-size:0.84rem;" required>
                             <div style="display:flex;gap:8px;">
                                 <button type="button" onclick="cancelEmailOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
                                 <button type="button" class="sec-action-btn sec-btn-blue" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-1"></i>Confirm Email</button>
@@ -2480,16 +2484,28 @@ function collectEmailOtp(btn) {
 }
 
 function requestEmailOtp() {
+    const newEmailInput = document.getElementById('inputNewEmail');
+    const newEmail = newEmailInput ? newEmailInput.value.trim() : '';
+    if (newEmailInput && !newEmail) {
+        alert('Please enter your new email address.');
+        newEmailInput.focus();
+        return;
+    }
     const btn = document.getElementById('sendEmailOtpBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Sending...';
     fetch('{{ route("otp.email.send") }}', {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_email: newEmail })
     }).then(r => r.json()).then(data => {
         if (data.success) {
             document.getElementById('emailStep1').style.display = 'none';
             document.getElementById('emailStep2').style.display = 'block';
+            const destEl = document.getElementById('emailSentDestination');
+            if (destEl) destEl.textContent = data.target_email || newEmail || '{{ Auth::user()->email }}';
+            const confirmInput = document.getElementById('confirmNewEmailInput');
+            if (confirmInput && newEmail) confirmInput.value = newEmail;
             if (data.dev_otp && eDigits) {
                 const str = String(data.dev_otp).trim();
                 eDigits.forEach((d, i) => { if (str[i]) d.value = str[i]; });
@@ -2499,12 +2515,12 @@ function requestEmailOtp() {
             if (eDigits[0]) eDigits[0].focus();
         } else {
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
+            btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Verification OTP';
             alert(data.message || 'Failed to send OTP.');
         }
     }).catch(() => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-envelope-fill me-2"></i>Send OTP to Current Email';
+        btn.innerHTML = '<i class="bi bi-send-fill me-2"></i>Send Verification OTP';
         alert('Network error. Please try again.');
     });
 }
