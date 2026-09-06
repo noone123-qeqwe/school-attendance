@@ -957,7 +957,9 @@
                 // 5. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
-                        showAppUpdatePopup(event.data.version || latestDetectedVersion || getLatestVersion(), true);
+                        // Auto-reload immediately when update detected (no popup needed)
+                        console.log('[PWA] Auto-reloading for version:', event.data.version);
+                        window.location.reload(true);
                     }
                 });
 
