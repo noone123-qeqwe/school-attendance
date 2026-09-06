@@ -778,25 +778,44 @@ async function removeDevice(id, btn) {
 }
 
 function handleTeacherAvatarUpload(input) {
-    if (!input.files || !input.files[0]) return;
+    console.log('[Profile Image] Upload triggered');
+    if (!input.files || !input.files[0]) {
+        console.error('[Profile Image] No file selected');
+        return;
+    }
     const file = input.files[0];
+    console.log('[Profile Image] File selected:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(2), 'MB');
+    
     if (file.size > 10 * 1024 * 1024) {
         alert('The selected image is too large (' + (file.size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
         input.value = '';
         return;
     }
+    
     const reader = new FileReader();
     reader.onload = function(e) {
         const avatarImg = document.getElementById('teacherAvatarDisplay');
-        if (avatarImg) avatarImg.src = e.target.result;
+        if (avatarImg) {
+            avatarImg.src = e.target.result;
+            console.log('[Profile Image] Preview updated');
+        }
     };
     reader.readAsDataURL(file);
+    
     const overlay = document.getElementById('teacherAvatarOverlay');
     if (overlay) {
         overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status" style="width:1.2rem;height:1.2rem;"></div><span style="font-size:0.7rem;margin-top:4px;">Saving...</span>';
         overlay.style.opacity = '1';
     }
-    document.getElementById('teacherProfileImgForm').submit();
+    
+    console.log('[Profile Image] Submitting form...');
+    const form = document.getElementById('teacherProfileImgForm');
+    if (form) {
+        form.submit();
+    } else {
+        console.error('[Profile Image] Form not found!');
+        alert('Error: Could not submit the form. Please refresh the page and try again.');
+    }
 }
 
 // ── WebAuthn Fingerprint Registration ──
