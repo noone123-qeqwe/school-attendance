@@ -584,6 +584,10 @@
     </div>
     <div class="pwa-banner-actions">
         <button type="button" class="pwa-btn-install pwa-install-trigger" id="pwaBannerInstallBtn">Install</button>
+        <a href="/download/apk" id="pwaBannerApkBtn" download="SmartAttendance.apk"
+           style="display:none; background:linear-gradient(135deg,#22C55E 0%,#16A34A 100%); color:#fff; border:none; border-radius:10px; padding:9px 14px; font-size:0.82rem; font-weight:700; cursor:pointer; text-decoration:none; align-items:center; gap:5px; white-space:nowrap;">
+            ⬇ APK
+        </a>
         <button type="button" class="pwa-btn-close" id="pwaBannerCloseBtn" aria-label="Dismiss">&times;</button>
     </div>
 </div>
@@ -604,8 +608,21 @@
             <!-- Dynamically populated based on device & browser -->
         </div>
 
+        <!-- Android APK download shortcut inside modal -->
+        <div id="pwaApkDownloadRow" style="display:none; margin-top:12px; padding:12px 14px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:12px; align-items:center; gap:10px;">
+            <div style="font-size:1.4rem;">📦</div>
+            <div style="flex:1; min-width:0;">
+                <div style="font-size:0.87rem; font-weight:700; color:#F3E7CD;">Direct APK Download</div>
+                <div style="font-size:0.76rem; color:#86EFAC; line-height:1.35;">Download the official Android app file (~4 MB). Install it once and it will appear on your Home screen.</div>
+            </div>
+            <a href="/download/apk" download="SmartAttendance.apk"
+               style="background:linear-gradient(135deg,#22C55E 0%,#16A34A 100%); color:#fff; border:none; border-radius:10px; padding:9px 16px; font-size:0.82rem; font-weight:700; cursor:pointer; text-decoration:none; white-space:nowrap; flex-shrink:0; display:inline-block;">
+                ⬇ Download APK
+            </a>
+        </div>
+
         <div style="display:flex; gap:8px; width:100%; margin-top:14px;">
-            <button type="button" class="pwa-btn-install" id="pwaIosCloseBtn" style="flex:1;">Understood</button>
+            <button type="button" class="pwa-btn-install" id="pwaIosCloseBtn" style="flex:1;">Got It</button>
             <button type="button" id="pwaResetStateBtn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#F3E7CD; border-radius:10px; padding:9px 14px; font-size:0.82rem; font-weight:600; cursor:pointer; white-space:nowrap; transition:all 0.2s;">Reset &amp; Retry</button>
         </div>
     </div>
@@ -1280,6 +1297,16 @@
                     <div style="font-size:0.8rem;color:#B39B82;"><strong>Desktop Wallpaper Icon:</strong> Web apps install into your Windows Start Menu. To place an icon on your desktop screen, open <code>chrome://apps</code> (or <code>brave://apps</code>), right-click the app, and select <strong>Create shortcuts &gt; Desktop</strong>.</div>
                 </div>
             `;
+        }
+
+        // Show APK download row for Android users
+        const apkRow = document.getElementById('pwaApkDownloadRow');
+        const apkBannerBtn = document.getElementById('pwaBannerApkBtn');
+        if (isAndroid && apkRow) {
+            apkRow.style.display = 'flex';
+        }
+        if (isAndroid && apkBannerBtn) {
+            apkBannerBtn.style.display = 'inline-flex';
         }
 
         modal.style.display = 'flex';

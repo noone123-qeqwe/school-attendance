@@ -531,10 +531,14 @@
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
         </div>
 
-        <div style="text-align: center; margin-top: 18px;">
+        <div style="text-align: center; margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
             <button type="button" class="pwa-install-trigger" data-display="inline-flex" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.35); border-radius: 99px; padding: 9px 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
                 <i class="bi bi-phone"></i> <span class="pwa-install-text">Install Attendance App</span>
             </button>
+            <a href="/download/apk" download="SmartAttendance.apk"
+               style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg,rgba(34,197,94,0.15) 0%,rgba(22,163,74,0.15) 100%); color: #86EFAC; border: 1px solid rgba(34,197,94,0.35); border-radius: 99px; padding: 9px 20px; font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.2);">
+                <i class="bi bi-android2"></i> Download Android APK
+            </a>
         </div>
 
     </div>

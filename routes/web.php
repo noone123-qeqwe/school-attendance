@@ -59,6 +59,24 @@ Route::get('/manifest.json', function () {
     ]);
 })->name('pwa.manifest');
 
+// Direct Download for Native Android App (.apk)
+Route::get('/download/apk', function () {
+    $apkPath = public_path('downloads/SmartAttendance.apk');
+    if (!file_exists($apkPath)) {
+        abort(404, 'APK file not found. Please ensure SmartAttendance.apk exists in public/downloads.');
+    }
+    return response()->download($apkPath, 'SmartAttendance.apk', [
+        'Content-Type' => 'application/vnd.android.package-archive',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+    ]);
+})->name('pwa.download.apk');
+
+Route::get('/SmartAttendance.apk', function () {
+    return redirect()->route('pwa.download.apk');
+});
+
 // Real-time PWA Version Checker with memory cache
 Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService) {
     // Use sw.js mtime in cache key so any file change (manual edit or bump) instantly busts cache
