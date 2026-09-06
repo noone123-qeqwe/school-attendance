@@ -110,29 +110,38 @@ class EmailDeliveryService
             return EmailDeliveryResult::rejected($providerName, $errorMsg, 500);
         }
 
-        // 3. Transmit email via Laravel Mailer (queued for instant response)
+        // 3. Transmit email via Laravel Mailer
         try {
             $mailable = new OtpMail($otpCode, $purpose, $recipientName);
             
-            // Use queue for async sending (instant response to user)
-            if (config('queue.default') !== 'sync') {
+            // In local/development environments, always send synchronously
+            // In production with active queue workers, use queue for better performance
+            $shouldQueue = config('queue.default') !== 'sync' 
+                && !app()->environment('local', 'development') 
+                && config('mail.queue', false);
+            
+            if ($shouldQueue) {
                 Mail::to($recipientEmail)->queue($mailable);
                 $messageId = 'queued_' . time();
+                $responseText = 'QUEUED';
             } else {
-                // Fallback to sync send if queue is not configured
-                $sentMessage = Mail::to($recipientEmail)->send($mailable);
-                $messageId = $this->extractMessageId($sentMessage);
+                // Send synchronously to ensure immediate delivery
+                // Note: Mail::send() returns void in Laravel 11+, message ID extraction happens via sent event
+                Mail::to($recipientEmail)->send($mailable);
+                $messageId = 'sent_' . time();
+                $responseText = 'SENT';
             }
 
             return EmailDeliveryResult::accepted(
                 provider: $providerName,
                 messageId: $messageId,
-                response: 'QUEUED',
+                response: $responseText,
                 diagnostics: [
                     'mailer'     => config('mail.default'),
                     'request_id' => $requestId,
                     'timestamp'  => now()->toIso8601String(),
-                    'queued'     => config('queue.default') !== 'sync',
+                    'queued'     => $shouldQueue,
+                    'environment' => app()->environment(),
                 ]
             );
         } catch (Throwable $e) {
@@ -143,10 +152,10 @@ class EmailDeliveryService
             if (config('mail.default') === 'smtp' && !app()->runningUnitTests()) {
                 try {
                     $mailable = new OtpMail($otpCode, $purpose, $recipientName);
-                    $sentMessage = Mail::mailer('smtp_ssl')->to($recipientEmail)->send($mailable);
+                    Mail::mailer('smtp_ssl')->to($recipientEmail)->send($mailable);
 
-                    $messageId = $this->extractMessageId($sentMessage);
-                    $debugResponse = $this->extractDebugResponse($sentMessage);
+                    $messageId = 'sent_ssl_' . time();
+                    $debugResponse = 'SENT via SSL fallback';
 
                     Log::info("Email delivery succeeded via SSL fallback on port 465");
                     return EmailDeliveryResult::accepted(
@@ -206,7 +215,7 @@ class EmailDeliveryService
                     ->subject("{$appName} - Diagnostic Delivery Test (" . date('H:i:s') . ")");
             };
 
-            $sentMessage = Mail::raw(
+            Mail::raw(
                 "Hello,\n\nThis is an automated diagnostic test email from {$appName}.\n\n" .
                 "Diagnostic Details:\n" .
                 "- Sent: {$timestamp}\n" .
@@ -216,8 +225,8 @@ class EmailDeliveryService
                 $sendCallback
             );
 
-            $messageId = $this->extractMessageId($sentMessage);
-            $debugResponse = $this->extractDebugResponse($sentMessage);
+            $messageId = 'diagnostic_' . time();
+            $debugResponse = 'SENT';
 
             return EmailDeliveryResult::accepted(
                 provider: $providerName,
@@ -237,14 +246,14 @@ class EmailDeliveryService
                         $message->to($recipientEmail)
                             ->subject("{$appName} - Diagnostic Delivery Test (" . date('H:i:s') . ")");
                     };
-                    $sentMessage = Mail::mailer('smtp_ssl')->raw(
+                    Mail::mailer('smtp_ssl')->raw(
                         "Hello,\n\nThis is an automated diagnostic test email from {$appName} (via SSL fallback on port 465).\n\n" .
                         "If you are reading this in Gmail, your email delivery pipeline is working correctly.\n",
                         $sendCallback
                     );
 
-                    $messageId = $this->extractMessageId($sentMessage);
-                    $debugResponse = $this->extractDebugResponse($sentMessage);
+                    $messageId = 'diagnostic_ssl_' . time();
+                    $debugResponse = 'SENT via SSL fallback';
 
                     return EmailDeliveryResult::accepted(
                         provider: 'smtp (smtp.gmail.com:465, ssl)',
