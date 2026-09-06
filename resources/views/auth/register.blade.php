@@ -711,11 +711,7 @@
                     Already have an account? <a href="{{ route('login') }}">Sign In</a>
                 </div>
 
-                <div style="text-align: center; margin-top: 18px;">
-                    <button type="button" class="pwa-install-trigger" data-display="inline-flex" style="display: none; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.35); border-radius: 99px; padding: 9px 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
-                        <i class="bi bi-phone"></i> <span class="pwa-install-text">Install Attendance App</span>
-                    </button>
-                </div>
+
             </div>
         </div>
     </div>
