@@ -857,7 +857,7 @@
     }
 
     let lastVersionCheckTime = 0;
-    const VERSION_CHECK_COOLDOWN_MS = 5000;
+    const VERSION_CHECK_COOLDOWN_MS = 2000;
 
     async function checkServerVersion(force = false) {
         const now = Date.now();
@@ -925,13 +925,19 @@
                 try { reg.update(); } catch(e) {}
                 checkServerVersion(true);
 
-                // 2. Periodic check every 30s for real-time background detection
+                // 2. Periodic check every 15s for real-time background detection
                 setInterval(() => {
+                    if (swRegistration) try { swRegistration.update(); } catch(e) {}
+                    checkServerVersion(true);
+                }, 15000);
+
+                // 3. Check on page visibility change (when user returns to tab)
+                document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
                         if (swRegistration) try { swRegistration.update(); } catch(e) {}
                         checkServerVersion(true);
                     }
-                }, 30000);
+                });
 
                 // 3. If an update is already downloaded and waiting in background, trigger popup immediately
                 if (reg.waiting) {
