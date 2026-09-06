@@ -117,6 +117,28 @@ class WebAuthnController extends Controller
         }
 
         $identifier = trim($raw);
+        $user = $this->findUserByIdentifier($identifier);
+
+        if (!$user) {
+            return response()->json(["success" => false, "message" => "Account not found for \"{$identifier}\"."], 404);
+        }
+        
+        $credentials = $user->webauthnCredentials()->exists() || DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
+        if (!$credentials) {
+            return response()->json(["success" => false, "message" => "No biometric credentials registered for this account."], 404);
+        }
+        
+        session(["webauthn_login_user_id" => $user->id]);
+        $options = $webauthn->authenticationOptions($user);
+        
+        return response()->json(array_merge($options['publicKey'], ["success" => true]));
+    }
+
+    /**
+     * Helper method to find user by various identifier formats
+     */
+    private function findUserByIdentifier(string $identifier): ?User
+    {
         $user = User::where("student_number", $identifier)
             ->orWhere("email", $identifier)
             ->orWhere("employee_id", $identifier)
@@ -135,19 +157,7 @@ class WebAuthnController extends Controller
             }
         }
 
-        if (!$user) {
-            return response()->json(["success" => false, "message" => "Account not found for \"{$identifier}\"."], 404);
-        }
-        
-        $credentials = $user->webauthnCredentials()->exists() || DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
-        if (!$credentials) {
-            return response()->json(["success" => false, "message" => "No fingerprint registered for this account."], 404);
-        }
-        
-        session(["webauthn_login_user_id" => $user->id]);
-        $options = $webauthn->authenticationOptions($user);
-        
-        return response()->json(array_merge($options['publicKey'], ["success" => true]));
+        return $user;
     }
 
     public function login(Request $request, WebauthnService $webauthn)
