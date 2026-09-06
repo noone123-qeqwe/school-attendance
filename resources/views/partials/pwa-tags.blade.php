@@ -1254,6 +1254,10 @@
                     <div class="pwa-ios-step-num" style="background:rgba(207,164,111,0.2);color:#F3E7CD;">💡</div>
                     <div style="font-size:0.8rem;color:#B39B82;"><strong>Note:</strong> On Samsung/Pixel phones, installed apps go into your <strong>App Drawer (swipe up)</strong>. Long-press the icon and tap <strong>Add to Home</strong>.</div>
                 </div>
+                <div class="pwa-ios-step" style="border-left: 3px solid #F59E0B; padding-left: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; margin-top: 6px;">
+                    <div class="pwa-ios-step-num" style="background:#F59E0B;color:#0E0609;">!</div>
+                    <div style="font-size:0.8rem;color:#F3E7CD;line-height:1.4;"><strong>Xiaomi / Redmi / Poco users:</strong> MIUI blocks shortcuts by default. Go to <strong>Settings &gt; Apps &gt; Manage apps &gt; [Brave / Chrome] &gt; Other permissions</strong> and turn on <strong>"Home screen shortcuts"</strong>.</div>
+                </div>
             `;
         } else {
             if (titleEl) titleEl.textContent = 'Install Smart Attendance';
@@ -1273,7 +1277,7 @@
                 </div>
                 <div class="pwa-ios-step" style="border-top: 1px dashed rgba(207,164,111,0.2); padding-top: 10px; margin-top: 6px;">
                     <div class="pwa-ios-step-num" style="background:rgba(207,164,111,0.2);color:#F3E7CD;">💡</div>
-                    <div style="font-size:0.8rem;color:#B39B82;"><strong>Desktop Icon:</strong> Chrome places apps in the Windows Start Menu. To add to your desktop wallpaper, open <code>chrome://apps</code>, right-click the app, and click <strong>Create shortcuts &gt; Desktop</strong>.</div>
+                    <div style="font-size:0.8rem;color:#B39B82;"><strong>Desktop Wallpaper Icon:</strong> Web apps install into your Windows Start Menu. To place an icon on your desktop screen, open <code>chrome://apps</code> (or <code>brave://apps</code>), right-click the app, and select <strong>Create shortcuts &gt; Desktop</strong>.</div>
                 </div>
             `;
         }
