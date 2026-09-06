@@ -233,4 +233,41 @@ class User extends Authenticatable
                     ->withPivot('response', 'decline_reason')
                     ->withTimestamps();
     }
+
+    /**
+     * Generate a unique student number automatically.
+     * Format: YYYY-NNNNNN (e.g., 2026-000001)
+     * Where YYYY is current year and NNNNNN is sequential number
+     */
+    public static function generateStudentNumber(): string
+    {
+        $year = date('Y');
+        $prefix = $year . '-';
+        
+        // Find the latest student number for this year
+        $latestStudent = static::where('student_number', 'LIKE', $prefix . '%')
+            ->where('role', 'student')
+            ->orderByRaw('CAST(SUBSTRING(student_number, ' . (strlen($prefix) + 1) . ') AS UNSIGNED) DESC')
+            ->first();
+        
+        if ($latestStudent && $latestStudent->student_number) {
+            // Extract the numeric part and increment
+            $lastNumber = (int) substr($latestStudent->student_number, strlen($prefix));
+            $newNumber = $lastNumber + 1;
+        } else {
+            // Start from 1 if no students exist for this year
+            $newNumber = 1;
+        }
+        
+        // Format with leading zeros (6 digits)
+        $studentNumber = $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        
+        // Ensure uniqueness (in case of race conditions)
+        while (static::where('student_number', $studentNumber)->exists()) {
+            $newNumber++;
+            $studentNumber = $prefix . str_pad($newNumber, 6, '0', STR_PAD_LEFT);
+        }
+        
+        return $studentNumber;
+    }
 }
