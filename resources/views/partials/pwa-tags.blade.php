@@ -957,9 +957,14 @@
                 // 5. Listen for broadcast message from push or system broadcast
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
-                        // Auto-reload immediately when update detected (no popup needed)
-                        console.log('[PWA] Auto-reloading for version:', event.data.version);
-                        window.location.reload(true);
+                        // Silent update - don't interrupt user on login page
+                        // Auto-reload only happens when user navigates or refreshes naturally
+                        console.log('[PWA] Update available:', event.data.version);
+                        
+                        // Store update availability, but don't force reload
+                        try {
+                            sessionStorage.setItem('pwa_update_available', event.data.version || 'latest');
+                        } catch(e) {}
                     }
                 });
 

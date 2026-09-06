@@ -531,60 +531,138 @@
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
         </div>
 
-        {{-- PWA Add-to-Home-Screen Install Banner --}}
-        <div id="pwaInstallRow" style="text-align: center; margin-top: 16px; display: none; flex-direction: column; align-items: center; gap: 8px;">
-            <button id="pwaInstallBtn" type="button"
+        {{-- Smart Download App Button - Mobile Only, Detects Installation State --}}
+        <div id="smartAppDownloadRow" style="text-align: center; margin-top: 20px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); display: none;">
+            <div style="font-size: 0.75rem; color: rgba(255,255,255,0.45); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Using a phone?</div>
+            <button id="downloadAppBtn" type="button"
                 style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;
                        background: rgba(207,164,111,0.12); color: #CFA46F;
-                       border: 1px solid rgba(207,164,111,0.35); border-radius: 99px;
-                       padding: 9px 22px; font-size: 0.82rem; font-weight: 700;
+                       border: 1px solid rgba(207,164,111,0.35); border-radius: 12px;
+                       padding: 10px 24px; font-size: 0.85rem; font-weight: 700;
                        cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
                        box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
-                <i class="bi bi-app"></i> Add to Home Screen
+                <i class="bi bi-download"></i> <span id="downloadAppBtnText">Download App</span>
             </button>
         </div>
-
-        {{-- Download APK button removed - only PWA install popup remains --}}
 
     </div>
 </div>
 
 <script>
-// ── PWA: Add to Home Screen Install Prompt ───────────────────────────────────
+// ── SMART APP DOWNLOAD BUTTON - Detects Actual Installation State ──────────────
 (function() {
-    var deferredPrompt = null;
-    var installRow    = document.getElementById('pwaInstallRow');
-    var installBtn    = document.getElementById('pwaInstallBtn');
-
-    // Only show install button if the app is not already installed
-    var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                       window.navigator.standalone === true;
-    if (isStandalone) return; // already installed, hide everything
-
+    var downloadRow = document.getElementById('smartAppDownloadRow');
+    var downloadBtn = document.getElementById('downloadAppBtn');
+    var btnText = document.getElementById('downloadAppBtnText');
+    
+    // Configuration - update this URL to your official app download location
+    var ANDROID_APP_URL = '/download/apk'; // or Google Play URL
+    var IOS_APP_URL = '#'; // App Store URL if available
+    
+    // Detect if user is on mobile device
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+    
+    // Detect if running in standalone mode (app is installed and opened)
+    function isAppInstalled() {
+        // PWA standalone mode detection
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                          window.navigator.standalone === true ||
+                          document.referrer.includes('android-app://');
+        
+        return isStandalone;
+    }
+    
+    // Detect platform
+    function getPlatform() {
+        var ua = navigator.userAgent;
+        if (/android/i.test(ua)) return 'android';
+        if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) return 'ios';
+        return 'desktop';
+    }
+    
+    // Check if app is available for installation
+    function checkAppAvailability() {
+        var platform = getPlatform();
+        var installed = isAppInstalled();
+        var mobile = isMobileDevice();
+        
+        console.log('[Smart Download] Platform:', platform, 'Mobile:', mobile, 'Installed:', installed);
+        
+        // Hide on desktop
+        if (!mobile || platform === 'desktop') {
+            if (downloadRow) downloadRow.style.display = 'none';
+            return;
+        }
+        
+        // Hide if app is already installed
+        if (installed) {
+            if (downloadRow) downloadRow.style.display = 'none';
+            return;
+        }
+        
+        // Show download button for mobile users without app
+        if (downloadRow) {
+            downloadRow.style.display = 'block';
+            
+            // Set appropriate download URL based on platform
+            if (downloadBtn) {
+                downloadBtn.onclick = function() {
+                    var url = platform === 'android' ? ANDROID_APP_URL : IOS_APP_URL;
+                    
+                    if (platform === 'android') {
+                        // For Android, download APK or open Play Store
+                        window.location.href = url;
+                    } else if (platform === 'ios') {
+                        // For iOS, show install instructions
+                        alert('To install:\n\n1. Tap the Share button (□↑)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to install');
+                    }
+                };
+            }
+        }
+    }
+    
+    // Initial check
+    checkAppAvailability();
+    
+    // Re-check when page becomes visible (user returns from installer)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            console.log('[Smart Download] Page visible, rechecking installation state...');
+            setTimeout(checkAppAvailability, 500);
+        }
+    });
+    
+    // Re-check when page gains focus
+    window.addEventListener('focus', function() {
+        console.log('[Smart Download] Page focused, rechecking installation state...');
+        setTimeout(checkAppAvailability, 500);
+    });
+    
+    // Listen for app installed event
+    window.addEventListener('appinstalled', function() {
+        console.log('[Smart Download] App installed event fired');
+        if (downloadRow) downloadRow.style.display = 'none';
+    });
+    
+    // Check for beforeinstallprompt (PWA available)
     window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
-        deferredPrompt = e;
-        if (installRow) { installRow.style.display = 'flex'; }
-    });
-
-    if (installBtn) {
-        installBtn.addEventListener('click', function() {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(function(choice) {
-                if (choice.outcome === 'accepted') {
-                    try { localStorage.setItem('pwa_installed', '1'); } catch(e) {}
-                    if (installRow) { installRow.style.display = 'none'; }
-                }
-                deferredPrompt = null;
-            });
-        });
-    }
-
-    // Hide install button if user already accepted
-    window.addEventListener('appinstalled', function() {
-        if (installRow) installRow.style.display = 'none';
-        try { localStorage.setItem('pwa_installed', '1'); } catch(e) {}
+        console.log('[Smart Download] PWA installation available');
+        
+        // If PWA is available, use native prompt
+        if (downloadBtn) {
+            downloadBtn.onclick = function() {
+                e.prompt();
+                e.userChoice.then(function(choice) {
+                    if (choice.outcome === 'accepted') {
+                        console.log('[Smart Download] User accepted PWA install');
+                        if (downloadRow) downloadRow.style.display = 'none';
+                    }
+                });
+            };
+        }
     });
 })();
 </script>
