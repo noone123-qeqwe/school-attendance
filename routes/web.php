@@ -8,7 +8,7 @@ use App\Http\Controllers\HomeController;
 
 
 // WebAuthn login — works for both guests and authenticated users
-Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->middleware('throttle:login')->name('webauthn.login.options');
+Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->middleware('throttle:webauthn.options')->name('webauthn.login.options');
 Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:login')->name('webauthn.login');
 
 // Web Push Notification Subscriptions & Testing

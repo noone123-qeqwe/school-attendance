@@ -83,7 +83,7 @@ class WebauthnService
             'publicKey' => [
                 'challenge' => $this->base64UrlEncode($challenge),
                 'rpId' => $this->rpId(),
-                'allowCredentials' => $user->webauthnCredentials
+                'allowCredentials' => $user->webauthnCredentials()->get()
                     ->map(fn ($credential) => [
                         'type' => 'public-key',
                         'id' => $credential->credential_id,

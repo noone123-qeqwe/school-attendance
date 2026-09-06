@@ -261,57 +261,21 @@
             cursor: pointer;
             transition: all 0.2s;
             margin-bottom: 8px;
+            width: 100%;
+            font-family: inherit;
+            color: inherit;
+            outline: none;
+            text-align: left;
+            -webkit-tap-highlight-color: transparent;
         }
-        .fp-row:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.35); }
+        .fp-row:hover { background: rgba(212, 175, 55, 0.15); border-color: rgba(212, 175, 55, 0.4); }
         .fp-row:active { transform: scale(0.98); }
-        .fp-row-left { display: flex; align-items: center; gap: 10px; }
-        .fp-row-left i { font-size: 1.2rem; color: rgba(255,255,255,0.8); transition: all 0.3s; }
+        .fp-row:focus-visible { outline: 2px solid rgba(212, 175, 55, 0.6); outline-offset: 2px; }
+        .fp-row-left { display: flex; align-items: center; gap: 10px; text-align: left; }
+        .fp-row-left i { font-size: 1.2rem; color: rgba(255,255,255,0.85); transition: all 0.3s; }
         .fp-row-label { font-size: 0.85rem; font-weight: 600; color: white; transition: all 0.2s; }
-        .fp-row-hint { font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 1px; transition: all 0.2s; }
-        .fp-row-arrow { color: rgba(255,255,255,0.35); font-size: 0.82rem; transition: all 0.2s; }
-        
-        /* Biometric button states */
-        .fp-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 13px;
-            border-radius: 11px;
-            border: 1.5px solid rgba(255,255,255,0.18);
-            background: rgba(255,255,255,0.08);
-            cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 8px;
-        }
-        .fp-row:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.35); }
-        .fp-row:active { transform: scale(0.98); }
-        .fp-row-left { display: flex; align-items: center; gap: 10px; }
-        .fp-row-left i { font-size: 1.2rem; color: rgba(255,255,255,0.8); transition: all 0.3s; }
-        .fp-row-label { font-size: 0.85rem; font-weight: 600; color: white; transition: all 0.2s; }
-        .fp-row-hint { font-size: 0.7rem; color: rgba(255,255,255,0.45); margin-top: 1px; transition: all 0.2s; }
-        .fp-row-arrow { color: rgba(255,255,255,0.35); font-size: 0.82rem; transition: all 0.2s; }
-        
-        .fp-row[data-state="checking"] {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-        .fp-row[data-state="ready"] {
-            cursor: pointer;
-        }
-        .fp-row[data-state="ready"]:hover {
-            background: rgba(212, 175, 55, 0.15);
-            border-color: rgba(212, 175, 55, 0.4);
-        }
-        .fp-row[data-state="not-registered"] {
-            background: rgba(255,255,255,0.05);
-            border-color: rgba(255,255,255,0.12);
-            cursor: help;
-        }
-        .fp-row[data-state="not-registered"]:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: rgba(255,255,255,0.2);
-        }
-        .fp-row[data-state="not-registered"] .fp-row-left i {
-            color: rgba(255,215,0,0.6);
-        }
+        .fp-row-hint { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 1px; transition: all 0.2s; }
+        .fp-row-arrow { color: rgba(255,255,255,0.4); font-size: 0.82rem; transition: all 0.2s; }
 
         /* Divider */
         .glass-divider {
@@ -542,7 +506,7 @@
             <div id="fingerprintSection" style="display: block;">
                 <!-- Inline message area for biometric feedback -->
                 <div id="fpMessage" style="display:none; border-radius:10px; padding:10px 14px; font-size:0.8rem; margin-bottom:8px; line-height:1.4;"></div>
-                <div class="fp-row anim-fade-up anim-d5" onclick="handleBiometricLogin()" id="fpRowBtn">
+                <button type="button" class="fp-row anim-fade-up anim-d5" onclick="handleBiometricLogin()" id="fpRowBtn">
                     <div class="fp-row-left">
                         <i class="bi bi-fingerprint" id="fpIcon"></i>
                         <div>
@@ -551,7 +515,7 @@
                         </div>
                     </div>
                     <i class="bi bi-chevron-right fp-row-arrow" id="fpArrow"></i>
-                </div>
+                </button>
                 <div class="glass-divider anim-fade-up anim-d5">or use password</div>
             </div>
 
@@ -879,7 +843,7 @@ if (loginForm) {
     });
 }
 
-// â”€â”€ INTELLIGENT BIOMETRIC BUTTON MANAGEMENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── BIOMETRIC / WEBAUTHN AUTHENTICATION ─────────────────────────────────────
 var idInput = document.getElementById('idInput');
 var fpSec = document.getElementById('fingerprintSection');
 var fpRowBtn = document.getElementById('fpRowBtn');
@@ -888,280 +852,10 @@ var fpHint = document.getElementById('fpHint');
 var fpIcon = document.getElementById('fpIcon');
 var fpArrow = document.getElementById('fpArrow');
 
-// Track button state
-var biometricState = {
-    available: false,
-    hasCredentials: false,
-    checking: false,
-    identifier: null
-};
-
-// Check if WebAuthn is supported
 function isBiometricSupported() {
     return window.isSecureContext && window.PublicKeyCredential !== undefined;
 }
 
-// Debounce function to avoid excessive API calls
-function debounce(func, wait) {
-    var timeout;
-    return function executedFunction() {
-        var context = this;
-        var args = arguments;
-        var later = function() {
-            timeout = null;
-            func.apply(context, args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-
-// Check if user has registered biometric credentials
-async function checkBiometricAvailability(identifier) {
-    if (!identifier || identifier.length < 3) {
-        // Show default state when no identifier entered yet
-        showBiometricButton('default');
-        return;
-    }
-
-    if (!isBiometricSupported()) {
-        showBiometricButton('not-supported');
-        return;
-    }
-
-    // Avoid redundant checks
-    if (biometricState.identifier === identifier && !biometricState.checking) {
-        return;
-    }
-
-    biometricState.checking = true;
-    biometricState.identifier = identifier;
-
-    try {
-        // Show checking state
-        showBiometricButton('checking');
-
-        var response = await fetch('{{ route("webauthn.login.options") }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({ identifier: identifier, student_number: identifier })
-        });
-
-        var data = await response.json();
-
-        if (data.success && data.allowCredentials && data.allowCredentials.length > 0) {
-            // User has registered biometric credentials
-            biometricState.hasCredentials = true;
-            biometricState.available = true;
-            showBiometricButton('ready');
-        } else {
-            // User has no biometric credentials
-            biometricState.hasCredentials = false;
-            biometricState.available = true;
-            showBiometricButton('not-registered');
-        }
-    } catch (error) {
-        console.log('Biometric check failed:', error);
-        // Still mark as checked so button click shows a message instead of looping
-        biometricState.available = true;
-        biometricState.hasCredentials = false;
-        showBiometricButton('not-registered');
-    } finally {
-        biometricState.checking = false;
-    }
-}
-
-// Debounced version for input event
-var debouncedCheck = debounce(function() {
-    var identifier = idInput.value.trim();
-    checkBiometricAvailability(identifier);
-}, 600);
-
-// Show biometric button in different states
-function showBiometricButton(state) {
-    if (!fpSec) return;
-
-    // Always keep section visible
-    fpSec.style.display = 'block';
-
-    if (state === 'default') {
-        fpRowBtn.setAttribute('data-state', 'ready');
-        fpRowBtn.style.opacity = '1';
-        fpRowBtn.style.pointerEvents = '';
-        fpLabel.textContent = 'Sign in with Biometrics';
-        fpHint.textContent = 'Fingerprint, Face ID, or device security';
-        fpIcon.className = 'bi bi-fingerprint';
-        fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
-        fpRowBtn.style.cursor = 'pointer';
-    } else if (state === 'checking') {
-        fpRowBtn.setAttribute('data-state', 'checking');
-        fpRowBtn.style.opacity = '0.6';
-        fpRowBtn.style.pointerEvents = 'none';
-        fpLabel.textContent = 'Checking biometric availability...';
-        fpHint.textContent = 'Please wait';
-        fpIcon.className = 'bi bi-hourglass-split';
-        fpArrow.className = 'bi bi-hourglass-split fp-row-arrow';
-    } else if (state === 'ready') {
-        fpRowBtn.setAttribute('data-state', 'ready');
-        fpRowBtn.style.opacity = '1';
-        fpRowBtn.style.pointerEvents = '';
-        fpLabel.textContent = 'Sign in with Biometrics';
-        fpHint.textContent = 'Fingerprint, Face ID, or device security';
-        fpIcon.className = 'bi bi-fingerprint';
-        fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
-        fpRowBtn.style.cursor = 'pointer';
-    } else if (state === 'not-registered') {
-        fpRowBtn.setAttribute('data-state', 'not-registered');
-        fpRowBtn.style.opacity = '0.75';
-        fpRowBtn.style.pointerEvents = '';
-        fpLabel.textContent = 'Set up Biometric Login';
-        fpHint.textContent = 'Sign in first, then enable in your profile';
-        fpIcon.className = 'bi bi-fingerprint';
-        fpArrow.className = 'bi bi-arrow-right fp-row-arrow';
-        fpRowBtn.style.cursor = 'help';
-    } else if (state === 'not-supported') {
-        fpRowBtn.setAttribute('data-state', 'not-registered');
-        fpRowBtn.style.opacity = '0.4';
-        fpRowBtn.style.pointerEvents = 'none';
-        fpLabel.textContent = 'Biometrics Not Available';
-        fpHint.textContent = 'Not supported on this browser or connection';
-        fpIcon.className = 'bi bi-fingerprint';
-        fpArrow.className = 'bi bi-x-circle fp-row-arrow';
-        fpRowBtn.style.cursor = 'default';
-    }
-}
-
-// Hide biometric button (kept for error cases - now just dims instead of hides)
-function hideBiometricButton() {
-    // Keep visible but show default state rather than hiding
-    showBiometricButton('default');
-    biometricState.available = false;
-    biometricState.hasCredentials = false;
-}
-
-// Reset button to default state
-function resetBiometricButton() {
-    if (!fpRowBtn) return;
-    fpRowBtn.setAttribute('data-state', 'ready');
-    fpRowBtn.style.opacity = '1';
-    fpRowBtn.style.pointerEvents = '';
-    fpLabel.textContent = 'Sign in with Biometrics';
-    fpHint.textContent = 'Touch sensor, Face ID, or device security';
-    fpIcon.className = 'bi bi-fingerprint';
-    fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
-}
-
-// Handle biometric login button click
-async function handleBiometricLogin() {
-    // Clear any previous messages
-    hideFpMessage();
-    
-    var identifier = idInput ? idInput.value.trim() : '';
-    
-    // If no identifier entered, prompt user
-    if (!identifier) {
-        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
-        if (idInput) { idInput.focus(); idInput.style.borderColor = '#d4af37'; setTimeout(function(){ idInput.style.borderColor=''; }, 2000); }
-        return;
-    }
-    
-    // If button is already in 'not-registered' state — show setup instructions immediately (no async needed)
-    var currentState = fpRowBtn ? fpRowBtn.getAttribute('data-state') : '';
-    if (currentState === 'not-registered') {
-        showBiometricInfo();
-        return;
-    }
-    
-    // If we haven't checked yet (default state), trigger check now
-    if (!biometricState.available && !biometricState.checking) {
-        showBiometricButton('checking');
-        await checkBiometricAvailability(identifier);
-    }
-    
-    if (!biometricState.hasCredentials) {
-        // User hasn't registered biometrics yet â€” show inline message
-        showBiometricInfo();
-        return;
-    }
-
-    // Proceed with actual biometric authentication
-    await performBiometricLogin();
-}
-
-// Show inline info message for unregistered users
-function showBiometricInfo() {
-    showFpMessage('info',
-        '<i class="bi bi-info-circle-fill me-2"></i>' +
-        '<strong>Biometric login not set up.</strong><br>' +
-        'Sign in with your password below, then go to your <strong>Profile</strong> page to register your fingerprint or Face ID.'
-    );
-    var passInput = document.getElementById('loginPassword');
-    if (passInput) {
-        passInput.focus();
-        passInput.style.borderColor = '#d4af37';
-        setTimeout(function() { if (passInput) passInput.style.borderColor = ''; }, 3000);
-    }
-}
-
-// Show inline fingerprint message
-function showFpMessage(type, html) {
-    var el = document.getElementById('fpMessage');
-    if (!el) return;
-    var styles = {
-        info:    'background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:#f3e7cd;',
-        warning: 'background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);color:#fca5a5;',
-        error:   'background:rgba(220,38,38,0.2);border:1px solid rgba(220,38,38,0.4);color:#fca5a5;',
-        success: 'background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.4);color:#86efac;'
-    };
-    el.style.cssText = (styles[type] || styles.info) + 'display:block;border-radius:10px;padding:10px 14px;font-size:0.8rem;margin-bottom:8px;line-height:1.5;';
-    el.innerHTML = html;
-    // Auto-hide after 8 seconds
-    clearTimeout(el._timer);
-    el._timer = setTimeout(function() { el.style.display = 'none'; }, 8000);
-}
-
-function hideFpMessage() {
-    var el = document.getElementById('fpMessage');
-    if (el) { el.style.display = 'none'; clearTimeout(el._timer); }
-}
-
-// Listen to identifier input
-if (idInput) {
-    idInput.addEventListener('input', debouncedCheck);
-    
-    // Also check on blur for better UX
-    idInput.addEventListener('blur', function() {
-        var identifier = idInput.value.trim();
-        if (identifier) {
-            checkBiometricAvailability(identifier);
-        }
-    });
-}
-
-// Restore identifier on validation error and check biometric availability
-@if(old('identifier'))
-    if (idInput) {
-        idInput.value = '{{ old('identifier') }}';
-        checkBiometricAvailability('{{ old('identifier') }}');
-    }
-@endif
-
-// Initial check if identifier is prefilled
-window.addEventListener('DOMContentLoaded', function() {
-    console.log('[Biometric] DOMContentLoaded - checking for prefilled identifier');
-    if (idInput && idInput.value.trim()) {
-        console.log('[Biometric] Prefilled identifier found:', idInput.value.trim());
-        checkBiometricAvailability(idInput.value.trim());
-    } else {
-        console.log('[Biometric] No prefilled identifier');
-    }
-});
-
-// â”€â”€ BIOMETRIC AUTHENTICATION IMPLEMENTATION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function normalizeBase64(base64) {
     base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
     var padding = base64.length % 4;
@@ -1188,38 +882,97 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-async function performBiometricLogin() {
+function resetBiometricButton() {
+    if (!fpRowBtn) return;
+    fpRowBtn.disabled = false;
+    fpRowBtn.style.opacity = '1';
+    fpRowBtn.style.cursor = 'pointer';
+    if (fpLabel) fpLabel.textContent = 'Sign in with Biometrics';
+    if (fpHint) fpHint.textContent = 'Touch sensor, Face ID, or device security';
+    if (fpIcon) fpIcon.className = 'bi bi-fingerprint';
+    if (fpArrow) fpArrow.className = 'bi bi-chevron-right fp-row-arrow';
+}
+
+function showFpMessage(type, html) {
+    var el = document.getElementById('fpMessage');
+    if (!el) return;
+    var styles = {
+        info:    'background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.4);color:#f3e7cd;',
+        warning: 'background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.4);color:#fca5a5;',
+        error:   'background:rgba(220,38,38,0.2);border:1px solid rgba(220,38,38,0.4);color:#fca5a5;',
+        success: 'background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.4);color:#86efac;'
+    };
+    el.style.cssText = (styles[type] || styles.info) + 'display:block;border-radius:10px;padding:10px 14px;font-size:0.8rem;margin-bottom:8px;line-height:1.5;';
+    el.innerHTML = html;
+    clearTimeout(el._timer);
+    el._timer = setTimeout(function() { el.style.display = 'none'; }, 10000);
+}
+
+function hideFpMessage() {
+    var el = document.getElementById('fpMessage');
+    if (el) { el.style.display = 'none'; clearTimeout(el._timer); }
+}
+
+function showBiometricError(msg) {
+    showFpMessage('error', '<i class="bi bi-exclamation-circle me-2"></i>' + msg);
+}
+
+function focusPasswordField() {
+    var passInput = document.getElementById('loginPassword');
+    if (passInput) {
+        passInput.focus();
+        passInput.style.borderColor = '#d4af37';
+        setTimeout(function() { 
+            if (passInput) passInput.style.borderColor = ''; 
+        }, 3000);
+    }
+}
+
+// Handle biometric login button click
+async function handleBiometricLogin() {
+    hideFpMessage();
+    
+    var identifier = idInput ? idInput.value.trim() : '';
+    
+    if (!identifier) {
+        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
+        if (idInput) {
+            idInput.focus();
+            idInput.style.borderColor = '#d4af37';
+            setTimeout(function() { if (idInput) idInput.style.borderColor = ''; }, 2500);
+        }
+        return;
+    }
+
     if (!window.isSecureContext) {
-        showBiometricError('Biometric authentication requires a secure connection (HTTPS or localhost).');
+        showBiometricError('Biometric authentication requires a secure connection (HTTPS).');
         return;
     }
 
     if (!window.PublicKeyCredential) {
-        showBiometricError('Biometric authentication is not supported by your browser. Please use Chrome, Safari, or Edge.');
+        showBiometricError('Biometric authentication is not supported by your browser. Please use Chrome, Edge, Safari, or Brave with WebAuthn enabled.');
         return;
     }
 
-    var studentNumber = idInput.value.trim();
-    if (!studentNumber) {
-        idInput.focus();
-        idInput.style.borderColor = 'rgba(252,165,165,0.8)';
-        setTimeout(function() { idInput.style.borderColor = ''; }, 2000);
-        showBiometricError('Please enter your Student ID or Email first.');
-        return;
-    }
+    await performBiometricLogin(identifier);
+}
 
-    // Update button to show progress
+async function performBiometricLogin(studentNumber) {
+    // Show connecting state
     if (fpRowBtn) {
-        fpRowBtn.style.opacity = '0.6';
-        fpRowBtn.style.pointerEvents = 'none';
+        fpRowBtn.disabled = true;
+        fpRowBtn.style.opacity = '0.7';
     }
-    if (fpLabel) fpLabel.textContent = 'Preparing authentication...';
+    if (fpLabel) fpLabel.textContent = 'Connecting to server...';
+    if (fpHint) fpHint.textContent = 'Looking up credentials for ' + studentNumber + '...';
+    if (fpIcon) fpIcon.className = 'bi bi-hourglass-split';
     if (fpArrow) fpArrow.className = 'bi bi-hourglass-split fp-row-arrow';
 
     try {
-        // Step 1: Get authentication options from server
+        // Step 1: Request options from server
         var optRes = await fetch('{{ route("webauthn.login.options") }}', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 
                 'X-CSRF-TOKEN': '{{ csrf_token() }}', 
                 'Content-Type': 'application/json', 
@@ -1229,29 +982,37 @@ async function performBiometricLogin() {
         });
         
         var opts = await optRes.json();
-        
-        console.log('WebAuthn options received:', opts);
+        console.log('WebAuthn options response:', opts);
 
-        if (!opts.success) {
-            showBiometricError(opts.message || 'Biometric login is not set up for this account. Please sign in with your password.');
+        if (!optRes.ok || !opts.success) {
+            var msg = opts.message || 'No biometric credentials registered for this account.';
+            showFpMessage('info',
+                '<i class="bi bi-info-circle-fill me-2"></i>' +
+                '<strong>' + msg + '</strong><br>' +
+                'Please sign in with your password below, then register your fingerprint or Face ID in your <strong>Profile</strong> page.'
+            );
             focusPasswordField();
             resetBiometricButton();
             return;
         }
 
         // Step 2: Prepare WebAuthn request
-        var challenge = base64ToUint8Array(opts.challenge);
         var allowCredentials = (opts.allowCredentials || []).map(function(c) {
-            return { type: c.type, id: base64ToUint8Array(c.id) };
+            return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
         });
-        
+
         if (allowCredentials.length === 0) {
-            showBiometricError('No biometric credentials found. Please sign in with your password and register in your profile.');
+            showFpMessage('info',
+                '<i class="bi bi-info-circle-fill me-2"></i>' +
+                '<strong>No biometric credentials found for this account.</strong><br>' +
+                'Sign in with your password below and enable fingerprint login in your Profile.'
+            );
             focusPasswordField();
             resetBiometricButton();
             return;
         }
 
+        var challenge = base64ToUint8Array(opts.challenge);
         var rpId = opts.rpId || window.location.hostname;
         var hostname = window.location.hostname;
         var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
@@ -1263,17 +1024,16 @@ async function performBiometricLogin() {
             timeout: 60000
         };
         
-        // Only set rpId for non-IP hostnames
         if (rpId && !isIp) {
             getPublicKey.rpId = rpId;
         }
 
-        // Update button for user action
-        if (fpLabel) fpLabel.textContent = 'Waiting for biometric...';
+        // Step 3: Trigger device biometric prompt
+        if (fpLabel) fpLabel.textContent = 'Touch sensor or scan Face ID...';
+        if (fpHint) fpHint.textContent = 'Scan your fingerprint, Face ID, or device lock';
         if (fpIcon) fpIcon.className = 'bi bi-hand-index';
+        console.log('Requesting biometric prompt via navigator.credentials.get()...');
 
-        // Step 3: Request biometric authentication from browser/device
-        console.log('Requesting biometric authentication...');
         var assertion = await navigator.credentials.get({
             publicKey: getPublicKey
         });
@@ -1282,13 +1042,13 @@ async function performBiometricLogin() {
             throw new Error('Authentication was cancelled or failed.');
         }
 
-        console.log('Biometric authentication successful, verifying...');
-
-        // Update button
-        if (fpLabel) fpLabel.textContent = 'Verifying...';
-        if (fpIcon) fpIcon.className = 'bi bi-shield-check';
+        console.log('Biometric assertion captured, verifying with server...');
 
         // Step 4: Send assertion to server for verification
+        if (fpLabel) fpLabel.textContent = 'Verifying fingerprint...';
+        if (fpHint) fpHint.textContent = 'Please wait a moment...';
+        if (fpIcon) fpIcon.className = 'bi bi-shield-check';
+
         var credentialId = bufferToBase64Url(assertion.rawId);
         var assertionResponse = {
             clientDataJSON: bufferToBase64Url(assertion.response.clientDataJSON instanceof ArrayBuffer ? new Uint8Array(assertion.response.clientDataJSON) : assertion.response.clientDataJSON),
@@ -1303,32 +1063,34 @@ async function performBiometricLogin() {
             type: assertion.type || 'public-key',
             response: assertionResponse
         };
-        
-        console.log('Sending assertion to server for verification...');
 
         var loginRes = await fetch('{{ route("webauthn.login") }}', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 
                 'X-CSRF-TOKEN': '{{ csrf_token() }}', 
                 'Content-Type': 'application/json', 
                 'Accept': 'application/json' 
             },
-            body: JSON.stringify({ credential_id: credentialId, assertion: assertionData })
+            body: JSON.stringify({ 
+                credential_id: credentialId, 
+                assertion: assertionData,
+                student_number: studentNumber,
+                identifier: studentNumber
+            })
         });
         
         var result = await loginRes.json();
 
         if (result.success) {
             console.log('Login successful! Redirecting...');
-            
-            // Update button to show success
-            if (fpLabel) fpLabel.textContent = 'âœ“ Authenticated! Redirecting...';
-            if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill';
-            if (fpArrow) fpArrow.className = 'bi bi-check2 fp-row-arrow';
+            if (fpLabel) fpLabel.textContent = '✓ Authenticated! Redirecting...';
+            if (fpHint) fpHint.textContent = 'Welcome back!';
+            if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill text-success';
+            if (fpArrow) fpArrow.className = 'bi bi-check2 fp-row-arrow text-success';
             if (fpRowBtn) fpRowBtn.style.opacity = '1';
             
-            // Redirect to dashboard
-            window.location.href = result.redirect;
+            window.location.href = result.redirect || '{{ route("home") }}';
         } else {
             console.error('Server verification failed:', result);
             showBiometricError(result.message || 'Authentication verification failed. Please try again or use your password.');
@@ -1337,43 +1099,30 @@ async function performBiometricLogin() {
         }
     } catch (err) {
         console.error('Biometric authentication error:', err);
-        
         var errorMessage = 'Authentication failed. ';
-        
         if (err.name === 'NotAllowedError') {
             errorMessage = 'Authentication was cancelled or timed out. Please try again or sign in with your password.';
         } else if (err.name === 'InvalidStateError') {
-            errorMessage = 'No matching biometric credential found on this browser. Please sign in with your password and register this browser in your profile.';
+            errorMessage = 'No matching biometric credential found on this device. Please sign in with your password and register this device in your profile.';
         } else if (err.name === 'SecurityError') {
-            errorMessage = 'Security error: Please ensure you\'re using HTTPS or localhost.';
+            errorMessage = 'Security error: Please ensure you are using HTTPS.';
         } else if (err.name === 'NotSupportedError') {
             errorMessage = 'Biometric authentication is not supported on this browser or device.';
         } else {
             errorMessage += (err.message || 'Please try again or use your password.');
         }
-        
         showBiometricError(errorMessage);
         focusPasswordField();
         resetBiometricButton();
     }
 }
 
-// Helper function to focus password field
-function focusPasswordField() {
-    var passInput = document.getElementById('loginPassword');
-    if (passInput) {
-        passInput.focus();
-        passInput.style.borderColor = '#d4af37';
-        setTimeout(function() { 
-            if (passInput) passInput.style.borderColor = ''; 
-        }, 3000);
+// Restore identifier on validation error if present
+@if(old('identifier'))
+    if (idInput) {
+        idInput.value = '{{ old('identifier') }}';
     }
-}
-
-// Show biometric error message â€” uses the unified fpMessage inline element
-function showBiometricError(msg) {
-    showFpMessage('error', '<i class="bi bi-exclamation-circle me-2"></i>' + msg);
-}
+@endif
 </script>
 </body>
 </html>

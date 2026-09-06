@@ -165,6 +165,17 @@ class WebAuthnController extends Controller
         $request->validate(["credential_id" => "required|string", "assertion" => "required|array"]);
         $userId = session("webauthn_login_user_id");
         
+        // Resilient fallback: If session was lost or expired, look up user from request identifier
+        if (!$userId) {
+            $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
+            if ($raw && is_string($raw)) {
+                $fallbackUser = $this->findUserByIdentifier(trim($raw));
+                if ($fallbackUser) {
+                    $userId = $fallbackUser->id;
+                }
+            }
+        }
+        
         \Illuminate\Support\Facades\Log::info('WebAuthn login attempt', [
             'user_id' => $userId,
             'session_id' => session()->getId(),
@@ -172,10 +183,10 @@ class WebAuthnController extends Controller
         ]);
         
         if (!$userId) {
-            \Illuminate\Support\Facades\Log::error('WebAuthn login - no user_id in session', [
+            \Illuminate\Support\Facades\Log::error('WebAuthn login - no user_id in session or request', [
                 'session_keys' => array_keys(session()->all()),
             ]);
-            return response()->json(["success" => false, "message" => "Session expired."], 401);
+            return response()->json(["success" => false, "message" => "Session expired. Please try again."], 401);
         }
         
         $user = User::find($userId);

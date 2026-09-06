@@ -81,6 +81,20 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // 1b. WebAuthn Options: Pre-flight check limiter (30/min per IP) to avoid choking on credential lookups
+        RateLimiter::for('webauthn.options', function (Request $request) {
+            $ip = $request->ip() ?: 'unknown';
+            return [
+                Limit::perMinute(30)->by('webauthn_opt:' . $ip)->response(function (Request $request, array $headers) {
+                    return response()->json([
+                        'status' => 'error',
+                        'success' => false,
+                        'message' => 'Too many requests. Please wait a moment and try again.',
+                        'retry_after' => (int) ($headers['Retry-After'] ?? 10),
+                    ], 429, $headers);
+                }),
+            ];
+        });
         // 2. OTP send: Enforce per-email 30s cooldown pace (2/min), while providing a realistic 20/min ceiling for shared IPs (mobile carrier CGNAT, campus WiFi)
         RateLimiter::for('otp.send', function (Request $request) {
             $email = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', $request->input('phone', $request->user()?->email ?? ''))))));
