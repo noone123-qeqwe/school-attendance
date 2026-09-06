@@ -1088,17 +1088,49 @@
 
         if (forceMode === 'already_installed') {
             if (titleEl) titleEl.textContent = 'App Already Installed';
-            if (subEl) subEl.textContent = 'Smart Attendance is already installed and ready on this device:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">✓</div>
-                    <div>Launch directly from your <strong>Home Screen</strong>, <strong>App Drawer</strong>, or <strong>Windows Start Menu</strong></div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">⚡</div>
-                    <div>Enjoy fast offline scanning, biometric clock-in, and instant school alerts</div>
-                </div>
-            `;
+            if (subEl) subEl.textContent = 'Smart Attendance is already installed on this device:';
+            if (isAndroid) {
+                stepsEl.innerHTML = `
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">1</div>
+                        <div><strong>Swipe UP</strong> from the bottom of your screen to open your <strong>App Drawer</strong></div>
+                    </div>
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">2</div>
+                        <div>Find <strong>Smart Attendance</strong>, then <strong>press and hold (long-press)</strong> the icon</div>
+                    </div>
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">3</div>
+                        <div>Tap <strong>Add to Home</strong> to place it directly onto your phone's Home screen</div>
+                    </div>
+                `;
+            } else if (!isIos) {
+                stepsEl.innerHTML = `
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">1</div>
+                        <div>Press the <strong>Windows Key</strong> on your keyboard and search for <strong>Smart Attendance</strong></div>
+                    </div>
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">2</div>
+                        <div>To place an icon on your Desktop wallpaper: open <code>chrome://apps</code> in Chrome, right-click <strong>Smart Attendance</strong>, and select <strong>Create shortcuts &gt; Desktop</strong></div>
+                    </div>
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">3</div>
+                        <div>Or drag the app icon from your Windows Start Menu directly onto your Desktop</div>
+                    </div>
+                `;
+            } else {
+                stepsEl.innerHTML = `
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">✓</div>
+                        <div>Check your <strong>Home Screen</strong> pages or swipe left into your <strong>App Library</strong></div>
+                    </div>
+                    <div class="pwa-ios-step">
+                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">⚡</div>
+                        <div>Enjoy instant biometric clock-in, QR scanning, and push alerts</div>
+                    </div>
+                `;
+            }
             if (actionBtn) {
                 actionBtn.textContent = 'Open Application';
                 actionBtn.onclick = (e) => {
@@ -1204,11 +1236,11 @@
             `;
         } else if (isAndroid) {
             if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'Install Smart Attendance from your browser menu:';
+            if (subEl) subEl.textContent = 'Install Smart Attendance on Android:';
             stepsEl.innerHTML = `
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">1</div>
-                    <div>Tap the <strong>Three Dots menu (⋮)</strong> at the top-right corner of your browser</div>
+                    <div>Tap the <strong>Three Dots menu (⋮)</strong> at the top-right corner of Chrome</div>
                 </div>
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">2</div>
@@ -1217,6 +1249,10 @@
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">3</div>
                     <div>Confirm by tapping <strong>Install</strong></div>
+                </div>
+                <div class="pwa-ios-step" style="border-top: 1px dashed rgba(207,164,111,0.2); padding-top: 10px; margin-top: 6px;">
+                    <div class="pwa-ios-step-num" style="background:rgba(207,164,111,0.2);color:#F3E7CD;">💡</div>
+                    <div style="font-size:0.8rem;color:#B39B82;"><strong>Note:</strong> On Samsung/Pixel phones, installed apps go into your <strong>App Drawer (swipe up)</strong>. Long-press the icon and tap <strong>Add to Home</strong>.</div>
                 </div>
             `;
         } else {
@@ -1234,6 +1270,10 @@
                 <div class="pwa-ios-step">
                     <div class="pwa-ios-step-num">3</div>
                     <div>Or click <strong>Menu (⋮) &gt; Save and share &gt; Install Smart Attendance</strong></div>
+                </div>
+                <div class="pwa-ios-step" style="border-top: 1px dashed rgba(207,164,111,0.2); padding-top: 10px; margin-top: 6px;">
+                    <div class="pwa-ios-step-num" style="background:rgba(207,164,111,0.2);color:#F3E7CD;">💡</div>
+                    <div style="font-size:0.8rem;color:#B39B82;"><strong>Desktop Icon:</strong> Chrome places apps in the Windows Start Menu. To add to your desktop wallpaper, open <code>chrome://apps</code>, right-click the app, and click <strong>Create shortcuts &gt; Desktop</strong>.</div>
                 </div>
             `;
         }
@@ -1305,7 +1345,14 @@
                 if (choice && choice.outcome === 'accepted') {
                     localStorage.setItem('pwa_app_installed', 'true');
                     hideInstallBanner(30);
-                    showNetworkToast('✓ Smart Attendance installed! Check your App Drawer (swipe up) or Home screen.', 'online');
+                    const isAndroidDevice = /android/.test(ua);
+                    if (isAndroidDevice) {
+                        showNetworkToast('✓ Installed! Swipe UP to open App Drawer, then long-press app & tap "Add to Home".', 'online');
+                    } else if (!isIos) {
+                        showNetworkToast('✓ Installed! Find it in Windows Start Menu or open chrome://apps for a Desktop shortcut.', 'online');
+                    } else {
+                        showNetworkToast('✓ Smart Attendance installed successfully!', 'online');
+                    }
                     syncPwaInstallVisibility();
                     return;
                 } else {
@@ -1487,6 +1534,12 @@
         document.querySelectorAll('.pwa-install-trigger').forEach(el => {
             el.style.display = 'none';
         });
+        const currentUa = (window.navigator.userAgent || '').toLowerCase();
+        if (/android/.test(currentUa)) {
+            showNetworkToast('✓ Smart Attendance installed! Check your App Drawer (swipe up) to add it to Home.', 'online');
+        } else if (!/iphone|ipad|ipod/.test(currentUa)) {
+            showNetworkToast('✓ Smart Attendance installed! Find it in Windows Start Menu or open chrome://apps for Desktop shortcut.', 'online');
+        }
     });
 
     // ── 7. Real-time Network Connectivity Notifications ──
