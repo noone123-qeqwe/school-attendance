@@ -377,7 +377,7 @@
             </div>
 
             <!-- Install on Phone / APK Download Card -->
-            <div class="info-card">
+            <div class="info-card" id="apkDownloadCard">
                 <div class="info-card-header">
                     <div class="info-card-header-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;">
                         <i class="bi bi-android2"></i>
@@ -712,6 +712,16 @@ async function handleStudentAvatarUpload(input) {
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDevices();
+
+    // Hide the APK download card if the app is already installed (running as PWA/standalone)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+        || window.navigator.standalone === true
+        || document.referrer.includes('android-app://');
+
+    if (isStandalone) {
+        const apkCard = document.getElementById('apkDownloadCard');
+        if (apkCard) apkCard.style.display = 'none';
+    }
 });
 </script>
 @endsection
