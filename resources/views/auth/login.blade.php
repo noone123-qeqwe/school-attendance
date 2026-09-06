@@ -1343,13 +1343,18 @@ async function performBiometricLogin() {
 
         // Step 4: Send assertion to server for verification
         var credentialId = bufferToBase64Url(assertion.rawId);
+        var assertionResponse = {
+            clientDataJSON: bufferToBase64Url(assertion.response.clientDataJSON instanceof ArrayBuffer ? new Uint8Array(assertion.response.clientDataJSON) : assertion.response.clientDataJSON),
+            authenticatorData: bufferToBase64Url(assertion.response.authenticatorData instanceof ArrayBuffer ? new Uint8Array(assertion.response.authenticatorData) : assertion.response.authenticatorData),
+            signature: bufferToBase64Url(assertion.response.signature instanceof ArrayBuffer ? new Uint8Array(assertion.response.signature) : assertion.response.signature)
+        };
+        if (assertion.response.userHandle) {
+            assertionResponse.userHandle = bufferToBase64Url(assertion.response.userHandle instanceof ArrayBuffer ? new Uint8Array(assertion.response.userHandle) : assertion.response.userHandle);
+        }
         var assertionData = {
             id: credentialId,
-            response: {
-                clientDataJSON: bufferToBase64Url(new Uint8Array(assertion.response.clientDataJSON)),
-                authenticatorData: bufferToBase64Url(new Uint8Array(assertion.response.authenticatorData)),
-                signature: bufferToBase64Url(new Uint8Array(assertion.response.signature))
-            }
+            type: assertion.type || 'public-key',
+            response: assertionResponse
         };
         
         console.log('Sending assertion to server for verification...');

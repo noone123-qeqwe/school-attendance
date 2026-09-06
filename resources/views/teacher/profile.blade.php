@@ -725,8 +725,16 @@ async function registerFingerprint() {
         });
 
         const rawId = bufferToBase64Url(credential.rawId);
-        const clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
-        const attestationObject = bufferToBase64Url(credential.response.attestationObject);
+        const clientDataJSON = bufferToBase64Url(
+            credential.response.clientDataJSON instanceof ArrayBuffer
+                ? new Uint8Array(credential.response.clientDataJSON)
+                : credential.response.clientDataJSON
+        );
+        const attestationObject = bufferToBase64Url(
+            credential.response.attestationObject instanceof ArrayBuffer
+                ? new Uint8Array(credential.response.attestationObject)
+                : credential.response.attestationObject
+        );
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
@@ -741,7 +749,7 @@ async function registerFingerprint() {
                         clientDataJSON: clientDataJSON
                     }
                 },
-                device_name: navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser'
+                device_name: /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile Device' : 'Desktop Browser'
             })
         });
         const result = await saveRes.json();
@@ -964,8 +972,16 @@ async function registerFingerprint() {
         });
 
         const rawId = bufferToBase64Url(credential.rawId);
-        const clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
-        const attestationObject = bufferToBase64Url(credential.response.attestationObject);
+        const clientDataJSON = bufferToBase64Url(
+            credential.response.clientDataJSON instanceof ArrayBuffer
+                ? new Uint8Array(credential.response.clientDataJSON)
+                : credential.response.clientDataJSON
+        );
+        const attestationObject = bufferToBase64Url(
+            credential.response.attestationObject instanceof ArrayBuffer
+                ? new Uint8Array(credential.response.attestationObject)
+                : credential.response.attestationObject
+        );
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
@@ -980,7 +996,7 @@ async function registerFingerprint() {
                         clientDataJSON: clientDataJSON
                     }
                 },
-                device_name: navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser'
+                device_name: /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Mobile Device' : 'Desktop Browser'
             })
         });
         const result = await saveRes.json();

@@ -136,9 +136,16 @@ class WebauthnService
         $authenticatorData = $this->base64UrlDecode($assertion['response']['authenticatorData'] ?? '');
         $parsed = $this->parseAuthenticatorData($authenticatorData, false);
 
-        if (($parsed['flags'] & 0x01) !== 0x01 || ($parsed['flags'] & 0x04) !== 0x04) {
-            throw new RuntimeException('Fingerprint verification was not completed.');
+        // Check UP (User Presence) flag - bit 0x01 must always be set
+        // We intentionally do NOT check UV (User Verification) flag (0x04) as many
+        // real-world authenticators (Windows Hello, Android fingerprint, iOS Face ID)
+        // do not set UV=1 even when biometrics were used, especially with userVerification='preferred'
+        if (($parsed['flags'] & 0x01) !== 0x01) {
+            Log::warning('WebAuthn UP flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
+            throw new RuntimeException('User presence was not confirmed by the authenticator.');
         }
+        
+        Log::debug('WebAuthn flags OK', ['flags' => $parsed['flags'], 'up' => ($parsed['flags'] & 0x01) === 0x01, 'uv' => ($parsed['flags'] & 0x04) === 0x04]);
 
         $signedData = $authenticatorData . hash('sha256', $clientDataJson, true);
         $signature = $this->base64UrlDecode($assertion['response']['signature'] ?? '');
