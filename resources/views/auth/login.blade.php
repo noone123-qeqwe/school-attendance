@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
     <title>Sign In - {{ config('app.name') }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -531,15 +531,93 @@
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
         </div>
 
-        <div style="text-align: center; margin-top: 18px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <a href="/download/apk" download="SmartAttendance.apk"
-               style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg,rgba(34,197,94,0.15) 0%,rgba(22,163,74,0.15) 100%); color: #86EFAC; border: 1px solid rgba(34,197,94,0.35); border-radius: 99px; padding: 9px 20px; font-size: 0.82rem; font-weight: 700; text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.2);">
+        {{-- PWA Add-to-Home-Screen Install Banner --}}
+        <div id="pwaInstallRow" style="text-align: center; margin-top: 16px; display: none; flex-direction: column; align-items: center; gap: 8px;">
+            <button id="pwaInstallBtn" type="button"
+                style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+                       background: rgba(207,164,111,0.12); color: #CFA46F;
+                       border: 1px solid rgba(207,164,111,0.35); border-radius: 99px;
+                       padding: 9px 22px; font-size: 0.82rem; font-weight: 700;
+                       cursor: pointer; transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
+                       box-shadow: 0 4px 14px rgba(0,0,0,0.25);">
+                <i class="bi bi-app"></i> Add to Home Screen
+            </button>
+        </div>
+
+        {{-- Download APK (hidden once downloaded) --}}
+        <div id="apkDownloadRow" style="text-align: center; margin-top: 8px; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <a id="apkDownloadBtn" href="/download/apk" download="SmartAttendance.apk"
+               style="display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+                      background: linear-gradient(135deg,rgba(34,197,94,0.15) 0%,rgba(22,163,74,0.15) 100%);
+                      color: #86EFAC; border: 1px solid rgba(34,197,94,0.35);
+                      border-radius: 99px; padding: 9px 20px; font-size: 0.82rem; font-weight: 700;
+                      text-decoration: none; transition: all 0.2s; box-shadow: 0 4px 14px rgba(0,0,0,0.2);">
                 <i class="bi bi-android2"></i> Download Android APK
             </a>
         </div>
 
     </div>
 </div>
+
+<script>
+// ── PWA: Hide APK button if already downloaded ──────────────────────────────
+(function() {
+    try {
+        if (localStorage.getItem('apk_downloaded') === '1') {
+            var row = document.getElementById('apkDownloadRow');
+            if (row) row.style.display = 'none';
+        }
+    } catch(e) {}
+    var apkBtn = document.getElementById('apkDownloadBtn');
+    if (apkBtn) {
+        apkBtn.addEventListener('click', function() {
+            try { localStorage.setItem('apk_downloaded', '1'); } catch(e) {}
+            setTimeout(function() {
+                var row = document.getElementById('apkDownloadRow');
+                if (row) { row.style.opacity='0'; row.style.transition='opacity 0.4s'; setTimeout(function(){ row.style.display='none'; }, 420); }
+            }, 1200);
+        });
+    }
+})();
+
+// ── PWA: Add to Home Screen Install Prompt ───────────────────────────────────
+(function() {
+    var deferredPrompt = null;
+    var installRow    = document.getElementById('pwaInstallRow');
+    var installBtn    = document.getElementById('pwaInstallBtn');
+
+    // Only show install button if the app is not already installed
+    var isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                       window.navigator.standalone === true;
+    if (isStandalone) return; // already installed, hide everything
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installRow) { installRow.style.display = 'flex'; }
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', function() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(choice) {
+                if (choice.outcome === 'accepted') {
+                    try { localStorage.setItem('pwa_installed', '1'); } catch(e) {}
+                    if (installRow) { installRow.style.display = 'none'; }
+                }
+                deferredPrompt = null;
+            });
+        });
+    }
+
+    // Hide install button if user already accepted
+    window.addEventListener('appinstalled', function() {
+        if (installRow) installRow.style.display = 'none';
+        try { localStorage.setItem('pwa_installed', '1'); } catch(e) {}
+    });
+})();
+</script>
 
 <script>
 // FingerprintJS initialization
