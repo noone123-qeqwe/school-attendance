@@ -2,8 +2,8 @@
     $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', '143');
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
-    $installedVersion = config('changelog.installed_version', '1.4.2');
-    $latestVersion = config('changelog.default_version', '1.4.3');
+    $installedVersion = config('changelog.installed_version', '2.2.0');
+    $latestVersion = config('changelog.default_version', '2.2.0');
     $initialChangelog = app(\App\Services\ChangelogService::class)->getRelease((string)$latestVersion);
 @endphp
 <!-- PWA Head Meta Tags -->
@@ -680,7 +680,7 @@
 
         const badge = document.getElementById('pwaUpdateVersionBadge');
         if (badge) {
-            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '1.4.3'));
+            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '2.2.0'));
         }
 
         const titleEl = document.getElementById('pwaUpdateTitle');
@@ -747,7 +747,7 @@
             return parsed.join('.');
         }
         const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content;
-        return metaLatest || '1.4.3';
+        return metaLatest || '2.2.0';
     }
 
     // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──
