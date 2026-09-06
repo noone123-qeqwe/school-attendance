@@ -209,6 +209,38 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/image', [PTController::class, 'updateImage'])->name('profile.image.update');
 });
 
+// Mobile App Routes (All authenticated users)
+Route::middleware('auth')->prefix('mobile')->name('mobile.')->group(function () {
+    // Shared mobile routes
+    Route::get('/home', [App\Http\Controllers\MobileController::class, 'home'])->name('home');
+    Route::get('/profile', [App\Http\Controllers\MobileController::class, 'profile'])->name('profile');
+    
+    // Student mobile routes
+    Route::middleware('student')->group(function () {
+        Route::get('/attendance', [App\Http\Controllers\MobileController::class, 'attendance'])->name('attendance');
+        Route::get('/scan', [App\Http\Controllers\MobileController::class, 'scan'])->name('scan');
+        Route::get('/history', [App\Http\Controllers\MobileController::class, 'history'])->name('history');
+    });
+    
+    // Teacher mobile routes
+    Route::middleware('teacher')->group(function () {
+        Route::get('/classes', [App\Http\Controllers\MobileController::class, 'classes'])->name('classes');
+        Route::get('/students', [App\Http\Controllers\MobileController::class, 'students'])->name('students');
+    });
+    
+    // Parent mobile routes
+    Route::middleware('parent')->group(function () {
+        Route::get('/children', [App\Http\Controllers\MobileController::class, 'children'])->name('children');
+        Route::get('/reports', [App\Http\Controllers\MobileController::class, 'reports'])->name('reports');
+    });
+    
+    // Admin mobile routes
+    Route::middleware('admin')->group(function () {
+        Route::get('/dashboard', [App\Http\Controllers\MobileController::class, 'dashboard'])->name('dashboard');
+        Route::get('/settings', [App\Http\Controllers\MobileController::class, 'settings'])->name('settings');
+    });
+});
+
 // Authenticated Routes (Protected) - Student Routes
 Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/profile', [PTController::class, 'profile'])->name('profile');
