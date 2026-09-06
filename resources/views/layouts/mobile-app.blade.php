@@ -2,12 +2,21 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1, minimum-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a1a1a">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Attendance">
+    
+    <!-- Android/Chrome -->
+    <meta name="application-name" content="Smart Attendance">
+    
+    <!-- Prevent zoom on input focus -->
+    <meta name="format-detection" content="telephone=no">
 
     <title>@yield('title', config('app.name', 'Smart Attendance'))</title>
 
@@ -74,6 +83,26 @@
             -moz-osx-font-smoothing: grayscale;
         }
 
+        /* Hide body overflow when in browser (not standalone PWA) */
+        @media (display-mode: browser) {
+            body {
+                padding-top: 0;
+            }
+        }
+
+        /* Fullscreen mode for standalone PWA */
+        @media (display-mode: standalone) {
+            body {
+                /* Already handled by default styles */
+            }
+        }
+
+        @media (display-mode: fullscreen) {
+            body {
+                /* Full immersive mode */
+            }
+        }
+
         /* Mobile App Container */
         .mobile-app {
             min-height: 100vh;
@@ -133,10 +162,27 @@
     <!-- Bottom Navigation -->
     @include('components.mobile.bottom-nav')
 
+    <!-- Install Prompt (only shows in browser mode) -->
+    {{-- @include('components.mobile.install-prompt') --}}
+
     <!-- Scripts -->
     <script>
         // CSRF Token setup
         window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Check if running as installed PWA
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                            window.navigator.standalone || 
+                            document.referrer.includes('android-app://');
+
+        console.log('PWA Standalone Mode:', isStandalone);
+
+        // Add class to body for CSS targeting
+        if (isStandalone) {
+            document.documentElement.classList.add('standalone-mode');
+        } else {
+            document.documentElement.classList.add('browser-mode');
+        }
 
         // Prevent pull-to-refresh on iOS
         document.body.addEventListener('touchmove', function(e) {
