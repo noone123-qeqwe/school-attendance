@@ -13,13 +13,13 @@ class BackupController extends Controller
 {
     public function index()
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         return redirect()->route('admin.system-update.index', ['tab' => 'backups']);
     }
 
     public function create()
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         $handle = null;
         $inTransaction = false;
         $filepath = null;
@@ -162,7 +162,7 @@ class BackupController extends Controller
 
     public function restore(BackupLog $backup)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $safeFilename = basename($backup->filename);
         $filepath = storage_path('app/backups/' . $safeFilename);
@@ -181,7 +181,7 @@ class BackupController extends Controller
 
     public function uploadRestore(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $request->validate([
             'backup_file' => 'required|file|max:10240'
@@ -316,7 +316,7 @@ class BackupController extends Controller
 
     public function download(BackupLog $backup)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $safeFilename = basename($backup->filename);
         $filepath = storage_path('app/backups/' . $safeFilename);
@@ -329,7 +329,7 @@ class BackupController extends Controller
 
     public function destroy(BackupLog $backup)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         $filepath = storage_path('app/' . $backup->path);
         if (file_exists($filepath)) {
             unlink($filepath);

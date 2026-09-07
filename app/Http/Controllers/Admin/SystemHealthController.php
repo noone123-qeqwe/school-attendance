@@ -13,7 +13,7 @@ class SystemHealthController extends Controller
 {
     public function index()
     {
-        abort_if(auth()->user()->admin_sub_role !== 'super_admin' && !auth()->user()->isAdmin(), 403);
+        abort_if(!auth()->user()->isSuperAdmin() && !auth()->user()->isAdmin(), 403);
         return redirect()->route('admin.system-update.index', ['tab' => 'health']);
     }
 }

@@ -32,7 +32,7 @@ class RoleController extends Controller
 
     public function update(Request $request, \App\Models\User $role)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403, 'Unauthorized. Only super_admin can change roles.');
+        abort_if(!Auth::user()->isSuperAdmin(), 403, 'Unauthorized. Only super_admin can change roles.');
 
         $user = $role; // Route model binding uses 'role' as the parameter name
 

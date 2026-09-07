@@ -30,7 +30,7 @@ class LiveAttendanceController extends Controller
         // Get current attendance records for this session
         $attendances = Attendance::where('session_id', $session->id)->get()->keyBy('user_id');
 
-        return view('teacher.qr-session', compact('subject', 'session', 'attendances'));
+        return redirect()->route('teacher.qr', $subject->code);
     }
 
     /**

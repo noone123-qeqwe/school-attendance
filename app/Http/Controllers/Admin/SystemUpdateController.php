@@ -18,7 +18,7 @@ class SystemUpdateController extends Controller
 {
     public function index(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $activeTab = $request->query('tab', 'updates');
 
@@ -196,7 +196,7 @@ class SystemUpdateController extends Controller
 
     public function runFullUpdate(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $results = [];
         $overallSuccess = true;
@@ -407,7 +407,7 @@ class SystemUpdateController extends Controller
 
     public function runMigrations(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         try {
             Artisan::call('migrate', ['--force' => true]);
             $output = trim(Artisan::output());
@@ -425,7 +425,7 @@ class SystemUpdateController extends Controller
 
     public function checkMigrations(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         try {
             $pending = $this->getPendingMigrationsInternal();
             $appliedCount = Schema::hasTable('migrations') ? DB::table('migrations')->count() : 0;
@@ -449,7 +449,7 @@ class SystemUpdateController extends Controller
 
     public function clearCaches(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         try {
             Artisan::call('view:clear');
             Artisan::call('cache:clear');
@@ -469,7 +469,7 @@ class SystemUpdateController extends Controller
 
     public function bumpPwaVersion(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         try {
             $newVer = $this->bumpPwaVersionInternal();
 
@@ -533,7 +533,7 @@ class SystemUpdateController extends Controller
 
     public function toggleMaintenance(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         try {
             if (app()->isDownForMaintenance()) {
                 Artisan::call('up');
@@ -590,7 +590,7 @@ class SystemUpdateController extends Controller
 
     public function runHealthCheck(Request $request)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         
         $checks = [];
 
@@ -769,7 +769,7 @@ class SystemUpdateController extends Controller
      */
     public function sendTestEmail(Request $request, \App\Services\Email\EmailDeliveryService $emailDeliveryService)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $request->validate(['email' => 'required|email']);
         $email = trim((string) $request->input('email'));

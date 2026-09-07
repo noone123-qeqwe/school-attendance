@@ -1119,7 +1119,7 @@ class AdminController extends Controller
         ]);
 
         // Prevent non-super-admins from resetting admin accounts
-        if ($user->isAdmin() && Auth::user()->admin_sub_role !== 'super_admin') {
+        if ($user->isAdmin() && !Auth::user()->isSuperAdmin()) {
             return back()->with('error', 'Only super admins can reset an administrator account\'s password.');
         }
 
@@ -1263,13 +1263,13 @@ class AdminController extends Controller
 
     public function createAdmin()
     {
-        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!\Illuminate\Support\Facades\Auth::user()->isSuperAdmin(), 403);
         return view('admin.admins.create');
     }
 
     public function storeAdmin(Request $request)
     {
-        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!\Illuminate\Support\Facades\Auth::user()->isSuperAdmin(), 403);
         
         $request->validate([
             'name'        => 'required|string|max:255',
@@ -1295,7 +1295,7 @@ class AdminController extends Controller
 
     public function editAdmin(User $admin)
     {
-        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!\Illuminate\Support\Facades\Auth::user()->isSuperAdmin(), 403);
         if ($admin->role !== 'admin') {
             abort(404);
         }
@@ -1304,7 +1304,7 @@ class AdminController extends Controller
 
     public function updateAdmin(Request $request, User $admin)
     {
-        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!\Illuminate\Support\Facades\Auth::user()->isSuperAdmin(), 403);
         if ($admin->role !== 'admin') {
             abort(404);
         }
@@ -1325,7 +1325,7 @@ class AdminController extends Controller
 
     public function destroyAdmin(User $admin)
     {
-        abort_if(\Illuminate\Support\Facades\Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!\Illuminate\Support\Facades\Auth::user()->isSuperAdmin(), 403);
         if ($admin->role !== 'admin') {
             abort(404);
         }
@@ -1344,7 +1344,7 @@ class AdminController extends Controller
 
     public function deactivateAdmin(User $admin)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         abort_if($admin->id === Auth::id(), 400, 'You cannot deactivate your own account.');
         $admin->is_active = false;
         $admin->save();
@@ -1354,7 +1354,7 @@ class AdminController extends Controller
 
     public function reactivateAdmin($id)
     {
-        abort_if(Auth::user()->admin_sub_role !== 'super_admin', 403);
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
         $admin = User::withTrashed()->findOrFail($id);
         abort_unless($admin->role === 'admin', 404);
         if ($admin->trashed()) {
