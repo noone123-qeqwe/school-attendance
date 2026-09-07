@@ -45,11 +45,17 @@
                 </div>
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Password</label>
-                    <input type="password" name="password" class="adm-input" required minlength="8" style="width:100%;">
+                    <div style="position: relative;">
+                        <input type="password" name="password" id="t_pw1" class="adm-input" required minlength="8" style="width:100%; padding-right: 42px;">
+                        <button type="button" class="eye-btn" onclick="togglePassword('t_pw1', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
-                    <input type="password" name="password_confirmation" class="adm-input" required style="width:100%;">
+                    <div style="position: relative;">
+                        <input type="password" name="password_confirmation" id="t_pw2" class="adm-input" required style="width:100%; padding-right: 42px;">
+                        <button type="button" class="eye-btn" onclick="togglePassword('t_pw2', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                    </div>
                 </div>
                 <div class="col-12" style="margin-top:16px;">
                     <button type="submit" class="adm-btn adm-btn-primary"><i class="bi bi-person-plus me-2"></i>Add Teacher</button>

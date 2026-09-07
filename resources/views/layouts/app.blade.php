@@ -1228,6 +1228,46 @@
                     }
                 });
             });
+
+            // ── Universal Global Password Toggle Handler ──
+            function togglePassword(inputId, btn) {
+                if (!inputId) return;
+                const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
+                if (!input) return;
+
+                const isPassword = input.type === 'password';
+                input.type = isPassword ? 'text' : 'password';
+
+                let button = btn;
+                if (!button && typeof inputId === 'string') {
+                    button = document.querySelector(`button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-btn, .eye-toggle, [class*="eye"]');
+                }
+                if (button) {
+                    const icon = button.querySelector('i');
+                    if (icon) {
+                        icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
+                    }
+                }
+            }
+            window.togglePassword = togglePassword;
+            window.togglePw = togglePassword;
+            window.toggleEye = togglePassword;
+
+            document.addEventListener('click', function(e) {
+                const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
+                if (!btn) return;
+                if (btn.hasAttribute('onclick')) return;
+
+                e.preventDefault();
+                const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+                let input = targetId ? document.getElementById(targetId) : null;
+                if (!input && btn.parentElement) {
+                    input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+                }
+                if (input) {
+                    togglePassword(input, btn);
+                }
+            });
         });
     </script>
 

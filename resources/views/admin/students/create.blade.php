@@ -169,13 +169,17 @@
                     <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
                         Password *
                     </label>
-                    <input type="password" 
-                           name="password" 
-                           class="adm-input" 
-                           required 
-                           minlength="8"
-                           placeholder="Minimum 8 characters"
-                           style="width: 100%;">
+                    <div style="position: relative;">
+                        <input type="password" 
+                               name="password" 
+                               id="s_pw1"
+                               class="adm-input" 
+                               required 
+                               minlength="8"
+                               placeholder="Minimum 8 characters"
+                               style="width: 100%; padding-right: 42px;">
+                        <button type="button" class="eye-btn" onclick="togglePassword('s_pw1', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                    </div>
                 </div>
 
                 <!-- Submit Section -->

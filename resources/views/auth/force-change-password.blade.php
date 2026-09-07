@@ -27,14 +27,20 @@
                 <form method="POST" action="{{ route('password.change.submit') }}">
                     @csrf
                     
-                    <div class="form-floating-custom mb-3">
-                        <input type="password" name="password" id="password" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff;">
+                    <div class="form-floating-custom mb-3" style="position: relative;">
+                        <input type="password" name="password" id="password" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
                         <label for="password" style="color:rgba(255,255,255,0.5);">New Password</label>
+                        <button type="button" class="eye-toggle" onclick="togglePassword('password', this)" tabindex="-1">
+                            <i class="bi bi-eye-slash"></i>
+                        </button>
                     </div>
 
-                    <div class="form-floating-custom mb-4">
-                        <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff;">
+                    <div class="form-floating-custom mb-4" style="position: relative;">
+                        <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
                         <label for="password_confirmation" style="color:rgba(255,255,255,0.5);">Confirm New Password</label>
+                        <button type="button" class="eye-toggle" onclick="togglePassword('password_confirmation', this)" tabindex="-1">
+                            <i class="bi bi-eye-slash"></i>
+                        </button>
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100" style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border: none; padding: 12px; border-radius: 12px; font-weight: 600;">

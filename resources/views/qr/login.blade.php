@@ -167,10 +167,13 @@
 
             <div class="mb-4">
                 <label for="password" class="form-label">Password</label>
-                <div class="input-group-custom">
+                <div class="input-group-custom" style="position: relative;">
                     <span class="input-icon"><i class="bi bi-lock-fill"></i></span>
                     <input type="password" class="custom-input" id="password" name="password" 
-                           required autocomplete="current-password" placeholder="Enter your password">
+                           required autocomplete="current-password" placeholder="Enter your password" style="padding-right: 42px;">
+                    <button type="button" class="eye-toggle" onclick="togglePassword('password', this)" tabindex="-1">
+                        <i class="bi bi-eye-slash"></i>
+                    </button>
                 </div>
             </div>
 

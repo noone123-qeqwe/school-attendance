@@ -67,11 +67,17 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
-                    <input type="password" name="password" class="adm-input" required minlength="8" style="width:100%;">
+                    <div style="position: relative;">
+                        <input type="password" name="password" id="te_pw1" class="adm-input" required minlength="8" style="width:100%; padding-right: 42px;">
+                        <button type="button" class="eye-btn" onclick="togglePassword('te_pw1', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
-                    <input type="password" name="password_confirmation" class="adm-input" required minlength="8" style="width:100%;">
+                    <div style="position: relative;">
+                        <input type="password" name="password_confirmation" id="te_pw2" class="adm-input" required minlength="8" style="width:100%; padding-right: 42px;">
+                        <button type="button" class="eye-btn" onclick="togglePassword('te_pw2', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                    </div>
                 </div>
                 <div class="col-12" style="margin-top:16px;">
                     <button type="submit" class="adm-btn" style="background-color:#ef4444; color:white; border:none; padding:8px 16px; border-radius:6px; font-weight:600; cursor:pointer;"><i class="bi bi-exclamation-triangle me-2"></i>Reset Password</button>

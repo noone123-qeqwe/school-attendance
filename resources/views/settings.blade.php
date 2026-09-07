@@ -2035,10 +2035,17 @@ async function toggleWebPush(input) {
     }
 }
 function togglePw(id, btn) {
-    const i = document.getElementById(id);
-    const ic = btn.querySelector('i');
-    if (i.type === 'password') { i.type = 'text'; ic.className = 'bi bi-eye'; btn.style.color = '#800000'; }
-    else { i.type = 'password'; ic.className = 'bi bi-eye-slash'; btn.style.color = ''; }
+    if (window.togglePassword) {
+        window.togglePassword(id, btn);
+        return;
+    }
+    const i = typeof id === 'string' ? document.getElementById(id) : id;
+    if (!i) return;
+    const isPw = i.type === 'password';
+    i.type = isPw ? 'text' : 'password';
+    const ic = btn ? btn.querySelector('i') : null;
+    if (ic) ic.className = isPw ? 'bi bi-eye' : 'bi bi-eye-slash';
+    if (btn) btn.style.color = isPw ? '#800000' : '';
 }
 // Compact sidebar toggle
 const ct = document.getElementById('compactToggle');
