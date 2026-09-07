@@ -324,11 +324,11 @@ Route::middleware(['auth', 'student'])->group(function () {
 
 
 
-    // WebAuthn (Fingerprint)
+    // WebAuthn (Fingerprint / Biometric Management for all authenticated users)
     Route::get('/webauthn/register-options', [App\Http\Controllers\WebAuthnController::class, 'registerOptions'])->name('webauthn.register.options');
     Route::post('/webauthn/register', [App\Http\Controllers\WebAuthnController::class, 'register'])->name('webauthn.register');
     Route::get('/webauthn/devices', [App\Http\Controllers\WebAuthnController::class, 'devices'])->name('webauthn.devices');
-    Route::delete('/webauthn/device', [App\Http\Controllers\WebAuthnController::class, 'removeDevice'])->name('webauthn.remove');
+    Route::match(['delete', 'post'], '/webauthn/device', [App\Http\Controllers\WebAuthnController::class, 'removeDevice'])->name('webauthn.remove');
 
     // WebAuthn QR verification
     Route::post('/qr/verify-options', [App\Http\Controllers\QrAttendanceController::class, 'verificationOptions'])->name('qr.verify.options');

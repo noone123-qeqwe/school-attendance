@@ -1197,16 +1197,7 @@ function focusPasswordField() {
         passInput.focus();
         passInput.style.borderColor = '#d4af37';
         passInput.style.boxShadow = '0 0 0 4px rgba(212, 175, 55, 0.35)';
-        setTimeout(function() { 
-            if (passInput) {
-                passInput.style.borderColor = ''; 
-                passInput.style.boxShadow = '';
-            }
-        }, 3000);
-    }
-}
-
-// ── BIOMETRIC MODAL CONTROLLER & SETUP FLOW ─────────────────────────────────
+     // ── BIOMETRIC MODAL CONTROLLER & SETUP FLOW ─────────────────────────────────
 let activeSetupIdentifier = '';
 
 function openBiometricModal(config) {
@@ -1237,7 +1228,7 @@ function openBiometricModal(config) {
     }
     
     if (stepsEl) {
-        stepsEl.style.display = config.hideSteps ? 'none' : 'none';
+        stepsEl.style.display = 'none';
     }
 
     if (passWrap) {
@@ -1260,7 +1251,7 @@ function openBiometricModal(config) {
         if (config.primaryBtnText) {
             primaryBtn.innerHTML = config.primaryBtnText;
         } else {
-            primaryBtn.innerHTML = '<i class="bi bi-shield-lock-fill me-2"></i>Set Up Biometrics';
+            primaryBtn.innerHTML = '<i class="bi bi-shield-lock-fill me-2"></i>SET UP BIOMETRICS';
         }
         primaryBtn.disabled = !!config.primaryDisabled;
         if (typeof config.onPrimaryClick === 'function') {
@@ -1271,11 +1262,16 @@ function openBiometricModal(config) {
     }
 
     if (secondaryBtn) {
-        secondaryBtn.textContent = config.secondaryBtnText || 'Use Password';
-        if (typeof config.onSecondaryClick === 'function') {
-            secondaryBtn.onclick = config.onSecondaryClick;
+        if (config.secondaryBtnText === '' || config.secondaryBtnText === false) {
+            secondaryBtn.style.display = 'none';
         } else {
-            secondaryBtn.onclick = closeBiometricModalAndFocusPassword;
+            secondaryBtn.style.display = 'block';
+            secondaryBtn.textContent = config.secondaryBtnText || 'USE PASSWORD';
+            if (typeof config.onSecondaryClick === 'function') {
+                secondaryBtn.onclick = config.onSecondaryClick;
+            } else {
+                secondaryBtn.onclick = closeBiometricModalAndFocusPassword;
+            }
         }
     }
     
@@ -1357,10 +1353,10 @@ function openBiometricSetupModal(identifier) {
     openBiometricModal({
         title: 'BIOMETRIC SIGN-IN',
         identifier: activeSetupIdentifier,
-        message: 'You haven\'t enabled biometric sign-in for this account yet.<br><br>Use your fingerprint, face, or device biometric for faster sign-in on this device.',
+        message: 'You haven\'t enabled biometric sign-in for this account yet.<br><br>You can use your fingerprint or other supported device biometric to sign in faster next time.',
         badgeType: 'warning',
-        primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>Set Up Biometrics',
-        secondaryBtnText: 'Use Password',
+        primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>SET UP BIOMETRICS',
+        secondaryBtnText: 'USE PASSWORD',
         onPrimaryClick: handleSetupBiometricsClick,
         onSecondaryClick: closeBiometricModalAndFocusPassword
     });
@@ -1384,8 +1380,8 @@ async function handleSetupBiometricsClick() {
             message: 'Please enter your password for <strong>' + activeSetupIdentifier + '</strong> to verify your identity and enable biometric sign-in.',
             showPassword: true,
             badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-check-circle-fill me-2"></i>Verify & Enable Biometrics',
-            secondaryBtnText: 'Use Password',
+            primaryBtnText: '<i class="bi bi-check-circle-fill me-2"></i>VERIFY & ENABLE BIOMETRICS',
+            secondaryBtnText: 'USE PASSWORD',
             onPrimaryClick: handleSetupBiometricsClick,
             onSecondaryClick: closeBiometricModalAndFocusPassword
         });
@@ -1436,8 +1432,8 @@ async function startBiometricRegistration(identifier, password) {
                 badgeType: 'danger',
                 alertMessage: '<i class="bi bi-exclamation-circle-fill me-2"></i>' + errMsg,
                 alertType: 'error',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>Try Again',
-                secondaryBtnText: 'Use Password',
+                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
+                secondaryBtnText: 'USE PASSWORD',
                 onPrimaryClick: handleSetupBiometricsClick,
                 onSecondaryClick: closeBiometricModalAndFocusPassword
             });
@@ -1447,7 +1443,7 @@ async function startBiometricRegistration(identifier, password) {
         openBiometricModal({
             title: 'TOUCH SENSOR OR SCAN FACE ID',
             identifier: identifier,
-            message: 'Please authenticate using your device\'s fingerprint, Face ID, or screen lock when prompted.',
+            message: 'Please authenticate using your device\'s fingerprint, Face ID, or screen lock when prompted by your device.',
             badgeType: 'info',
             primaryBtnText: '<i class="bi bi-hand-index-thumb me-2"></i>Waiting for Biometric Prompt...',
             primaryDisabled: true,
@@ -1523,12 +1519,12 @@ async function startBiometricRegistration(identifier, password) {
 
         if (regResult.success) {
             openBiometricModal({
-                title: '✓ BIOMETRIC ENABLED',
+                title: '✓ BIOMETRIC SIGN-IN ENABLED',
                 identifier: identifier,
-                message: 'Biometric sign-in is now available on this device.<br><br>You can sign in using your device\'s biometric authentication for future logins.',
+                message: 'Biometric sign-in is now enabled for this account on this device.',
                 badgeType: 'success',
-                primaryBtnText: '<i class="bi bi-check-circle-fill me-2"></i>Continue',
-                secondaryBtnText: 'Dismiss',
+                primaryBtnText: 'CONTINUE',
+                secondaryBtnText: false,
                 onPrimaryClick: function() {
                     closeBiometricModal();
                     window.location.href = regResult.redirect || '{{ route("home") }}';
@@ -1539,10 +1535,13 @@ async function startBiometricRegistration(identifier, password) {
         }
     } catch (err) {
         console.error('Biometric setup error:', err);
-        var msg = 'Biometric setup failed. ';
         if (err.name === 'NotAllowedError') {
-            msg = 'Biometric setup was cancelled or timed out.';
-        } else if (err.message) {
+            closeBiometricModal();
+            resetBiometricButton();
+            return;
+        }
+        var msg = 'Biometric setup failed. ';
+        if (err.message) {
             msg += err.message;
         }
         openBiometricModal({
@@ -1550,8 +1549,8 @@ async function startBiometricRegistration(identifier, password) {
             identifier: identifier,
             message: msg + '<br><br>You can sign in using your password or try setting up biometrics again.',
             badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>Try Setup Again',
-            secondaryBtnText: 'Use Password',
+            primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY SETUP AGAIN',
+            secondaryBtnText: 'USE PASSWORD',
             onPrimaryClick: handleSetupBiometricsClick,
             onSecondaryClick: closeBiometricModalAndFocusPassword
         });
@@ -1564,13 +1563,54 @@ async function handleBiometricLogin() {
     
     var identifier = idInput ? idInput.value.trim() : '';
     
+    // STATE C: Check secure context & WebAuthn API availability
+    if (!window.isSecureContext || !window.PublicKeyCredential) {
+        openBiometricModal({
+            title: 'BIOMETRIC UNAVAILABLE',
+            message: 'This device does not have a supported biometric method available.<br><br>Please use your password to sign in.',
+            badgeType: 'warning',
+            primaryBtnText: 'USE PASSWORD',
+            secondaryBtnText: false,
+            onPrimaryClick: closeBiometricModalAndFocusPassword
+        });
+        return;
+    }
+
+    // STATE D: Check if device platform authenticator is available/configured
+    var isPlatformAvailable = false;
+    try {
+        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+            isPlatformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        } else {
+            isPlatformAvailable = true; // Fallback if API method absent
+        }
+    } catch (e) {
+        isPlatformAvailable = true;
+    }
+
+    if (!isPlatformAvailable) {
+        openBiometricModal({
+            title: 'BIOMETRIC NOT SET UP',
+            message: 'Your device supports biometric authentication, but no biometric method is currently configured.',
+            badgeType: 'warning',
+            primaryBtnText: '<i class="bi bi-gear-fill me-2"></i>OPEN DEVICE SETTINGS',
+            secondaryBtnText: 'USE PASSWORD',
+            onPrimaryClick: function() {
+                showFpMessage('info', '<i class="bi bi-info-circle me-2"></i>Please configure a fingerprint, Face ID, or PIN in your device security settings.');
+                closeBiometricModalAndFocusPassword();
+            },
+            onSecondaryClick: closeBiometricModalAndFocusPassword
+        });
+        return;
+    }
+    
     if (!identifier) {
         openBiometricModal({
             title: 'STUDENT ID OR EMAIL REQUIRED',
             message: 'Please enter your <strong>Student ID or Email</strong> first so the system can verify your registered biometric credentials.',
             badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-person-fill me-2"></i>Enter Student ID / Email',
-            secondaryBtnText: 'Use Password',
+            primaryBtnText: '<i class="bi bi-person-fill me-2"></i>ENTER STUDENT ID / EMAIL',
+            secondaryBtnText: 'USE PASSWORD',
             onPrimaryClick: closeBiometricModalAndFocusIdentifier,
             onSecondaryClick: closeBiometricModalAndFocusPassword
         });
@@ -1580,30 +1620,6 @@ async function handleBiometricLogin() {
             idInput.style.borderColor = '#d4af37';
             setTimeout(function() { if (idInput) idInput.style.borderColor = ''; }, 2500);
         }
-        return;
-    }
-
-    if (!window.isSecureContext) {
-        openBiometricModal({
-            title: 'SECURE CONNECTION REQUIRED',
-            message: 'Biometric authentication requires a secure connection (<strong>HTTPS</strong> or localhost). If accessing from mobile, please open via HTTPS.',
-            badgeType: 'danger',
-            primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
-            onPrimaryClick: closeBiometricModalAndFocusPassword
-        });
-        showBiometricError('Biometric authentication requires a secure connection (HTTPS).');
-        return;
-    }
-
-    if (!window.PublicKeyCredential) {
-        openBiometricModal({
-            title: 'BIOMETRICS NOT SUPPORTED',
-            message: 'Biometric authentication is not supported by your browser. Please use Chrome, Edge, Safari, or Brave with WebAuthn enabled.',
-            badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
-            onPrimaryClick: closeBiometricModalAndFocusPassword
-        });
-        showBiometricError('Biometric authentication is not supported by your browser. Please use Chrome, Edge, Safari, or Brave with WebAuthn enabled.');
         return;
     }
 
@@ -1637,6 +1653,7 @@ async function performBiometricLogin(studentNumber) {
 
         if (!optRes.ok || !opts.success) {
             resetBiometricButton();
+            // STATE B: Phone supports biometrics but user account has not registered
             if (opts.code === 'NOT_REGISTERED' || (optRes.status === 404 && opts.user_exists)) {
                 openBiometricSetupModal(studentNumber);
                 return;
@@ -1646,15 +1663,23 @@ async function performBiometricLogin(studentNumber) {
                     identifier: studentNumber,
                     message: 'No account was found matching "<strong>' + studentNumber + '</strong>". Please double check your Student ID or Email.',
                     badgeType: 'danger',
-                    primaryBtnText: '<i class="bi bi-pencil-fill me-2"></i>Check Student ID / Email',
-                    secondaryBtnText: 'Use Password',
+                    primaryBtnText: '<i class="bi bi-pencil-fill me-2"></i>CHECK STUDENT ID / EMAIL',
+                    secondaryBtnText: 'USE PASSWORD',
                     onPrimaryClick: closeBiometricModalAndFocusIdentifier,
                     onSecondaryClick: closeBiometricModalAndFocusPassword
                 });
                 return;
             } else {
-                showBiometricError(opts.message || 'No biometric credentials registered for this account.');
-                focusPasswordField();
+                openBiometricModal({
+                    title: 'BIOMETRIC SIGN-IN',
+                    identifier: studentNumber,
+                    message: opts.message || 'You haven\'t enabled biometric sign-in for this account yet.',
+                    badgeType: 'warning',
+                    primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>SET UP BIOMETRICS',
+                    secondaryBtnText: 'USE PASSWORD',
+                    onPrimaryClick: function() { openBiometricSetupModal(studentNumber); },
+                    onSecondaryClick: closeBiometricModalAndFocusPassword
+                });
                 return;
             }
         }
@@ -1669,6 +1694,7 @@ async function performBiometricLogin(studentNumber) {
             return;
         }
 
+        // STATE A: Account HAS biometric credential registered. Directly trigger system prompt!
         var challenge = base64ToUint8Array(opts.challenge);
         var rpId = opts.rpId || window.location.hostname;
         var hostname = window.location.hostname;
@@ -1743,33 +1769,55 @@ async function performBiometricLogin(studentNumber) {
             
             window.location.href = result.redirect || '{{ route("home") }}';
         } else {
-            showBiometricError(result.message || 'Biometric authentication failed. Please try again.');
             resetBiometricButton();
-            focusPasswordField();
+            openBiometricModal({
+                title: 'BIOMETRIC AUTHENTICATION FAILED',
+                identifier: studentNumber,
+                message: 'Your biometric authentication could not be completed.',
+                badgeType: 'danger',
+                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
+                secondaryBtnText: 'USE PASSWORD',
+                onPrimaryClick: function() {
+                    closeBiometricModal();
+                    performBiometricLogin(studentNumber);
+                },
+                onSecondaryClick: closeBiometricModalAndFocusPassword
+            });
         }
     } catch (err) {
         console.error('Biometric authentication error:', err);
         resetBiometricButton();
         if (err.name === 'NotAllowedError') {
-            showFpMessage('info', '<i class="bi bi-info-circle-fill me-2"></i><strong>Biometric sign-in cancelled.</strong> You can try again or sign in with your password.');
+            // User cancelled system prompt: return to login screen cleanly
+            return;
         } else if (err.name === 'InvalidStateError') {
             openBiometricModal({
                 title: 'DEVICE NOT ENROLLED',
                 identifier: studentNumber,
                 message: 'Your biometric sign-in needs to be set up again for this device.',
                 badgeType: 'warning',
-                primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>Set Up Again',
-                secondaryBtnText: 'Use Password',
+                primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>SET UP AGAIN',
+                secondaryBtnText: 'USE PASSWORD',
                 onPrimaryClick: function() { openBiometricSetupModal(studentNumber); },
                 onSecondaryClick: closeBiometricModalAndFocusPassword
             });
         } else {
-            showBiometricError('Biometric authentication failed. Please try again or use password.');
-            focusPasswordField();
+            openBiometricModal({
+                title: 'BIOMETRIC AUTHENTICATION FAILED',
+                identifier: studentNumber,
+                message: 'Your biometric authentication could not be completed.',
+                badgeType: 'danger',
+                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
+                secondaryBtnText: 'USE PASSWORD',
+                onPrimaryClick: function() {
+                    closeBiometricModal();
+                    performBiometricLogin(studentNumber);
+                },
+                onSecondaryClick: closeBiometricModalAndFocusPassword
+            });
         }
     }
 }
-
 
 // Restore identifier on validation error if present
 @if(old('identifier'))

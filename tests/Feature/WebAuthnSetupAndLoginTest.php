@@ -155,4 +155,53 @@ class WebAuthnSetupAndLoginTest extends TestCase
         ]);
         $resB->assertStatus(404)->assertJson(['code' => 'NOT_REGISTERED']);
     }
+
+    public function test_login_options_returns_account_not_found_for_unknown_user()
+    {
+        $response = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => 'NONEXISTENT_USER_9999',
+        ]);
+
+        $response->assertStatus(404)
+            ->assertJson([
+                'success' => false,
+                'code' => 'ACCOUNT_NOT_FOUND',
+            ]);
+    }
+
+    public function test_disabling_biometrics_removes_credential_and_resets_login_state()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU_DISABLE_TEST',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $cred = WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'disable_test_cred_id',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'User Device',
+        ]);
+
+        // Prior to disabling -> login options succeeds
+        $resBefore = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => 'STU_DISABLE_TEST',
+        ]);
+        $resBefore->assertStatus(200)->assertJson(['success' => true]);
+
+        // Authenticate user & remove device
+        $this->actingAs($user);
+        $removeRes = $this->deleteJson(route('webauthn.remove'), [
+            'credential_id' => 'disable_test_cred_id',
+        ]);
+        $removeRes->assertStatus(200)->assertJson(['success' => true]);
+
+        // Unauthenticate and test login options again -> now returns NOT_REGISTERED
+        $this->post('/logout');
+        $resAfter = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => 'STU_DISABLE_TEST',
+        ]);
+        $resAfter->assertStatus(404)->assertJson(['code' => 'NOT_REGISTERED']);
+    }
 }
