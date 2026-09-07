@@ -13,7 +13,10 @@
         <i class="bi bi-grid-fill"></i>
         <span class="nav-link-text">Dashboard</span>
     </a>
-
+    <a href="{{ route('parent.link.form') }}" class="nav-link {{ request()->routeIs('parent.link*') ? 'active' : '' }}">
+        <i class="bi bi-person-plus-fill"></i>
+        <span class="nav-link-text">Link Student</span>
+    </a>
 
     <a href="{{ route('parent.calendar') }}" class="nav-link {{ request()->routeIs('parent.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-event"></i>

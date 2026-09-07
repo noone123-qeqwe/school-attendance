@@ -48,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(
             prepend: ['throttle:api'],
+            append: [\App\Http\Middleware\CheckAccountStatus::class],
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

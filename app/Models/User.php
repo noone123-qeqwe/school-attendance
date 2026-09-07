@@ -145,6 +145,15 @@ class User extends Authenticatable
         return $this->role === 'parent';
     }
 
+    /**
+     * Check if the user is a super admin.
+     * Null admin_sub_role is treated as super_admin for backward compatibility.
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'admin' && ($this->admin_sub_role === 'super_admin' || $this->admin_sub_role === null);
+    }
+
     public function isDepartmentHead(): bool
     {
         return $this->role === 'department_head';

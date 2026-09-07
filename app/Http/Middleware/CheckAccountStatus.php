@@ -19,8 +19,16 @@ class CheckAccountStatus
 
             if (isset($user->is_active) && !$user->is_active) {
                 Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+
+                if ($request->hasSession()) {
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                }
+
+                // Revoke Sanctum tokens for API requests
+                if ($user->currentAccessToken()) {
+                    $user->currentAccessToken()->delete();
+                }
 
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([

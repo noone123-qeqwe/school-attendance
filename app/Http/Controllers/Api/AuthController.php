@@ -74,6 +74,17 @@ class AuthController extends Controller
             $this->lockoutService->clear($identifier, $ip);
 
             $user = Auth::user();
+
+            if (!$user->isActive()) {
+                Auth::logout();
+                return response()->json([
+                    'status' => 'error',
+                    'success' => false,
+                    'message' => 'Your account has been deactivated. Please contact the school administrator.',
+                    'account_disabled' => true,
+                ], 403);
+            }
+
             $token = $user->createToken('mobile-app')->plainTextToken;
 
             return response()->json([

@@ -114,7 +114,7 @@
             <i class="bi bi-chevron-down ms-auto dropdown-chevron"></i>
         </button>
         <div class="sidebar-submenu">
-            @if(Auth::user()->admin_sub_role === 'super_admin')
+            @if(Auth::user()->isSuperAdmin())
             <a href="{{ route('admin.system-update.index') }}" class="nav-link sub-nav-link {{ (request()->routeIs('admin.system-update*') || request()->routeIs('admin.backups*') || request()->routeIs('admin.system-health*')) ? 'active' : '' }}">
                 <span class="nav-link-text">System Maintenance</span>
             </a>

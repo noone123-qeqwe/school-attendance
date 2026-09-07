@@ -16,16 +16,10 @@ class SuperAdminMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->role === 'admin') {
-            // Null or empty sub_role means full admin by default, but we treat super_admin explicitly
-            // For backward compatibility, if admin_sub_role is null, we assume they are super admin
-            $subRole = Auth::user()->admin_sub_role;
-            if ($subRole !== 'super_admin' && $subRole !== null) {
-                return abort(403, 'Unauthorized action. Super Admin privileges required.');
-            }
+        if (Auth::check() && Auth::user()->isSuperAdmin()) {
             return $next($request);
         }
         
-        return abort(403, 'Unauthorized.');
+        return abort(403, 'Unauthorized. Super Admin privileges required.');
     }
 }

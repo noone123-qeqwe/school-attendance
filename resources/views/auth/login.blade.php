@@ -647,14 +647,66 @@
 <div class="bottom-bar">
     <span>&copy; {{ date('Y') }} Smart Classroom Attendance System. All rights reserved.</span>
     <div class="bottom-links">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms of Service</a>
-        <a href="#">Contact Us</a>
+        <a href="javascript:void(0)" onclick="showFooterModal('privacy')">Privacy Policy</a>
+        <a href="javascript:void(0)" onclick="showFooterModal('terms')">Terms of Service</a>
+        <a href="javascript:void(0)" onclick="showFooterModal('contact')">Contact Us</a>
         <span style="color: rgba(207,164,111,0.6); font-weight: 600; margin-left: 12px; pointer-events: all;">
             v{{ config('changelog.default_version', '2.3.0') }}
         </span>
     </div>
 </div>
+
+<!-- Footer Info Modals -->
+<div id="footerModalOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:99999;backdrop-filter:blur(6px);opacity:0;transition:opacity 0.25s;" onclick="closeFooterModal()">
+    <div id="footerModalContent" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.95);background:linear-gradient(145deg,#1a1218 0%,#0d0a0f 100%);border:1px solid rgba(207,164,111,0.25);border-radius:20px;padding:32px;max-width:520px;width:92%;max-height:80vh;overflow-y:auto;color:#f3e7cd;box-shadow:0 25px 60px rgba(0,0,0,0.5);transition:transform 0.25s;" onclick="event.stopPropagation()">
+        <button onclick="closeFooterModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.08);border:none;color:#b39b82;width:32px;height:32px;border-radius:50%;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">&times;</button>
+        <div id="footerModalBody"></div>
+    </div>
+</div>
+<script>
+const footerModals = {
+    privacy: `<h3 style="margin:0 0 16px;color:#cfa46f;font-size:1.2rem;"><i class="bi bi-shield-lock-fill me-2"></i>Privacy Policy</h3>
+        <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">The Smart Classroom Attendance System collects only the data necessary for attendance tracking. This includes:</p>
+        <ul style="color:#b39b82;line-height:1.9;font-size:0.85rem;padding-left:20px;">
+            <li>Student information (name, ID, course, section)</li>
+            <li>Attendance records (timestamps, location data during scan)</li>
+            <li>Device identifiers for binding verification</li>
+            <li>Biometric credential IDs (WebAuthn — no biometric data is stored)</li>
+        </ul>
+        <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">Your data is stored securely and is only accessible to authorized school personnel. We do not share personal data with third parties.</p>`,
+    terms: `<h3 style="margin:0 0 16px;color:#cfa46f;font-size:1.2rem;"><i class="bi bi-file-earmark-text-fill me-2"></i>Terms of Service</h3>
+        <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">By using the Smart Classroom Attendance System, you agree to:</p>
+        <ul style="color:#b39b82;line-height:1.9;font-size:0.85rem;padding-left:20px;">
+            <li>Use the system only for legitimate attendance purposes</li>
+            <li>Not share your login credentials with others</li>
+            <li>Not attempt to manipulate or falsify attendance records</li>
+            <li>Report any system issues to the school administration</li>
+            <li>Comply with the institution's academic policies</li>
+        </ul>
+        <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">Violations may result in disciplinary action as determined by the institution.</p>`,
+    contact: `<h3 style="margin:0 0 16px;color:#cfa46f;font-size:1.2rem;"><i class="bi bi-envelope-fill me-2"></i>Contact Us</h3>
+        <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">For support or inquiries, reach out through the following channels:</p>
+        <div style="margin:16px 0;padding:16px;background:rgba(255,255,255,0.04);border-radius:12px;border:1px solid rgba(255,255,255,0.08);">
+            <p style="color:#f3e7cd;font-size:0.9rem;margin:0 0 8px;"><i class="bi bi-building me-2" style="color:#cfa46f;"></i><strong>School Administration Office</strong></p>
+            <p style="color:#b39b82;font-size:0.85rem;margin:0 0 6px;"><i class="bi bi-envelope me-2"></i>admin@school.edu.ph</p>
+            <p style="color:#b39b82;font-size:0.85rem;margin:0 0 6px;"><i class="bi bi-telephone me-2"></i>(02) 8123-4567</p>
+            <p style="color:#b39b82;font-size:0.85rem;margin:0;"><i class="bi bi-clock me-2"></i>Mon–Fri, 8:00 AM – 5:00 PM</p>
+        </div>
+        <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">For technical issues with the attendance system, please contact your class adviser or the IT department.</p>`
+};
+function showFooterModal(type) {
+    document.getElementById('footerModalBody').innerHTML = footerModals[type] || '';
+    const overlay = document.getElementById('footerModalOverlay');
+    overlay.style.display = 'block';
+    requestAnimationFrame(() => { overlay.style.opacity = '1'; document.getElementById('footerModalContent').style.transform = 'translate(-50%,-50%) scale(1)'; });
+}
+function closeFooterModal() {
+    const overlay = document.getElementById('footerModalOverlay');
+    overlay.style.opacity = '0';
+    document.getElementById('footerModalContent').style.transform = 'translate(-50%,-50%) scale(0.95)';
+    setTimeout(() => { overlay.style.display = 'none'; }, 250);
+}
+</script>
 
 <!-- Auth scene -->
 <div class="auth-scene">

@@ -25,6 +25,14 @@
         <i class="bi bi-file-text-fill"></i>
         <span class="nav-link-text">Excuse Submissions</span>
     </a>
+    <a href="{{ route('teacher.attendance') }}" class="nav-link {{ request()->routeIs('teacher.attendance*') ? 'active' : '' }}">
+        <i class="bi bi-clipboard-data-fill"></i>
+        <span class="nav-link-text">Attendance Records</span>
+    </a>
+    <a href="{{ route('teacher.students') }}" class="nav-link {{ request()->routeIs('teacher.students*') || request()->routeIs('teacher.student') ? 'active' : '' }}">
+        <i class="bi bi-people-fill"></i>
+        <span class="nav-link-text">Student Roster</span>
+    </a>
     <a href="{{ route('teacher.corrections') }}" class="nav-link {{ request()->routeIs('teacher.corrections*') ? 'active' : '' }}">
         <i class="bi bi-pencil-square"></i>
         <span class="nav-link-text">Correction Requests</span>

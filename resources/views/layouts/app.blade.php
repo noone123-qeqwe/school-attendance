@@ -278,7 +278,7 @@
                                 <img src="{{ $profileImageUrl }}" class="user-avatar-img" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
                                 <div>
                                     <div class="fw-bold" style="font-size:0.9rem;">{{ Auth::user()->name }}</div>
-                                    <div style="font-size:0.75rem;color:#94a3b8;">{{ Auth::user()->student_number }}</div>
+                                    <div style="font-size:0.75rem;color:#94a3b8;">{{ Auth::user()->student_number ?: (Auth::user()->employee_id ?: Auth::user()->email) }}</div>
                                 </div>
                             </div>
                             <hr class="my-2" style="border-color:#f1f5f9;">

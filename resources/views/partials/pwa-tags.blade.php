@@ -1507,7 +1507,7 @@
         const standalone = checkIsStandalone();
         const triggers = document.querySelectorAll('.pwa-install-trigger');
         if (standalone) {
-            triggers.forEach(el => { el.style.display = 'none'; });
+            triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
             const banner = document.getElementById('pwaInstallBanner');
             if (banner) banner.style.display = 'none';
             return;
@@ -1515,7 +1515,8 @@
 
         triggers.forEach(el => {
             if (el.id === 'pwaBannerInstallBtn') return;
-            el.style.display = el.getAttribute('data-display') || 'inline-flex';
+            el.style.setProperty('display', el.getAttribute('data-display') || 'inline-flex', 'important');
+            el.style.visibility = 'visible';
         });
 
         scheduleInstallBanner();

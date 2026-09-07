@@ -122,6 +122,10 @@ class WebAuthnController extends Controller
         if (!$user) {
             return response()->json(["success" => false, "message" => "Account not found for \"{$identifier}\"."], 404);
         }
+
+        if (!$user->isActive()) {
+            return response()->json(["success" => false, "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
+        }
         
         $credentials = $user->webauthnCredentials()->exists() || DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
         if (!$credentials) {
@@ -191,6 +195,10 @@ class WebAuthnController extends Controller
         
         $user = User::find($userId);
         if (!$user) return response()->json(["success" => false, "message" => "User not found."], 401);
+
+        if (!$user->isActive()) {
+            return response()->json(["success" => false, "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
+        }
         
         try {
             $webauthn->verifyAssertion($user, $request->assertion);

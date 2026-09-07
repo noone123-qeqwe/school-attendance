@@ -448,8 +448,10 @@ class TeacherController extends Controller
         
         $request->validate([
             'status' => 'required|in:Present,Late,Absent,Excused',
-            'reason' => 'required|string|max:255',
+            'reason' => 'nullable|string|max:255',
         ]);
+
+        $reason = $request->reason ?: 'Manual override by instructor';
 
         // Verify the teacher owns the subject for this attendance record
         $teacherSubjects = Subject::where('instructor_id', $teacher->id)
@@ -474,8 +476,8 @@ class TeacherController extends Controller
         activity()
             ->performedOn($attendance)
             ->causedBy($teacher)
-            ->withProperties(['reason' => $request->reason, 'old_status' => $oldStatus, 'new_status' => $newStatus])
-            ->log("Attendance status overridden from {$oldStatus} to {$newStatus}. Reason: {$request->reason}");
+            ->withProperties(['reason' => $reason, 'old_status' => $oldStatus, 'new_status' => $newStatus])
+            ->log("Attendance status overridden from {$oldStatus} to {$newStatus}. Reason: {$reason}");
 
         return response()->json([
             'success' => true,

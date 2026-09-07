@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                 },
-                body: JSON.stringify({ status: status })
+                body: JSON.stringify({ status: status, reason: 'Manual override by instructor' })
             })
             .then(res => res.json())
             .then(data => {

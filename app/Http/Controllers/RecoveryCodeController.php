@@ -57,6 +57,11 @@ class RecoveryCodeController extends Controller
             return back()->withErrors(['identifier' => 'Invalid credentials or recovery code.'])->withInput();
         }
 
+        // Ensure user account is active before allowing login
+        if (!$user->isActive()) {
+            return back()->withErrors(['identifier' => 'Your account has been deactivated. Please contact the school administrator.'])->withInput();
+        }
+
         // Mark code as used
         $validCode->update([
             'used' => true,

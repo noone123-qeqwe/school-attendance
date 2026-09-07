@@ -457,12 +457,20 @@ class QrAttendanceController extends Controller
                 ->causedBy(Auth::user())
                 ->log("Teacher override: {$student->name} marked as {$request->status} for {$session->subject_code}");
 
-            event(new TeacherAttendanceUpdated($session->teacher_id, [
-                'type'         => 'clock_in',
-                'student_name' => $student->name,
-                'subject_code' => $session->subject_code,
-                'status'       => $att->status,
-            ]));
+            try {
+                broadcast(new TeacherAttendanceUpdated(
+                    (int) ($session->created_by ?? Auth::id()),
+                    $student->name,
+                    $session->subject_code,
+                    $att->status,
+                    'clock_in'
+                ));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Teacher attendance broadcast failed on override', [
+                    'error' => $e->getMessage(),
+                    'session_id' => $session->id,
+                ]);
+            }
 
             return $att;
         }, 3);
