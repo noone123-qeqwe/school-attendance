@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.1'),
-    'default_version' => env('APP_LATEST_VERSION', '2.3.1'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.2'),
+    'default_version' => env('APP_LATEST_VERSION', '2.3.2'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,23 @@ return [
     |
     */
     'releases' => [
+        '2.3.2' => [
+            'version' => '2.3.2',
+            'version_tag' => 'v2.3.2',
+            'title' => 'Smart Attendance Branding & App Update',
+            'description' => 'Updated application branding to Smart Attendance with automatic over-the-air launcher icon and home screen synchronization.',
+            'features' => [
+                'Official app name and home screen title updated to Smart Attendance',
+                'Automatic in-place home screen label synchronization without requiring re-download',
+            ],
+            'improvements' => [
+                'Enhanced manifest cache-busting for immediate mobile client detection',
+                'Updated service worker cache and offline manifest resolution',
+            ],
+            'bugFixes' => [],
+            'security' => [],
+            'released_at' => '2026-09-08',
+        ],
         '2.3.1' => [
             'version' => '2.3.1',
             'version_tag' => 'v2.3.1',

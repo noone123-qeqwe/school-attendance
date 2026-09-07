@@ -20,7 +20,7 @@
 <meta name="sw-build-mtime" content="{{ $swFileMtime }}">
 
 <!-- PWA Manifest & Icons -->
-<link rel="manifest" href="/manifest.json">
+<link rel="manifest" href="/manifest.json?v={{ file_exists(public_path('manifest.json')) ? filemtime(public_path('manifest.json')) : '2.3.2' }}">
 <link rel="apple-touch-icon" href="/images/icons/icon-192x192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/images/icons/icon-180x180.png">
 <link rel="apple-touch-icon" sizes="152x152" href="/images/icons/icon-152x152.png">

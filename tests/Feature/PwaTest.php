@@ -15,13 +15,13 @@ class PwaTest extends TestCase
         $manifest = json_decode($jsonContent, true);
 
         $this->assertNotNull($manifest, 'manifest.json must be valid JSON');
-        $this->assertEquals('Osmena Attendance', $manifest['name']);
-        $this->assertEquals('Attendance', $manifest['short_name']);
+        $this->assertEquals('Smart Attendance', $manifest['name']);
+        $this->assertEquals('Smart Attendance', $manifest['short_name']);
         $this->assertEquals('fullscreen', $manifest['display']);
         $this->assertEquals('/', $manifest['start_url']);
         $this->assertEquals('#1a1a1a', $manifest['background_color']);
         $this->assertEquals('#1a1a1a', $manifest['theme_color']);
-        $this->assertEquals((string)config('changelog.default_version', '2.3.1'), $manifest['version']);
+        $this->assertEquals((string)config('changelog.default_version', '2.3.2'), $manifest['version']);
         $this->assertArrayHasKey('launch_handler', $manifest);
         
         $this->assertNotEmpty($manifest['icons']);
