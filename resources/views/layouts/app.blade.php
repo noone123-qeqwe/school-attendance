@@ -1136,9 +1136,6 @@
     </script>
     @endauth
     
-    <!-- Native App Top Navigation Bar -->
-    <div id="native-app-progress" style="position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: linear-gradient(90deg, #cfa46f, #ffd166, #4ade80); z-index: 100000; transition: width 0.25s ease, opacity 0.3s ease; box-shadow: 0 0 10px rgba(207,164,111,0.8); pointer-events: none;"></div>
-
     <!-- Global Loading Overlay -->
     <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(17,10,10,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
         <div style="width: 56px; height: 56px; border: 3px solid rgba(212,175,55,0.15); border-top-color: #cfa46f; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
@@ -1165,7 +1162,7 @@
             }
         }, { passive: true });
 
-        // ── Seamless Page Transitions & Instant Navigation Bar ──
+        // ── Seamless Page Transitions ──
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a');
             if (!link) return;
@@ -1178,13 +1175,6 @@
             try {
                 const targetUrl = new URL(href, window.location.origin);
                 if (targetUrl.origin === window.location.origin && targetUrl.pathname !== window.location.pathname) {
-                    const bar = document.getElementById('native-app-progress');
-                    if (bar) {
-                        bar.style.opacity = '1';
-                        bar.style.width = '40%';
-                        setTimeout(() => { if (bar) bar.style.width = '85%'; }, 100);
-                    }
-
                     // Apply smooth page exit animation
                     const pageEnterEl = document.querySelector('.page-enter');
                     if (pageEnterEl && window.innerWidth <= 768) {
@@ -1195,14 +1185,6 @@
         });
 
         window.addEventListener('pageshow', function() {
-            const bar = document.getElementById('native-app-progress');
-            if (bar) {
-                bar.style.width = '100%';
-                setTimeout(() => {
-                    bar.style.opacity = '0';
-                    setTimeout(() => { bar.style.width = '0%'; }, 250);
-                }, 100);
-            }
             const pageEnterEl = document.querySelector('.page-enter');
             if (pageEnterEl) {
                 pageEnterEl.classList.remove('page-exit');
