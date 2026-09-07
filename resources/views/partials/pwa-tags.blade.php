@@ -1203,6 +1203,9 @@
         ensurePwaModalsInBody();
     }
 
+    const pageLoadTimestamp = Math.floor(Date.now() / 1000);
+    let latestServerTimestamp = 0;
+
     function showAppUpdatePopup(version, force = false, changelog = null) {
         if (version) latestDetectedVersion = version;
 
@@ -1218,17 +1221,17 @@
         const currentInstalled = getInstalledVersion();
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
 
-        // Under NO circumstances should an update popup show if installed >= target!
-        if (compareSemver(targetVersion, currentInstalled) <= 0) {
-            return;
-        }
-
         const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
         const localDismissed = localStorage.getItem('pwa_update_dismissed_ver');
-        const isDismissed = (sessionDismissed === targetVersion) || (localDismissed === targetVersion);
+        const tsDismissed = sessionStorage.getItem('pwa_update_dismissed_ts');
+        
+        const isDismissed = (!force) && (
+            sessionDismissed === targetVersion || 
+            (latestServerTimestamp && tsDismissed === String(latestServerTimestamp))
+        );
 
-        // Only block if this EXACT version was dismissed AND not forced
-        if (!force && isDismissed) {
+        // Only block if this EXACT version / timestamp was dismissed AND not forced
+        if (isDismissed) {
             return;
         }
 
@@ -1298,7 +1301,9 @@
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         if (targetVersion) {
             sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
-            localStorage.setItem('pwa_update_dismissed_ver', targetVersion);
+        }
+        if (latestServerTimestamp) {
+            sessionStorage.setItem('pwa_update_dismissed_ts', String(latestServerTimestamp));
         }
     }
 
@@ -1329,13 +1334,18 @@
                 if (data) {
                     latestVer = getLatestVersion(data);
                     latestDetectedVersion = latestVer;
+                    if (data.timestamp) {
+                        latestServerTimestamp = data.timestamp;
+                    }
                     if (data.changelog) {
                         updateChangelog = data.changelog;
                         updateChangelogUI(updateChangelog);
                     }
 
-                    // Semantic comparison: Latest Version > Installed Version
-                    if (compareSemver(latestVer, installedVer) > 0) {
+                    // Semantic comparison OR Build timestamp update OR waiting service worker
+                    if (compareSemver(latestVer, installedVer) > 0 ||
+                        (data.timestamp && data.timestamp > pageLoadTimestamp) ||
+                        (swRegistration && swRegistration.waiting)) {
                         isUpdateAvailable = true;
                     }
                 }
@@ -1374,7 +1384,7 @@
                 });
                 swRegistration = reg;
 
-                // 1. Check version on load (do NOT force-override user dismissal)
+                // 1. Check version on load
                 try { reg.update(); } catch(e) {}
                 checkServerVersion(false);
 
@@ -1394,14 +1404,7 @@
 
                 // 4. If an update is already downloaded and waiting in background:
                 if (reg.waiting) {
-                    const currentInstalled = getInstalledVersion();
-                    const latest = latestDetectedVersion || getLatestVersion();
-                    if (compareSemver(latest, currentInstalled) > 0) {
-                        showAppUpdatePopup(latest, false);
-                    } else {
-                        // Current installed version is already up to date; silently activate worker
-                        reg.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
-                    }
+                    showAppUpdatePopup(latestDetectedVersion || getLatestVersion(), false);
                 }
 
                 // 5. When a new update is found and finishes installing in the background
