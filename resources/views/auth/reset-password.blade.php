@@ -115,14 +115,14 @@
                 <label class="field-label">New Password</label>
                 <div class="pw-wrap">
                     <input type="password" name="password" id="pw1" class="field-input" placeholder="At least 8 characters" required>
-                    <button type="button" class="eye-btn" onclick="togglePw('pw1',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                    <button type="button" class="eye-btn" onclick="togglePw('pw1',this,event)" data-toggle-password="pw1" aria-controls="pw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                 </div>
             </div>
             <div>
                 <label class="field-label">Confirm Password</label>
                 <div class="pw-wrap">
                     <input type="password" name="password_confirmation" id="pw2" class="field-input" placeholder="Repeat new password" required>
-                    <button type="button" class="eye-btn" onclick="togglePw('pw2',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                    <button type="button" class="eye-btn" onclick="togglePw('pw2',this,event)" data-toggle-password="pw2" aria-controls="pw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                 </div>
             </div>
             <button type="submit" class="submit-btn">
@@ -132,19 +132,52 @@
     </div>
 </div>
 
-<script>
-function togglePw(id, btn) {
+<script @cspNonce>
+function togglePw(id, btn, e) {
+    if (e) {
+        if (e._pwToggled) return;
+        e._pwToggled = true;
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+    }
     if (window.togglePassword) {
-        window.togglePassword(id, btn);
+        window.togglePassword(id, btn, e);
         return;
     }
     const i = typeof id === 'string' ? document.getElementById(id) : id;
     if (!i) return;
+
+    let start = null;
+    let end = null;
+    try {
+        start = i.selectionStart;
+        end = i.selectionEnd;
+    } catch (err) {}
+
     const isPw = i.type === 'password';
     i.type = isPw ? 'text' : 'password';
     const ic = btn ? btn.querySelector('i') : null;
     if (ic) ic.className = isPw ? 'bi bi-eye' : 'bi bi-eye-slash';
-    if (btn) btn.style.color = isPw ? '#d8b35c' : '';
+    if (btn) {
+        btn.style.color = isPw ? '#d8b35c' : '';
+        const isConf = i.name === 'password_confirmation' || i.id === 'pw2';
+        const label = isPw 
+            ? (isConf ? 'Hide password confirmation' : 'Hide password')
+            : (isConf ? 'Show password confirmation' : 'Show password');
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+        btn.setAttribute('aria-pressed', isPw ? 'true' : 'false');
+    }
+
+    try {
+        i.focus();
+        if (start !== null && end !== null) {
+            i.setSelectionRange(start, end);
+        }
+    } catch (err) {}
 }
+window.togglePw = togglePw;
+window.togglePassword = togglePw;
+window.toggleEye = togglePw;
 </script>
 @endsection

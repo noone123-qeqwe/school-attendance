@@ -2478,22 +2478,36 @@ input:focus, select:focus, textarea:focus, button:focus {
     background: transparent !important;
     border: none !important;
     outline: none !important;
-    padding: 6px !important;
+    padding: 0 !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
     line-height: 1 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     user-select: none !important;
     -webkit-tap-highlight-color: transparent !important;
+    touch-action: manipulation !important;
     color: rgba(255, 255, 255, 0.65) !important;
+    border-radius: 8px !important;
+    transition: color 0.15s ease, background 0.15s ease !important;
 }
 
 .eye-btn:hover, .eye-toggle:hover, [data-toggle-password]:hover {
     color: #ffffff !important;
 }
 
+.eye-btn:focus-visible, .eye-toggle:focus-visible, [data-toggle-password]:focus-visible {
+    outline: 2px solid rgba(212, 175, 55, 0.75) !important;
+    outline-offset: 2px !important;
+    color: #ffffff !important;
+}
+
 .eye-btn i, .eye-toggle i, [data-toggle-password] i {
     pointer-events: none !important;
+    font-size: 1.15rem !important;
 }
 
 

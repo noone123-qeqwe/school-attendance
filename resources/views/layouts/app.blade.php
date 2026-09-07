@@ -1230,24 +1230,52 @@
             });
 
             // ── Universal Global Password Toggle Handler ──
-            function togglePassword(inputId, btn) {
+            function togglePassword(inputId, btn, e) {
+                if (e) {
+                    if (e._pwToggled) return;
+                    e._pwToggled = true;
+                    if (e.preventDefault) e.preventDefault();
+                    if (e.stopPropagation) e.stopPropagation();
+                }
                 if (!inputId) return;
                 const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
                 if (!input) return;
 
+                let button = btn;
+                if (!button && typeof inputId === 'string') {
+                    button = document.querySelector(`button[data-toggle-password="${inputId}"], button[aria-controls="${inputId}"], button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-btn, .eye-toggle, [class*="eye"]');
+                }
+
+                let start = null;
+                let end = null;
+                try {
+                    start = input.selectionStart;
+                    end = input.selectionEnd;
+                } catch (err) {}
+
                 const isPassword = input.type === 'password';
                 input.type = isPassword ? 'text' : 'password';
 
-                let button = btn;
-                if (!button && typeof inputId === 'string') {
-                    button = document.querySelector(`button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-btn, .eye-toggle, [class*="eye"]');
-                }
                 if (button) {
                     const icon = button.querySelector('i');
                     if (icon) {
                         icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
                     }
+                    const isConf = input.name === 'password_confirmation' || (input.id && (input.id.includes('2') || input.id.includes('conf')));
+                    const label = isPassword 
+                        ? (isConf ? 'Hide password confirmation' : 'Hide password')
+                        : (isConf ? 'Show password confirmation' : 'Show password');
+                    button.setAttribute('aria-label', label);
+                    button.setAttribute('title', label);
+                    button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
                 }
+
+                try {
+                    input.focus();
+                    if (start !== null && end !== null) {
+                        input.setSelectionRange(start, end);
+                    }
+                } catch (err) {}
             }
             window.togglePassword = togglePassword;
             window.togglePw = togglePassword;
@@ -1256,16 +1284,36 @@
             document.addEventListener('click', function(e) {
                 const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
                 if (!btn) return;
-                if (btn.hasAttribute('onclick')) return;
 
-                e.preventDefault();
                 const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
                 let input = targetId ? document.getElementById(targetId) : null;
                 if (!input && btn.parentElement) {
                     input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
                 }
                 if (input) {
-                    togglePassword(input, btn);
+                    togglePassword(input, btn, e);
+                }
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
+                    if (!btn) return;
+                    const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+                    let input = targetId ? document.getElementById(targetId) : null;
+                    if (!input && btn.parentElement) {
+                        input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+                    }
+                    if (input) {
+                        togglePassword(input, btn, e);
+                    }
+                }
+            });
+
+            document.addEventListener('mousedown', function(e) {
+                const btn = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password], [id^="btn-toggle-password"]');
+                if (btn) {
+                    e.preventDefault();
                 }
             });
         });

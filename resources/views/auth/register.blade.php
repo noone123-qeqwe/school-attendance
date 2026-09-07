@@ -633,14 +633,14 @@
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password">
                             <input type="password" name="password" id="password" placeholder=" " required autocomplete="new-password">
                             <label for="password">Password (Min 8 chars)</label>
-                            <button type="button" class="eye-btn" id="btn-toggle-password" aria-label="Toggle password visibility"><i class="bi bi-eye-slash"></i></button>
+                            <button type="button" class="eye-btn" id="btn-toggle-password" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                         </div>
                         <div class="field-feedback" id="feedback-password"></div>
 
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password_confirmation">
                             <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required autocomplete="new-password">
                             <label for="password_confirmation">Confirm Password</label>
-                            <button type="button" class="eye-btn" id="btn-toggle-password-conf" aria-label="Toggle password confirmation visibility"><i class="bi bi-eye-slash"></i></button>
+                            <button type="button" class="eye-btn" id="btn-toggle-password-conf" data-toggle-password="password_confirmation" aria-controls="password_confirmation" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                         </div>
                         <div class="field-feedback" id="feedback-password_confirmation"></div>
 
@@ -1219,18 +1219,54 @@
         }
 
         // Password visibility toggle
-        function togglePassword(id, btn) {
-            const input = document.getElementById(id);
-            if (!input) return;
-            const icon = btn ? btn.querySelector('i') : null;
-            if (input.type === 'password') {
-                input.type = 'text';
-                if (icon) icon.className = 'bi bi-eye';
-            } else {
-                input.type = 'password';
-                if (icon) icon.className = 'bi bi-eye-slash';
+        function togglePassword(id, btn, e) {
+            if (e) {
+                if (e._pwToggled) return;
+                e._pwToggled = true;
+                if (e.preventDefault) e.preventDefault();
+                if (e.stopPropagation) e.stopPropagation();
             }
+            const input = typeof id === 'string' ? document.getElementById(id) : id;
+            if (!input) return;
+
+            let start = null;
+            let end = null;
+            try {
+                start = input.selectionStart;
+                end = input.selectionEnd;
+            } catch (err) {}
+
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+
+            let button = btn;
+            if (!button && typeof id === 'string') {
+                button = document.querySelector(`button[data-toggle-password="${id}"], button[aria-controls="${id}"], button[onclick*="${id}"]`) || input.parentElement?.querySelector('.eye-btn, .eye-toggle, [class*="eye"]');
+            }
+            if (button) {
+                const icon = button.querySelector('i');
+                if (icon) {
+                    icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
+                }
+                const isConf = input.id === 'password_confirmation' || input.name === 'password_confirmation';
+                const label = isPassword 
+                    ? (isConf ? 'Hide password confirmation' : 'Hide password')
+                    : (isConf ? 'Show password confirmation' : 'Show password');
+                button.setAttribute('aria-label', label);
+                button.setAttribute('title', label);
+                button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+            }
+
+            try {
+                input.focus();
+                if (start !== null && end !== null) {
+                    input.setSelectionRange(start, end);
+                }
+            } catch (err) {}
         }
+        window.togglePassword = togglePassword;
+        window.togglePw = togglePassword;
+        window.toggleEye = togglePassword;
 
         // OTP Boxes & Countdown
         const otpBoxes = document.querySelectorAll('.otp-box');
@@ -1702,16 +1738,20 @@
             const togglePassBtn = document.getElementById('btn-toggle-password');
             if (togglePassBtn) {
                 togglePassBtn.addEventListener('click', (e) => {
+                    togglePassword('password', togglePassBtn, e);
+                });
+                togglePassBtn.addEventListener('mousedown', (e) => {
                     e.preventDefault();
-                    togglePassword('password', togglePassBtn);
                 });
             }
 
             const togglePassConfBtn = document.getElementById('btn-toggle-password-conf');
             if (togglePassConfBtn) {
                 togglePassConfBtn.addEventListener('click', (e) => {
+                    togglePassword('password_confirmation', togglePassConfBtn, e);
+                });
+                togglePassConfBtn.addEventListener('mousedown', (e) => {
                     e.preventDefault();
-                    togglePassword('password_confirmation', togglePassConfBtn);
                 });
             }
 

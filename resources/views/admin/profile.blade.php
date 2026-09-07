@@ -297,14 +297,14 @@
                                 <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
                                 <div class="pw-wrap">
                                     <input type="password" name="password" id="apw1" class="adm-form-input" placeholder="At least 8 characters" required>
-                                    <button type="button" class="eye-btn" onclick="togglePw('apw1',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                                    <button type="button" class="eye-btn" onclick="togglePw('apw1',this,event)" data-toggle-password="apw1" aria-controls="apw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                             </div>
                             <div class="mb-4">
                                 <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
                                 <div class="pw-wrap">
                                     <input type="password" name="password_confirmation" id="apw2" class="adm-form-input" placeholder="Repeat new password" required>
-                                    <button type="button" class="eye-btn" onclick="togglePw('apw2',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                                    <button type="button" class="eye-btn" onclick="togglePw('apw2',this,event)" data-toggle-password="apw2" aria-controls="apw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                             </div>
                             <div style="display:flex;gap:10px;">
@@ -370,18 +370,42 @@
 </div>
 
 <script>
-function togglePw(id, btn) {
+function togglePw(id, btn, e) {
+    if (e && e.preventDefault) e.preventDefault();
     if (window.togglePassword) {
-        window.togglePassword(id, btn);
+        window.togglePassword(id, btn, e);
         return;
     }
     const i = typeof id === 'string' ? document.getElementById(id) : id;
     if (!i) return;
+
+    let start = null;
+    let end = null;
+    try {
+        start = i.selectionStart;
+        end = i.selectionEnd;
+    } catch (err) {}
+
     const isPw = i.type === 'password';
     i.type = isPw ? 'text' : 'password';
     const ic = btn ? btn.querySelector('i') : null;
     if (ic) ic.className = isPw ? 'bi bi-eye' : 'bi bi-eye-slash';
-    if (btn) btn.style.color = isPw ? '#5c001d' : '';
+    if (btn) {
+        btn.style.color = isPw ? '#5c001d' : '';
+        const isConf = i.name === 'password_confirmation' || i.id === 'apw2';
+        const label = isPw 
+            ? (isConf ? 'Hide password confirmation' : 'Hide password')
+            : (isConf ? 'Show password confirmation' : 'Show password');
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+        btn.setAttribute('aria-pressed', isPw ? 'true' : 'false');
+    }
+
+    try {
+        if (start !== null && end !== null && document.activeElement === i) {
+            i.setSelectionRange(start, end);
+        }
+    } catch (err) {}
 }
 
 // Admin OTP digit handling

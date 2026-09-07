@@ -665,7 +665,7 @@
         <div id="footerModalBody"></div>
     </div>
 </div>
-<script>
+<script @cspNonce>
 const footerModals = {
     privacy: `<h3 style="margin:0 0 16px;color:#cfa46f;font-size:1.2rem;"><i class="bi bi-shield-lock-fill me-2"></i>Privacy Policy</h3>
         <p style="color:#b39b82;line-height:1.7;font-size:0.9rem;">The Smart Classroom Attendance System collects only the data necessary for attendance tracking. This includes:</p>
@@ -707,44 +707,102 @@ function closeFooterModal() {
     overlay.style.opacity = '0';
     document.getElementById('footerModalContent').style.transform = 'translate(-50%,-50%) scale(0.95)';
     setTimeout(() => { overlay.style.display = 'none'; }, 250);
-function toggleEye(inputId, btn) {
+}
+
+function toggleEye(inputId, btn, e) {
+    if (e) {
+        if (e._pwToggled) return;
+        e._pwToggled = true;
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+    }
     if (!inputId) return;
     const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
     if (!input) return;
 
+    let button = btn;
+    if (!button && typeof inputId === 'string') {
+        button = document.querySelector(`button[data-toggle-password="${inputId}"], button[aria-controls="${inputId}"], button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-toggle, .eye-btn, [class*="eye"]');
+    }
+
+    let start = null;
+    let end = null;
+    try {
+        start = input.selectionStart;
+        end = input.selectionEnd;
+    } catch (err) {}
+
     const isPassword = input.type === 'password';
     input.type = isPassword ? 'text' : 'password';
 
-    let button = btn;
-    if (!button && typeof inputId === 'string') {
-        button = document.querySelector(`button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-toggle, .eye-btn, [class*="eye"]');
-    }
     if (button) {
         const icon = button.querySelector('i');
         if (icon) {
             icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
         }
-        button.style.color = isPassword ? '#ffffff' : '';
+        const isConf = input.name === 'password_confirmation' || (input.id && (input.id.includes('2') || input.id.includes('conf')));
+        const label = isPassword 
+            ? (isConf ? 'Hide password confirmation' : 'Hide password')
+            : (isConf ? 'Show password confirmation' : 'Show password');
+        button.setAttribute('aria-label', label);
+        button.setAttribute('title', label);
+        button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
     }
+
+    try {
+        input.focus();
+        if (start !== null && end !== null) {
+            input.setSelectionRange(start, end);
+        }
+    } catch (err) {}
 }
 window.toggleEye = toggleEye;
 window.togglePw = toggleEye;
 window.togglePassword = toggleEye;
 
-document.addEventListener('DOMContentLoaded', function() {
+function setupPasswordToggleListeners() {
     document.addEventListener('click', function(e) {
         const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
         if (!btn) return;
+
         const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
         let input = targetId ? document.getElementById(targetId) : null;
         if (!input && btn.parentElement) {
             input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
         }
         if (input) {
-            toggleEye(input, btn);
+            toggleEye(input, btn, e);
         }
     });
-});
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === ' ' || e.key === 'Enter') {
+            const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+            if (!btn) return;
+            const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+            let input = targetId ? document.getElementById(targetId) : null;
+            if (!input && btn.parentElement) {
+                input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+            }
+            if (input) {
+                toggleEye(input, btn, e);
+            }
+        }
+    });
+
+    document.addEventListener('mousedown', function(e) {
+        const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+        if (btn) {
+            e.preventDefault();
+        }
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupPasswordToggleListeners);
+} else {
+    setupPasswordToggleListeners();
+}
 </script>
 
 <!-- Auth scene -->
@@ -818,7 +876,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="password" name="password" id="loginPassword"
                        class="glass-input has-eye @error('password') is-invalid @enderror"
                        placeholder="Password" required autocomplete="current-password">
-                <button type="button" class="eye-toggle" onclick="toggleEye('loginPassword',this)" onpointerdown="event.preventDefault();" onmousedown="event.preventDefault();" tabindex="-1" aria-label="Toggle password visibility">
+                <button type="button" class="eye-toggle" onclick="toggleEye('loginPassword',this,event)" data-toggle-password="loginPassword" aria-controls="loginPassword" aria-label="Show password" title="Show password" aria-pressed="false">
                     <i class="bi bi-eye-slash"></i>
                 </button>
             </div>
@@ -958,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="glass-input-wrap" style="margin-bottom:0;">
                     <i class="bi bi-lock-fill g-icon"></i>
                     <input type="password" id="bioModalPasswordInput" class="glass-input has-eye" placeholder="Enter password to verify account" autocomplete="current-password">
-                    <button type="button" class="eye-toggle" onclick="toggleEye('bioModalPasswordInput',this)" tabindex="-1">
+                    <button type="button" class="eye-toggle" onclick="toggleEye('bioModalPasswordInput',this,event)" aria-label="Show password" title="Show password" aria-pressed="false">
                         <i class="bi bi-eye-slash"></i>
                     </button>
                 </div>
@@ -1012,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 </style>
 
-<script>
+<script @cspNonce>
 // ── PWA INSTALL BUTTON CONTROLLER (LOGIN PAGE) ──────────────────────────────
 (function() {
     function checkStandalone() {
@@ -1095,7 +1153,7 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
-<script>
+<script @cspNonce>
 // FingerprintJS initialization (safely wrapped)
 try {
     const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
@@ -1230,7 +1288,14 @@ function focusPasswordField() {
         passInput.focus();
         passInput.style.borderColor = '#d4af37';
         passInput.style.boxShadow = '0 0 0 4px rgba(212, 175, 55, 0.35)';
-     // ── BIOMETRIC MODAL CONTROLLER & SETUP FLOW ─────────────────────────────────
+        setTimeout(function() {
+            passInput.style.borderColor = '';
+            passInput.style.boxShadow = '';
+        }, 1500);
+    }
+}
+
+// ── BIOMETRIC MODAL CONTROLLER & SETUP FLOW ─────────────────────────────────
 let activeSetupIdentifier = '';
 
 function openBiometricModal(config) {

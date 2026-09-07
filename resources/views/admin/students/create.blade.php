@@ -178,7 +178,7 @@
                                minlength="8"
                                placeholder="Minimum 8 characters"
                                style="width: 100%; padding-right: 42px;">
-                        <button type="button" class="eye-btn" onclick="togglePassword('s_pw1', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                        <button type="button" class="eye-btn" onclick="togglePassword('s_pw1', this, event)" data-toggle-password="s_pw1" aria-controls="s_pw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                     </div>
                 </div>
 

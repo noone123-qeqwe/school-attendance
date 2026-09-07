@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/premium.css') }}">
     @include('partials.pwa-tags')
     <style>
         :root {
@@ -171,7 +172,7 @@
                     <span class="input-icon"><i class="bi bi-lock-fill"></i></span>
                     <input type="password" class="custom-input" id="password" name="password" 
                            required autocomplete="current-password" placeholder="Enter your password" style="padding-right: 42px;">
-                    <button type="button" class="eye-toggle" onclick="togglePassword('password', this)" tabindex="-1">
+                    <button type="button" class="eye-toggle" onclick="togglePassword('password', this, event)" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false">
                         <i class="bi bi-eye-slash"></i>
                     </button>
                 </div>
@@ -188,5 +189,88 @@
             </small>
         </div>
     </div>
+    <script @cspNonce>
+        function togglePassword(inputId, btn, e) {
+            if (e) {
+                if (e._pwToggled) return;
+                e._pwToggled = true;
+                if (e.preventDefault) e.preventDefault();
+                if (e.stopPropagation) e.stopPropagation();
+            }
+            if (!inputId) return;
+            const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
+            if (!input) return;
+
+            let start = null;
+            let end = null;
+            try {
+                start = input.selectionStart;
+                end = input.selectionEnd;
+            } catch (err) {}
+
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+
+            let button = btn;
+            if (!button && typeof inputId === 'string') {
+                button = document.querySelector(`button[data-toggle-password="${inputId}"], button[aria-controls="${inputId}"], button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-btn, .eye-toggle, [class*="eye"]');
+            }
+            if (button) {
+                const icon = button.querySelector('i');
+                if (icon) {
+                    icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
+                }
+                const label = isPassword ? 'Hide password' : 'Show password';
+                button.setAttribute('aria-label', label);
+                button.setAttribute('title', label);
+                button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
+            }
+
+            try {
+                input.focus();
+                if (start !== null && end !== null) {
+                    input.setSelectionRange(start, end);
+                }
+            } catch (err) {}
+        }
+        window.togglePassword = togglePassword;
+        window.togglePw = togglePassword;
+        window.toggleEye = togglePassword;
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+            if (!btn) return;
+            const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+            let input = targetId ? document.getElementById(targetId) : null;
+            if (!input && btn.parentElement) {
+                input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+            }
+            if (input) {
+                togglePassword(input, btn, e);
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === ' ' || e.key === 'Enter') {
+                const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+                if (!btn) return;
+                const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+                let input = targetId ? document.getElementById(targetId) : null;
+                if (!input && btn.parentElement) {
+                    input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+                }
+                if (input) {
+                    togglePassword(input, btn, e);
+                }
+            }
+        });
+
+        document.addEventListener('mousedown', function(e) {
+            const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+            if (btn) {
+                e.preventDefault();
+            }
+        });
+    </script>
 </body>
 </html>

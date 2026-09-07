@@ -1412,12 +1412,12 @@
                             <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Password</label>
                             <div class="pw-wrap" style="margin-bottom:10px;">
                                 <input type="password" name="password" id="spw1" class="si" placeholder="Minimum 8 characters" style="padding:9px 12px;font-size:0.84rem;" required>
-                                <button type="button" class="eye-btn" onclick="togglePw('spw1',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                                <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Confirm Password</label>
                             <div class="pw-wrap" style="margin-bottom:14px;">
                                 <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" style="padding:9px 12px;font-size:0.84rem;" required>
-                                <button type="button" class="eye-btn" onclick="togglePw('spw2',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                                <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <div style="display:flex;gap:8px;">
                                 <button type="button" onclick="cancelOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
@@ -2034,18 +2034,48 @@ async function toggleWebPush(input) {
         await WebPushManager.unsubscribe();
     }
 }
-function togglePw(id, btn) {
+function togglePw(id, btn, e) {
+    if (e) {
+        if (e._pwToggled) return;
+        e._pwToggled = true;
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+    }
     if (window.togglePassword) {
-        window.togglePassword(id, btn);
+        window.togglePassword(id, btn, e);
         return;
     }
     const i = typeof id === 'string' ? document.getElementById(id) : id;
     if (!i) return;
+
+    let start = null;
+    let end = null;
+    try {
+        start = i.selectionStart;
+        end = i.selectionEnd;
+    } catch (err) {}
+
     const isPw = i.type === 'password';
     i.type = isPw ? 'text' : 'password';
     const ic = btn ? btn.querySelector('i') : null;
     if (ic) ic.className = isPw ? 'bi bi-eye' : 'bi bi-eye-slash';
-    if (btn) btn.style.color = isPw ? '#800000' : '';
+    if (btn) {
+        btn.style.color = isPw ? '#800000' : '';
+        const isConf = i.name === 'password_confirmation' || i.id === 'spw2';
+        const label = isPw 
+            ? (isConf ? 'Hide password confirmation' : 'Hide password')
+            : (isConf ? 'Show password confirmation' : 'Show password');
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+        btn.setAttribute('aria-pressed', isPw ? 'true' : 'false');
+    }
+
+    try {
+        i.focus();
+        if (start !== null && end !== null) {
+            i.setSelectionRange(start, end);
+        }
+    } catch (err) {}
 }
 // Compact sidebar toggle
 const ct = document.getElementById('compactToggle');

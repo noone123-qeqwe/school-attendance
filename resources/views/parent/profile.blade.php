@@ -333,12 +333,12 @@
                             <label class="sl">New Password</label>
                             <div class="pw-wrap" style="margin-bottom:12px;">
                                 <input type="password" name="password" id="spw1" class="si" placeholder="At least 8 characters" required>
-                                <button type="button" class="eye-btn" onclick="togglePw('spw1',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                                <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <label class="sl">Confirm Password</label>
                             <div class="pw-wrap" style="margin-bottom:16px;">
                                 <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" required>
-                                <button type="button" class="eye-btn" onclick="togglePw('spw2',this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                                <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <div style="display:flex;gap:10px;">
                                 <button type="button" onclick="cancelOtp()" class="cancel-btn">Cancel</button>
@@ -482,8 +482,7 @@
 
 </div>
 
-
-
+<script @cspNonce>
 function updateStabsScrollArrows() {
     const nav = document.getElementById('stabsNav');
     const leftBtn = document.getElementById('stabsArrowLeft');
@@ -556,18 +555,48 @@ function switchTab(id, btn) {
     setTimeout(updateStabsScrollArrows, 300);
 }
 
-function togglePw(id, btn) {
+function togglePw(id, btn, e) {
+    if (e) {
+        if (e._pwToggled) return;
+        e._pwToggled = true;
+        if (e.preventDefault) e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+    }
     if (window.togglePassword) {
-        window.togglePassword(id, btn);
+        window.togglePassword(id, btn, e);
         return;
     }
     const i = typeof id === 'string' ? document.getElementById(id) : id;
     if (!i) return;
+
+    let start = null;
+    let end = null;
+    try {
+        start = i.selectionStart;
+        end = i.selectionEnd;
+    } catch (err) {}
+
     const isPw = i.type === 'password';
     i.type = isPw ? 'text' : 'password';
     const ic = btn ? btn.querySelector('i') : null;
     if (ic) ic.className = isPw ? 'bi bi-eye' : 'bi bi-eye-slash';
-    if (btn) btn.style.color = isPw ? '#cfa46f' : '';
+    if (btn) {
+        btn.style.color = isPw ? '#cfa46f' : '';
+        const isConf = i.name === 'password_confirmation' || i.id === 'spw2';
+        const label = isPw 
+            ? (isConf ? 'Hide password confirmation' : 'Hide password')
+            : (isConf ? 'Show password confirmation' : 'Show password');
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('title', label);
+        btn.setAttribute('aria-pressed', isPw ? 'true' : 'false');
+    }
+
+    try {
+        i.focus();
+        if (start !== null && end !== null) {
+            i.setSelectionRange(start, end);
+        }
+    } catch (err) {}
 }
 
 @if($errors->any()) switchTab('security', document.querySelectorAll('.stab')[1]); @endif

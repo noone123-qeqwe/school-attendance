@@ -30,7 +30,7 @@
                     <div class="form-floating-custom mb-3" style="position: relative;">
                         <input type="password" name="password" id="password" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
                         <label for="password" style="color:rgba(255,255,255,0.5);">New Password</label>
-                        <button type="button" class="eye-toggle" onclick="togglePassword('password', this)" tabindex="-1">
+                        <button type="button" class="eye-toggle" onclick="togglePassword('password', this, event)" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false">
                             <i class="bi bi-eye-slash"></i>
                         </button>
                     </div>
@@ -38,7 +38,7 @@
                     <div class="form-floating-custom mb-4" style="position: relative;">
                         <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
                         <label for="password_confirmation" style="color:rgba(255,255,255,0.5);">Confirm New Password</label>
-                        <button type="button" class="eye-toggle" onclick="togglePassword('password_confirmation', this)" tabindex="-1">
+                        <button type="button" class="eye-toggle" onclick="togglePassword('password_confirmation', this, event)" data-toggle-password="password_confirmation" aria-controls="password_confirmation" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false">
                             <i class="bi bi-eye-slash"></i>
                         </button>
                     </div>

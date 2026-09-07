@@ -81,14 +81,14 @@
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
                     <div style="position: relative;">
                         <input type="password" name="password" id="se_pw1" class="adm-input" required minlength="8" style="width:100%; padding-right: 42px;">
-                        <button type="button" class="eye-btn" onclick="togglePassword('se_pw1', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                        <button type="button" class="eye-btn" onclick="togglePassword('se_pw1', this, event)" data-toggle-password="se_pw1" aria-controls="se_pw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
                     <div style="position: relative;">
                         <input type="password" name="password_confirmation" id="se_pw2" class="adm-input" required minlength="8" style="width:100%; padding-right: 42px;">
-                        <button type="button" class="eye-btn" onclick="togglePassword('se_pw2', this)" tabindex="-1"><i class="bi bi-eye-slash"></i></button>
+                        <button type="button" class="eye-btn" onclick="togglePassword('se_pw2', this, event)" data-toggle-password="se_pw2" aria-controls="se_pw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                     </div>
                 </div>
                 <div class="col-12" style="margin-top:16px;">
