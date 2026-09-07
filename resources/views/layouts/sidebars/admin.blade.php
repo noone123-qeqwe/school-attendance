@@ -105,7 +105,7 @@
     
     <!-- System Dropdown -->
     @php
-        $isSystemActive = request()->routeIs('admin.system-update*') || request()->routeIs('admin.backups*') || request()->routeIs('admin.system-health*') || request()->routeIs('admin.activity.log');
+        $isSystemActive = request()->routeIs('admin.system-update*') || request()->routeIs('admin.backups*') || request()->routeIs('admin.system-health*') || request()->routeIs('admin.activity.log') || request()->routeIs('admin.policies*');
     @endphp
     <div class="sidebar-dropdown-group {{ $isSystemActive ? 'open' : '' }}">
         <button class="nav-link dropdown-toggle-btn" onclick="toggleSidebarDropdown(this)" data-title="System">
@@ -119,6 +119,9 @@
                 <span class="nav-link-text">System Maintenance</span>
             </a>
             @endif
+            <a href="{{ route('admin.policies.edit') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.policies*') ? 'active' : '' }}">
+                <span class="nav-link-text">Privacy & Terms</span>
+            </a>
             <a href="{{ route('admin.activity.log') }}" class="nav-link sub-nav-link {{ request()->routeIs('admin.activity.log') ? 'active' : '' }}">
                 <span class="nav-link-text">Audit Logs</span>
             </a>

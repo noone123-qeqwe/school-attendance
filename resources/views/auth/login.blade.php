@@ -665,8 +665,8 @@
 <div class="bottom-bar">
     <span>&copy; {{ date('Y') }} Smart Classroom Attendance System. All rights reserved.</span>
     <div class="bottom-links">
-        <a href="javascript:void(0)" data-footer-modal="privacy">Privacy Policy</a>
-        <a href="javascript:void(0)" data-footer-modal="terms">Terms of Service</a>
+        <a href="{{ route('privacy') }}">Privacy Policy</a>
+        <a href="{{ route('terms') }}">Terms & Conditions</a>
         <a href="javascript:void(0)" data-footer-modal="contact">Contact Us</a>
         <span style="color: rgba(207,164,111,0.6); font-weight: 600; margin-left: 12px; pointer-events: all;">
             v{{ config('changelog.default_version', '2.3.0') }}

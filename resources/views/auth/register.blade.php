@@ -645,6 +645,14 @@
                         </div>
                         <div class="field-feedback" id="feedback-password_confirmation"></div>
 
+                        <!-- Terms & Privacy Policy Checkbox (Unchecked by default) -->
+                        <div class="form-check text-start mt-3 mb-3" style="padding-left:1.8rem;">
+                            <input class="form-check-input" type="checkbox" name="terms" id="terms" value="1" {{ old('terms') ? 'checked' : '' }} required style="cursor:pointer; background-color:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.3);">
+                            <label class="form-check-label" for="terms" style="font-size:0.84rem; color:var(--text-muted); line-height:1.45; cursor:pointer;">
+                                I have read and understood the <a href="{{ route('privacy') }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent); text-decoration:underline;">Privacy Notice</a> and agree to the <a href="{{ route('terms') }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent); text-decoration:underline;">Terms & Conditions</a>.
+                            </label>
+                        </div>
+
                         <div class="btn-group-row">
                             <button type="button" class="btn-premium btn-secondary" id="btn-back-step2" aria-label="Back to Step 1">
                                 <i class="bi bi-arrow-left"></i>
@@ -676,6 +684,10 @@
                         <div class="text-center mb-4 mt-3" style="font-size:0.85rem; color:var(--text-muted);">
                             Code expires in <span id="timer" style="color:var(--accent); font-weight:700; font-variant-numeric: tabular-nums;">10:00</span>
                         </div>
+
+                        <p class="text-center mb-3" style="font-size:0.8rem; color:var(--text-muted); line-height:1.4;">
+                            By completing registration, you acknowledge that you have read and understood the <a href="{{ route('privacy') }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent); text-decoration:underline;">Privacy Notice</a> and agree to the <a href="{{ route('terms') }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent); text-decoration:underline;">Terms & Conditions</a>.
+                        </p>
 
                         <div class="btn-group-row">
                             <button type="button" class="btn-premium btn-secondary" id="btn-back-step3" aria-label="Back to Step 2">
@@ -710,6 +722,12 @@
 
                 <div class="auth-links" id="auth-links">
                     Already have an account? <a href="{{ route('login') }}">Sign In</a>
+                </div>
+
+                <div class="text-center mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.06); font-size:0.8rem; color:var(--text-muted);">
+                    <a href="{{ route('privacy') }}" style="color:var(--text-muted); text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Privacy Policy</a>
+                    <span class="mx-2" style="color:rgba(255,255,255,0.2);">|</span>
+                    <a href="{{ route('terms') }}" style="color:var(--text-muted); text-decoration:none;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-muted)'">Terms & Conditions</a>
                 </div>
 
 
@@ -1434,6 +1452,13 @@
                 return;
             }
 
+            const termsCheckbox = document.getElementById('terms');
+            if (termsCheckbox && !termsCheckbox.checked) {
+                showAlert('You must read and agree to the Privacy Notice and Terms & Conditions to create an account.');
+                termsCheckbox.focus();
+                return;
+            }
+
             const requestId = (typeof crypto !== 'undefined' && crypto.randomUUID)
                 ? crypto.randomUUID()
                 : 'req_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
@@ -1571,6 +1596,13 @@
 
         function verifyOtpAndSubmit() {
             hideAlert();
+
+            const termsCheckbox = document.getElementById('terms');
+            if (termsCheckbox && !termsCheckbox.checked) {
+                showAlert('You must read and agree to the Privacy Notice and Terms & Conditions to create an account.');
+                return;
+            }
+
             const otp = Array.from(otpBoxes).map(b => b.value).join('');
             if (otp.length !== 6) { showAlert("Please enter the full 6-digit verification code."); return; }
 

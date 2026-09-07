@@ -254,6 +254,12 @@
         <div class="resend-link mt-3">
             <a href="{{ route('login') }}" style="color:rgba(248,231,211,0.6); font-size:0.85rem;"><i class="bi bi-arrow-left me-1"></i>Back to Sign In</a>
         </div>
+
+        <div class="text-center mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.06); font-size:0.8rem; color:rgba(248,231,211,0.6);">
+            <a href="{{ route('privacy') }}" target="_blank" style="color:rgba(248,231,211,0.6); text-decoration:none;" onmouseover="this.style.color='#d8b35c'" onmouseout="this.style.color='rgba(248,231,211,0.6)'">Privacy Policy</a>
+            <span class="mx-2" style="opacity:0.3;">|</span>
+            <a href="{{ route('terms') }}" target="_blank" style="color:rgba(248,231,211,0.6); text-decoration:none;" onmouseover="this.style.color='#d8b35c'" onmouseout="this.style.color='rgba(248,231,211,0.6)'">Terms & Conditions</a>
+        </div>
     </div>
 </div>
 

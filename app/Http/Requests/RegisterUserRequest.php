@@ -73,6 +73,17 @@ class RegisterUserRequest extends FormRequest
             }
         }
 
+        if (!$this->routeIs('admin.*')) {
+            $rules['terms'] = 'accepted';
+        }
+
         return $rules;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'terms.accepted' => 'You must read and agree to the Privacy Notice and Terms & Conditions to create an account.',
+        ];
     }
 }

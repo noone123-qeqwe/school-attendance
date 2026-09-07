@@ -164,6 +164,10 @@ if (app()->environment('local', 'testing')) {
     });
 }
 
+// Public Legal Policies (accessible to guests and authenticated users)
+Route::get('/privacy', [App\Http\Controllers\LegalController::class, 'privacy'])->name('privacy');
+Route::get('/terms', [App\Http\Controllers\LegalController::class, 'terms'])->name('terms');
+
 // Guest Routes (Public)
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () { return view('auth.login'); })->name('login');
@@ -663,5 +667,10 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/reports', [App\Http\Controllers\AdminController::class, 'reports'])->name('reports');
     Route::get('/reports/pdf', [App\Http\Controllers\AdminController::class, 'exportReportsPdf'])->name('reports.pdf');
     Route::get('/reports/csv', [App\Http\Controllers\AdminController::class, 'exportReportsCsv'])->name('reports.csv');
+
+    // Policy & Legal Management
+    Route::get('/policies', [App\Http\Controllers\Admin\PolicyController::class, 'edit'])->name('policies.edit');
+    Route::post('/policies', [App\Http\Controllers\Admin\PolicyController::class, 'update'])->name('policies.update');
+    Route::post('/policies/reset', [App\Http\Controllers\Admin\PolicyController::class, 'reset'])->name('policies.reset');
 
 });
