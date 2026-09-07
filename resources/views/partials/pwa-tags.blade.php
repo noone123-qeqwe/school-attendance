@@ -139,124 +139,460 @@
         color: #F3E7CD;
     }
 
-    /* Universal PWA Install Guide Modal */
+    /* ── Redesigned Mobile App Download & Installation Modal ── */
     .pwa-ios-modal {
         position: fixed;
         inset: 0;
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        background: rgba(0, 0, 0, 0.78);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
         z-index: 100000;
         display: none;
         align-items: flex-end;
         justify-content: center;
-        padding: 20px;
-        animation: pwaFadeIn 0.3s ease;
+        padding: 0;
+        animation: pwaFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     @media (min-width: 769px) {
         .pwa-ios-modal {
             align-items: center;
+            padding: 20px;
         }
     }
 
-    .pwa-ios-arrow-pointer {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 6px;
-        margin-top: 14px;
-        padding-top: 10px;
-        border-top: 1px dashed rgba(207, 164, 111, 0.25);
-    }
-
-    @keyframes pwaBounceDown {
-        0%, 100% { transform: translateY(0); }
-        50% { transform: translateY(6px); }
-    }
-    .pwa-bounce-anim {
-        animation: pwaBounceDown 1.3s infinite ease-in-out;
-    }
-
-    .pwa-btn-loading {
-        opacity: 0.8 !important;
-        pointer-events: none !important;
-        cursor: wait !important;
-    }
-    .pwa-spinner {
-        display: inline-block;
-        width: 13px;
-        height: 13px;
-        border: 2px solid currentColor;
-        border-right-color: transparent;
-        border-radius: 50%;
-        animation: pwaSpin 0.75s linear infinite;
-        vertical-align: -2px;
-        margin-right: 6px;
-    }
-    @keyframes pwaSpin {
-        to { transform: rotate(360deg); }
-    }
-
     .pwa-ios-sheet {
-        background: rgba(26, 17, 16, 0.98);
-        border: 1px solid rgba(207, 164, 111, 0.35);
-        border-radius: 24px;
-        padding: 28px 24px;
-        max-width: 420px;
+        background: linear-gradient(180deg, #1C1111 0%, #120A0A 100%);
+        border: 1.5px solid rgba(207, 164, 111, 0.35);
+        border-bottom: none;
+        border-radius: 26px 26px 0 0;
+        padding: 16px 18px 24px;
+        max-width: 440px;
         width: 100%;
         color: #F3E7CD;
         text-align: center;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+        box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.75);
         position: relative;
+        max-height: min(90vh, 640px);
+        overflow-y: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
     }
 
-    .pwa-ios-sheet h3 {
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #F3E7CD;
-        margin-bottom: 10px;
+    .pwa-ios-sheet::-webkit-scrollbar {
+        display: none;
     }
 
-    .pwa-ios-sheet p {
-        font-size: 0.88rem;
-        color: #B39B82;
-        line-height: 1.5;
-        margin-bottom: 20px;
+    @media (min-width: 769px) {
+        .pwa-ios-sheet {
+            border-radius: 24px;
+            border-bottom: 1.5px solid rgba(207, 164, 111, 0.35);
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+            padding: 22px 22px 26px;
+        }
     }
 
-    .pwa-ios-steps {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        text-align: left;
-        margin-bottom: 24px;
-        background: rgba(17, 10, 10, 0.7);
-        border-radius: 14px;
-        padding: 16px;
-        border: 1px solid rgba(207, 164, 111, 0.2);
+    .pwa-sheet-handle {
+        width: 38px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 99px;
+        margin: 0 auto 12px;
+    }
+    @media (min-width: 769px) {
+        .pwa-sheet-handle {
+            display: none;
+        }
     }
 
-    .pwa-ios-step {
+    .pwa-sheet-top-row {
         display: flex;
         align-items: center;
-        gap: 12px;
-        font-size: 0.85rem;
-        color: #F3E7CD;
+        justify-content: space-between;
+        margin-bottom: 12px;
     }
 
-    .pwa-ios-step-num {
-        width: 24px;
-        height: 24px;
+    .pwa-sheet-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pwa-sheet-title-icon {
+        font-size: 1rem;
+        color: var(--gold, #CFA46F);
+        display: flex;
+        align-items: center;
+    }
+
+    .pwa-sheet-title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #F3E7CD;
+        letter-spacing: 0.4px;
+        margin: 0;
+        text-transform: uppercase;
+    }
+
+    .pwa-sheet-close-btn {
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
-        background: #CFA46F;
-        color: #110A0A;
-        font-weight: 700;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #B39B82;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.75rem;
+        cursor: pointer;
+        font-size: 1.15rem;
+        line-height: 1;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .pwa-sheet-close-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        color: #F3E7CD;
+    }
+
+    /* ── Main App Hero Card ── */
+    .pwa-hero-card {
+        background: linear-gradient(145deg, rgba(207, 164, 111, 0.12) 0%, rgba(28, 16, 16, 0.9) 100%);
+        border: 1.5px solid rgba(207, 164, 111, 0.32);
+        border-radius: 18px;
+        padding: 14px 14px 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(207, 164, 111, 0.2);
+        margin-bottom: 12px;
+        text-align: center;
+    }
+
+    .pwa-hero-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-align: left;
+        margin-bottom: 10px;
+    }
+
+    .pwa-hero-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        border: 1.5px solid rgba(207, 164, 111, 0.45);
+        object-fit: cover;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         flex-shrink: 0;
+        background: #120A0A;
+    }
+
+    .pwa-hero-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .pwa-hero-badge {
+        font-size: 0.68rem;
+        color: #E8C064;
+        background: rgba(207, 164, 111, 0.15);
+        border: 1px solid rgba(207, 164, 111, 0.3);
+        border-radius: 6px;
+        padding: 1.5px 7px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
+
+    .pwa-hero-verified {
+        font-size: 0.68rem;
+        color: #4ADE80;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-weight: 600;
+    }
+
+    .pwa-hero-title {
+        font-size: 0.86rem;
+        font-weight: 800;
+        color: #F3E7CD;
+        letter-spacing: 0.2px;
+        line-height: 1.25;
+        margin: 4px 0 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pwa-hero-meta {
+        font-size: 0.72rem;
+        color: rgba(243, 231, 205, 0.65);
+        font-variant-numeric: tabular-nums;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .pwa-meta-dot {
+        opacity: 0.4;
+    }
+
+    .pwa-hero-tagline {
+        font-size: 0.78rem;
+        color: #B39B82;
+        line-height: 1.35;
+        margin: 0 0 12px;
+        text-align: left;
+    }
+
+    .pwa-cta-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .pwa-hero-dl-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        min-height: 48px;
+        background: linear-gradient(135deg, #E8C064 0%, #CFA46F 100%);
+        color: #110A0A;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.92rem;
+        font-weight: 800;
+        letter-spacing: 0.4px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 6px 20px rgba(232, 192, 100, 0.35);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .pwa-hero-dl-btn:active {
+        transform: scale(0.98);
+        filter: brightness(0.95);
+    }
+
+    .pwa-dl-progress-bar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3.5px;
+        background: rgba(17, 10, 10, 0.8);
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+
+    .pwa-dl-status-banner {
+        display: none;
+        align-items: center;
+        gap: 8px;
+        background: rgba(34, 197, 94, 0.12);
+        border: 1px solid rgba(34, 197, 94, 0.35);
+        border-radius: 10px;
+        padding: 8px 12px;
+        color: #86EFAC;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-align: left;
+        margin-top: 8px;
+        line-height: 1.35;
+        animation: pwaFadeIn 0.3s ease;
+    }
+
+    .pwa-hero-trust {
+        font-size: 0.72rem;
+        color: rgba(207, 164, 111, 0.75);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        margin-top: 9px;
+        font-weight: 600;
+    }
+
+    /* ── Simple 3-Step Visual Process ── */
+    .pwa-mini-steps-section {
+        margin-bottom: 10px;
+        text-align: left;
+    }
+
+    .pwa-mini-steps-title {
+        font-size: 0.68rem;
+        font-weight: 800;
+        color: rgba(207, 164, 111, 0.8);
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .pwa-mini-steps-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .pwa-mini-step-box {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(207, 164, 111, 0.18);
+        border-radius: 10px;
+        padding: 8px 4px;
+        text-align: center;
+    }
+
+    .pwa-mini-step-num {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #CFA46F;
+        color: #110A0A;
+        font-weight: 800;
+        font-size: 0.72rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 4px;
+    }
+
+    .pwa-mini-step-label {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #F3E7CD;
+        text-transform: uppercase;
+    }
+
+    .pwa-mini-step-hint {
+        font-size: 0.64rem;
+        color: #B39B82;
+        line-height: 1.25;
+        margin-top: 2px;
+    }
+
+    /* ── Collapsible Troubleshooting Section ── */
+    .pwa-help-details {
+        margin-top: 8px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.02);
+        transition: all 0.2s ease;
+    }
+
+    .pwa-help-details[open] {
+        border-color: rgba(207, 164, 111, 0.3);
+        background: rgba(0, 0, 0, 0.35);
+    }
+
+    .pwa-help-summary {
+        padding: 10px 14px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        color: #CFA46F;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        list-style: none;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .pwa-help-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .pwa-help-chevron {
+        font-size: 0.75rem;
+        transition: transform 0.2s ease;
+    }
+
+    .pwa-help-details[open] .pwa-help-chevron {
+        transform: rotate(180deg);
+    }
+
+    .pwa-help-content {
+        padding: 10px 14px 12px;
+        font-size: 0.75rem;
+        color: #F3E7CD;
+        text-align: left;
+        line-height: 1.45;
+        border-top: 1px solid rgba(207, 164, 111, 0.15);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .pwa-help-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .pwa-help-bullet {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #CFA46F;
+        margin-top: 6px;
+        flex-shrink: 0;
+    }
+
+    /* ── Bottom Action Buttons ── */
+    .pwa-sheet-bottom-actions {
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        margin-top: 14px;
+    }
+
+    .pwa-sheet-btn-secondary {
+        flex: 1;
+        min-height: 44px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 12px;
+        color: #F3E7CD;
+        font-size: 0.84rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .pwa-sheet-btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.14);
+    }
+
+    .pwa-sheet-btn-check {
+        flex: 1;
+        min-height: 44px;
+        background: rgba(207, 164, 111, 0.12);
+        border: 1px solid rgba(207, 164, 111, 0.3);
+        border-radius: 12px;
+        color: #E8C064;
+        font-size: 0.84rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .pwa-sheet-btn-check:hover {
+        background: rgba(207, 164, 111, 0.2);
+    }
+
+    @keyframes pwaSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+
+    .pwa-spin-fast {
+        animation: pwaSpin 0.75s linear infinite !important;
+        display: inline-block !important;
     }
 
     /* Connectivity Toast */
@@ -592,38 +928,122 @@
     </div>
 </div>
 
-<!-- Universal PWA Install Guide Modal (Android, iOS & In-App Browsers) -->
-<div class="pwa-ios-modal" id="pwaIosModal">
+<!-- Universal PWA Install & Download Modal (Android, iOS & Desktop) -->
+<div class="pwa-ios-modal" id="pwaIosModal" role="dialog" aria-modal="true" aria-labelledby="pwaModalTitle">
     <div class="pwa-ios-sheet">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <img src="/images/icons/icon-72x72.png" style="width:34px; height:34px; border-radius:8px; border:1px solid rgba(207,164,111,0.3);" alt="App Icon">
-                <h3 id="pwaModalTitle" style="margin:0; font-size:1.1rem; color:#F3E7CD; text-align:left;">Install Smart Attendance</h3>
+        <div class="pwa-sheet-handle"></div>
+        <div class="pwa-sheet-top-row">
+            <div class="pwa-sheet-title-wrap">
+                <span class="pwa-sheet-title-icon"><i class="bi bi-phone"></i></span>
+                <h3 id="pwaModalTitle" class="pwa-sheet-title">Get Mobile App</h3>
             </div>
-            <button type="button" id="pwaModalCloseIcon" style="background:none; border:none; color:#B39B82; font-size:1.4rem; cursor:pointer; line-height:1; padding:4px;">&times;</button>
-        </div>
-        <p id="pwaModalSub" style="text-align:left; font-size:0.85rem; color:#B39B82; line-height:1.4; margin-bottom:16px;">Add to your home screen for rapid clock-in, instant notifications, and offline access.</p>
-        
-        <div class="pwa-ios-steps" id="pwaModalSteps">
-            <!-- Dynamically populated based on device & browser -->
+            <button type="button" id="pwaModalCloseIcon" class="pwa-sheet-close-btn" aria-label="Close modal">&times;</button>
         </div>
 
-        <!-- Android APK download shortcut inside modal -->
-        <div id="pwaApkDownloadRow" style="display:none; margin-top:12px; padding:12px 14px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:12px; align-items:center; gap:10px;">
-            <div style="font-size:1.4rem;">📦</div>
-            <div style="flex:1; min-width:0;">
-                <div style="font-size:0.87rem; font-weight:700; color:#F3E7CD;">Direct APK Download</div>
-                <div style="font-size:0.76rem; color:#86EFAC; line-height:1.35;">Download the official Android app file (~4 MB). Install it once and it will appear on your Home screen.</div>
+        <!-- 1. Main App Hero Card -->
+        <div class="pwa-hero-card" id="pwaHeroCard">
+            <div class="pwa-hero-header">
+                <img src="/images/icons/icon-192x192.png" alt="Smart Attendance" class="pwa-hero-icon" id="pwaHeroIcon">
+                <div class="pwa-hero-info">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span class="pwa-hero-badge" id="pwaHeroBadge">Official Android App</span>
+                        <span class="pwa-hero-verified" id="pwaHeroVerified"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                    </div>
+                    <h4 class="pwa-hero-title" id="pwaHeroTitle">Smart Classroom Attendance</h4>
+                    <div class="pwa-hero-meta" id="pwaHeroMeta">
+                        <span id="pwaHeroVersion">v{{ config('changelog.default_version', '2.3.0') }}</span>
+                        <span class="pwa-meta-dot">•</span>
+                        <span id="pwaHeroSize">~4 MB</span>
+                        <span class="pwa-meta-dot">•</span>
+                        <span id="pwaHeroPlatform">Android</span>
+                    </div>
+                </div>
             </div>
-            <a href="/download/apk" download="SmartAttendance.apk"
-               style="background:linear-gradient(135deg,#22C55E 0%,#16A34A 100%); color:#fff; border:none; border-radius:10px; padding:9px 16px; font-size:0.82rem; font-weight:700; cursor:pointer; text-decoration:none; white-space:nowrap; flex-shrink:0; display:inline-block;">
-                ⬇ Download APK
-            </a>
+
+            <p class="pwa-hero-tagline" id="pwaHeroTagline">Install for faster clock-in, biometric access &amp; instant alerts.</p>
+
+            <!-- Main CTA Download / Action Button -->
+            <div class="pwa-cta-container">
+                <button type="button" id="pwaModalDownloadApkBtn" class="pwa-hero-dl-btn" data-apk-url="{{ route('pwa.download.apk') }}" data-action="download">
+                    <span class="pwa-dl-btn-content" id="pwaDlBtnContent" style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class="bi bi-arrow-down-circle-fill pwa-dl-icon" id="pwaDlIcon"></i>
+                        <span class="pwa-dl-label" id="pwaDlLabel">Download APK</span>
+                    </span>
+                    <span class="pwa-dl-progress-bar" id="pwaDlProgressBar"></span>
+                </button>
+
+                <div id="pwaDlStatusAlert" class="pwa-dl-status-banner">
+                    <i class="bi bi-check-circle-fill" style="font-size:1.05rem; flex-shrink:0;"></i>
+                    <div>
+                        <div style="font-weight:700;">Download Started!</div>
+                        <div style="font-size:0.72rem; opacity:0.9;">Open your Downloads folder and tap the APK to install.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pwa-hero-trust" id="pwaHeroTrust">
+                <i class="bi bi-shield-check text-success"></i>
+                <span id="pwaHeroTrustText">Official Smart Classroom Attendance App</span>
+            </div>
         </div>
 
-        <div style="display:flex; gap:8px; width:100%; margin-top:14px;">
-            <button type="button" class="pwa-btn-install" id="pwaIosCloseBtn" style="flex:1;">Got It</button>
-            <button type="button" id="pwaResetStateBtn" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#F3E7CD; border-radius:10px; padding:9px 14px; font-size:0.82rem; font-weight:600; cursor:pointer; white-space:nowrap; transition:all 0.2s;">Reset &amp; Retry</button>
+        <!-- 2. Simple 3-Step Visual Process -->
+        <div class="pwa-mini-steps-section" id="pwaMiniStepsSection">
+            <div class="pwa-mini-steps-title" id="pwaStepsHeaderTitle">HOW TO INSTALL</div>
+            <div class="pwa-mini-steps-grid" id="pwaModalSteps">
+                <div class="pwa-mini-step-box">
+                    <div class="pwa-mini-step-num">1</div>
+                    <div class="pwa-mini-step-label">DOWNLOAD</div>
+                    <div class="pwa-mini-step-hint">Tap Download APK</div>
+                </div>
+                <div class="pwa-mini-step-box">
+                    <div class="pwa-mini-step-num">2</div>
+                    <div class="pwa-mini-step-label">INSTALL</div>
+                    <div class="pwa-mini-step-hint">Open file &amp; tap Install</div>
+                </div>
+                <div class="pwa-mini-step-box">
+                    <div class="pwa-mini-step-num">3</div>
+                    <div class="pwa-mini-step-label">OPEN</div>
+                    <div class="pwa-mini-step-hint">Launch from Drawer</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Collapsible Troubleshooting Section -->
+        <details class="pwa-help-details" id="pwaHelpDetails">
+            <summary class="pwa-help-summary">
+                <span style="display:flex; align-items:center; gap:6px;">
+                    <i class="bi bi-question-circle"></i>
+                    <span>Having trouble installing?</span>
+                </span>
+                <i class="bi bi-chevron-down pwa-help-chevron"></i>
+            </summary>
+            <div class="pwa-help-content" id="pwaHelpContent">
+                <div class="pwa-help-item">
+                    <span class="pwa-help-bullet"></span>
+                    <div><strong>Samsung / Pixel:</strong> Open the downloaded APK and tap Install. The icon appears in your App Drawer (swipe up). Long-press to add to Home.</div>
+                </div>
+                <div class="pwa-help-item">
+                    <span class="pwa-help-bullet"></span>
+                    <div><strong>Xiaomi / Redmi / Poco:</strong> If home screen shortcuts are blocked: Settings &gt; Apps &gt; Permissions &gt; enable "Home screen shortcuts".</div>
+                </div>
+                <div class="pwa-help-item">
+                    <span class="pwa-help-bullet"></span>
+                    <div><strong>Browser Warning:</strong> Tap "Details" or "Download anyway" if your browser displays a standard prompt for direct APK files.</div>
+                </div>
+                <div class="pwa-help-item">
+                    <span class="pwa-help-bullet"></span>
+                    <div><strong>Can't Find Download:</strong> Open your phone's <strong>Files</strong> or <strong>Downloads</strong> app and tap <code>SmartAttendance.apk</code>.</div>
+                </div>
+            </div>
+        </details>
+
+        <!-- 4. Secondary Action Buttons -->
+        <div class="pwa-sheet-bottom-actions">
+            <button type="button" class="pwa-sheet-btn-secondary" id="pwaIosCloseBtn">Got It</button>
+            <button type="button" class="pwa-sheet-btn-check" id="pwaResetStateBtn">
+                <i class="bi bi-arrow-repeat me-1"></i> Check Again
+            </button>
         </div>
     </div>
 </div>
@@ -1118,20 +1538,178 @@
         syncPwaInstallVisibility();
     });
 
-    // ── 5. Guide Modal Builder for iOS, Android, Insecure Context & Desktops ──
+    // ── 5. Redesigned Guide Modal Builder & Download Handler ──
+    let isDownloadingApk = false;
+
+    function handleHeroCtaClick(btn) {
+        if (!btn) return;
+        const action = btn.getAttribute('data-action') || 'download';
+
+        // 1. If already installed: open application
+        if (action === 'open') {
+            closePwaGuideModal();
+            window.location.href = '/home';
+            return;
+        }
+
+        // 2. If desktop / browser native prompt is available
+        if (action === 'native_prompt') {
+            if (deferredPrompt) {
+                closePwaGuideModal();
+                triggerPwaInstall();
+            } else {
+                showNetworkToast('Follow the installation steps below', 'online');
+            }
+            return;
+        }
+
+        // 3. If guide action (iOS, desktop browser menu)
+        if (action === 'guide') {
+            const stepsSec = document.getElementById('pwaMiniStepsSection');
+            if (stepsSec) {
+                stepsSec.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+            return;
+        }
+
+        // 4. If direct APK download (Android / Default)
+        if (action === 'download') {
+            if (isDownloadingApk) return;
+            isDownloadingApk = true;
+
+            const apkUrl = btn.getAttribute('data-apk-url') || '/download/apk';
+            const labelEl = document.getElementById('pwaDlLabel');
+            const iconEl = document.getElementById('pwaDlIcon');
+            const progressEl = document.getElementById('pwaDlProgressBar');
+            const alertEl = document.getElementById('pwaDlStatusAlert');
+
+            // 1. Set DOWNLOADING state
+            if (labelEl) labelEl.textContent = 'DOWNLOADING...';
+            if (iconEl) iconEl.className = 'bi bi-arrow-repeat pwa-dl-icon pwa-spin-fast';
+            if (progressEl) {
+                progressEl.style.transition = 'width 0.75s ease-out';
+                progressEl.style.width = '70%';
+            }
+
+            if (window.triggerHaptic) {
+                window.triggerHaptic('light');
+            } else if (navigator.vibrate) {
+                navigator.vibrate(50);
+            }
+
+            // 2. After simulated packaging delay, trigger file download & complete progress
+            setTimeout(() => {
+                const tempLink = document.createElement('a');
+                tempLink.href = apkUrl;
+                tempLink.download = 'SmartAttendance.apk';
+                tempLink.style.display = 'none';
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                setTimeout(() => { tempLink.remove(); }, 300);
+
+                if (progressEl) {
+                    progressEl.style.width = '100%';
+                }
+
+                // DOWNLOAD STARTED state
+                if (labelEl) labelEl.textContent = 'DOWNLOAD STARTED';
+                if (iconEl) iconEl.className = 'bi bi-check-circle-fill pwa-dl-icon';
+
+                // Reveal status banner
+                if (alertEl) {
+                    alertEl.style.display = 'flex';
+                }
+
+                if (window.triggerHaptic) {
+                    window.triggerHaptic('success');
+                } else if (navigator.vibrate) {
+                    navigator.vibrate([60, 40, 60]);
+                }
+
+                // After 3.5s, ready to download again if needed
+                setTimeout(() => {
+                    if (progressEl) {
+                        progressEl.style.transition = 'none';
+                        progressEl.style.width = '0%';
+                    }
+                    if (labelEl) labelEl.textContent = 'Download Again';
+                    if (iconEl) iconEl.className = 'bi bi-arrow-down-circle-fill pwa-dl-icon';
+                    isDownloadingApk = false;
+                }, 3500);
+            }, 800);
+        }
+    }
+
+    async function checkAppInstallStateAgain(btn) {
+        if (btn) {
+            btn.style.opacity = '0.7';
+            btn.disabled = true;
+        }
+
+        if ('serviceWorker' in navigator && swRegistration) {
+            try { await swRegistration.update(); } catch(e) {}
+        }
+
+        const isStandalone = checkIsStandalone();
+        const isInstalled = isStandalone || await checkIsAppInstalled();
+
+        if (btn) {
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        }
+
+        if (isInstalled) {
+            showNetworkToast('✓ Smart Attendance is installed!', 'online');
+            showPwaGuideModal('already_installed');
+            return;
+        }
+
+        if (deferredPrompt) {
+            closePwaGuideModal();
+            triggerPwaInstall();
+            return;
+        }
+
+        showNetworkToast('Checking app... Open your Downloads folder and tap the APK to install.', 'online');
+    }
+
     function showPwaGuideModal(forceMode = null) {
         ensurePwaModalsInBody();
         const modal = document.getElementById('pwaIosModal');
         const titleEl = document.getElementById('pwaModalTitle');
-        const subEl = document.getElementById('pwaModalSub');
-        const stepsEl = document.getElementById('pwaModalSteps');
-        const actionBtn = document.getElementById('pwaIosCloseBtn');
+        const badgeEl = document.getElementById('pwaHeroBadge');
+        const verifiedEl = document.getElementById('pwaHeroVerified');
+        const heroTitleEl = document.getElementById('pwaHeroTitle');
+        const versionEl = document.getElementById('pwaHeroVersion');
+        const sizeEl = document.getElementById('pwaHeroSize');
+        const platformEl = document.getElementById('pwaHeroPlatform');
+        const taglineEl = document.getElementById('pwaHeroTagline');
+        const heroDlBtn = document.getElementById('pwaModalDownloadApkBtn');
+        const dlIcon = document.getElementById('pwaDlIcon');
+        const dlLabel = document.getElementById('pwaDlLabel');
+        const dlProgressBar = document.getElementById('pwaDlProgressBar');
+        const dlStatusAlert = document.getElementById('pwaDlStatusAlert');
+        const heroTrustText = document.getElementById('pwaHeroTrustText');
+        const stepsHeader = document.getElementById('pwaStepsHeaderTitle');
+        const stepsGrid = document.getElementById('pwaModalSteps');
+        const helpDetails = document.getElementById('pwaHelpDetails');
+        const helpContent = document.getElementById('pwaHelpContent');
+        const closeBtn = document.getElementById('pwaIosCloseBtn');
+        const checkBtn = document.getElementById('pwaResetStateBtn');
 
-        if (!modal || !stepsEl) return;
+        if (!modal) return;
 
-        // Clean up previous dynamically inserted pointer or rows
-        const existingPointer = modal.querySelector('.pwa-ios-arrow-pointer');
-        if (existingPointer) existingPointer.remove();
+        // Reset previous download progress and banner state on each open
+        if (dlProgressBar) {
+            dlProgressBar.style.transition = 'none';
+            dlProgressBar.style.width = '0%';
+        }
+        if (dlStatusAlert) {
+            dlStatusAlert.style.display = 'none';
+        }
+        if (helpDetails) {
+            helpDetails.removeAttribute('open');
+        }
 
         const ua = (window.navigator.userAgent || '').toLowerCase();
         const isIos = /iphone|ipad|ipod/.test(ua);
@@ -1142,216 +1720,309 @@
         const isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 
         // Default close behavior
-        if (actionBtn) {
-            actionBtn.textContent = 'Got It';
-            actionBtn.onclick = (e) => {
+        if (closeBtn) {
+            closeBtn.textContent = 'Got It';
+            closeBtn.onclick = (e) => {
                 e.preventDefault();
                 closePwaGuideModal();
             };
         }
 
-        if (forceMode === 'already_installed') {
-            if (titleEl) titleEl.textContent = 'App Already Installed';
-            if (subEl) subEl.textContent = 'Smart Attendance is already installed on this device:';
-            if (isAndroid) {
-                stepsEl.innerHTML = `
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">1</div>
-                        <div><strong>Swipe UP</strong> from the bottom of your screen to open your <strong>App Drawer</strong></div>
+        if (forceMode === 'already_installed' || checkIsStandalone()) {
+            if (titleEl) titleEl.textContent = 'App Installed';
+            if (badgeEl) {
+                badgeEl.textContent = '✓ Installed';
+                badgeEl.style.color = '#4ADE80';
+                badgeEl.style.borderColor = 'rgba(74, 222, 128, 0.35)';
+                badgeEl.style.background = 'rgba(74, 222, 128, 0.12)';
+            }
+            if (taglineEl) taglineEl.textContent = 'Smart Classroom Attendance is installed and ready to use.';
+            if (heroDlBtn) {
+                heroDlBtn.setAttribute('data-action', 'open');
+                heroDlBtn.style.background = 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)';
+            }
+            if (dlLabel) dlLabel.textContent = 'Open App';
+            if (dlIcon) dlIcon.className = 'bi bi-box-arrow-up-right pwa-dl-icon';
+            if (heroTrustText) heroTrustText.textContent = 'Official Application Ready';
+            if (stepsHeader) stepsHeader.textContent = 'QUICK ACCESS';
+            if (stepsGrid) {
+                stepsGrid.innerHTML = `
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num" style="background:#22C55E;color:#0E0609;">1</div>
+                        <div class="pwa-mini-step-label">DRAWER</div>
+                        <div class="pwa-mini-step-hint">Swipe up for icon</div>
                     </div>
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">2</div>
-                        <div>Find <strong>Smart Attendance</strong>, then <strong>press and hold (long-press)</strong> the icon</div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num" style="background:#CFA46F;color:#0E0609;">2</div>
+                        <div class="pwa-mini-step-label">SHORTCUT</div>
+                        <div class="pwa-mini-step-hint">Long-press to Home</div>
                     </div>
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">3</div>
-                        <div>Tap <strong>Add to Home</strong> to place it directly onto your phone's Home screen</div>
-                    </div>
-                `;
-            } else if (!isIos) {
-                stepsEl.innerHTML = `
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">1</div>
-                        <div>Press the <strong>Windows Key</strong> on your keyboard and search for <strong>Smart Attendance</strong></div>
-                    </div>
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">2</div>
-                        <div>To place an icon on your Desktop wallpaper: open <code>chrome://apps</code> in Chrome, right-click <strong>Smart Attendance</strong>, and select <strong>Create shortcuts &gt; Desktop</strong></div>
-                    </div>
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">3</div>
-                        <div>Or drag the app icon from your Windows Start Menu directly onto your Desktop</div>
-                    </div>
-                `;
-            } else {
-                stepsEl.innerHTML = `
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#22C55E;color:#0E0609;">✓</div>
-                        <div>Check your <strong>Home Screen</strong> pages or swipe left into your <strong>App Library</strong></div>
-                    </div>
-                    <div class="pwa-ios-step">
-                        <div class="pwa-ios-step-num" style="background:#CFA46F;color:#0E0609;">⚡</div>
-                        <div>Enjoy instant biometric clock-in, QR scanning, and push alerts</div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num" style="background:#CFA46F;color:#0E0609;">3</div>
+                        <div class="pwa-mini-step-label">INSTANT</div>
+                        <div class="pwa-mini-step-hint">Biometrics &amp; QR</div>
                     </div>
                 `;
             }
-            if (actionBtn) {
-                actionBtn.textContent = 'Open Application';
-                actionBtn.onclick = (e) => {
-                    e.preventDefault();
-                    closePwaGuideModal();
-                    window.location.href = '/home';
-                };
+            if (helpContent) {
+                helpContent.innerHTML = `
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Can't Find App:</strong> Swipe up into your App Drawer and search for "Smart Attendance".</div>
+                    </div>
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Add Shortcut:</strong> Long-press the icon and tap "Add to Home".</div>
+                    </div>
+                `;
             }
+            if (closeBtn) closeBtn.textContent = 'Close';
+
         } else if (forceMode === 'insecure_context' || !isSecure) {
-            if (titleEl) titleEl.textContent = 'Secure Connection (HTTPS) Required';
-            if (subEl) subEl.textContent = 'Browsers strictly require a secure HTTPS connection or localhost to install web applications:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step" style="border-left: 3px solid #EF4444; padding-left: 10px; background: rgba(239, 68, 68, 0.08); border-radius: 8px;">
-                    <div class="pwa-ios-step-num" style="background:#EF4444;color:#FFFFFF;">!</div>
-                    <div>Connected via <strong>${window.location.protocol}//${window.location.host}</strong> (unencrypted HTTP)</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">1</div>
-                    <div><strong>On PC / Laptop:</strong> Access using <code>http://localhost:8002</code> or <code>http://127.0.0.1:8002</code> instead of a local network IP</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">2</div>
-                    <div><strong>On Mobile (Wi-Fi):</strong> Connect via an HTTPS tunnel (such as Cloudflare or ngrok), or tap browser menu (⋮) &gt; <strong>Add to Home screen</strong> for a quick bookmark shortcut</div>
-                </div>
-            `;
-            if (actionBtn) {
-                actionBtn.textContent = 'Close';
+            if (titleEl) titleEl.textContent = 'HTTPS Required';
+            if (badgeEl) {
+                badgeEl.textContent = 'Security Note';
+                badgeEl.style.color = '#F87171';
+                badgeEl.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+                badgeEl.style.background = 'rgba(239, 68, 68, 0.12)';
             }
+            if (taglineEl) taglineEl.textContent = 'Browsers require a secure HTTPS connection or localhost to install web apps.';
+            if (heroDlBtn) heroDlBtn.setAttribute('data-action', 'guide');
+            if (dlLabel) dlLabel.textContent = 'HTTPS Setup Needed';
+            if (dlIcon) dlIcon.className = 'bi bi-shield-exclamation pwa-dl-icon';
+            if (stepsHeader) stepsHeader.textContent = 'HOW TO ACCESS';
+            if (stepsGrid) {
+                stepsGrid.innerHTML = `
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num" style="background:#EF4444;color:#FFFFFF;">!</div>
+                        <div class="pwa-mini-step-label">HTTP</div>
+                        <div class="pwa-mini-step-hint">Unencrypted</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">1</div>
+                        <div class="pwa-mini-step-label">LOCAL</div>
+                        <div class="pwa-mini-step-hint">Use localhost</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">2</div>
+                        <div class="pwa-mini-step-label">TUNNEL</div>
+                        <div class="pwa-mini-step-hint">HTTPS tunnel</div>
+                    </div>
+                `;
+            }
+            if (helpContent) {
+                helpContent.innerHTML = `
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>On PC / Laptop:</strong> Access using <code>http://localhost:8002</code> instead of a local network IP.</div>
+                    </div>
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>On Mobile:</strong> Connect via an HTTPS tunnel (Cloudflare or ngrok).</div>
+                    </div>
+                `;
+            }
+            if (closeBtn) closeBtn.textContent = 'Close';
+
         } else if (isInApp) {
-            if (titleEl) titleEl.textContent = 'Open in Browser to Install';
-            if (subEl) subEl.textContent = 'In-app browsers do not support direct app installation. Please open this page in Chrome or Safari:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">1</div>
-                    <div>Tap the <strong>More options menu (⋯ or ⋮)</strong> at the top corner of your screen</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">2</div>
-                    <div>Select <strong>Open in Chrome</strong> or <strong>Open in Safari</strong></div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">3</div>
-                    <div>Tap <strong>Install Smart Attendance</strong> once opened in the browser</div>
-                </div>
-            `;
-        } else if (isIosSafari) {
-            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'Add Smart Attendance to your iOS Home Screen in 3 easy steps:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">1</div>
-                    <div>Tap the <strong>Share</strong> button <svg style="display:inline;vertical-align:middle;margin:0 2px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CFA46F" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> in Safari's toolbar</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">2</div>
-                    <div>Scroll down and tap <strong>Add to Home Screen</strong> <svg style="display:inline;vertical-align:middle;margin:0 2px;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CFA46F" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">3</div>
-                    <div>Tap <strong>Add</strong> in the top right corner to complete</div>
-                </div>
-            `;
-            const pointer = document.createElement('div');
-            pointer.className = 'pwa-ios-arrow-pointer';
-            pointer.innerHTML = `
-                <span style="font-size:0.75rem; color:#CFA46F; font-weight:700; letter-spacing:0.3px;">Tap Safari's Share button below</span>
-                <svg class="pwa-bounce-anim" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#CFA46F" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
-            `;
-            stepsEl.after(pointer);
-        } else if (isIos) {
-            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'To install on iOS from this browser:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">1</div>
-                    <div>Tap the <strong>Share</strong> or <strong>Menu (⋯)</strong> button</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">2</div>
-                    <div>Select <strong>Add to Home Screen</strong> (or open in Safari for full PWA capabilities)</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">3</div>
-                    <div>Tap <strong>Add</strong> to put Smart Attendance on your home screen</div>
-                </div>
-            `;
-        } else if (isSamsung) {
-            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'Add Smart Attendance to your Home Screen:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">1</div>
-                    <div>Tap the <strong>Menu button (☰)</strong> at the bottom right corner</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">2</div>
-                    <div>Tap <strong>+ Add page to</strong> and select <strong>Home screen</strong></div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">3</div>
-                    <div>Tap <strong>Add</strong> or <strong>Install</strong> to finish</div>
-                </div>
-            `;
-        } else if (isAndroid) {
-            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'Install Smart Attendance on Android:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">1</div>
-                    <div>Tap the <strong>Three Dots menu (⋮)</strong> at the top-right corner of Chrome</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">2</div>
-                    <div>Tap <strong>Install app</strong> or <strong>Add to Home screen</strong></div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">3</div>
-                    <div>Confirm by tapping <strong>Install</strong></div>
-                </div>
-                <div class="pwa-ios-step" style="border-top: 1px dashed rgba(207,164,111,0.2); padding-top: 10px; margin-top: 6px;">
-                    <div class="pwa-ios-step-num" style="background:rgba(207,164,111,0.2);color:#F3E7CD;">💡</div>
-                    <div style="font-size:0.8rem;color:#B39B82;"><strong>Note:</strong> On Samsung/Pixel phones, installed apps go into your <strong>App Drawer (swipe up)</strong>. Long-press the icon and tap <strong>Add to Home</strong>.</div>
-                </div>
-                <div class="pwa-ios-step" style="border-left: 3px solid #F59E0B; padding-left: 10px; background: rgba(245, 158, 11, 0.1); border-radius: 8px; margin-top: 6px;">
-                    <div class="pwa-ios-step-num" style="background:#F59E0B;color:#0E0609;">!</div>
-                    <div style="font-size:0.8rem;color:#F3E7CD;line-height:1.4;"><strong>Xiaomi / Redmi / Poco users:</strong> MIUI blocks shortcuts by default. Go to <strong>Settings &gt; Apps &gt; Manage apps &gt; [Brave / Chrome] &gt; Other permissions</strong> and turn on <strong>"Home screen shortcuts"</strong>.</div>
-                </div>
-            `;
+            if (titleEl) titleEl.textContent = 'Open in Browser';
+            if (badgeEl) badgeEl.textContent = 'In-App Browser';
+            if (taglineEl) taglineEl.textContent = 'Please open in Chrome or Safari to install the app or download the APK.';
+            if (heroDlBtn) heroDlBtn.setAttribute('data-action', 'download');
+            if (dlLabel) dlLabel.textContent = 'Download APK';
+            if (dlIcon) dlIcon.className = 'bi bi-arrow-down-circle-fill pwa-dl-icon';
+            if (stepsHeader) stepsHeader.textContent = 'SWITCH BROWSER';
+            if (stepsGrid) {
+                stepsGrid.innerHTML = `
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">1</div>
+                        <div class="pwa-mini-step-label">MENU</div>
+                        <div class="pwa-mini-step-hint">Tap ⋯ or ⋮ icon</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">2</div>
+                        <div class="pwa-mini-step-label">OPEN</div>
+                        <div class="pwa-mini-step-hint">In Chrome / Safari</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">3</div>
+                        <div class="pwa-mini-step-label">INSTALL</div>
+                        <div class="pwa-mini-step-hint">Tap Install / APK</div>
+                    </div>
+                `;
+            }
+
+        } else if (isIosSafari || isIos) {
+            if (titleEl) titleEl.textContent = 'Install on iOS';
+            if (badgeEl) {
+                badgeEl.textContent = 'iOS Web App';
+                badgeEl.style.color = '#E8C064';
+                badgeEl.style.borderColor = 'rgba(207, 164, 111, 0.3)';
+                badgeEl.style.background = 'rgba(207, 164, 111, 0.15)';
+            }
+            if (platformEl) platformEl.textContent = 'iOS';
+            if (sizeEl) sizeEl.textContent = 'PWA';
+            if (taglineEl) taglineEl.textContent = 'Add to your Home Screen for faster clock-in & biometric access.';
+            if (heroDlBtn) {
+                heroDlBtn.setAttribute('data-action', 'guide');
+                heroDlBtn.style.background = 'linear-gradient(135deg, #E8C064 0%, #CFA46F 100%)';
+            }
+            if (dlLabel) dlLabel.textContent = 'Follow Steps Below';
+            if (dlIcon) dlIcon.className = 'bi bi-phone pwa-dl-icon';
+            if (heroTrustText) heroTrustText.textContent = 'Official Web Application';
+            if (stepsHeader) stepsHeader.textContent = 'HOW TO INSTALL';
+            if (stepsGrid) {
+                stepsGrid.innerHTML = `
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">1</div>
+                        <div class="pwa-mini-step-label">SHARE</div>
+                        <div class="pwa-mini-step-hint">Tap Safari Share</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">2</div>
+                        <div class="pwa-mini-step-label">ADD</div>
+                        <div class="pwa-mini-step-hint">Add to Home Screen</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">3</div>
+                        <div class="pwa-mini-step-label">OPEN</div>
+                        <div class="pwa-mini-step-hint">Launch from Home</div>
+                    </div>
+                `;
+            }
+            if (helpContent) {
+                helpContent.innerHTML = `
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Must Use Safari:</strong> On iOS, Chrome and third-party browsers cannot directly add PWAs to the Home Screen. Open in Safari to install.</div>
+                    </div>
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Can't Find "Add to Home Screen":</strong> In Safari, tap the Share icon and scroll down in the action sheet.</div>
+                    </div>
+                `;
+            }
+
+        } else if (!isAndroid) {
+            // Desktop PC / Mac / Linux
+            if (titleEl) titleEl.textContent = 'Install on Computer';
+            if (badgeEl) {
+                badgeEl.textContent = 'Desktop Web App';
+                badgeEl.style.color = '#E8C064';
+                badgeEl.style.borderColor = 'rgba(207, 164, 111, 0.3)';
+                badgeEl.style.background = 'rgba(207, 164, 111, 0.15)';
+            }
+            if (platformEl) platformEl.textContent = 'Desktop';
+            if (sizeEl) sizeEl.textContent = 'PWA';
+            if (taglineEl) taglineEl.textContent = 'Install directly onto your computer for rapid desktop access.';
+            if (heroDlBtn) {
+                if (deferredPrompt) {
+                    heroDlBtn.setAttribute('data-action', 'native_prompt');
+                    if (dlLabel) dlLabel.textContent = 'Install App';
+                    if (dlIcon) dlIcon.className = 'bi bi-download pwa-dl-icon';
+                } else {
+                    heroDlBtn.setAttribute('data-action', 'guide');
+                    if (dlLabel) dlLabel.textContent = 'Install via Browser';
+                    if (dlIcon) dlIcon.className = 'bi bi-laptop pwa-dl-icon';
+                }
+                heroDlBtn.style.background = 'linear-gradient(135deg, #E8C064 0%, #CFA46F 100%)';
+            }
+            if (heroTrustText) heroTrustText.textContent = 'Official Web Application';
+            if (stepsHeader) stepsHeader.textContent = 'HOW TO INSTALL';
+            if (stepsGrid) {
+                stepsGrid.innerHTML = `
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">1</div>
+                        <div class="pwa-mini-step-label">BAR</div>
+                        <div class="pwa-mini-step-hint">Click ⊕ / ⬇ in URL bar</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">2</div>
+                        <div class="pwa-mini-step-label">CONFIRM</div>
+                        <div class="pwa-mini-step-hint">Click Install in popup</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">3</div>
+                        <div class="pwa-mini-step-label">LAUNCH</div>
+                        <div class="pwa-mini-step-hint">Open from Start / Apps</div>
+                    </div>
+                `;
+            }
+            if (helpContent) {
+                helpContent.innerHTML = `
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Windows Start Menu:</strong> Installed apps appear in your Start Menu. Search for "Smart Attendance".</div>
+                    </div>
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Desktop Shortcut:</strong> Open <code>chrome://apps</code> (or <code>brave://apps</code>), right-click Smart Attendance, and select <strong>Create shortcuts &gt; Desktop</strong>.</div>
+                    </div>
+                `;
+            }
+
         } else {
-            if (titleEl) titleEl.textContent = 'Install Smart Attendance';
-            if (subEl) subEl.textContent = 'Install directly on your computer:';
-            stepsEl.innerHTML = `
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">1</div>
-                    <div>Look at the right side of the <strong>URL address bar</strong> at the top of your browser</div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">2</div>
-                    <div>Click the <strong>Install App icon</strong> <span style="background:rgba(207,164,111,0.2);padding:2px 7px;border-radius:6px;color:#CFA46F;font-size:0.8rem;font-weight:700;display:inline-block;margin-left:4px;">⊕ or ⬇</span></div>
-                </div>
-                <div class="pwa-ios-step">
-                    <div class="pwa-ios-step-num">3</div>
-                    <div>Or click <strong>Menu (⋮) &gt; Save and share &gt; Install Smart Attendance</strong></div>
-                </div>
-                <div class="pwa-ios-step" style="border-top: 1px dashed rgba(207,164,111,0.2); padding-top: 10px; margin-top: 6px;">
-                    <div class="pwa-ios-step-num" style="background:rgba(207,164,111,0.2);color:#F3E7CD;">💡</div>
-                    <div style="font-size:0.8rem;color:#B39B82;"><strong>Desktop Wallpaper Icon:</strong> Web apps install into your Windows Start Menu. To place an icon on your desktop screen, open <code>chrome://apps</code> (or <code>brave://apps</code>), right-click the app, and select <strong>Create shortcuts &gt; Desktop</strong>.</div>
-                </div>
-            `;
+            // Android Default
+            if (titleEl) titleEl.textContent = 'Get Mobile App';
+            if (badgeEl) {
+                badgeEl.textContent = 'Official Android App';
+                badgeEl.style.color = '#E8C064';
+                badgeEl.style.borderColor = 'rgba(207, 164, 111, 0.3)';
+                badgeEl.style.background = 'rgba(207, 164, 111, 0.15)';
+            }
+            if (platformEl) platformEl.textContent = 'Android';
+            if (sizeEl) sizeEl.textContent = '~4 MB';
+            if (taglineEl) taglineEl.textContent = 'Install for faster clock-in, biometric access &amp; instant alerts.';
+            if (heroDlBtn) {
+                heroDlBtn.setAttribute('data-action', 'download');
+                heroDlBtn.style.background = 'linear-gradient(135deg, #E8C064 0%, #CFA46F 100%)';
+            }
+            if (dlLabel) dlLabel.textContent = 'Download APK';
+            if (dlIcon) dlIcon.className = 'bi bi-arrow-down-circle-fill pwa-dl-icon';
+            if (heroTrustText) heroTrustText.textContent = 'Official Smart Classroom Attendance App';
+            if (stepsHeader) stepsHeader.textContent = 'HOW TO INSTALL';
+            if (stepsGrid) {
+                stepsGrid.innerHTML = `
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">1</div>
+                        <div class="pwa-mini-step-label">DOWNLOAD</div>
+                        <div class="pwa-mini-step-hint">Tap Download APK</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">2</div>
+                        <div class="pwa-mini-step-label">INSTALL</div>
+                        <div class="pwa-mini-step-hint">Open file &amp; tap Install</div>
+                    </div>
+                    <div class="pwa-mini-step-box">
+                        <div class="pwa-mini-step-num">3</div>
+                        <div class="pwa-mini-step-label">OPEN</div>
+                        <div class="pwa-mini-step-hint">Launch from Drawer</div>
+                    </div>
+                `;
+            }
+            if (helpContent) {
+                helpContent.innerHTML = `
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Samsung / Pixel:</strong> Open the downloaded APK and tap Install. The icon appears in your App Drawer (swipe up). Long-press to add to Home.</div>
+                    </div>
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Xiaomi / Redmi / Poco:</strong> If home screen shortcuts are blocked: Settings &gt; Apps &gt; Permissions &gt; enable "Home screen shortcuts".</div>
+                    </div>
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Browser Warning:</strong> Tap "Details" or "Download anyway" if your browser displays a standard prompt for direct APK files.</div>
+                    </div>
+                    <div class="pwa-help-item">
+                        <span class="pwa-help-bullet"></span>
+                        <div><strong>Can't Find Download:</strong> Open your phone's <strong>Files</strong> or <strong>Downloads</strong> app and tap <code>SmartAttendance.apk</code>.</div>
+                    </div>
+                `;
+            }
         }
 
-        // Show APK download row for Android users
-        const apkRow = document.getElementById('pwaApkDownloadRow');
         const apkBannerBtn = document.getElementById('pwaBannerApkBtn');
-        if (isAndroid && apkRow) {
-            apkRow.style.display = 'flex';
-        }
         if (isAndroid && apkBannerBtn) {
             apkBannerBtn.style.display = 'inline-flex';
         }
@@ -1366,29 +2037,7 @@
     }
 
     function resetPwaStateAndRetry() {
-        localStorage.removeItem('pwa_app_installed');
-        localStorage.removeItem('pwa_prompt_dismissed');
-        localStorage.removeItem('pwa_ios_prompt_dismissed');
-        localStorage.removeItem('pwa_banner_dismissed_until');
-        sessionStorage.removeItem('pwa_banner_dismissed');
-        window.__pwaWaitedBeforePrompt = false;
-        closePwaGuideModal();
-        showNetworkToast('PWA installer state reset. Checking...', 'online');
-        if ('serviceWorker' in navigator && swRegistration) {
-            try { swRegistration.update(); } catch(e) {}
-        }
-        syncPwaInstallVisibility();
-        if (deferredPrompt) {
-            triggerPwaInstall();
-        } else {
-            setTimeout(() => {
-                if (deferredPrompt) {
-                    triggerPwaInstall();
-                } else {
-                    showPwaGuideModal();
-                }
-            }, 600);
-        }
+        checkAppInstallStateAgain(document.getElementById('pwaResetStateBtn'));
     }
 
     // ── 6. Universal Trigger Install Handler ──
@@ -1526,11 +2175,21 @@
             return;
         }
 
-        // Reset & retry button in modal
+        // Download APK / Hero CTA in redesigned modal
+        const heroCtaTrigger = target.closest('#pwaModalDownloadApkBtn');
+        if (heroCtaTrigger) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleHeroCtaClick(heroCtaTrigger);
+            return;
+        }
+
+        // Check Again button in modal
         const resetTrigger = target.closest('#pwaResetStateBtn');
         if (resetTrigger) {
             e.preventDefault();
-            resetPwaStateAndRetry();
+            e.stopPropagation();
+            checkAppInstallStateAgain(resetTrigger);
             return;
         }
 
