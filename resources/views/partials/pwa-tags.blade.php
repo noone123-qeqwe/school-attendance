@@ -1,6 +1,6 @@
 @php
-    $installedVersion = (string)config('changelog.installed_version', '2.3.0');
-    $latestVersion = (string)config('changelog.default_version', '2.3.0');
+    $installedVersion = (string)config('changelog.installed_version', '2.3.1');
+    $latestVersion = (string)config('changelog.default_version', '2.3.1');
     $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', $latestVersion);
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
@@ -1146,7 +1146,7 @@
     }
 
     function getInstalledVersion() {
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.0';
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.1';
         const storedInstalled = localStorage.getItem('pwa_installed_version');
         
         // If metaInstalled is newer than storedInstalled, auto-sync localStorage
@@ -1174,7 +1174,7 @@
             return metaInstalled;
         }
 
-        return '2.3.0';
+        return '2.3.1';
     }
 
     function getLatestVersion(serverData = null) {
@@ -1185,7 +1185,7 @@
             return serverData.changelog.version;
         }
         const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content;
-        return metaLatest || '2.3.0';
+        return metaLatest || '2.3.1';
     }
 
     // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──
@@ -1215,8 +1215,8 @@
         if (stored) {
             return parseInt(stored, 10);
         }
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.0';
-        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content || '2.3.0';
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.1';
+        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content || '2.3.1';
         // If user is already on the latest semver release, default applied mtime to current server mtime
         if (compareSemver(metaLatest, metaInstalled) <= 0 && serverSwMtime) {
             localStorage.setItem('pwa_applied_sw_mtime', String(serverSwMtime));
@@ -1228,15 +1228,9 @@
     function checkInstantUpdateAvailable() {
         const installedVer = getInstalledVersion();
         const latestVer = getLatestVersion();
-        const appliedMtime = getAppliedSwMtime();
 
-        // 1. Semantic Version update (e.g. 2.3.1 > 2.3.0)
+        // 1. Semantic Version update (e.g. 2.3.2 > 2.3.1)
         if (compareSemver(latestVer, installedVer) > 0) {
-            return true;
-        }
-
-        // 2. Build Timestamp update (e.g. sw.js or codebase updated on server since user last applied update)
-        if (serverSwMtime && appliedMtime && serverSwMtime > appliedMtime) {
             return true;
         }
 
@@ -1380,11 +1374,8 @@
                         updateChangelogUI(updateChangelog);
                     }
 
-                    // Semantic comparison OR Build timestamp update OR waiting service worker
-                    if (compareSemver(latestVer, installedVer) > 0 ||
-                        (data.timestamp && appliedMtime && data.timestamp > appliedMtime) ||
-                        (data.timestamp && !appliedMtime && data.timestamp > pageLoadTimestamp - 86400) ||
-                        (swRegistration && swRegistration.waiting)) {
+                    // Semantic comparison: only flag update when server version is strictly newer than installed
+                    if (compareSemver(latestVer, installedVer) > 0) {
                         isUpdateAvailable = true;
                     }
                 }
@@ -1447,7 +1438,11 @@
 
                 // 4. If an update is already downloaded and waiting in background:
                 if (reg.waiting) {
-                    showAppUpdatePopup(latestDetectedVersion || getLatestVersion(), false);
+                    const currentInstalled = getInstalledVersion();
+                    const latest = latestDetectedVersion || getLatestVersion();
+                    if (compareSemver(latest, currentInstalled) > 0) {
+                        showAppUpdatePopup(latest, false);
+                    }
                 }
 
                 // 5. When a new update is found and finishes installing in the background

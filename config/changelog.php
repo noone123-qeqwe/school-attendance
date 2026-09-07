@@ -6,7 +6,7 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.0'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.1'),
     'default_version' => env('APP_LATEST_VERSION', '2.3.1'),
 
     /*
