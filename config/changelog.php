@@ -7,7 +7,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'installed_version' => env('APP_INSTALLED_VERSION', '2.3.0'),
-    'default_version' => env('APP_LATEST_VERSION', '2.3.0'),
+    'default_version' => env('APP_LATEST_VERSION', '2.3.1'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,32 @@ return [
     |
     */
     'releases' => [
+        '2.3.1' => [
+            'version' => '2.3.1',
+            'version_tag' => 'v2.3.1',
+            'title' => 'Biometric Detection & Sign-In Workflow Update',
+            'description' => 'Enhanced biometric sign-in behavior with device capability pre-checks, intuitive account setup popups, password verification, and seamless credential management.',
+            'features' => [
+                'Automatic biometric capability detection (Supported, Unsupported, Not Configured)',
+                'Biometric sign-in setup popup for unregistered accounts',
+                'Password verification modal before passkey/biometric creation',
+                'Success confirmation and direct biometric login after registration',
+            ],
+            'improvements' => [
+                'Optimized account isolation for multiple users on a single device',
+                'Standardized biometric management across Admin, Teacher, Student, and Parent profile settings',
+                'Instant PWA update popup notification when new releases are pushed',
+            ],
+            'bugFixes' => [
+                'Resolved issue where tapping Sign In with Fingerprint on unregistered accounts would do nothing or error',
+                'Fixed device credential deletion and state reset upon disabling biometrics',
+            ],
+            'security' => [
+                'Strict server-side WebAuthn challenge verification',
+            ],
+            'released_at' => '2026-09-07',
+        ],
+
         '2.3.0' => [
             'version' => '2.3.0',
             'version_tag' => 'v2.3.0',
