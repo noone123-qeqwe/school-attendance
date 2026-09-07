@@ -113,23 +113,31 @@ class WebAuthnController extends Controller
     {
         $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
         if (!$raw || !is_string($raw)) {
-            return response()->json(["success" => false, "message" => "Please enter your Student ID or Email."], 422);
+            return response()->json(["success" => false, "code" => "IDENTIFIER_REQUIRED", "message" => "Please enter your Student ID or Email."], 422);
         }
 
         $identifier = trim($raw);
         $user = $this->findUserByIdentifier($identifier);
 
         if (!$user) {
-            return response()->json(["success" => false, "message" => "Account not found for \"{$identifier}\"."], 404);
+            return response()->json(["success" => false, "code" => "ACCOUNT_NOT_FOUND", "message" => "Account not found for \"{$identifier}\"."], 404);
         }
 
         if (!$user->isActive()) {
-            return response()->json(["success" => false, "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
+            return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
         }
         
         $credentials = $user->webauthnCredentials()->exists() || DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
         if (!$credentials) {
-            return response()->json(["success" => false, "message" => "No biometric credentials registered for this account."], 404);
+            return response()->json([
+                "success" => false,
+                "code" => "NOT_REGISTERED",
+                "user_exists" => true,
+                "user_id" => $user->id,
+                "identifier" => $user->student_number ?? $user->email ?? $identifier,
+                "user_name" => $user->name,
+                "message" => "You haven't enabled biometric sign-in for this account yet."
+            ], 404);
         }
         
         session(["webauthn_login_user_id" => $user->id]);
@@ -137,6 +145,105 @@ class WebAuthnController extends Controller
         
         return response()->json(array_merge($options['publicKey'], ["success" => true]));
     }
+
+    public function setupOptions(Request $request, WebauthnService $webauthn)
+    {
+        $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
+        $password = $request->input('password');
+
+        if (!$raw || !is_string($raw)) {
+            return response()->json(["success" => false, "message" => "Please enter your Student ID or Email."], 422);
+        }
+
+        $identifier = trim($raw);
+        $user = $this->findUserByIdentifier($identifier);
+
+        if (!$user) {
+            return response()->json(["success" => false, "code" => "ACCOUNT_NOT_FOUND", "message" => "Account not found for \"{$identifier}\"."], 404);
+        }
+
+        if (!$user->isActive()) {
+            return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Your account has been deactivated."], 403);
+        }
+
+        if (!$password || !\Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+            return response()->json(["success" => false, "code" => "INVALID_PASSWORD", "message" => "Invalid password. Please enter the correct password to verify your account."], 401);
+        }
+
+        session(['webauthn.setup_user_id' => $user->id]);
+        $options = $webauthn->registrationOptions($user);
+
+        return response()->json(array_merge($options['publicKey'], [
+            "success" => true,
+            "user_id" => $user->id,
+            "identifier" => $user->student_number ?? $user->email ?? $identifier
+        ]));
+    }
+
+    public function setupRegister(Request $request, WebauthnService $webauthn)
+    {
+        $userId = session('webauthn.setup_user_id');
+
+        if (!$userId && $request->has('identifier') && $request->has('password')) {
+            $user = $this->findUserByIdentifier(trim($request->input('identifier')));
+            if ($user && \Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
+                $userId = $user->id;
+            }
+        }
+
+        if (!$userId) {
+            return response()->json(["success" => false, "message" => "Session expired or user unverified. Please try again."], 401);
+        }
+
+        $user = User::find($userId);
+        if (!$user) {
+            return response()->json(["success" => false, "message" => "User not found."], 404);
+        }
+
+        $credentialId = $request->input('credential_id') ?? $request->input('id') ?? $request->input('rawId');
+        $credential = $request->input('credential') ?? [
+            'id' => $request->input('id') ?? $credentialId,
+            'type' => $request->input('type') ?? 'public-key',
+            'response' => $request->input('response') ?? [],
+        ];
+        $deviceName = $request->input('device_name') ?? (str_contains(request()->userAgent() ?? '', 'Mobile') ? 'Mobile Device' : 'Desktop Browser');
+
+        if (!$credentialId || !is_string($credentialId)) {
+            return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
+        }
+
+        try {
+            $stored = $webauthn->storeCredential($user, $credential);
+            $stored->forceFill(['device_name' => $deviceName])->save();
+
+            session()->forget('webauthn.setup_user_id');
+
+            Auth::login($user, true);
+            $request->session()->regenerate();
+
+            if ($user->isStudent()) {
+                app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+            }
+
+            $redirectUrl = route('home');
+            if ($user->isAdmin()) {
+                $redirectUrl = route('admin.dashboard');
+            } elseif ($user->isTeacher()) {
+                $redirectUrl = route('teacher.dashboard');
+            } elseif ($user->isParent()) {
+                $redirectUrl = route('parent.dashboard');
+            }
+
+            return response()->json([
+                "success" => true,
+                "message" => "Biometric sign-in successfully enabled for " . ($user->student_number ?? $user->email),
+                "redirect" => $redirectUrl
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(["success" => false, "message" => "Failed to enable biometrics: " . $e->getMessage()], 422);
+        }
+    }
+
 
     /**
      * Helper method to find user by various identifier formats

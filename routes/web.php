@@ -7,9 +7,11 @@ use App\Http\Controllers\ClassController;
 use App\Http\Controllers\HomeController;
 
 
-// WebAuthn login — works for both guests and authenticated users
+// WebAuthn login & first-time setup — works for both guests and authenticated users
 Route::post('/webauthn/login-options', [App\Http\Controllers\WebAuthnController::class, 'loginOptions'])->middleware('throttle:webauthn.options')->name('webauthn.login.options');
 Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:login')->name('webauthn.login');
+Route::post('/webauthn/setup-options', [App\Http\Controllers\WebAuthnController::class, 'setupOptions'])->middleware('throttle:webauthn.options')->name('webauthn.setup.options');
+Route::post('/webauthn/setup-register', [App\Http\Controllers\WebAuthnController::class, 'setupRegister'])->middleware('throttle:login')->name('webauthn.setup.register');
 
 // Web Push Notification Subscriptions & Testing
 Route::get('/push/public-key', [App\Http\Controllers\PushSubscriptionController::class, 'getPublicKey'])->name('push.public_key');

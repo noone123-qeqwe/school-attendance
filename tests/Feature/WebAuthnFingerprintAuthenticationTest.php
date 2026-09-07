@@ -101,7 +101,7 @@ class WebAuthnFingerprintAuthenticationTest extends TestCase
         $response->assertStatus(404);
         $response->assertJson([
             'success' => false,
-            'message' => 'No biometric credentials registered for this account.',
+            'code' => 'NOT_REGISTERED',
         ]);
     }
 
