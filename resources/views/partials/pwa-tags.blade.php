@@ -17,6 +17,7 @@
 <meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
 <meta name="app-installed-version" content="{{ $installedVersion }}">
 <meta name="app-latest-version" content="{{ $latestVersion }}">
+<meta name="sw-build-mtime" content="{{ $swFileMtime }}">
 
 <!-- PWA Manifest & Icons -->
 <link rel="manifest" href="/manifest.json">
@@ -1203,8 +1204,42 @@
         ensurePwaModalsInBody();
     }
 
+    const serverSwMtime = parseInt(document.querySelector('meta[name="sw-build-mtime"]')?.content || '0', 10);
     const pageLoadTimestamp = Math.floor(Date.now() / 1000);
-    let latestServerTimestamp = 0;
+    let latestServerTimestamp = serverSwMtime;
+
+    function getAppliedSwMtime() {
+        const stored = localStorage.getItem('pwa_applied_sw_mtime');
+        if (stored) {
+            return parseInt(stored, 10);
+        }
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.0';
+        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content || '2.3.0';
+        // If user is already on the latest semver release, default applied mtime to current server mtime
+        if (compareSemver(metaLatest, metaInstalled) <= 0 && serverSwMtime) {
+            localStorage.setItem('pwa_applied_sw_mtime', String(serverSwMtime));
+            return serverSwMtime;
+        }
+        return 0;
+    }
+
+    function checkInstantUpdateAvailable() {
+        const installedVer = getInstalledVersion();
+        const latestVer = getLatestVersion();
+        const appliedMtime = getAppliedSwMtime();
+
+        // 1. Semantic Version update (e.g. 2.3.1 > 2.3.0)
+        if (compareSemver(latestVer, installedVer) > 0) {
+            return true;
+        }
+
+        // 2. Build Timestamp update (e.g. sw.js or codebase updated on server since user last applied update)
+        if (serverSwMtime && appliedMtime && serverSwMtime > appliedMtime) {
+            return true;
+        }
+
+        return false;
+    }
 
     function showAppUpdatePopup(version, force = false, changelog = null) {
         if (version) latestDetectedVersion = version;
@@ -1308,7 +1343,7 @@
     }
 
     let lastVersionCheckTime = 0;
-    const VERSION_CHECK_COOLDOWN_MS = 2000;
+    const VERSION_CHECK_COOLDOWN_MS = 1000;
 
     async function checkServerVersion(force = false) {
         const now = Date.now();
@@ -1319,12 +1354,13 @@
 
         const installedVer = getInstalledVersion();
         let latestVer = getLatestVersion();
+        const appliedMtime = getAppliedSwMtime();
 
         if (swRegistration) {
             try { swRegistration.update(); } catch(e) {}
         }
 
-        let isUpdateAvailable = false;
+        let isUpdateAvailable = checkInstantUpdateAvailable();
         let updateChangelog = currentChangelogData;
 
         try {
@@ -1344,7 +1380,8 @@
 
                     // Semantic comparison OR Build timestamp update OR waiting service worker
                     if (compareSemver(latestVer, installedVer) > 0 ||
-                        (data.timestamp && data.timestamp > pageLoadTimestamp) ||
+                        (data.timestamp && appliedMtime && data.timestamp > appliedMtime) ||
+                        (data.timestamp && !appliedMtime && data.timestamp > pageLoadTimestamp - 86400) ||
                         (swRegistration && swRegistration.waiting)) {
                         isUpdateAvailable = true;
                     }
@@ -1352,8 +1389,8 @@
             }
         } catch (e) {}
 
-        // Fallback check if offline or network error: compare local metadata
-        if (!isUpdateAvailable && compareSemver(latestVer, installedVer) > 0) {
+        // Fallback check if offline or network error: compare local metadata or build mtime
+        if (!isUpdateAvailable && checkInstantUpdateAvailable()) {
             isUpdateAvailable = true;
         }
 
@@ -1362,8 +1399,12 @@
         }
     }
 
-    // Run check immediately on evaluation
-    checkServerVersion();
+    // Run instant zero-delay check immediately when script runs
+    if (checkInstantUpdateAvailable()) {
+        showAppUpdatePopup(getLatestVersion(), false);
+    }
+    // Launch background server check
+    checkServerVersion(true);
 
     if ('serviceWorker' in navigator) {
         let refreshing = false;
@@ -2224,11 +2265,14 @@
             applyUpdateBtn.style.pointerEvents = 'none';
 
             const targetVer = latestDetectedVersion || getLatestVersion();
+            const targetTs = latestServerTimestamp || serverSwMtime;
             localStorage.setItem('pwa_installed_version', targetVer);
             localStorage.setItem('pwa_app_version', targetVer);
+            localStorage.setItem('pwa_applied_sw_mtime', String(targetTs));
             localStorage.removeItem('pwa_update_dismissed_ver');
             localStorage.removeItem('pwa_update_prompted_ver');
             sessionStorage.removeItem('pwa_update_dismissed_ver');
+            sessionStorage.removeItem('pwa_update_dismissed_ts');
             sessionStorage.setItem('pwa_updating', 'true');
 
             // Hide popup immediately
