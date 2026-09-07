@@ -1492,6 +1492,12 @@
         showPwaGuideModal();
     }
 
+    // Expose helpers globally
+    window.triggerPwaInstall = triggerPwaInstall;
+    window.showPwaGuideModal = showPwaGuideModal;
+    window.closePwaGuideModal = closePwaGuideModal;
+    window.checkIsStandalone = checkIsStandalone;
+
     // ── 7. Global Event Delegation (Guarantees ALL install buttons work anytime) ──
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -1504,7 +1510,7 @@
         if (!target) return;
 
         // Install button clicked
-        const installTrigger = target.closest('.pwa-install-trigger') || target.closest('#pwaInstallBtn');
+        const installTrigger = target.closest('.pwa-install-trigger') || target.closest('#pwaInstallBtn') || target.closest('#downloadAppBtn');
         if (installTrigger) {
             e.preventDefault();
             e.stopPropagation();
