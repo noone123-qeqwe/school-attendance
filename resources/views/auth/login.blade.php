@@ -707,7 +707,44 @@ function closeFooterModal() {
     overlay.style.opacity = '0';
     document.getElementById('footerModalContent').style.transform = 'translate(-50%,-50%) scale(0.95)';
     setTimeout(() => { overlay.style.display = 'none'; }, 250);
+function toggleEye(inputId, btn) {
+    if (!inputId) return;
+    const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
+    if (!input) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    let button = btn;
+    if (!button && typeof inputId === 'string') {
+        button = document.querySelector(`button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-toggle, .eye-btn, [class*="eye"]');
+    }
+    if (button) {
+        const icon = button.querySelector('i');
+        if (icon) {
+            icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
+        }
+        button.style.color = isPassword ? '#ffffff' : '';
+    }
 }
+window.toggleEye = toggleEye;
+window.togglePw = toggleEye;
+window.togglePassword = toggleEye;
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+        if (!btn) return;
+        const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+        let input = targetId ? document.getElementById(targetId) : null;
+        if (!input && btn.parentElement) {
+            input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+        }
+        if (input) {
+            toggleEye(input, btn);
+        }
+    });
+});
 </script>
 
 <!-- Auth scene -->
@@ -781,7 +818,7 @@ function closeFooterModal() {
                 <input type="password" name="password" id="loginPassword"
                        class="glass-input has-eye @error('password') is-invalid @enderror"
                        placeholder="Password" required autocomplete="current-password">
-                <button type="button" class="eye-toggle" onclick="toggleEye('loginPassword',this)" tabindex="-1">
+                <button type="button" class="eye-toggle" onclick="toggleEye('loginPassword',this)" onpointerdown="event.preventDefault();" onmousedown="event.preventDefault();" tabindex="-1" aria-label="Toggle password visibility">
                     <i class="bi bi-eye-slash"></i>
                 </button>
             </div>
@@ -1059,44 +1096,24 @@ function closeFooterModal() {
 </script>
 
 <script>
-// FingerprintJS initialization
-const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
-    .then(FingerprintJS => FingerprintJS.load());
+// FingerprintJS initialization (safely wrapped)
+try {
+    const fpPromise = import('https://openfpcdn.io/fingerprintjs/v4')
+        .then(FingerprintJS => FingerprintJS.load())
+        .catch(() => null);
 
-fpPromise
-    .then(fp => fp.get())
-    .then(result => {
-        const visitorId = result.visitorId;
-        var hiddenInput = document.getElementById('deviceFingerprint');
-        if (hiddenInput) {
-            hiddenInput.value = visitorId;
-        }
-    })
-    .catch(error => console.error('FingerprintJS error:', error));
-
-function toggleEye(inputId, btn) {
-    if (!inputId) return;
-    const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
-    if (!input) return;
-
-    const isPassword = input.type === 'password';
-    input.type = isPassword ? 'text' : 'password';
-
-    let button = btn;
-    if (!button && typeof inputId === 'string') {
-        button = document.querySelector(`button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-toggle, .eye-btn, [class*="eye"]');
+    if (fpPromise) {
+        fpPromise.then(fp => {
+            if (!fp) return;
+            return fp.get();
+        }).then(result => {
+            if (!result) return;
+            const visitorId = result.visitorId;
+            var hiddenInput = document.getElementById('deviceFingerprint');
+            if (hiddenInput) hiddenInput.value = visitorId;
+        }).catch(error => console.error('FingerprintJS error:', error));
     }
-    if (button) {
-        const icon = button.querySelector('i');
-        if (icon) {
-            icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
-        }
-        button.style.color = isPassword ? 'white' : '';
-    }
-}
-window.toggleEye = toggleEye;
-window.togglePw = toggleEye;
-window.togglePassword = toggleEye;
+} catch (e) {}
 
 // Remember identifier in localStorage
 var idInput = document.getElementById('idInput');
