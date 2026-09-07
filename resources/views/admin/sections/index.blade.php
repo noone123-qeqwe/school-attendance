@@ -10,9 +10,6 @@
     </div>
     
     <div style="display:flex; gap:12px;">
-        <button type="button" class="saas-btn saas-btn-secondary" onclick="openModal('importSectionModal')">
-            <i class="bi bi-upload"></i> Import CSV
-        </button>
         <button class="saas-btn saas-btn-primary" onclick="openModal('addSectionModal')">
             <i class="bi bi-plus-lg"></i> Add Section
         </button>
@@ -75,15 +72,12 @@
                         <span class="saas-text-muted">{{ $section->students()->count() ?? 0 }} students</span>
                     </td>
                     <td style="text-align:right;">
-                        <a href="{{ route('admin.section.history', $section) }}" class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="History">
-                            <i class="bi bi-clock-history"></i>
-                        </a>
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-danger);" title="Delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        <form action="{{ route('admin.sections.destroy', $section) }}" method="POST" onsubmit="return confirm('Delete section {{ addslashes($section->name) }}?')" style="margin:0; display:inline-block;">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-danger);" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
                     </td>
                 </tr>
                 @empty
@@ -151,30 +145,6 @@
             <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:flex-end; gap:12px; background:rgba(0,0,0,0.2);">
                 <button type="button" class="saas-btn saas-btn-secondary" onclick="closeModal('addSectionModal')">Cancel</button>
                 <button type="submit" class="saas-btn saas-btn-primary">Save Section</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Import Section Modal -->
-<div id="importSectionModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
-    <div class="saas-card" style="width:100%; max-width:400px; transform:scale(0.95); transition:transform 0.2s;" id="importSectionCard">
-        <div class="saas-card-header">
-            <div class="saas-heading saas-heading-sm">Import Sections</div>
-            <button onclick="closeModal('importSectionModal')" style="background:none; border:none; color:var(--saas-text-muted); cursor:pointer;"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <form action="{{ route('admin.sections.import') }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            <div class="saas-card-body">
-                <div class="saas-form-group">
-                    <label class="saas-label">CSV File</label>
-                    <input type="file" name="csv_file" class="saas-input" accept=".csv" required>
-                    <div style="font-size:0.75rem; color:var(--saas-text-muted); margin-top:8px;">Format: <code>name, course_id, year_level</code></div>
-                </div>
-            </div>
-            <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:flex-end; gap:12px; background:rgba(0,0,0,0.2);">
-                <button type="button" class="saas-btn saas-btn-secondary" onclick="closeModal('importSectionModal')">Cancel</button>
-                <button type="submit" class="saas-btn saas-btn-primary">Import</button>
             </div>
         </form>
     </div>

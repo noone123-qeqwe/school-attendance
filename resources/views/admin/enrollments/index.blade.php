@@ -9,7 +9,7 @@
             <h1 class="ent-section-title" style="margin-bottom:4px; font-size:1.5rem;">Manage Roster: {{ $subject->code }}</h1>
             <p class="ent-text-muted" style="margin:0;">{{ $subject->name }} | {{ $subject->year_level }} Year, {{ $subject->semester }}{{ (int)$subject->semester === 1 ? 'st' : 'nd' }} Sem</p>
         </div>
-        <a href="{{ route('admin.subjects.index') }}" class="ent-btn ent-btn-secondary">
+        <a href="{{ route('admin.subjects') }}" class="ent-btn ent-btn-secondary">
             <i class="bi bi-arrow-left"></i> Back to Subjects
         </a>
     </div>

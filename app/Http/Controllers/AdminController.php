@@ -123,6 +123,37 @@ class AdminController extends Controller
         return view('admin.early-warnings', compact('warnings'));
     }
 
+    public function exportEarlyWarnings()
+    {
+        $warnings = \App\Models\Warning::where('type', 'chronic_absenteeism')
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="early-warnings-' . now()->format('Y-m-d') . '.csv"',
+        ];
+
+        $callback = function () use ($warnings) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Student Name', 'Student ID', 'Subject Code', 'Warning Message', 'Date Flagged']);
+
+            foreach ($warnings as $w) {
+                fputcsv($handle, [
+                    $w->user->name ?? 'Unknown',
+                    $w->user->student_number ?? 'N/A',
+                    $w->subject_code ?? 'N/A',
+                    $w->message ?? '',
+                    $w->created_at ? $w->created_at->format('Y-m-d H:i:s') : 'N/A',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
 
 
     // ─────────────────────────────────────────
@@ -580,6 +611,28 @@ class AdminController extends Controller
         return view('admin.subjects.index', compact('subjects'));
     }
 
+    public function exportSubjectsPdf(Request $request)
+    {
+        $query = Subject::query()->with(['schedules', 'instructorUser']);
+        if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
+        if ($request->filled('semester'))   $query->where('semester', $request->semester);
+        if ($request->filled('course'))     $query->where('course', $request->course);
+        if ($request->filled('search')) {
+            $query->where(fn($q) => $q
+                ->where('name','like','%'.$request->search.'%')
+                ->orWhere('code','like','%'.$request->search.'%')
+                ->orWhereHas('instructorUser', function($query) use ($request) {
+                    $query->where('name', 'like', '%'.$request->search.'%');
+                })
+            );
+        }
+
+        $subjects = $query->orderBy('year_level')->orderBy('code')->get();
+        $filters = $request->only(['year_level', 'semester', 'course', 'search']);
+        $pdf = Pdf::loadView('admin.subjects._report', ['subjects' => $subjects, 'filters' => $filters, 'forPdf' => true]);
+        return $pdf->download('subjects-directory-' . now()->format('Y-m-d') . '.pdf');
+    }
+
 
 
     public function createSubject()
@@ -918,6 +971,13 @@ class AdminController extends Controller
     {
         Notification::where('user_id', auth()->id())->where('is_read', false)->update(['is_read' => true]);
         return back()->with('success', 'All notifications marked as read.');
+    }
+
+    public function markNotificationRead(Notification $notification)
+    {
+        abort_unless(auth()->user()->isAdmin(), 403);
+        $notification->update(['is_read' => true]);
+        return back()->with('success', 'Notification marked as read.');
     }
 
     public function notifications(Request $request)

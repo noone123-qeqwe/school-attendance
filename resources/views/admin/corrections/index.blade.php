@@ -96,13 +96,13 @@
                             <td data-label="Actions" style="text-align:center;">
                                 @if($correction->status === 'pending')
                                 <div class="d-flex justify-content-center gap-2">
-                                    <form method="POST" action="{{ route('admin.correction.approve', $correction) }}" style="display:inline;">
+                                    <form method="POST" action="{{ route('admin.corrections.approve', $correction) }}" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-press" style="padding:4px 12px; background:rgba(34,197,94,0.15); color:#86efac; border:1px solid rgba(34,197,94,0.3); border-radius:8px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Approve Correction">
                                             ✓ Approve
                                         </button>
                                     </form>
-                                    <form method="POST" action="{{ route('admin.correction.reject', $correction) }}" style="display:inline;">
+                                    <form method="POST" action="{{ route('admin.corrections.reject', $correction) }}" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-press" style="padding:4px 12px; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); border-radius:8px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Reject Correction">
                                             ✕ Reject

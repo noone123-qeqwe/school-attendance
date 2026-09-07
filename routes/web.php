@@ -378,7 +378,8 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/attendance/export-csv', [App\Http\Controllers\TeacherController::class, 'exportAttendanceCsv'])->name('attendance.csv');
     Route::post('/attendance/{attendance}/excuse', [App\Http\Controllers\TeacherController::class, 'excuseAttendance'])->name('attendance.excuse');
     Route::post('/attendance/{attendance}/override', [App\Http\Controllers\TeacherController::class, 'overrideAttendance'])->name('attendance.override');
-    Route::post('/corrections/{correction}', [App\Http\Controllers\AttendanceCorrectionController::class, 'update'])->name('teacher.corrections.update');
+    Route::get('/corrections', [App\Http\Controllers\TeacherController::class, 'corrections'])->name('corrections');
+    Route::post('/corrections/{correction}', [App\Http\Controllers\AttendanceCorrectionController::class, 'update'])->name('corrections.update');
     
     // Student Management - Full CRUD
     Route::get('/students', [App\Http\Controllers\TeacherController::class, 'students'])->name('students');
@@ -492,6 +493,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
 
     // Early Warnings
     Route::get('/early-warnings', [App\Http\Controllers\AdminController::class, 'earlyWarnings'])->name('early-warnings');
+    Route::get('/early-warnings/export', [App\Http\Controllers\AdminController::class, 'exportEarlyWarnings'])->name('early-warnings.export');
 
     // Attendance Management
     Route::get('/attendance', [App\Http\Controllers\AdminController::class, 'attendanceLogs'])->name('attendance');
@@ -529,6 +531,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/subjects', [App\Http\Controllers\AdminController::class, 'subjects'])->name('subjects');
     Route::get('/subjects/create', [App\Http\Controllers\AdminController::class, 'createSubject'])->name('subjects.create');
     Route::post('/subjects', [App\Http\Controllers\AdminController::class, 'storeSubject'])->name('subjects.store');
+    Route::get('/subjects/export-pdf', [App\Http\Controllers\AdminController::class, 'exportSubjectsPdf'])->name('subjects.pdf');
 
     // Enrollments
     Route::get('/subjects/{subject}/enrollments', [App\Http\Controllers\Admin\EnrollmentController::class, 'index'])->name('enrollments.index');
@@ -551,9 +554,15 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     // Notifications (system alerts)
     Route::get('/notifications', [App\Http\Controllers\AdminController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\AdminController::class, 'markAllNotificationsRead'])->name('notifications.markAllRead');
+    Route::post('/notifications/{notification}/read', [App\Http\Controllers\AdminController::class, 'markNotificationRead'])->name('notifications.markRead');
     Route::post('/notifications/{notification}/archive', [App\Http\Controllers\AdminController::class, 'archiveNotification'])->name('notifications.archive');
     Route::post('/notifications/{notification}/unarchive', [App\Http\Controllers\AdminController::class, 'unarchiveNotification'])->name('notifications.unarchive');
     Route::delete('/notifications/{notification}', [App\Http\Controllers\AdminController::class, 'deleteNotification'])->name('notifications.delete');
+
+    // GPS Configuration
+    Route::get('/gps', [App\Http\Controllers\GpsController::class, 'showConfig'])->name('gps');
+    Route::post('/gps', [App\Http\Controllers\GpsController::class, 'updateConfig'])->name('gps.update');
+    Route::post('/gps/quick', [App\Http\Controllers\GpsController::class, 'quickUpdate'])->name('gps.quick');
 
     // Profile
     Route::get('/profile', [App\Http\Controllers\AdminController::class, 'profile'])->name('profile');
@@ -612,15 +621,15 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
 
     
     // New Academic Modules (SaaS Design Expansion)
-    Route::resource('academic-years', App\Http\Controllers\Admin\AcademicYearController::class);
+    Route::resource('academic-years', App\Http\Controllers\Admin\AcademicYearController::class)->except(['create', 'show', 'edit']);
     Route::post('academic-years/{academic_year}/set-current', [App\Http\Controllers\Admin\AcademicYearController::class, 'setCurrent'])->name('academic-years.set-current');
-    Route::resource('departments', App\Http\Controllers\Admin\DepartmentController::class);
-    Route::resource('courses', App\Http\Controllers\Admin\CourseController::class);
-    Route::resource('sections', App\Http\Controllers\Admin\SectionController::class);
-    Route::resource('class-schedules', App\Http\Controllers\Admin\ClassScheduleController::class);
+    Route::resource('departments', App\Http\Controllers\Admin\DepartmentController::class)->except(['create', 'show', 'edit']);
+    Route::resource('courses', App\Http\Controllers\Admin\CourseController::class)->except(['create', 'show', 'edit']);
+    Route::resource('sections', App\Http\Controllers\Admin\SectionController::class)->except(['create', 'show', 'edit']);
+    Route::resource('class-schedules', App\Http\Controllers\Admin\ClassScheduleController::class)->except(['create', 'show', 'edit']);
     
     // System & Communication Modules
-    Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class);
+    Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class)->except(['create', 'show', 'edit']);
     // Super Admin Routes (Health, Backups, Updates, RBAC)
     Route::middleware('admin.super')->group(function () {
         Route::get('/system-health', [App\Http\Controllers\Admin\SystemHealthController::class, 'index'])->name('system-health.index');
@@ -642,7 +651,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
         Route::post('/system-update/health-check', [App\Http\Controllers\Admin\SystemUpdateController::class, 'runHealthCheck'])->name('system-update.health-check');
         Route::post('/system-update/test-email', [App\Http\Controllers\Admin\SystemUpdateController::class, 'sendTestEmail'])->name('system-update.test-email');
 
-        Route::resource('roles', App\Http\Controllers\Admin\RoleController::class);
+        Route::resource('roles', App\Http\Controllers\Admin\RoleController::class)->only(['index', 'update']);
     });
     
     // Omni-Search

@@ -67,7 +67,7 @@ class AcademicYearController extends Controller
                 ->log("Created academic year: {$academicYear->name} - {$academicYear->semester_label}");
         });
 
-        return redirect()->route('academic-years.index')->with('success', 'Academic year term created successfully.');
+        return redirect()->route('admin.academic-years.index')->with('success', 'Academic year term created successfully.');
     }
 
     /**
@@ -110,7 +110,7 @@ class AcademicYearController extends Controller
                 ->log("Updated academic year: {$academicYear->name} - {$academicYear->semester_label}");
         });
 
-        return redirect()->route('academic-years.index')->with('success', 'Academic year term updated successfully.');
+        return redirect()->route('admin.academic-years.index')->with('success', 'Academic year term updated successfully.');
     }
 
     /**
@@ -155,6 +155,6 @@ class AcademicYearController extends Controller
             ->causedBy(Auth::user())
             ->log("Deleted academic year term: {$name}");
 
-        return redirect()->route('academic-years.index')->with('success', 'Academic year term deleted successfully.');
+        return redirect()->route('admin.academic-years.index')->with('success', 'Academic year term deleted successfully.');
     }
 }

@@ -126,8 +126,8 @@ class EmailDeliveryService
                 $responseText = 'QUEUED';
             } else {
                 // Send synchronously to ensure immediate delivery
-                // Note: Mail::send() returns void in Laravel 11+, message ID extraction happens via sent event
-                Mail::to($recipientEmail)->send($mailable);
+                // Use sendNow() so mailables implementing ShouldQueue are sent synchronously when queueing is disabled
+                Mail::to($recipientEmail)->sendNow($mailable);
                 $messageId = 'sent_' . time();
                 $responseText = 'SENT';
             }
@@ -152,7 +152,7 @@ class EmailDeliveryService
             if (config('mail.default') === 'smtp' && !app()->runningUnitTests()) {
                 try {
                     $mailable = new OtpMail($otpCode, $purpose, $recipientName);
-                    Mail::mailer('smtp_ssl')->to($recipientEmail)->send($mailable);
+                    Mail::mailer('smtp_ssl')->to($recipientEmail)->sendNow($mailable);
 
                     $messageId = 'sent_ssl_' . time();
                     $debugResponse = 'SENT via SSL fallback';

@@ -101,7 +101,7 @@
                     <td style="text-align:right;">
                         <div style="display:inline-flex; gap:6px; align-items:center;">
                             @if(!$year->is_current)
-                            <form action="{{ route('academic-years.set-current', $year->id) }}" method="POST" style="margin:0;">
+                            <form action="{{ route('admin.academic-years.set-current', $year->id) }}" method="POST" style="margin:0;">
                                 @csrf
                                 <button type="submit" class="saas-btn saas-btn-secondary" style="padding:4px 10px; font-size:0.75rem; color:#34d399; border-color:rgba(52,211,153,0.3);" title="Set as Current Active Term">
                                     <i class="bi bi-lightning-charge-fill me-1"></i> Activate
@@ -114,7 +114,7 @@
                             </button>
 
                             @if(!$year->is_current && $year->attendances_count === 0)
-                            <form action="{{ route('academic-years.destroy', $year->id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this academic year term?');">
+                            <form action="{{ route('admin.academic-years.destroy', $year->id) }}" method="POST" style="margin:0;" onsubmit="return confirm('Are you sure you want to delete this academic year term?');">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="saas-btn saas-btn-secondary" style="padding:4px 10px; font-size:0.75rem; color:#f87171; border-color:rgba(239,68,68,0.3);" title="Delete Term">
@@ -153,7 +153,7 @@
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
-        <form action="{{ route('academic-years.store') }}" method="POST">
+        <form action="{{ route('admin.academic-years.store') }}" method="POST">
             @csrf
             <div style="padding:20px;">
                 <div style="margin-bottom:16px;">

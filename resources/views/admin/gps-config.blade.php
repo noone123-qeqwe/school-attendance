@@ -80,9 +80,9 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> Update GPS Settings
                             </button>
-                            <a href="{{ route('gps.test') }}" class="btn btn-outline-info">
-                                <i class="bi bi-speedometer2"></i> Test GPS Functionality
-                            </a>
+                            <button type="button" class="btn btn-outline-info" onclick="document.getElementById('getCurrentLocation').click()">
+                                <i class="bi bi-speedometer2"></i> Test GPS Signal
+                            </button>
                         </div>
                     </form>
                 </div>

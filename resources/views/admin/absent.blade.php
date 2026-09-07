@@ -43,7 +43,7 @@
 <!-- Filter bar -->
 <div class="adm-card" style="margin-bottom:20px;">
     <div style="padding:18px 22px;">
-        <form method="GET" action="{{ route('admin.absent') }}" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+        <form method="GET" action="{{ request()->url() }}" style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
             <div style="display:flex;flex-direction:column;">
                 <label style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">Date</label>
                 <input type="date" name="date" class="adm-input" value="{{ $date }}">
@@ -67,7 +67,7 @@
             </div>
             <div style="display:flex;gap:8px;align-items:flex-end;">
                 <button type="submit" class="adm-btn adm-btn-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
-                <a href="{{ route('admin.absent') }}" class="adm-btn adm-btn-ghost">Reset</a>
+                <a href="{{ request()->url() }}" class="adm-btn adm-btn-ghost">Reset</a>
             </div>
         </form>
     </div>

@@ -8,7 +8,7 @@
             <div style="font-size:1.5rem;font-weight:800;color:#f3e7cd;">Teacher Performance</div>
             <div style="font-size:0.88rem;color:#b39b82;margin-top:2px;">Analytics on teacher activity and overall class attendance rates</div>
         </div>
-        <a href="{{ route('admin.reports.teacher_performance.pdf') }}" style="padding:9px 18px;background:#cfa46f;color:#1e1b18;border-radius:10px;font-size:0.85rem;font-weight:700;text-decoration:none;">
+        <a href="javascript:window.print()" style="padding:9px 18px;background:#cfa46f;color:#1e1b18;border-radius:10px;font-size:0.85rem;font-weight:700;text-decoration:none;">
             <i class="bi bi-file-earmark-pdf-fill me-2"></i>Export PDF
         </a>
     </div>

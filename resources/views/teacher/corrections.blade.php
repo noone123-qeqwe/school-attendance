@@ -73,14 +73,14 @@
                         <td style="text-align: right;">
                             @if($c->status === 'pending')
                                 <div class="d-inline-flex gap-2">
-                                    <form action="{{ route('corrections.update', $c) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('teacher.corrections.update', $c) }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="action" value="approve">
                                         <button type="submit" class="btn btn-sm" style="background: rgba(34,197,94,0.2); color: #86efac; border: 1px solid rgba(34,197,94,0.4); border-radius: 8px; font-weight: 600;">
                                             <i class="bi bi-check-lg"></i> Approve
                                         </button>
                                     </form>
-                                    <form action="{{ route('corrections.update', $c) }}" method="POST" class="d-inline">
+                                    <form action="{{ route('teacher.corrections.update', $c) }}" method="POST" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="action" value="reject">
                                         <button type="submit" class="btn btn-sm" style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4); border-radius: 8px; font-weight: 600;">

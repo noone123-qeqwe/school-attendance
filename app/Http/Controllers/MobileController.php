@@ -156,8 +156,7 @@ class MobileController extends Controller
      */
     public function attendance()
     {
-        // Placeholder for now
-        return view('mobile.attendance');
+        return redirect()->route('student.attendance.calendar');
     }
 
     /**
@@ -165,8 +164,7 @@ class MobileController extends Controller
      */
     public function scan()
     {
-        // Placeholder for now
-        return view('mobile.scan');
+        return redirect()->route('home', ['action' => 'scan']);
     }
 
     /**
@@ -174,8 +172,7 @@ class MobileController extends Controller
      */
     public function history()
     {
-        // Placeholder for now
-        return view('mobile.history');
+        return redirect()->route('home');
     }
 
     /**
@@ -190,33 +187,33 @@ class MobileController extends Controller
     // Teacher-specific mobile pages
     public function classes()
     {
-        return view('mobile.classes');
+        return redirect()->route('teacher.classroom.index');
     }
 
     public function students()
     {
-        return view('mobile.students');
+        return redirect()->route('teacher.students');
     }
 
     // Parent-specific mobile pages
     public function children()
     {
-        return view('mobile.children');
+        return redirect()->route('parent.dashboard');
     }
 
     public function reports()
     {
-        return view('mobile.reports');
+        return redirect()->route('parent.dashboard');
     }
 
     // Admin-specific mobile pages
     public function dashboard()
     {
-        return view('mobile.dashboard');
+        return redirect()->route('admin.dashboard');
     }
 
     public function settings()
     {
-        return view('mobile.settings');
+        return redirect()->route('admin.settings');
     }
 }
