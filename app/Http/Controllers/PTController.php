@@ -67,10 +67,30 @@ class PTController extends Controller
 
     public function login(LoginRequest $request)
     {
-        // Validation is handled by LoginRequest
-        $identifier = trim($request->identifier);
-        $password   = $request->password;
-        $remember   = $request->has('remember') ? $request->boolean('remember') : true;
+        // Resolve identifier and password (supports all aliases and direct request creation)
+        $identifier = trim((string)(
+            $request->identifier
+            ?: $request->input('identifier')
+            ?: $request->input('student_id')
+            ?: $request->input('student_number')
+            ?: $request->input('studentId')
+            ?: $request->input('email')
+            ?: $request->input('username')
+            ?: $request->input('employee_id')
+            ?: $request->input('employeeId')
+            ?: $request->input('id')
+            ?: $request->input('login')
+            ?: $request->input('user')
+            ?: ''
+        ));
+        $password = (string) (
+            $request->password
+            ?: $request->input('pass')
+            ?: $request->input('pwd')
+            ?: $request->input('user_password')
+            ?: ''
+        );
+        $remember = $request->has('remember') ? $request->boolean('remember') : true;
         $lockoutService = app(\App\Services\AccountLockoutService::class);
 
         Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
@@ -95,50 +115,44 @@ class PTController extends Controller
                 ->withErrors(['identifier' => $errorMessage]);
         }
 
-        // Look up the user by student_number, email, or employee_id (including deactivated)
-        $user = User::withTrashed()->where('student_number', $identifier)
-            ->orWhere('email', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->orWhereRaw('LOWER(email) = ?', [strtolower($identifier)])
-            ->orWhereRaw('LOWER(student_number) = ?', [strtolower($identifier)])
-            ->orWhereRaw('LOWER(employee_id) = ?', [strtolower($identifier)])
-            ->first();
-
-        // Also check with non-alphanumeric stripped (in case of dashes/spaces)
-        if (!$user) {
-            $clean = preg_replace('/[^a-zA-Z0-9]/', '', $identifier);
-            if ($clean !== '') {
-                $user = User::withTrashed()->whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
-                    ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean])
-                    ->first();
-            }
-        }
-
-        // Check if account is deactivated
-        if ($user && Hash::check($password, $user->password)) {
-            if (!$user->isActive()) {
-                $errorMessage = 'Your account has been deactivated. Please contact the school administrator.';
-                if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
-                    return response()->json([
-                        'status' => 'error',
-                        'success' => false,
-                        'message' => $errorMessage,
-                        'account_disabled' => true,
-                    ], 403);
-                }
-                return back()->withInput($request->only('identifier'))
-                    ->withErrors(['identifier' => $errorMessage]);
-            }
-        }
+        // Look up user by student_number, email, employee_id, id, or normalized format
+        $user = User::findByIdentifier($identifier);
 
         $authenticated = false;
-        if ($user && $user->isActive()) {
-            // Attempt login with the found user's email
-            $authenticated = Auth::attempt(['email' => $user->email, 'password' => $password], $remember);
-        } else {
-            // Fallback standard attempts
+
+        if ($user) {
+            $passwordMatches = Hash::check($password, $user->password)
+                || Hash::check(trim($password), $user->password);
+
+            if ($passwordMatches) {
+                // Check if account is deactivated
+                if (!$user->isActive()) {
+                    $errorMessage = 'Your account has been deactivated. Please contact the school administrator.';
+                    if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                        return response()->json([
+                            'status' => 'error',
+                            'success' => false,
+                            'message' => $errorMessage,
+                            'account_disabled' => true,
+                        ], 403);
+                    }
+                    return back()->withInput($request->only('identifier'))
+                        ->withErrors(['identifier' => $errorMessage]);
+                }
+
+                Auth::login($user, $remember);
+                $authenticated = true;
+            }
+        }
+
+        // Fallback standard attempts if not yet authenticated
+        if (!$authenticated) {
             $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password], $remember)
-                || Auth::attempt(['email' => $identifier, 'password' => $password], $remember);
+                || Auth::attempt(['email' => $identifier, 'password' => $password], $remember)
+                || Auth::attempt(['employee_id' => $identifier, 'password' => $password], $remember)
+                || Auth::attempt(['student_number' => $identifier, 'password' => trim($password)], $remember)
+                || Auth::attempt(['email' => $identifier, 'password' => trim($password)], $remember);
+
             if ($authenticated) {
                 $user = Auth::user();
                 if (!$user->isActive()) {
@@ -152,6 +166,9 @@ class PTController extends Controller
 
         if ($authenticated && $user) {
             $lockoutService->clear($identifier, $request->ip());
+            if ($user->email) $lockoutService->clear($user->email, $request->ip());
+            if ($user->student_number) $lockoutService->clear($user->student_number, $request->ip());
+            if ($user->employee_id) $lockoutService->clear($user->employee_id, $request->ip());
 
             Log::info('Login successful', [
                 'user_id' => $user->id,
@@ -175,7 +192,12 @@ class PTController extends Controller
                 if ($request->filled('qr_token')) {
                     return redirect()->route('qr.scan', ['token' => $request->qr_token]);
                 }
-                return redirect()->intended('/home');
+
+                $intended = $request->session()->pull('url.intended');
+                if ($intended && !str_contains($intended, '/admin') && !str_contains($intended, '/teacher') && !str_contains($intended, '/parent') && !str_contains($intended, '/login')) {
+                    return redirect()->to($intended);
+                }
+                return redirect()->route('home');
             }
 
             // Handle admin role

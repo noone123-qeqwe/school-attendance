@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Services\AccountLockoutService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -15,8 +17,43 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', $request->input('student_number', $request->input('employee_id', $request->input('user', ''))))))));
-        $password = (string) $request->input('password', $request->input('pass', ''));
+        $candidates = [
+            $request->input('identifier'),
+            $request->input('student_id'),
+            $request->input('student_number'),
+            $request->input('studentId'),
+            $request->input('email'),
+            $request->input('username'),
+            $request->input('employee_id'),
+            $request->input('employeeId'),
+            $request->input('id'),
+            $request->input('login'),
+            $request->input('user'),
+            $request->input('user_id'),
+            $request->input('userId'),
+        ];
+        $identifier = '';
+        foreach ($candidates as $c) {
+            if (is_scalar($c) && trim((string)$c) !== '') {
+                $identifier = trim((string)$c);
+                break;
+            }
+        }
+
+        $passCandidates = [
+            $request->input('password'),
+            $request->input('pass'),
+            $request->input('pwd'),
+            $request->input('user_password'),
+        ];
+        $password = '';
+        foreach ($passCandidates as $p) {
+            if (is_scalar($p) && (string)$p !== '') {
+                $password = (string)$p;
+                break;
+            }
+        }
+
         $ip = $request->ip() ?: 'unknown';
 
         // 1. Check account / IP lockout FIRST before any database or hashing operations
@@ -34,8 +71,8 @@ class AuthController extends Controller
         }
 
         // 2. Validate presence of credentials
-        if (empty($identifier) || empty($password)) {
-            $result = $this->lockoutService->recordFailedAttempt($identifier, $ip);
+        if ($identifier === '' || $password === '') {
+            $result = $this->lockoutService->recordFailedAttempt($identifier ?: 'unknown', $ip);
             if ($result['locked']) {
                 return response()->json([
                     'status' => 'error',
@@ -51,29 +88,36 @@ class AuthController extends Controller
                 'success' => false,
                 'message' => 'The identifier and password fields are required.',
                 'errors' => [
-                    'email' => ['The email/identifier field is required.'],
+                    'identifier' => ['The identifier field is required.'],
                     'password' => ['The password field is required.'],
                 ],
                 'remaining_attempts' => $result['remaining_attempts'],
             ], 422);
         }
 
-        // 3. Attempt authentication
-        $credentials = filter_var($identifier, FILTER_VALIDATE_EMAIL)
-            ? ['email' => $identifier, 'password' => $password]
-            : ['student_number' => $identifier, 'password' => $password];
+        // 3. Attempt authentication via User lookup
+        $user = User::findByIdentifier($identifier);
+        $authenticated = false;
 
-        $authenticated = Auth::attempt($credentials);
-
-        if (!$authenticated) {
-            $authenticated = Auth::attempt(['employee_id' => $identifier, 'password' => $password])
-                || Auth::attempt(['email' => $identifier, 'password' => $password]);
+        if ($user && (Hash::check($password, $user->password) || Hash::check(trim($password), $user->password))) {
+            $authenticated = true;
+        } else {
+            // Fallback standard attempts
+            $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password])
+                || Auth::attempt(['email' => $identifier, 'password' => $password])
+                || Auth::attempt(['employee_id' => $identifier, 'password' => $password])
+                || Auth::attempt(['student_number' => $identifier, 'password' => trim($password)])
+                || Auth::attempt(['email' => $identifier, 'password' => trim($password)]);
+            if ($authenticated) {
+                $user = Auth::user();
+            }
         }
 
-        if ($authenticated) {
+        if ($authenticated && $user) {
             $this->lockoutService->clear($identifier, $ip);
-
-            $user = Auth::user();
+            if ($user->email) $this->lockoutService->clear($user->email, $ip);
+            if ($user->student_number) $this->lockoutService->clear($user->student_number, $ip);
+            if ($user->employee_id) $this->lockoutService->clear($user->employee_id, $ip);
 
             if (!$user->isActive()) {
                 Auth::logout();
@@ -87,12 +131,23 @@ class AuthController extends Controller
 
             $token = $user->createToken('mobile-app')->plainTextToken;
 
+            // Determine dashboard URL
+            $dashboardUrl = url('/home');
+            if ($user->isAdmin()) {
+                $dashboardUrl = route('admin.dashboard');
+            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+                $dashboardUrl = route('teacher.dashboard');
+            } elseif ($user->isParent()) {
+                $dashboardUrl = route('parent.dashboard');
+            }
+
             return response()->json([
                 'status' => 'success',
                 'success' => true,
                 'user' => $user,
                 'token' => $token,
                 'role' => $user->role,
+                'dashboard_url' => $dashboardUrl,
             ]);
         }
 
@@ -112,7 +167,7 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'error',
             'success' => false,
-            'message' => 'Invalid credentials. (' . $result['remaining_attempts'] . ' attempts remaining before account lockout)',
+            'message' => 'Incorrect ID/email or password. (' . $result['remaining_attempts'] . ' attempts remaining before account lockout)',
             'remaining_attempts' => $result['remaining_attempts'],
         ], 401);
     }

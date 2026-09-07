@@ -13,18 +13,46 @@ class LoginRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $id = $this->input('identifier')
-            ?? $this->input('email')
-            ?? $this->input('username')
-            ?? $this->input('student_number')
-            ?? $this->input('employee_id')
-            ?? $this->input('user')
-            ?? '';
-        $pass = $this->input('password') ?? $this->input('pass') ?? '';
+        $candidates = [
+            $this->input('identifier'),
+            $this->input('student_id'),
+            $this->input('student_number'),
+            $this->input('studentId'),
+            $this->input('email'),
+            $this->input('username'),
+            $this->input('employee_id'),
+            $this->input('employeeId'),
+            $this->input('id'),
+            $this->input('login'),
+            $this->input('user'),
+            $this->input('user_id'),
+            $this->input('userId'),
+        ];
+        $id = '';
+        foreach ($candidates as $candidate) {
+            if (is_scalar($candidate) && trim((string)$candidate) !== '') {
+                $id = trim((string)$candidate);
+                break;
+            }
+        }
+
+        $passCandidates = [
+            $this->input('password'),
+            $this->input('pass'),
+            $this->input('pwd'),
+            $this->input('user_password'),
+        ];
+        $pass = '';
+        foreach ($passCandidates as $p) {
+            if (is_scalar($p) && (string)$p !== '') {
+                $pass = (string)$p;
+                break;
+            }
+        }
 
         $this->merge([
-            'identifier' => is_string($id) ? trim($id) : '',
-            'password'   => is_string($pass) ? (string) $pass : '',
+            'identifier' => $id,
+            'password'   => $pass,
         ]);
     }
 

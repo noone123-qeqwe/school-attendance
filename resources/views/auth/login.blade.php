@@ -1315,8 +1315,10 @@ if (loginForm) {
 
         var btn = document.getElementById('loginSubmitBtn');
         if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="btn-spinner"></span>SIGNING IN...';
+            setTimeout(function() {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="btn-spinner"></span>SIGNING IN...';
+            }, 10);
         }
     });
 }

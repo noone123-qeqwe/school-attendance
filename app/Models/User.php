@@ -120,6 +120,88 @@ class User extends Authenticatable
     'is_active',
 ];
 
+    /**
+     * Find a user by any valid identifier:
+     * - Student number (exact, case-insensitive, or padded with leading zero for institutional 7-digit IDs)
+     * - Email (exact or case-insensitive)
+     * - Employee ID (exact, case-insensitive, or stripped)
+     * - Database primary key ID (if numeric)
+     * - Normalized alphanumeric formats (stripping hyphens and spaces)
+     */
+    public static function findByIdentifier(?string $identifier, bool $withTrashed = true): ?self
+    {
+        $raw = trim((string) $identifier);
+        if ($raw === '') {
+            return null;
+        }
+
+        $query = $withTrashed ? static::withTrashed() : static::query();
+
+        // 1. Direct match on standard fields (exact or lowercase)
+        $lower = strtolower($raw);
+        $user = (clone $query)->where(function ($q) use ($raw, $lower) {
+            $q->where('student_number', $raw)
+              ->orWhere('email', $raw)
+              ->orWhere('employee_id', $raw)
+              ->orWhereRaw('LOWER(email) = ?', [$lower])
+              ->orWhereRaw('LOWER(student_number) = ?', [$lower])
+              ->orWhereRaw('LOWER(employee_id) = ?', [$lower]);
+        })->first();
+
+        if ($user) {
+            return $user;
+        }
+
+        // 2. If numeric, check primary key id or institutional 7-digit zero-padded student number
+        if (ctype_digit($raw) || is_numeric($raw)) {
+            $num = (int) $raw;
+
+            // Check primary key ID
+            $user = (clone $query)->where('id', $num)->first();
+            if ($user) {
+                return $user;
+            }
+
+            // Check 7-digit zero-padded student_number (e.g. 703250 -> 0703250)
+            $padded = sprintf('%07d', $num);
+            $user = (clone $query)->where(function ($q) use ($padded) {
+                $q->where('student_number', $padded)
+                  ->orWhere('employee_id', $padded);
+            })->first();
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // 3. Clean non-alphanumeric characters (e.g. hyphens, spaces in 070-3250)
+        $clean = preg_replace('/[^a-zA-Z0-9]/', '', $raw);
+        if ($clean !== '' && $clean !== $raw) {
+            $user = (clone $query)->where(function ($q) use ($clean) {
+                $q->where('student_number', $clean)
+                  ->orWhere('employee_id', $clean)
+                  ->orWhereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
+                  ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean]);
+            })->first();
+
+            if ($user) {
+                return $user;
+            }
+
+            if (ctype_digit($clean)) {
+                $padded = sprintf('%07d', (int) $clean);
+                $user = (clone $query)->where(function ($q) use ($padded) {
+                    $q->where('student_number', $padded)
+                      ->orWhere('employee_id', $padded);
+                })->first();
+                if ($user) {
+                    return $user;
+                }
+            }
+        }
+
+        return null;
+    }
+
     public function isActive(): bool
     {
         return (bool) ($this->is_active ?? true) && !$this->trashed();

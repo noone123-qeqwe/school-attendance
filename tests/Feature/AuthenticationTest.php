@@ -180,4 +180,187 @@ class AuthenticationTest extends TestCase
 
         $response->assertRedirect('/home');
     }
+
+    // ─────────────────────────────────────────
+    // STUDENT 0703250 SCENARIO TESTS
+    // ─────────────────────────────────────────
+
+    public function test_student_0703250_can_login_with_student123(): void
+    {
+        $student = User::factory()->create([
+            'student_number' => '0703250',
+            'email' => 'ibnkervijamatos44@gmail.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => '0703250',
+            'password' => 'student123',
+        ]);
+
+        $this->assertAuthenticatedAs($student);
+        $response->assertRedirect('/home');
+        $this->assertEquals('student', session('user_role'));
+    }
+
+    public function test_student_0703250_can_login_with_student_id_field_name(): void
+    {
+        $student = User::factory()->create([
+            'student_number' => '0703250',
+            'email' => 'ibnkervijamatos44@gmail.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'student_id' => '0703250',
+            'password' => 'student123',
+        ]);
+
+        $this->assertAuthenticatedAs($student);
+        $response->assertRedirect('/home');
+    }
+
+    public function test_student_0703250_can_login_without_leading_zero(): void
+    {
+        $student = User::factory()->create([
+            'student_number' => '0703250',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => '703250',
+            'password' => 'student123',
+        ]);
+
+        $this->assertAuthenticatedAs($student);
+        $response->assertRedirect('/home');
+    }
+
+    public function test_student_0703250_can_login_with_formatted_dash(): void
+    {
+        $student = User::factory()->create([
+            'student_number' => '0703250',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => '070-3250',
+            'password' => 'student123',
+        ]);
+
+        $this->assertAuthenticatedAs($student);
+        $response->assertRedirect('/home');
+    }
+
+    public function test_student_0703250_can_login_with_email(): void
+    {
+        $student = User::factory()->create([
+            'student_number' => '0703250',
+            'email' => 'ibnkervijamatos44@gmail.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => 'ibnkervijamatos44@gmail.com',
+            'password' => 'student123',
+        ]);
+
+        $this->assertAuthenticatedAs($student);
+        $response->assertRedirect('/home');
+    }
+
+    public function test_student_0703250_cannot_login_with_incorrect_password(): void
+    {
+        User::factory()->create([
+            'student_number' => '0703250',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => '0703250',
+            'password' => 'wrongpassword',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('identifier');
+    }
+
+    public function test_student_0703250_cannot_login_with_incorrect_id(): void
+    {
+        User::factory()->create([
+            'student_number' => '0703250',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => '0703999',
+            'password' => 'student123',
+        ]);
+
+        $this->assertGuest();
+        $response->assertSessionHasErrors('identifier');
+    }
+
+    public function test_api_login_with_0703250_and_student123(): void
+    {
+        $student = User::factory()->create([
+            'student_number' => '0703250',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'student_id' => '0703250',
+            'password' => 'student123',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'status' => 'success',
+            'success' => true,
+            'role' => 'student',
+        ]);
+        $this->assertNotEmpty($response->json('token'));
+    }
+
+    public function test_api_login_with_incorrect_password_is_rejected(): void
+    {
+        User::factory()->create([
+            'student_number' => '0703250',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->postJson('/api/login', [
+            'identifier' => '0703250',
+            'password' => 'wrongpassword',
+        ]);
+
+        $response->assertStatus(401);
+        $response->assertJson([
+            'status' => 'error',
+            'success' => false,
+        ]);
+    }
+
+    public function test_api_login_with_incorrect_id_is_rejected(): void
+    {
+        $response = $this->postJson('/api/login', [
+            'identifier' => '0703999',
+            'password' => 'student123',
+        ]);
+
+        $response->assertStatus(401);
+        $response->assertJson([
+            'status' => 'error',
+            'success' => false,
+        ]);
+    }
 }
