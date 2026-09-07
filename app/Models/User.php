@@ -44,6 +44,53 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the resolved URL for the user's profile picture or default avatar.
+     */
+    public function getProfilePhotoUrlAttribute(): string
+    {
+        if ($this->profile_image) {
+            if (str_starts_with($this->profile_image, 'http://') || str_starts_with($this->profile_image, 'https://')) {
+                return $this->profile_image;
+            }
+            if (str_starts_with($this->profile_image, '/')) {
+                return $this->profile_image;
+            }
+            return asset('storage/' . $this->profile_image);
+        }
+
+        $initials = urlencode($this->name ?: 'User');
+        $bg = $this->isTeacher() ? '7c2d12' : ($this->isAdmin() ? '800000' : '800000');
+        return "https://ui-avatars.com/api/?name={$initials}&background={$bg}&color=fff&size=256";
+    }
+
+    /**
+     * Get profile photo URL with timestamp version parameter for cache-busting.
+     */
+    public function getProfilePhotoUrlWithVersionAttribute(): string
+    {
+        $url = $this->profile_photo_url;
+        $version = $this->updated_at ? $this->updated_at->timestamp : time();
+        $separator = str_contains($url, '?') ? '&' : '?';
+        return $url . $separator . 'v=' . $version;
+    }
+
+    /**
+     * Determine if the user has an uploaded custom profile picture.
+     */
+    public function getHasCustomProfileImageAttribute(): bool
+    {
+        return !empty($this->profile_image);
+    }
+
+    /**
+     * Additional attributes to append to array/JSON representation.
+     */
+    protected $appends = [
+        'profile_photo_url',
+        'has_custom_profile_image',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      * Including the fields required for the Smart Classroom Attendance System.
      */
@@ -101,6 +148,11 @@ class User extends Authenticatable
     public function isDepartmentHead(): bool
     {
         return $this->role === 'department_head';
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
     }
 
     public function children()

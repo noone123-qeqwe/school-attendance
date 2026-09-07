@@ -204,8 +204,10 @@ Route::middleware('auth')->group(function () {
     // Generate Recovery Codes
     Route::post('/recovery/generate', [App\Http\Controllers\RecoveryCodeController::class, 'generate'])->name('recovery.generate');
 
-    // Profile Image Update (all authenticated roles)
-    Route::post('/profile/image', [PTController::class, 'updateImage'])->name('profile.image.update');
+    // Profile Image Management (all authenticated roles)
+    Route::post('/profile/image', [App\Http\Controllers\ProfilePhotoController::class, 'update'])->name('profile.image.update');
+    Route::delete('/profile/image', [App\Http\Controllers\ProfilePhotoController::class, 'destroy'])->name('profile.image.delete');
+    Route::post('/profile/image/remove', [App\Http\Controllers\ProfilePhotoController::class, 'destroy'])->name('profile.image.remove');
 });
 
 // Mobile App Routes (All authenticated users)

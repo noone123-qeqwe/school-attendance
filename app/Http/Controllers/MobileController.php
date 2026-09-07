@@ -183,8 +183,8 @@ class MobileController extends Controller
      */
     public function profile()
     {
-        // Placeholder for now
-        return view('mobile.profile');
+        $user = Auth::user();
+        return view('mobile.profile', compact('user'));
     }
 
     // Teacher-specific mobile pages

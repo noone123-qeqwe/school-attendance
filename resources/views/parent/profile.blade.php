@@ -232,26 +232,8 @@
                     <div><div class="sc-title">Personal Information</div><div class="sc-sub">Update your basic profile details</div></div>
                 </div>
                 <div class="sc-body">
-                    <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
-                        <input type="file" name="profile_image" id="imgInput" class="d-none" accept="image/*" onchange="updateProfilePreview(this)">
-                        <div onclick="document.getElementById('imgInput').click()"
-                             style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #fef3c7;box-shadow:0 4px 16px rgba(128,0,0,.12);cursor:pointer;position:relative;flex-shrink:0;transition:transform .3s;"
-                             onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform=''">
-                            @if($user->profile_image)
-                                <img id="profilePreview" src="{{ str_starts_with($user->profile_image, 'http') ? $user->profile_image : asset('storage/'.$user->profile_image) }}" style="width:100%;height:100%;object-fit:cover;"
-                                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=800000&color=fff&size=200'">
-                            @else
-                                <img id="profilePreview" src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=800000&color=fff&size=200" style="width:100%;height:100%;object-fit:cover;">
-                            @endif
-                            <div style="position:absolute;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;border-radius:50%;"
-                                 onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
-                                <i class="bi bi-camera-fill" style="color:white;font-size:1.2rem;"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="font-size:1rem;font-weight:700;color:#f3e7cd;">Profile Photo</div>
-                            <div style="font-size:.8rem;color:#b39b82;margin-top:2px;">Click the photo to change it</div>
-                        </div>
+                    <div style="margin-bottom:24px;">
+                        <x-profile-photo-manager :user="$user" :size="88" avatar-id="profilePreview" />
                     </div>
                     
                     <div class="row g-4">
@@ -500,21 +482,7 @@
 
 </div>
 
-<script>
-function updateProfilePreview(input) {
-    if (input.files && input.files[0]) {
-        if (input.files[0].size > 10 * 1024 * 1024) {
-            alert('The selected image is too large (' + (input.files[0].size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
-            input.value = '';
-            return;
-        }
-        var reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('profilePreview').src = e.target.result;
-        }
-        reader.readAsDataURL(input.files[0]);
-    }
-}
+
 
 function updateStabsScrollArrows() {
     const nav = document.getElementById('stabsNav');

@@ -164,22 +164,9 @@
 
 <!-- Profile Header -->
 <div class="adm-profile-header">
-    <form action="{{ route('admin.profile.image') }}" method="POST" enctype="multipart/form-data" id="adminProfileImgForm">
-        @csrf
-        <input type="file" name="profile_image" id="adminProfileImg" class="d-none" accept="image/*" onchange="handleAdminAvatarUpload(this)">
-        <div class="adm-profile-avatar" onclick="document.getElementById('adminProfileImg').click()" title="Click to change profile picture">
-            @if($user->profile_image)
-                <img id="adminAvatarDisplay" src="{{ str_starts_with($user->profile_image, 'http') ? $user->profile_image : (str_starts_with($user->profile_image, '/') ? $user->profile_image : asset('storage/'.$user->profile_image)) }}"
-                     onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=800000&color=fff&size=200'">
-            @else
-                <img id="adminAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode($user->name) }}&background=800000&color=fff&size=200">
-            @endif
-            <div id="adminAvatarOverlay" class="adm-avatar-overlay">
-                <i class="bi bi-camera-fill" style="font-size:1.2rem;"></i>
-                <span>Change</span>
-            </div>
-        </div>
-    </form>
+    <div class="adm-avatar-wrapper">
+        <x-profile-photo-manager :user="$user" :size="96" avatar-id="adminAvatarDisplay" />
+    </div>
 
     <!-- Name + role -->
     <div class="adm-profile-meta">
@@ -750,27 +737,7 @@ async function removeDevice(id, btn) {
     } catch(e) {}
 }
 
-function handleAdminAvatarUpload(input) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-        alert('The selected image is too large (' + (file.size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
-        input.value = '';
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const avatarImg = document.getElementById('adminAvatarDisplay');
-        if (avatarImg) avatarImg.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-    const overlay = document.getElementById('adminAvatarOverlay');
-    if (overlay) {
-        overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status" style="width:1.2rem;height:1.2rem;"></div><span style="font-size:0.7rem;margin-top:4px;">Saving...</span>';
-        overlay.style.opacity = '1';
-    }
-    document.getElementById('adminProfileImgForm').submit();
-}
+
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDevices();

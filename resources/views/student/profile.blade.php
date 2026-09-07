@@ -156,10 +156,15 @@
         padding: 4px 14px; border-radius: 99px;
     }
     
+    .student-avatar-container {
+        position: absolute;
+        bottom: -56px; left: 36px;
+        z-index: 10;
+    }
+    
     @media (max-width: 768px) {
-        .profile-meta { padding-left: 0; padding-top: 60px; justify-content: center; text-align: center; }
-        .avatar-wrap { left: 50%; transform: translateX(-50%); }
-        .avatar-wrap:hover { transform: translateX(-50%) scale(1.05); }
+        .student-avatar-container { left: 50%; transform: translateX(-50%); }
+        .profile-meta { padding-left: 0; padding-top: 100px; justify-content: center; text-align: center; }
         .profile-id { justify-content: center; margin: 4px auto 0; }
         .info-row { flex-direction: column; gap: 8px; align-items: flex-start; }
     }
@@ -187,23 +192,10 @@
             <i class="bi bi-mortarboard-fill profile-hero-icon"></i>
         </div>
 
-        <!-- Avatar -->
-        <form action="{{ route('profile.image.update') }}" method="POST" enctype="multipart/form-data" id="profileImageForm">
-            @csrf
-            <input type="file" name="profile_image" id="profile_image_input" class="d-none" accept="image/jpeg,image/png,image/jpg,image/webp,image/gif,image/heic,image/heif,image/*" onchange="handleStudentAvatarUpload(this)">
-            <label for="profile_image_input" class="avatar-wrap" title="Click to change profile picture">
-                @if(Auth::user()->profile_image)
-                    <img id="studentAvatarDisplay" src="{{ str_starts_with(Auth::user()->profile_image, 'http') ? Auth::user()->profile_image : asset('storage/'.Auth::user()->profile_image) }}"
-                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200'">
-                @else
-                    <img id="studentAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode(Auth::user()->name) }}&background=800000&color=fff&size=200">
-                @endif
-                <div class="avatar-edit-overlay" id="avatarEditOverlay">
-                    <i class="bi bi-camera-fill" style="font-size:1.2rem;"></i>
-                    <span>Change</span>
-                </div>
-            </label>
-        </form>
+        <!-- Profile Picture Manager -->
+        <div class="student-avatar-container">
+            <x-profile-photo-manager :user="Auth::user()" :size="112" avatar-id="studentAvatarDisplay" />
+        </div>
 
         <!-- Name + meta -->
         <div class="profile-meta">
@@ -629,73 +621,7 @@ async function removeDevice(id, btn) {
     } catch(e) {}
 }
 
-async function handleStudentAvatarUpload(input) {
-    if (!input.files || !input.files[0]) return;
-    const file = input.files[0];
-    
-    // Check file size (10 MB max)
-    if (file.size > 10 * 1024 * 1024) {
-        alert('The selected image is too large (' + (file.size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
-        input.value = '';
-        return;
-    }
-    
-    // Instant preview
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const avatarImg = document.getElementById('studentAvatarDisplay');
-        if (avatarImg) avatarImg.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-    
-    // Loading indicator
-    const overlay = document.getElementById('avatarEditOverlay');
-    if (overlay) {
-        overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status" style="width:1.2rem;height:1.2rem;"></div><span style="font-size:0.7rem;margin-top:4px;">Saving...</span>';
-        overlay.style.opacity = '1';
-    }
-    
-    const form = document.getElementById('profileImageForm');
-    const formData = new FormData(form);
-    formData.set('profile_image', file);
-    formData.set('_token', '{{ csrf_token() }}');
 
-    try {
-        const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-            if (overlay) {
-                overlay.innerHTML = '<i class="bi bi-check-circle-fill text-success" style="font-size:1.3rem;"></i><span style="font-size:0.65rem;margin-top:2px;">Saved</span>';
-                setTimeout(() => {
-                    overlay.style.opacity = '0';
-                    overlay.innerHTML = '<i class="bi bi-camera-fill" style="font-size:1.2rem;"></i><span>Change</span>';
-                }, 1800);
-            }
-            if (data.image_url) {
-                const freshUrl = data.image_url + (data.image_url.includes('?') ? '&' : '?') + 't=' + Date.now();
-                document.querySelectorAll('.top-nav-avatar, .user-avatar-img, .header-user-avatar, .header-profile-img, .mobile-user-avatar, #studentAvatarDisplay, #settingsAvatarDisplay').forEach(img => {
-                    img.src = freshUrl;
-                });
-            }
-            if (window.triggerHaptic) window.triggerHaptic('success');
-        } else {
-            throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join('\n') : 'Upload failed'));
-        }
-    } catch (err) {
-        console.warn('AJAX upload fallback to form submit:', err);
-        form.submit();
-    }
-}
 
 document.addEventListener('DOMContentLoaded', () => {
     loadDevices();

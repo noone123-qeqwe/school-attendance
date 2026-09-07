@@ -128,22 +128,9 @@
 @endif
 
 <div class="tch-profile-header">
-    <form action="{{ route('teacher.profile.image') }}" method="POST" enctype="multipart/form-data" id="teacherProfileImgForm">
-        @csrf
-        <input type="file" name="profile_image" id="teacherProfileImg" class="d-none" accept="image/*" onchange="handleTeacherAvatarUpload(this)">
-        <div class="tch-profile-avatar" onclick="document.getElementById('teacherProfileImg').click()" title="Click to change profile picture">
-                @if($teacher->profile_image)
-                    <img id="teacherAvatarDisplay" src="{{ str_starts_with($teacher->profile_image, 'http') ? $teacher->profile_image : (str_starts_with($teacher->profile_image, '/') ? $teacher->profile_image : asset('storage/'.$teacher->profile_image)) }}"
-                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}&background=7c2d12&color=fff&size=200'">
-                @else
-                    <img id="teacherAvatarDisplay" src="https://ui-avatars.com/api/?name={{ urlencode($teacher->name) }}&background=7c2d12&color=fff&size=200">
-                @endif
-                <div id="teacherAvatarOverlay" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;border-radius:50%;color:white;"
-                     onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
-                    <i class="bi bi-camera-fill" style="font-size:1.2rem;"></i>
-                </div>
-            </div>
-        </form>
+    <div class="tch-avatar-wrapper">
+        <x-profile-photo-manager :user="$teacher" :size="96" avatar-id="teacherAvatarDisplay" />
+    </div>
 
         <div class="tch-profile-header-info">
             <div class="tch-profile-name">{{ $teacher->name }}</div>
@@ -785,46 +772,7 @@ async function removeDevice(id, btn) {
     } catch(e) {}
 }
 
-function handleTeacherAvatarUpload(input) {
-    console.log('[Profile Image] Upload triggered');
-    if (!input.files || !input.files[0]) {
-        console.error('[Profile Image] No file selected');
-        return;
-    }
-    const file = input.files[0];
-    console.log('[Profile Image] File selected:', file.name, 'Size:', (file.size / (1024 * 1024)).toFixed(2), 'MB');
-    
-    if (file.size > 10 * 1024 * 1024) {
-        alert('The selected image is too large (' + (file.size / (1024 * 1024)).toFixed(1) + 'MB). Please choose an image under 10MB.');
-        input.value = '';
-        return;
-    }
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const avatarImg = document.getElementById('teacherAvatarDisplay');
-        if (avatarImg) {
-            avatarImg.src = e.target.result;
-            console.log('[Profile Image] Preview updated');
-        }
-    };
-    reader.readAsDataURL(file);
-    
-    const overlay = document.getElementById('teacherAvatarOverlay');
-    if (overlay) {
-        overlay.innerHTML = '<div class="spinner-border spinner-border-sm text-light" role="status" style="width:1.2rem;height:1.2rem;"></div><span style="font-size:0.7rem;margin-top:4px;">Saving...</span>';
-        overlay.style.opacity = '1';
-    }
-    
-    console.log('[Profile Image] Submitting form...');
-    const form = document.getElementById('teacherProfileImgForm');
-    if (form) {
-        form.submit();
-    } else {
-        console.error('[Profile Image] Form not found!');
-        alert('Error: Could not submit the form. Please refresh the page and try again.');
-    }
-}
+
 
 // ── WebAuthn Fingerprint Registration ──
 async function loadDevices() {
