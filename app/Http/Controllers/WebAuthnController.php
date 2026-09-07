@@ -27,6 +27,9 @@ class WebAuthnController extends Controller
     private function getRpId(Request $request): string
     {
         $host = trim((string) $request->header('x-forwarded-host', $request->getHost()));
+        if (str_contains($host, ',')) {
+            $host = trim(explode(',', $host)[0]);
+        }
         $host = preg_replace('/:\d+$/', '', $host);
 
         if ($host === '') {

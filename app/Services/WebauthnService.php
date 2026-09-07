@@ -289,7 +289,7 @@ class WebauthnService
         $host = '';
 
         if (function_exists('request') && request()) {
-            // Try x-forwarded-host first (set by proxies like ngrok / tunnels)
+            // Try x-forwarded-host first (set by proxies like Render / ngrok / Cloudflare)
             $host = trim((string) request()->header('x-forwarded-host'));
             
             // Fallback to x-forwarded-server
@@ -303,6 +303,16 @@ class WebauthnService
             }
         }
 
+        // Handle multi-hop proxy headers (take first hostname if comma-separated)
+        if (str_contains($host, ',')) {
+            $host = trim(explode(',', $host)[0]);
+        }
+
+        // Remove scheme if present
+        if (str_contains($host, '://')) {
+            $host = parse_url($host, PHP_URL_HOST) ?: $host;
+        }
+
         // Remove port numbers
         $host = preg_replace('/:\d+$/', '', $host);
 
@@ -314,7 +324,7 @@ class WebauthnService
             }
         }
 
-        return strtolower($host ?: 'localhost');
+        return strtolower(trim($host) ?: 'localhost');
     }
 
     private function parseAuthenticatorData(string $authData, bool $requireAttestedCredential): array
