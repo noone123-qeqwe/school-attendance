@@ -222,7 +222,7 @@
         }
         #loginForm .glass-input {
             width: 100%;
-            padding: 11px 13px 11px 50px !important;
+            padding: 11px 13px 11px 50px;
             border-radius: 11px;
             border: 1.5px solid rgba(212, 175, 55, 0.25);
             background: rgba(0,0,0,0.3);
@@ -240,16 +240,18 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
         }
         #loginForm .glass-input-wrap:focus-within .g-icon { color: rgba(255,255,255,0.85); }
-        #loginForm .glass-input.has-eye { padding-right: 42px; }
+        .glass-input.has-eye { padding-right: 46px !important; }
         .eye-toggle {
-            position: absolute; right: 12px; top: 50%;
+            position: absolute; right: 10px; top: 50%;
             transform: translateY(-50%);
-            color: rgba(255,255,255,0.5); font-size: 0.95rem;
-            cursor: pointer; background: none; border: none; padding: 4px;
+            color: rgba(255,255,255,0.65); font-size: 1.05rem;
+            cursor: pointer; background: none; border: none; padding: 6px;
             transition: color 0.2s; line-height: 1;
-            z-index: 5;
+            z-index: 10 !important;
+            display: inline-flex; align-items: center; justify-content: center;
         }
         .eye-toggle:hover { color: white; }
+        .eye-toggle i { pointer-events: none !important; }
 
         /* Fingerprint/Biometric row */
         .fp-row {
@@ -1073,14 +1075,28 @@ fpPromise
     .catch(error => console.error('FingerprintJS error:', error));
 
 function toggleEye(inputId, btn) {
-    var input = document.getElementById(inputId);
-    var icon  = btn.querySelector('i');
-    if (input.type === 'password') {
-        input.type = 'text'; icon.className = 'bi bi-eye'; btn.style.color = 'white';
-    } else {
-        input.type = 'password'; icon.className = 'bi bi-eye-slash'; btn.style.color = '';
+    if (!inputId) return;
+    const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
+    if (!input) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    let button = btn;
+    if (!button && typeof inputId === 'string') {
+        button = document.querySelector(`button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-toggle, .eye-btn, [class*="eye"]');
+    }
+    if (button) {
+        const icon = button.querySelector('i');
+        if (icon) {
+            icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
+        }
+        button.style.color = isPassword ? 'white' : '';
     }
 }
+window.toggleEye = toggleEye;
+window.togglePw = toggleEye;
+window.togglePassword = toggleEye;
 
 // Remember identifier in localStorage
 var idInput = document.getElementById('idInput');
