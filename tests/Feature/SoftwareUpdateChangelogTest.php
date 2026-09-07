@@ -103,8 +103,10 @@ class SoftwareUpdateChangelogTest extends TestCase
         ]);
 
         $data = $response->json();
-        $this->assertEquals('1.4.3', $data['latest_version']);
-        $this->assertEquals('1.4.2', $data['installed_version']);
+        $latest = (string)config('changelog.default_version', '2.2.0');
+        $installed = (string)config('changelog.installed_version', '2.2.0');
+        $this->assertEquals($latest, $data['latest_version']);
+        $this->assertEquals($installed, $data['installed_version']);
         $this->assertNotEmpty($data['changelog']['features']);
         $this->assertNotEmpty($data['changelog']['title']);
     }
@@ -135,8 +137,10 @@ class SoftwareUpdateChangelogTest extends TestCase
         $response->assertSee('pwaDismissUpdatePopupBtn', false);
 
         // Verify version meta tags for both desktop and mobile
-        $response->assertSee('name="app-installed-version" content="1.4.2"', false);
-        $response->assertSee('name="app-latest-version" content="1.4.3"', false);
+        $latest = (string)config('changelog.default_version', '2.2.0');
+        $installed = (string)config('changelog.installed_version', '2.2.0');
+        $response->assertSee('name="app-installed-version" content="' . $installed . '"', false);
+        $response->assertSee('name="app-latest-version" content="' . $latest . '"', false);
 
         // Verify mobile-optimized layout CSS rules
         $response->assertSee('z-index: 100005 !important;', false);

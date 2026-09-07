@@ -76,6 +76,8 @@ self.addEventListener('activate', (event) => {
             if (self.registration.navigationPreload) {
                 return self.registration.navigationPreload.enable();
             }
+        }).then(() => {
+            return self.clients.claim();
         })
     );
 });

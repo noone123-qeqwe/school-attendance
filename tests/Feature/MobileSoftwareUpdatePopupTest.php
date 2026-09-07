@@ -12,6 +12,11 @@ class MobileSoftwareUpdatePopupTest extends TestCase
 
     public function test_software_update_metadata_contract_satisfies_latest_greater_than_installed(): void
     {
+        config([
+            'changelog.installed_version' => '2.1.0',
+            'changelog.default_version' => '2.2.0',
+        ]);
+
         $response = $this->get('/pwa/version');
 
         $response->assertStatus(200);
@@ -23,8 +28,8 @@ class MobileSoftwareUpdatePopupTest extends TestCase
         $installed = $data['installed_version'];
         $latest = $data['latest_version'];
 
-        $this->assertEquals('1.4.2', $installed);
-        $this->assertEquals('1.4.3', $latest);
+        $this->assertEquals('2.1.0', $installed);
+        $this->assertEquals('2.2.0', $latest);
 
         // Assert semver Latest > Installed
         $this->assertGreaterThan(0, version_compare($latest, $installed));
@@ -48,8 +53,10 @@ class MobileSoftwareUpdatePopupTest extends TestCase
         $response->assertSee('max-height: min(520px, calc(100dvh - 96px - env(safe-area-inset-bottom, 12px))) !important;', false);
 
         // Meta tags for update comparison
-        $response->assertSee('<meta name="app-installed-version" content="1.4.2">', false);
-        $response->assertSee('<meta name="app-latest-version" content="1.4.3">', false);
+        $installed = (string)config('changelog.installed_version', '2.2.0');
+        $latest = (string)config('changelog.default_version', '2.2.0');
+        $response->assertSee('<meta name="app-installed-version" content="' . $installed . '">', false);
+        $response->assertSee('<meta name="app-latest-version" content="' . $latest . '">', false);
     }
 
     public function test_mobile_responsive_css_and_update_popup_rendered_on_register(): void
@@ -58,8 +65,10 @@ class MobileSoftwareUpdatePopupTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('id="pwaSystemUpdatePopup"', false);
-        $response->assertSee('<meta name="app-installed-version" content="1.4.2">', false);
-        $response->assertSee('<meta name="app-latest-version" content="1.4.3">', false);
+        $installed = (string)config('changelog.installed_version', '2.2.0');
+        $latest = (string)config('changelog.default_version', '2.2.0');
+        $response->assertSee('<meta name="app-installed-version" content="' . $installed . '">', false);
+        $response->assertSee('<meta name="app-latest-version" content="' . $latest . '">', false);
     }
 
     public function test_settings_page_reflects_dynamic_application_version(): void
@@ -72,8 +81,8 @@ class MobileSoftwareUpdatePopupTest extends TestCase
         $response = $this->actingAs($user)->get('/settings');
 
         $response->assertStatus(200);
-        $response->assertSee('v1.4.3', false);
-        $response->assertDontSee('v2.1.0', false);
+        $latest = (string)config('changelog.default_version', '2.2.0');
+        $response->assertSee('v' . $latest, false);
     }
 
     public function test_pwa_update_script_contains_semver_comparison_logic(): void

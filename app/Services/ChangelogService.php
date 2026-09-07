@@ -13,7 +13,7 @@ class ChangelogService
     public function getRelease(?string $rawVersion = null): array
     {
         $releases = config('changelog.releases', []);
-        $defaultVersion = config('changelog.default_version', '1.4.3');
+        $defaultVersion = config('changelog.default_version', '2.2.0');
 
         if (empty($rawVersion)) {
             $rawVersion = $defaultVersion;
@@ -76,7 +76,7 @@ class ChangelogService
             return $this->formatRelease($first);
         }
 
-        return $this->buildFallbackRelease(config('changelog.default_version', '1.4.3'));
+        return $this->buildFallbackRelease(config('changelog.default_version', '2.2.0'));
     }
 
     /**
@@ -134,7 +134,7 @@ class ChangelogService
      */
     protected function formatRelease(array $release): array
     {
-        $version = $release['version'] ?? config('changelog.default_version', '1.4.3');
+        $version = $release['version'] ?? config('changelog.default_version', '2.2.0');
         $versionTag = $release['version_tag'] ?? ('v' . ltrim($version, 'v'));
 
         $features = array_values((array)($release['features'] ?? []));

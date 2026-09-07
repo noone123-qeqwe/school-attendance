@@ -15,13 +15,13 @@ class PwaTest extends TestCase
         $manifest = json_decode($jsonContent, true);
 
         $this->assertNotNull($manifest, 'manifest.json must be valid JSON');
-        $this->assertEquals('Smart Attendance', $manifest['name']);
-        $this->assertEquals('Smart Attendance', $manifest['short_name']);
-        $this->assertEquals('standalone', $manifest['display']);
+        $this->assertEquals('Osmena Attendance', $manifest['name']);
+        $this->assertEquals('Attendance', $manifest['short_name']);
+        $this->assertEquals('fullscreen', $manifest['display']);
         $this->assertEquals('/', $manifest['start_url']);
-        $this->assertEquals('#110A0A', $manifest['background_color']);
-        $this->assertEquals('#110A0A', $manifest['theme_color']);
-        $this->assertEquals('2.1.0', $manifest['version']);
+        $this->assertEquals('#1a1a1a', $manifest['background_color']);
+        $this->assertEquals('#1a1a1a', $manifest['theme_color']);
+        $this->assertEquals('2.2.0', $manifest['version']);
         $this->assertArrayHasKey('launch_handler', $manifest);
         
         $this->assertNotEmpty($manifest['icons']);
@@ -105,7 +105,7 @@ class PwaTest extends TestCase
         $response->assertSee('pwaSystemUpdatePopup', false);
         $response->assertSee('pwaApplyUpdateBtn', false);
         $response->assertSee('pwa-install-trigger', false);
-        $response->assertSee('Install Attendance App', false);
+        $response->assertSee('Install Smart Attendance', false);
     }
 
     public function test_register_page_includes_pwa_install_trigger(): void
