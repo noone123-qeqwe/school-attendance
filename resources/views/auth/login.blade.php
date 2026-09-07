@@ -351,6 +351,208 @@
         /* Fingerprint section */
         #fingerprintSection { display: block; }
 
+        /* ── Biometric Popup Modal ── */
+        .bio-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s;
+        }
+        .bio-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .bio-modal-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(10, 4, 4, 0.78);
+            backdrop-filter: blur(14px) saturate(160%);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+        }
+        .bio-modal-dialog {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            z-index: 2;
+            transform: scale(0.92) translateY(12px);
+            transition: transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .bio-modal-overlay.active .bio-modal-dialog {
+            transform: scale(1) translateY(0);
+        }
+        .bio-modal-card {
+            background: linear-gradient(145deg, rgba(38, 22, 22, 0.94) 0%, rgba(18, 10, 10, 0.98) 100%);
+            border: 1.5px solid rgba(212, 175, 55, 0.35);
+            border-radius: 22px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            padding: 28px 24px 22px;
+            color: #f3e7cd;
+            text-align: center;
+            position: relative;
+        }
+        .bio-modal-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.65);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .bio-modal-close:hover {
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+            transform: rotate(90deg);
+        }
+        .bio-modal-icon-wrap {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 14px;
+        }
+        .bio-modal-icon-circle {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(128, 0, 0, 0.35) 100%);
+            border: 2px solid rgba(212, 175, 55, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #d4af37;
+            box-shadow: 0 0 24px rgba(212, 175, 55, 0.3);
+            animation: glowPulse 2.5s infinite;
+        }
+        .bio-modal-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #eab308;
+            color: #1a0a0a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            border: 2px solid #1a0a0a;
+        }
+        .bio-modal-title {
+            font-size: 1.22rem;
+            font-weight: 800;
+            color: #ffffff;
+            margin-bottom: 6px;
+            letter-spacing: -0.3px;
+        }
+        .bio-modal-user-pill {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(212, 175, 55, 0.12);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            color: #d4af37;
+            border-radius: 99px;
+            padding: 3px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            max-width: 90%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .bio-modal-desc {
+            font-size: 0.84rem;
+            line-height: 1.45;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 16px;
+        }
+        .bio-modal-steps {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 12px 16px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        .bio-modal-steps-header {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #d4af37;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .bio-modal-steps-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .bio-modal-steps-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.35;
+        }
+        .bio-modal-steps-list .step-num {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(212, 175, 55, 0.2);
+            color: #d4af37;
+            border: 1px solid rgba(212, 175, 55, 0.4);
+            font-size: 0.65rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .bio-modal-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .bio-modal-actions .glass-btn {
+            margin: 0;
+        }
+        .bio-modal-secondary-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.2s;
+        }
+        .bio-modal-secondary-btn:hover {
+            color: #ffffff;
+        }
+
         /* Mobile and Responsive */
         @media (max-width: 768px) {
             .glass-card { 
@@ -617,6 +819,71 @@
         <i class="bi bi-arrow-bar-down" style="font-size: 1.15rem;"></i>
         <span id="pwaInstallBtnText">Install App</span>
     </button>
+</div>
+
+<!-- Biometric Not Registered / Information Modal -->
+<div id="biometricModal" class="bio-modal-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="bio-modal-backdrop" onclick="closeBiometricModal()"></div>
+    <div class="bio-modal-dialog">
+        <div class="bio-modal-card">
+            <!-- Close button -->
+            <button type="button" class="bio-modal-close" onclick="closeBiometricModal()" aria-label="Close">
+                <i class="bi bi-x-lg"></i>
+            </button>
+
+            <!-- Header Icon -->
+            <div class="bio-modal-icon-wrap" id="bioModalIconWrap">
+                <div class="bio-modal-icon-circle">
+                    <i class="bi bi-fingerprint" id="bioModalIcon"></i>
+                </div>
+                <span class="bio-modal-badge" id="bioModalBadge"><i class="bi bi-exclamation-triangle-fill"></i></span>
+            </div>
+
+            <!-- Title & User Identifier Badge -->
+            <h4 class="bio-modal-title" id="bioModalTitle">Biometrics Not Registered</h4>
+            <div class="bio-modal-user-pill" id="bioModalUserPill" style="display:none;">
+                <i class="bi bi-person-badge me-1"></i><span id="bioModalUserText"></span>
+            </div>
+            <p class="bio-modal-desc" id="bioModalDesc">
+                No biometric credentials (fingerprint, Face ID, or passkey) are registered for this account.
+            </p>
+
+            <!-- How to Setup Steps -->
+            <div class="bio-modal-steps" id="bioModalSteps">
+                <div class="bio-modal-steps-header">
+                    <i class="bi bi-info-circle me-1"></i> How to set up biometric login:
+                </div>
+                <ol class="bio-modal-steps-list">
+                    <li>
+                        <span class="step-num">1</span>
+                        <span>Sign in with your <strong>Password</strong> below.</span>
+                    </li>
+                    <li>
+                        <span class="step-num">2</span>
+                        <span>Navigate to your <strong>Profile / Settings</strong> page.</span>
+                    </li>
+                    <li>
+                        <span class="step-num">3</span>
+                        <span>Locate <strong>Fingerprint / Biometric Login</strong>.</span>
+                    </li>
+                    <li>
+                        <span class="step-num">4</span>
+                        <span>Tap <strong>Register Device</strong> to link your sensor.</span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="bio-modal-actions">
+                <button type="button" class="glass-btn glass-btn-primary" id="bioModalPrimaryBtn" onclick="closeBiometricModalAndFocusPassword()">
+                    <i class="bi bi-key-fill me-2"></i>Sign in with Password
+                </button>
+                <button type="button" class="bio-modal-secondary-btn" onclick="closeBiometricModal()">
+                    Dismiss
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 <style>
 @keyframes pwaButtonPulse {
@@ -920,13 +1187,131 @@ function showBiometricError(msg) {
 function focusPasswordField() {
     var passInput = document.getElementById('loginPassword');
     if (passInput) {
+        try {
+            passInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } catch(e) {}
         passInput.focus();
         passInput.style.borderColor = '#d4af37';
+        passInput.style.boxShadow = '0 0 0 4px rgba(212, 175, 55, 0.35)';
         setTimeout(function() { 
-            if (passInput) passInput.style.borderColor = ''; 
+            if (passInput) {
+                passInput.style.borderColor = ''; 
+                passInput.style.boxShadow = '';
+            }
         }, 3000);
     }
 }
+
+// ── BIOMETRIC MODAL CONTROLLER ──────────────────────────────────────────────
+function openBiometricModal(config) {
+    config = config || {};
+    var modal = document.getElementById('biometricModal');
+    if (!modal) return;
+    
+    var titleEl = document.getElementById('bioModalTitle');
+    var descEl = document.getElementById('bioModalDesc');
+    var pillEl = document.getElementById('bioModalUserPill');
+    var pillTextEl = document.getElementById('bioModalUserText');
+    var stepsEl = document.getElementById('bioModalSteps');
+    var primaryBtn = document.getElementById('bioModalPrimaryBtn');
+    var badgeEl = document.getElementById('bioModalBadge');
+    
+    if (titleEl) titleEl.textContent = config.title || 'Biometrics Not Registered';
+    if (descEl) descEl.innerHTML = config.message || 'No biometric credentials registered for this account.';
+    
+    if (config.identifier) {
+        if (pillEl) pillEl.style.display = 'inline-flex';
+        if (pillTextEl) pillTextEl.textContent = config.identifier;
+    } else {
+        if (pillEl) pillEl.style.display = 'none';
+    }
+    
+    if (stepsEl) {
+        stepsEl.style.display = config.hideSteps ? 'none' : 'block';
+    }
+    
+    if (primaryBtn) {
+        if (config.primaryBtnText) {
+            primaryBtn.innerHTML = config.primaryBtnText;
+        } else {
+            primaryBtn.innerHTML = '<i class="bi bi-key-fill me-2"></i>Sign in with Password';
+        }
+        if (typeof config.onPrimaryClick === 'function') {
+            primaryBtn.onclick = config.onPrimaryClick;
+        } else {
+            primaryBtn.onclick = closeBiometricModalAndFocusPassword;
+        }
+    }
+    
+    if (badgeEl) {
+        if (config.badgeType === 'danger') {
+            badgeEl.style.background = '#ef4444';
+            badgeEl.innerHTML = '<i class="bi bi-x-lg"></i>';
+        } else if (config.badgeType === 'info') {
+            badgeEl.style.background = '#3b82f6';
+            badgeEl.innerHTML = '<i class="bi bi-info-lg"></i>';
+        } else {
+            badgeEl.style.background = '#eab308';
+            badgeEl.innerHTML = '<i class="bi bi-exclamation-triangle-fill"></i>';
+        }
+    }
+    
+    modal.style.display = 'flex';
+    void modal.offsetHeight;
+    modal.classList.add('active');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBiometricModal() {
+    var modal = document.getElementById('biometricModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+    setTimeout(function() {
+        if (!modal.classList.contains('active')) {
+            modal.style.display = 'none';
+        }
+    }, 300);
+}
+
+function closeBiometricModalAndFocusPassword() {
+    closeBiometricModal();
+    setTimeout(function() {
+        focusPasswordField();
+    }, 320);
+}
+
+function closeBiometricModalAndFocusIdentifier() {
+    closeBiometricModal();
+    setTimeout(function() {
+        if (idInput) {
+            try {
+                idInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch(e) {}
+            idInput.focus();
+            idInput.style.borderColor = '#d4af37';
+            idInput.style.boxShadow = '0 0 0 4px rgba(212, 175, 55, 0.35)';
+            setTimeout(function() { 
+                if (idInput) {
+                    idInput.style.borderColor = ''; 
+                    idInput.style.boxShadow = '';
+                }
+            }, 2500);
+        }
+    }, 320);
+}
+
+// Close biometric modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var modal = document.getElementById('biometricModal');
+        if (modal && modal.classList.contains('active')) {
+            closeBiometricModal();
+        }
+    }
+});
 
 // Handle biometric login button click
 async function handleBiometricLogin() {
@@ -935,6 +1320,14 @@ async function handleBiometricLogin() {
     var identifier = idInput ? idInput.value.trim() : '';
     
     if (!identifier) {
+        openBiometricModal({
+            title: 'Student ID or Email Required',
+            message: 'Please enter your <strong>Student ID or Email</strong> first so the system can verify your registered biometric credentials.',
+            hideSteps: true,
+            badgeType: 'warning',
+            primaryBtnText: '<i class="bi bi-person-fill me-2"></i>Enter Student ID / Email',
+            onPrimaryClick: closeBiometricModalAndFocusIdentifier
+        });
         showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
         if (idInput) {
             idInput.focus();
@@ -945,11 +1338,27 @@ async function handleBiometricLogin() {
     }
 
     if (!window.isSecureContext) {
+        openBiometricModal({
+            title: 'Secure Connection Required',
+            message: 'Biometric authentication requires a secure connection (<strong>HTTPS</strong> or localhost). If accessing from mobile, please open via HTTPS.',
+            hideSteps: true,
+            badgeType: 'danger',
+            primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
+            onPrimaryClick: closeBiometricModalAndFocusPassword
+        });
         showBiometricError('Biometric authentication requires a secure connection (HTTPS).');
         return;
     }
 
     if (!window.PublicKeyCredential) {
+        openBiometricModal({
+            title: 'Biometrics Not Supported',
+            message: 'Biometric authentication is not supported by your browser. Please use Chrome, Edge, Safari, or Brave with WebAuthn enabled.',
+            hideSteps: true,
+            badgeType: 'warning',
+            primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
+            onPrimaryClick: closeBiometricModalAndFocusPassword
+        });
         showBiometricError('Biometric authentication is not supported by your browser. Please use Chrome, Edge, Safari, or Brave with WebAuthn enabled.');
         return;
     }
@@ -986,6 +1395,31 @@ async function performBiometricLogin(studentNumber) {
 
         if (!optRes.ok || !opts.success) {
             var msg = opts.message || 'No biometric credentials registered for this account.';
+            var isNotFound = optRes.status === 404 && (msg.toLowerCase().includes('account not found') || msg.toLowerCase().includes('not found'));
+
+            if (isNotFound) {
+                openBiometricModal({
+                    title: 'Account Not Found',
+                    identifier: studentNumber,
+                    message: 'No account was found matching "<strong>' + studentNumber + '</strong>". Please double check your Student ID or Email.',
+                    hideSteps: true,
+                    badgeType: 'danger',
+                    primaryBtnText: '<i class="bi bi-pencil-fill me-2"></i>Check Student ID / Email',
+                    onPrimaryClick: closeBiometricModalAndFocusIdentifier
+                });
+            } else {
+                // User has NOT registered a fingerprint or biometric device!
+                openBiometricModal({
+                    title: 'Biometric Login Not Set Up',
+                    identifier: studentNumber,
+                    message: 'You have not registered a fingerprint or biometric device for this account yet.',
+                    hideSteps: false,
+                    badgeType: 'warning',
+                    primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
+                    onPrimaryClick: closeBiometricModalAndFocusPassword
+                });
+            }
+
             showFpMessage('info',
                 '<i class="bi bi-info-circle-fill me-2"></i>' +
                 '<strong>' + msg + '</strong><br>' +
@@ -1002,6 +1436,15 @@ async function performBiometricLogin(studentNumber) {
         });
 
         if (allowCredentials.length === 0) {
+            openBiometricModal({
+                title: 'No Biometric Credentials Found',
+                identifier: studentNumber,
+                message: 'No active biometric credentials found for this account. Please sign in with your password and register your fingerprint in your profile.',
+                hideSteps: false,
+                badgeType: 'warning',
+                primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
+                onPrimaryClick: closeBiometricModalAndFocusPassword
+            });
             showFpMessage('info',
                 '<i class="bi bi-info-circle-fill me-2"></i>' +
                 '<strong>No biometric credentials found for this account.</strong><br>' +
@@ -1104,10 +1547,35 @@ async function performBiometricLogin(studentNumber) {
             errorMessage = 'Authentication was cancelled or timed out. Please try again or sign in with your password.';
         } else if (err.name === 'InvalidStateError') {
             errorMessage = 'No matching biometric credential found on this device. Please sign in with your password and register this device in your profile.';
+            openBiometricModal({
+                title: 'Device Not Enrolled',
+                identifier: studentNumber,
+                message: 'No matching biometric credential was found on <strong>this specific browser or device</strong>. Please sign in with your password and register this device in your profile.',
+                hideSteps: false,
+                badgeType: 'warning',
+                primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
+                onPrimaryClick: closeBiometricModalAndFocusPassword
+            });
         } else if (err.name === 'SecurityError') {
             errorMessage = 'Security error: Please ensure you are using HTTPS.';
+            openBiometricModal({
+                title: 'Security Error',
+                message: 'Biometric authentication requires a secure connection (<strong>HTTPS</strong>).',
+                hideSteps: true,
+                badgeType: 'danger',
+                primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
+                onPrimaryClick: closeBiometricModalAndFocusPassword
+            });
         } else if (err.name === 'NotSupportedError') {
             errorMessage = 'Biometric authentication is not supported on this browser or device.';
+            openBiometricModal({
+                title: 'Biometrics Not Supported',
+                message: 'Biometric authentication is not supported by your current browser or hardware.',
+                hideSteps: true,
+                badgeType: 'warning',
+                primaryBtnText: '<i class="bi bi-key-fill me-2"></i>Sign in with Password',
+                onPrimaryClick: closeBiometricModalAndFocusPassword
+            });
         } else {
             errorMessage += (err.message || 'Please try again or use your password.');
         }
