@@ -1,6 +1,6 @@
 @php
-    $installedVersion = (string)config('changelog.installed_version', '2.2.0');
-    $latestVersion = (string)config('changelog.default_version', '2.2.0');
+    $installedVersion = (string)config('changelog.installed_version', '2.3.0');
+    $latestVersion = (string)config('changelog.default_version', '2.3.0');
     $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', $latestVersion);
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
@@ -680,7 +680,7 @@
 
         const badge = document.getElementById('pwaUpdateVersionBadge');
         if (badge) {
-            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '2.2.0'));
+            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '2.3.0'));
         }
 
         const titleEl = document.getElementById('pwaUpdateTitle');
@@ -723,7 +723,7 @@
     }
 
     function getInstalledVersion() {
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.2.0';
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.0';
         const storedInstalled = localStorage.getItem('pwa_installed_version');
         
         // If metaInstalled is newer than storedInstalled, auto-sync localStorage
@@ -751,7 +751,7 @@
             return metaInstalled;
         }
 
-        return '2.2.0';
+        return '2.3.0';
     }
 
     function getLatestVersion(serverData = null) {
@@ -762,7 +762,7 @@
             return serverData.changelog.version;
         }
         const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content;
-        return metaLatest || '2.2.0';
+        return metaLatest || '2.3.0';
     }
 
     // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──

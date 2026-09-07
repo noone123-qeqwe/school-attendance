@@ -745,6 +745,14 @@ class SystemUpdateController extends Controller
             File::put($tagsPath, $tagsContent);
         }
 
+        $manifestPath = public_path('manifest.json');
+        if (File::exists($manifestPath)) {
+            $manifestContent = File::get($manifestPath);
+            $appVer = (string)config('changelog.default_version', '2.3.0');
+            $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$appVer}\"", $manifestContent);
+            File::put($manifestPath, $manifestContent);
+        }
+
         \Illuminate\Support\Facades\Cache::forever('pwa_sw_version', $newVersion);
 
         // Flush the old mtime-based cached version response so /pwa/version immediately returns the new tag

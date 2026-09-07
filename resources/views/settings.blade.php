@@ -1863,7 +1863,7 @@
                         <div style="flex:1;min-width:0;">
                             <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 <span>Software Updates & PWA Assets</span>
-                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ config('changelog.default_version', '2.2.0') }}</span>
+                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ config('changelog.default_version', '2.3.0') }}</span>
                             </div>
                             <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
                         </div>
@@ -1934,7 +1934,7 @@ async function checkForAppUpdates() {
             feedback.style.background = 'rgba(16, 185, 129, 0.1)';
             feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
             feedback.style.color = '#6ee7b7';
-            feedback.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Your application is up to date (v{{ config('changelog.default_version', '2.2.0') }}). You have the latest version installed.';
+            feedback.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Your application is up to date (v{{ config('changelog.default_version', '2.3.0') }}). You have the latest version installed.';
         }
         if (statusText) statusText.textContent = 'Last checked: Just now';
     } catch (e) {

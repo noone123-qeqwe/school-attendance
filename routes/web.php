@@ -86,8 +86,8 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
     $cacheKey = 'pwa_version_response_' . $swMtime . ($requestedVer ? '_' . preg_replace('/[^a-zA-Z0-9_.]/', '', $requestedVer) : '');
 
     $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime, $requestedVer, $changelogService) {
-        $latestVersion = (string)config('changelog.default_version', '2.2.0');
-        $installedVersion = (string)config('changelog.installed_version', '2.2.0');
+        $latestVersion = (string)config('changelog.default_version', '2.3.0');
+        $installedVersion = (string)config('changelog.installed_version', '2.3.0');
         $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', $latestVersion);
         $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
         $targetVer = $requestedVer ?: $latestVersion;

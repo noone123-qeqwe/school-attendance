@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.2.0'),
-    'default_version' => env('APP_LATEST_VERSION', '2.2.0'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.0'),
+    'default_version' => env('APP_LATEST_VERSION', '2.3.0'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,33 @@ return [
     |
     */
     'releases' => [
+        '2.3.0' => [
+            'version' => '2.3.0',
+            'version_tag' => 'v2.3.0',
+            'title' => 'Biometric Authentication & PWA Reliability Overhaul',
+            'description' => 'Comprehensive update featuring interactive biometric login guidance, universal PWA installation across mobile and desktop, direct APK downloads, and persistent update loop fixes.',
+            'features' => [
+                'Biometric login guidance modal for unregistered fingerprints and passkeys',
+                'Universal PWA installer with platform-tailored iOS Safari & Android Chrome guides',
+                'Direct Android APK (.apk) download shortcut from login and update dialogs',
+                'Real-time PWA update detection with automatic cache synchronization',
+            ],
+            'improvements' => [
+                'Unified PWA prompt delegation for all mobile and desktop devices',
+                'Enhanced service worker lifecycle handling and background sync',
+                'Refined dark mode aesthetics, gold accents, and typography',
+            ],
+            'bugFixes' => [
+                'Fixed broken "Install App" button behavior on mobile devices',
+                'Resolved persistent update pop-up loop and stale version display',
+                'Fixed UTF-8 character corruption and mojibake across templates',
+            ],
+            'security' => [
+                'Hardened WebAuthn authentication verification and CSRF token entropy',
+            ],
+            'released_at' => '2026-09-07',
+        ],
+
         '2.2.0' => [
             'version' => '2.2.0',
             'version_tag' => 'v2.2.0',

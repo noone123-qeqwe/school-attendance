@@ -1,7 +1,7 @@
 {
   "name": "Osmena Attendance",
   "short_name": "Attendance",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Real-time School Attendance, QR Clock-in, and Classroom Monitoring System",
   "id": "/app/v2",
   "start_url": "/",
