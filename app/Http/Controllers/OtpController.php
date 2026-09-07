@@ -207,6 +207,16 @@ class OtpController extends Controller
 
     public function verifyOtp(Request $request)
     {
+        // Support fallback if otp_digits array was submitted
+        if (empty($request->otp) && $request->has('otp_digits')) {
+            $digitsInput = $request->input('otp_digits');
+            if (is_array($digitsInput)) {
+                $request->merge(['otp' => implode('', $digitsInput)]);
+            } elseif (is_string($digitsInput)) {
+                $request->merge(['otp' => $digitsInput]);
+            }
+        }
+
         // Accept "identifier" (new unified field), legacy "email", or fallback to session
         $identifierInput = $request->input('identifier', $request->input('email', session('otp_identifier', '')));
         $identifier = strtolower(trim((string) $identifierInput));
@@ -221,6 +231,9 @@ class OtpController extends Controller
         $request->validate([
             'otp'     => 'required|digits:6',
             'purpose' => 'required|in:forgot_password,change_password',
+        ], [
+            'otp.required' => 'The verification code is required.',
+            'otp.digits'   => 'The verification code must be exactly 6 digits.',
         ]);
 
         $result = $this->otpService->verifyOtp($identifier, $otpClean, $request->purpose);

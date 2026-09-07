@@ -1167,7 +1167,19 @@ class AdminController extends Controller
 
     public function verifyTwoFactor(Request $request)
     {
-        $request->validate(['otp' => 'required|digits:6']);
+        if (empty($request->otp) && $request->has('otp_digits')) {
+            $digitsInput = $request->input('otp_digits');
+            if (is_array($digitsInput)) {
+                $request->merge(['otp' => implode('', $digitsInput)]);
+            } elseif (is_string($digitsInput)) {
+                $request->merge(['otp' => $digitsInput]);
+            }
+        }
+
+        $request->validate(['otp' => 'required|digits:6'], [
+            'otp.required' => 'The verification code is required.',
+            'otp.digits'   => 'The verification code must be exactly 6 digits.',
+        ]);
 
         $user = Auth::user();
         if (!$user || !$user->isAdmin()) return redirect()->route('login');

@@ -40,14 +40,27 @@
         box-shadow: 0 12px 32px rgba(216,179,92,0.22);
     }
     .otp-icon i { color: #f8e7d3; font-size: 1.8rem; }
-    .otp-inputs { display: flex; gap: 12px; justify-content: center; margin: 20px 0; }
+    .otp-inputs {
+        display: flex; gap: 8px; justify-content: center; align-items: center;
+        width: 100%; max-width: 360px; margin: 20px auto; box-sizing: border-box;
+    }
     .otp-digit {
-        width: 54px; height: 62px; border-radius: 16px;
+        flex: 1 1 0; min-width: 0; max-width: 48px; height: 58px; border-radius: 14px;
         border: 1.5px solid rgba(255,255,255,0.14);
         font-size: 1.5rem; font-weight: 800; text-align: center;
         color: #f8e7d3;
         background: rgba(255,255,255,0.06);
-        outline: none; transition: all .2s;
+        outline: none; transition: all .2s; box-sizing: border-box;
+    }
+    @media (max-width: 480px) {
+        .otp-card { padding: 32px 18px; border-radius: 22px; }
+        .otp-inputs { gap: 6px; }
+        .otp-digit { height: 50px; font-size: 1.3rem; border-radius: 12px; }
+    }
+    @media (max-width: 350px) {
+        .otp-card { padding: 26px 12px; border-radius: 18px; }
+        .otp-inputs { gap: 4px; }
+        .otp-digit { height: 44px; font-size: 1.15rem; border-radius: 10px; }
     }
     .otp-digit:focus {
         border-color: rgba(216,179,92,0.7);
@@ -144,7 +157,7 @@
 
             <div class="otp-inputs">
                 @for($i = 1; $i <= 6; $i++)
-                <input type="text" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d{{ $i }}" autocomplete="off">
+                <input type="text" name="otp_digits[]" class="otp-digit" maxlength="1" inputmode="numeric" pattern="[0-9]" id="d{{ $i }}" autocomplete="off">
                 @endfor
             </div>
 
@@ -163,7 +176,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function autofillAdminOtp(code) {
     if (!code) return;
     const digits = document.querySelectorAll('.otp-digit');
