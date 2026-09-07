@@ -1,8 +1,8 @@
-/* BUMP_TIMESTAMP: 2026-09-07T23:15:35+08:00 */
-const CACHE_VERSION = 'v266';
-const CACHE_NAME = `attendance-v266`;
+/* BUMP_TIMESTAMP: 2026-09-07T23:45:00+08:00 */
+const CACHE_VERSION = 'v267';
+const CACHE_NAME = `attendance-v267`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v266`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v267`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
@@ -18,8 +18,10 @@ const PRECACHE_ASSETS = [
     '/css/premium.css',
     '/css/dashboard-enterprise.css',
     '/css/mobile-enterprise.css',
-    '/js/html5-qrcode.min.js'
+    '/js/html5-qrcode.min.js',
+    '/js/password-toggle.js'
 ];
+
 
 // Maximum items to keep in runtime cache
 const MAX_RUNTIME_ITEMS = 50;

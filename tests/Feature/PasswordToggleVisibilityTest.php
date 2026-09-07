@@ -203,4 +203,33 @@ class PasswordToggleVisibilityTest extends TestCase
         $view->assertSee('aria-label="Show password"', false);
         $view->assertSee('aria-label="Show password confirmation"', false);
     }
+
+    public function test_password_toggle_javascript_asset_exists_and_is_included()
+    {
+        $this->assertFileExists(public_path('js/password-toggle.js'));
+
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $response->assertSee('password-toggle.js', false);
+    }
+
+    public function test_login_page_biometric_modal_password_toggle_button_attributes()
+    {
+        $response = $this->get(route('login'));
+
+        $response->assertStatus(200);
+        $response->assertSee('bioModalPasswordInput', false);
+        $response->assertSee('data-toggle-password="bioModalPasswordInput"', false);
+        $response->assertSee('aria-controls="bioModalPasswordInput"', false);
+    }
+
+    public function test_register_page_toggle_buttons_have_type_button_and_onclick()
+    {
+        $response = $this->get(route('register'));
+
+        $response->assertStatus(200);
+        $response->assertSee('onclick="togglePassword(\'password\', this, event)"', false);
+        $response->assertSee('onclick="togglePassword(\'password_confirmation\', this, event)"', false);
+    }
 }
+

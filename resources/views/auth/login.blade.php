@@ -240,18 +240,34 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
         }
         #loginForm .glass-input-wrap:focus-within .g-icon { color: rgba(255,255,255,0.85); }
-        .glass-input.has-eye { padding-right: 46px !important; }
+        .glass-input.has-eye { padding-right: 50px !important; }
         .eye-toggle {
-            position: absolute; right: 10px; top: 50%;
+            position: absolute; right: 8px; top: 50%;
             transform: translateY(-50%);
             color: rgba(255,255,255,0.65); font-size: 1.05rem;
-            cursor: pointer; background: none; border: none; padding: 6px;
+            cursor: pointer; background: none; border: none; padding: 0;
             transition: color 0.2s; line-height: 1;
             z-index: 10 !important;
+            min-width: 44px !important;
+            min-height: 44px !important;
+            width: 44px !important;
+            height: 44px !important;
             display: inline-flex; align-items: center; justify-content: center;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+            touch-action: manipulation !important;
+            border-radius: 10px;
         }
         .eye-toggle:hover { color: white; }
-        .eye-toggle i { pointer-events: none !important; }
+        .eye-toggle:focus-visible {
+            outline: 2px solid rgba(212, 175, 55, 0.75) !important;
+            outline-offset: 2px !important;
+            color: #ffffff !important;
+        }
+        .eye-toggle i { pointer-events: none !important; font-size: 1.15rem !important; }
+
 
         /* Fingerprint/Biometric row */
         .fp-row {
@@ -716,15 +732,49 @@ function toggleEye(inputId, btn, e) {
         if (e.preventDefault) e.preventDefault();
         if (e.stopPropagation) e.stopPropagation();
     }
-    if (!inputId) return;
-    const input = typeof inputId === 'string' ? document.getElementById(inputId) : inputId;
-    if (!input) return;
 
     let button = btn;
-    if (!button && typeof inputId === 'string') {
-        button = document.querySelector(`button[data-toggle-password="${inputId}"], button[aria-controls="${inputId}"], button[onclick*="${inputId}"]`) || input.parentElement?.querySelector('.eye-toggle, .eye-btn, [class*="eye"]');
+    if (!button && e && e.target) {
+        button = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password], [id^="btn-toggle-password"]');
     }
 
+    // Debounce protection per button (300ms) to prevent duplicate triggers (pointerdown + click)
+    const now = Date.now();
+    if (button) {
+        if (button._lastToggleTime && (now - button._lastToggleTime < 300)) {
+            return;
+        }
+        button._lastToggleTime = now;
+    }
+
+    if (!inputId && button) {
+        inputId = button.getAttribute('data-toggle-password') || button.getAttribute('aria-controls');
+    }
+
+    let input = null;
+    if (typeof inputId === 'string') {
+        input = document.getElementById(inputId);
+    } else if (inputId && inputId.nodeType === 1) {
+        input = inputId;
+    }
+
+    if (!input && button && button.parentElement) {
+        input = button.parentElement.querySelector('input[type="password"], input[type="text"]');
+    }
+    if (!input) return;
+
+    if (!button) {
+        const id = input.id;
+        if (id) {
+            button = document.querySelector(`button[data-toggle-password="${id}"], button[aria-controls="${id}"], button[onclick*="${id}"]`);
+        }
+        if (!button && input.parentElement) {
+            button = input.parentElement.querySelector('.eye-toggle, .eye-btn, [data-toggle-password], [id^="btn-toggle-password"]');
+        }
+    }
+
+    // Capture focus state and selection range
+    const isCurrentlyFocused = (document.activeElement === input);
     let start = null;
     let end = null;
     try {
@@ -732,15 +782,19 @@ function toggleEye(inputId, btn, e) {
         end = input.selectionEnd;
     } catch (err) {}
 
+    // 4. Dedicated visibility state toggle
     const isPassword = input.type === 'password';
     input.type = isPassword ? 'text' : 'password';
 
+    // 8. Synchronize icon and accessibility state
     if (button) {
         const icon = button.querySelector('i');
         if (icon) {
+            // Password hidden: Eye-off icon (bi bi-eye-slash)
+            // Password visible: Eye icon (bi bi-eye)
             icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
         }
-        const isConf = input.name === 'password_confirmation' || (input.id && (input.id.includes('2') || input.id.includes('conf')));
+        const isConf = input.name === 'password_confirmation' || (input.id && (input.id.includes('2') || input.id.includes('conf') || input.id.endsWith('_confirmation')));
         const label = isPassword 
             ? (isConf ? 'Hide password confirmation' : 'Hide password')
             : (isConf ? 'Show password confirmation' : 'Show password');
@@ -749,51 +803,84 @@ function toggleEye(inputId, btn, e) {
         button.setAttribute('aria-pressed', isPassword ? 'true' : 'false');
     }
 
-    try {
-        input.focus();
-        if (start !== null && end !== null) {
-            input.setSelectionRange(start, end);
-        }
-    } catch (err) {}
+    // 6. Keep input focus and restore cursor without page jump
+    if (isCurrentlyFocused) {
+        try {
+            input.focus({ preventScroll: true });
+            if (start !== null && end !== null) {
+                input.setSelectionRange(start, end);
+            }
+        } catch (err) {}
+    }
 }
 window.toggleEye = toggleEye;
 window.togglePw = toggleEye;
 window.togglePassword = toggleEye;
 
 function setupPasswordToggleListeners() {
-    document.addEventListener('click', function(e) {
-        const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+    // 1. Pointerdown (touch and mouse down):
+    // Prevents active input blur and virtual keyboard dismissal on mobile, triggers toggle instantly
+    document.addEventListener('pointerdown', function(e) {
+        if (e.button !== undefined && e.button !== 0) return;
+        const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password], [id^="btn-toggle-password"]');
         if (!btn) return;
+
+        e.preventDefault(); // Prevents input from losing focus / virtual keyboard from closing
+        const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+        let input = targetId ? document.getElementById(targetId) : null;
+        if (!input && btn.parentElement) {
+            input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+        }
+        toggleEye(input, btn, e);
+    });
+
+    // 2. Touchstart fallback for environments without PointerEvent
+    if (!window.PointerEvent) {
+        document.addEventListener('touchstart', function(e) {
+            const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password], [id^="btn-toggle-password"]');
+            if (!btn) return;
+
+            e.preventDefault();
+            const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
+            let input = targetId ? document.getElementById(targetId) : null;
+            if (!input && btn.parentElement) {
+                input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
+            }
+            toggleEye(input, btn, e);
+        }, { passive: false });
+    }
+
+    // 3. Click handler (standard desktop click / fallback)
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password], [id^="btn-toggle-password"]');
+        if (!btn) return;
+
+        e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
 
         const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
         let input = targetId ? document.getElementById(targetId) : null;
         if (!input && btn.parentElement) {
             input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
         }
-        if (input) {
-            toggleEye(input, btn, e);
-        }
+        toggleEye(input, btn, e);
     });
 
+    // 4. Keyboard accessibility (Space and Enter)
     document.addEventListener('keydown', function(e) {
-        if (e.key === ' ' || e.key === 'Enter') {
-            const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
+        if (e.key === ' ' || e.key === 'Enter' || e.keyCode === 32 || e.keyCode === 13) {
+            const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password], [id^="btn-toggle-password"]');
             if (!btn) return;
+
+            e.preventDefault();
+            if (e.stopPropagation) e.stopPropagation();
+
             const targetId = btn.getAttribute('data-toggle-password') || btn.getAttribute('aria-controls');
             let input = targetId ? document.getElementById(targetId) : null;
             if (!input && btn.parentElement) {
                 input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
             }
-            if (input) {
-                toggleEye(input, btn, e);
-            }
-        }
-    });
-
-    document.addEventListener('mousedown', function(e) {
-        const btn = e.target.closest('.eye-toggle, .eye-btn, [data-toggle-password]');
-        if (btn) {
-            e.preventDefault();
+            toggleEye(input, btn, e);
         }
     });
 }
@@ -804,6 +891,7 @@ if (document.readyState === 'loading') {
     setupPasswordToggleListeners();
 }
 </script>
+
 
 <!-- Auth scene -->
 <div class="auth-scene">
@@ -1016,9 +1104,10 @@ if (document.readyState === 'loading') {
                 <div class="glass-input-wrap" style="margin-bottom:0;">
                     <i class="bi bi-lock-fill g-icon"></i>
                     <input type="password" id="bioModalPasswordInput" class="glass-input has-eye" placeholder="Enter password to verify account" autocomplete="current-password">
-                    <button type="button" class="eye-toggle" onclick="toggleEye('bioModalPasswordInput',this,event)" aria-label="Show password" title="Show password" aria-pressed="false">
+                    <button type="button" class="eye-toggle" onclick="toggleEye('bioModalPasswordInput',this,event)" data-toggle-password="bioModalPasswordInput" aria-controls="bioModalPasswordInput" aria-label="Show password" title="Show password" aria-pressed="false">
                         <i class="bi bi-eye-slash"></i>
                     </button>
+
                 </div>
             </div>
 

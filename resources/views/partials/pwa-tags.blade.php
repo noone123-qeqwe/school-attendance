@@ -1084,7 +1084,9 @@
 <!-- Real-time Connectivity Toast -->
 <div class="pwa-network-toast" id="pwaNetworkToast"></div>
 
+<script @cspNonce src="{{ asset('js/password-toggle.js') }}?v={{ file_exists(public_path('js/password-toggle.js')) ? filemtime(public_path('js/password-toggle.js')) : time() }}"></script>
 <script @cspNonce>
+
     // ── 1. Register Service Worker & Handle Real-Time Update Notifications ──
     let swRegistration = null;
     let deferredPrompt = null;

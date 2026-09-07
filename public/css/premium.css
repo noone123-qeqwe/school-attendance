@@ -2470,7 +2470,7 @@ input:focus, select:focus, textarea:focus, button:focus {
 /* Universal Password Toggle Eye Buttons */
 .eye-btn, .eye-toggle, [data-toggle-password] {
     position: absolute !important;
-    right: 12px !important;
+    right: 8px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
     z-index: 10 !important;
@@ -2479,19 +2479,21 @@ input:focus, select:focus, textarea:focus, button:focus {
     border: none !important;
     outline: none !important;
     padding: 0 !important;
-    min-width: 38px !important;
-    min-height: 38px !important;
-    width: 38px !important;
-    height: 38px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 44px !important;
+    height: 44px !important;
     line-height: 1 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
     -webkit-tap-highlight-color: transparent !important;
     touch-action: manipulation !important;
     color: rgba(255, 255, 255, 0.65) !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
     transition: color 0.15s ease, background 0.15s ease !important;
 }
 
@@ -2509,6 +2511,17 @@ input:focus, select:focus, textarea:focus, button:focus {
     pointer-events: none !important;
     font-size: 1.15rem !important;
 }
+
+/* Ensure inputs paired with eye toggle have sufficient right padding */
+input[type="password"].has-eye,
+input[type="text"].has-eye,
+.form-floating-custom input[type="password"],
+.form-floating-custom input[type="text"][id*="password"],
+.pw-wrap input,
+.input-group-custom input[id*="password"] {
+    padding-right: 50px !important;
+}
+
 
 
 

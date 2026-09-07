@@ -144,9 +144,20 @@ function togglePw(id, btn, e) {
         window.togglePassword(id, btn, e);
         return;
     }
+    let button = btn;
+    if (!button && e && e.target) {
+        button = e.target.closest('.eye-btn, .eye-toggle, [data-toggle-password]');
+    }
+    const now = Date.now();
+    if (button) {
+        if (button._lastToggleTime && (now - button._lastToggleTime < 300)) return;
+        button._lastToggleTime = now;
+    }
+
     const i = typeof id === 'string' ? document.getElementById(id) : id;
     if (!i) return;
 
+    const isCurrentlyFocused = (document.activeElement === i);
     let start = null;
     let end = null;
     try {
@@ -156,28 +167,31 @@ function togglePw(id, btn, e) {
 
     const isPw = i.type === 'password';
     i.type = isPw ? 'text' : 'password';
-    const ic = btn ? btn.querySelector('i') : null;
+    const ic = button ? button.querySelector('i') : null;
     if (ic) ic.className = isPw ? 'bi bi-eye' : 'bi bi-eye-slash';
-    if (btn) {
-        btn.style.color = isPw ? '#d8b35c' : '';
+    if (button) {
+        button.style.color = isPw ? '#d8b35c' : '';
         const isConf = i.name === 'password_confirmation' || i.id === 'pw2';
         const label = isPw 
             ? (isConf ? 'Hide password confirmation' : 'Hide password')
             : (isConf ? 'Show password confirmation' : 'Show password');
-        btn.setAttribute('aria-label', label);
-        btn.setAttribute('title', label);
-        btn.setAttribute('aria-pressed', isPw ? 'true' : 'false');
+        button.setAttribute('aria-label', label);
+        button.setAttribute('title', label);
+        button.setAttribute('aria-pressed', isPw ? 'true' : 'false');
     }
 
-    try {
-        i.focus();
-        if (start !== null && end !== null) {
-            i.setSelectionRange(start, end);
-        }
-    } catch (err) {}
+    if (isCurrentlyFocused) {
+        try {
+            i.focus({ preventScroll: true });
+            if (start !== null && end !== null) {
+                i.setSelectionRange(start, end);
+            }
+        } catch (err) {}
+    }
 }
 window.togglePw = togglePw;
 window.togglePassword = togglePw;
 window.toggleEye = togglePw;
 </script>
+
 @endsection
