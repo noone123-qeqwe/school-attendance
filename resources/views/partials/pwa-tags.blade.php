@@ -1521,6 +1521,10 @@
     }
 
     function scheduleInstallBanner() {
+        @auth
+        // Suppress install banner and prompts completely on authenticated dashboard/portal
+        return;
+        @endauth
         if (checkIsStandalone()) return;
         if (sessionStorage.getItem('pwa_banner_dismissed') === 'true') return;
         const dismissedUntil = localStorage.getItem('pwa_banner_dismissed_until');
@@ -1545,6 +1549,15 @@
     }
 
     function syncPwaInstallVisibility() {
+        @auth
+        // On authenticated dashboard/portal: ensure no install triggers or banner are visible
+        const triggers = document.querySelectorAll('.pwa-install-trigger');
+        triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) banner.style.display = 'none';
+        return;
+        @endauth
+
         const standalone = checkIsStandalone();
         const triggers = document.querySelectorAll('.pwa-install-trigger');
         if (standalone) {

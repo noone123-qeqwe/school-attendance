@@ -56,13 +56,6 @@
             @endif
         @endauth
         @show
-
-        <div style="padding: 12px 16px; margin-top: auto;">
-            <button type="button" class="pwa-install-trigger" data-display="flex" style="display: none !important; width: 100%; align-items: center; justify-content: center; gap: 8px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.3); border-radius: 12px; padding: 10px 14px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: all 0.2s; visibility: hidden;">
-                <i class="bi bi-phone-fill"></i>
-                <span class="nav-link-text">Install App</span>
-            </button>
-        </div>
     </aside>
     @endauth
 
@@ -92,18 +85,21 @@
                     </div>
                 </div>
 
-                <div class="header-right d-flex align-items-center gap-2">
-                    <button type="button" class="pwa-install-trigger notif-btn" data-display="inline-flex" style="display: none !important; visibility: hidden; align-items: center; justify-content: center; gap: 6px; background: rgba(207,164,111,0.12); color: #CFA46F; border: 1px solid rgba(207,164,111,0.35); border-radius: 10px; padding: 6px 12px; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.2s;" title="Install Smart Attendance App">
-                        <i class="bi bi-download"></i>
-                        <span class="d-none d-sm-inline pwa-install-text">Install App</span>
-                    </button>
-                    <button type="button" onclick="if(window.openCommandPalette) window.openCommandPalette();" class="d-flex d-sm-none notif-btn" aria-label="Search" title="Search">
-                        <i class="bi bi-search" style="font-size: 0.85rem;"></i>
-                    </button>
-                    <button type="button" onclick="if(window.openCommandPalette) window.openCommandPalette();" class="d-none d-sm-flex align-items-center gap-2" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 6px 12px; color: #b39b82; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease;">
-                        <i class="bi bi-search" style="font-size: 0.75rem;"></i>
-                        <span>Search...</span>
-                        <kbd style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.25); color: #f3e7cd; border-radius: 4px; padding: 1px 5px; font-size: 0.65rem; font-family: inherit;">Ctrl K</kbd>
+                <div class="header-right d-flex align-items-center gap-2 gap-sm-3">
+                    <!-- Modern Universal Search Bar with Quick Action Trigger -->
+                    <button type="button" 
+                            id="headerSearchBar" 
+                            class="header-search-bar" 
+                            onclick="if(window.openCommandPalette) window.openCommandPalette();" 
+                            aria-label="Search pages, students, subjects, or actions (Ctrl + K)" 
+                            title="Search anything (Ctrl + K)">
+                        <i class="bi bi-search header-search-icon" aria-hidden="true"></i>
+                        <span class="header-search-text">Search anything...</span>
+                        <span class="header-search-shortcut" aria-hidden="true">
+                            <kbd class="header-search-key" id="headerSearchModKey">Ctrl</kbd>
+                            <span class="header-search-plus">+</span>
+                            <kbd class="header-search-key">K</kbd>
+                        </span>
                     </button>
 
                     @php
@@ -943,10 +939,6 @@
                         <span class="more-sheet-item-label">Settings</span>
                     </a>
                 @endif
-                <button type="button" class="more-sheet-item pwa-install-trigger" data-color="gold" data-display="flex" style="display: none !important; visibility: hidden; background: transparent; border: none; cursor: pointer; text-align: center;" onclick="closeMoreSheet();">
-                    <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #CFA46F; border-color: rgba(207,164,111,0.35);"><i class="bi bi-phone-fill"></i></div>
-                    <span class="more-sheet-item-label pwa-install-text">Install App</span>
-                </button>
             </div>
         </div>
         <script @cspNonce>
@@ -1356,6 +1348,42 @@
                         input = btn.parentElement.querySelector('input[type="password"], input[type="text"]');
                     }
                     togglePassword(input, btn, e);
+                }
+            });
+
+            // ── Modern Header Search Bar Keyboard Shortcuts & UX ──
+            const searchBar = document.getElementById('headerSearchBar');
+            const modKey = document.getElementById('headerSearchModKey');
+            const isAppleDevice = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform || navigator.userAgent);
+
+            if (modKey && isAppleDevice) {
+                modKey.textContent = '⌘';
+            }
+
+            if (searchBar) {
+                searchBar.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (window.openCommandPalette) window.openCommandPalette();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        searchBar.blur();
+                        if (window.closeCommandPalette) window.closeCommandPalette();
+                    }
+                });
+            }
+
+            // Global Ctrl+K / Cmd+K visual highlight on header search bar
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                    if (searchBar) {
+                        searchBar.classList.add('active');
+                        setTimeout(function() { searchBar.classList.remove('active'); }, 500);
+                    }
+                } else if (e.key === 'Escape') {
+                    if (searchBar && document.activeElement === searchBar) {
+                        searchBar.blur();
+                    }
                 }
             });
         });

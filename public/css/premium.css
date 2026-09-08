@@ -263,6 +263,181 @@ body {
 }
 .header-profile-img:hover { border-color: var(--gold); transform: scale(1.05); }
 
+/* ── Modern Dashboard Header Search Bar ── */
+.header-search-bar {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 42px;
+    width: 270px;
+    padding: 0 14px;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 215, 145, 0.14);
+    border-radius: var(--radius-sm, 12px);
+    color: #a8947f;
+    cursor: pointer;
+    text-decoration: none;
+    user-select: none;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.header-search-bar:hover {
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(207, 164, 111, 0.38);
+    color: #e2d5c3;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 12px rgba(207, 164, 111, 0.12);
+    transform: translateY(-1px);
+}
+
+.header-search-bar:focus,
+.header-search-bar:focus-visible,
+.header-search-bar.active {
+    outline: none;
+    background: rgba(255, 255, 255, 0.09);
+    border-color: #cfa46f;
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.28), 0 6px 20px rgba(0, 0, 0, 0.45);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.header-search-icon {
+    font-size: 0.88rem;
+    color: #cfa46f;
+    margin-right: 10px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.header-search-bar:hover .header-search-icon,
+.header-search-bar:focus .header-search-icon {
+    color: #ffd89b;
+    transform: scale(1.1);
+}
+
+.header-search-text {
+    flex: 1;
+    text-align: left;
+    font-size: 0.82rem;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.1px;
+}
+
+.header-search-shortcut {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 8px;
+    flex-shrink: 0;
+}
+
+.header-search-key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    padding: 2px 6px;
+    background: rgba(207, 164, 111, 0.12);
+    border: 1px solid rgba(207, 164, 111, 0.25);
+    border-bottom: 2px solid rgba(207, 164, 111, 0.42);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    color: #f3e7cd;
+    font-size: 0.64rem;
+    font-weight: 700;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height: 1.1;
+    letter-spacing: 0.3px;
+    transition: all 0.2s ease;
+}
+
+.header-search-plus {
+    font-size: 0.62rem;
+    color: rgba(207, 164, 111, 0.55);
+    font-weight: 600;
+}
+
+.header-search-bar:hover .header-search-key {
+    background: rgba(207, 164, 111, 0.18);
+    border-color: rgba(207, 164, 111, 0.45);
+    color: #ffffff;
+}
+
+.header-search-bar:focus .header-search-key,
+.header-search-bar:focus-visible .header-search-key {
+    background: rgba(207, 164, 111, 0.28);
+    border-color: #cfa46f;
+    color: #ffffff;
+    box-shadow: 0 0 8px rgba(207, 164, 111, 0.35);
+}
+
+/* Responsive screen size rules for header search bar */
+@media (max-width: 1199px) {
+    .header-search-bar {
+        width: 230px;
+    }
+}
+
+@media (max-width: 991px) {
+    .header-search-bar {
+        width: 195px;
+        padding: 0 12px;
+    }
+    .header-search-text {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .header-search-bar {
+        width: 155px;
+        padding: 0 10px;
+        height: 40px;
+    }
+    .header-search-icon {
+        margin-right: 6px;
+        font-size: 0.82rem;
+    }
+    .header-search-shortcut {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-search-bar {
+        width: clamp(105px, 28vw, 130px);
+        padding: 0 8px;
+        height: 38px;
+    }
+    .header-search-text {
+        font-size: 0.76rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .header-search-bar {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 10px;
+    }
+    .header-search-icon {
+        margin-right: 0;
+    }
+    .header-search-text {
+        display: none !important;
+    }
+}
+
 
 /* ── 3. MAIN LAYOUT AREA ── */
 .main-wrapper { min-height: 100vh; display: flex; flex-direction: column; width: 100%; }
