@@ -335,8 +335,7 @@
         @else
             navItems = [
                 { label: 'Dashboard', hint: 'Student home', icon: 'bi-grid-fill', url: '{{ route("home") }}' },
-                { label: 'Scan QR / Enter Code', hint: 'Mark class attendance', icon: 'bi-qr-code-scan', url: '{{ route("home") }}?open_scanner=1' },
-                { label: 'Enter Attendance Code', hint: 'Enter 6-digit session PIN', icon: 'bi-key-fill', url: '{{ route("home") }}?open_code=1' },
+                { label: 'Enter Attendance Code', hint: 'Enter 6-digit session PIN or scan QR', icon: 'bi-key-fill', url: '{{ route("home") }}?open_code=1' },
                 { label: 'My Classes', hint: 'Enrolled subjects', icon: 'bi-folder', url: '{{ route("student.classes") }}' },
                 { label: 'My Schedule', hint: 'Weekly timetable', icon: 'bi-calendar-week', url: '{{ route("student.schedule") }}' },
                 { label: 'Notifications', hint: 'Alerts & warnings', icon: 'bi-bell', url: '{{ route("notifications") }}' },

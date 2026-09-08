@@ -4,14 +4,25 @@
         
         <!-- Header & Top Floating Bar -->
         <div class="scanner-top-bar">
-            <!-- Mode Switcher Tabs: QR vs Code -->
-            <div class="scanner-mode-switcher">
+            <!-- Mobile: Mode Switcher Tabs (QR vs Code) -->
+            <div class="scanner-mode-switcher" id="mobileModeSwitcher">
                 <button type="button" id="tabScanMode" class="scanner-mode-tab active" onclick="switchScannerMode('scan')">
                     <i class="bi bi-qr-code-scan me-1"></i> Scan QR
                 </button>
                 <button type="button" id="tabCodeMode" class="scanner-mode-tab" onclick="switchScannerMode('code')">
                     <i class="bi bi-key-fill me-1"></i> Enter Code
                 </button>
+            </div>
+
+            <!-- Desktop: Dedicated Header (Code Only) -->
+            <div id="desktopScannerHeader" class="desktop-scanner-header" style="display: none; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 12px; background: rgba(207,164,111,0.16); color: #cfa46f; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; border: 1px solid rgba(207,164,111,0.3);">
+                    <i class="bi bi-key-fill"></i>
+                </div>
+                <div>
+                    <div style="font-size: 1.05rem; font-weight: 800; color: #f3e7cd; letter-spacing: -0.2px; line-height: 1.2;">Enter Attendance Code</div>
+                    <div style="font-size: 0.72rem; color: #b39b82;">Manual attendance check-in</div>
+                </div>
             </div>
             
             <div class="scanner-top-actions">
@@ -985,6 +996,38 @@
     .reticle-corner.bottom-left { bottom: 20px; left: 20px; }
     .reticle-corner.bottom-right { bottom: 20px; right: 20px; }
 }
+
+/* ── DESKTOP ONLY / MOBILE ONLY RESPONSIVE RULES ── */
+@media (min-width: 768px) {
+    /* Desktop layout: lock to code-only manual entry */
+    .scanner-mode-switcher {
+        display: none !important;
+    }
+    #desktopScannerHeader {
+        display: flex !important;
+    }
+    #torchCameraBtn,
+    #flipCameraBtn,
+    #switchToCameraBtn {
+        display: none !important;
+    }
+    #scannerActiveView {
+        display: none !important;
+    }
+    .scanner-modal-card {
+        max-width: 480px;
+        width: 100%;
+        padding: 28px 28px 24px;
+        border-radius: 28px;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Mobile layout: show switcher and camera elements */
+    #desktopScannerHeader {
+        display: none !important;
+    }
+}
 </style>
 
 <script nonce="{{ csp_nonce() }}" src="{{ asset('js/html5-qrcode.min.js') }}?v={{ filemtime(public_path('js/html5-qrcode.min.js')) }}"></script>
@@ -1004,7 +1047,16 @@ if (navigator.geolocation) {
     );
 }
 
+function isDesktopDevice() {
+    // Desktop / tablet layout threshold: screen width >= 768px
+    return window.innerWidth >= 768;
+}
+
 function switchScannerMode(mode) {
+    if (isDesktopDevice()) {
+        // Enforce code-only mode on desktop layouts
+        mode = 'code';
+    }
     currentScannerMode = mode;
     const tabScan = document.getElementById('tabScanMode');
     const tabCode = document.getElementById('tabCodeMode');
@@ -1012,24 +1064,26 @@ function switchScannerMode(mode) {
     const codeView = document.getElementById('scannerCodeView');
     const torchBtn = document.getElementById('torchCameraBtn');
     const flipBtn = document.getElementById('flipCameraBtn');
+    const switchCamBtn = document.getElementById('switchToCameraBtn');
 
-    if (!tabScan || !tabCode || !scanView || !codeView) return;
-
-    if (mode === 'scan') {
-        tabScan.classList.add('active');
-        tabCode.classList.remove('active');
-        scanView.style.display = 'block';
-        codeView.style.display = 'none';
+    if (mode === 'scan' && !isDesktopDevice()) {
+        if (tabScan) tabScan.classList.add('active');
+        if (tabCode) tabCode.classList.remove('active');
+        if (scanView) scanView.style.display = 'block';
+        if (codeView) codeView.style.display = 'none';
         if (torchBtn) torchBtn.style.display = 'flex';
         if (flipBtn) flipBtn.style.display = 'flex';
         startHtml5Scanner();
     } else {
-        tabCode.classList.add('active');
-        tabScan.classList.remove('active');
-        scanView.style.display = 'none';
-        codeView.style.display = 'block';
+        if (tabCode) tabCode.classList.add('active');
+        if (tabScan) tabScan.classList.remove('active');
+        if (scanView) scanView.style.display = 'none';
+        if (codeView) codeView.style.display = 'block';
         if (torchBtn) torchBtn.style.display = 'none';
         if (flipBtn) flipBtn.style.display = 'none';
+        if (switchCamBtn) {
+            switchCamBtn.style.display = isDesktopDevice() ? 'none' : 'block';
+        }
 
         // Stop camera while typing to save battery
         if (html5QrScanner) {
@@ -1042,7 +1096,7 @@ function switchScannerMode(mode) {
         setTimeout(() => {
             const input = document.getElementById('directSessionCodeInput');
             if (input) input.focus();
-        }, 100);
+        }, 80);
     }
 
     if (window.triggerHaptic) window.triggerHaptic('light');
@@ -1084,42 +1138,51 @@ function submitDirectCode() {
     onQrScanSuccess(cleanVal);
 }
 
+function applyResponsiveScannerLayout() {
+    const isDesktop = isDesktopDevice();
+    const modeSwitcher = document.getElementById('mobileModeSwitcher') || document.querySelector('.scanner-mode-switcher');
+    const desktopHeader = document.getElementById('desktopScannerHeader');
+    const torchBtn = document.getElementById('torchCameraBtn');
+    const flipBtn = document.getElementById('flipCameraBtn');
+    const switchCamBtn = document.getElementById('switchToCameraBtn');
+    const scanTab = document.getElementById('tabScanMode');
+
+    if (isDesktop) {
+        if (modeSwitcher) modeSwitcher.style.display = 'none';
+        if (desktopHeader) desktopHeader.style.display = 'flex';
+        if (torchBtn) torchBtn.style.display = 'none';
+        if (flipBtn) flipBtn.style.display = 'none';
+        if (switchCamBtn) switchCamBtn.style.display = 'none';
+        if (scanTab) scanTab.style.display = 'none';
+    } else {
+        if (modeSwitcher) modeSwitcher.style.display = 'inline-flex';
+        if (desktopHeader) desktopHeader.style.display = 'none';
+        if (switchCamBtn) switchCamBtn.style.display = 'block';
+        if (scanTab) scanTab.style.display = 'inline-block';
+    }
+}
+
 function openStudentScanner(initialMode = 'scan') {
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
     
-    // Detect if user is on desktop - if so, force code mode
-    const isDesktop = !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && 
-                      window.innerWidth >= 1024;
-    
-    // On desktop, always use code entry mode (no camera scanning)
+    const isDesktop = isDesktopDevice();
+    // On desktop, strictly enforce code entry mode
     if (isDesktop) {
         initialMode = 'code';
-        console.log('[Scanner] Desktop detected - switching to code entry mode');
     }
     modal.style.display = 'flex';
     
-    // Hide QR scan tab and camera controls on desktop
-    if (isDesktop) {
-        const scanTab = document.getElementById('tabScanMode');
-        const modeSwitcher = document.querySelector('.scanner-mode-switcher');
-        const torchBtn = document.getElementById('torchCameraBtn');
-        const flipBtn = document.getElementById('flipCameraBtn');
-        const switchCamBtn = document.getElementById('switchToCameraBtn');
-        
-        if (scanTab) scanTab.style.display = 'none';
-        if (modeSwitcher && modeSwitcher.children.length <= 1) modeSwitcher.style.display = 'none';
-        if (torchBtn) torchBtn.style.display = 'none';
-        if (flipBtn) flipBtn.style.display = 'none';
-        if (switchCamBtn) switchCamBtn.style.display = 'none';
-    }
-    
+    applyResponsiveScannerLayout();
     resetScannerView();
-
     switchScannerMode(initialMode);
 }
 
 function startHtml5Scanner() {
+    if (isDesktopDevice()) {
+        console.log('[Scanner] QR camera scanner is disabled on desktop layouts.');
+        return;
+    }
     const fallbackNotice = document.getElementById('scannerFallbackNotice');
     if (fallbackNotice) fallbackNotice.style.display = 'none';
 
@@ -1250,21 +1313,32 @@ function closeStudentScanner() {
 }
 
 function resetScannerView() {
+    const isDesktop = isDesktopDevice();
     const activeView = document.getElementById('scannerActiveView');
     const codeView = document.getElementById('scannerCodeView');
     const resultView = document.getElementById('scannerResultView');
     const overlay = document.getElementById('scannerProcessingOverlay');
     const codeInput = document.getElementById('directSessionCodeInput');
 
-    if (activeView) activeView.style.display = 'block';
-    if (codeView) codeView.style.display = 'none';
     if (resultView) resultView.style.display = 'none';
     if (overlay) overlay.style.display = 'none';
     if (codeInput) codeInput.value = '';
-    
-    const modal = document.getElementById('studentScannerModal');
-    if (currentScannerMode === 'scan' && !html5QrScanner && modal && modal.style.display === 'flex') {
-        startHtml5Scanner();
+
+    if (isDesktop) {
+        if (activeView) activeView.style.display = 'none';
+        if (codeView) codeView.style.display = 'block';
+    } else {
+        if (currentScannerMode === 'scan') {
+            if (activeView) activeView.style.display = 'block';
+            if (codeView) codeView.style.display = 'none';
+            const modal = document.getElementById('studentScannerModal');
+            if (!html5QrScanner && modal && modal.style.display === 'flex') {
+                startHtml5Scanner();
+            }
+        } else {
+            if (activeView) activeView.style.display = 'none';
+            if (codeView) codeView.style.display = 'block';
+        }
     }
 }
 
@@ -1506,6 +1580,37 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { openStudentScanner(); }, 150);
     } else if (urlParams.get('open_code') === '1') {
         setTimeout(() => { openStudentScanner('code'); }, 150);
+    }
+
+    // Modal backdrop click to close
+    const modal = document.getElementById('studentScannerModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeStudentScanner();
+            }
+        });
+    }
+});
+
+// Window resize adaptive listener
+window.addEventListener('resize', () => {
+    const modal = document.getElementById('studentScannerModal');
+    if (modal && modal.style.display !== 'none') {
+        applyResponsiveScannerLayout();
+        if (isDesktopDevice() && currentScannerMode !== 'code') {
+            switchScannerMode('code');
+        }
+    }
+});
+
+// Keyboard support: Escape key closes modal on desktop/mobile
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('studentScannerModal');
+        if (modal && modal.style.display !== 'none') {
+            closeStudentScanner();
+        }
     }
 });
 </script>

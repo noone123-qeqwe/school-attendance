@@ -148,6 +148,9 @@
                 </div>
                 <!-- Mobile-only compact CTA -->
                 <div class="d-md-none mt-3 d-flex gap-2">
+                    <button type="button" onclick="openStudentScanner('scan')" class="btn-modern-primary flex-fill justify-content-center" style="padding: 10px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 12px;">
+                        <i class="bi bi-qr-code-scan me-1"></i> Scan / Enter Code
+                    </button>
                     <a href="{{ route('excuses') }}" class="btn-modern-glass flex-fill justify-content-center" style="padding: 10px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 12px;">
                         <i class="bi bi-envelope-paper-fill me-1"></i> Excuse
                     </a>
@@ -162,8 +165,8 @@
                 </div>
                 <div class="hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <button type="button" onclick="openStudentScanner()" class="btn-modern-primary w-100 justify-content-center" style="padding: 12px; font-size: 0.95rem;">
-                <i class="bi bi-qr-code-scan"></i> Scan Attendance QR
+            <button type="button" onclick="openStudentScanner('code')" class="btn-modern-primary w-100 justify-content-center" style="padding: 12px; font-size: 0.95rem;">
+                <i class="bi bi-key-fill me-2"></i> Enter Attendance Code
             </button>
             <a href="{{ route('excuses') }}" class="btn-modern-glass w-100 justify-content-center" style="padding: 10px; font-size: 0.88rem;">
                 <i class="bi bi-envelope-paper-fill"></i> Submit Excuse / Leave

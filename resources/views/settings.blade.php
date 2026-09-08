@@ -2212,7 +2212,7 @@
 
                     <div class="bio-method-grid">
                         <!-- Option 1: Fingerprint -->
-                        <div class="bio-method-card selected" id="methodCardFingerprint" onclick="selectBiometricMethod('fingerprint')" tabindex="0" role="button" aria-pressed="true" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
+                        <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" onclick="selectBiometricMethod('fingerprint')" tabindex="0" role="button" aria-pressed="true" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
                             <div class="bio-card-radio">
                                 <div class="bio-radio-inner">
                                     <i class="bi bi-check-lg"></i>
@@ -2862,6 +2862,7 @@ window.scrollStabs = function(direction) {
 
 window.switchTab = function(id, btn) {
     if (!id) return;
+    if (id === 'biometrics') id = 'fingerprint';
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
 
@@ -2983,7 +2984,7 @@ function selectBiometricMethod(method) {
     selectedBioMethod = method;
 
     // 1. Toggle option card active styling & radio state
-    const cardFp = document.getElementById('methodCardFp');
+    const cardFp = document.getElementById('methodCardFp') || document.getElementById('methodCardFingerprint');
     const cardFace = document.getElementById('methodCardFace');
     if (cardFp && cardFace) {
         if (method === 'fingerprint') {

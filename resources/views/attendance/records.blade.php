@@ -544,9 +544,19 @@
         <i class="bi bi-arrow-left"></i> Back to Dashboard
     </a>
 
-    <div class="page-header">
-        <div class="page-header-title">Attendance Records</div>
-        <div class="page-header-sub">Your complete attendance history — {{ $records->count() }} total records</div>
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+        <div>
+            <div class="page-header-title">Attendance Records</div>
+            <div class="page-header-sub">Your complete attendance history — {{ $records->count() }} total records</div>
+        </div>
+        <div>
+            <button type="button" onclick="openStudentScanner('code')" class="btn btn-primary d-none d-md-inline-flex" style="padding: 10px 18px; font-size: 0.85rem; border-radius: 12px; text-transform: none;">
+                <i class="bi bi-key-fill me-1"></i> Enter Attendance Code
+            </button>
+            <button type="button" onclick="openStudentScanner('scan')" class="btn btn-primary d-inline-flex d-md-none" style="padding: 9px 14px; font-size: 0.82rem; border-radius: 12px; text-transform: none;">
+                <i class="bi bi-qr-code-scan me-1"></i> Scan / Enter Code
+            </button>
+        </div>
     </div>
 
     @php

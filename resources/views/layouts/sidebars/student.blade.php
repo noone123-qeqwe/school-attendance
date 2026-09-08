@@ -8,14 +8,10 @@
 
 <div class="sidebar-divider"></div>
 
-<div class="sidebar-nav">
+<div class="sidebar-nav" style="display: flex; flex-direction: column; gap: 4px;">
     <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
         <i class="bi bi-grid-fill"></i>
         <span class="nav-link-text">Dashboard</span>
-    </a>
-    <a href="javascript:void(0)" onclick="if(typeof openStudentScanner === 'function'){openStudentScanner();}else{window.location.href='{{ route('home') }}?open_scanner=1';}" class="nav-link" style="color: #f3e7cd; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.22); border-radius: 12px; margin: 4px 0 8px 0;">
-        <i class="bi bi-qr-code-scan" style="color: #cfa46f;"></i>
-        <span class="nav-link-text" style="font-weight: 700;">Scan QR / Enter Code</span>
     </a>
     <a href="{{ route('student.schedule') }}" class="nav-link {{ request()->routeIs('student.schedule') ? 'active' : '' }}">
         <i class="bi bi-calendar2-week-fill"></i>
@@ -33,7 +29,6 @@
         <i class="bi bi-clipboard-data-fill"></i>
         <span class="nav-link-text">Attendance Records</span>
     </a>
-
     <a href="{{ route('student.calendar') }}" class="nav-link {{ request()->routeIs('student.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-event-fill"></i>
         <span class="nav-link-text">School Calendar</span>
@@ -42,8 +37,9 @@
         <i class="bi bi-file-text-fill"></i>
         <span class="nav-link-text">Excuse Submissions</span>
     </a>
-    <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" class="nav-link">
-        <i class="bi bi-fingerprint" style="color: #4ade80;"></i>
-        <span class="nav-link-text">Biometrics Registration</span>
+    <a href="{{ route('settings') }}" class="nav-link {{ request()->routeIs('settings*') ? 'active' : '' }}">
+        <i class="bi bi-gear-fill"></i>
+        <span class="nav-link-text">Settings</span>
     </a>
 </div>
+
