@@ -26,13 +26,13 @@
             </div>
             
             <div class="scanner-top-actions">
-                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="scanner-icon-btn" title="Toggle Flashlight">
+                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="scanner-icon-btn" title="Toggle Flashlight" aria-label="Toggle Flashlight">
                     <i class="bi bi-lightning-charge"></i>
                 </button>
-                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="scanner-icon-btn" title="Flip Camera">
+                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="scanner-icon-btn" title="Flip Camera" aria-label="Flip Camera">
                     <i class="bi bi-camera-reverse"></i>
                 </button>
-                <button type="button" onclick="closeStudentScanner()" class="scanner-icon-btn close-btn" title="Close">
+                <button type="button" onclick="closeStudentScanner()" class="scanner-icon-btn close-btn" title="Close" aria-label="Close Scanner">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
@@ -59,8 +59,8 @@
                 <div id="scannerLaser" class="scanner-laser-line"></div>
 
                 <!-- Guidance Pill -->
-                <div class="scanner-guide-badge">
-                    <i class="bi bi-viewfinder me-1"></i> Point at screen
+                <div id="scannerGuideBadge" class="scanner-guide-badge">
+                    <i class="bi bi-viewfinder me-1"></i> Point at screen QR code
                 </div>
 
                 <!-- Processing Overlay -->
@@ -72,16 +72,16 @@
 
                 <!-- Fallback Notice (Permission Blocked / Unsupported) -->
                 <div id="scannerFallbackNotice" class="scanner-fallback-box" style="display: none;">
-                    <div class="fallback-icon-wrap">
+                    <div class="fallback-icon-wrap" id="fallbackIconWrap">
                         <i class="bi bi-camera-video-off"></i>
                     </div>
-                    <h5 class="fallback-title">Camera Inactive</h5>
+                    <h5 class="fallback-title" id="fallbackTitle">Camera Inactive</h5>
                     <p id="scannerFallbackText" class="fallback-text">Please allow camera permissions or switch to Code entry.</p>
-                    <div class="d-flex justify-content-center gap-2 mt-2">
-                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="requestCameraAgain()" style="border-radius: 12px; font-weight: 700;">
+                    <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-outline-warning" id="retryCameraBtn" onclick="requestCameraAgain()" style="border-radius: 12px; font-weight: 700; padding: 7px 16px;">
                             <i class="bi bi-arrow-repeat me-1"></i> Retry Camera
                         </button>
-                        <button type="button" class="btn btn-sm btn-warning text-dark" onclick="switchScannerMode('code')" style="border-radius: 12px; font-weight: 700;">
+                        <button type="button" class="btn btn-sm btn-warning text-dark" onclick="switchScannerMode('code')" style="border-radius: 12px; font-weight: 700; padding: 7px 16px;">
                             <i class="bi bi-key-fill me-1"></i> Use Code
                         </button>
                     </div>
@@ -153,12 +153,22 @@
                 </div>
             </div>
 
+            <!-- Auto Close Countdown Notice (active on successful recording) -->
+            <div id="resultAutoCloseNotice" class="result-autoclose-box" style="display: none;">
+                <div class="autoclose-text">
+                    <i class="bi bi-check2-circle text-success me-1"></i> Auto-closing and updating in <strong id="autoCloseCountdown">3</strong>s
+                </div>
+                <div class="autoclose-progress-bar">
+                    <div id="autoCloseProgressFill" class="autoclose-progress-fill"></div>
+                </div>
+            </div>
+
             <!-- Action Buttons -->
-            <div class="d-flex gap-2 w-100">
-                <button type="button" id="resultDoneBtn" onclick="finishScanAndRefresh()" class="btn scanner-primary-action-btn">
-                    <i class="bi bi-check-lg me-1"></i> Back to Dashboard
+            <div class="d-flex gap-2 w-100 mt-2">
+                <button type="button" id="resultDoneBtn" onclick="finishScanAndRefresh()" class="btn scanner-primary-action-btn flex-fill">
+                    <i class="bi bi-check-lg me-1"></i> Done (Back to Dashboard)
                 </button>
-                <button type="button" id="resultRetryBtn" onclick="resetScannerView()" class="btn scanner-secondary-action-btn" style="display: none;">
+                <button type="button" id="resultRetryBtn" onclick="resetScannerView()" class="btn scanner-secondary-action-btn flex-fill" style="display: none;">
                     <i class="bi bi-arrow-repeat me-1"></i> Try Again
                 </button>
             </div>
@@ -249,92 +259,92 @@
     border-radius: 24px;
     max-width: 440px;
     width: 100%;
-    padding: 28px 24px 24px;
-    color: #f3e7cd;
+    padding: 24px 20px;
     text-align: center;
     position: relative;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 30px rgba(239, 68, 68, 0.15);
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(239, 68, 68, 0.2);
+    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes popIn {
-    0% { opacity: 0; transform: scale(0.88) translateY(20px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes fadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
+@keyframes scaleUp {
+    0% { transform: scale(0.92); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 .outside-range-close-btn {
     position: absolute;
-    top: 16px;
-    right: 16px;
+    top: 14px;
+    right: 14px;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    border: none;
     color: #f3e7cd;
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
 }
 
 .outside-range-close-btn:hover {
-    background: rgba(239, 68, 68, 0.25);
-    color: #f87171;
-    transform: rotate(90deg);
+    background: rgba(239, 68, 68, 0.3);
+    color: #ffffff;
 }
 
 .outside-range-icon-pulse {
-    width: 76px;
-    height: 76px;
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 14px;
     border-radius: 50%;
-    background: rgba(239, 68, 68, 0.12);
+    background: rgba(239, 68, 68, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 16px;
     position: relative;
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
-    animation: pulseGps 2s infinite;
 }
 
-@keyframes pulseGps {
-    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
-    70% { box-shadow: 0 0 0 16px rgba(239, 68, 68, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+.outside-range-icon-pulse::after {
+    content: '';
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(239, 68, 68, 0.35);
+    animation: pulseRing 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulseRing {
+    0% { transform: scale(0.85); opacity: 1; }
+    100% { transform: scale(1.35); opacity: 0; }
 }
 
 .outside-range-icon-inner {
-    width: 54px;
-    height: 54px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #ef4444, #991b1b);
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ffffff;
-    font-size: 1.7rem;
+    font-size: 1.5rem;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.5);
 }
 
 .outside-range-badge {
     display: inline-flex;
     align-items: center;
-    padding: 4px 12px;
-    border-radius: 999px;
-    background: rgba(239, 68, 68, 0.15);
+    background: rgba(239, 68, 68, 0.18);
     border: 1px solid rgba(239, 68, 68, 0.35);
-    color: #f87171;
-    font-size: 0.72rem;
+    color: #fca5a5;
+    font-size: 0.68rem;
     font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-bottom: 10px;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 99px;
+    margin-bottom: 8px;
 }
 
 .outside-range-headline {
@@ -650,71 +660,89 @@
     border-radius: 24px;
     overflow: hidden;
     background: #000000;
-    min-height: 270px;
-    max-height: 320px;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid rgba(207, 164, 111, 0.35);
-    box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.85);
+    border: 1.5px solid rgba(207, 164, 111, 0.4);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(0, 0, 0, 0.9);
 }
 
 .scanner-reader-feed {
+    position: absolute !important;
+    inset: 0 !important;
     width: 100% !important;
-    min-height: 250px !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .scanner-reader-feed video {
-    border-radius: 20px !important;
+    border-radius: 22px !important;
     object-fit: cover !important;
     width: 100% !important;
-    max-height: 310px !important;
+    height: 100% !important;
 }
 
-.scanner-reader-feed __scan_region__ {
+.scanner-reader-feed canvas {
+    display: none !important;
+}
+
+.scanner-reader-feed #reader__scan_region {
     border: none !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.scanner-reader-feed #reader__dashboard {
+    display: none !important;
 }
 
 /* Reticle Corner Markers */
 .reticle-corner {
     position: absolute;
-    width: 26px;
-    height: 26px;
-    border-color: #cfa46f;
+    width: 28px;
+    height: 28px;
+    border-color: #ffd700;
     border-style: solid;
     border-width: 0;
-    z-index: 12;
+    z-index: 14;
     pointer-events: none;
-    filter: drop-shadow(0 0 6px rgba(207, 164, 111, 0.8));
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.75));
 }
 
 .reticle-corner.top-left {
-    top: 24px;
-    left: 24px;
+    top: 18px;
+    left: 18px;
     border-top-width: 3.5px;
     border-left-width: 3.5px;
     border-top-left-radius: 12px;
 }
 
 .reticle-corner.top-right {
-    top: 24px;
-    right: 24px;
+    top: 18px;
+    right: 18px;
     border-top-width: 3.5px;
     border-right-width: 3.5px;
     border-top-right-radius: 12px;
 }
 
 .reticle-corner.bottom-left {
-    bottom: 24px;
-    left: 24px;
+    bottom: 18px;
+    left: 18px;
     border-bottom-width: 3.5px;
     border-left-width: 3.5px;
     border-bottom-left-radius: 12px;
 }
 
 .reticle-corner.bottom-right {
-    bottom: 24px;
-    right: 24px;
+    bottom: 18px;
+    right: 18px;
     border-bottom-width: 3.5px;
     border-right-width: 3.5px;
     border-bottom-right-radius: 12px;
@@ -723,20 +751,20 @@
 /* Laser Scan Line */
 .scanner-laser-line {
     position: absolute;
-    left: 12%;
-    right: 12%;
+    left: 8%;
+    right: 8%;
     height: 3px;
-    background: linear-gradient(90deg, transparent, #cfa46f 30%, #ffd700 50%, #cfa46f 70%, transparent);
-    box-shadow: 0 0 16px #ffd700, 0 0 30px rgba(207, 164, 111, 0.6);
+    background: linear-gradient(90deg, transparent, #cfa46f 25%, #ffd700 50%, #cfa46f 75%, transparent);
+    box-shadow: 0 0 18px #ffd700, 0 0 32px rgba(207, 164, 111, 0.7);
     z-index: 15;
     animation: modernLaserScan 2s ease-in-out infinite;
     pointer-events: none;
 }
 
 @keyframes modernLaserScan {
-    0% { top: 18%; opacity: 0.3; }
-    50% { top: 78%; opacity: 1; }
-    100% { top: 18%; opacity: 0.3; }
+    0% { top: 12%; opacity: 0.25; }
+    50% { top: 86%; opacity: 1; }
+    100% { top: 12%; opacity: 0.25; }
 }
 
 /* Guidance Badge */
@@ -745,30 +773,33 @@
     bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(18, 16, 14, 0.75);
+    background: rgba(18, 16, 14, 0.85);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.16);
     color: #f3e7cd;
     font-size: 0.72rem;
     font-weight: 600;
-    padding: 4px 12px;
+    padding: 5px 14px;
     border-radius: 99px;
     z-index: 16;
     pointer-events: none;
+    white-space: nowrap;
 }
 
 /* Processing Overlay */
 .scanner-processing-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(14, 13, 12, 0.9);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(14, 13, 12, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     z-index: 25;
+    display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    border-radius: 22px;
 }
 
 .processing-title {
@@ -789,12 +820,13 @@
     padding: 24px 16px;
     color: #b39b82;
     text-align: center;
-    z-index: 10;
+    z-index: 20;
+    position: relative;
 }
 
 .fallback-icon-wrap {
-    width: 50px;
-    height: 50px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     background: rgba(239, 68, 68, 0.15);
     border: 1px solid rgba(239, 68, 68, 0.3);
@@ -803,21 +835,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 8px;
+    margin: 0 auto 10px;
 }
 
 .fallback-title {
     font-weight: 700;
     color: #ffffff;
     font-size: 1rem;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
 }
 
 .fallback-text {
     font-size: 0.8rem;
-    color: #b39b82;
-    max-width: 250px;
+    color: #d1c4b2;
+    max-width: 260px;
     margin: 0 auto;
+    line-height: 1.45;
 }
 
 .scanner-manual-toggle-btn {
@@ -879,7 +912,7 @@
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 18px;
     padding: 14px 18px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     text-align: left;
 }
 
@@ -921,6 +954,38 @@
     font-weight: 700;
 }
 
+/* Auto Close Countdown Box */
+.result-autoclose-box {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    text-align: center;
+}
+
+.autoclose-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #34d399;
+    margin-bottom: 6px;
+}
+
+.autoclose-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.autoclose-progress-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #10b981, #34d399);
+    transition: width 0.1s linear;
+}
+
 .scanner-primary-action-btn {
     background: linear-gradient(135deg, #cfa46f, #8c6d46) !important;
     color: #181614 !important;
@@ -953,7 +1018,7 @@
     .scanner-modal-card {
         max-width: 100vw;
         width: 100vw;
-        min-height: 90dvh;
+        min-height: 88dvh;
         max-height: 96dvh;
         border-radius: 32px 32px 0 0;
         border-bottom: none;
@@ -966,35 +1031,34 @@
     }
 
     .scanner-viewfinder-wrapper {
-        min-height: 290px;
-        max-height: 350px;
+        max-width: 300px;
+        aspect-ratio: 1 / 1;
         border-radius: 26px;
     }
 
     .scanner-reader-feed video {
-        max-height: 340px !important;
         border-radius: 24px !important;
     }
 
     .scanner-title {
-        font-size: 1.35rem;
+        font-size: 1.3rem;
     }
 
     .code-entry-input {
-        font-size: 2.4rem !important;
+        font-size: 2.2rem !important;
         letter-spacing: 6px !important;
         padding: 14px 10px !important;
     }
 
     .reticle-corner {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
     }
 
-    .reticle-corner.top-left { top: 20px; left: 20px; }
-    .reticle-corner.top-right { top: 20px; right: 20px; }
-    .reticle-corner.bottom-left { bottom: 20px; left: 20px; }
-    .reticle-corner.bottom-right { bottom: 20px; right: 20px; }
+    .reticle-corner.top-left { top: 16px; left: 16px; }
+    .reticle-corner.top-right { top: 16px; right: 16px; }
+    .reticle-corner.bottom-left { bottom: 16px; left: 16px; }
+    .reticle-corner.bottom-right { bottom: 16px; right: 16px; }
 }
 
 /* ── DESKTOP ONLY / MOBILE ONLY RESPONSIVE RULES ── */
@@ -1033,10 +1097,15 @@
 <script nonce="{{ csp_nonce() }}" src="{{ asset('js/html5-qrcode.min.js') }}?v={{ filemtime(public_path('js/html5-qrcode.min.js')) }}"></script>
 <script nonce="{{ csp_nonce() }}">
 let html5QrScanner = null;
+let isScannerStarting = false;
+let isScannerRunning = false;
+let isScanInFlight = false;
 let currentFacingMode = "environment";
 let torchEnabled = false;
 let studentGeoCoords = null;
 let currentScannerMode = 'scan'; // 'scan' | 'code'
+let autoCloseTimer = null;
+let autoCloseCountdownInterval = null;
 
 // Auto-capture GPS coords quietly for faster validation
 if (navigator.geolocation) {
@@ -1086,12 +1155,7 @@ function switchScannerMode(mode) {
         }
 
         // Stop camera while typing to save battery
-        if (html5QrScanner) {
-            html5QrScanner.stop().then(() => {
-                html5QrScanner.clear();
-            }).catch(() => {});
-            html5QrScanner = null;
-        }
+        safeStopScanner();
 
         setTimeout(() => {
             const input = document.getElementById('directSessionCodeInput');
@@ -1178,67 +1242,143 @@ function openStudentScanner(initialMode = 'scan') {
     switchScannerMode(initialMode);
 }
 
-function startHtml5Scanner() {
+async function safeStopScanner() {
+    if (html5QrScanner && isScannerRunning) {
+        try {
+            await html5QrScanner.stop();
+        } catch (e) {
+            console.warn("[Scanner] Safe stop warning:", e);
+        }
+    }
+    isScannerRunning = false;
+    isScannerStarting = false;
+    const laser = document.getElementById('scannerLaser');
+    if (laser) laser.style.display = 'none';
+}
+
+async function safeClearScanner() {
+    await safeStopScanner();
+    if (html5QrScanner) {
+        try {
+            await html5QrScanner.clear();
+        } catch (e) {}
+        html5QrScanner = null;
+    }
+}
+
+async function waitForHtml5Qrcode(maxWaitMs = 3000) {
+    const startTime = Date.now();
+    while (typeof Html5Qrcode === 'undefined') {
+        if (Date.now() - startTime > maxWaitMs) {
+            return false;
+        }
+        await new Promise(r => setTimeout(r, 100));
+    }
+    return true;
+}
+
+async function startHtml5Scanner() {
     if (isDesktopDevice()) {
         console.log('[Scanner] QR camera scanner is disabled on desktop layouts.');
         return;
     }
-    const fallbackNotice = document.getElementById('scannerFallbackNotice');
-    if (fallbackNotice) fallbackNotice.style.display = 'none';
 
-    try {
-        if (typeof Html5Qrcode !== 'undefined') {
-            if (html5QrScanner) {
-                html5QrScanner.stop().catch(() => {}).finally(() => initScannerInstance());
-            } else {
-                initScannerInstance();
-            }
-        } else {
-            showCameraError("Scanner engine is loading. You can also enter the 6-digit code.");
-        }
-    } catch (e) {
-        showCameraError("Camera initialization failed: " + e.message);
+    if (isScannerStarting || isScannerRunning) {
+        return;
     }
-}
 
-async function initScannerInstance() {
+    hideCameraError();
+
+    // 1. Check secure context (HTTPS / localhost required by browsers for camera)
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        showCameraError("Camera access requires a secure connection (HTTPS) or localhost. Please switch to 6-digit Code entry.", false, true);
+        return;
+    }
+
+    // 2. Check browser mediaDevices support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showCameraError("Your browser or device does not support live camera scanning. Please enter the 6-digit Code.", false, true);
+        return;
+    }
+
+    // 3. Wait for Html5Qrcode library to be loaded
+    const libLoaded = await waitForHtml5Qrcode();
+    if (!libLoaded) {
+        showCameraError("Scanner engine is loading. Please enter the 6-digit Code or tap Retry.", false);
+        return;
+    }
+
+    isScannerStarting = true;
+
     try {
-        if (!html5QrScanner) {
-            html5QrScanner = new Html5Qrcode("reader");
+        // 4. Request camera permissions explicitly
+        try {
+            const probeStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: currentFacingMode } }
+            });
+            probeStream.getTracks().forEach(track => track.stop());
+        } catch (permErr) {
+            isScannerStarting = false;
+            if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
+                showCameraError("Camera access was denied. Please allow camera permissions in your browser address bar/settings, then tap Retry Camera.", true);
+                return;
+            } else if (permErr.name === 'NotFoundError' || permErr.name === 'DevicesNotFoundError') {
+                showCameraError("No camera detected on this device. Please use 'Enter Code'.", false, true);
+                return;
+            } else if (permErr.name === 'NotReadableError' || permErr.name === 'TrackStartError') {
+                showCameraError("Camera is currently in use by another app. Please close other camera apps and tap Retry.", false);
+                return;
+            } else {
+                showCameraError("Camera permission failed: " + (permErr.message || "Unknown error"), false);
+                return;
+            }
         }
-        const isMobile = window.innerWidth <= 640;
-        const config = {
-            fps: 15,
+
+        // 5. Initialize Html5Qrcode instance
+        await safeClearScanner();
+
+        const readerContainer = document.getElementById('reader');
+        if (readerContainer) {
+            readerContainer.innerHTML = '';
+        }
+
+        html5QrScanner = new Html5Qrcode("reader");
+
+        const qrConfig = {
+            fps: 20,
             qrbox: function(viewfinderWidth, viewfinderHeight) {
                 const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const qrboxSize = Math.floor(minEdge * 0.72);
+                const qrboxSize = Math.floor(minEdge * 0.76);
                 return { width: Math.max(qrboxSize, 180), height: Math.max(qrboxSize, 180) };
             },
-            aspectRatio: 1.0,
-            showTorchButtonIfSupported: true
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+            }
         };
 
-        // Try standard facingMode
+        // Try primary facingMode
         try {
             await html5QrScanner.start(
-                { facingMode: currentFacingMode },
-                config,
+                { facingMode: { ideal: currentFacingMode } },
+                qrConfig,
                 onQrScanSuccess
             );
+            isScannerRunning = true;
+            isScannerStarting = false;
             const laser = document.getElementById('scannerLaser');
             if (laser) laser.style.display = 'block';
             return;
         } catch (firstErr) {
-            console.warn("FacingMode start failed, trying camera enumeration fallback:", firstErr);
+            console.warn("[Scanner] FacingMode start failed, trying camera enumeration fallback:", firstErr);
         }
 
-        // Camera enumeration fallback for multi-camera phones
+        // Camera enumeration fallback for multi-lens mobile devices
         const cameras = await Html5Qrcode.getCameras();
         if (cameras && cameras.length > 0) {
             let selectedCamera = cameras[0];
-            const backCam = cameras.find(c => /back|rear|environment/i.test(c.label));
-            if (backCam && currentFacingMode === 'environment') {
-                selectedCamera = backCam;
+            if (currentFacingMode === 'environment') {
+                const backCam = cameras.find(c => /back|rear|environment|main/i.test(c.label));
+                if (backCam) selectedCamera = backCam;
             } else if (currentFacingMode === 'user') {
                 const frontCam = cameras.find(c => /front|user|selfie/i.test(c.label));
                 if (frontCam) selectedCamera = frontCam;
@@ -1246,41 +1386,82 @@ async function initScannerInstance() {
 
             await html5QrScanner.start(
                 selectedCamera.id,
-                config,
+                qrConfig,
                 onQrScanSuccess
             );
+            isScannerRunning = true;
+            isScannerStarting = false;
             const laser = document.getElementById('scannerLaser');
             if (laser) laser.style.display = 'block';
         } else {
             throw new Error("No cameras detected on this device.");
         }
     } catch (err) {
-        console.warn("Camera start failed completely:", err);
-        showCameraError("Camera access unavailable or permission denied. Tap 'Use Code' to enter the 6-digit code.");
+        console.warn("[Scanner] Camera start failed completely:", err);
+        isScannerStarting = false;
+        isScannerRunning = false;
+        showCameraError("Camera unavailable or permission denied. Tap 'Retry Camera' or enter the 6-digit Code.", true);
     }
 }
 
-function showCameraError(msg) {
+function showCameraError(msg, isPermission = false, isUnsupported = false) {
     const notice = document.getElementById('scannerFallbackNotice');
     const text = document.getElementById('scannerFallbackText');
+    const title = document.getElementById('fallbackTitle');
+    const iconWrap = document.getElementById('fallbackIconWrap');
+    const retryBtn = document.getElementById('retryCameraBtn');
     const laser = document.getElementById('scannerLaser');
+
     if (notice) notice.style.display = 'block';
     if (text) text.textContent = msg;
     if (laser) laser.style.display = 'none';
+
+    if (title) {
+        if (isPermission) {
+            title.textContent = 'Camera Permission Required';
+        } else if (isUnsupported) {
+            title.textContent = 'Camera Unsupported';
+        } else {
+            title.textContent = 'Camera Inactive';
+        }
+    }
+
+    if (iconWrap) {
+        if (isPermission) {
+            iconWrap.innerHTML = '<i class="bi bi-shield-lock-fill text-warning"></i>';
+            iconWrap.style.background = 'rgba(245, 158, 11, 0.15)';
+            iconWrap.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+        } else {
+            iconWrap.innerHTML = '<i class="bi bi-camera-video-off text-danger"></i>';
+            iconWrap.style.background = 'rgba(239, 68, 68, 0.15)';
+            iconWrap.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+        }
+    }
+
+    if (retryBtn) {
+        retryBtn.style.display = isUnsupported ? 'none' : 'inline-flex';
+    }
+}
+
+function hideCameraError() {
+    const notice = document.getElementById('scannerFallbackNotice');
+    if (notice) notice.style.display = 'none';
 }
 
 function requestCameraAgain() {
+    hideCameraError();
     startHtml5Scanner();
 }
 
-function toggleCameraFacing() {
+async function toggleCameraFacing() {
     currentFacingMode = currentFacingMode === "environment" ? "user" : "environment";
+    await safeStopScanner();
     startHtml5Scanner();
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
 function toggleTorch() {
-    if (!html5QrScanner) return;
+    if (!html5QrScanner || !isScannerRunning) return;
     try {
         torchEnabled = !torchEnabled;
         const torchBtn = document.getElementById('torchCameraBtn');
@@ -1302,26 +1483,39 @@ function toggleTorch() {
 }
 
 function closeStudentScanner() {
+    clearAutoCloseTimer();
     const modal = document.getElementById('studentScannerModal');
     if (modal) modal.style.display = 'none';
-    if (html5QrScanner) {
-        html5QrScanner.stop().then(() => {
-            html5QrScanner.clear();
-        }).catch(() => {});
-        html5QrScanner = null;
+    safeClearScanner();
+    isScanInFlight = false;
+}
+
+function clearAutoCloseTimer() {
+    if (autoCloseTimer) {
+        clearTimeout(autoCloseTimer);
+        autoCloseTimer = null;
+    }
+    if (autoCloseCountdownInterval) {
+        clearInterval(autoCloseCountdownInterval);
+        autoCloseCountdownInterval = null;
     }
 }
 
 function resetScannerView() {
+    clearAutoCloseTimer();
+    isScanInFlight = false;
+
     const isDesktop = isDesktopDevice();
     const activeView = document.getElementById('scannerActiveView');
     const codeView = document.getElementById('scannerCodeView');
     const resultView = document.getElementById('scannerResultView');
     const overlay = document.getElementById('scannerProcessingOverlay');
     const codeInput = document.getElementById('directSessionCodeInput');
+    const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
 
     if (resultView) resultView.style.display = 'none';
     if (overlay) overlay.style.display = 'none';
+    if (autoCloseNotice) autoCloseNotice.style.display = 'none';
     if (codeInput) codeInput.value = '';
 
     if (isDesktop) {
@@ -1332,7 +1526,7 @@ function resetScannerView() {
             if (activeView) activeView.style.display = 'block';
             if (codeView) codeView.style.display = 'none';
             const modal = document.getElementById('studentScannerModal');
-            if (!html5QrScanner && modal && modal.style.display === 'flex') {
+            if (modal && modal.style.display === 'flex') {
                 startHtml5Scanner();
             }
         } else {
@@ -1342,10 +1536,31 @@ function resetScannerView() {
     }
 }
 
-async function onQrScanSuccess(decodedText) {
-    if (html5QrScanner) {
-        html5QrScanner.stop().catch(() => {});
+function extractQrToken(raw) {
+    if (!raw) return '';
+    let str = raw.trim();
+    if (str.includes('/qr/scan/')) {
+        const parts = str.split('/qr/scan/');
+        str = parts[1] ? parts[1].split('?')[0].split('#')[0] : str;
+    } else if (str.startsWith('http://') || str.startsWith('https://')) {
+        try {
+            const url = new URL(str);
+            const pathParts = url.pathname.split('/').filter(Boolean);
+            if (pathParts.length > 0) {
+                str = pathParts[pathParts.length - 1];
+            }
+        } catch(e) {}
     }
+    return str.trim();
+}
+
+async function onQrScanSuccess(decodedText) {
+    // Prevent multiple accidental scan triggers (in-flight guard)
+    if (isScanInFlight) return;
+    isScanInFlight = true;
+
+    // Immediately stop camera feed and hide laser
+    safeStopScanner();
 
     const overlay = document.getElementById('scannerProcessingOverlay');
     const laser = document.getElementById('scannerLaser');
@@ -1356,7 +1571,10 @@ async function onQrScanSuccess(decodedText) {
     playScanBeep();
     if (window.triggerHaptic) window.triggerHaptic('medium');
 
-    // Fetch fresh GPS if not present
+    // Clean scanned token / URL
+    const cleanedToken = extractQrToken(decodedText);
+
+    // Fetch fresh GPS if not already captured
     if (!studentGeoCoords && navigator.geolocation) {
         try {
             await new Promise((resolve) => {
@@ -1373,7 +1591,7 @@ async function onQrScanSuccess(decodedText) {
     }
 
     const payload = {
-        token: decodedText.trim(),
+        token: cleanedToken,
         latitude: studentGeoCoords ? studentGeoCoords.lat : null,
         longitude: studentGeoCoords ? studentGeoCoords.lng : null,
         accuracy: studentGeoCoords ? studentGeoCoords.acc : null
@@ -1407,6 +1625,8 @@ async function onQrScanSuccess(decodedText) {
 }
 
 function renderScanSuccess(data) {
+    clearAutoCloseTimer();
+
     document.getElementById('scannerActiveView').style.display = 'none';
     document.getElementById('scannerCodeView').style.display = 'none';
     document.getElementById('scannerResultView').style.display = 'block';
@@ -1417,7 +1637,10 @@ function renderScanSuccess(data) {
     const subtitle = document.getElementById('resultSubtitle');
     const retryBtn = document.getElementById('resultRetryBtn');
     const doneBtn = document.getElementById('resultDoneBtn');
+    const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
+    const detailsBox = document.getElementById('resultDetailsBox');
 
+    if (detailsBox) detailsBox.style.display = 'block';
     if (retryBtn) retryBtn.style.display = 'none';
     if (doneBtn) doneBtn.style.display = 'block';
 
@@ -1431,13 +1654,16 @@ function renderScanSuccess(data) {
         
         badge.className = 'badge bg-info text-dark';
         badge.textContent = data.status || 'Present';
+
+        if (autoCloseNotice) autoCloseNotice.style.display = 'none';
+        if (window.triggerHaptic) window.triggerHaptic('light');
     } else {
         iconBox.style.background = 'rgba(16, 185, 129, 0.15)';
         iconBox.style.border = '2px solid rgba(16, 185, 129, 0.4)';
         iconBox.innerHTML = '<i class="bi bi-check2-circle" style="color: #34d399;"></i>';
 
         title.textContent = 'Attendance Recorded Successfully!';
-        subtitle.textContent = `Your attendance has been recorded for ${data.subject || 'this class'}.`;
+        subtitle.textContent = `Your attendance has been confirmed for ${data.subject || 'this class'}.`;
 
         const isPresent = (data.status || 'Present') === 'Present';
         badge.className = isPresent ? 'badge bg-success' : 'badge bg-warning text-dark';
@@ -1445,6 +1671,31 @@ function renderScanSuccess(data) {
 
         playSuccessChime();
         if (window.triggerHaptic) window.triggerHaptic('success');
+
+        // Automatically close and submit flow
+        if (autoCloseNotice) {
+            autoCloseNotice.style.display = 'block';
+            let secondsLeft = 3;
+            const countEl = document.getElementById('autoCloseCountdown');
+            const progressFill = document.getElementById('autoCloseProgressFill');
+            if (countEl) countEl.textContent = secondsLeft;
+            if (progressFill) progressFill.style.width = '100%';
+
+            autoCloseCountdownInterval = setInterval(() => {
+                secondsLeft--;
+                if (countEl) countEl.textContent = Math.max(secondsLeft, 0);
+                if (progressFill) {
+                    progressFill.style.width = (secondsLeft / 3 * 100) + '%';
+                }
+                if (secondsLeft <= 0) {
+                    clearInterval(autoCloseCountdownInterval);
+                }
+            }, 1000);
+
+            autoCloseTimer = setTimeout(() => {
+                finishScanAndRefresh();
+            }, 3200);
+        }
     }
 
     document.getElementById('resultSubject').textContent = (data.subject || 'Subject') + (data.subject_code ? ' (' + data.subject_code + ')' : '');
@@ -1454,6 +1705,9 @@ function renderScanSuccess(data) {
 }
 
 function renderScanError(data) {
+    clearAutoCloseTimer();
+    isScanInFlight = false;
+
     document.getElementById('scannerActiveView').style.display = 'none';
     document.getElementById('scannerCodeView').style.display = 'none';
     document.getElementById('scannerResultView').style.display = 'block';
@@ -1463,6 +1717,9 @@ function renderScanError(data) {
     const subtitle = document.getElementById('resultSubtitle');
     const retryBtn = document.getElementById('resultRetryBtn');
     const doneBtn = document.getElementById('resultDoneBtn');
+    const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
+
+    if (autoCloseNotice) autoCloseNotice.style.display = 'none';
 
     iconBox.style.background = 'rgba(239, 68, 68, 0.15)';
     iconBox.style.border = '2px solid rgba(239, 68, 68, 0.4)';
@@ -1485,6 +1742,7 @@ function renderScanError(data) {
     if (retryBtn) retryBtn.style.display = 'block';
     if (doneBtn) doneBtn.style.display = 'none';
 
+    playErrorTone();
     if (window.triggerHaptic) window.triggerHaptic('error');
 }
 
@@ -1507,7 +1765,7 @@ function showOutsideRangePopup(data) {
 
     modal.style.display = 'flex';
     if (window.triggerHaptic) window.triggerHaptic('error');
-    playScanBeep();
+    playErrorTone();
 }
 
 function closeOutsideRangePopup() {
@@ -1531,6 +1789,7 @@ window.showOutsideRangePopup = showOutsideRangePopup;
 window.closeOutsideRangePopup = closeOutsideRangePopup;
 
 function finishScanAndRefresh() {
+    clearAutoCloseTimer();
     closeStudentScanner();
     window.location.reload();
 }
@@ -1545,8 +1804,8 @@ function playScanBeep() {
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, ctx.currentTime);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
         osc.start();
         osc.stop(ctx.currentTime + 0.12);
@@ -1563,9 +1822,9 @@ function playSuccessChime() {
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
-        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
         gain.gain.setValueAtTime(0.15, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
         osc.start();
@@ -1573,11 +1832,30 @@ function playSuccessChime() {
     } catch(e) {}
 }
 
+function playErrorTone() {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.setValueAtTime(160, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.35);
+    } catch(e) {}
+}
+
 // Auto open scanner if directed with URL query
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('open_scanner') === '1') {
-        setTimeout(() => { openStudentScanner(); }, 150);
+        setTimeout(() => { openStudentScanner('scan'); }, 150);
     } else if (urlParams.get('open_code') === '1') {
         setTimeout(() => { openStudentScanner('code'); }, 150);
     }

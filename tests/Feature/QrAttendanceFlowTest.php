@@ -427,4 +427,149 @@ class QrAttendanceFlowTest extends TestCase
         $this->assertGreaterThanOrEqual(290, $diffSeconds);
         $this->assertLessThanOrEqual(305, $diffSeconds);
     }
+
+    public function test_student_in_app_qr_scanner_handles_full_url_qr_scan()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'URL101',
+            'name' => 'Web Technologies',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code
+        ]);
+        $startResponse->assertStatus(200);
+        $scanUrl = $startResponse->json('scan_url');
+        $token = $startResponse->json('token');
+
+        $this->assertNotEmpty($scanUrl);
+        $this->assertStringContainsString('/qr/scan/' . $token, $scanUrl);
+
+        // Student scans teacher QR displaying the full signed URL
+        $scanResponse = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $scanUrl,
+        ]);
+
+        $scanResponse->assertStatus(200);
+        $this->assertTrue($scanResponse->json('success'));
+        $this->assertEquals('Present', $scanResponse->json('status'));
+        $this->assertEquals('URL101', $scanResponse->json('subject_code'));
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'subject_code' => 'URL101',
+            'status' => 'Present',
+            'method' => 'qr'
+        ]);
+    }
+
+    public function test_student_in_app_qr_scanner_rejects_invalid_token()
+    {
+        $student = User::factory()->create(['role' => 'student']);
+
+        $response = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => 'invalid-nonexistent-token-xyz',
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertFalse($response->json('success'));
+        $this->assertEquals('invalid_or_expired', $response->json('error_type'));
+    }
+
+    public function test_student_in_app_qr_scanner_rejects_expired_or_inactive_session()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'EXP101',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code
+        ]);
+        $sessionId = $startResponse->json('session_id');
+        $token = $startResponse->json('token');
+
+        // Teacher terminates or expires the session
+        $session = AttendanceSession::find($sessionId);
+        $session->update([
+            'active' => false,
+            'session_ends_at' => now()->subMinutes(10),
+        ]);
+
+        $response = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $token,
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertFalse($response->json('success'));
+        $this->assertEquals('session_closed', $response->json('error_type'));
+    }
+
+    public function test_student_in_app_qr_scanner_rejects_outside_classroom_boundary()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'GEO101',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code,
+            'classroom_lat' => 14.5000,
+            'classroom_lng' => 121.0000
+        ]);
+        $token = $startResponse->json('token');
+
+        // Student scans from far away (approx 1.5km away)
+        $response = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $token,
+            'latitude' => 14.5150,
+            'longitude' => 121.0150,
+            'accuracy' => 10
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertFalse($response->json('success'));
+        $this->assertEquals('outside_classroom', $response->json('error_type'));
+        $this->assertGreaterThan(50, $response->json('distance'));
+    }
 }

@@ -998,11 +998,20 @@ class QrAttendanceController extends Controller
             ], 422);
         }
 
-        // Clean token if full URL was scanned
+        // Clean token if full URL or path was scanned
         $rawToken = $rawInput;
         if (str_contains($rawToken, '/qr/scan/')) {
             $parts = explode('/qr/scan/', $rawToken);
             $rawToken = explode('?', $parts[1] ?? '')[0];
+            $rawToken = explode('#', $rawToken)[0];
+        } elseif (filter_var($rawToken, FILTER_VALIDATE_URL)) {
+            $path = trim(parse_url($rawToken, PHP_URL_PATH) ?? '', '/');
+            $segments = explode('/', $path);
+            $lastSegment = end($segments);
+            if (!empty($lastSegment)) {
+                $rawToken = explode('?', $lastSegment)[0];
+                $rawToken = explode('#', $rawToken)[0];
+            }
         }
 
         $cleanedCode = strtoupper(preg_replace('/[^0-9A-Za-z]/', '', $rawInput));
@@ -1010,9 +1019,9 @@ class QrAttendanceController extends Controller
 
         // Look up by token or session_code
         $session = AttendanceSession::with(['subject.instructor'])
-            ->where(function ($query) use ($rawToken, $cleanedCode) {
+            ->where(function ($query) use ($rawToken, $cleanedCode, $isCodeMethod) {
                 $query->where('token', $rawToken);
-                if (!empty($cleanedCode)) {
+                if ($isCodeMethod && !empty($cleanedCode)) {
                     $query->orWhere('session_code', $cleanedCode);
                 }
             })

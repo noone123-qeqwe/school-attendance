@@ -130,4 +130,35 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertSee('Registered Hardware Credentials');
         $response->assertSee('id="deviceList"', false);
     }
+
+    public function test_student_scanner_modal_has_camera_viewfinder_laser_reticles_and_fallback_states(): void
+    {
+        $response = $this->actingAs($this->student)->get('/home');
+
+        $response->assertStatus(200);
+
+        // Viewfinder & camera components
+        $response->assertSee('id="scannerVideoContainer"', false);
+        $response->assertSee('id="reader"', false);
+        $response->assertSee('id="scannerLaser"', false);
+        $response->assertSee('id="scannerGuideBadge"', false);
+        $response->assertSee('reticle-corner top-left', false);
+        $response->assertSee('reticle-corner top-right', false);
+        $response->assertSee('reticle-corner bottom-left', false);
+        $response->assertSee('reticle-corner bottom-right', false);
+
+        // Overlay & Feedback
+        $response->assertSee('id="scannerProcessingOverlay"', false);
+        $response->assertSee('id="scannerFallbackNotice"', false);
+        $response->assertSee('id="retryCameraBtn"', false);
+        $response->assertSee('id="resultAutoCloseNotice"', false);
+        $response->assertSee('id="autoCloseCountdown"', false);
+        $response->assertSee('id="outsideRangePopupModal"', false);
+
+        // Functional JS safeguards
+        $response->assertSee('safeStopScanner()', false);
+        $response->assertSee('safeClearScanner()', false);
+        $response->assertSee('isScanInFlight', false);
+        $response->assertSee('extractQrToken(', false);
+    }
 }
