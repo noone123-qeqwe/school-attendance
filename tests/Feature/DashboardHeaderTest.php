@@ -117,4 +117,19 @@ class DashboardHeaderTest extends TestCase
         $this->assertStringContainsString('id="headerSearchBar"', $headerHtml);
         $this->assertStringContainsString('Search anything...', $headerHtml);
     }
+
+    public function test_user_profile_dropdown_does_not_contain_biometrics_registration(): void
+    {
+        $response = $this->actingAs($this->student)->get('/home');
+        $response->assertStatus(200);
+
+        $headerHtml = $this->getHeaderHtml($response->getContent());
+        $this->assertNotEmpty($headerHtml);
+
+        // Header profile dropdown must contain Settings and Log Out, but NOT Biometrics Registration
+        $this->assertStringNotContainsString('Biometrics Registration', $headerHtml);
+        $this->assertStringContainsString('Settings', $headerHtml);
+        $this->assertStringContainsString('Log Out', $headerHtml);
+    }
 }
+

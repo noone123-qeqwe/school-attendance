@@ -278,13 +278,6 @@
                                 </div>
                             </div>
                             <hr class="my-2" style="border-color:#f1f5f9;">
-                            @php
-                                $fpRoute = Auth::user()->isTeacher() ? route('teacher.profile') : (Auth::user()->isAdmin() ? route('admin.profile') : (Auth::user()->isParent() ? route('parent.profile') : route('settings').'#tab-fingerprint'));
-                            @endphp
-                            <a class="fb-dropdown-item" href="{{ $fpRoute }}" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');">
-                                <div class="fb-icon-circle" style="background:rgba(34,197,94,0.15);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
-                                <span>Biometrics Registration</span>
-                            </a>
                             @if(Auth::user()->isTeacher())
                             <a class="fb-dropdown-item" href="{{ route('teacher.profile') }}">
                                 <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
