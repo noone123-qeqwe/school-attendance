@@ -1,15 +1,14 @@
-/* BUMP_TIMESTAMP: 2026-09-08T02:07:00+08:00 */
-const CACHE_VERSION = 'v268';
-const CACHE_NAME = `attendance-v268`;
+/* BUMP_TIMESTAMP: 2026-09-08T13:15:00+08:00 */
+const CACHE_VERSION = 'v269';
+const CACHE_NAME = `attendance-v269`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v268`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v269`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
 // Core essential resources to pre-cache on install
 const PRECACHE_ASSETS = [
     OFFLINE_URL,
-    '/manifest.json',
     '/images/logo.png',
     '/images/icons/icon-192x192.png',
     '/images/icons/icon-512x512.png',
@@ -39,8 +38,9 @@ async function trimCache(cacheName, maxItems) {
     }
 }
 
-// Install: precache essential offline assets peacefully in background (no force skipWaiting)
+// Install: precache essential offline assets and skip waiting immediately
 self.addEventListener('install', (event) => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(STATIC_CACHE_NAME).then((cache) => {
             return cache.addAll(PRECACHE_ASSETS).catch((err) => {
