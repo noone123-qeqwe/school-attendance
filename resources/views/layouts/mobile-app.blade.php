@@ -149,6 +149,7 @@
         }
     </style>
 
+    @include('partials.pwa-tags')
     @stack('styles')
 </head>
 <body>
