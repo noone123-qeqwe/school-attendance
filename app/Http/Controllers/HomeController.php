@@ -54,9 +54,14 @@ class HomeController extends Controller
         return redirect()->route('admin.dashboard');
     }
 
-    // Teachers don't have a student dashboard — send them to teacher panel
-    if ($user->isTeacher()) {
+    // Teachers / Dept Heads don't have a student dashboard — send them to teacher panel
+    if ($user->isTeacher() || $user->isDepartmentHead()) {
         return redirect()->route('teacher.dashboard');
+    }
+
+    // Parents don't have a student dashboard — send them to parent portal
+    if ($user->isParent()) {
+        return redirect()->route('parent.dashboard');
     }
 
     // Ensure we're dealing with a student

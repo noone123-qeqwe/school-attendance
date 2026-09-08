@@ -101,13 +101,16 @@ class AuthController extends Controller
 
         if ($user && (Hash::check($password, $user->password) || Hash::check(trim($password), $user->password))) {
             $authenticated = true;
-        } else {
-            // Fallback standard attempts
+        }
+
+        // Fallback standard attempts
+        if (!$authenticated) {
             $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password])
                 || Auth::attempt(['email' => $identifier, 'password' => $password])
                 || Auth::attempt(['employee_id' => $identifier, 'password' => $password])
                 || Auth::attempt(['student_number' => $identifier, 'password' => trim($password)])
-                || Auth::attempt(['email' => $identifier, 'password' => trim($password)]);
+                || Auth::attempt(['email' => $identifier, 'password' => trim($password)])
+                || Auth::attempt(['employee_id' => $identifier, 'password' => trim($password)]);
             if ($authenticated) {
                 $user = Auth::user();
             }
@@ -167,8 +170,11 @@ class AuthController extends Controller
         return response()->json([
             'status' => 'error',
             'success' => false,
-            'message' => 'Incorrect ID/email or password. (' . $result['remaining_attempts'] . ' attempts remaining before account lockout)',
+            'message' => 'Incorrect ID/email or password.',
             'remaining_attempts' => $result['remaining_attempts'],
+            'errors' => [
+                'identifier' => ['Incorrect ID/email or password.'],
+            ],
         ], 401);
     }
 

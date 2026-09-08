@@ -347,6 +347,7 @@ class AuthenticationTest extends TestCase
         $response->assertJson([
             'status' => 'error',
             'success' => false,
+            'message' => 'Incorrect ID/email or password.',
         ]);
     }
 
@@ -361,6 +362,58 @@ class AuthenticationTest extends TestCase
         $response->assertJson([
             'status' => 'error',
             'success' => false,
+            'message' => 'Incorrect ID/email or password.',
         ]);
+    }
+
+    public function test_login_with_accidental_spaces_in_credentials(): void
+    {
+        $student = User::factory()->create([
+            'student_number' => '0703250',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => '   0703250   ',
+            'password' => '  student123  ',
+        ]);
+
+        $this->assertAuthenticatedAs($student);
+        $response->assertRedirect('/home');
+    }
+
+    public function test_parent_can_login_with_email(): void
+    {
+        $parent = User::factory()->create([
+            'email' => 'parent.test@example.com',
+            'password' => \Illuminate\Support\Facades\Hash::make('parent123'),
+            'role' => 'parent',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => 'parent.test@example.com',
+            'password' => 'parent123',
+        ]);
+
+        $this->assertAuthenticatedAs($parent);
+        $response->assertRedirect(route('parent.dashboard'));
+    }
+
+    public function test_teacher_can_login_with_employee_id(): void
+    {
+        $teacher = User::factory()->create([
+            'employee_id' => 'T-2024-001',
+            'password' => \Illuminate\Support\Facades\Hash::make('teacher123'),
+            'role' => 'teacher',
+        ]);
+
+        $response = $this->post('/login', [
+            'identifier' => 'T-2024-001',
+            'password' => 'teacher123',
+        ]);
+
+        $this->assertAuthenticatedAs($teacher);
+        $response->assertRedirect(route('teacher.dashboard'));
     }
 }

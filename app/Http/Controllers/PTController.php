@@ -151,15 +151,25 @@ class PTController extends Controller
                 || Auth::attempt(['email' => $identifier, 'password' => $password], $remember)
                 || Auth::attempt(['employee_id' => $identifier, 'password' => $password], $remember)
                 || Auth::attempt(['student_number' => $identifier, 'password' => trim($password)], $remember)
-                || Auth::attempt(['email' => $identifier, 'password' => trim($password)], $remember);
+                || Auth::attempt(['email' => $identifier, 'password' => trim($password)], $remember)
+                || Auth::attempt(['employee_id' => $identifier, 'password' => trim($password)], $remember);
 
             if ($authenticated) {
                 $user = Auth::user();
                 if (!$user->isActive()) {
                     Auth::logout();
                     $authenticated = false;
+                    $errorMessage = 'Your account has been deactivated. Please contact the school administrator.';
+                    if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                        return response()->json([
+                            'status' => 'error',
+                            'success' => false,
+                            'message' => $errorMessage,
+                            'account_disabled' => true,
+                        ], 403);
+                    }
                     return back()->withInput($request->only('identifier'))
-                        ->withErrors(['identifier' => 'Your account has been deactivated. Please contact the school administrator.']);
+                        ->withErrors(['identifier' => $errorMessage]);
                 }
             }
         }
@@ -181,7 +191,9 @@ class PTController extends Controller
             $request->session()->put('user_role', $user->role);
             $request->session()->put('login_timestamp', now()->toString());
 
-            // Handle student role
+            // Determine target dashboard URL based on role
+            $targetUrl = route('home');
+
             if ($user->isStudent()) {
                 $request->session()->put('user_role', 'student');
                 $request->session()->put('login_timestamp', now());
@@ -190,46 +202,61 @@ class PTController extends Controller
                 app(DeviceBindingService::class)->bind($user, $request);
 
                 if ($request->filled('qr_token')) {
-                    return redirect()->route('qr.scan', ['token' => $request->qr_token]);
+                    $targetUrl = route('qr.scan', ['token' => $request->qr_token]);
+                } else {
+                    $intended = $request->session()->pull('url.intended');
+                    if ($intended && !str_contains($intended, '/admin') && !str_contains($intended, '/teacher') && !str_contains($intended, '/parent') && !str_contains($intended, '/login')) {
+                        $targetUrl = $intended;
+                    } else {
+                        $targetUrl = route('home');
+                    }
                 }
-
-                $intended = $request->session()->pull('url.intended');
-                if ($intended && !str_contains($intended, '/admin') && !str_contains($intended, '/teacher') && !str_contains($intended, '/parent') && !str_contains($intended, '/login')) {
-                    return redirect()->to($intended);
-                }
-                return redirect()->route('home');
-            }
-
-            // Handle admin role
-            if ($user->isAdmin()) {
+            } elseif ($user->isAdmin()) {
                 Log::info('Admin login successful', ['user_id' => $user->id, 'session_id' => $request->session()->getId()]);
 
                 if (app()->environment('local', 'testing')) {
                     $request->session()->put('admin_2fa_verified', true);
                     $request->session()->save();
-                    return redirect()->route('admin.dashboard');
+                    $targetUrl = route('admin.dashboard');
+                } else {
+                    $otp = \App\Models\Otp::generate($user->id, 'admin_login');
+                    try {
+                        app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'admin_login', $user->name);
+                    } catch (\Exception $e) {
+                        Log::error('Failed to send admin 2FA OTP: ' . $e->getMessage());
+                    }
+
+                    if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                        return response()->json([
+                            'status' => '2fa_required',
+                            'requires_2fa' => true,
+                            'redirect_url' => route('admin.2fa.form'),
+                            'message' => 'Please check your email for the verification code.',
+                        ]);
+                    }
+                    return redirect()->route('admin.2fa.form')->with('info', 'Please check your email for the verification code.');
                 }
-
-                $otp = \App\Models\Otp::generate($user->id, 'admin_login');
-                try {
-                    app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'admin_login', $user->name);
-                } catch (\Exception $e) {
-                    Log::error('Failed to send admin 2FA OTP: ' . $e->getMessage());
-                }
-                return redirect()->route('admin.2fa.form')->with('info', 'Please check your email for the verification code.');
+            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+                $targetUrl = route('teacher.dashboard');
+            } elseif ($user->isParent()) {
+                $targetUrl = route('parent.dashboard');
+            } else {
+                $targetUrl = route('home');
             }
 
-            // Handle teacher / dept head role
-            if ($user->isTeacher() || $user->isDepartmentHead()) {
-                return redirect()->route('teacher.dashboard');
+            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                return response()->json([
+                    'status' => 'success',
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'user' => $user,
+                    'role' => $user->role,
+                    'redirect_url' => $targetUrl,
+                    'dashboard_url' => $targetUrl,
+                ]);
             }
 
-            // Handle parent role
-            if ($user->isParent()) {
-                return redirect()->route('parent.dashboard');
-            }
-
-            return redirect()->intended('/home');
+            return redirect()->to($targetUrl);
         }
 
         // Record failed attempt
@@ -254,6 +281,17 @@ class PTController extends Controller
         }
 
         $errorMessage = 'Incorrect ID/email or password.';
+
+        if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+            return response()->json([
+                'status' => 'error',
+                'success' => false,
+                'message' => $errorMessage,
+                'errors' => [
+                    'identifier' => [$errorMessage],
+                ],
+            ], 401);
+        }
 
         $response = back()->withInput($request->only('identifier'))
             ->withErrors(['identifier' => $errorMessage]);

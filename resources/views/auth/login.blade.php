@@ -1301,10 +1301,32 @@ try {
     }
 } catch (e) {}
 
+function clearErrorStates() {
+    var alerts = document.querySelectorAll('.glass-alert, .invalid-feedback-custom');
+    alerts.forEach(function(el) { el.style.display = 'none'; });
+    if (idInput) idInput.classList.remove('is-invalid');
+    var pass = document.getElementById('loginPassword');
+    if (pass) pass.classList.remove('is-invalid');
+}
+
+if (idInput) {
+    idInput.addEventListener('input', clearErrorStates);
+}
+var passInput = document.getElementById('loginPassword');
+if (passInput) {
+    passInput.addEventListener('input', clearErrorStates);
+}
+
 // Loading state and remember credentials on submit
 var loginForm = document.getElementById('loginForm');
 if (loginForm) {
     loginForm.addEventListener('submit', function() {
+        clearErrorStates();
+
+        if (idInput && idInput.value) {
+            idInput.value = idInput.value.trim();
+        }
+
         try {
             if (rememberCheckbox && rememberCheckbox.checked && idInput && idInput.value) {
                 localStorage.setItem('attendance_saved_identifier', idInput.value.trim());
