@@ -256,4 +256,41 @@ class ProfilePhotoUploadTest extends TestCase
         $this->assertNotEquals('profile_images/userA.jpg', $userA->profile_image);
         Storage::disk('public')->assertExists($userA->profile_image);
     }
+
+    public function test_change_photo_button_is_removed_and_camera_badge_is_present(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'name' => 'Profile Test Student',
+            'student_number' => '0703250',
+        ]);
+
+        $response = $this->actingAs($student)->get('/settings');
+        $response->assertOk();
+
+        // Must NOT have the "Change Photo" button
+        $response->assertDontSee('ppm-btn-change', false);
+        $response->assertDontSee('>Change Photo</button>', false);
+
+        // Must have the clickable camera action badge
+        $response->assertSee('ppmCameraBadge', false);
+        $response->assertSee('ppm-badge-btn', false);
+        $response->assertSee('bi-camera-fill', false);
+        $response->assertSee('ppmTriggerPicker', false);
+
+        // Must have the native hidden file input accepting image/*
+        $response->assertSee('id="ppmFileInput"', false);
+        $response->assertSee('accept="image/*', false);
+        $response->assertSee('ppmHandleFileSelect', false);
+
+        // Must have the status overlay for loading, success, and error feedback
+        $response->assertSee('ppmStatusOverlay', false);
+        $response->assertSee('ppmStatusSpinner', false);
+        $response->assertSee('ppmStatusSuccess', false);
+        $response->assertSee('ppmStatusError', false);
+
+        // Must have properly aligned profile card layout
+        $response->assertSee('profile-card-inner', false);
+        $response->assertSee('profile-details-col', false);
+    }
 }

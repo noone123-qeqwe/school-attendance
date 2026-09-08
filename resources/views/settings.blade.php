@@ -1885,26 +1885,26 @@
                 </div>
             </div>
             <div class="sc-body">
+                <div class="profile-card-inner">
                     <x-profile-photo-manager :user="Auth::user()" :size="96" avatar-id="settingsAvatarDisplay" />
 
-                        <!-- User details column -->
-                        <div class="profile-details-col">
-                            <div class="profile-user-name">{{ Auth::user()->name }}</div>
-                            <div class="profile-user-id">
-                                <i class="bi bi-person-badge"></i>
-                                <span>{{ Auth::user()->student_number ?? Auth::user()->email }}</span>
-                            </div>
-                            <div class="profile-actions-row">
-                                @if(Auth::user()->course)
-                                    <span class="profile-badge-course">{{ Auth::user()->course }}</span>
-                                @endif
-                                @if(Auth::user()->year_level)
-                                    <span class="profile-badge-year">Year {{ Auth::user()->year_level }}</span>
-                                @endif
-                            </div>
+                    <!-- User details column -->
+                    <div class="profile-details-col">
+                        <div class="profile-user-name">{{ Auth::user()->name }}</div>
+                        <div class="profile-user-id">
+                            <i class="bi bi-person-badge"></i>
+                            <span>{{ Auth::user()->student_number ?? Auth::user()->email }}</span>
+                        </div>
+                        <div class="profile-actions-row">
+                            @if(Auth::user()->course)
+                                <span class="profile-badge-course">{{ Auth::user()->course }}</span>
+                            @endif
+                            @if(Auth::user()->year_level)
+                                <span class="profile-badge-year">Year {{ Auth::user()->year_level }}</span>
+                            @endif
                         </div>
                     </div>
-                </form>
+                </div>
             </div>
         </div>
 
