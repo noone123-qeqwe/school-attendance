@@ -6,8 +6,9 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ParentApiController;
 use App\Http\Controllers\Api\OtpApiController;
 
-// Authentication & Brute-Force Protected Login
+// Authentication & Brute-Force Protected Login (supports /api/login and /api/auth/login)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
 // OTP & 2FA Protected Endpoints
 Route::post('/otp', [OtpApiController::class, 'sendOtp'])->middleware('throttle:otp.send');

@@ -137,7 +137,7 @@ class User extends Authenticatable
 
         $query = $withTrashed ? static::withTrashed() : static::query();
 
-        // 1. Direct match on standard fields (exact or lowercase)
+        // 1. Direct match on standard fields (exact, trimmed, or lowercase)
         $lower = strtolower($raw);
         $user = (clone $query)->where(function ($q) use ($raw, $lower) {
             $q->where('student_number', $raw)
@@ -145,35 +145,45 @@ class User extends Authenticatable
               ->orWhere('employee_id', $raw)
               ->orWhereRaw('LOWER(email) = ?', [$lower])
               ->orWhereRaw('LOWER(student_number) = ?', [$lower])
-              ->orWhereRaw('LOWER(employee_id) = ?', [$lower]);
+              ->orWhereRaw('LOWER(employee_id) = ?', [$lower])
+              ->orWhereRaw('TRIM(email) = ?', [$raw])
+              ->orWhereRaw('TRIM(student_number) = ?', [$raw])
+              ->orWhereRaw('TRIM(employee_id) = ?', [$raw])
+              ->orWhereRaw('LOWER(TRIM(email)) = ?', [$lower])
+              ->orWhereRaw('LOWER(TRIM(student_number)) = ?', [$lower])
+              ->orWhereRaw('LOWER(TRIM(employee_id)) = ?', [$lower]);
         })->first();
 
         if ($user) {
             return $user;
         }
 
-        // 2. If numeric, check primary key id or institutional 7-digit zero-padded student number
+        // 2. If numeric, check institutional 7-digit zero-padded or unpadded student number / employee id
         if (ctype_digit($raw) || is_numeric($raw)) {
             $num = (int) $raw;
+            $unpadded = (string) $num;
+            $padded7 = sprintf('%07d', $num);
 
-            // Check primary key ID
-            $user = (clone $query)->where('id', $num)->first();
+            // Check unpadded (e.g. user typed 0703250 and DB has 703250) or padded (user typed 703250 and DB has 0703250)
+            $user = (clone $query)->where(function ($q) use ($unpadded, $padded7) {
+                $q->where('student_number', $padded7)
+                  ->orWhere('employee_id', $padded7)
+                  ->orWhere('student_number', $unpadded)
+                  ->orWhere('employee_id', $unpadded);
+            })->first();
+
             if ($user) {
                 return $user;
             }
 
-            // Check 7-digit zero-padded student_number (e.g. 703250 -> 0703250)
-            $padded = sprintf('%07d', $num);
-            $user = (clone $query)->where(function ($q) use ($padded) {
-                $q->where('student_number', $padded)
-                  ->orWhere('employee_id', $padded);
-            })->first();
+            // Fallback to primary key ID only after student_number / employee_id checks
+            $user = (clone $query)->where('id', $num)->first();
             if ($user) {
                 return $user;
             }
         }
 
-        // 3. Clean non-alphanumeric characters (e.g. hyphens, spaces in 070-3250)
+        // 3. Clean non-alphanumeric characters (e.g. hyphens, spaces in 070-3250, T-2024-001)
         $clean = preg_replace('/[^a-zA-Z0-9]/', '', $raw);
         if ($clean !== '' && $clean !== $raw) {
             $user = (clone $query)->where(function ($q) use ($clean) {
@@ -188,11 +198,16 @@ class User extends Authenticatable
             }
 
             if (ctype_digit($clean)) {
-                $padded = sprintf('%07d', (int) $clean);
-                $user = (clone $query)->where(function ($q) use ($padded) {
-                    $q->where('student_number', $padded)
-                      ->orWhere('employee_id', $padded);
+                $num = (int) $clean;
+                $unpadded = (string) $num;
+                $padded7 = sprintf('%07d', $num);
+                $user = (clone $query)->where(function ($q) use ($unpadded, $padded7) {
+                    $q->where('student_number', $padded7)
+                      ->orWhere('employee_id', $padded7)
+                      ->orWhere('student_number', $unpadded)
+                      ->orWhere('employee_id', $unpadded);
                 })->first();
+
                 if ($user) {
                     return $user;
                 }

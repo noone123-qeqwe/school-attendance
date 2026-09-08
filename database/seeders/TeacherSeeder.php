@@ -67,6 +67,10 @@ class TeacherSeeder extends Seeder
                 'email_verified_at' => now(),
             ];
 
+            if (!empty($data['password'])) {
+                $attributes['password'] = Hash::make($data['password']);
+            }
+
             if ($existing) {
                 if ($existing->trashed()) {
                     $existing->restore();
@@ -74,7 +78,9 @@ class TeacherSeeder extends Seeder
                 $existing->update($attributes);
                 $updatedCount++;
             } else {
-                $attributes['password'] = Hash::make($data['password'] ?? 'teacher123');
+                if (empty($attributes['password'])) {
+                    $attributes['password'] = Hash::make('teacher123');
+                }
                 User::create($attributes);
                 $createdCount++;
             }
