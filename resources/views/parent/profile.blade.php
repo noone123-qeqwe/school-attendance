@@ -406,11 +406,8 @@
                         <div>
                             <div style="font-weight:700;margin-bottom:4px;">Biometric login not available</div>
                             <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
-                                You're using an in-app browser that doesn't support fingerprint/biometric login. Please open this page in <strong>Chrome</strong> or <strong>Safari</strong> to register your fingerprint.
+                                Biometric authentication is not supported or not configured on this device.
                             </div>
-                            <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
-                                <i class="bi bi-box-arrow-up-right"></i> Open in Browser
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -607,19 +604,8 @@ function isInAppBrowser() {
     return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Twitter|Snapchat|MicroMessenger|KAKAOTALK/i.test(ua);
 }
 
-function openInSystemBrowser() {
-    var url = window.location.href;
-    if (/android/i.test(navigator.userAgent)) {
-        window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
-        setTimeout(function() { window.open(url, '_system'); }, 500);
-    } else {
-        window.open(url, '_blank');
-    }
-}
-
 // ── WebAuthn Fingerprint Registration ──
 async function loadDevices() {
-    var inApp = isInAppBrowser();
     const list = document.getElementById('deviceList');
     const regBtn = document.getElementById('registerFpBtn');
     const unsupported = document.getElementById('webauthnUnsupported');
@@ -628,16 +614,10 @@ async function loadDevices() {
         if (unsupported) {
             unsupported.style.display = 'block';
             var msgEl = document.getElementById('webauthnUnsupportedMsg');
-            var openBtn = document.getElementById('openInBrowserBtn');
             if (!window.isSecureContext) {
-                msgEl.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If accessing from mobile, please open via HTTPS.';
-                if (openBtn) openBtn.style.display = 'none';
-            } else if (inApp) {
-                msgEl.innerHTML = 'You\'re using an in-app browser that doesn\'t support fingerprint login. Tap the button below to open this page in <strong>Chrome</strong> or <strong>Safari</strong>.';
-                if (openBtn) openBtn.style.display = 'inline-flex';
+                msgEl.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>.';
             } else {
-                msgEl.innerHTML = 'Your browser or device doesn\'t support biometric login. Please try using <strong>Chrome</strong> or <strong>Safari</strong> on a device with a fingerprint sensor.';
-                if (openBtn) openBtn.style.display = 'none';
+                msgEl.innerHTML = 'Biometric authentication is not supported or not configured on this device.';
             }
         }
         if (regBtn) {

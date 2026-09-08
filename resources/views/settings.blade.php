@@ -2961,18 +2961,6 @@ function isInAppBrowser() {
     return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Twitter|Snapchat|MicroMessenger|KAKAOTALK/i.test(ua);
 }
 
-function openInSystemBrowser() {
-    var url = window.location.href;
-    // Android: use intent to open in Chrome
-    if (/android/i.test(navigator.userAgent)) {
-        window.location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
-        // Fallback after a short delay (if intent doesn't work)
-        setTimeout(function() { window.open(url, '_system'); }, 500);
-    } else {
-        window.open(url, '_system');
-    }
-}
-
 // ── WebAuthn Biometrics Registration (Fingerprint & Face Recognition) ──
 let selectedBioMethod = 'fingerprint'; // 'fingerprint' | 'face'
 let bioAbortController = null;

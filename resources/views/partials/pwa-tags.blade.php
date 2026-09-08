@@ -1880,29 +1880,29 @@
             if (closeBtn) closeBtn.textContent = 'Close';
 
         } else if (isInApp) {
-            if (titleEl) titleEl.textContent = 'Open in Browser';
-            if (badgeEl) badgeEl.textContent = 'In-App Browser';
-            if (taglineEl) taglineEl.textContent = 'Please open in Chrome or Safari to install the app or download the APK.';
+            if (titleEl) titleEl.textContent = 'Smart Attendance App';
+            if (badgeEl) badgeEl.textContent = 'Application';
+            if (taglineEl) taglineEl.textContent = 'Install or download the app for the best standalone experience.';
             if (heroDlBtn) heroDlBtn.setAttribute('data-action', 'download');
             if (dlLabel) dlLabel.textContent = 'Download APK';
             if (dlIcon) dlIcon.className = 'bi bi-arrow-down-circle-fill pwa-dl-icon';
-            if (stepsHeader) stepsHeader.textContent = 'SWITCH BROWSER';
+            if (stepsHeader) stepsHeader.textContent = 'GET APP';
             if (stepsGrid) {
                 stepsGrid.innerHTML = `
                     <div class="pwa-mini-step-box">
                         <div class="pwa-mini-step-num">1</div>
-                        <div class="pwa-mini-step-label">MENU</div>
-                        <div class="pwa-mini-step-hint">Tap ⋯ or ⋮ icon</div>
+                        <div class="pwa-mini-step-label">DOWNLOAD</div>
+                        <div class="pwa-mini-step-hint">Tap Download APK</div>
                     </div>
                     <div class="pwa-mini-step-box">
                         <div class="pwa-mini-step-num">2</div>
-                        <div class="pwa-mini-step-label">OPEN</div>
-                        <div class="pwa-mini-step-hint">In Chrome / Safari</div>
+                        <div class="pwa-mini-step-label">INSTALL</div>
+                        <div class="pwa-mini-step-hint">Open and install</div>
                     </div>
                     <div class="pwa-mini-step-box">
                         <div class="pwa-mini-step-num">3</div>
-                        <div class="pwa-mini-step-label">INSTALL</div>
-                        <div class="pwa-mini-step-hint">Tap Install / APK</div>
+                        <div class="pwa-mini-step-label">LAUNCH</div>
+                        <div class="pwa-mini-step-hint">Launch direct app</div>
                     </div>
                 `;
             }
