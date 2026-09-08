@@ -38,14 +38,28 @@ class StudentResponsiveAttendanceTest extends TestCase
         $this->assertStringContainsString('Attendance Records', $sidebar);
         $this->assertStringContainsString('School Calendar', $sidebar);
         $this->assertStringContainsString('Excuse Submissions', $sidebar);
-        $this->assertStringContainsString('Settings', $sidebar);
-        $this->assertStringContainsString(route('settings'), $sidebar);
 
-        // Verify removed sidebar links
+        // Verify removed sidebar links (Settings, Scan QR, Biometrics)
+        $this->assertStringNotContainsString('Settings', $sidebar);
+        $this->assertStringNotContainsString(route('settings'), $sidebar);
         $this->assertStringNotContainsString('Scan QR / Enter Code', $sidebar);
         $this->assertStringNotContainsString('Scan QR', $sidebar);
         $this->assertStringNotContainsString('Biometrics Registration', $sidebar);
         $this->assertStringNotContainsString('student/biometrics', $sidebar);
+    }
+
+    public function test_settings_is_removed_from_sidebar_and_mobile_more_sheet(): void
+    {
+        $this->actingAs($this->student);
+        $sidebar = view('layouts.sidebars.student')->render();
+        $this->assertStringNotContainsString('Settings', $sidebar);
+
+        $response = $this->actingAs($this->student)->get('/home');
+        $response->assertOk();
+        $html = $response->getContent();
+
+        // Ensure moreSheetContent does not contain Settings link
+        $this->assertDoesNotMatchRegularExpression('/id="moreSheetContent"[\s\S]*?<span class="more-sheet-item-label">Settings<\/span>/', $html);
     }
 
     public function test_home_dashboard_has_responsive_attendance_action_buttons(): void

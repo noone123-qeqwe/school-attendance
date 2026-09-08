@@ -57,10 +57,6 @@
             <i class="bi bi-person-fill"></i>
             <span class="nav-link-text">My Profile</span>
         </a>
-        <a href="{{ route('admin.settings') }}" class="nav-link {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
-            <i class="bi bi-sliders"></i>
-            <span class="nav-link-text">Settings</span>
-        </a>
     </div>
 
     <div class="sidebar-footer text-center">

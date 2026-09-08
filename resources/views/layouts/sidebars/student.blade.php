@@ -37,9 +37,5 @@
         <i class="bi bi-file-text-fill"></i>
         <span class="nav-link-text">Excuse Submissions</span>
     </a>
-    <a href="{{ route('settings') }}" class="nav-link {{ request()->routeIs('settings*') ? 'active' : '' }}">
-        <i class="bi bi-gear-fill"></i>
-        <span class="nav-link-text">Settings</span>
-    </a>
 </div>
 

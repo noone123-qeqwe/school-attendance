@@ -927,10 +927,6 @@
                         <div class="more-sheet-item-icon" style="background: rgba(34,197,94,0.18); color: #4ade80; border-color: rgba(34,197,94,0.35);"><i class="bi bi-fingerprint"></i></div>
                         <span class="more-sheet-item-label">Biometrics</span>
                     </a>
-                    <a href="{{ route('settings') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>
-                        <span class="more-sheet-item-label">Settings</span>
-                    </a>
                 @endif
             </div>
         </div>
