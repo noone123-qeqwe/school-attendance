@@ -431,6 +431,8 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     
     // Excuse Reviews
     Route::get('/excuse-reviews', [App\Http\Controllers\TeacherController::class, 'excuseReviews'])->name('excuse.reviews');
+    Route::post('/excuse-reviews/bulk-approve', [App\Http\Controllers\TeacherController::class, 'bulkApproveExcuses'])->name('excuse.bulk.approve');
+    Route::post('/excuse-reviews/bulk-reject', [App\Http\Controllers\TeacherController::class, 'bulkRejectExcuses'])->name('excuse.bulk.reject');
     Route::post('/excuse/{excuseSubmission}/approve', [App\Http\Controllers\TeacherController::class, 'approveExcuse'])->name('excuse.approve');
     Route::post('/excuse/{excuseSubmission}/reject', [App\Http\Controllers\TeacherController::class, 'rejectExcuse'])->name('excuse.reject');
     Route::get('/excuse/{excuseSubmission}/detail', [App\Http\Controllers\TeacherController::class, 'viewExcuseDetail'])->name('excuse.detail');

@@ -1182,36 +1182,66 @@ class TeacherController extends Controller
 
     public function approveExcuse(Request $request, ExcuseSubmission $excuseSubmission)
     {
+        $teacher = Auth::user();
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)
+            ->pluck('code');
+
+        if ($excuseSubmission->attendance && !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
+            abort(403, 'Unauthorized access to this excuse submission.');
+        }
+
         try {
-            // Verify teacher has access to this excuse submission
-            $teacher = Auth::user();
-            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-                ->pluck('code');
+            $request->validate([
+                'admin_notes' => 'nullable|string|max:500',
+                'status_override' => 'nullable|string|in:keep,Excused,Present,Late',
+            ]);
 
-            if ($excuseSubmission->attendance && !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
-                abort(403, 'Unauthorized access to this excuse submission.');
-            }
+            $adminNotes = $request->input('admin_notes');
+            $statusOverride = $request->input('status_override', 'keep');
 
-            // Step 1: Update excuse status
+            // Step 1: Update excuse submission
             $excuseSubmission->status = 'approved';
             $excuseSubmission->reviewed_at = now();
-            $excuseSubmission->reviewed_by = Auth::id();
+            $excuseSubmission->reviewed_by = $teacher->id;
+            if ($adminNotes !== null) {
+                $excuseSubmission->admin_notes = $adminNotes;
+            }
             $excuseSubmission->save();
 
-            // Step 2: Update attendance if it exists
+            // Step 2: Update attendance record
             $attendance = $excuseSubmission->attendance;
             if ($attendance) {
                 $attendance->excused = true;
-                $attendance->excuse_note = 'Approved by teacher';
+                $attendance->excuse_note = $adminNotes ?: 'Approved by instructor ' . $teacher->name;
+
+                if ($statusOverride && $statusOverride !== 'keep') {
+                    $attendance->status = $statusOverride;
+                }
                 $attendance->save();
             }
 
-            // Step 3: Web Push Notification
+            // Step 3: Notifications
+            $student = $excuseSubmission->user;
+            $subjectLabel = $attendance ? ($attendance->subject->name ?? $attendance->subject_code ?? 'class') : 'class';
+            $dateLabel = $attendance && $attendance->date ? \Carbon\Carbon::parse($attendance->date)->format('M j, Y') : 'session';
+            $approvalMessage = "Your excuse request for {$subjectLabel} on {$dateLabel} has been approved" . ($adminNotes ? ": {$adminNotes}" : ".");
+
+            // 3a. In-App Notification to Student
+            \App\Models\Notification::create([
+                'user_id' => $excuseSubmission->user_id,
+                'sent_by' => $teacher->id,
+                'type' => 'excuse_approved',
+                'subject_code' => $attendance?->subject_code,
+                'message' => $approvalMessage,
+                'is_read' => false,
+            ]);
+
+            // 3b. Web Push Notification to Student
             try {
                 app(\App\Services\WebPushService::class)->sendToUser(
                     $excuseSubmission->user_id,
                     '✅ Excuse Request Approved',
-                    'Your excuse request for ' . ($attendance->subject->name ?? $attendance->subject_code ?? 'class') . ' on ' . ($attendance ? \Carbon\Carbon::parse($attendance->date)->format('M j, Y') : 'session') . ' has been approved.',
+                    $approvalMessage,
                     [
                         'url' => route('excuses'),
                         'tag' => 'excuse-approved-' . $excuseSubmission->id,
@@ -1221,9 +1251,41 @@ class TeacherController extends Controller
                 \Log::warning('WebPush approve error: ' . $e->getMessage());
             }
 
+            // 3c. Notify Linked Parents
+            if ($student && $student->parents && $student->parents->isNotEmpty()) {
+                $parentMessage = "Excuse letter for {$student->name} in {$subjectLabel} ({$dateLabel}) was approved by {$teacher->name}" . ($adminNotes ? ": {$adminNotes}" : ".");
+                foreach ($student->parents as $parent) {
+                    try {
+                        \App\Models\Notification::create([
+                            'user_id' => $parent->id,
+                            'sent_by' => $teacher->id,
+                            'type' => 'excuse_approved',
+                            'subject_code' => $attendance?->subject_code,
+                            'message' => $parentMessage,
+                            'is_read' => false,
+                        ]);
+
+                        app(\App\Services\WebPushService::class)->sendToUser(
+                            $parent->id,
+                            '✅ Child Excuse Approved',
+                            $parentMessage,
+                            [
+                                'url' => route('parent.excuses'),
+                                'tag' => 'parent-excuse-approved-' . $excuseSubmission->id,
+                            ]
+                        );
+                    } catch (\Throwable $e) {
+                        // Push fail ignore
+                    }
+                }
+            }
+
             return response()->json([
                 'success' => true, 
-                'message' => 'Excuse approved successfully!'
+                'message' => 'Excuse approved successfully!',
+                'status' => 'approved',
+                'attendance_status' => $attendance?->status,
+                'excused' => true,
             ]);
             
         } catch (\Exception $e) {
@@ -1243,74 +1305,258 @@ class TeacherController extends Controller
             ->pluck('code');
 
         // Verify teacher has access to this excuse submission
-        if (!$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
+        if ($excuseSubmission->attendance && !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
             abort(403, 'Unauthorized access to this excuse submission.');
         }
 
-        $request->validate([
-            'admin_notes' => 'required|string|max:500'
-        ]);
-
-        $excuseSubmission->update([
-            'status' => 'rejected',
-            'reviewed_at' => now(),
-            'reviewed_by' => $teacher->id,
-            'admin_notes' => $request->admin_notes
-        ]);
-
-        // Create notification for student
         try {
-            $notificationData = [
-                'user_id' => $excuseSubmission->user_id,
-                'message' => "Your excuse for {$excuseSubmission->attendance->subject_code} on " . 
-                             \Carbon\Carbon::parse($excuseSubmission->attendance->date)->format('M j, Y') . 
-                             " has been rejected. Reason: " . $request->admin_notes,
-                'type' => 'warning_2',
-                'is_read' => false
-            ];
-            
-            // Add sent_by and subject_code if they exist in the schema
-            if (Schema::hasColumn('notifications', 'sent_by')) {
-                $notificationData['sent_by'] = $teacher->id;
-            }
-            if (Schema::hasColumn('notifications', 'subject_code')) {
-                $notificationData['subject_code'] = $excuseSubmission->attendance->subject_code;
-            }
-            
-            \App\Models\Notification::create($notificationData);
-        } catch (\Exception $notifError) {
-            \Log::warning('Notification creation failed on reject: ' . $notifError->getMessage());
-            // Continue even if notification fails
-        }
+            $request->validate([
+                'admin_notes' => 'required|string|max:500'
+            ]);
 
-        // Broadcast notification to student
-        try {
-            broadcast(new \App\Events\NotificationSent(
-                userId: $excuseSubmission->user_id,
-                message: "Your excuse for {$excuseSubmission->attendance->subject_code} on " . 
-                         \Carbon\Carbon::parse($excuseSubmission->attendance->date)->format('M j, Y') . 
-                         " has been rejected. Reason: " . $request->admin_notes,
-                type: 'warning_2'
-            ))->toOthers();
+            $adminNotes = $request->input('admin_notes');
+
+            $excuseSubmission->update([
+                'status' => 'rejected',
+                'reviewed_at' => now(),
+                'reviewed_by' => $teacher->id,
+                'admin_notes' => $adminNotes,
+            ]);
+
+            // Update attendance record
+            $attendance = $excuseSubmission->attendance;
+            if ($attendance) {
+                $attendance->excused = false;
+                $attendance->excuse_note = 'Rejected: ' . $adminNotes;
+                $attendance->save();
+            }
+
+            $student = $excuseSubmission->user;
+            $subjectCode = $attendance?->subject_code ?? 'Class';
+            $dateLabel = $attendance && $attendance->date ? \Carbon\Carbon::parse($attendance->date)->format('M j, Y') : 'session';
+            $rejectMessage = "Your excuse for {$subjectCode} on {$dateLabel} was declined. Reason: {$adminNotes}";
+
+            // In-app notification for student
+            try {
+                \App\Models\Notification::create([
+                    'user_id' => $excuseSubmission->user_id,
+                    'sent_by' => $teacher->id,
+                    'subject_code' => $subjectCode,
+                    'type' => 'warning_2',
+                    'message' => $rejectMessage,
+                    'is_read' => false,
+                ]);
+            } catch (\Exception $notifError) {
+                \Log::warning('Notification creation failed on reject: ' . $notifError->getMessage());
+            }
 
             // Real-Time Web Push Notification
-            app(\App\Services\WebPushService::class)->sendToUser(
-                $excuseSubmission->user_id,
-                '❌ Excuse Request Rejected',
-                "Your excuse for {$excuseSubmission->attendance->subject_code} was declined: " . $request->admin_notes,
-                [
-                    'url' => route('excuses'),
-                    'tag' => 'excuse-rejected-' . $excuseSubmission->id,
-                ]
-            );
-        } catch (\Exception $e) {
-            // Broadcasting or push not available
-        }
+            try {
+                app(\App\Services\WebPushService::class)->sendToUser(
+                    $excuseSubmission->user_id,
+                    '❌ Excuse Request Declined',
+                    $rejectMessage,
+                    [
+                        'url' => route('excuses'),
+                        'tag' => 'excuse-rejected-' . $excuseSubmission->id,
+                    ]
+                );
+            } catch (\Exception $e) {
+                // Broadcasting or push not available
+            }
 
-        return response()->json([
-            'success' => true, 
-            'message' => 'Excuse rejected with feedback.'
-        ]);
+            // Notify Linked Parents
+            if ($student && $student->parents && $student->parents->isNotEmpty()) {
+                $parentRejectMessage = "Excuse letter for {$student->name} in {$subjectCode} ({$dateLabel}) was declined by {$teacher->name}. Reason: {$adminNotes}";
+                foreach ($student->parents as $parent) {
+                    try {
+                        \App\Models\Notification::create([
+                            'user_id' => $parent->id,
+                            'sent_by' => $teacher->id,
+                            'subject_code' => $subjectCode,
+                            'type' => 'warning_2',
+                            'message' => $parentRejectMessage,
+                            'is_read' => false,
+                        ]);
+
+                        app(\App\Services\WebPushService::class)->sendToUser(
+                            $parent->id,
+                            '❌ Child Excuse Declined',
+                            $parentRejectMessage,
+                            [
+                                'url' => route('parent.excuses'),
+                                'tag' => 'parent-excuse-rejected-' . $excuseSubmission->id,
+                            ]
+                        );
+                    } catch (\Throwable $e) {
+                        // Push fail ignore
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true, 
+                'message' => 'Excuse rejected with feedback.',
+                'status' => 'rejected',
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Excuse reject error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function bulkApproveExcuses(Request $request)
+    {
+        try {
+            $teacher = Auth::user();
+            $teacherSubjects = Subject::where('instructor_id', $teacher->id)->pluck('code');
+
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:excuse_submissions,id',
+                'admin_notes' => 'nullable|string|max:500',
+                'status_override' => 'nullable|string|in:keep,Excused,Present,Late',
+            ]);
+
+            $adminNotes = $request->input('admin_notes', 'Approved by teacher');
+            $statusOverride = $request->input('status_override', 'keep');
+
+            $submissions = ExcuseSubmission::with(['attendance.subject', 'user.parents'])
+                ->whereIn('id', $request->ids)
+                ->whereHas('attendance', function ($q) use ($teacherSubjects) {
+                    $q->whereIn('subject_code', $teacherSubjects);
+                })
+                ->get();
+
+            $approvedCount = 0;
+            foreach ($submissions as $submission) {
+                $submission->status = 'approved';
+                $submission->reviewed_at = now();
+                $submission->reviewed_by = $teacher->id;
+                $submission->admin_notes = $adminNotes;
+                $submission->save();
+
+                if ($submission->attendance) {
+                    $submission->attendance->excused = true;
+                    $submission->attendance->excuse_note = $adminNotes;
+                    if ($statusOverride && $statusOverride !== 'keep') {
+                        $submission->attendance->status = $statusOverride;
+                    }
+                    $submission->attendance->save();
+                }
+
+                // Notify student & parents
+                try {
+                    $student = $submission->user;
+                    $subjectName = $submission->attendance?->subject?->name ?? $submission->attendance?->subject_code ?? 'class';
+                    $msg = "Your excuse request for {$subjectName} has been approved.";
+                    \App\Models\Notification::create([
+                        'user_id' => $submission->user_id,
+                        'sent_by' => $teacher->id,
+                        'type' => 'excuse_approved',
+                        'subject_code' => $submission->attendance?->subject_code,
+                        'message' => $msg,
+                        'is_read' => false,
+                    ]);
+
+                    if ($student && $student->parents) {
+                        foreach ($student->parents as $p) {
+                            \App\Models\Notification::create([
+                                'user_id' => $p->id,
+                                'sent_by' => $teacher->id,
+                                'type' => 'excuse_approved',
+                                'subject_code' => $submission->attendance?->subject_code,
+                                'message' => "Excuse for {$student->name} in {$subjectName} was approved.",
+                                'is_read' => false,
+                            ]);
+                        }
+                    }
+                } catch (\Throwable $e) {}
+
+                $approvedCount++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully approved {$approvedCount} excuse submission(s).",
+                'count' => $approvedCount,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Bulk approve error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function bulkRejectExcuses(Request $request)
+    {
+        try {
+            $teacher = Auth::user();
+            $teacherSubjects = Subject::where('instructor_id', $teacher->id)->pluck('code');
+
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:excuse_submissions,id',
+                'admin_notes' => 'required|string|max:500',
+            ]);
+
+            $adminNotes = $request->input('admin_notes');
+
+            $submissions = ExcuseSubmission::with(['attendance.subject', 'user.parents'])
+                ->whereIn('id', $request->ids)
+                ->whereHas('attendance', function ($q) use ($teacherSubjects) {
+                    $q->whereIn('subject_code', $teacherSubjects);
+                })
+                ->get();
+
+            $rejectedCount = 0;
+            foreach ($submissions as $submission) {
+                $submission->status = 'rejected';
+                $submission->reviewed_at = now();
+                $submission->reviewed_by = $teacher->id;
+                $submission->admin_notes = $adminNotes;
+                $submission->save();
+
+                if ($submission->attendance) {
+                    $submission->attendance->excused = false;
+                    $submission->attendance->excuse_note = 'Rejected: ' . $adminNotes;
+                    $submission->attendance->save();
+                }
+
+                try {
+                    $student = $submission->user;
+                    $subjectName = $submission->attendance?->subject?->name ?? $submission->attendance?->subject_code ?? 'class';
+                    $msg = "Your excuse request for {$subjectName} was declined: {$adminNotes}";
+                    \App\Models\Notification::create([
+                        'user_id' => $submission->user_id,
+                        'sent_by' => $teacher->id,
+                        'type' => 'warning_2',
+                        'subject_code' => $submission->attendance?->subject_code,
+                        'message' => $msg,
+                        'is_read' => false,
+                    ]);
+                } catch (\Throwable $e) {}
+
+                $rejectedCount++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully rejected {$rejectedCount} excuse submission(s).",
+                'count' => $rejectedCount,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Bulk reject error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function viewExcuseDetail(ExcuseSubmission $excuseSubmission)

@@ -137,6 +137,34 @@
     color: #e2e8f0 !important;
     border-color: rgba(255,255,255,0.08);
 }
+.bulk-action-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.7), 0 0 20px rgba(59, 130, 246, 0.25);
+    border-radius: 16px;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    z-index: 1050;
+    transition: all 0.25s ease;
+}
+.parent-pill {
+    background: rgba(59, 130, 246, 0.16);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+}
 .empty-state {
     text-align: center;
     padding: 40px 20px;
@@ -379,6 +407,9 @@
         <table class="adm-table">
             <thead>
                 <tr>
+                    <th style="width: 44px; text-align: center;">
+                        <input type="checkbox" id="selectAllCheckbox" class="form-check-input" style="background-color: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); cursor: pointer;" title="Select all pending excuses">
+                    </th>
                     <th>Student</th>
                     <th>Subject</th>
                     <th>Absent Date</th>
@@ -391,6 +422,9 @@
             <tbody>
                 @forelse($excuseSubmissions as $excuse)
                     <tr data-excuse-id="{{ $excuse->id }}">
+                        <td style="width: 44px; text-align: center;" data-label="Select">
+                            <input type="checkbox" class="excuse-row-checkbox form-check-input" value="{{ $excuse->id }}" data-status="{{ $excuse->status }}" {{ $excuse->status !== 'pending' ? 'disabled' : '' }} style="background-color: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); cursor: pointer;">
+                        </td>
                         <td data-label="Student">
                             <div class="student-info">
                                 <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : asset('storage/'.$excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}" 
@@ -412,7 +446,14 @@
                         <td data-label="Absent Date">{{ \Carbon\Carbon::parse($excuse->attendance->date)->format('M j, Y') }}</td>
                         <td data-label="Reason">
                             <div class="excuse-summary">
-                                <div class="reason" title="{{ $excuse->reason }}">{{ Str::limit($excuse->reason, 80) }}</div>
+                                <div class="reason" title="{{ $excuse->reason }}">
+                                    {{ Str::limit($excuse->reason, 80) }}
+                                    @if(str_contains($excuse->description ?? '', 'Parent/Guardian') || str_contains($excuse->reason ?? '', 'Parent'))
+                                        <span class="parent-pill" title="Submitted by parent/guardian via verified portal">
+                                            <i class="bi bi-person-heart"></i> Parent
+                                        </span>
+                                    @endif
+                                </div>
                                 @if($excuse->description)
                                 <div class="description" title="{{ $excuse->description }}">{{ Str::limit($excuse->description, 60) }}</div>
                                 @endif
@@ -454,7 +495,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="empty-state">
+                        <td colspan="8" class="empty-state">
                             <i class="bi bi-file-text"></i>
                             <div>No excuse submissions found</div>
                             <div style="font-size: 0.8rem; margin-top: 4px;">Students haven't submitted any excuse letters for your subjects yet.</div>
@@ -497,32 +538,128 @@
 <!-- Approve Excuse Modal -->
 <div class="modal fade" id="approveExcuseModal" tabindex="-1">
     <div class="modal-dialog">
-        <div class="modal-content" style="border-radius: 14px; border: none;">
+        <div class="modal-content" style="border-radius: 14px; border: none; background: #2a2a2a; color: #f8fafc;">
             <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.12);">
                 <h5 class="modal-title" style="font-weight: 700; color: #f8fafc;">
                     <i class="bi bi-check-circle" style="color: #34d399;"></i>
-                    Approve Excuse
+                    Approve Excuse Letter
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="approveExcuseForm">
                 @csrf
                 <div class="modal-body" style="padding: 20px; color: #cbd5e1;">
-                    <p style="color: #cbd5e1; margin-bottom: 16px;">Are you sure you want to approve this excuse? This will mark the attendance as excused.</p>
+                    <p style="color: #cbd5e1; margin-bottom: 16px;">Are you sure you want to approve this excuse? This will update the attendance record.</p>
                     
                     <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #f8fafc;">Attendance Status Action</label>
+                        <select name="status_override" class="form-select tch-input">
+                            <option value="keep" selected>Keep current status & mark as Excused</option>
+                            <option value="Excused">Change status to "Excused"</option>
+                            <option value="Present">Override status to "Present"</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
                         <label class="form-label" style="font-weight: 600; color: #f8fafc;">Approval Note (Optional)</label>
-                        <textarea name="admin_notes" class="tch-input" rows="3" placeholder="Add any additional notes..."></textarea>
+                        <textarea name="admin_notes" class="tch-input" rows="3" placeholder="Add approval remarks or audit trail note..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.12); padding: 16px 20px;">
                     <button type="button" class="tch-btn tch-btn-ghost" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="tch-btn" style="background: #16a34a; color: white;">
-                        <i class="bi bi-check"></i> Approve Excuse
+                        <i class="bi bi-check-lg"></i> Approve Excuse
                     </button>
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Bulk Approve Modal -->
+<div class="modal fade" id="bulkApproveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 14px; border: none; background: #2a2a2a; color: #f8fafc;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.12);">
+                <h5 class="modal-title" style="font-weight: 700; color: #f8fafc;">
+                    <i class="bi bi-check2-all" style="color: #34d399;"></i> Bulk Approve Excuses
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="bulkApproveForm">
+                @csrf
+                <div class="modal-body" style="padding: 20px; color: #cbd5e1;">
+                    <p style="color: #cbd5e1; margin-bottom: 16px;">You are about to approve <strong id="bulkApproveCountText" class="text-white">0</strong> pending excuse letters.</p>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #f8fafc;">Attendance Status Action</label>
+                        <select name="status_override" class="form-select tch-input">
+                            <option value="keep" selected>Keep current status & mark as Excused</option>
+                            <option value="Excused">Change status to "Excused"</option>
+                            <option value="Present">Override status to "Present"</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #f8fafc;">Approval Note (Optional)</label>
+                        <textarea name="admin_notes" class="tch-input" rows="3" placeholder="Add approval remarks or audit trail note..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.12); padding: 16px 20px;">
+                    <button type="button" class="tch-btn tch-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="tch-btn" style="background: #16a34a; color: white;">
+                        <i class="bi bi-check-lg"></i> Confirm Bulk Approval
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Reject Modal -->
+<div class="modal fade" id="bulkRejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 14px; border: none; background: #2a2a2a; color: #f8fafc;">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.12);">
+                <h5 class="modal-title" style="font-weight: 700; color: #f8fafc;">
+                    <i class="bi bi-x-circle" style="color: #f87171;"></i> Bulk Decline Excuses
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="bulkRejectForm">
+                @csrf
+                <div class="modal-body" style="padding: 20px; color: #cbd5e1;">
+                    <p style="color: #cbd5e1; margin-bottom: 16px;">You are declining <strong id="bulkRejectCountText" class="text-white">0</strong> pending excuse letters.</p>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-weight: 600; color: #f8fafc;">Reason for Declining *</label>
+                        <textarea name="admin_notes" class="tch-input" rows="4" placeholder="Please provide specific justification for declining these excuses..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.12); padding: 16px 20px;">
+                    <button type="button" class="tch-btn tch-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="tch-btn" style="background: #dc2626; color: white;">
+                        <i class="bi bi-x-lg"></i> Confirm Bulk Rejection
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Bulk Action Bar -->
+<div id="bulkActionBar" class="bulk-action-bar d-none">
+    <div class="d-flex align-items-center gap-2">
+        <span class="badge bg-primary" id="selectedCountBadge" style="font-size: 0.85rem; padding: 6px 12px; border-radius: 999px;">0 selected</span>
+        <span style="font-weight: 600; font-size: 0.88rem; color: #f8fafc;">Excuses Selected</span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <button type="button" id="openBulkApproveModalBtn" class="tch-btn" style="background: #16a34a; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 8px;">
+            <i class="bi bi-check2-all me-1"></i> Bulk Approve
+        </button>
+        <button type="button" id="openBulkRejectModalBtn" class="tch-btn" style="background: #dc2626; color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 8px;">
+            <i class="bi bi-x-circle me-1"></i> Bulk Reject
+        </button>
+        <button type="button" id="clearSelectionBtn" class="tch-btn tch-btn-ghost" style="padding: 8px 14px; font-size: 0.85rem; color: #cbd5e1;">
+            Clear
+        </button>
     </div>
 </div>
 
@@ -650,6 +787,7 @@ function viewExcuse(excuseId) {
                                     ${excuse.attachments.map(attachment => {
                                         const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment);
                                         const fileName = attachment.split('/').pop();
+                                        const fileUrl = attachment.startsWith('http') ? attachment : '/storage/' + attachment;
                                         return `
                                             <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.8rem;">
                                                 <div style="width: 32px; height: 32px; border-radius: 6px; background: ${isImage ? '#16a34a' : '#475569'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
@@ -665,13 +803,13 @@ function viewExcuse(excuseId) {
                                                 </div>
                                                 <div style="display: flex; gap: 4px;">
                                                     ${isImage ? `
-                                                        <button onclick="viewImage('/storage/${attachment}', '${fileName}')" 
+                                                        <button onclick="viewImage('${fileUrl}', '${fileName}')" 
                                                                 style="padding: 4px 8px; background: #16a34a; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.7rem; display: flex; align-items: center; gap: 2px;"
                                                                 title="View Image">
                                                             <i class="bi bi-eye-fill"></i> View
                                                         </button>
                                                     ` : ''}
-                                                    <a href="/storage/${attachment}" target="_blank" 
+                                                    <a href="${fileUrl}" target="_blank" 
                                                        style="padding: 4px 8px; background: #6b7280; color: white; text-decoration: none; border-radius: 4px; font-size: 0.7rem; display: flex; align-items: center; gap: 2px;"
                                                        title="Download File">
                                                         <i class="bi bi-download"></i> Get
@@ -747,7 +885,173 @@ function rejectExcuse(excuseId) {
     new bootstrap.Modal(document.getElementById('rejectExcuseModal')).show();
 }
 
-// Handle approve form submission
+// Bulk Selection Management
+const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+const bulkActionBar = document.getElementById('bulkActionBar');
+const selectedCountBadge = document.getElementById('selectedCountBadge');
+const openBulkApproveModalBtn = document.getElementById('openBulkApproveModalBtn');
+const openBulkRejectModalBtn = document.getElementById('openBulkRejectModalBtn');
+const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+const bulkApproveCountText = document.getElementById('bulkApproveCountText');
+const bulkRejectCountText = document.getElementById('bulkRejectCountText');
+const bulkApproveForm = document.getElementById('bulkApproveForm');
+const bulkRejectForm = document.getElementById('bulkRejectForm');
+
+function getSelectedExcuseIds() {
+    return Array.from(document.querySelectorAll('.excuse-row-checkbox:checked')).map(cb => parseInt(cb.value));
+}
+
+function updateBulkActionBar() {
+    const selected = getSelectedExcuseIds();
+    const count = selected.length;
+    if (count > 0) {
+        if (selectedCountBadge) selectedCountBadge.textContent = `${count} selected`;
+        if (bulkActionBar) bulkActionBar.classList.remove('d-none');
+        if (bulkApproveCountText) bulkApproveCountText.textContent = count;
+        if (bulkRejectCountText) bulkRejectCountText.textContent = count;
+    } else {
+        if (bulkActionBar) bulkActionBar.classList.add('d-none');
+    }
+}
+
+if (selectAllCheckbox) {
+    selectAllCheckbox.addEventListener('change', function() {
+        const isChecked = this.checked;
+        document.querySelectorAll('.excuse-row-checkbox:not(:disabled)').forEach(cb => {
+            cb.checked = isChecked;
+        });
+        updateBulkActionBar();
+    });
+}
+
+document.querySelectorAll('.excuse-row-checkbox').forEach(cb => {
+    cb.addEventListener('change', function() {
+        const allEnabled = document.querySelectorAll('.excuse-row-checkbox:not(:disabled)');
+        const checkedEnabled = document.querySelectorAll('.excuse-row-checkbox:not(:disabled):checked');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = allEnabled.length > 0 && allEnabled.length === checkedEnabled.length;
+        }
+        updateBulkActionBar();
+    });
+});
+
+if (clearSelectionBtn) {
+    clearSelectionBtn.addEventListener('click', function() {
+        if (selectAllCheckbox) selectAllCheckbox.checked = false;
+        document.querySelectorAll('.excuse-row-checkbox').forEach(cb => cb.checked = false);
+        updateBulkActionBar();
+    });
+}
+
+if (openBulkApproveModalBtn) {
+    openBulkApproveModalBtn.addEventListener('click', function() {
+        const count = getSelectedExcuseIds().length;
+        if (count === 0) return;
+        new bootstrap.Modal(document.getElementById('bulkApproveModal')).show();
+    });
+}
+
+if (openBulkRejectModalBtn) {
+    openBulkRejectModalBtn.addEventListener('click', function() {
+        const count = getSelectedExcuseIds().length;
+        if (count === 0) return;
+        new bootstrap.Modal(document.getElementById('bulkRejectModal')).show();
+    });
+}
+
+// Bulk Approve Form Submission
+if (bulkApproveForm) {
+    bulkApproveForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const ids = getSelectedExcuseIds();
+        if (ids.length === 0) return;
+
+        const formData = new FormData(this);
+        ids.forEach(id => formData.append('ids[]', id));
+
+        fetch('{{ route('teacher.excuse.bulk.approve') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('bulkApproveModal')).hide();
+                ids.forEach(id => {
+                    const row = document.querySelector(`[data-excuse-id="${id}"]`);
+                    if (row) {
+                        const badge = row.querySelector('.status-badge');
+                        if (badge) {
+                            badge.textContent = 'Approved';
+                            badge.className = 'status-badge status-approved';
+                        }
+                        const actions = row.querySelector('.excuse-actions');
+                        if (actions) {
+                            actions.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Approved</span>';
+                        }
+                        const cb = row.querySelector('.excuse-row-checkbox');
+                        if (cb) {
+                            cb.checked = false;
+                            cb.disabled = true;
+                        }
+                    }
+                });
+                updateBulkActionBar();
+                if (typeof showPremiumToast === 'function') {
+                    showPremiumToast(data.message, 'success');
+                } else {
+                    location.reload();
+                }
+            } else {
+                alert('Error: ' + (data.message || 'Bulk approve failed'));
+            }
+        })
+        .catch(err => {
+            console.error('Bulk approve error:', err);
+            alert('Failed to execute bulk approval: ' + err.message);
+        });
+    });
+}
+
+// Bulk Reject Form Submission
+if (bulkRejectForm) {
+    bulkRejectForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const ids = getSelectedExcuseIds();
+        if (ids.length === 0) return;
+
+        const formData = new FormData(this);
+        ids.forEach(id => formData.append('ids[]', id));
+
+        fetch('{{ route('teacher.excuse.bulk.reject') }}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                bootstrap.Modal.getInstance(document.getElementById('bulkRejectModal')).hide();
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'Bulk reject failed'));
+            }
+        })
+        .catch(err => {
+            console.error('Bulk reject error:', err);
+            alert('Failed to execute bulk rejection: ' + err.message);
+        });
+    });
+}
+
+// Handle single approve form submission
 document.getElementById('approveExcuseForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -788,7 +1092,14 @@ document.getElementById('approveExcuseForm').addEventListener('submit', function
                 if (actionButtons) {
                     actionButtons.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill"></i> Approved</span>';
                 }
+
+                const cb = excuseRow.querySelector('.excuse-row-checkbox');
+                if (cb) {
+                    cb.checked = false;
+                    cb.disabled = true;
+                }
             }
+            updateBulkActionBar();
             
             // Show success message
             const successMsg = document.createElement('div');
@@ -797,25 +1108,29 @@ document.getElementById('approveExcuseForm').addEventListener('submit', function
                     <i class="bi bi-check-circle-fill"></i><span>${data.message}</span>
                 </div>
             `;
-            document.querySelector('.tch-stats').parentNode.insertBefore(successMsg, document.querySelector('.tch-stats'));
-            
-            // Remove success message after 3 seconds
-            setTimeout(() => {
-                if (successMsg.parentNode) {
-                    successMsg.parentNode.removeChild(successMsg);
-                }
-            }, 3000);
+            if (document.querySelector('.tch-stats')) {
+                document.querySelector('.tch-stats').parentNode.insertBefore(successMsg, document.querySelector('.tch-stats'));
+                setTimeout(() => {
+                    if (successMsg.parentNode) {
+                        successMsg.parentNode.removeChild(successMsg);
+                    }
+                }, 3000);
+            } else if (typeof showPremiumToast === 'function') {
+                showPremiumToast(data.message, 'success');
+            }
         } else {
             if (typeof showPremiumToast === 'function') showPremiumToast('Error: ' + (data.message || 'Unknown error occurred'), 'error');
+            else alert('Error: ' + (data.message || 'Unknown error occurred'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
         if (typeof showPremiumToast === 'function') showPremiumToast('An error occurred while approving the excuse: ' + error.message, 'error');
+        else alert('An error occurred: ' + error.message);
     });
 });
 
-// Handle reject form submission
+// Handle single reject form submission
 document.getElementById('rejectExcuseForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
@@ -836,11 +1151,13 @@ document.getElementById('rejectExcuseForm').addEventListener('submit', function(
             location.reload();
         } else {
             if (typeof showPremiumToast === 'function') showPremiumToast('Error: ' + data.message, 'error');
+            else alert('Error: ' + data.message);
         }
     })
     .catch(error => {
         console.error('Error:', error);
         if (typeof showPremiumToast === 'function') showPremiumToast('An error occurred while rejecting the excuse.', 'error');
+        else alert('An error occurred while rejecting the excuse.');
     });
 });
 </script>

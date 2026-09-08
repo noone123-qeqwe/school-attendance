@@ -53,32 +53,51 @@ class Attendance extends Model
     protected static function booted()
     {
         static::saved(function ($attendance) {
-            if ($attendance->status === 'Absent' && $attendance->wasChanged('status')) {
-                \App\Models\Notification::create([
-                    'user_id' => $attendance->user_id,
-                    'type' => 'absence_alert',
-                    'subject_code' => $attendance->subject_code,
-                    'message' => "{$attendance->user->name} was marked Absent in {$attendance->subject_code} on {$attendance->date->format('M d, Y')}.",
-                    'is_read' => false
-                ]);
-                
-                $parents = $attendance->user->parents;
-                if ($parents) {
-                    foreach ($parents as $parent) {
-                        $prefs = collect($parent->notification_preferences ?? ['in_app' => true, 'email' => true]);
-                        
-                        if ($prefs->get('in_app')) {
+            if ($attendance->status === 'Absent' && $attendance->wasChanged('status') && !$attendance->excused) {
+                try {
+                    $student = $attendance->user;
+                    if (!$student) {
+                        return;
+                    }
+
+                    $formattedDate = $attendance->date ? $attendance->date->format('M d, Y') : 'Session';
+                    $signedUrl = \Illuminate\Support\Facades\URL::signedRoute('guest.excuse', ['attendance' => $attendance->id]);
+
+                    \App\Models\Notification::create([
+                        'user_id' => $attendance->user_id,
+                        'type' => 'absence_alert',
+                        'subject_code' => $attendance->subject_code,
+                        'message' => "{$student->name} was marked Absent in {$attendance->subject_code} on {$formattedDate}.",
+                        'is_read' => false
+                    ]);
+                    
+                    $parents = $student->parents;
+                    if ($parents && $parents->isNotEmpty()) {
+                        foreach ($parents as $parent) {
                             \App\Models\Notification::create([
                                 'user_id' => $parent->id,
                                 'type' => 'absence_alert',
                                 'subject_code' => $attendance->subject_code,
-                                'message' => "{$attendance->user->name} was marked Absent in {$attendance->subject_code} on {$attendance->date->format('M d, Y')}.",
+                                'message' => "{$student->name} was marked Absent in {$attendance->subject_code} on {$formattedDate}.",
                                 'is_read' => false
                             ]);
+
+                            try {
+                                $parent->notify(new \App\Notifications\AbsenceAlert($attendance, $signedUrl));
+                            } catch (\Throwable $notifEx) {
+                                \Illuminate\Support\Facades\Log::warning('Parent AbsenceAlert dispatch warning: ' . $notifEx->getMessage());
+                            }
                         }
-                        
-                        // We would trigger Email/SMS here based on $prefs->get('email')
+                    } elseif (!empty($student->guardian_email)) {
+                        try {
+                            \Illuminate\Support\Facades\Notification::route('mail', $student->guardian_email)
+                                ->notify(new \App\Notifications\AbsenceAlert($attendance, $signedUrl));
+                        } catch (\Throwable $notifEx) {
+                            \Illuminate\Support\Facades\Log::warning('Guardian email AbsenceAlert warning: ' . $notifEx->getMessage());
+                        }
                     }
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('Attendance saved notification warning: ' . $e->getMessage());
                 }
             }
         });
