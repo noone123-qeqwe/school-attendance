@@ -633,14 +633,14 @@
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password">
                             <input type="password" name="password" id="password" placeholder=" " required autocomplete="new-password">
                             <label for="password">Password (Min 8 chars)</label>
-                            <button type="button" class="eye-btn" id="btn-toggle-password" onclick="togglePassword('password', this, event)" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
+                            <button type="button" class="eye-btn" id="btn-toggle-password" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                         </div>
                         <div class="field-feedback" id="feedback-password"></div>
 
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password_confirmation">
                             <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required autocomplete="new-password">
                             <label for="password_confirmation">Confirm Password</label>
-                            <button type="button" class="eye-btn" id="btn-toggle-password-conf" onclick="togglePassword('password_confirmation', this, event)" data-toggle-password="password_confirmation" aria-controls="password_confirmation" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
+                            <button type="button" class="eye-btn" id="btn-toggle-password-conf" data-toggle-password="password_confirmation" aria-controls="password_confirmation" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
 
                         </div>
                         <div class="field-feedback" id="feedback-password_confirmation"></div>

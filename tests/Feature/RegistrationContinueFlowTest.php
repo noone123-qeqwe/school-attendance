@@ -87,6 +87,7 @@ class RegistrationContinueFlowTest extends TestCase
             'email' => 'janessa.herminado@example.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
+            'terms' => '1',
         ];
 
         $response = $this->post('/register', $payload);
@@ -120,6 +121,7 @@ class RegistrationContinueFlowTest extends TestCase
             'email' => 'janessa.nomn@example.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
+            'terms' => '1',
         ];
 
         $response = $this->post('/register', $payload);
@@ -148,6 +150,7 @@ class RegistrationContinueFlowTest extends TestCase
             'email' => 'invalid.id@example.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
+            'terms' => '1',
         ];
 
         $response = $this->post('/register', $payload);
@@ -169,6 +172,7 @@ class RegistrationContinueFlowTest extends TestCase
             'email' => 'parent.test@example.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
+            'terms' => '1',
         ];
 
         $response = $this->post('/register', $payload);

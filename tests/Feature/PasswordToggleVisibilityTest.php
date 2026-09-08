@@ -223,13 +223,13 @@ class PasswordToggleVisibilityTest extends TestCase
         $response->assertSee('aria-controls="bioModalPasswordInput"', false);
     }
 
-    public function test_register_page_toggle_buttons_have_type_button_and_onclick()
+    public function test_register_page_toggle_buttons_have_type_button_and_data_attributes()
     {
         $response = $this->get(route('register'));
 
         $response->assertStatus(200);
-        $response->assertSee('onclick="togglePassword(\'password\', this, event)"', false);
-        $response->assertSee('onclick="togglePassword(\'password_confirmation\', this, event)"', false);
+        $response->assertSee('data-toggle-password="password"', false);
+        $response->assertSee('data-toggle-password="password_confirmation"', false);
     }
 }
 

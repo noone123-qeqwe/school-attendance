@@ -1,0 +1,23 @@
+name: Keep Render Service Awake
+
+on:
+  schedule:
+    # Run every 10 minutes (Render free tier sleeps after 15 minutes of inactivity)
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep_awake:
+    name: Ping Render Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send keep-alive ping to /up
+        run: |
+          echo "Pinging production health check..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 45 "https://school-attendance-o0pm.onrender.com/up")
+          echo "Response code: $HTTP_CODE"
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "Render service is awake and healthy."
+          else
+            echo "Service was sleeping or returned code $HTTP_CODE. Ping triggered wake-up."
+          fi
