@@ -745,81 +745,734 @@
     transform: translateY(0) scale(0.98) !important;
 }
 
-/* ── Biometric Pulse Scanner ── */
-.fp-radar-wrap {
+/* ── Biometric Registration Suite ── */
+.bio-flow-section {
+    margin-bottom: 24px;
+}
+.bio-section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.bio-step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(207, 164, 111, 0.15);
+    color: var(--gold, #cfa46f);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.bio-step-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f3e7cd;
+}
+.bio-step-subtitle {
+    font-size: 0.78rem;
+    color: #b39b82;
+    margin-top: 2px;
+}
+
+/* Method Selection Grid */
+.bio-method-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 8px;
+}
+.bio-method-card {
     position: relative;
-    width: 64px;
-    height: 64px;
+    background: rgba(255, 235, 190, 0.03);
+    border: 1.5px solid rgba(255, 215, 145, 0.12);
+    border-radius: 16px;
+    padding: 20px 20px 18px 20px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    outline: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+.bio-method-card:hover {
+    border-color: rgba(207, 164, 111, 0.35);
+    background: rgba(255, 235, 190, 0.05);
+    transform: translateY(-2px);
+}
+.bio-method-card:focus-visible {
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.3);
+}
+.bio-method-card.selected#methodCardFingerprint {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.09) 0%, rgba(20, 14, 14, 0.7) 100%);
+    box-shadow: 0 0 28px rgba(34, 197, 94, 0.22), inset 0 0 15px rgba(34, 197, 94, 0.06);
+}
+.bio-method-card.selected#methodCardFace {
+    border-color: #06b6d4;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.09) 0%, rgba(20, 14, 14, 0.7) 100%);
+    box-shadow: 0 0 28px rgba(6, 182, 212, 0.22), inset 0 0 15px rgba(6, 182, 212, 0.06);
+}
+
+.bio-card-radio {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 215, 145, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+.bio-radio-inner {
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.05) 70%, transparent 100%);
-    border: 1.5px solid rgba(74, 222, 128, 0.45);
-    box-shadow: 0 0 24px rgba(34, 197, 94, 0.25);
-    flex-shrink: 0;
+    font-size: 0.7rem;
+    color: #110a0a;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.fp-radar-wrap::before {
-    content: '';
-    position: absolute;
-    inset: -5px;
-    border-radius: 50%;
-    border: 1.5px dashed rgba(74, 222, 128, 0.35);
-    animation: fpRadarSpin 12s linear infinite;
+.bio-method-card.selected#methodCardFingerprint .bio-card-radio {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.2);
 }
-@keyframes fpRadarSpin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+.bio-method-card.selected#methodCardFingerprint .bio-radio-inner {
+    background: #22c55e;
+    opacity: 1;
+    transform: scale(1);
+}
+.bio-method-card.selected#methodCardFace .bio-card-radio {
+    border-color: #06b6d4;
+    background: rgba(6, 182, 212, 0.2);
+}
+.bio-method-card.selected#methodCardFace .bio-radio-inner {
+    background: #06b6d4;
+    opacity: 1;
+    transform: scale(1);
 }
 
-/* ── Device Credential Cards ── */
+.bio-method-icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin-bottom: 14px;
+    transition: all 0.3s ease;
+}
+.bio-fp-icon {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1.5px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+}
+.bio-face-icon {
+    background: rgba(6, 182, 212, 0.12);
+    border: 1.5px solid rgba(6, 182, 212, 0.3);
+    color: #38bdf8;
+}
+.bio-method-card.selected .bio-method-icon-wrap {
+    transform: scale(1.08);
+}
+.bio-method-card.selected#methodCardFingerprint .bio-fp-icon {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
+}
+.bio-method-card.selected#methodCardFace .bio-face-icon {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+}
+
+.bio-method-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.bio-method-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f3e7cd;
+}
+.bio-status-pill {
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+}
+.bio-status-pill.not-reg {
+    background: rgba(245, 158, 11, 0.12);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.bio-status-pill.registered {
+    background: rgba(34, 197, 94, 0.16);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+.bio-status-pill.registering {
+    background: rgba(59, 130, 246, 0.16);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+.bio-status-pill.failed {
+    background: rgba(239, 68, 68, 0.16);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.bio-method-desc {
+    font-size: 0.78rem;
+    color: #b39b82;
+    line-height: 1.45;
+    margin-bottom: 12px;
+}
+.bio-method-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.72rem;
+    color: #a8947f;
+}
+
+/* Scanner Stage Card */
+.bio-scanner-card {
+    background: linear-gradient(145deg, rgba(255, 235, 190, 0.04) 0%, rgba(20, 14, 14, 0.95) 100%);
+    border: 1.5px solid rgba(212, 175, 55, 0.2);
+    border-radius: 18px;
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s ease;
+}
+.bio-scanner-card.bio-detected {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 35px rgba(34, 197, 94, 0.35) !important;
+    animation: bioDetectFlash 0.6s ease;
+}
+@keyframes bioDetectFlash {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.015); box-shadow: 0 0 50px rgba(34, 197, 94, 0.55); }
+    100% { transform: scale(1); }
+}
+
+.bio-stage-view {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.bio-method-preview {
+    display: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bio-method-preview.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+.bio-scanner-display {
+    display: none;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bio-scanner-display.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Fingerprint Idle Graphic */
+.bio-idle-sensor-ring {
+    position: relative;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    margin: 0 auto 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.04) 70%, transparent 100%);
+    border: 1.5px solid rgba(74, 222, 128, 0.35);
+}
+.bio-radar-ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(74, 222, 128, 0.3);
+    animation: fpRadarSpin 14s linear infinite;
+}
+.bio-radar-ring.delay-1 {
+    inset: -14px;
+    border: 1px solid rgba(74, 222, 128, 0.15);
+    animation: fpRadarPulse 3s ease-out infinite;
+}
+.bio-idle-sensor-icon {
+    font-size: 2.5rem;
+}
+
+/* Face Idle Graphic */
+.bio-idle-face-box {
+    position: relative;
+    width: 90px;
+    height: 104px;
+    margin: 0 auto 16px auto;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(6, 182, 212, 0.05);
+    border: 1px dashed rgba(6, 182, 212, 0.25);
+}
+.hud-corner {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-color: #06b6d4;
+    border-style: solid;
+}
+.hud-tl { top: -2px; left: -2px; border-width: 2.5px 0 0 2.5px; border-top-left-radius: 5px; }
+.hud-tr { top: -2px; right: -2px; border-width: 2.5px 2.5px 0 0; border-top-right-radius: 5px; }
+.hud-bl { bottom: -2px; left: -2px; border-width: 0 0 2.5px 2.5px; border-bottom-left-radius: 5px; }
+.hud-br { bottom: -2px; right: -2px; border-width: 0 2.5px 2.5px 0; border-bottom-right-radius: 5px; }
+.hud-face-reticle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.bio-idle-face-icon {
+    font-size: 2.6rem;
+}
+
+.bio-preview-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    margin-bottom: 6px;
+}
+.bio-preview-sub {
+    font-size: 0.82rem;
+    color: #b39b82;
+    max-width: 440px;
+    margin: 0 auto 20px auto;
+    line-height: 1.5;
+}
+.bio-action-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+.bio-primary-cta {
+    padding: 12px 28px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    border-radius: 12px;
+}
+.bio-hardware-note {
+    font-size: 0.78rem;
+    color: #b39b82;
+}
+
+/* Fingerprint Live Active Scanner */
+.fp-scan-frame {
+    position: relative;
+    width: 130px;
+    height: 155px;
+    margin: 0 auto 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.16) 0%, rgba(20, 14, 14, 0.8) 80%);
+    border-radius: 20px;
+    border: 1.5px solid rgba(74, 222, 128, 0.4);
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.25);
+    overflow: hidden;
+}
+.fp-svg {
+    width: 85px;
+    height: 105px;
+    stroke: rgba(207, 164, 111, 0.5);
+    fill: none;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    transition: all 0.3s ease;
+}
+.fp-ridge {
+    transition: stroke 0.3s ease;
+}
+.bio-scanner-card.bio-detected .fp-svg {
+    stroke: #4ade80 !important;
+    filter: drop-shadow(0 0 10px #22c55e);
+}
+.fp-laser-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%);
+    box-shadow: 0 0 18px #4ade80, 0 0 8px #22c55e;
+    z-index: 5;
+    top: 0;
+    animation: fpLaserSweep 2.2s ease-in-out infinite;
+}
+@keyframes fpLaserSweep {
+    0%   { top: 5%; opacity: 0.7; }
+    50%  { top: 92%; opacity: 1; }
+    100% { top: 5%; opacity: 0.7; }
+}
+.fp-pulse-wave {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(74, 222, 128, 0.5);
+    animation: fpPulseExpand 2.4s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+}
+@keyframes fpPulseExpand {
+    0% { transform: scale(0.3); opacity: 0.9; }
+    100% { transform: scale(3.5); opacity: 0; }
+}
+
+/* Face Recognition Live Active Scanner */
+.face-scan-frame {
+    position: relative;
+    width: 150px;
+    height: 175px;
+    margin: 0 auto 16px auto;
+    border-radius: 22px;
+    background: rgba(6, 182, 212, 0.05);
+    border: 1.5px solid rgba(6, 182, 212, 0.4);
+    box-shadow: 0 0 30px rgba(6, 182, 212, 0.25);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.face-laser-bar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%);
+    box-shadow: 0 0 20px #06b6d4, 0 0 10px #38bdf8;
+    z-index: 5;
+    top: 0;
+    animation: faceLaserSweep 2.4s ease-in-out infinite;
+}
+@keyframes faceLaserSweep {
+    0%   { top: 5%; opacity: 0.75; }
+    50%  { top: 92%; opacity: 1; }
+    100% { top: 5%; opacity: 0.75; }
+}
+.face-camera-feed {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+}
+.face-holo-mesh {
+    position: relative;
+    width: 90px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.face-oval-target {
+    width: 76px;
+    height: 100px;
+    border-radius: 50% / 60% 60% 40% 40%;
+    border: 1.5px dashed rgba(6, 182, 212, 0.4);
+    position: relative;
+    animation: faceOvalPulse 2s ease-in-out infinite;
+}
+@keyframes faceOvalPulse {
+    0%, 100% { border-color: rgba(6, 182, 212, 0.35); transform: scale(1); }
+    50% { border-color: rgba(56, 189, 248, 0.7); transform: scale(1.02); }
+}
+.face-mesh-node {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #38bdf8;
+    box-shadow: 0 0 8px #06b6d4;
+    animation: meshNodePulse 1.8s infinite ease-in-out;
+}
+.n-forehead { top: 22px; left: 42px; }
+.n-eye-l    { top: 44px; left: 24px; animation-delay: 0.2s; }
+.n-eye-r    { top: 44px; right: 24px; animation-delay: 0.3s; }
+.n-nose     { top: 62px; left: 42px; animation-delay: 0.5s; }
+.n-mouth    { top: 82px; left: 42px; animation-delay: 0.7s; }
+.n-jaw-l    { top: 98px; left: 28px; animation-delay: 0.9s; }
+.n-jaw-r    { top: 98px; right: 28px; animation-delay: 1s; }
+@keyframes meshNodePulse {
+    0%, 100% { opacity: 0.4; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.3); }
+}
+
+.bio-scanning-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    margin-bottom: 4px;
+}
+.bio-scanning-sub {
+    font-size: 0.8rem;
+    color: #b39b82;
+    margin-bottom: 16px;
+}
+
+/* Progressive Scan Feedback */
+.bio-progress-container {
+    max-width: 280px;
+    margin: 0 auto 16px auto;
+}
+.bio-progress-track {
+    width: 100%;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.bio-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #16a34a, #4ade80);
+    border-radius: 99px;
+    transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bio-progress-fill.cyan-fill {
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+.bio-progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.74rem;
+    color: #b39b82;
+}
+.bio-progress-pct {
+    font-weight: 700;
+    color: #f3e7cd;
+}
+
+.bio-cancel-row {
+    margin-top: 8px;
+}
+.bio-cancel-btn {
+    padding: 8px 18px;
+    font-size: 0.8rem;
+    border-radius: 10px;
+}
+
+/* Success View */
+.bio-success-wrap {
+    padding: 10px 0;
+}
+.bio-success-icon-ring {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: rgba(34, 197, 94, 0.15);
+    border: 2px solid rgba(74, 222, 128, 0.4);
+    box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+    margin: 0 auto 18px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes successPop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.bio-success-svg {
+    width: 52px;
+    height: 52px;
+}
+.bio-success-circle {
+    stroke: #22c55e;
+    stroke-width: 3;
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: circleStroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.bio-success-check {
+    stroke: #4ade80;
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: checkStroke 0.4s cubic-bezier(0.65, 0, 0.45, 1) 0.5s forwards;
+}
+@keyframes circleStroke {
+    100% { stroke-dashoffset: 0; }
+}
+@keyframes checkStroke {
+    100% { stroke-dashoffset: 0; }
+}
+
+.bio-success-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #4ade80;
+    margin-bottom: 6px;
+}
+.bio-success-desc {
+    font-size: 0.84rem;
+    color: #d1fae5;
+    max-width: 440px;
+    margin: 0 auto 20px auto;
+    line-height: 1.5;
+}
+.bio-success-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Error View */
+.bio-error-wrap {
+    padding: 10px 0;
+    animation: bioShake 0.5s ease-in-out;
+}
+@keyframes bioShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+}
+.bio-error-icon-box {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1.5px solid rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+    margin: 0 auto 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #f87171;
+    font-size: 2rem;
+}
+.bio-error-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fca5a5;
+    margin-bottom: 6px;
+}
+.bio-error-desc {
+    font-size: 0.82rem;
+    color: #fecaca;
+    max-width: 420px;
+    margin: 0 auto 20px auto;
+    line-height: 1.5;
+}
+.bio-error-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Device Item Cards */
 .device-item-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding: 14px 16px;
+    padding: 14px 18px;
     border-radius: 14px;
     background: rgba(255, 235, 190, 0.03);
     border: 1px solid rgba(255, 215, 145, 0.08);
     margin-bottom: 12px;
-    transition: all 0.2s ease;
+    transition: all 0.25s ease;
 }
 .device-item-card:hover {
     border-color: rgba(255, 215, 145, 0.2);
     background: rgba(255, 235, 190, 0.06);
+    transform: translateY(-1px);
 }
 .device-item-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     flex: 1;
     min-width: 0;
 }
 .device-item-icon {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
-    background: rgba(22, 163, 74, 0.15);
-    border: 1px solid rgba(22, 163, 74, 0.3);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #4ade80;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     flex-shrink: 0;
+}
+.device-item-icon.fp-type {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+}
+.device-item-icon.face-type {
+    background: rgba(6, 182, 212, 0.15);
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    color: #38bdf8;
 }
 .device-item-info {
     flex: 1;
     min-width: 0;
 }
+.device-item-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
 .device-item-name {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: #f3e7cd;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+}
+.device-type-badge {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.device-type-badge.fp {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.device-type-badge.face {
+    background: rgba(6, 182, 212, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(6, 182, 212, 0.3);
 }
 .device-item-meta {
     font-size: 0.74rem;
@@ -862,6 +1515,16 @@
     background: rgba(248, 113, 113, 0.22);
     color: #fca5a5;
     border-color: rgba(248, 113, 113, 0.4);
+}
+
+@keyframes fpRadarSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+@keyframes fpRadarPulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 0.1; }
+    100% { transform: scale(1); opacity: 0.6; }
 }
 
 /* ── Attendance KPI Stat Cards ── */
@@ -1200,7 +1863,7 @@
         <div class="stabs" id="stabsNav">
             <button class="stab active" data-tab="profile" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
             <button class="stab" data-tab="security" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
-            <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Fingerprint</button>
+            <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-shield-lock-fill me-1"></i> Biometrics</button>
             <button class="stab" data-tab="attendance" onclick="switchTab('attendance',this)"><i class="bi bi-bar-chart-fill me-1"></i> Attendance</button>
             <button class="stab" data-tab="preferences" data-tab-id="preferences" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
         </div>
@@ -1509,91 +2172,292 @@
 
     </div>
 
-    <!-- ── TAB: FINGERPRINT ── -->
+    <!-- ── TAB: BIOMETRICS REGISTRATION ── -->
     <div id="tab-fingerprint" class="spanel">
         <div class="sc">
             <div class="sc-head">
-                <div class="sc-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
+                <div class="sc-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;"><i class="bi bi-shield-lock-fill"></i></div>
                 <div>
-                    <div class="sc-title">Biometric & Fingerprint Security</div>
-                    <div class="sc-sub">Hardware-grade FIDO2 / WebAuthn biometric authentication on this device</div>
+                    <div class="sc-title">Biometrics Registration</div>
+                    <div class="sc-sub">Hardware-grade FIDO2 / WebAuthn passwordless biometric authentication</div>
                 </div>
             </div>
             <div class="sc-body">
 
-                <!-- In-app browser alert -->
+                <!-- In-app browser & Insecure Context Alert -->
                 <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
                     <div style="display:flex;align-items:flex-start;gap:12px;">
                         <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
                         <div>
-                            <div style="font-weight:700;margin-bottom:4px;">Biometric login not available on this browser</div>
+                            <div style="font-weight:700;margin-bottom:4px;" id="unsupportedTitle">Biometric sensor not available on this browser</div>
                             <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
-                                You're using an in-app browser that doesn't support fingerprint/biometric login. Please open this page in <strong>Chrome</strong> or <strong>Safari</strong> to register your fingerprint.
+                                Your current browser or connection does not support hardware biometric sign-in.
                             </div>
-                            <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
-                                <i class="bi bi-box-arrow-up-right"></i> Open in Browser
+                            <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:none;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
+                                <i class="bi bi-box-arrow-up-right"></i> Open in External Browser
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- Hero Biometric Card -->
-                <div style="display:flex;align-items:center;gap:20px;background:linear-gradient(135deg,rgba(34,197,94,0.08) 0%,rgba(207,164,111,0.04) 100%);border:1px solid rgba(34,197,94,0.2);border-radius:16px;padding:22px;margin-bottom:24px;flex-wrap:wrap;">
-                    <div class="fp-radar-wrap">
-                        <i class="bi bi-fingerprint" style="font-size:2rem;color:#4ade80;"></i>
-                    </div>
-                    <div style="flex:1;min-width:200px;">
-                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                            <span style="font-size:1.05rem;font-weight:800;color:#f3e7cd;">FIDO2 / WebAuthn Hardware Security</span>
-                            <span style="font-size:0.68rem;font-weight:700;background:rgba(34,197,94,0.18);color:#4ade80;padding:2px 8px;border-radius:99px;border:1px solid rgba(34,197,94,0.3);">Certified</span>
+                <!-- ── Step 1: Method Selection ── -->
+                <div class="bio-flow-section">
+                    <div class="bio-section-title-wrap">
+                        <span class="bio-step-badge">Step 1</span>
+                        <div>
+                            <div class="bio-step-title">Choose Biometric Authentication Method</div>
+                            <div class="bio-step-subtitle">Select ONE preferred biometric method to register for passwordless login and QR clock-in:</div>
                         </div>
-                        <p style="font-size:0.8rem;color:#b39b82;margin:0;line-height:1.5;">
-                            Biometric signatures never leave your local hardware device. Register once to log in and sign attendance without typing passwords.
-                        </p>
+                    </div>
+
+                    <div class="bio-method-grid">
+                        <!-- Option 1: Fingerprint -->
+                        <div class="bio-method-card selected" id="methodCardFingerprint" onclick="selectBiometricMethod('fingerprint')" tabindex="0" role="button" aria-pressed="true" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
+                            <div class="bio-card-radio">
+                                <div class="bio-radio-inner">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+                            </div>
+                            <div class="bio-method-icon-wrap bio-fp-icon">
+                                <i class="bi bi-fingerprint"></i>
+                            </div>
+                            <div class="bio-method-info">
+                                <div class="bio-method-header">
+                                    <span class="bio-method-name">Fingerprint</span>
+                                    <span class="bio-status-pill not-reg" id="statusBadgeFingerprint">Checking...</span>
+                                </div>
+                                <p class="bio-method-desc">
+                                    Authenticate in seconds using your device's built-in fingerprint scanner, Touch ID sensor, or USB security key.
+                                </p>
+                                <div class="bio-method-meta">
+                                    <span><i class="bi bi-lightning-charge-fill me-1" style="color:#4ade80;"></i>Ultra-Fast</span>
+                                    <span><i class="bi bi-cpu-fill me-1" style="color:#cfa46f;"></i>Local Enclave</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option 2: Face Recognition -->
+                        <div class="bio-method-card" id="methodCardFace" onclick="selectBiometricMethod('face')" tabindex="0" role="button" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
+                            <div class="bio-card-radio">
+                                <div class="bio-radio-inner">
+                                    <i class="bi bi-check-lg"></i>
+                                </div>
+                            </div>
+                            <div class="bio-method-icon-wrap bio-face-icon">
+                                <i class="bi bi-person-bounding-box"></i>
+                            </div>
+                            <div class="bio-method-info">
+                                <div class="bio-method-header">
+                                    <span class="bio-method-name">Face Recognition</span>
+                                    <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
+                                </div>
+                                <p class="bio-method-desc">
+                                    Authenticate hands-free using Face ID, Windows Hello Face recognition camera, or front-facing facial geometry.
+                                </p>
+                                <div class="bio-method-meta">
+                                    <span><i class="bi bi-eye-fill me-1" style="color:#38bdf8;"></i>Hands-Free</span>
+                                    <span><i class="bi bi-camera-fill me-1" style="color:#cfa46f;"></i>Front Sensor</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Feature Highlights -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:24px;">
-                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                            <div style="width:30px;height:30px;border-radius:8px;background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);display:flex;align-items:center;justify-content:center;font-size:.9rem;"><i class="bi bi-shield-lock"></i></div>
-                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">Instant Sign-In</span>
+                <!-- ── Step 2: Registration & Scanning Stage ── -->
+                <div class="bio-flow-section" style="margin-top:24px;">
+                    <div class="bio-section-title-wrap">
+                        <span class="bio-step-badge">Step 2</span>
+                        <div>
+                            <div class="bio-step-title" id="bioStep2Title">Biometric Sensor Capture</div>
+                            <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected: <strong id="selectedMethodDisplay" style="color:#4ade80;">Fingerprint</strong> — Ready to register this device</div>
                         </div>
-                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Unlock your account in milliseconds using your fingerprint sensor or Face ID.</p>
                     </div>
-                    <div style="background:rgba(255,235,190,0.03);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                            <div style="width:30px;height:30px;border-radius:8px;background:rgba(34,197,94,0.15);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:.9rem;"><i class="bi bi-qr-code-scan"></i></div>
-                            <span style="font-size:.85rem;font-weight:700;color:#f3e7cd;">QR Attendance Clock-In</span>
+
+                    <!-- Scanner Stage Container -->
+                    <div class="bio-scanner-card" id="bioScannerStage">
+
+                        <!-- State A: Idle / Ready Overview -->
+                        <div class="bio-stage-view" id="bioIdleView">
+                            <div class="bio-preview-container">
+                                <!-- Fingerprint Idle Graphic -->
+                                <div id="fpIdlePreview" class="bio-method-preview active">
+                                    <div class="bio-idle-sensor-ring">
+                                        <div class="bio-radar-ring"></div>
+                                        <div class="bio-radar-ring delay-1"></div>
+                                        <i class="bi bi-fingerprint bio-idle-sensor-icon" style="color:#4ade80;"></i>
+                                    </div>
+                                    <div class="bio-preview-title">Register Fingerprint Authentication</div>
+                                    <div class="bio-preview-sub">Click the button below to start the hardware fingerprint enrollment for this account.</div>
+                                </div>
+
+                                <!-- Face Idle Graphic -->
+                                <div id="faceIdlePreview" class="bio-method-preview">
+                                    <div class="bio-idle-face-box">
+                                        <span class="hud-corner hud-tl"></span>
+                                        <span class="hud-corner hud-tr"></span>
+                                        <span class="hud-corner hud-bl"></span>
+                                        <span class="hud-corner hud-br"></span>
+                                        <div class="hud-face-reticle">
+                                            <i class="bi bi-person-bounding-box bio-idle-face-icon" style="color:#38bdf8;"></i>
+                                        </div>
+                                    </div>
+                                    <div class="bio-preview-title">Register Face Recognition</div>
+                                    <div class="bio-preview-sub">Click the button below to start facial biometric enrollment using Face ID or your device camera.</div>
+                                </div>
+                            </div>
+
+                            <div class="bio-action-row">
+                                <button type="button" id="startBioBtn" onclick="beginSelectedBiometricRegistration()" class="sbtn btn-emerald bio-primary-cta">
+                                    <i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint
+                                </button>
+                                <span class="bio-hardware-note">
+                                    <i class="bi bi-shield-check text-success me-1"></i>FIDO2 / WebAuthn Hardware Security
+                                </span>
+                            </div>
                         </div>
-                        <p style="font-size:.76rem;color:#b39b82;margin:0;line-height:1.4;">Verify your identity securely when scanning teacher classroom attendance QR codes.</p>
+
+                        <!-- State B: Active Live Scanning Stage -->
+                        <div class="bio-stage-view" id="bioScanningView" style="display:none;">
+                            <div class="bio-scan-hud-container">
+
+                                <!-- Fingerprint Realistic Scanner -->
+                                <div id="fpActiveScanner" class="bio-scanner-display active">
+                                    <div class="fp-scan-frame">
+                                        <div class="fp-pulse-wave"></div>
+                                        <div class="fp-laser-line" id="fpLaserLine"></div>
+                                        <svg class="fp-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+                                            <path class="fp-ridge" d="M50 15 C30 15 20 28 20 45 C20 65 25 85 27 105" />
+                                            <path class="fp-ridge" d="M50 25 C36 25 28 35 28 48 C28 68 33 88 35 105" />
+                                            <path class="fp-ridge" d="M50 35 C42 35 36 42 36 52 C36 72 40 92 42 105" />
+                                            <path class="fp-ridge" d="M50 45 C46 45 44 48 44 55 C44 75 48 95 49 105" />
+                                            <path class="fp-ridge" d="M50 55 C52 55 54 58 54 62 C54 78 52 94 51 105" />
+                                            <path class="fp-ridge" d="M50 35 C58 35 64 42 64 52 C64 72 60 92 58 105" />
+                                            <path class="fp-ridge" d="M50 25 C64 25 72 35 72 48 C72 68 67 88 65 105" />
+                                            <path class="fp-ridge" d="M50 15 C70 15 80 28 80 45 C80 65 75 85 73 105" />
+                                        </svg>
+                                    </div>
+                                    <div class="bio-scanning-title" id="fpScanningTitle">Scanning Fingerprint...</div>
+                                    <div class="bio-scanning-sub" id="fpStatusSub">Touch your device sensor or Windows Hello prompt</div>
+
+                                    <!-- Progressive Scan Feedback -->
+                                    <div class="bio-progress-container">
+                                        <div class="bio-progress-track">
+                                            <div class="bio-progress-fill" id="fpProgressFill" style="width: 0%;"></div>
+                                        </div>
+                                        <div class="bio-progress-labels">
+                                            <span class="bio-progress-state" id="fpStateLabel">Initializing sensor...</span>
+                                            <span class="bio-progress-pct" id="fpPctLabel">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Face Recognition Realistic Scanner -->
+                                <div id="faceActiveScanner" class="bio-scanner-display">
+                                    <div class="face-scan-frame" id="faceScanFrame">
+                                        <span class="hud-corner hud-tl"></span>
+                                        <span class="hud-corner hud-tr"></span>
+                                        <span class="hud-corner hud-bl"></span>
+                                        <span class="hud-corner hud-br"></span>
+                                        <div class="face-laser-bar" id="faceLaserBar"></div>
+
+                                        <video id="faceCameraVideo" class="face-camera-feed" autoplay playsinline muted style="display:none;"></video>
+                                        <div id="faceHoloGraphic" class="face-holo-mesh">
+                                            <div class="face-oval-target"></div>
+                                            <div class="face-mesh-node n-forehead"></div>
+                                            <div class="face-mesh-node n-eye-l"></div>
+                                            <div class="face-mesh-node n-eye-r"></div>
+                                            <div class="face-mesh-node n-nose"></div>
+                                            <div class="face-mesh-node n-mouth"></div>
+                                            <div class="face-mesh-node n-jaw-l"></div>
+                                            <div class="face-mesh-node n-jaw-r"></div>
+                                        </div>
+                                    </div>
+                                    <div class="bio-scanning-title" id="faceScanningTitle">Scanning Facial Landmarks...</div>
+                                    <div class="bio-scanning-sub" id="faceStatusSub">Align face within the target frame and follow device prompt</div>
+
+                                    <!-- Progressive Scan Feedback -->
+                                    <div class="bio-progress-container">
+                                        <div class="bio-progress-track">
+                                            <div class="bio-progress-fill cyan-fill" id="faceProgressFill" style="width: 0%;"></div>
+                                        </div>
+                                        <div class="bio-progress-labels">
+                                            <span class="bio-progress-state" id="faceStateLabel">Aligning facial geometry...</span>
+                                            <span class="bio-progress-pct" id="facePctLabel">0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bio-cancel-row">
+                                <button type="button" onclick="cancelBiometricRegistration()" class="cancel-btn bio-cancel-btn">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel Registration
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- State C: Success View -->
+                        <div class="bio-stage-view" id="bioSuccessView" style="display:none;">
+                            <div class="bio-success-wrap">
+                                <div class="bio-success-icon-ring">
+                                    <svg class="bio-success-svg" viewBox="0 0 52 52">
+                                        <circle class="bio-success-circle" cx="26" cy="26" r="25" fill="none"/>
+                                        <path class="bio-success-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                    </svg>
+                                </div>
+                                <div class="bio-success-title" id="bioSuccessTitle">Biometric Registered Successfully!</div>
+                                <div class="bio-success-desc" id="bioSuccessDesc">
+                                    Your credential has been securely enrolled in your hardware enclave and linked to your account.
+                                </div>
+                                <div class="bio-success-actions">
+                                    <button type="button" onclick="resetToSelectionStage()" class="sbtn btn-emerald" style="padding:10px 24px;">
+                                        <i class="bi bi-check-lg me-1"></i>Done
+                                    </button>
+                                    <button type="button" onclick="switchOrRegisterOtherMethod()" class="cancel-btn" id="registerOtherBtn" style="padding:10px 20px;">
+                                        <i class="bi bi-plus-circle me-1"></i>Register Other Method
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- State D: Error View -->
+                        <div class="bio-stage-view" id="bioErrorView" style="display:none;">
+                            <div class="bio-error-wrap">
+                                <div class="bio-error-icon-box">
+                                    <i class="bi bi-exclamation-triangle-fill"></i>
+                                </div>
+                                <div class="bio-error-title" id="bioErrorTitle">Registration Failed</div>
+                                <div class="bio-error-desc" id="bioErrorDesc">
+                                    The biometric prompt was cancelled or timed out.
+                                </div>
+                                <div class="bio-error-actions">
+                                    <button type="button" onclick="retryBiometricRegistration()" class="sbtn btn-emerald" id="retryBtn" style="padding:10px 24px;">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Try Again
+                                    </button>
+                                    <button type="button" onclick="switchBiometricMethodFallback()" class="cancel-btn" id="fallbackSwitchBtn" style="padding:10px 20px;">
+                                        <i class="bi bi-arrow-left-right me-1"></i>Switch Method
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                <!-- Registered Devices List -->
-                <div style="margin-bottom:24px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px;">
-                        <div style="font-size:.75rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;flex:1;min-width:0;">Registered Hardware Credentials</div>
+                <!-- ── Step 3: Registered Hardware Credentials List ── -->
+                <div style="margin-top:28px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;">
+                        <div style="font-size:.78rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Hardware Credentials</div>
                         <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;">Loading...</span>
                     </div>
                     <div id="deviceList">
                         <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
-                            <i class="bi bi-fingerprint" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
+                            <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
                             <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
-                            <div style="font-size:.78rem;color:#b39b82;">Register this device to enable fast fingerprint sign-in and QR clock-in.</div>
+                            <div style="font-size:.78rem;color:#b39b82;">Choose Fingerprint or Face Recognition above to register this device.</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Register action -->
-                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-                    <button type="button" onclick="registerFingerprint()" id="registerFpBtn" class="sbtn btn-emerald" style="padding:10px 22px;font-size:0.85rem;">
-                        <i class="bi bi-fingerprint me-2"></i>Register This Device
-                    </button>
-                    <span style="font-size:.78rem;color:#b39b82;"><i class="bi bi-shield-check me-1 text-success"></i>FIDO2 / WebAuthn standard security</span>
-                </div>
-                <div id="fpMessage" style="margin-top:14px;font-size:.82rem;display:none;"></div>
             </div>
         </div>
     </div>
@@ -2108,41 +2972,256 @@ function openInSystemBrowser() {
     }
 }
 
-// ── WebAuthn Fingerprint Registration ──
+// ── WebAuthn Biometrics Registration (Fingerprint & Face Recognition) ──
+let selectedBioMethod = 'fingerprint'; // 'fingerprint' | 'face'
+let bioAbortController = null;
+let bioScanProgressTimer = null;
+let bioCameraStream = null;
+
+function selectBiometricMethod(method) {
+    if (method !== 'fingerprint' && method !== 'face') return;
+    selectedBioMethod = method;
+
+    // 1. Toggle option card active styling & radio state
+    const cardFp = document.getElementById('methodCardFp');
+    const cardFace = document.getElementById('methodCardFace');
+    if (cardFp && cardFace) {
+        if (method === 'fingerprint') {
+            cardFp.classList.add('selected');
+            cardFp.setAttribute('aria-pressed', 'true');
+            cardFace.classList.remove('selected');
+            cardFace.setAttribute('aria-pressed', 'false');
+        } else {
+            cardFace.classList.add('selected');
+            cardFace.setAttribute('aria-pressed', 'true');
+            cardFp.classList.remove('selected');
+            cardFp.setAttribute('aria-pressed', 'false');
+        }
+    }
+
+    // 2. Smoothly switch idle preview graphic
+    const fpPrev = document.getElementById('fpIdlePreview');
+    const facePrev = document.getElementById('faceIdlePreview');
+    if (fpPrev && facePrev) {
+        if (method === 'fingerprint') {
+            fpPrev.classList.add('active');
+            facePrev.classList.remove('active');
+        } else {
+            facePrev.classList.add('active');
+            fpPrev.classList.remove('active');
+        }
+    }
+
+    // 3. Switch active scanner views
+    const fpScan = document.getElementById('fpActiveScanner');
+    const faceScan = document.getElementById('faceActiveScanner');
+    if (fpScan && faceScan) {
+        if (method === 'fingerprint') {
+            fpScan.classList.add('active');
+            faceScan.classList.remove('active');
+        } else {
+            faceScan.classList.add('active');
+            fpScan.classList.remove('active');
+        }
+    }
+
+    // 4. Update Step 2 title & CTA button text
+    const displaySpan = document.getElementById('selectedMethodDisplay');
+    const startBtn = document.getElementById('startBioBtn');
+    if (displaySpan) {
+        if (method === 'fingerprint') {
+            displaySpan.textContent = 'Fingerprint';
+            displaySpan.style.color = '#4ade80';
+        } else {
+            displaySpan.textContent = 'Face Recognition';
+            displaySpan.style.color = '#38bdf8';
+        }
+    }
+    if (startBtn) {
+        if (method === 'fingerprint') {
+            startBtn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint';
+            startBtn.className = 'sbtn btn-emerald bio-primary-cta';
+            startBtn.style.background = '';
+            startBtn.style.color = '';
+        } else {
+            startBtn.innerHTML = '<i class="bi bi-person-bounding-box me-2"></i>Continue to Register Face Recognition';
+            startBtn.className = 'sbtn bio-primary-cta';
+            startBtn.style.background = 'linear-gradient(135deg, #0284c7, #0ea5e9)';
+            startBtn.style.color = '#ffffff';
+        }
+    }
+
+    // 5. Reset scanner stage back to idle view if error or success was shown
+    const idleView = document.getElementById('bioIdleView');
+    const scanningView = document.getElementById('bioScanningView');
+    const successView = document.getElementById('bioSuccessView');
+    const errorView = document.getElementById('bioErrorView');
+    if (idleView && (successView?.style.display !== 'none' || errorView?.style.display !== 'none')) {
+        idleView.style.display = 'block';
+        if (scanningView) scanningView.style.display = 'none';
+        if (successView) successView.style.display = 'none';
+        if (errorView) errorView.style.display = 'none';
+    }
+
+    if (window.triggerHaptic) window.triggerHaptic('light');
+}
+
+async function startBioCamera() {
+    const video = document.getElementById('faceCameraVideo');
+    const holo = document.getElementById('faceHoloGraphic');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (video) video.style.display = 'none';
+        if (holo) holo.style.display = 'block';
+        return;
+    }
+    try {
+        bioCameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: 'user',
+                width: { ideal: 480 },
+                height: { ideal: 480 }
+            }
+        });
+        if (video && bioCameraStream) {
+            video.srcObject = bioCameraStream;
+            video.style.display = 'block';
+            if (holo) holo.style.display = 'none';
+        }
+    } catch(err) {
+        console.warn('Camera feed unavailable or denied for face HUD, falling back to holographic mesh:', err);
+        if (video) video.style.display = 'none';
+        if (holo) holo.style.display = 'block';
+    }
+}
+
+function stopBioCamera() {
+    if (bioCameraStream) {
+        try {
+            bioCameraStream.getTracks().forEach(track => track.stop());
+        } catch(e){}
+        bioCameraStream = null;
+    }
+    const video = document.getElementById('faceCameraVideo');
+    if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+    }
+    const holo = document.getElementById('faceHoloGraphic');
+    if (holo) holo.style.display = 'block';
+}
+
+function updateProgressiveFeedback(pct, stateText) {
+    if (selectedBioMethod === 'fingerprint') {
+        const fill = document.getElementById('fpProgressFill');
+        const pctEl = document.getElementById('fpPctLabel');
+        const stateEl = document.getElementById('fpStateLabel');
+        if (fill) fill.style.width = pct + '%';
+        if (pctEl) pctEl.textContent = pct + '%';
+        if (stateEl && stateText) stateEl.textContent = stateText;
+    } else {
+        const fill = document.getElementById('faceProgressFill');
+        const pctEl = document.getElementById('facePctLabel');
+        const stateEl = document.getElementById('faceStateLabel');
+        if (fill) fill.style.width = pct + '%';
+        if (pctEl) pctEl.textContent = pct + '%';
+        if (stateEl && stateText) stateEl.textContent = stateText;
+    }
+}
+
+function startScanProgressAnimation() {
+    clearInterval(bioScanProgressTimer);
+    let currentPct = 5;
+    updateProgressiveFeedback(currentPct, selectedBioMethod === 'fingerprint' ? 'Initializing biometric sensor...' : 'Aligning facial geometry...');
+    
+    bioScanProgressTimer = setInterval(() => {
+        if (currentPct < 85) {
+            currentPct += Math.floor(Math.random() * 5) + 3;
+            if (currentPct > 85) currentPct = 85;
+            
+            let label = '';
+            if (selectedBioMethod === 'fingerprint') {
+                if (currentPct < 25) label = 'Accessing hardware enclave...';
+                else if (currentPct < 55) label = 'Scanning fingerprint ridges...';
+                else if (currentPct < 80) label = 'Generating cryptographic keypair...';
+                else label = 'Touch sensor or confirm OS prompt...';
+            } else {
+                if (currentPct < 25) label = 'Locating facial contours...';
+                else if (currentPct < 55) label = 'Mapping 3D biometric landmarks...';
+                else if (currentPct < 80) label = 'Validating anti-spoofing liveness...';
+                else label = 'Look directly at camera / confirm prompt...';
+            }
+            updateProgressiveFeedback(currentPct, label);
+        }
+    }, 280);
+}
+
+function triggerBiometricDetected() {
+    clearInterval(bioScanProgressTimer);
+    bioScanProgressTimer = null;
+    updateProgressiveFeedback(100, selectedBioMethod === 'fingerprint' ? 'Fingerprint matched! Finalizing...' : 'Face recognized! Finalizing...');
+    
+    const frame = selectedBioMethod === 'fingerprint'
+        ? document.querySelector('.fp-scan-frame')
+        : document.getElementById('faceScanFrame');
+    if (frame) frame.classList.add('bio-detected');
+
+    if (window.triggerHaptic) window.triggerHaptic('success');
+}
+
+function cancelBiometricRegistration() {
+    if (bioAbortController) {
+        try { bioAbortController.abort(); } catch(e){}
+        bioAbortController = null;
+    }
+    stopBioCamera();
+    clearInterval(bioScanProgressTimer);
+    bioScanProgressTimer = null;
+
+    const idleView = document.getElementById('bioIdleView');
+    const scanningView = document.getElementById('bioScanningView');
+    const successView = document.getElementById('bioSuccessView');
+    const errorView = document.getElementById('bioErrorView');
+    if (idleView) idleView.style.display = 'block';
+    if (scanningView) scanningView.style.display = 'none';
+    if (successView) successView.style.display = 'none';
+    if (errorView) errorView.style.display = 'none';
+
+    // Clear any detected flash
+    document.querySelectorAll('.fp-scan-frame, .face-scan-frame').forEach(el => el.classList.remove('bio-detected'));
+}
+
+function resetToSelectionStage() {
+    cancelBiometricRegistration();
+}
+
+function switchOrRegisterOtherMethod() {
+    const other = selectedBioMethod === 'fingerprint' ? 'face' : 'fingerprint';
+    selectBiometricMethod(other);
+    resetToSelectionStage();
+}
+
+function retryBiometricRegistration() {
+    const errorView = document.getElementById('bioErrorView');
+    if (errorView) errorView.style.display = 'none';
+    beginSelectedBiometricRegistration();
+}
+
+function switchBiometricMethodFallback() {
+    const other = selectedBioMethod === 'fingerprint' ? 'face' : 'fingerprint';
+    selectBiometricMethod(other);
+    resetToSelectionStage();
+}
+
 async function loadDevices() {
-    var inApp = isInAppBrowser();
     const list = document.getElementById('deviceList');
     const badge = document.getElementById('deviceCountBadge');
-    const regBtn = document.getElementById('registerFpBtn');
-    const unsupported = document.getElementById('webauthnUnsupported');
+    const badgeFp = document.getElementById('statusBadgeFingerprint');
+    const badgeFace = document.getElementById('statusBadgeFace');
 
     if (!window.PublicKeyCredential) {
         if (badge) { badge.textContent = !window.isSecureContext ? 'Requires HTTPS' : 'Unsupported'; badge.style.color = '#f87171'; }
-        if (unsupported) {
-            unsupported.style.display = 'block';
-            var msgEl = document.getElementById('webauthnUnsupportedMsg');
-            var openBtn = document.getElementById('openInBrowserBtn');
-            if (!window.isSecureContext) {
-                msgEl.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If testing on mobile over Wi-Fi, please open this app using an HTTPS URL.';
-                if (openBtn) openBtn.style.display = 'none';
-            } else if (inApp) {
-                msgEl.innerHTML = 'You\'re using an in-app browser (like Messenger or Facebook) that doesn\'t support fingerprint login. Tap the button below to open this page in <strong>Chrome</strong> or <strong>Safari</strong>.';
-                if (openBtn) openBtn.style.display = 'inline-flex';
-            } else {
-                msgEl.innerHTML = 'Your browser or device doesn\'t support biometric login. Please try using <strong>Chrome</strong> or <strong>Safari</strong> on a device with a fingerprint sensor or Face ID.';
-                if (openBtn) openBtn.style.display = 'none';
-            }
-        }
-        if (regBtn) {
-            regBtn.style.display = 'inline-flex';
-            regBtn.onclick = function() {
-                if (!window.isSecureContext) {
-                    alert('Biometric registration requires a secure HTTPS connection. Please access via HTTPS or localhost.');
-                } else {
-                    alert('Biometric APIs are not supported by your current browser or device.');
-                }
-            };
-        }
+        if (badgeFp) { badgeFp.textContent = 'Unavailable'; badgeFp.className = 'bio-status-pill not-reg'; }
+        if (badgeFace) { badgeFace.textContent = 'Unavailable'; badgeFace.className = 'bio-status-pill not-reg'; }
     }
 
     try {
@@ -2152,41 +3231,62 @@ async function loadDevices() {
 
         list.innerHTML = '';
 
+        const hasFp = Array.isArray(devices) && devices.some(d => (d.biometric_type || 'fingerprint') === 'fingerprint');
+        const hasFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face');
+
+        if (badgeFp) {
+            badgeFp.textContent = hasFp ? 'Active' : 'Not Registered';
+            badgeFp.className = 'bio-status-pill ' + (hasFp ? 'reg-active' : 'not-reg');
+        }
+        if (badgeFace) {
+            badgeFace.textContent = hasFace ? 'Active' : 'Not Registered';
+            badgeFace.className = 'bio-status-pill ' + (hasFace ? 'reg-active' : 'not-reg');
+        }
+
         if (devices && devices.length > 0) {
             if (badge) {
                 badge.textContent = `${devices.length} Registered`;
                 badge.style.color = '#4ade80';
                 badge.style.borderColor = 'rgba(74,222,128,0.3)';
                 badge.style.background = 'rgba(74,222,128,0.1)';
-                badge.style.whiteSpace = 'nowrap';
-                badge.style.flexShrink = '0';
-                badge.style.display = 'inline-flex';
-                badge.style.alignItems = 'center';
             }
 
-            const registeredMsg = document.createElement('div');
-            registeredMsg.style.cssText = 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
-            registeredMsg.innerHTML = '<i class="bi bi-check-circle-fill" style="font-size:1.2rem;color:#22c55e;"></i> <span>Biometric authentication is <strong>active</strong> on your account.</span>';
-            list.appendChild(registeredMsg);
+            const activeSummary = document.createElement('div');
+            activeSummary.style.cssText = 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
+            activeSummary.innerHTML = `
+                <i class="bi bi-check-circle-fill" style="font-size:1.2rem;color:#22c55e;"></i>
+                <div>
+                    <div>Biometric authentication is <strong>active</strong> on your account.</div>
+                    <div style="font-size:.76rem;color:#86efac;font-weight:400;margin-top:2px;">
+                        Enrolled: ${hasFp && hasFace ? 'Fingerprint & Face Recognition' : (hasFace ? 'Face Recognition' : 'Fingerprint')}
+                    </div>
+                </div>`;
+            list.appendChild(activeSummary);
 
             devices.forEach(d => {
+                const isFace = d.biometric_type === 'face';
                 const div = document.createElement('div');
                 div.className = 'device-item-card';
                 div.innerHTML = `
                     <div class="device-item-left">
-                        <div class="device-item-icon">
-                            <i class="bi bi-fingerprint"></i>
+                        <div class="device-item-icon" style="background:${isFace ? 'rgba(56,189,248,0.12)' : 'rgba(74,222,128,0.12)'};color:${isFace ? '#38bdf8' : '#4ade80'};">
+                            <i class="bi ${isFace ? 'bi-person-bounding-box' : 'bi-fingerprint'}"></i>
                         </div>
                         <div class="device-item-info">
-                            <div class="device-item-name">${d.name || d.device_name || "Registered Device"}</div>
+                            <div class="device-item-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                                <span>${d.name || d.device_name || (isFace ? 'Face Recognition Credential' : 'Fingerprint Credential')}</span>
+                                <span class="bio-device-type-pill ${isFace ? 'pill-face' : 'pill-fp'}">
+                                    <i class="bi ${isFace ? 'bi-person-bounding-box' : 'bi-fingerprint'} me-1"></i>${isFace ? 'Face' : 'Fingerprint'}
+                                </span>
+                            </div>
                             <div class="device-item-meta">
-                                <span class="device-meta-verified"><i class="bi bi-shield-check me-1"></i>Verified</span>
+                                <span class="device-meta-verified"><i class="bi bi-shield-check me-1"></i>Hardware Enclave</span>
                                 <span class="device-meta-dot">•</span>
-                                <span class="device-meta-date">${new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                <span class="device-meta-date">${d.created_at ? new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Registered'}</span>
                             </div>
                         </div>
                     </div>
-                    <button onclick="removeDevice('${d.credential_id}', this)" class="device-remove-btn" type="button" title="Remove device credential">
+                    <button onclick="removeDevice('${d.credential_id}', this)" class="device-remove-btn" type="button" title="Remove biometric credential">
                         <i class="bi bi-trash3 me-1"></i>Remove
                     </button>`;
                 list.appendChild(div);
@@ -2197,23 +3297,45 @@ async function loadDevices() {
                 badge.style.color = '#b39b82';
                 badge.style.borderColor = 'rgba(207,164,111,0.2)';
                 badge.style.background = 'rgba(207,164,111,0.12)';
-                badge.style.whiteSpace = 'nowrap';
-                badge.style.flexShrink = '0';
-                badge.style.display = 'inline-flex';
-                badge.style.alignItems = 'center';
             }
             const emptyDiv = document.createElement('div');
             emptyDiv.id = 'noDevices';
-            emptyDiv.style.cssText = 'text-align:center;padding:28px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);margin-bottom:16px;';
+            emptyDiv.style.cssText = 'text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);';
             emptyDiv.innerHTML = `
-                <i class="bi bi-fingerprint" style="font-size:2.4rem;display:block;margin-bottom:8px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                <div style="font-weight:600;color:#f3e7cd;margin-bottom:4px;">No fingerprint registered yet</div>
-                <div style="font-size:.78rem;color:#b39b82;">Register this device to enable fast fingerprint sign-in and QR clock-in.</div>
+                <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
+                <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
+                <div style="font-size:.78rem;color:#b39b82;">Select Fingerprint or Face Recognition above and click Continue to register.</div>
             `;
             list.appendChild(emptyDiv);
         }
     } catch(e) {
-        console.error('Failed to load devices', e);
+        console.error('Failed to load biometric devices', e);
+    }
+}
+
+async function removeDevice(credentialId, btn) {
+    if (!confirm('Remove this biometric credential from your account?')) return;
+    try {
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Removing...';
+        }
+        const res = await fetch('{{ route("webauthn.remove") }}', {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ credential_id: credentialId })
+        });
+        const data = await res.json();
+        await loadDevices();
+        if (typeof showToast === 'function') {
+            showToast(data.message || 'Biometric credential removed.', 'info');
+        }
+    } catch(err) {
+        console.error('Failed to remove biometric device', err);
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Remove';
+        }
     }
 }
 
@@ -2264,21 +3386,73 @@ async function prefetchWebAuthn() {
     isFetchingOptions = false;
 }
 
-async function registerFingerprint() {
-    const btn = document.getElementById('registerFpBtn');
-    const msg = document.getElementById('fpMessage');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Waiting for biometric prompt...';
-    msg.style.display = 'none';
+// ── Unified Biometric Registration Flow (Fingerprint / Face Recognition) ──
+async function beginSelectedBiometricRegistration() {
+    const idleView = document.getElementById('bioIdleView');
+    const scanningView = document.getElementById('bioScanningView');
+    const successView = document.getElementById('bioSuccessView');
+    const errorView = document.getElementById('bioErrorView');
+    const errorTitle = document.getElementById('bioErrorTitle');
+    const errorDesc = document.getElementById('bioErrorDesc');
+    const successTitle = document.getElementById('bioSuccessTitle');
+    const successDesc = document.getElementById('bioSuccessDesc');
+
+    // 1. Hardware / Browser Compatibility Checks
+    if (!window.isSecureContext) {
+        if (idleView) idleView.style.display = 'none';
+        if (errorView) {
+            errorView.style.display = 'block';
+            if (errorTitle) errorTitle.textContent = 'HTTPS Connection Required';
+            if (errorDesc) errorDesc.innerHTML = 'Biometric WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If testing on a mobile device over local Wi-Fi, please access via an HTTPS URL.';
+        }
+        return;
+    }
+
+    if (!window.PublicKeyCredential) {
+        if (idleView) idleView.style.display = 'none';
+        if (errorView) {
+            errorView.style.display = 'block';
+            if (errorTitle) errorTitle.textContent = 'Browser Unsupported';
+            if (errorDesc) errorDesc.innerHTML = 'Your current browser does not support WebAuthn biometric credentials. Please use <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Apple Safari</strong>.';
+        }
+        return;
+    }
+
+    // 2. Prepare Scanner View & Progressive Animation
+    if (idleView) idleView.style.display = 'none';
+    if (successView) successView.style.display = 'none';
+    if (errorView) errorView.style.display = 'none';
+    if (scanningView) scanningView.style.display = 'block';
+
+    // Clear previous detection effects
+    document.querySelectorAll('.fp-scan-frame, .face-scan-frame').forEach(el => el.classList.remove('bio-detected'));
+
+    const fpScan = document.getElementById('fpActiveScanner');
+    const faceScan = document.getElementById('faceActiveScanner');
+    if (selectedBioMethod === 'face') {
+        if (fpScan) fpScan.classList.remove('active');
+        if (faceScan) faceScan.classList.add('active');
+        startBioCamera();
+    } else {
+        if (faceScan) faceScan.classList.remove('active');
+        if (fpScan) fpScan.classList.add('active');
+        stopBioCamera();
+    }
+
+    startScanProgressAnimation();
+
+    // Setup abort controller for cancel button
+    bioAbortController = new AbortController();
 
     try {
-        // Step 1: Always fetch fresh registration challenge directly from server
-        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
+        // Step 1: Fetch fresh registration options & challenge from server
+        const optRes = await fetch('{{ route("webauthn.register.options") }}?biometric_type=' + encodeURIComponent(selectedBioMethod), {
             headers: { 
                 'X-CSRF-TOKEN': '{{ csrf_token() }}', 
                 'Accept': 'application/json',
                 'ngrok-skip-browser-warning': 'true'
-            }
+            },
+            signal: bioAbortController.signal
         });
         const opts = await optRes.json();
 
@@ -2299,7 +3473,7 @@ async function registerFingerprint() {
         });
 
         const timeoutPromise = new Promise((_, reject) => {
-            const err = new Error('Biometric prompt timed out. Please try again.');
+            const err = new Error('Biometric sensor prompt timed out. Please try again.');
             err.name = 'TimeoutError';
             setTimeout(() => reject(err), 60000);
         });
@@ -2315,31 +3489,36 @@ async function registerFingerprint() {
                 ],
                 authenticatorSelection: opts.authenticatorSelection || {
                     authenticatorAttachment: 'platform',
-                    userVerification: 'preferred',
+                    userVerification: 'required',
                     requireResidentKey: false
                 },
                 timeout: opts.timeout || 60000,
                 attestation: opts.attestation || 'none',
                 excludeCredentials: excludeCredentials
-            }
+            },
+            signal: bioAbortController.signal
         });
 
         const credential = await Promise.race([createPromise, timeoutPromise]);
 
-        // Step 3: encode credential id and attestation object
-        var credentialId = bufferToBase64Url(credential.rawId);
-        var attestationObject = bufferToBase64Url(credential.response.attestationObject);
-        var clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
+        // Biometric successfully captured by device!
+        triggerBiometricDetected();
+
+        // Step 2: Encode credential ID and attestation object
+        const credentialId = bufferToBase64Url(credential.rawId);
+        const attestationObject = bufferToBase64Url(credential.response.attestationObject);
+        const clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
 
         // Detect device name
-        var ua = navigator.userAgent;
-        var deviceName = ua.indexOf('iPhone') !== -1 ? 'iPhone' :
+        const ua = navigator.userAgent;
+        let deviceType = ua.indexOf('iPhone') !== -1 ? 'iPhone' :
                          ua.indexOf('iPad') !== -1 ? 'iPad' :
-                         ua.indexOf('Android') !== -1 ? 'Android Mobile' :
+                         ua.indexOf('Android') !== -1 ? 'Android Device' :
                          ua.indexOf('Windows') !== -1 ? 'Windows PC' :
-                         ua.indexOf('Mac') !== -1 ? 'Mac Device' : 'Mobile Device';
+                         ua.indexOf('Mac') !== -1 ? 'Mac' : 'Biometric Device';
+        const deviceName = `${deviceType} (${selectedBioMethod === 'face' ? 'Face Recognition' : 'Fingerprint'})`;
 
-        // Step 4: save to server
+        // Step 3: Save registered credential and biometric type to server
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
             headers: {
@@ -2358,51 +3537,80 @@ async function registerFingerprint() {
                         clientDataJSON: clientDataJSON
                     }
                 },
+                biometric_type: selectedBioMethod,
                 device_name: deviceName
             })
         });
-        const result = await saveRes.json();
 
-        msg.style.display = 'block';
+        const result = await saveRes.json();
+        stopBioCamera();
+
+        if (saveRes.status === 409 || (result && result.error === 'duplicate')) {
+            // Duplicate credential conflict prevented
+            if (scanningView) scanningView.style.display = 'none';
+            if (errorView) {
+                errorView.style.display = 'block';
+                if (errorTitle) errorTitle.textContent = 'Biometric Already Registered';
+                if (errorDesc) errorDesc.innerHTML = result.message || 'This biometric credential is already registered on your account. Duplicate registrations are prevented.';
+            }
+            return;
+        }
+
         if (result.success) {
-            msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;padding:10px 14px;border-radius:10px;';
-            msg.innerHTML = '<i class="bi bi-check-circle me-2"></i>' + (result.message || 'Fingerprint registered successfully!');
-            btn.innerHTML = '<i class="bi bi-check2 me-2"></i>Registered';
-            loadDevices();
-            setTimeout(function() { location.reload(); }, 1500);
+            if (scanningView) scanningView.style.display = 'none';
+            if (successView) {
+                successView.style.display = 'block';
+                if (successTitle) {
+                    successTitle.textContent = (selectedBioMethod === 'face' ? 'Face Recognition' : 'Fingerprint') + ' Registered Successfully!';
+                }
+                if (successDesc) {
+                    successDesc.innerHTML = result.message || `Your ${selectedBioMethod === 'face' ? 'facial recognition profile' : 'fingerprint credential'} has been securely enrolled in your device hardware enclave and linked to your account.`;
+                }
+            }
+            await loadDevices();
         } else {
-            msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:10px;';
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (result.message || 'Registration failed.');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
+            if (scanningView) scanningView.style.display = 'none';
+            if (errorView) {
+                errorView.style.display = 'block';
+                if (errorTitle) errorTitle.textContent = 'Registration Incomplete';
+                if (errorDesc) errorDesc.innerHTML = result.message || 'The server could not verify and save the biometric enrollment.';
+            }
         }
     } catch(err) {
-        msg.style.display = 'block';
-        msg.style.cssText = 'margin-top:12px;font-size:.82rem;display:block;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:10px;';
-        if (err.name === 'NotAllowedError') {
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Biometric prompt was cancelled.';
-        } else if (err.name === 'InvalidStateError') {
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>This device is already registered.';
-        } else if (err.name === 'NotReadableError') {
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Device biometric sensor is unavailable or locked.';
-        } else {
-            msg.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>' + (err.message || 'Registration failed.');
+        stopBioCamera();
+        clearInterval(bioScanProgressTimer);
+        bioScanProgressTimer = null;
+
+        if (err.name === 'AbortError') {
+            // User intentionally clicked cancel
+            if (scanningView) scanningView.style.display = 'none';
+            if (idleView) idleView.style.display = 'block';
+            return;
         }
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Register This Device';
+
+        if (scanningView) scanningView.style.display = 'none';
+        if (errorView) {
+            errorView.style.display = 'block';
+            if (err.name === 'NotAllowedError') {
+                if (errorTitle) errorTitle.textContent = 'Biometric Prompt Dismissed';
+                if (errorDesc) errorDesc.innerHTML = 'The device biometric prompt was cancelled or timed out. Ensure your sensor is clean and try again.';
+            } else if (err.name === 'InvalidStateError') {
+                if (errorTitle) errorTitle.textContent = 'Already Registered';
+                if (errorDesc) errorDesc.innerHTML = 'This biometric credential is already registered on this device for your account.';
+            } else if (err.name === 'NotSupportedError') {
+                if (errorTitle) errorTitle.textContent = (selectedBioMethod === 'face' ? 'Face Recognition' : 'Fingerprint') + ' Unsupported';
+                if (errorDesc) errorDesc.innerHTML = `Your device does not have hardware support for ${selectedBioMethod === 'face' ? 'facial recognition' : 'fingerprint scanning'}. Please switch to the ${selectedBioMethod === 'face' ? 'Fingerprint' : 'Face Recognition'} option.`;
+            } else {
+                if (errorTitle) errorTitle.textContent = 'Registration Failed';
+                if (errorDesc) errorDesc.innerHTML = err.message || 'An error occurred during biometric capture. Please check sensor permissions and try again.';
+            }
+        }
         prefetchWebAuthn();
     }
 }
 
-async function removeDevice(credentialId, btn) {
-    if (!confirm('Remove this fingerprint device?')) return;
-    await fetch('{{ route("webauthn.remove") }}', {
-        method: 'DELETE',
-        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' },
-        body: JSON.stringify({ credential_id: credentialId })
-    });
-    loadDevices();
-}
+// Backward compatibility alias
+window.registerFingerprint = beginSelectedBiometricRegistration;
 
 // OTP digit handling in settings
 const sDigits = document.querySelectorAll('.otp-digit-s');
@@ -2649,6 +3857,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('resize', updateStabsScrollArrows, { passive: true });
 
+    // Direct event listener bindings for Biometrics Registration (CSP compliant)
+    const cardFp = document.getElementById('methodCardFp');
+    if (cardFp) cardFp.addEventListener('click', () => selectBiometricMethod('fingerprint'));
+    const cardFace = document.getElementById('methodCardFace');
+    if (cardFace) cardFace.addEventListener('click', () => selectBiometricMethod('face'));
+    const startBioBtn = document.getElementById('startBioBtn');
+    if (startBioBtn) startBioBtn.addEventListener('click', () => beginSelectedBiometricRegistration());
+    const cancelBioBtn = document.querySelector('.bio-cancel-btn');
+    if (cancelBioBtn) cancelBioBtn.addEventListener('click', () => cancelBiometricRegistration());
+    const retryBtn = document.getElementById('retryBtn');
+    if (retryBtn) retryBtn.addEventListener('click', () => retryBiometricRegistration());
+    const fallbackSwitchBtn = document.getElementById('fallbackSwitchBtn');
+    if (fallbackSwitchBtn) fallbackSwitchBtn.addEventListener('click', () => switchBiometricMethodFallback());
+    const registerOtherBtn = document.getElementById('registerOtherBtn');
+    if (registerOtherBtn) registerOtherBtn.addEventListener('click', () => switchOrRegisterOtherMethod());
+
     // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint or #fingerprint)
     const rawHash = window.location.hash.replace('#tab-', '').replace('#', '');
     const storedTab = localStorage.getItem('active_settings_tab');
@@ -2658,5 +3882,16 @@ document.addEventListener('DOMContentLoaded', () => {
         window.switchTab(targetTab);
     }
 });
+
+// Explicit window bindings for external callers and inline fallbacks
+window.selectBiometricMethod = selectBiometricMethod;
+window.beginSelectedBiometricRegistration = beginSelectedBiometricRegistration;
+window.cancelBiometricRegistration = cancelBiometricRegistration;
+window.resetToSelectionStage = resetToSelectionStage;
+window.switchOrRegisterOtherMethod = switchOrRegisterOtherMethod;
+window.retryBiometricRegistration = retryBiometricRegistration;
+window.switchBiometricMethodFallback = switchBiometricMethodFallback;
+window.loadDevices = loadDevices;
+window.removeDevice = removeDevice;
 </script>
 @endsection

@@ -12,6 +12,7 @@ class WebauthnCredential extends Model
         'public_key',
         'sign_count',
         'device_name',
+        'biometric_type',
         'last_used_at',
     ];
 

@@ -287,7 +287,7 @@
                             @endphp
                             <a class="fb-dropdown-item" href="{{ $fpRoute }}" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');">
                                 <div class="fb-icon-circle" style="background:rgba(34,197,94,0.15);color:#4ade80;"><i class="bi bi-fingerprint"></i></div>
-                                <span>Fingerprint Login</span>
+                                <span>Biometrics Registration</span>
                             </a>
                             @if(Auth::user()->isTeacher())
                             <a class="fb-dropdown-item" href="{{ route('teacher.profile') }}">
@@ -936,7 +936,7 @@
                     </a>
                     <a href="{{ route('settings') }}#tab-fingerprint" class="more-sheet-item" data-color="green" onclick="localStorage.setItem('active_settings_tab', 'fingerprint'); closeMoreSheet();">
                         <div class="more-sheet-item-icon" style="background: rgba(34,197,94,0.18); color: #4ade80; border-color: rgba(34,197,94,0.35);"><i class="bi bi-fingerprint"></i></div>
-                        <span class="more-sheet-item-label">Fingerprint</span>
+                        <span class="more-sheet-item-label">Biometrics</span>
                     </a>
                     <a href="{{ route('settings') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-gear-fill"></i></div>

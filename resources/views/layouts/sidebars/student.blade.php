@@ -44,6 +44,6 @@
     </a>
     <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" class="nav-link">
         <i class="bi bi-fingerprint" style="color: #4ade80;"></i>
-        <span class="nav-link-text">Biometric Fingerprint</span>
+        <span class="nav-link-text">Biometrics Registration</span>
     </a>
 </div>

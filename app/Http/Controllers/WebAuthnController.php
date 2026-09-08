@@ -51,6 +51,13 @@ class WebAuthnController extends Controller
     {
         $user = Auth::user();
         
+        $biometricType = $request->input('biometric_type', 'fingerprint');
+        if (!in_array($biometricType, ['fingerprint', 'face'])) {
+            $biometricType = 'fingerprint';
+        }
+
+        $typeLabel = $biometricType === 'face' ? 'Face Recognition' : 'Fingerprint';
+
         // Accept both nested credential format and flattened credential payload
         $credentialId = $request->input('credential_id') ?? $request->input('id') ?? $request->input('rawId');
         $credential = $request->input('credential') ?? [
@@ -58,7 +65,8 @@ class WebAuthnController extends Controller
             'type' => $request->input('type') ?? 'public-key',
             'response' => $request->input('response') ?? [],
         ];
-        $deviceName = $request->input('device_name') ?? 'My Device';
+        $defaultDevice = $biometricType === 'face' ? 'Face ID / Facial Recognition' : 'Fingerprint Sensor';
+        $deviceName = $request->input('device_name') ?? $defaultDevice;
 
         if (!$credentialId || !is_string($credentialId)) {
             return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
@@ -79,12 +87,18 @@ class WebAuthnController extends Controller
             ->exists();
 
         if ($exists) {
-            return response()->json(["success" => false, "message" => "This device is already registered."]);
+            return response()->json([
+                "success" => false, 
+                "message" => "This {$typeLabel} credential is already registered on your account."
+            ], 409);
         }
 
         try {
             $stored = $webauthn->storeCredential($user, $credential);
-            $stored->forceFill(['device_name' => $deviceName])->save();
+            $stored->forceFill([
+                'device_name' => $deviceName,
+                'biometric_type' => $biometricType,
+            ])->save();
 
             // Check if user already has recovery codes
             $hasRecoveryCodes = \App\Models\RecoveryCode::where('user_id', $user->id)->exists();
@@ -102,12 +116,13 @@ class WebAuthnController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            return response()->json(["success" => false, "message" => "Failed to store fingerprint: " . $e->getMessage()], 422);
+            return response()->json(["success" => false, "message" => "Failed to store {$typeLabel}: " . $e->getMessage()], 422);
         }
 
         return response()->json([
             "success" => true, 
-            "message" => "Fingerprint registered successfully!",
+            "message" => "{$typeLabel} registered successfully!",
+            "biometric_type" => $biometricType,
             "recovery_codes" => $recoveryCodes
         ]);
     }
@@ -209,7 +224,16 @@ class WebAuthnController extends Controller
             'type' => $request->input('type') ?? 'public-key',
             'response' => $request->input('response') ?? [],
         ];
-        $deviceName = $request->input('device_name') ?? (str_contains(request()->userAgent() ?? '', 'Mobile') ? 'Mobile Device' : 'Desktop Browser');
+        $biometricType = $request->input('biometric_type', 'fingerprint');
+        if (!in_array($biometricType, ['fingerprint', 'face'])) {
+            $biometricType = 'fingerprint';
+        }
+        $typeLabel = $biometricType === 'face' ? 'Face Recognition' : 'Fingerprint';
+
+        $defaultDevice = $biometricType === 'face' 
+            ? 'Face ID / Facial Recognition' 
+            : (str_contains(request()->userAgent() ?? '', 'Mobile') ? 'Mobile Fingerprint Sensor' : 'Desktop Fingerprint Sensor');
+        $deviceName = $request->input('device_name') ?? $defaultDevice;
 
         if (!$credentialId || !is_string($credentialId)) {
             return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
@@ -217,7 +241,10 @@ class WebAuthnController extends Controller
 
         try {
             $stored = $webauthn->storeCredential($user, $credential);
-            $stored->forceFill(['device_name' => $deviceName])->save();
+            $stored->forceFill([
+                'device_name' => $deviceName,
+                'biometric_type' => $biometricType,
+            ])->save();
 
             session()->forget('webauthn.setup_user_id');
 
@@ -239,7 +266,8 @@ class WebAuthnController extends Controller
 
             return response()->json([
                 "success" => true,
-                "message" => "Biometric sign-in successfully enabled for " . ($user->student_number ?? $user->email),
+                "message" => "{$typeLabel} sign-in successfully enabled for " . ($user->student_number ?? $user->email),
+                "biometric_type" => $biometricType,
                 "redirect" => $redirectUrl
             ]);
         } catch (\Throwable $e) {
@@ -353,14 +381,17 @@ class WebAuthnController extends Controller
     {
         $devices = DB::table("webauthn_credentials")
             ->where("user_id", Auth::id())
-            ->select(["credential_id", "device_name", "created_at"])
+            ->select(["credential_id", "device_name", "biometric_type", "created_at", "last_used_at"])
+            ->orderBy("created_at", "desc")
             ->get()
             ->map(function ($d) {
                 return [
                     'credential_id' => $d->credential_id,
                     'name' => $d->device_name ?? 'My Device',
                     'device_name' => $d->device_name ?? 'My Device',
+                    'biometric_type' => in_array($d->biometric_type, ['face', 'fingerprint']) ? $d->biometric_type : 'fingerprint',
                     'created_at' => $d->created_at,
+                    'last_used_at' => $d->last_used_at,
                 ];
             });
 

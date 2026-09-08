@@ -140,8 +140,8 @@
                         </a>
                     @else
                         <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" style="text-decoration:none;">
-                            <span class="modern-chip modern-chip-gold" title="Click to register device fingerprint">
-                                <i class="bi bi-fingerprint"></i> Set up Fingerprint
+                            <span class="modern-chip modern-chip-gold" title="Click to register device biometrics">
+                                <i class="bi bi-fingerprint"></i> Set up Biometrics
                             </span>
                         </a>
                     @endif
