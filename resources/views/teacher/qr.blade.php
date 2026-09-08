@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'QR Attendance - ' . $subject->name)
+@section('page-title', 'Live QR Attendance - ' . $subject->name)
 
 @push('styles')
 <style>
@@ -16,13 +16,13 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(212, 175, 55, 0.15);
-    border-radius: 20px;
+    border-radius: 24px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
     overflow: hidden;
 }
 
 .main-card-header {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.35);
     color: #f3e7cd;
     padding: 20px 24px;
     border-bottom: 1px solid rgba(212, 175, 55, 0.15);
@@ -42,7 +42,7 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 2px dashed rgba(207, 164, 111, 0.25);
-    border-radius: 20px;
+    border-radius: 24px;
     display: flex; 
     flex-direction: column; 
     align-items: center; 
@@ -56,27 +56,27 @@
 .qr-container.active { 
     background: rgba(207, 164, 111, 0.04);
     border: 2px solid rgba(207, 164, 111, 0.4);
-    box-shadow: 0 0 30px rgba(207, 164, 111, 0.15);
+    box-shadow: 0 0 36px rgba(207, 164, 111, 0.15);
 }
 
 .qr-container img { 
-    border-radius: 16px; 
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    border-radius: 18px; 
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
     transition: all 0.3s ease;
     border: 4px solid #ffffff;
 }
 
-.qr-container img:hover { transform: scale(1.03); }
+.qr-container img:hover { transform: scale(1.02); }
 
 /* Buttons */
 .modern-btn { 
     background: linear-gradient(135deg, var(--gold), #b88a44) !important;
     border: none !important;
     color: #1a1a2e !important;
-    padding: 14px 28px !important;
-    border-radius: 12px !important;
+    padding: 12px 24px !important;
+    border-radius: 14px !important;
     font-weight: 700 !important;
-    font-size: 0.95rem !important;
+    font-size: 0.92rem !important;
     box-shadow: 0 6px 20px rgba(207, 164, 111, 0.25) !important;
     transition: all 0.2s ease !important;
     text-transform: uppercase !important;
@@ -84,6 +84,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
 }
 
 .modern-btn:hover { 
@@ -111,38 +112,51 @@
     box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25) !important;
 }
 
-/* Glass Session Timer */
+.modern-btn.secondary {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #f3e7cd !important;
+    border: 1px solid rgba(207, 164, 111, 0.3) !important;
+    box-shadow: none !important;
+}
+
+.modern-btn.secondary:hover {
+    background: rgba(207, 164, 111, 0.18) !important;
+    color: #ffffff !important;
+    border-color: rgba(207, 164, 111, 0.5) !important;
+}
+
+/* Session Timer */
 .session-timer { 
     background: rgba(0, 0, 0, 0.4) !important;
     backdrop-filter: blur(20px) !important;
     color: #f3e7cd !important;
     border: 1px solid rgba(212, 175, 55, 0.25) !important;
     border-radius: 16px !important;
-    padding: 16px 24px !important;
+    padding: 14px 20px !important;
     font-weight: 700 !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
 }
 
 .timer-display { 
-    font-family: 'Courier New', monospace !important; 
+    font-family: 'Consolas', 'Courier New', monospace !important; 
     font-size: 1.4rem !important;
     color: #f59e0b;
 }
 
-/* Glass Statistics Card */
+/* Statistics Card */
 .stats-card { 
     background: rgba(30, 21, 21, 0.6);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(212, 175, 55, 0.15);
-    border-radius: 20px;
+    border-radius: 22px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
     overflow: hidden;
     transition: all 0.3s ease;
 }
 
 .stats-header { 
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.35);
     color: #f3e7cd;
     padding: 16px 20px;
     display: flex;
@@ -159,15 +173,20 @@
 }
 
 .live-indicator { 
-    display: flex; 
+    display: inline-flex; 
     align-items: center; 
-    gap: 8px; 
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    padding: 3px 10px;
+    border-radius: 99px;
 }
 
 .live-dot { 
-    width: 9px; height: 9px; 
+    width: 8px; height: 8px; 
     background: #10b981; 
     border-radius: 50%; 
+    box-shadow: 0 0 10px #10b981;
     animation: pulseDot 2s infinite;
 }
 
@@ -177,35 +196,75 @@
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
-.stats-grid { 
+.stats-grid-4 { 
     display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 14px; 
-    padding: 20px; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 10px; 
+    padding: 16px; 
+}
+
+@media (max-width: 991px) {
+    .stats-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
 .stat-item { 
     text-align: center; 
-    padding: 14px; 
-    background: rgba(0, 0, 0, 0.25);
-    border-radius: 12px; 
+    padding: 12px 8px; 
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 14px; 
     border: 1px solid rgba(255, 255, 255, 0.05);
     transition: all 0.2s ease;
 }
 
 .stat-number { 
-    font-size: 1.8rem; 
+    font-size: 1.6rem; 
     font-weight: 800; 
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     color: #f3e7cd;
+    line-height: 1.2;
 }
 
 .stat-label { 
-    font-size: 0.75rem; 
-    font-weight: 600; 
+    font-size: 0.68rem; 
+    font-weight: 700; 
     color: #b39b82; 
     text-transform: uppercase; 
     letter-spacing: 0.5px; 
+}
+
+/* Roster Filter Tabs */
+.roster-filter-pills {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    overflow-x: auto;
+}
+
+.roster-pill {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #b39b82;
+    padding: 4px 12px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.roster-pill:hover {
+    color: #ffffff;
+    border-color: rgba(207, 164, 111, 0.4);
+}
+
+.roster-pill.active {
+    background: linear-gradient(135deg, #cfa46f, #8c6d46);
+    color: #181614;
+    border-color: #ffd700;
 }
 
 /* Glass Clock-ins Items */
@@ -213,12 +272,12 @@
     display: flex; 
     align-items: center; 
     gap: 12px; 
-    padding: 12px 14px; 
+    padding: 11px 14px; 
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px; 
-    margin-bottom: 10px; 
-    transition: all 0.2s ease;
+    border-radius: 14px; 
+    margin-bottom: 8px; 
+    transition: all 0.25s ease;
 }
 
 .clockin-item:hover { 
@@ -226,56 +285,67 @@
     border-color: rgba(207, 164, 111, 0.25);
 }
 
+.clockin-item.just-arrived {
+    animation: highlightArrival 2.5s ease-out;
+    border-color: rgba(16, 185, 129, 0.6);
+}
+
+@keyframes highlightArrival {
+    0% { background: rgba(16, 185, 129, 0.25); transform: translateY(-4px); }
+    100% { background: rgba(0, 0, 0, 0.25); transform: translateY(0); }
+}
+
 .avatar-circle { 
-    width: 40px; height: 40px; 
+    width: 38px; height: 38px; 
     background: rgba(207, 164, 111, 0.15);
     color: #cfa46f; 
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
-    font-weight: 700; 
-    font-size: 0.85rem;
+    font-weight: 800; 
+    font-size: 0.82rem;
     border: 1px solid rgba(207, 164, 111, 0.3);
+    flex-shrink: 0;
 }
 
 .status-badge { 
-    padding: 4px 10px; 
+    padding: 3px 8px; 
     border-radius: 20px; 
-    font-size: 0.7rem; 
-    font-weight: 700; 
+    font-size: 0.68rem; 
+    font-weight: 800; 
     text-transform: uppercase; 
     display: inline-block;
 }
 
 .status-present { 
-    background: rgba(16, 185, 129, 0.15); 
+    background: rgba(16, 185, 129, 0.18); 
     color: #4ade80;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
 .status-late { 
-    background: rgba(245, 158, 11, 0.15); 
+    background: rgba(245, 158, 11, 0.18); 
     color: #fbbf24;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+    border: 1px solid rgba(245, 158, 11, 0.35);
 }
 
 .status-absent { 
-    background: rgba(239, 68, 68, 0.15); 
+    background: rgba(239, 68, 68, 0.18); 
     color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .status-missing {
-    background: rgba(255, 255, 255, 0.05);
-    color: #888;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: #a8a29e;
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 /* Alert Boxes Dark Mode High Contrast */
 .qr-alert {
     padding: 16px 20px;
-    border-radius: 14px;
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -284,7 +354,7 @@
 }
 
 .qr-alert-success {
-    background: rgba(16, 185, 129, 0.1);
+    background: rgba(16, 185, 129, 0.12);
     border: 1px solid rgba(16, 185, 129, 0.3);
     color: #4ade80;
 }
@@ -292,7 +362,7 @@
 .qr-alert-success .qr-alert-body { color: #dcfce7; font-size: 0.85rem; }
 
 .qr-alert-warning {
-    background: rgba(245, 158, 11, 0.1);
+    background: rgba(245, 158, 11, 0.12);
     border: 1px solid rgba(245, 158, 11, 0.3);
     color: #fbbf24;
 }
@@ -300,7 +370,7 @@
 .qr-alert-warning .qr-alert-body { color: #fef3c7; font-size: 0.85rem; }
 
 .qr-alert-danger {
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.12);
     border: 1px solid rgba(239, 68, 68, 0.3);
     color: #f87171;
 }
@@ -308,12 +378,67 @@
 .qr-alert-danger .qr-alert-body { color: #fee2e2; font-size: 0.85rem; }
 
 .qr-alert-info {
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.12);
     border: 1px solid rgba(59, 130, 246, 0.3);
     color: #60a5fa;
 }
 .qr-alert-info .qr-alert-title { color: #93c5fd; font-weight: 700; }
 .qr-alert-info .qr-alert-body { color: #dbeafe; font-size: 0.85rem; }
+
+/* ── PROJECTOR MODE TICKER ── */
+.projector-ticker-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(207, 164, 111, 0.25);
+    border-radius: 20px;
+    padding: 12px 18px;
+    backdrop-filter: blur(16px);
+}
+
+.projector-ticker-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+}
+
+.projector-ticker-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+
+.projector-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    border-radius: 99px;
+    padding: 5px 12px;
+    white-space: nowrap;
+    animation: chipSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes chipSlide {
+    from { opacity: 0; transform: translateY(8px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.projector-chip .chip-name {
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 0.88rem;
+}
+
+.projector-chip .chip-time {
+    font-size: 0.72rem;
+    color: #b39b82;
+    font-family: monospace;
+}
 
 @media (max-width: 768px) {
     #sidebar {
@@ -346,13 +471,21 @@
                             </small>
                         </div>
                         <div class="d-flex flex-wrap align-items-center gap-2">
-                            <button type="button" id="copyLinkBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: rgba(255,255,255,0.06) !important; color: #f3e7cd !important; border: 1px solid rgba(255,255,255,0.15) !important;" onclick="copyScanLink()">
+                            <!-- Sound Toggle Button -->
+                            <button type="button" id="soundToggleBtn" class="btn modern-btn secondary" onclick="toggleClockInSound()" title="Toggle clock-in audio chimes" style="padding: 10px 14px !important;">
+                                <i class="bi bi-volume-up-fill me-1" id="soundIcon"></i>
+                                <span class="d-none d-sm-inline" id="soundText">Chime On</span>
+                            </button>
+                            <!-- Copy Link Button -->
+                            <button type="button" id="copyLinkBtn" class="btn modern-btn secondary" style="display: none; padding: 10px 16px !important;" onclick="copyScanLink()">
                                 <i class="bi bi-link-45deg me-1"></i> Copy Link
                             </button>
+                            <!-- Projector Mode Fullscreen Button -->
                             <button type="button" id="projectorBtn" class="btn modern-btn" style="display: none; padding: 10px 18px !important; background: linear-gradient(135deg, #d97706, #b45309) !important; color: white !important;" onclick="openProjectorMode()">
                                 <i class="bi bi-display me-1"></i> Projector Mode
                             </button>
-                            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn" style="padding: 10px 18px !important; background: rgba(255,255,255,0.06) !important; color: #f3e7cd !important; border: 1px solid rgba(255,255,255,0.15) !important;">
+                            <!-- Back to Subjects -->
+                            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn secondary" style="padding: 10px 16px !important;">
                                 <i class="bi bi-arrow-left me-1"></i> Subjects
                             </a>
                         </div>
@@ -426,21 +559,21 @@
             </div>
         </div>
         
-        <!-- Live Statistics Sidebar -->
-        <div id="sidebar" style="display: none; width: 350px; flex-shrink: 0; min-width: 320px;">
+        <!-- Live Statistics & Roster Sidebar -->
+        <div id="sidebar" style="display: none; width: 370px; flex-shrink: 0; min-width: 320px;">
             <!-- Real-time Stats Card -->
             <div class="stats-card mb-4">
                 <div class="stats-header">
                     <h5><i class="bi bi-bar-chart-fill me-2" style="color: #cfa46f;"></i>Live Statistics</h5>
-                    <div class="live-indicator">
+                    <div class="live-indicator" id="liveStatusBadge">
                         <span class="live-dot"></span>
                         <small style="color: #4ade80; font-weight: 700; font-size: 0.75rem;">LIVE</small>
                     </div>
                 </div>
-                <div class="stats-grid">
+                <div class="stats-grid-4">
                     <div class="stat-item">
                         <div class="stat-number" id="totalStudents">0</div>
-                        <div class="stat-label">Total Students</div>
+                        <div class="stat-label">Enrolled</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number" style="color: #4ade80;" id="clockedIn">0</div>
@@ -451,14 +584,18 @@
                         <div class="stat-label">Late</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number" style="color: #60a5fa;" id="progressPercent">0%</div>
-                        <div class="stat-label">Progress</div>
+                        <div class="stat-number" style="color: #f87171;" id="absentCount">0</div>
+                        <div class="stat-label">Unmarked</div>
                     </div>
                 </div>
-                <div class="px-4 pb-4">
-                    <div class="progress" style="height: 10px; border-radius: 10px; background: rgba(255,255,255,0.08);">
+                <div class="px-4 pb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span style="font-size: 0.72rem; color: #b39b82; font-weight: 700; text-transform: uppercase;">Attendance Rate</span>
+                        <span id="progressPercent" style="font-size: 0.8rem; font-weight: 800; color: #cfa46f;">0%</span>
+                    </div>
+                    <div class="progress" style="height: 8px; border-radius: 10px; background: rgba(255,255,255,0.08);">
                         <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
-                             style="width: 0%; background: linear-gradient(135deg, #cfa46f, #b88a44); border-radius: 10px;"></div>
+                             style="width: 0%; background: linear-gradient(135deg, #cfa46f, #b88a44); border-radius: 10px; transition: width 0.4s ease;"></div>
                     </div>
                 </div>
             </div>
@@ -466,19 +603,29 @@
             <!-- Live Clock-ins Feed -->
             <div class="stats-card">
                 <div class="stats-header">
-                    <h5><i class="bi bi-people-fill me-2" style="color: #cfa46f;"></i>Live Clock-ins</h5>
-                    <div class="live-dot"></div>
+                    <h5><i class="bi bi-people-fill me-2" style="color: #cfa46f;"></i>Class Roster</h5>
+                    <small id="rosterCountBadge" style="color: #cfa46f; font-weight: 700; font-size: 0.75rem;">0 Checked In</small>
                 </div>
-                <div style="padding: 1rem 1.25rem 0.5rem;">
+
+                <!-- Filter Pills: All, Present, Late, Missing -->
+                <div class="roster-filter-pills">
+                    <button type="button" class="roster-pill active" onclick="setRosterFilter('all', this)">All</button>
+                    <button type="button" class="roster-pill" onclick="setRosterFilter('present', this)">Present (<span id="countPillPresent">0</span>)</button>
+                    <button type="button" class="roster-pill" onclick="setRosterFilter('late', this)">Late (<span id="countPillLate">0</span>)</button>
+                    <button type="button" class="roster-pill" onclick="setRosterFilter('missing', this)">Unmarked (<span id="countPillMissing">0</span>)</button>
+                </div>
+
+                <div style="padding: 0.85rem 1.25rem 0.5rem;">
                     <div class="input-group input-group-sm">
                         <span class="input-group-text" style="background: rgba(0,0,0,0.3); border-color: rgba(212,175,55,0.2); color: #cfa46f;"><i class="bi bi-search"></i></span>
                         <input type="text" id="rosterSearch" class="form-control" placeholder="Search student name or ID..." style="background: rgba(0,0,0,0.3); border-color: rgba(212,175,55,0.2); color: #f3e7cd;" oninput="filterClockins()">
                     </div>
                 </div>
-                <div style="max-height: 450px; overflow-y: auto; padding: 1rem 1.25rem 1.5rem;">
+
+                <div style="max-height: 440px; overflow-y: auto; padding: 0.5rem 1.25rem 1.25rem;">
                     <div id="clockinsList">
                         <div class="text-center text-muted py-5">
-                            <i class="bi bi-clock-history" style="font-size: 3.5rem; opacity: 0.3; color: #cfa46f;"></i>
+                            <i class="bi bi-clock-history" style="font-size: 3.2rem; opacity: 0.3; color: #cfa46f;"></i>
                             <h6 class="mt-3" style="color: #f3e7cd;">Waiting for students...</h6>
                             <p class="small mb-0" style="color: #b39b82;">Clock-ins will appear here in real-time</p>
                         </div>
@@ -490,44 +637,69 @@
 </div>
 
 <!-- Projector Mode Fullscreen Overlay Modal -->
-<div id="projectorModal" style="display: none; position: fixed; inset: 0; background: #0f0b08; z-index: 99999; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; color: white;">
-    <div style="position: absolute; top: 24px; right: 24px; display: flex; gap: 12px;">
-        <button type="button" class="btn btn-outline-light btn-lg rounded-pill" onclick="closeProjectorMode()">
-            <i class="bi bi-x-lg me-1"></i> Exit Fullscreen
-        </button>
-    </div>
-    <div style="max-width: 600px; width: 100%;">
-        <div class="mb-3">
-            <span class="badge" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; font-size: 1rem; padding: 8px 20px; border-radius: 99px; font-weight: 700;">
-                <i class="bi bi-broadcast me-1"></i> Live QR & Code Attendance
+<div id="projectorModal" style="display: none; position: fixed; inset: 0; background: #0c0a09; z-index: 99999; flex-direction: column; align-items: center; justify-content: space-between; padding: 24px; text-align: center; color: white; overflow-y: auto;">
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; max-width: 1100px;">
+        <div class="text-start">
+            <span class="badge" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; font-size: 0.85rem; padding: 6px 16px; border-radius: 99px; font-weight: 800;">
+                <i class="bi bi-broadcast me-1"></i> Live Attendance
             </span>
+            <h3 style="font-size: 1.8rem; font-weight: 800; margin: 6px 0 0; color: #f3e7cd;">{{ $subject->name }}</h3>
+            <div style="color: #b39b82; font-size: 0.95rem;">{{ $subject->code }} • Year {{ $subject->year_level }} • Section {{ $subject->section ?? 'Regular' }}</div>
         </div>
-        <h2 style="font-size: 2.2rem; font-weight: 800; margin-bottom: 6px; color: #f3e7cd;">{{ $subject->name }}</h2>
-        <p style="color: #b39b82; font-size: 1.1rem; margin-bottom: 20px;">{{ $subject->code }} • Scan with phone camera or enter code</p>
+        <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-outline-light rounded-pill px-3" onclick="toggleClockInSound()" title="Toggle Audio Chime">
+                <i class="bi bi-volume-up-fill me-1" id="projectorSoundIcon"></i> Sound
+            </button>
+            <button type="button" class="btn btn-outline-light rounded-pill px-3" onclick="closeProjectorMode()">
+                <i class="bi bi-x-lg me-1"></i> Exit Fullscreen
+            </button>
+        </div>
+    </div>
 
-        <div id="projectorQrWrapper" style="background: white; border-radius: 28px; padding: 24px; display: inline-block; box-shadow: 0 20px 60px rgba(0,0,0,0.6); margin-bottom: 16px;">
+    <div style="max-width: 700px; width: 100%; margin: auto; padding: 12px 0;">
+        <!-- Large QR Display -->
+        <div id="projectorQrWrapper" style="background: white; border-radius: 28px; padding: 22px; display: inline-block; box-shadow: 0 24px 64px rgba(0,0,0,0.8); margin-bottom: 16px;">
             <div id="projectorQrCode"></div>
         </div>
 
         <!-- Projector Big Attendance Code -->
-        <div id="projectorCodeSection" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(207,164,111,0.4); border-radius: 22px; padding: 14px 28px; max-width: 480px; margin: 0 auto 20px;">
-            <div style="font-size: 0.82rem; text-transform: uppercase; font-weight: 800; color: #b39b82; letter-spacing: 1.5px; margin-bottom: 4px;">
+        <div id="projectorCodeSection" style="background: rgba(255,255,255,0.06); border: 1.5px solid rgba(207,164,111,0.4); border-radius: 22px; padding: 14px 28px; max-width: 480px; margin: 0 auto 16px;">
+            <div style="font-size: 0.82rem; text-transform: uppercase; font-weight: 800; color: #b39b82; letter-spacing: 1.5px; margin-bottom: 2px;">
                 <i class="bi bi-key-fill text-warning me-1"></i> Attendance Code / PIN
             </div>
-            <div id="projectorSessionCode" style="font-size: 3.2rem; font-weight: 900; letter-spacing: 8px; color: #ffd700; font-family: monospace; text-shadow: 0 0 24px rgba(255,215,0,0.5);">
+            <div id="projectorSessionCode" style="font-size: 3.4rem; font-weight: 900; letter-spacing: 8px; color: #ffd700; font-family: monospace; text-shadow: 0 0 24px rgba(255,215,0,0.5); line-height: 1.1;">
                 ------
+            </div>
+            <div style="font-size: 0.8rem; color: #b39b82; margin-top: 4px;">
+                Point mobile camera at QR or enter 6-digit code on your dashboard
             </div>
         </div>
 
-        <div class="d-flex justify-content-center align-items-center gap-4 mt-2">
-            <div style="background: rgba(255,255,255,0.06); padding: 12px 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 0.8rem; color: #b39b82; text-transform: uppercase; font-weight: 600;">Attendance Progress</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #4ade80;" id="projectorCount">0 Present</div>
+        <!-- Metric badges -->
+        <div class="d-flex justify-content-center align-items-center gap-3 mt-2 flex-wrap">
+            <div style="background: rgba(255,255,255,0.06); padding: 10px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 0.72rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Present</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #4ade80;" id="projectorCount">0 Present</div>
             </div>
-            <div style="background: rgba(255,255,255,0.06); padding: 12px 24px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 0.8rem; color: #b39b82; text-transform: uppercase; font-weight: 600;">Code Refresh</div>
-                <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;" id="projectorCountdown">05:00</div>
+            <div style="background: rgba(255,255,255,0.06); padding: 10px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 0.72rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Code Refresh In</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24; font-family: monospace;" id="projectorCountdown">05:00</div>
             </div>
+            <div style="background: rgba(255,255,255,0.06); padding: 10px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="font-size: 0.72rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Session Timer</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #60a5fa; font-family: monospace;" id="projectorSessionRemaining">--:--</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Projector Recent Check-In Ticker -->
+    <div id="projectorTickerWrapper" class="projector-ticker-container" style="max-width: 1000px; width: 100%; margin: 10px auto 0;">
+        <div class="projector-ticker-header">
+            <span class="live-dot" style="width: 7px; height: 7px;"></span>
+            <span style="color: #cfa46f; letter-spacing: 0.5px;">RECENT CLASSROOM CHECK-INS</span>
+        </div>
+        <div id="projectorRecentChips" class="projector-ticker-scroll">
+            <div class="text-muted small py-1" id="projectorEmptyTickerText">Waiting for students to scan or enter code...</div>
         </div>
     </div>
 </div>
@@ -546,6 +718,13 @@ let locationTimeoutId = null;
 let locationDowngraded = false;
 let refreshCountdownSeconds = 300;
 
+// Audio & Roster State
+let clockInSoundEnabled = true;
+let cachedClockins = [];
+let activeRosterFilter = 'all';
+let knownClockedInIds = new Set();
+let recentCheckInsQueue = [];
+
 const startBtn = document.getElementById('startBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -558,8 +737,8 @@ const locationStatus = document.getElementById('locationStatus');
 document.addEventListener('DOMContentLoaded', () => {
     checkScheduleStatus();
     captureTeacherLocation();
-    // Check schedule status every 30 seconds
     scheduleCheckInterval = setInterval(checkScheduleStatus, 30000);
+    subscribeToTeacherAttendanceUpdates();
 });
 
 // Cleanup intervals when page unloads
@@ -693,6 +872,9 @@ startBtn.addEventListener('click', async () => {
 
         if (data.success) {
             currentSession = data;
+            knownClockedInIds.clear();
+            recentCheckInsQueue = [];
+
             showQRCode(data.scan_url);
             updateUIForActiveSession();
             startIntervals();
@@ -703,6 +885,7 @@ startBtn.addEventListener('click', async () => {
             }
             
             document.getElementById('statusMessages').innerHTML = '';
+            showTeacherToast('Attendance session started successfully!', 'success');
         } else {
             const statusMessages = document.getElementById('statusMessages');
             statusMessages.innerHTML = `
@@ -733,19 +916,24 @@ startBtn.addEventListener('click', async () => {
     }
 });
 
-// Additional state & audio support
-let clockInSoundEnabled = true;
-let cachedClockins = [];
-
+// Audio chime handling
 function toggleClockInSound() {
     clockInSoundEnabled = !clockInSoundEnabled;
     const icon = document.getElementById('soundIcon');
+    const text = document.getElementById('soundText');
+    const pIcon = document.getElementById('projectorSoundIcon');
+
     if (clockInSoundEnabled) {
-        icon.className = 'bi bi-volume-up-fill';
-        showTeacherToast('Clock-in audio chimes enabled', 'info');
+        if (icon) icon.className = 'bi bi-volume-up-fill me-1';
+        if (text) text.textContent = 'Chime On';
+        if (pIcon) pIcon.className = 'bi bi-volume-up-fill me-1';
+        showTeacherToast('Attendance audio chimes enabled', 'info');
+        playClockInChime();
     } else {
-        icon.className = 'bi bi-volume-mute-fill';
-        showTeacherToast('Clock-in audio chimes muted', 'info');
+        if (icon) icon.className = 'bi bi-volume-mute-fill me-1';
+        if (text) text.textContent = 'Muted';
+        if (pIcon) pIcon.className = 'bi bi-volume-mute-fill me-1';
+        showTeacherToast('Attendance audio chimes muted', 'info');
     }
 }
 
@@ -759,10 +947,10 @@ function playClockInChime() {
         const gain = ctx.createGain();
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
+        gain.gain.setValueAtTime(0.14, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
         osc.start();
         osc.stop(ctx.currentTime + 0.35);
@@ -796,6 +984,7 @@ function copySessionCode() {
 
 function openProjectorMode() {
     const modal = document.getElementById('projectorModal');
+    if (!modal) return;
     modal.style.display = 'flex';
     if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
@@ -804,6 +993,7 @@ function openProjectorMode() {
 
 function closeProjectorMode() {
     const modal = document.getElementById('projectorModal');
+    if (!modal) return;
     modal.style.display = 'none';
     if (document.fullscreenElement && document.exitFullscreen) {
         document.exitFullscreen().catch(() => {});
@@ -892,7 +1082,7 @@ function startIntervals() {
     startSessionTimer(currentSession.session_end);
     updateClockIns();
     if (clockinInterval) clearInterval(clockinInterval);
-    clockinInterval = setInterval(updateClockIns, 5000);
+    clockinInterval = setInterval(updateClockIns, 3000); // 3-second live polling loop
 }
 
 // Refresh QR
@@ -915,9 +1105,10 @@ refreshBtn.addEventListener('click', async () => {
         if (data.success) {
             currentSession.token = data.token;
             currentSession.scan_url = data.scan_url;
-            currentSession.ttl = data.ttl || currentSession.ttl || 60;
+            currentSession.ttl = data.ttl || currentSession.ttl || 300;
             showQRCode(data.scan_url);
             resetRefreshTimers();
+            showTeacherToast('Attendance QR refreshed', 'info');
         }
     } catch (error) {
         console.error('Error refreshing:', error);
@@ -964,11 +1155,11 @@ function enterGracePeriod() {
     
     qrContainer.classList.remove('active');
     qrContainer.innerHTML = `
-        <div style="color: #b39b82; text-align: center;">
-            <i class="bi bi-clock-history" style="font-size: 4rem; opacity: 0.4; margin-bottom: 1rem; color: #cfa46f; display: block;"></i>
-            <h5 style="color: #f3e7cd; font-weight: 700;">Session Closed — Grace Period Active</h5>
-            <p style="color: #b39b82;">You can review and edit the roster on the right. You can leave this page when done.</p>
-            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn mt-3">Finish & Exit</a>
+        <div style="color: #b39b82; text-align: center; padding: 20px;">
+            <i class="bi bi-clock-history" style="font-size: 4.5rem; opacity: 0.4; margin-bottom: 1rem; color: #cfa46f; display: block;"></i>
+            <h5 style="color: #f3e7cd; font-weight: 800; font-size: 1.35rem;">Session Closed — Review Active</h5>
+            <p style="color: #b39b82; font-size: 0.95rem; max-width: 440px; margin: 0 auto 20px;">Student scanning has ended. You can review the final attendance roster on the right or make manual adjustments.</p>
+            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn">Finish & Back to Subjects</a>
         </div>
     `;
     
@@ -976,8 +1167,8 @@ function enterGracePeriod() {
         <div class="qr-alert qr-alert-info">
             <i class="bi bi-info-circle-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
             <div>
-                <h6 class="qr-alert-title mb-1"><i class="bi bi-clock-history me-1"></i> Session Closed</h6>
-                <p class="qr-alert-body mb-0">Students can no longer clock in. You can still make manual adjustments in the sidebar.</p>
+                <h6 class="qr-alert-title mb-1"><i class="bi bi-clock-history me-1"></i> Session Completed</h6>
+                <p class="qr-alert-body mb-0">Attendance has been recorded. Manual overrides can still be made using the roster menu on the right.</p>
             </div>
         </div>
     `;
@@ -986,11 +1177,11 @@ function enterGracePeriod() {
 function showQRCode(url) {
     qrContainer.innerHTML = `
         <div class="text-center" style="width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-            <div style="background: #ffffff; padding: 14px; border-radius: 20px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); display: inline-block;">
-                <div id="localQrCanvas" style="display: flex; justify-content: center; align-items: center; min-width: 250px; min-height: 250px;"></div>
+            <div style="background: #ffffff; padding: 14px; border-radius: 22px; box-shadow: 0 16px 48px rgba(0,0,0,0.5); display: inline-block;">
+                <div id="localQrCanvas" style="display: flex; justify-content: center; align-items: center; min-width: 260px; min-height: 260px;"></div>
             </div>
             <p class="mt-3 mb-0" style="color: #f3e7cd; font-size: 1.05rem; font-weight: 700;">
-                <i class="bi bi-phone me-1" style="color: #cfa46f;"></i> Ask students to scan this QR code
+                <i class="bi bi-phone me-1" style="color: #cfa46f;"></i> Point mobile camera at QR code to check in
             </p>
         </div>
     `;
@@ -1019,8 +1210,8 @@ function showQRCode(url) {
         if (projTarget && typeof QRCode !== 'undefined') {
             new QRCode(projTarget, {
                 text: url,
-                width: Math.min(500, Math.floor(window.innerWidth * 0.8)),
-                height: Math.min(500, Math.floor(window.innerWidth * 0.8)),
+                width: Math.min(460, Math.floor(window.innerWidth * 0.7)),
+                height: Math.min(460, Math.floor(window.innerWidth * 0.7)),
                 colorDark: "#000000",
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.M
@@ -1031,6 +1222,7 @@ function showQRCode(url) {
 
 function startSessionTimer(endTimeStr) {
     const timerDisplay = document.getElementById('timeRemaining');
+    const projSessionRemaining = document.getElementById('projectorSessionRemaining');
     if (!timerDisplay) return;
 
     if (timerInterval) clearInterval(timerInterval);
@@ -1044,31 +1236,51 @@ function startSessionTimer(endTimeStr) {
         if (distance < 0) {
             clearInterval(timerInterval);
             timerDisplay.textContent = '00:00';
+            if (projSessionRemaining) projSessionRemaining.textContent = '00:00';
             stopBtn.click();
             return;
         }
 
         const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        const formatted = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
 
-        timerDisplay.textContent = 
-            (minutes < 10 ? '0' : '') + minutes + ':' + 
-            (seconds < 10 ? '0' : '') + seconds;
+        timerDisplay.textContent = formatted;
+        if (projSessionRemaining) projSessionRemaining.textContent = formatted;
     }, 1000);
 }
 
-function filterClockins() {
-    const query = (document.getElementById('rosterSearch')?.value || '').toLowerCase().trim();
-    renderClockinsList(query);
+function setRosterFilter(filter, el) {
+    activeRosterFilter = filter;
+    document.querySelectorAll('.roster-pill').forEach(pill => pill.classList.remove('active'));
+    if (el) el.classList.add('active');
+    renderClockinsList();
 }
 
-function renderClockinsList(query = '') {
+function filterClockins() {
+    renderClockinsList();
+}
+
+function renderClockinsList() {
     const clockinsList = document.getElementById('clockinsList');
     if (!clockinsList) return;
 
+    const query = (document.getElementById('rosterSearch')?.value || '').toLowerCase().trim();
+
     let items = cachedClockins;
+
+    // Filter by tab pill
+    if (activeRosterFilter === 'present') {
+        items = items.filter(c => c.status === 'Present');
+    } else if (activeRosterFilter === 'late') {
+        items = items.filter(c => c.status === 'Late');
+    } else if (activeRosterFilter === 'missing') {
+        items = items.filter(c => c.status === 'Missing' || c.status === 'Absent');
+    }
+
+    // Filter by search query
     if (query) {
-        items = cachedClockins.filter(c => 
+        items = items.filter(c => 
             (c.name && c.name.toLowerCase().includes(query)) || 
             (c.student_number && c.student_number.toLowerCase().includes(query)) ||
             (c.status && c.status.toLowerCase().includes(query))
@@ -1079,40 +1291,107 @@ function renderClockinsList(query = '') {
         clockinsList.innerHTML = `
             <div class="text-center text-muted py-4">
                 <i class="bi bi-search" style="font-size: 2.5rem; opacity: 0.3; color: #cfa46f;"></i>
-                <h6 class="mt-2" style="color: #f3e7cd;">${query ? 'No matching students' : 'Waiting for students...'}</h6>
-                <p class="small mb-0" style="color: #b39b82;">${query ? 'Try a different search term' : 'Clock-ins will appear here in real-time'}</p>
+                <h6 class="mt-2" style="color: #f3e7cd;">${query ? 'No matching students' : 'No students in this view'}</h6>
+                <p class="small mb-0" style="color: #b39b82;">${query ? 'Try searching for another name or ID' : 'Waiting for students...'}</p>
             </div>
         `;
         return;
     }
 
-    clockinsList.innerHTML = items.map(clockin => `
-        <div class="clockin-item ${clockin.status === 'Missing' ? 'missing' : ''}">
-            <div class="clockin-avatar">
-                <div class="avatar-circle">${clockin.name.substring(0, 2).toUpperCase()}</div>
-            </div>
-            <div class="clockin-info flex-grow-1" style="min-width: 0;">
-                <div class="fw-bold" style="font-size: 0.88rem; color: #f3e7cd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${clockin.name}</div>
-                <div style="font-size: 0.75rem; font-family: monospace; color: #b39b82;">${clockin.student_number}</div>
-            </div>
-            <div class="clockin-status text-end d-flex align-items-center gap-2">
-                <div style="text-align: right; min-width: 65px;">
-                    <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
-                    <div style="font-size: 0.7rem; color: #b39b82; margin-top: 2px;">${clockin.time}</div>
+    clockinsList.innerHTML = items.map(clockin => {
+        const isPresentOrLate = clockin.status === 'Present' || clockin.status === 'Late';
+        const justArrivedClass = knownClockedInIds.has(clockin.id) ? 'just-arrived' : '';
+        return `
+            <div class="clockin-item ${clockin.status === 'Missing' ? 'status-missing' : ''} ${justArrivedClass}" id="clockin-row-${clockin.id}">
+                <div class="clockin-avatar">
+                    <div class="avatar-circle">${(clockin.name || 'ST').substring(0, 2).toUpperCase()}</div>
                 </div>
-                <div class="dropdown">
-                    <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; color: #b39b82;" data-bs-toggle="dropdown">
-                        <i class="bi bi-three-dots-vertical"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="background: #1a1512; border: 1px solid rgba(212,175,55,0.2); font-size: 0.85rem; padding: 6px; border-radius: 10px;">
-                        <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 6px; padding: 6px 12px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
-                        <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 6px; padding: 6px 12px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
-                        <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 6px; padding: 6px 12px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
-                    </ul>
+                <div class="clockin-info flex-grow-1" style="min-width: 0;">
+                    <div class="fw-bold" style="font-size: 0.88rem; color: #f3e7cd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${clockin.name}</div>
+                    <div style="font-size: 0.74rem; font-family: monospace; color: #b39b82;">${clockin.student_number}</div>
+                </div>
+                <div class="clockin-status text-end d-flex align-items-center gap-2">
+                    <div style="text-align: right; min-width: 65px;">
+                        <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
+                        <div style="font-size: 0.7rem; color: #b39b82; margin-top: 2px;">${clockin.time}</div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; color: #b39b82;" data-bs-toggle="dropdown" aria-label="Status actions">
+                            <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="background: #1a1512; border: 1px solid rgba(212,175,55,0.25); font-size: 0.85rem; padding: 6px; border-radius: 12px;">
+                            <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 8px; padding: 6px 12px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
+                            <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 8px; padding: 6px 12px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
+                            <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 8px; padding: 6px 12px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+}
+
+function updateStatsCounters(stats) {
+    if (!stats) return;
+
+    const total = stats.total_students || 0;
+    const present = stats.present !== undefined ? stats.present : (stats.clocked_in || 0);
+    const late = stats.late || 0;
+    const clockedIn = stats.clocked_in || (present + late);
+    const absent = stats.absent !== undefined ? stats.absent : Math.max(0, total - clockedIn);
+    const progress = stats.progress || (total > 0 ? Math.round((clockedIn / total) * 100) : 0);
+
+    const totalEl = document.getElementById('totalStudents');
+    const clockedInEl = document.getElementById('clockedIn');
+    const lateEl = document.getElementById('lateCount');
+    const absentEl = document.getElementById('absentCount');
+    const progressEl = document.getElementById('progressPercent');
+    const barEl = document.getElementById('progressBar');
+    const badgeEl = document.getElementById('rosterCountBadge');
+
+    if (totalEl) totalEl.textContent = total;
+    if (clockedInEl) clockedInEl.textContent = present;
+    if (lateEl) lateEl.textContent = late;
+    if (absentEl) absentEl.textContent = absent;
+    if (progressEl) progressEl.textContent = progress + '%';
+    if (barEl) barEl.style.width = progress + '%';
+    if (badgeEl) badgeEl.textContent = `${clockedIn} / ${total} Present`;
+
+    // Filter pill counts
+    const pillPres = document.getElementById('countPillPresent');
+    const pillLate = document.getElementById('countPillLate');
+    const pillMiss = document.getElementById('countPillMissing');
+    if (pillPres) pillPres.textContent = present;
+    if (pillLate) pillLate.textContent = late;
+    if (pillMiss) pillMiss.textContent = absent;
+
+    // Projector modal live count
+    const projCount = document.getElementById('projectorCount');
+    if (projCount) projCount.textContent = `${clockedIn} / ${total} Present`;
+}
+
+function addProjectorTickerItem(item) {
+    const ticker = document.getElementById('projectorRecentChips');
+    const emptyText = document.getElementById('projectorEmptyTickerText');
+    if (!ticker) return;
+
+    if (emptyText) emptyText.style.display = 'none';
+
+    const chip = document.createElement('div');
+    chip.className = 'projector-chip';
+    chip.innerHTML = `
+        <span class="avatar-circle" style="width:26px;height:26px;font-size:0.7rem;">${(item.student_name || 'ST').substring(0,2).toUpperCase()}</span>
+        <span class="chip-name">${item.student_name}</span>
+        <span class="chip-time">${item.time || ''}</span>
+        <span class="status-badge status-${(item.status || 'present').toLowerCase()}">${item.status || 'Present'}</span>
+    `;
+
+    ticker.insertBefore(chip, ticker.firstChild);
+
+    // Keep max 12 items in projector ticker
+    while (ticker.children.length > 12) {
+        ticker.removeChild(ticker.lastChild);
+    }
 }
 
 async function updateClockIns() {
@@ -1125,52 +1404,98 @@ async function updateClockIns() {
         const data = await response.json();
         if (!data || !data.stats) return;
 
-        document.getElementById('totalStudents').textContent = data.stats.total_students;
-        document.getElementById('clockedIn').textContent = data.stats.clocked_in;
-        document.getElementById('lateCount').textContent = data.stats.late;
-        document.getElementById('progressPercent').textContent = data.stats.progress + '%';
-        document.getElementById('progressBar').style.width = data.stats.progress + '%';
+        const incomingClockins = data.clockins || [];
 
-        const projCount = document.getElementById('projectorCount');
-        if (projCount) projCount.textContent = `${data.stats.clocked_in} / ${data.stats.total_students} Present`;
+        // Detect newly arrived students via polling cycle
+        if (cachedClockins && cachedClockins.length > 0) {
+            incomingClockins.forEach(fresh => {
+                if (['Present', 'Late'].includes(fresh.status)) {
+                    const old = cachedClockins.find(c => c.id === fresh.id);
+                    if (!old || !['Present', 'Late'].includes(old.status)) {
+                        // New student check-in detected!
+                        knownClockedInIds.add(fresh.id);
+                        playClockInChime();
+                        addProjectorTickerItem({
+                            student_name: fresh.name,
+                            status: fresh.status,
+                            time: fresh.time
+                        });
+                        showTeacherToast(`${fresh.name} checked in (${fresh.status})`, 'success');
+                    }
+                }
+            });
+        } else {
+            // First load: initialize known IDs
+            incomingClockins.forEach(c => {
+                if (['Present', 'Late'].includes(c.status)) {
+                    knownClockedInIds.add(c.id);
+                }
+            });
+        }
 
-        cachedClockins = data.clockins || [];
-        filterClockins();
+        cachedClockins = incomingClockins;
+        updateStatsCounters(data.stats);
+        renderClockinsList();
     } catch (error) {
-        console.error('Error updating clock-ins:', error);
+        console.warn('Clock-in update warning:', error);
     }
 }
 
+function handleIncomingCheckIn(payload) {
+    playClockInChime();
+    addProjectorTickerItem({
+        student_name: payload.student_name,
+        status: payload.status,
+        time: payload.time
+    });
+    showTeacherToast(`${payload.student_name} checked in (${payload.status})`, 'success');
+    updateClockIns();
+}
+
 function subscribeToTeacherAttendanceUpdates() {
-    if (!window.teacherEcho) {
-        setTimeout(subscribeToTeacherAttendanceUpdates, 250);
+    const echoInstance = window.teacherEcho || window.adminEcho || window.Echo;
+    if (!echoInstance) {
+        setTimeout(subscribeToTeacherAttendanceUpdates, 300);
         return;
     }
 
     if (window.teacherAttendanceSubscribed) return;
-
     window.teacherAttendanceSubscribed = true;
 
-    window.teacherEcho.private('teacher-dashboard.{{ Auth::id() }}')
-        .listen('.attendance.updated', (payload) => {
-            if (!currentSession || !payload || payload.subject_code !== '{{ $subject->code }}') {
-                return;
-            }
+    try {
+        echoInstance.private('teacher-dashboard.{{ Auth::id() }}')
+            .listen('.attendance.updated', (payload) => {
+                if (!currentSession || !payload || payload.subject_code !== '{{ $subject->code }}') {
+                    return;
+                }
 
-            if (payload.type === 'clock_in') {
-                playClockInChime();
-                updateClockIns();
-                showTeacherToast(`${payload.student_name} clocked in for ${payload.subject_code} (${payload.status})`, 'success');
-            }
-        });
+                if (payload.type === 'clock_in') {
+                    handleIncomingCheckIn(payload);
+                }
+            });
+
+        const liveBadge = document.getElementById('liveStatusBadge');
+        if (liveBadge) {
+            liveBadge.innerHTML = '<span class="live-dot"></span><small style="color: #4ade80; font-weight: 700; font-size: 0.75rem;">LIVE STREAM</small>';
+        }
+    } catch (e) {
+        console.warn('[Realtime] WebSocket subscribe error:', e);
+    }
 }
-
-subscribeToTeacherAttendanceUpdates();
 
 async function overrideStatus(studentId, newStatus, event) {
     event.preventDefault();
     if (!currentSession) return;
     
+    // Optimistic UI update
+    const target = cachedClockins.find(c => c.id === studentId);
+    const oldStatus = target ? target.status : 'Missing';
+    if (target) {
+        target.status = newStatus;
+        target.time = (new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        renderClockinsList();
+    }
+
     try {
         const response = await fetch('{{ route("teacher.qr.override") }}', {
             method: 'POST',
@@ -1190,9 +1515,13 @@ async function overrideStatus(studentId, newStatus, event) {
             updateClockIns();
             showTeacherToast(`Student marked as ${newStatus}`, 'success');
         } else {
+            if (target) target.status = oldStatus;
+            renderClockinsList();
             showTeacherToast(data.message || 'Failed to update status', 'error');
         }
     } catch (error) {
+        if (target) target.status = oldStatus;
+        renderClockinsList();
         showTeacherToast('Network error while updating status', 'error');
     }
 }
@@ -1211,7 +1540,7 @@ function showTeacherToast(message, type = 'info') {
         position: fixed; bottom: 24px; right: 24px; z-index: 9999;
         background: ${c.bg}; border: 1px solid ${c.border};
         color: white; padding: 14px 20px; border-radius: 14px;
-        font-size: 0.85rem; font-weight: 600; max-width: 320px;
+        font-size: 0.85rem; font-weight: 600; max-width: 340px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         backdrop-filter: blur(12px);
         animation: slideInToast 0.35s ease;
@@ -1272,8 +1601,8 @@ function captureTeacherLocation() {
         <div class="qr-alert qr-alert-info">
             <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
             <div>
-                <h6 class="qr-alert-title mb-1"><i class="bi bi-geo-alt me-1"></i> Capturing Laptop Location...</h6>
-                <p class="qr-alert-body mb-0">Please allow location access so the student scan area matches your laptop.</p>
+                <h6 class="qr-alert-title mb-1"><i class="bi bi-geo-alt me-1"></i> Capturing Classroom Location...</h6>
+                <p class="qr-alert-body mb-0">Please allow location access so the student scan area matches your room.</p>
             </div>
         </div>
     `;
@@ -1302,7 +1631,7 @@ function captureTeacherLocation() {
             <div class="qr-alert ${isReliable ? 'qr-alert-success' : 'qr-alert-warning'}">
                 <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: ${isReliable ? '#10b981' : '#f59e0b'};"></i>
                 <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-laptop me-1"></i> Using Laptop Location</h6>
+                    <h6 class="qr-alert-title mb-1"><i class="bi bi-laptop me-1"></i> Using Classroom Location</h6>
                     <p class="qr-alert-body mb-1">Latitude: ${teacherLocation.latitude.toFixed(6)}, Longitude: ${teacherLocation.longitude.toFixed(6)}</p>
                     <p class="qr-alert-body mb-0">Accuracy: ${Math.round(accuracy)}m &mdash; ${isReliable ? '<i class="bi bi-check2 text-success me-1"></i> This is acceptable for classroom location.' : 'This is a weaker fix, but the session will still use it.'}</p>
                 </div>
@@ -1387,5 +1716,12 @@ function captureTeacherLocation() {
 
     startLocationWatch(true);
 }
+
+// Keyboard shortcuts: 'F' or 'P' for projector mode, 'Escape' to exit
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeProjectorMode();
+    }
+});
 </script>
 @endsection

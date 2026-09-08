@@ -397,8 +397,10 @@ class QrAttendanceController extends Controller
 
         $totalStudents = $students->count();
 
-        $clockedIn = $todayRecords->where('status', 'Present')->count() + $todayRecords->where('status', 'Late')->count();
+        $present = $todayRecords->where('status', 'Present')->count();
+        $clockedIn = $present + $todayRecords->where('status', 'Late')->count();
         $late = $todayRecords->where('status', 'Late')->count();
+        $absent = max(0, $totalStudents - $clockedIn);
         $progress = $totalStudents > 0 ? round(($clockedIn / $totalStudents) * 100) : 0;
 
         return response()->json([
@@ -406,8 +408,10 @@ class QrAttendanceController extends Controller
             'stats' => [
                 'total_students' => $totalStudents,
                 'clocked_in'     => $clockedIn,
-                'inside_radius'  => 0,
+                'present'        => $present,
                 'late'           => $late,
+                'absent'         => $absent,
+                'inside_radius'  => 0,
                 'progress'       => $progress,
             ],
         ]);
@@ -446,7 +450,7 @@ class QrAttendanceController extends Controller
                     'time_in' => $request->status === 'Absent' ? null : now(),
                     'latitude' => null,
                     'longitude' => null,
-                    'device_id' => 'teacher-override',
+                    'method' => 'manual',
                     'excused' => false,
                     'academic_year_id' => \App\Models\AcademicYear::where('is_current', true)->value('id'),
                 ]

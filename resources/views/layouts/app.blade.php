@@ -663,6 +663,8 @@
                             forceTLS: forceTls,
                             enabledTransports: forceTls ? ['wss', 'ws'] : ['ws'],
                         });
+                        window.Echo = window.adminEcho;
+                        window.teacherEcho = window.adminEcho;
 
                         window.adminEcho.private('notifications.{{ Auth::id() }}')
                             .listen('.notification.sent', (e) => {
