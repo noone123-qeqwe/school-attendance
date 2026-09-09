@@ -47,10 +47,10 @@ class MobileSoftwareUpdatePopupTest extends TestCase
         $response->assertSee('id="pwaLaterUpdateBtn"', false);
         $response->assertSee('id="pwaDismissUpdatePopupBtn"', false);
 
-        // Mobile CSS rules for clearing the floating mobile bottom nav capsule
+        // Mobile CSS rules for centered viewport modal clear of floating mobile bottom nav capsule
         $response->assertSee('z-index: 100005 !important;', false);
-        $response->assertSee('bottom: calc(84px + env(safe-area-inset-bottom, 12px)) !important;', false);
-        $response->assertSee('max-height: min(520px, calc(100dvh - 96px - env(safe-area-inset-bottom, 12px))) !important;', false);
+        $response->assertSee('transform: translate(-50%, -50%) !important;', false);
+        $response->assertSee('pwa-update-backdrop', false);
 
         // Meta tags for update comparison
         $installed = (string)config('changelog.installed_version', '2.3.0');

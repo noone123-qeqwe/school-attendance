@@ -144,7 +144,7 @@ class SoftwareUpdateChangelogTest extends TestCase
 
         // Verify mobile-optimized layout CSS rules
         $response->assertSee('z-index: 100005 !important;', false);
-        $response->assertSee('calc(84px + env(safe-area-inset-bottom, 12px))', false);
+        $response->assertSee('transform: translate(-50%, -50%) !important;', false);
 
         // Verify update notes container and categories are omitted from the popup
         $response->assertDontSee('pwaUpdateChangelogContainer', false);

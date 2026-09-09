@@ -184,7 +184,10 @@
 </style>
 
 <script>
-    let deferredPrompt;
+    // Reuse global deferredPrompt if already registered by pwa-tags
+    if (typeof window.deferredPrompt === 'undefined') {
+        window.deferredPrompt = null;
+    }
 
     // Check if should show install prompt
     window.addEventListener('load', function() {
@@ -198,7 +201,8 @@
         // Show prompt if not standalone and not recently dismissed (wait 7 days)
         if (!isStandalone && (!dismissed || (Date.now() - dismissTime) > 7 * 24 * 60 * 60 * 1000)) {
             setTimeout(() => {
-                document.getElementById('installPrompt').style.display = 'block';
+                const promptEl = document.getElementById('installPrompt');
+                if (promptEl) promptEl.style.display = 'block';
             }, 3000); // Show after 3 seconds
         }
     });
@@ -206,23 +210,24 @@
     // Capture the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
-        deferredPrompt = e;
+        window.deferredPrompt = e;
         console.log('Install prompt available');
     });
 
     // Install PWA
     async function installPWA() {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
+        if (window.deferredPrompt) {
+            window.deferredPrompt.prompt();
+            const { outcome } = await window.deferredPrompt.userChoice;
             console.log('Install outcome:', outcome);
             
             if (outcome === 'accepted') {
-                document.getElementById('installPrompt').style.display = 'none';
+                const promptEl = document.getElementById('installPrompt');
+                if (promptEl) promptEl.style.display = 'none';
                 localStorage.removeItem('installPromptDismissed');
             }
             
-            deferredPrompt = null;
+            window.deferredPrompt = null;
         } else {
             // Show instructions if no prompt available
             alert('To install:\n\n' +

@@ -683,20 +683,61 @@
         }
     }
 
-    /* On mobile / tablets: Gracefully float above bottom navigation capsule with safe area */
+    /* Mobile Backdrop Overlay for Update Modal */
+    .pwa-update-backdrop {
+        display: none;
+    }
+
+    /* On mobile / tablets: Perfectly centered modal popup within viewport, completely clear of bottom navigation */
     @media (max-width: 768px) {
+        .pwa-update-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 100045 !important;
+            opacity: 0;
+            transition: opacity 0.25s ease-out;
+            pointer-events: auto;
+        }
+        .pwa-update-backdrop.show {
+            display: block;
+            opacity: 1;
+        }
+
         .pwa-update-banner {
-            bottom: calc(84px + env(safe-area-inset-bottom, 12px)) !important;
-            left: 12px !important;
-            right: 12px !important;
-            width: auto !important;
-            max-width: calc(100vw - 24px) !important;
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            right: auto !important;
+            bottom: auto !important;
+            transform: translate(-50%, -50%) !important;
+            width: calc(100vw - 32px) !important;
+            max-width: 395px !important;
             margin: 0 auto !important;
-            padding: 16px 18px !important;
-            border-radius: 20px !important;
-            max-height: min(520px, calc(100dvh - 96px - env(safe-area-inset-bottom, 12px))) !important;
+            padding: 20px 18px !important;
+            border-radius: 22px !important;
+            max-height: min(520px, calc(100dvh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))) !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
             box-sizing: border-box !important;
             z-index: 100005 !important;
+            background: rgba(18, 10, 8, 0.98) !important;
+            border: 1.5px solid rgba(207, 164, 111, 0.35) !important;
+            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 40px rgba(207, 164, 111, 0.15) !important;
+            animation: pwaSlideUpMobileCenter 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+
+        @keyframes pwaSlideUpMobileCenter {
+            0% {
+                opacity: 0;
+                transform: translate(-50%, calc(-50% + 24px)) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         .pwa-update-banner-actions {
@@ -709,14 +750,80 @@
             min-height: 44px !important;
             touch-action: manipulation !important;
         }
+
+        .pwa-update-close-btn {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            min-height: 32px !important;
+            font-size: 1.35rem !important;
+            touch-action: manipulation !important;
+            top: 2px !important;
+            right: 2px !important;
+        }
     }
 
-    /* Small screens / landscape mobile phones: keep content accessible within viewport */
-    @media (max-width: 768px) and (max-height: 540px) {
+    /* Small screens (narrow phones <= 360px) */
+    @media (max-width: 360px) {
         .pwa-update-banner {
-            top: calc(8px + env(safe-area-inset-top, 0px)) !important;
+            width: calc(100vw - 20px) !important;
+            padding: 16px 14px !important;
+            border-radius: 18px !important;
+        }
+
+        .pwa-update-banner-actions {
+            flex-direction: column !important;
+            gap: 8px !important;
+        }
+
+        .pwa-btn-update-later,
+        .pwa-btn-update-apply {
+            width: 100% !important;
+            justify-content: center !important;
+            min-height: 44px !important;
+        }
+    }
+
+    /* Small screens / landscape mobile phones: keep content accessible and centered within viewport */
+    @media (max-width: 768px) and (max-height: 540px), (max-height: 500px) and (orientation: landscape) {
+        .pwa-update-banner {
+            top: 50% !important;
+            left: 50% !important;
+            right: auto !important;
             bottom: auto !important;
-            max-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px)) !important;
+            transform: translate(-50%, -50%) !important;
+            max-height: calc(100dvh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
+            padding: 14px 18px !important;
+            max-width: min(460px, calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))) !important;
+        }
+
+        .pwa-update-banner-header {
+            gap: 10px !important;
+        }
+
+        .pwa-update-app-icon {
+            width: 38px !important;
+            height: 38px !important;
+        }
+
+        .pwa-update-title {
+            font-size: 0.95rem !important;
+        }
+
+        .pwa-update-subtitle {
+            font-size: 0.76rem !important;
+            max-height: 48px !important;
+            overflow-y: auto !important;
+        }
+
+        .pwa-update-banner-actions {
+            gap: 8px !important;
+        }
+
+        .pwa-btn-update-later,
+        .pwa-btn-update-apply {
+            min-height: 40px !important;
+            padding: 8px 14px !important;
         }
     }
 
@@ -1050,6 +1157,7 @@
 </div>
 
 <!-- Enterprise-Grade System Update Notification (Dynamic Version-Based Changelog) -->
+<div class="pwa-update-backdrop" id="pwaUpdateBackdrop" style="display: none;"></div>
 <div class="pwa-update-banner" id="pwaSystemUpdatePopup" style="display: none;">
     <div class="pwa-update-glow"></div>
     <div class="pwa-update-banner-header">
@@ -1063,6 +1171,7 @@
                 <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">{{ $initialChangelog['version_display'] ?? ('VERSION ' . ltrim((string)$swCacheVer, 'v')) }}</span>
             </div>
             <div class="pwa-update-title" id="pwaUpdateTitle">{{ $initialChangelog['title'] ?? 'Software Update Available' }}</div>
+            <div class="pwa-update-subtitle" id="pwaUpdateSubtitle">{{ $initialChangelog['description'] ?? 'A new version of Smart Attendance is ready with new features and improvements.' }}</div>
         </div>
         <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
     </div>
@@ -1191,7 +1300,7 @@
     // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──
     function ensurePwaModalsInBody() {
         if (!document.body) return false;
-        ['pwaInstallBanner', 'pwaIosModal', 'pwaSystemUpdatePopup', 'pwaNetworkToast'].forEach(function(id) {
+        ['pwaInstallBanner', 'pwaIosModal', 'pwaUpdateBackdrop', 'pwaSystemUpdatePopup', 'pwaNetworkToast'].forEach(function(id) {
             const el = document.getElementById(id);
             if (el && el.parentElement !== document.body) {
                 document.body.appendChild(el);
@@ -1231,6 +1340,12 @@
 
         // 1. Semantic Version update (e.g. 2.3.2 > 2.3.1)
         if (compareSemver(latestVer, installedVer) > 0) {
+            return true;
+        }
+
+        // 2. Timestamp update (e.g. new build deployed with updated cache)
+        const appliedMtime = getAppliedSwMtime();
+        if (serverSwMtime && appliedMtime && serverSwMtime > appliedMtime) {
             return true;
         }
 
@@ -1280,6 +1395,12 @@
                 .catch(function() {});
         }
 
+        const backdrop = document.getElementById('pwaUpdateBackdrop');
+        if (backdrop) {
+            backdrop.classList.add('show');
+            backdrop.style.display = 'block';
+        }
+
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) {
             popup.style.display = 'none';
@@ -1303,7 +1424,7 @@
                     const notifTitle = '🚀 Smart Attendance Update Available';
                     const notifOptions = {
                         body: 'A new version of the attendance portal is ready. Tap to load the latest features and optimizations.',
-                        icon: '/images/icons/icon-192x192.png',
+                        icon: '/images/icons/icon-72x72.png',
                         badge: '/images/icons/icon-72x72.png',
                         vibrate: [100, 50, 100],
                         tag: 'app-update-' + (latestDetectedVersion || Date.now()),
@@ -1328,6 +1449,12 @@
     function hideAppUpdatePopup(version) {
         const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) popup.style.display = 'none';
+
+        const backdrop = document.getElementById('pwaUpdateBackdrop');
+        if (backdrop) {
+            backdrop.classList.remove('show');
+            backdrop.style.display = 'none';
+        }
 
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         if (targetVersion) {
@@ -1376,6 +1503,8 @@
 
                     // Semantic comparison: only flag update when server version is strictly newer than installed
                     if (compareSemver(latestVer, installedVer) > 0) {
+                        isUpdateAvailable = true;
+                    } else if (data.timestamp && appliedMtime && data.timestamp > appliedMtime) {
                         isUpdateAvailable = true;
                     }
                 }
@@ -1442,6 +1571,8 @@
                     const latest = latestDetectedVersion || getLatestVersion();
                     if (compareSemver(latest, currentInstalled) > 0) {
                         showAppUpdatePopup(latest, false);
+                    } else {
+                        checkServerVersion(true);
                     }
                 }
 
@@ -1456,6 +1587,8 @@
                                     const latest = latestDetectedVersion || getLatestVersion();
                                     if (compareSemver(latest, currentInstalled) > 0) {
                                         showAppUpdatePopup(latest, false);
+                                    } else {
+                                        checkServerVersion(true);
                                     }
                                 } else {
                                     checkServerVersion(false);
@@ -1472,6 +1605,7 @@
                         try {
                             sessionStorage.setItem('pwa_update_available', event.data.version || 'latest');
                         } catch(e) {}
+                        checkServerVersion(true);
                     }
                 });
 
@@ -2288,6 +2422,11 @@
             // Hide popup immediately
             const popup = document.getElementById('pwaSystemUpdatePopup');
             if (popup) popup.style.display = 'none';
+            const backdrop = document.getElementById('pwaUpdateBackdrop');
+            if (backdrop) {
+                backdrop.classList.remove('show');
+                backdrop.style.display = 'none';
+            }
 
             if (swRegistration && swRegistration.waiting) {
                 swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
@@ -2309,7 +2448,7 @@
         }
 
         // Dismiss Update popup (Dismiss for current session)
-        const dismissUpdateBtn = target.closest('#pwaDismissUpdatePopupBtn') || target.closest('#pwaLaterUpdateBtn');
+        const dismissUpdateBtn = target.closest('#pwaDismissUpdatePopupBtn') || target.closest('#pwaLaterUpdateBtn') || (target.id === 'pwaUpdateBackdrop');
         if (dismissUpdateBtn) {
             e.preventDefault();
             hideAppUpdatePopup(latestDetectedVersion);
