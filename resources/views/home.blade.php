@@ -69,41 +69,272 @@
 
 <!-- Active Warnings -->
 @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-<div class="ent-alert ent-fade-up mobile-warning-section" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); margin-bottom: 20px; padding: 20px; border-radius: 16px;">
-    <div class="d-flex align-items-center gap-3 mb-3">
-        <div class="ent-alert-icon" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.1); flex-shrink: 0;">
+<div class="ent-alert ent-fade-up mobile-warning-section">
+    <div class="warning-header d-flex align-items-center gap-3 mb-3">
+        <div class="ent-alert-icon warning-icon-box" style="flex-shrink: 0;">
             <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
-        <div class="ent-alert-body" style="flex: 1; min-width: 0;">
-            <div class="ent-alert-title" style="color: #fca5a5; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em;">Action Required: Attendance Warning</div>
-            <div class="ent-alert-text" style="color: #b39b82; font-size: 0.82rem; line-height: 1.4;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
+        <div class="ent-alert-body warning-header-body" style="flex: 1; min-width: 0;">
+            <div class="ent-alert-title warning-title">Action Required: Attendance Warning</div>
+            <div class="ent-alert-text warning-subtitle">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
         </div>
     </div>
     
-    <div class="d-flex flex-column gap-3 mb-3 warning-cards-list">
+    <div class="warning-cards-list d-flex flex-column gap-3 mb-3">
         @foreach($activeWarnings as $warning)
-        <div class="warning-card-item" style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s ease;">
-            <div class="warning-card-header" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:4px; margin-bottom:8px;">
-                <span style="color: #fca5a5; font-weight: 700; font-size: 0.84rem;"><i class="bi bi-exclamation-triangle-fill me-1" style="opacity: 0.8;"></i>{{ $warning->subject_code }}</span>
-                <span style="color: #b39b82; font-size: 0.72rem;">{{ $warning->created_at->diffForHumans() }}</span>
+        <div class="warning-card-item">
+            <div class="warning-card-header">
+                <span class="warning-card-code"><i class="bi bi-exclamation-triangle-fill me-1" style="opacity: 0.85;"></i>{{ $warning->subject_code }}</span>
+                <span class="warning-card-time"><i class="bi bi-clock me-1"></i>{{ $warning->created_at->diffForHumans() }}</span>
             </div>
-            <div style="font-size: 0.82rem; color: #d6b67b; line-height: 1.5; word-break: break-word;">{{ $warning->message }}</div>
+            <div class="warning-card-message">{{ $warning->message }}</div>
         </div>
         @endforeach
     </div>
     
-    <div class="d-flex gap-2 flex-wrap warning-action-btns">
-        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, #dc2626, #b91c1c); border: 1px solid rgba(239,68,68,0.4); border-radius: 10px; flex: 1; min-width: 120px; text-align: center; justify-content: center;">
-            <i class="bi bi-file-text-fill"></i> Submit Excuse
+    <div class="warning-action-btns d-flex gap-2 flex-wrap">
+        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary warning-btn-submit">
+            <i class="bi bi-file-text-fill me-1"></i> Submit Excuse
         </a>
-        <a href="{{ route('attendance.records') }}" class="ent-btn ent-btn-secondary" style="color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; flex: 1; min-width: 120px; text-align: center; justify-content: center;">
-            View Records
+        <a href="{{ route('attendance.records') }}" class="ent-btn ent-btn-secondary warning-btn-records">
+            <i class="bi bi-journal-text me-1"></i> View Records
         </a>
     </div>
 </div>
 @endif
 
 <style>
+    /* ══════════════════════════════════════════════════════════════
+       ATTENDANCE WARNING SECTION (Responsive Mobile & Desktop)
+       ══════════════════════════════════════════════════════════════ */
+    .mobile-warning-section {
+        background: linear-gradient(145deg, rgba(239, 68, 68, 0.12) 0%, rgba(20, 10, 8, 0.9) 100%) !important;
+        border: 1.5px solid rgba(239, 68, 68, 0.32) !important;
+        border-radius: 18px !important;
+        margin-bottom: 20px !important;
+        padding: 20px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(239, 68, 68, 0.08) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .mobile-warning-section .warning-icon-box {
+        background: rgba(239, 68, 68, 0.18) !important;
+        color: #f87171 !important;
+        border: 1px solid rgba(239, 68, 68, 0.25) !important;
+        border-radius: 12px !important;
+    }
+
+    .mobile-warning-section .warning-title {
+        color: #fca5a5 !important;
+        font-weight: 700 !important;
+        font-size: 1.05rem !important;
+        letter-spacing: -0.01em !important;
+        margin-bottom: 4px !important;
+        overflow-wrap: break-word !important;
+        word-wrap: break-word !important;
+        word-break: normal !important;
+    }
+
+    .mobile-warning-section .warning-subtitle {
+        color: #b39b82 !important;
+        font-size: 0.82rem !important;
+        line-height: 1.45 !important;
+        margin: 0 !important;
+        overflow-wrap: break-word !important;
+        word-wrap: break-word !important;
+        word-break: normal !important;
+    }
+
+    .mobile-warning-section .warning-card-item {
+        background: rgba(0, 0, 0, 0.45) !important;
+        padding: 14px !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(239, 68, 68, 0.22) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .mobile-warning-section .warning-card-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+        width: 100% !important;
+    }
+
+    .mobile-warning-section .warning-card-code {
+        color: #fca5a5 !important;
+        font-weight: 700 !important;
+        font-size: 0.84rem !important;
+        background: rgba(239, 68, 68, 0.15) !important;
+        border: 1px solid rgba(239, 68, 68, 0.3) !important;
+        padding: 2px 8px !important;
+        border-radius: 6px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+
+    .mobile-warning-section .warning-card-time {
+        color: #b39b82 !important;
+        font-size: 0.72rem !important;
+        font-weight: 500 !important;
+    }
+
+    .mobile-warning-section .warning-card-message {
+        font-size: 0.85rem !important;
+        color: #f3e7cd !important;
+        line-height: 1.55 !important;
+        margin: 0 !important;
+        overflow-wrap: break-word !important;
+        word-wrap: break-word !important;
+        word-break: normal !important;
+        hyphens: none !important;
+    }
+
+    .mobile-warning-section .warning-btn-submit {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+        color: #ffffff !important;
+        border: 1px solid rgba(239, 68, 68, 0.5) !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-decoration: none !important;
+        touch-action: manipulation !important;
+        box-shadow: 0 4px 14px rgba(220, 38, 38, 0.35) !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .mobile-warning-section .warning-btn-records {
+        background: rgba(239, 68, 68, 0.08) !important;
+        color: #fca5a5 !important;
+        border: 1px solid rgba(239, 68, 68, 0.32) !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-decoration: none !important;
+        touch-action: manipulation !important;
+        transition: all 0.2s ease !important;
+    }
+
+    /* Desktop layout (>= 992px): Multi-column with ample space */
+    @media (min-width: 992px) {
+        .mobile-warning-section {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            gap: 20px !important;
+            padding: 22px 24px !important;
+        }
+        .mobile-warning-section .warning-header {
+            flex: 0 0 280px !important;
+            max-width: 320px !important;
+            margin-bottom: 0 !important;
+        }
+        .mobile-warning-section .warning-cards-list {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        .mobile-warning-section .warning-action-btns {
+            flex: 0 0 170px !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            margin-top: 0 !important;
+        }
+        .mobile-warning-section .warning-action-btns > a {
+            width: 100% !important;
+            min-height: 42px !important;
+            padding: 10px 14px !important;
+        }
+    }
+
+    /* Mobile & Tablet layout (< 992px): Single-column full-width stacked */
+    @media (max-width: 991.98px) {
+        .mobile-warning-section {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 14px !important;
+            padding: 16px 14px !important;
+            margin-bottom: 16px !important;
+            border-radius: 16px !important;
+        }
+        .mobile-warning-section .warning-header {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+            width: 100% !important;
+            margin-bottom: 0 !important;
+        }
+        .mobile-warning-section .warning-icon-box {
+            width: 42px !important;
+            height: 42px !important;
+            min-width: 42px !important;
+            font-size: 1.2rem !important;
+            flex-shrink: 0 !important;
+        }
+        .mobile-warning-section .warning-header-body {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+        }
+        .mobile-warning-section .warning-title {
+            font-size: 0.98rem !important;
+            line-height: 1.35 !important;
+        }
+        .mobile-warning-section .warning-subtitle {
+            font-size: 0.78rem !important;
+            line-height: 1.45 !important;
+        }
+        .mobile-warning-section .warning-cards-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            width: 100% !important;
+            margin-bottom: 0 !important;
+        }
+        .mobile-warning-section .warning-card-item {
+            width: 100% !important;
+            padding: 13px 14px !important;
+            border-radius: 12px !important;
+        }
+        .mobile-warning-section .warning-card-message {
+            font-size: 0.85rem !important;
+            line-height: 1.55 !important;
+        }
+        .mobile-warning-section .warning-action-btns {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            width: 100% !important;
+            margin-top: 2px !important;
+        }
+        .mobile-warning-section .warning-action-btns > a {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            min-height: 44px !important;
+            padding: 11px 16px !important;
+            font-size: 0.85rem !important;
+            font-weight: 700 !important;
+            border-radius: 12px !important;
+            box-sizing: border-box !important;
+            text-align: center !important;
+            white-space: normal !important;
+        }
+    }
+
     @media (max-width: 768px) {
         /* Hero banner compact */
         .hero-banner { padding: 14px !important; border-radius: 14px !important; box-shadow: none !important; }
@@ -121,15 +352,6 @@
         .att-cal-stats { padding: 8px 6px !important; }
         .att-cal-stat { border: none !important; padding: 3px 6px !important; background: transparent !important; }
 
-        /* Warning section — stack buttons vertically */
-        .mobile-warning-section { padding: 14px !important; margin-bottom: 14px !important; border-radius: 14px !important; }
-        .mobile-warning-section .ent-alert-title { font-size: 0.88rem !important; line-height: 1.3 !important; }
-        .mobile-warning-section .ent-alert-text { font-size: 0.76rem !important; }
-        .mobile-warning-section .warning-card-item { padding: 12px !important; border-radius: 10px !important; }
-        .mobile-warning-section .warning-card-header { flex-direction: column !important; gap: 3px !important; }
-        .mobile-warning-section .warning-action-btns { flex-direction: column !important; gap: 8px !important; }
-        .mobile-warning-section .warning-action-btns > a { width: 100% !important; min-width: 0 !important; flex: none !important; }
-
         /* Hero card CTA compact */
         .premium-hero-card .d-md-none.d-flex { flex-direction: column !important; gap: 8px !important; }
         .premium-hero-card .d-md-none .btn-modern-primary,
@@ -145,11 +367,16 @@
         .mobile-error-toast { font-size: 0.78rem !important; padding: 10px 12px !important; margin-bottom: 12px !important; }
     }
 
+    /* Small screens (<= 360px) */
     @media (max-width: 360px) {
+        .mobile-warning-section { padding: 12px 10px !important; border-radius: 14px !important; }
+        .mobile-warning-section .warning-title { font-size: 0.9rem !important; }
+        .mobile-warning-section .warning-subtitle { font-size: 0.74rem !important; }
+        .mobile-warning-section .warning-card-item { padding: 10px 10px !important; }
+        .mobile-warning-section .warning-card-message { font-size: 0.8rem !important; }
         .premium-hero-card h1 { font-size: 1.05rem !important; }
         .premium-hero-card .d-md-none .btn-modern-primary,
         .premium-hero-card .d-md-none .btn-modern-glass { font-size: 0.78rem !important; padding: 9px 12px !important; }
-        .mobile-warning-section .ent-alert-title { font-size: 0.82rem !important; }
     }
 </style>
 
@@ -253,16 +480,16 @@
                     <!-- Background Glow -->
                     <div class="bg-glow" style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: {{ $rateColor }}; border-radius: 50%; filter: blur(50px); opacity: 0.15; pointer-events: none;"></div>
 
-                    <div class="d-flex justify-content-between align-items-start mb-3" style="position: relative; z-index: 2;">
-                        <div>
-                            <div style="font-weight: 800; color: #f3e7cd; font-size: 1.1rem; letter-spacing: -0.3px;">{{ $stat->name }}</div>
-                            <div style="font-size: 0.8rem; color: #b39b82; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                    <div class="d-flex justify-content-between align-items-start mb-3" style="position: relative; z-index: 2; gap: 12px;">
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="font-weight: 800; color: #f3e7cd; font-size: 1.1rem; letter-spacing: -0.3px; overflow-wrap: break-word; word-break: normal;">{{ $stat->name }}</div>
+                            <div style="font-size: 0.8rem; color: #b39b82; margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                 <span style="background: rgba(207,164,111,0.1); padding: 3px 8px; border-radius: 6px; font-weight: 700;">{{ $stat->code }}</span>
                                 <span>•</span>
                                 <span>{{ $stat->total }} Classes</span>
                             </div>
                         </div>
-                        <div style="text-align: right;">
+                        <div style="text-align: right; flex-shrink: 0;">
                             <div class="rate-text" style="font-size: 1.7rem; font-weight: 900; color: {{ $rateColor }}; line-height: 1; text-shadow: 0 0 20px {{ $rateBg }};">{{ $stat->rate }}<span style="font-size: 1.1rem; opacity: 0.8;">%</span></div>
                             @if(!$isNew && $stat->rate < 75)
                                 <div style="font-size: 0.7rem; color: #f87171; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(248,113,113,0.15); padding: 3px 10px; border-radius: 99px;">
@@ -324,17 +551,17 @@
             @if(isset($todaySchedule) && $todaySchedule->count() > 0)
                 <div class="d-flex flex-column gap-3">
                 @foreach($todaySchedule as $item)
-                    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width: 4px; height: 40px; background: {{ $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : 'var(--gold)')) }}; border-radius: 4px;"></div>
-                            <div>
-                                <div style="font-weight: 700; color: #f3e7cd; font-size: 1.1rem;">{{ $item->subject->name }}</div>
-                                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 4px;">
+                    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                        <div class="d-flex align-items-center gap-3" style="flex: 1; min-width: 0;">
+                            <div style="width: 4px; height: 40px; background: {{ $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : 'var(--gold)')) }}; border-radius: 4px; flex-shrink: 0;"></div>
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 700; color: #f3e7cd; font-size: 1.1rem; overflow-wrap: break-word; word-break: normal;">{{ $item->subject->name }}</div>
+                                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 4px; overflow-wrap: break-word; word-break: normal;">
                                     {{ $item->start_time->format('g:i A') }} – {{ $item->end_time->format('g:i A') }} &nbsp;·&nbsp; {{ $item->subject->code }}
                                 </div>
                             </div>
                         </div>
-                        <div>
+                        <div style="flex-shrink: 0;">
                             @if($item->status === 'completed') <x-badge type="present">Done</x-badge>
                             @elseif($item->status === 'ongoing') <x-badge type="late">Now</x-badge>
                             @elseif($item->status === 'missed') <x-badge type="absent">Missed</x-badge>
@@ -362,14 +589,14 @@
             @if(isset($calendarEvents) && $calendarEvents->count() > 0)
                 <div class="d-flex flex-column gap-3">
                     @foreach($calendarEvents->take(5) as $event)
-                        <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center;">
-                            <div class="d-flex align-items-center gap-3">
-                                <div style="width: 48px; height: 48px; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 48px;">
+                        <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                            <div class="d-flex align-items-center gap-3" style="flex: 1; min-width: 0;">
+                                <div style="width: 48px; height: 48px; background: rgba(207,164,111,0.1); border: 1px solid rgba(207,164,111,0.2); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-width: 48px; flex-shrink: 0;">
                                     <span style="font-size: 0.7rem; font-weight: 800; color: #cfa46f; text-transform: uppercase; line-height: 1;">{{ \Carbon\Carbon::parse($event->date)->format('M') }}</span>
                                     <span style="font-size: 1.2rem; font-weight: 900; color: #f3e7cd; line-height: 1;">{{ \Carbon\Carbon::parse($event->date)->format('d') }}</span>
                                 </div>
-                                <div>
-                                    <div style="font-weight: 700; color: #f3e7cd; font-size: 1.1rem;">{{ $event->title }}</div>
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 700; color: #f3e7cd; font-size: 1.1rem; overflow-wrap: break-word; word-break: normal;">{{ $event->title }}</div>
                                     @if($event->type === 'announcement' && isset($event->author) && $event->author)
                                         @php
                                             $evtAuthorRole = $event->author_role ?? 'teacher';

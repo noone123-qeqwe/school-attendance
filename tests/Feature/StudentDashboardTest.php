@@ -234,4 +234,32 @@ class StudentDashboardTest extends TestCase
 
         $this->assertEquals(2, \App\Models\ExcuseSubmission::where('user_id', $this->student->id)->count());
     }
+
+    public function test_dashboard_renders_responsive_attendance_warning_card(): void
+    {
+        \App\Models\Warning::create([
+            'user_id' => $this->student->id,
+            'subject_code' => 'SDM',
+            'type' => 'warning_consecutive_3',
+            'message' => '🚨 URGENT: You have been absent for 3 consecutive sessions in Software Deployment.',
+            'sent_by' => $this->student->id,
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/home');
+
+        $response->assertStatus(200);
+        $response->assertSee('mobile-warning-section');
+        $response->assertSee('Action Required: Attendance Warning');
+        $response->assertSee('You have 1 active warning(s)');
+        $response->assertSee('SDM');
+        $response->assertSee('🚨 URGENT: You have been absent for 3 consecutive sessions in Software Deployment.');
+        $response->assertSee('Submit Excuse');
+        $response->assertSee('View Records');
+
+        // Check CSS rules for mobile responsiveness
+        $content = $response->getContent();
+        $this->assertStringContainsString('flex-direction: column !important;', $content);
+        $this->assertStringContainsString('overflow-wrap: break-word !important;', $content);
+        $this->assertStringContainsString('word-break: normal !important;', $content);
+    }
 }
