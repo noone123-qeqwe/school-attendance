@@ -62,41 +62,41 @@
 @endphp
 
 @if(session('error'))
-<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;padding:12px 16px;font-size:.875rem;margin-bottom:20px;display:flex;align-items:center;gap:10px;">
-    <i class="bi bi-exclamation-circle-fill"></i><span>{{ session('error') }}</span>
+<div class="mobile-error-toast" style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;padding:10px 14px;font-size:.82rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;word-break:break-word;">
+    <i class="bi bi-exclamation-circle-fill" style="flex-shrink:0;"></i><span>{{ session('error') }}</span>
 </div>
 @endif
 
 <!-- Active Warnings -->
 @if(isset($activeWarnings) && $activeWarnings->count() > 0)
-<div class="ent-alert ent-fade-up" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); margin-bottom: 24px; padding: 24px; border-radius: 16px;">
+<div class="ent-alert ent-fade-up mobile-warning-section" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); margin-bottom: 20px; padding: 20px; border-radius: 16px;">
     <div class="d-flex align-items-center gap-3 mb-3">
-        <div class="ent-alert-icon" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.1);">
+        <div class="ent-alert-icon" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.1); flex-shrink: 0;">
             <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
-        <div class="ent-alert-body" style="flex: 1;">
-            <div class="ent-alert-title" style="color: #fca5a5; font-weight: 700; font-size: 1.1rem; letter-spacing: -0.01em;">Action Required: Attendance Warning</div>
-            <div class="ent-alert-text" style="color: #b39b82; font-size: 0.875rem;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
+        <div class="ent-alert-body" style="flex: 1; min-width: 0;">
+            <div class="ent-alert-title" style="color: #fca5a5; font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em;">Action Required: Attendance Warning</div>
+            <div class="ent-alert-text" style="color: #b39b82; font-size: 0.82rem; line-height: 1.4;">You have {{ $activeWarnings->count() }} active warning(s). Please review your attendance immediately.</div>
         </div>
     </div>
     
-    <div class="d-flex flex-column gap-3 mb-4">
+    <div class="d-flex flex-column gap-3 mb-3 warning-cards-list">
         @foreach($activeWarnings as $warning)
-        <div style="background: rgba(0,0,0,0.3); padding: 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s ease;">
-            <div class="d-flex justify-content-between mb-2">
-                <span style="color: #fca5a5; font-weight: 700; font-size: 0.875rem;"><i class="bi bi-exclamation-triangle-fill me-2" style="opacity: 0.8;"></i>{{ $warning->subject_code }}</span>
-                <span style="color: #b39b82; font-size: 0.75rem;">{{ $warning->created_at->diffForHumans() }}</span>
+        <div class="warning-card-item" style="background: rgba(0,0,0,0.3); padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.2s ease;">
+            <div class="warning-card-header" style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:4px; margin-bottom:8px;">
+                <span style="color: #fca5a5; font-weight: 700; font-size: 0.84rem;"><i class="bi bi-exclamation-triangle-fill me-1" style="opacity: 0.8;"></i>{{ $warning->subject_code }}</span>
+                <span style="color: #b39b82; font-size: 0.72rem;">{{ $warning->created_at->diffForHumans() }}</span>
             </div>
-            <div style="font-size: 0.875rem; color: #d6b67b; line-height: 1.6;">{{ $warning->message }}</div>
+            <div style="font-size: 0.82rem; color: #d6b67b; line-height: 1.5; word-break: break-word;">{{ $warning->message }}</div>
         </div>
         @endforeach
     </div>
     
-    <div class="d-flex gap-3 flex-wrap">
-        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, #dc2626, #b91c1c); border: 1px solid rgba(239,68,68,0.4); border-radius: 10px;">
+    <div class="d-flex gap-2 flex-wrap warning-action-btns">
+        <a href="{{ route('excuses') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, #dc2626, #b91c1c); border: 1px solid rgba(239,68,68,0.4); border-radius: 10px; flex: 1; min-width: 120px; text-align: center; justify-content: center;">
             <i class="bi bi-file-text-fill"></i> Submit Excuse
         </a>
-        <a href="{{ route('attendance.records') }}" class="ent-btn ent-btn-secondary" style="color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px;">
+        <a href="{{ route('attendance.records') }}" class="ent-btn ent-btn-secondary" style="color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; flex: 1; min-width: 120px; text-align: center; justify-content: center;">
             View Records
         </a>
     </div>
@@ -105,16 +105,51 @@
 
 <style>
     @media (max-width: 768px) {
-        .hero-banner { padding: 16px !important; border-radius: 16px !important; box-shadow: none !important; }
-        .hero-banner h1 { font-size: 1.5rem !important; margin-bottom: 4px !important; }
-        .subject-stat-card { padding: 16px !important; box-shadow: none !important; border-radius: 12px !important; }
-        .subject-stat-card .rate-text { font-size: 1.4rem !important; }
+        /* Hero banner compact */
+        .hero-banner { padding: 14px !important; border-radius: 14px !important; box-shadow: none !important; }
+        .hero-banner h1 { font-size: 1.2rem !important; margin-bottom: 4px !important; }
+
+        /* Subject stat cards compact */
+        .subject-stat-card { padding: 14px !important; box-shadow: none !important; border-radius: 12px !important; }
+        .subject-stat-card .rate-text { font-size: 1.35rem !important; }
         .subject-stat-card .bg-glow { display: none !important; }
+
+        /* Calendar compact */
         .att-cal-wrap { border-radius: 12px !important; border: 1px solid rgba(255,255,255,0.03) !important; background: rgba(0,0,0,0.08) !important; }
-        .att-cal-grid { padding: 0 8px 12px !important; gap: 2px !important; }
+        .att-cal-grid { padding: 0 6px 10px !important; gap: 2px !important; }
         .att-cal-cell { border-radius: 6px !important; }
-        .att-cal-stats { padding: 10px 8px !important; }
-        .att-cal-stat { border: none !important; padding: 4px 8px !important; background: transparent !important; }
+        .att-cal-stats { padding: 8px 6px !important; }
+        .att-cal-stat { border: none !important; padding: 3px 6px !important; background: transparent !important; }
+
+        /* Warning section — stack buttons vertically */
+        .mobile-warning-section { padding: 14px !important; margin-bottom: 14px !important; border-radius: 14px !important; }
+        .mobile-warning-section .ent-alert-title { font-size: 0.88rem !important; line-height: 1.3 !important; }
+        .mobile-warning-section .ent-alert-text { font-size: 0.76rem !important; }
+        .mobile-warning-section .warning-card-item { padding: 12px !important; border-radius: 10px !important; }
+        .mobile-warning-section .warning-card-header { flex-direction: column !important; gap: 3px !important; }
+        .mobile-warning-section .warning-action-btns { flex-direction: column !important; gap: 8px !important; }
+        .mobile-warning-section .warning-action-btns > a { width: 100% !important; min-width: 0 !important; flex: none !important; }
+
+        /* Hero card CTA compact */
+        .premium-hero-card .d-md-none.d-flex { flex-direction: column !important; gap: 8px !important; }
+        .premium-hero-card .d-md-none .btn-modern-primary,
+        .premium-hero-card .d-md-none .btn-modern-glass {
+            width: 100% !important;
+            justify-content: center !important;
+            padding: 10px 14px !important;
+            font-size: 0.82rem !important;
+            min-height: 44px !important;
+        }
+
+        /* Error toast compact */
+        .mobile-error-toast { font-size: 0.78rem !important; padding: 10px 12px !important; margin-bottom: 12px !important; }
+    }
+
+    @media (max-width: 360px) {
+        .premium-hero-card h1 { font-size: 1.05rem !important; }
+        .premium-hero-card .d-md-none .btn-modern-primary,
+        .premium-hero-card .d-md-none .btn-modern-glass { font-size: 0.78rem !important; padding: 9px 12px !important; }
+        .mobile-warning-section .ent-alert-title { font-size: 0.82rem !important; }
     }
 </style>
 
