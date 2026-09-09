@@ -2766,12 +2766,12 @@ async function checkForAppUpdates() {
             feedback.style.background = 'rgba(207, 164, 111, 0.12)';
             feedback.style.border = '1px solid rgba(207, 164, 111, 0.35)';
             feedback.style.color = '#f3e7cd';
-            feedback.innerHTML = '<i class="bi bi-stars me-2"></i>A new software update is available! Tap "Restart & Update" on the notification to install.';
+            feedback.innerHTML = '<i class="bi bi-stars me-2"></i>A new software update is ready! Tap "Refresh Now" on the notification to use the latest version.';
         } else {
             feedback.style.background = 'rgba(16, 185, 129, 0.1)';
             feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
             feedback.style.color = '#6ee7b7';
-            feedback.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Your application is up to date (v{{ config('changelog.default_version', '2.3.0') }}). You have the latest version installed.';
+            feedback.innerHTML = '<div style="display:flex; align-items:flex-start; gap:8px;"><i class="bi bi-check-circle-fill me-1" style="font-size:1.1rem; color:#22c55e;"></i><div><strong>You’re up to date ✓</strong><div style="font-size:0.85em; opacity:0.9; margin-top:2px;">Your system is already running the latest version (v{{ config('changelog.default_version', '2.3.2') }}).</div></div></div>';
         }
         if (statusText) statusText.textContent = 'Last checked: Just now';
     } catch (e) {

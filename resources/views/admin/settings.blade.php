@@ -241,14 +241,15 @@ async function checkAdminUpdates() {
     }
 
     try {
-        if ('serviceWorker' in navigator) {
+        let result = null;
+        if (typeof checkServerVersion === 'function') {
+            result = await checkServerVersion(true, true);
+        } else if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.getRegistration();
             if (reg) {
                 await reg.update();
-                if (reg.waiting) {
-                    if (typeof showAppUpdatePopup === 'function') {
-                        showAppUpdatePopup(null, true);
-                    }
+                if (reg.waiting && typeof showAppUpdatePopup === 'function') {
+                    showAppUpdatePopup(null, true);
                     feedback.style.display = 'none';
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Update Ready';
@@ -257,12 +258,23 @@ async function checkAdminUpdates() {
             }
         }
 
-        await new Promise(r => setTimeout(r, 700));
+        await new Promise(r => setTimeout(r, 400));
 
-        feedback.style.background = 'rgba(16, 185, 129, 0.1)';
-        feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-        feedback.style.color = '#6ee7b7';
-        feedback.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> System & App are fully up to date (v2.1.0).';
+        const popup = document.getElementById('pwaSystemUpdatePopup');
+        const popupVisible = popup && window.getComputedStyle(popup).display !== 'none';
+
+        if (popupVisible || (result && !result.upToDate)) {
+            feedback.style.background = 'rgba(207, 164, 111, 0.12)';
+            feedback.style.border = '1px solid rgba(207, 164, 111, 0.35)';
+            feedback.style.color = '#f3e7cd';
+            feedback.innerHTML = '<i class="bi bi-stars me-2"></i>A new software update is ready! Tap "Refresh Now" on the notification to activate.';
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i> Update Ready';
+        } else {
+            feedback.style.background = 'rgba(16, 185, 129, 0.1)';
+            feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            feedback.style.color = '#6ee7b7';
+            feedback.innerHTML = '<div style="display:flex; align-items:flex-start; gap:8px;"><i class="bi bi-check-circle-fill me-1" style="font-size:1.1rem; color:#22c55e;"></i><div><strong>You’re up to date ✓</strong><div style="font-size:0.85em; opacity:0.9; margin-top:2px;">Your system is already running the latest version (v{{ config('changelog.default_version', '2.3.2') }}).</div></div></div>';
+        }
     } catch (e) {
         feedback.style.background = 'rgba(239, 68, 68, 0.1)';
         feedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';

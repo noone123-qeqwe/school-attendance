@@ -103,4 +103,28 @@ class MobileSoftwareUpdatePopupTest extends TestCase
         $this->assertStringContainsString("'pageshow'", $content);
         $this->assertStringContainsString("'visibilitychange'", $content);
     }
+
+    public function test_automatic_update_toast_elements_and_helpers_rendered(): void
+    {
+        $response = $this->get('/login');
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        // Ensure "System Updated ✓" auto-toast element and actions are present
+        $response->assertSee('id="pwaSystemUpdatedToast"', false);
+        $response->assertSee('System Updated', false);
+        $response->assertSee('You are now using the latest version.', false);
+        $response->assertSee('id="pwaDismissUpdatedToastBtn"', false);
+
+        // Ensure Update Ready title and refresh button are present
+        $response->assertSee('Update Ready', false);
+        $response->assertSee('Refresh Now', false);
+
+        // Ensure automatic background update helper functions are defined
+        $this->assertStringContainsString('function showSystemUpdatedToast(', $content);
+        $this->assertStringContainsString('function showUpdateReadyPrompt(', $content);
+        $this->assertStringContainsString('function applySystemUpdate(', $content);
+        $this->assertStringContainsString('window.showSystemUpdatedToast =', $content);
+    }
 }
