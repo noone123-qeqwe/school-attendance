@@ -1,10 +1,5 @@
 @php
-    $layout = 'layouts.app';
-    if(Auth::check()) {
-        if(Auth::user()->isAdmin()) $layout = 'admin.layout';
-        elseif(Auth::user()->isTeacher()) $layout = 'teacher.layout';
-        elseif(Auth::user()->isParent()) $layout = 'parent.layout';
-    }
+    $layout = (Auth::check() && Auth::user()->isAdmin()) ? 'admin.layout' : 'layouts.app';
 @endphp
 @extends($layout)
 

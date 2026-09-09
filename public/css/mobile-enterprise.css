@@ -75,16 +75,96 @@
         border-bottom: 1px solid rgba(255,225,145,0.08) !important;
         display: flex !important;
         align-items: center !important;
+        justify-content: space-between !important;
         z-index: 9980 !important;
+    }
+
+    .header-left {
+        display: flex !important;
+        align-items: center !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+    }
+
+    .header-title-container {
+        min-width: 0 !important;
+        overflow: hidden !important;
     }
 
     .header-page-title {
         font-size: 1.05rem !important;
         font-weight: 800 !important;
         letter-spacing: -0.01em !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 170px !important;
     }
+
     .header-page-sub {
         display: none !important;
+    }
+
+    /* Mobile Back Button */
+    .mobile-back-btn {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #f3e7cd !important;
+        margin-right: 8px !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        touch-action: manipulation !important;
+        transition: transform 0.15s ease, background 0.15s ease !important;
+        flex-shrink: 0 !important;
+    }
+    .mobile-back-btn:active {
+        transform: scale(0.9) !important;
+        background: rgba(207, 164, 111, 0.25) !important;
+        color: #cfa46f !important;
+    }
+
+    /* Compact Header Search Bar */
+    #headerSearchBar.header-search-bar {
+        width: 38px !important;
+        min-width: 38px !important;
+        height: 38px !important;
+        padding: 0 !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        background: rgba(255, 255, 255, 0.07) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: none !important;
+        flex-shrink: 0 !important;
+    }
+    #headerSearchBar .header-search-text,
+    #headerSearchBar .header-search-shortcut {
+        display: none !important;
+    }
+    #headerSearchBar .header-search-icon {
+        font-size: 0.95rem !important;
+        margin: 0 !important;
+        color: #cfa46f !important;
+    }
+    #headerSearchBar:active {
+        transform: scale(0.92) !important;
+        background: rgba(207, 164, 111, 0.2) !important;
+    }
+
+    /* Keyboard Avoidance */
+    body.keyboard-open .mobile-bottom-nav {
+        display: none !important;
+    }
+    body.keyboard-open {
+        padding-bottom: 0 !important;
     }
 
     /* ── NATIVE BOTTOM SHEET MODALS ── */
@@ -96,6 +176,9 @@
         right: 0 !important;
         max-width: 100% !important;
         width: 100% !important;
+        max-height: 90dvh !important;
+        display: flex !important;
+        flex-direction: column !important;
         transform: translateY(100%);
         transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
         z-index: 10000 !important;
@@ -112,6 +195,10 @@
         padding-bottom: calc(20px + env(safe-area-inset-bottom, 16px)) !important;
         position: relative !important;
         box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7) !important;
+        max-height: 90dvh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
     }
     .modal-content::before {
         content: '';
@@ -121,6 +208,14 @@
         border-radius: 99px;
         background: rgba(255, 255, 255, 0.22);
         margin: 0 auto 14px auto;
+        flex-shrink: 0;
+    }
+    .modal-body {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior: contain;
+        flex: 1 1 auto !important;
+        max-height: calc(90dvh - 120px) !important;
     }
 
     /* ── SIDEBAR REMOVED FOR MOBILE ── */
@@ -756,12 +851,22 @@
     }
 
     /* ── FORMS ── */
-    .form-control, .form-select, .ent-input, .saas-input, .adm-input, .tch-input, .ds-input, .ds-select, .ds-textarea {
-        min-height: 50px !important;
+    input:not([type="checkbox"]):not([type="radio"]), select, textarea, .form-control, .form-select, .ent-input, .saas-input, .adm-input, .tch-input, .ds-input, .ds-select, .ds-textarea {
+        min-height: 48px !important;
         font-size: 16px !important;
         border-radius: 12px !important;
         padding: 12px 14px !important;
         transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    }
+
+    input[type="checkbox"], input[type="radio"] {
+        min-height: 22px !important;
+        min-width: 22px !important;
+        width: 22px !important;
+        height: 22px !important;
+        padding: 0 !important;
+        cursor: pointer !important;
+        accent-color: #cfa46f !important;
     }
 
     .form-control:focus, .form-select:focus, .ent-input:focus, .saas-input:focus, .adm-input:focus, .tch-input:focus, .ds-input:focus, .ds-select:focus, .ds-textarea:focus {
@@ -898,14 +1003,56 @@
         text-align: left;
     }
     
+    /* Checkbox column formatting for card rows */
+    .adm-table tbody td:first-child:has(input[type="checkbox"]),
+    .ent-table tbody td:first-child:has(input[type="checkbox"]),
+    .saas-table tbody td:first-child:has(input[type="checkbox"]),
+    .tch-table tbody td:first-child:has(input[type="checkbox"]) {
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.08) !important;
+        padding-bottom: 8px !important;
+        justify-content: flex-start !important;
+        gap: 10px !important;
+    }
+    .adm-table tbody td:first-child:has(input[type="checkbox"])::before,
+    .ent-table tbody td:first-child:has(input[type="checkbox"])::before,
+    .saas-table tbody td:first-child:has(input[type="checkbox"])::before,
+    .tch-table tbody td:first-child:has(input[type="checkbox"])::before {
+        content: 'SELECT RECORD' !important;
+        font-size: 0.7rem !important;
+        font-weight: 700 !important;
+        color: #b39b82 !important;
+        margin-right: 12px !important;
+    }
+
     .adm-table tbody td[data-label="Action"], .adm-table tbody td[data-label="Actions"],
     .ent-table tbody td[data-label="Action"], .ent-table tbody td[data-label="Actions"],
     .saas-table tbody td[data-label="Action"], .saas-table tbody td[data-label="Actions"],
     .tch-table tbody td[data-label="Action"], .tch-table tbody td[data-label="Actions"],
     .table tbody td[data-label="Action"], .table tbody td[data-label="Actions"] {
         justify-content: flex-end !important;
-        gap: 10px;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
         padding-top: 14px !important;
+    }
+
+    .adm-table tbody td[data-label="Action"] .btn,
+    .adm-table tbody td[data-label="Actions"] .btn,
+    .ent-table tbody td[data-label="Action"] .btn,
+    .ent-table tbody td[data-label="Actions"] .btn,
+    .saas-table tbody td[data-label="Action"] .btn,
+    .saas-table tbody td[data-label="Actions"] .btn,
+    .tch-table tbody td[data-label="Action"] .btn,
+    .tch-table tbody td[data-label="Actions"] .btn {
+        min-height: 38px !important;
+        min-width: 38px !important;
+        padding: 6px 12px !important;
+        font-size: 0.8rem !important;
+        border-radius: 10px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        touch-action: manipulation !important;
     }
     
     .adm-table tbody td[data-label="Action"]::before, .adm-table tbody td[data-label="Actions"]::before,
@@ -1305,5 +1452,39 @@
     .saas-card-header form button {
         width: 100% !important;
         min-width: 0 !important;
+    }
+
+    /* Enhanced Mobile Directory & Header Actions */
+    .header-actions, .card-actions, .directory-actions, .page-actions {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        width: 100% !important;
+    }
+    .header-actions > .btn, .card-actions > .btn, .directory-actions > .btn, .page-actions > .btn {
+        flex: 1 1 calc(50% - 4px) !important;
+        min-height: 42px !important;
+    }
+    .header-actions > .btn-primary, .card-actions > .btn-primary, .directory-actions > .btn-primary, .page-actions > .btn-primary {
+        flex: 1 1 100% !important;
+        order: -1 !important;
+    }
+
+    /* Mobile Pagination Optimization */
+    .pagination {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 4px !important;
+    }
+    .page-item .page-link {
+        min-width: 38px !important;
+        min-height: 38px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+        font-size: 0.82rem !important;
+        padding: 6px 10px !important;
     }
 }

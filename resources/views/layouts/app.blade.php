@@ -67,7 +67,19 @@
                     <button class="burger-btn d-none d-md-flex" id="burgerBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
                         <i class="bi bi-layout-sidebar-inset"></i>
                     </button>
-                    <div>
+                    @php
+                        $isRootPage = request()->routeIs('home') || request()->routeIs('admin.dashboard') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard');
+                        $fallbackBackUrl = route('home');
+                        if (Auth::user()->isAdmin()) $fallbackBackUrl = route('admin.dashboard');
+                        elseif (Auth::user()->isTeacher()) $fallbackBackUrl = route('teacher.dashboard');
+                        elseif (Auth::user()->isParent()) $fallbackBackUrl = route('parent.dashboard');
+                    @endphp
+                    @if(!$isRootPage)
+                        <button type="button" class="mobile-back-btn d-md-none" onclick="if(window.history.length > 1) { window.history.back(); } else { window.location.href='{{ $fallbackBackUrl }}'; }" aria-label="Go back" title="Back">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                    @endif
+                    <div class="header-title-container">
                         <div class="header-page-title">
                             @hasSection('page-title')
                                 @yield('page-title')
@@ -1371,12 +1383,31 @@
                         searchBar.classList.add('active');
                         setTimeout(function() { searchBar.classList.remove('active'); }, 500);
                     }
-                } else if (e.key === 'Escape') {
-                    if (searchBar && document.activeElement === searchBar) {
-                        searchBar.blur();
-                    }
                 }
             });
+
+            // ── Mobile Virtual Keyboard Handling ──
+            if (window.visualViewport) {
+                const handleViewportResize = () => {
+                    const isKeyboard = window.visualViewport.height < (window.innerHeight - 120);
+                    document.body.classList.toggle('keyboard-open', isKeyboard);
+                };
+                window.visualViewport.addEventListener('resize', handleViewportResize);
+                window.visualViewport.addEventListener('scroll', handleViewportResize);
+            }
+
+            // Global Native Touch Haptic Helper
+            window.triggerHaptic = function(type = 'light') {
+                if ('vibrate' in navigator) {
+                    try {
+                        if (type === 'light') navigator.vibrate(8);
+                        else if (type === 'medium') navigator.vibrate(18);
+                        else if (type === 'heavy') navigator.vibrate(30);
+                        else if (type === 'success') navigator.vibrate([12, 30, 20]);
+                        else if (type === 'error') navigator.vibrate([25, 40, 25]);
+                    } catch(e) {}
+                }
+            };
         });
     </script>
 

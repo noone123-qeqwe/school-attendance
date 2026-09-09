@@ -1018,8 +1018,10 @@
     .scanner-modal-card {
         max-width: 100vw;
         width: 100vw;
-        min-height: 88dvh;
-        max-height: 96dvh;
+        max-height: 94dvh;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior: contain;
         border-radius: 32px 32px 0 0;
         border-bottom: none;
         border-left: none;

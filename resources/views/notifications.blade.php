@@ -177,12 +177,17 @@
     
     @media (max-width: 768px) {
         .page-header {
-            padding: 16px 20px;
-            border-radius: 12px;
+            padding: 18px 20px;
+            border-radius: 16px;
             margin-bottom: 16px;
         }
-        .page-header h1 { font-size: 1.25rem; }
-        .notification-card { padding: 16px; }
+        .page-header h1 { font-size: 1.3rem; }
+        .notification-card { 
+            padding: 16px; 
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+        }
         .notification-header {
             flex-direction: column;
             align-items: stretch;
@@ -197,17 +202,37 @@
         .action-btn {
             width: 100%;
             justify-content: center;
-            padding: 8px 16px;
+            padding: 10px 16px;
+            min-height: 44px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            touch-action: manipulation;
+        }
+        .action-btn:active {
+            transform: scale(0.96);
         }
         .filter-tabs {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
+            margin-bottom: 18px;
+            display: flex;
+            gap: 8px;
         }
         .filter-tabs::-webkit-scrollbar { display: none; }
+        .filter-tab {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 99px;
+            padding: 8px 18px;
+            touch-action: manipulation;
+        }
         .notification-meta {
             flex-wrap: wrap;
             gap: 8px 16px;
+            font-size: 0.78rem;
         }
     }
 </style>

@@ -9,9 +9,91 @@
     </div>
 </div>
 
+@php
+    $currentDay = now()->format('l');
+    $validDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    $defaultDay = in_array($currentDay, $validDays) ? $currentDay : 'Monday';
+@endphp
+
+<style>
+    @media (max-width: 767px) {
+        .mobile-sched-hidden {
+            display: none !important;
+        }
+        .schedule-day-rail {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 4px 2px 8px 2px;
+            margin-bottom: 12px;
+            scrollbar-width: none;
+        }
+        .schedule-day-rail::-webkit-scrollbar {
+            display: none;
+        }
+        .schedule-day-pill {
+            flex-shrink: 0;
+            min-height: 42px;
+            padding: 8px 16px;
+            border-radius: 99px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            color: #b39b82;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            touch-action: manipulation;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: pointer;
+        }
+        .schedule-day-pill:active {
+            transform: scale(0.94);
+        }
+        .schedule-day-pill.active {
+            background: linear-gradient(135deg, rgba(207, 164, 111, 0.28), rgba(184, 134, 56, 0.15)) !important;
+            border-color: rgba(207, 164, 111, 0.55) !important;
+            color: #f5dfa8 !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+        }
+        .schedule-day-pill-badge {
+            font-size: 0.7rem;
+            padding: 2px 7px;
+            border-radius: 99px;
+            background: rgba(207, 164, 111, 0.2);
+            color: #f5dfa8;
+            font-weight: 800;
+        }
+        .schedule-day-pill.active .schedule-day-pill-badge {
+            background: #cfa46f;
+            color: #120804;
+        }
+    }
+</style>
+
+<!-- Mobile Day Selector Pill Rail -->
+<div class="d-md-none">
+    <div class="schedule-day-rail">
+        @foreach($validDays as $day)
+            @php $count = $weeklySchedule[$day]->count(); @endphp
+            <button type="button" 
+                    class="schedule-day-pill {{ $day === $defaultDay ? 'active' : '' }}" 
+                    onclick="selectScheduleDay('{{ $day }}')"
+                    id="sched-pill-{{ $day }}">
+                <span>{{ substr($day, 0, 3) }}</span>
+                @if($count > 0)
+                    <span class="schedule-day-pill-badge">{{ $count }}</span>
+                @endif
+            </button>
+        @endforeach
+    </div>
+</div>
+
 <div class="row g-4">
     @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
-        <div class="col-lg-12">
+        <div class="col-lg-12 schedule-day-col {{ $day === $defaultDay ? '' : 'mobile-sched-hidden' }}" id="sched-day-card-{{ $day }}">
             <x-card title="{{ $day }}" icon="bi bi-calendar-event">
                 @if($weeklySchedule[$day]->count() > 0)
                     <!-- Desktop Table -->
@@ -36,7 +118,7 @@
                                 <tr>
                                     <td data-label="Time">
                                         <div style="font-weight: 700; color: var(--gold);">
-                                            {{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}
+                                             {{ \Carbon\Carbon::parse($sched->start_time)->format('g:i A') }} - {{ \Carbon\Carbon::parse($sched->end_time)->format('g:i A') }}
                                         </div>
                                     </td>
                                     <td data-label="Subject">
@@ -59,13 +141,13 @@
                     <div class="d-block d-md-none">
                         <div class="d-flex flex-column pt-2">
                             @foreach($weeklySchedule[$day] as $sched)
-                                <div style="border-left: 3px solid var(--gold); background: transparent; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 0 12px 12px; margin-bottom: 4px;">
+                                <div style="border-left: 3px solid var(--gold); background: rgba(255,255,255,0.02); border-radius: 0 12px 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 10px 12px 14px; margin-bottom: 8px;">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <div>
                                             <div style="font-weight: 700; color: #f3e7cd; font-size: 1.05rem; line-height: 1.2;">{{ $sched->subject->name }}</div>
                                             <div style="font-size: 0.75rem; color: #b39b82; margin-top: 2px;">{{ $sched->subject->code }}</div>
                                         </div>
-                                        <span style="color: #38bdf8; font-size: 0.75rem; font-weight: 600; flex-shrink: 0;">{{ $sched->room ?? 'TBA' }}</span>
+                                        <span style="background: rgba(14,165,233,0.15); color: #38bdf8; border: 1px solid rgba(14,165,233,0.3); padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; flex-shrink: 0;">{{ $sched->room ?? 'TBA' }}</span>
                                     </div>
                                     <div class="d-flex flex-column gap-1" style="margin-top: 8px;">
                                         <div style="color: #d6b67b; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
@@ -89,4 +171,21 @@
         </div>
     @endforeach
 </div>
+
+<script nonce="{{ csp_nonce() }}">
+    function selectScheduleDay(day) {
+        if (window.triggerHaptic) window.triggerHaptic('light');
+        document.querySelectorAll('.schedule-day-pill').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById('sched-pill-' + day);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+        document.querySelectorAll('.schedule-day-col').forEach(col => col.classList.add('mobile-sched-hidden'));
+        const targetCol = document.getElementById('sched-day-card-' + day);
+        if (targetCol) {
+            targetCol.classList.remove('mobile-sched-hidden');
+        }
+    }
+</script>
 @endsection
