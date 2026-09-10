@@ -1947,18 +1947,16 @@
     }
 
     function syncPwaInstallVisibility() {
+        const triggers = document.querySelectorAll('.pwa-install-trigger');
+        const banner = document.getElementById('pwaInstallBanner');
         @auth
         // On authenticated dashboard/portal: ensure no install triggers or banner are visible
-        const triggers = document.querySelectorAll('.pwa-install-trigger');
         triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
-        const banner = document.getElementById('pwaInstallBanner');
         if (banner) banner.style.display = 'none';
         @else
         const standalone = checkIsStandalone();
-        const triggers = document.querySelectorAll('.pwa-install-trigger');
         if (standalone) {
             triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
-            const banner = document.getElementById('pwaInstallBanner');
             if (banner) banner.style.display = 'none';
             return;
         }

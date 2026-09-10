@@ -30,11 +30,11 @@
                  class="ppm-avatar-img user-avatar-img"
                  onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name ?? 'User') }}&background=800000&color=fff&size=256'">
             
-            <!-- Desktop Hover Overlay -->
-            <div class="ppm-avatar-hover-overlay" onclick="ppmTriggerPicker(event)" title="Change photo">
+            <!-- Desktop Hover Overlay (Native label trigger for file input) -->
+            <label for="ppmFileInput" class="ppm-avatar-hover-overlay" id="ppmHoverOverlay" role="button" tabindex="0" title="Change photo" aria-label="Change photo">
                 <i class="bi bi-camera-fill fs-3" style="pointer-events: none;"></i>
                 <span class="ppm-hover-text" style="pointer-events: none;">Change</span>
-            </div>
+            </label>
 
             <!-- Live Upload / Status Overlay -->
             <div class="ppm-status-overlay d-none" id="ppmStatusOverlay" aria-live="polite">
@@ -47,20 +47,22 @@
             </div>
         </div>
 
-        <!-- Functional Camera Action Badge (The designated trigger to change profile photo) -->
-        <button type="button" 
-                class="ppm-badge-btn" 
-                id="ppmCameraBadge" 
-                onclick="ppmTriggerPicker(event)" 
-                aria-label="Change profile picture" 
-                title="Change profile picture">
+        <!-- Functional Camera Action Badge (Native label trigger for file input: guaranteed to open picker on mobile/desktop without CSP or JS blockage) -->
+        <label for="ppmFileInput" 
+               class="ppm-badge-btn" 
+               id="ppmCameraBadge" 
+               role="button" 
+               tabindex="0" 
+               aria-label="Change profile picture" 
+               title="Change profile picture">
             <i class="bi bi-camera-fill" style="pointer-events: none;"></i>
-        </button>
+        </label>
     </div>
 
     <!-- Hidden Native File Input (Accessible, zero-size, non-display-none for maximum browser compatibility) -->
     <input type="file" 
            id="ppmFileInput" 
+           name="profile_image"
            style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; opacity: 0;" 
            accept="image/*,image/jpeg,image/png,image/jpg,image/webp,image/gif,image/heic,image/heif" 
            onchange="ppmHandleFileSelect(this)">
@@ -496,7 +498,7 @@
 }
 </style>
 
-<script>
+<script @cspNonce>
 /**
  * Profile Photo Manager
  * Camera badge triggers device image picker, opens circular preview modal, allows confirm/cancel, and uploads with instant cache-busting
@@ -516,6 +518,10 @@
     };
 
     const targetAvatarId = "{{ $avatarId }}";
+
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || routes.csrf;
+    }
 
     // Teleport modals to <body> to avoid clipping or stacking context traps
     function teleportModals() {
@@ -558,22 +564,27 @@
 
     // Trigger device picker synchronously from camera badge or avatar
     window.ppmTriggerPicker = function(e) {
+        if (state.isUploading) return;
+        const input = document.getElementById('ppmFileInput');
+        if (!input) return;
+
+        // If triggered directly by label click, browser natively opens file picker; just reset value
+        if (e && e.target && (e.target.id === 'ppmCameraBadge' || e.target.closest('#ppmCameraBadge') || e.target.id === 'ppmHoverOverlay' || e.target.closest('#ppmHoverOverlay'))) {
+            input.value = '';
+            return;
+        }
+
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        if (state.isUploading) return;
-
-        const input = document.getElementById('ppmFileInput');
-        if (input) {
-            input.value = '';
-            input.click();
-        }
+        input.value = '';
+        input.click();
     };
 
     // Clicking avatar ring forwards to camera picker
     window.ppmDropzoneClick = function(e) {
-        if (e.target.closest('#ppmCameraBadge')) {
+        if (e.target.closest('#ppmCameraBadge') || e.target.closest('#ppmHoverOverlay')) {
             return;
         }
         window.ppmTriggerPicker(e);
@@ -581,13 +592,15 @@
 
     // Handle file selection from camera or file dialog
     window.ppmHandleFileSelect = function(input) {
-        if (!input.files || !input.files[0]) {
+        if (!input || !input.files || !input.files[0]) {
             return;
         }
         const file = input.files[0];
 
-        // 1. Validate File Type
-        const isImage = file.type ? file.type.startsWith('image/') : /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name);
+        // 1. Validate File Type (flexible for mobile camera captures)
+        const isImage = (file.type && file.type.startsWith('image/')) || 
+                        /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name || '') || 
+                        (file.size > 0 && !file.type);
         if (!isImage) {
             ppmShowToast('Please select a valid image file (JPG, PNG, WEBP, HEIC).', 'error');
             return;
@@ -666,7 +679,7 @@
         });
     };
 
-    // Auto center-crop to 1:1 square canvas (max 800x800) for crisp, lightweight transfer
+    // Auto center-crop to 1:1 square canvas (max 800x800, min 100x100) for crisp, lightweight transfer
     function prepareSquareBlob(dataUrl, originalFile, callback) {
         const img = new Image();
         img.onload = function() {
@@ -683,7 +696,7 @@
                 const cropY = (srcH - minSide) / 2;
 
                 const maxDim = 800;
-                const targetDim = Math.min(minSide, maxDim);
+                const targetDim = Math.max(100, Math.min(minSide, maxDim));
 
                 const canvas = document.createElement('canvas');
                 canvas.width = targetDim;
@@ -712,16 +725,17 @@
 
     // Execute AJAX upload
     function executeUpload(blob) {
+        const csrfToken = getCsrfToken();
         const formData = new FormData();
         formData.append('profile_image', blob, 'profile.jpg');
-        formData.append('_token', routes.csrf);
+        formData.append('_token', csrfToken);
 
         fetch(routes.upload, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': routes.csrf,
+                'X-CSRF-TOKEN': csrfToken,
             },
             body: formData
         })
@@ -864,6 +878,7 @@
     };
 
     window.ppmExecuteRemove = function() {
+        const csrfToken = getCsrfToken();
         const btn = document.getElementById('ppmConfirmRemoveBtn');
         const cancelBtn = document.getElementById('ppmCancelRemoveBtn');
         if (btn) {
@@ -879,10 +894,10 @@
                 'Content-Type': 'application/json',
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': routes.csrf,
+                'X-CSRF-TOKEN': csrfToken,
                 'X-HTTP-Method-Override': 'DELETE',
             },
-            body: JSON.stringify({ _token: routes.csrf, _method: 'DELETE' })
+            body: JSON.stringify({ _token: csrfToken, _method: 'DELETE' })
         })
         .then(res => res.json())
         .then(data => {
@@ -972,25 +987,97 @@
         }, 3500);
     };
 
-    // Keyboard & Drag-and-drop
-    function initKeyboardSupport() {
-        const badge = document.getElementById('ppmCameraBadge');
-        if (badge) {
-            badge.addEventListener('keydown', (e) => {
+    // Bind explicit event listeners to bypass any CSP inline handler restrictions
+    function bindEventListeners() {
+        const fileInput = document.getElementById('ppmFileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                ppmHandleFileSelect(this);
+            });
+        }
+
+        const cameraBadge = document.getElementById('ppmCameraBadge');
+        if (cameraBadge) {
+            cameraBadge.addEventListener('click', function(e) {
+                if (fileInput) fileInput.value = '';
+            });
+            cameraBadge.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    window.ppmTriggerPicker(e);
+                    if (fileInput) {
+                        fileInput.value = '';
+                        fileInput.click();
+                    }
                 }
             });
         }
-        const dropzone = document.getElementById('ppmDropzone');
-        if (dropzone) {
-            dropzone.addEventListener('keydown', (e) => {
+
+        const hoverOverlay = document.getElementById('ppmHoverOverlay');
+        if (hoverOverlay) {
+            hoverOverlay.addEventListener('click', function(e) {
+                if (fileInput) fileInput.value = '';
+            });
+            hoverOverlay.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    window.ppmTriggerPicker(e);
+                    if (fileInput) {
+                        fileInput.value = '';
+                        fileInput.click();
+                    }
                 }
             });
+        }
+
+        const dropzone = document.getElementById('ppmDropzone');
+        if (dropzone) {
+            dropzone.addEventListener('click', function(e) {
+                if (e.target.closest('#ppmCameraBadge') || e.target.closest('#ppmHoverOverlay')) {
+                    return;
+                }
+                if (fileInput) {
+                    fileInput.value = '';
+                    fileInput.click();
+                }
+            });
+            dropzone.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (fileInput) {
+                        fileInput.value = '';
+                        fileInput.click();
+                    }
+                }
+            });
+        }
+
+        const confirmSaveBtn = document.getElementById('ppmConfirmSaveBtn');
+        if (confirmSaveBtn) {
+            confirmSaveBtn.addEventListener('click', ppmExecuteSave);
+        }
+
+        const cancelPreviewBtn = document.getElementById('ppmCancelPreviewBtn');
+        if (cancelPreviewBtn) {
+            cancelPreviewBtn.addEventListener('click', ppmCancelPreview);
+        }
+
+        const modalCloseBtn = document.querySelector('#ppmPreviewModal .btn-close');
+        if (modalCloseBtn) {
+            modalCloseBtn.addEventListener('click', ppmCancelPreview);
+        }
+
+        const removeBtn = document.getElementById('ppmRemoveBtn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', ppmPromptRemove);
+        }
+
+        const confirmRemoveBtn = document.getElementById('ppmConfirmRemoveBtn');
+        if (confirmRemoveBtn) {
+            confirmRemoveBtn.addEventListener('click', ppmExecuteRemove);
+        }
+
+        const cancelRemoveBtn = document.getElementById('ppmCancelRemoveBtn');
+        if (cancelRemoveBtn) {
+            cancelRemoveBtn.addEventListener('click', ppmCloseRemoveModal);
         }
     }
 
@@ -1023,17 +1110,17 @@
         });
     }
 
+    function init() {
+        teleportModals();
+        bindEventListeners();
+        initDragAndDrop();
+    }
+
     // Initialize on DOM ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            teleportModals();
-            initKeyboardSupport();
-            initDragAndDrop();
-        });
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        teleportModals();
-        initKeyboardSupport();
-        initDragAndDrop();
+        init();
     }
 })();
 </script>

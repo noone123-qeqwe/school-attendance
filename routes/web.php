@@ -75,6 +75,17 @@ Route::get('/download/apk', function () {
     ]);
 })->name('pwa.download.apk');
 
+// Public Storage Fallback (Ensures uploaded media/profile images work seamlessly on PaaS/Render even if storage:link symlink is absent)
+Route::get('/storage/{path}', function (string $path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath) || is_dir($fullPath)) {
+        abort(404);
+    }
+    return response()->file($fullPath, [
+        'Cache-Control' => 'public, max-age=86400',
+    ]);
+})->where('path', '.*')->name('storage.fallback');
+
 Route::get('/SmartAttendance.apk', function () {
     return redirect()->route('pwa.download.apk');
 });
