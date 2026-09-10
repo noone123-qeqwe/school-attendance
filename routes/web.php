@@ -328,12 +328,6 @@ Route::middleware(['auth', 'student'])->group(function () {
 
 
 
-    // WebAuthn (Fingerprint / Biometric Management for all authenticated users)
-    Route::get('/webauthn/register-options', [App\Http\Controllers\WebAuthnController::class, 'registerOptions'])->name('webauthn.register.options');
-    Route::post('/webauthn/register', [App\Http\Controllers\WebAuthnController::class, 'register'])->name('webauthn.register');
-    Route::get('/webauthn/devices', [App\Http\Controllers\WebAuthnController::class, 'devices'])->name('webauthn.devices');
-    Route::match(['delete', 'post'], '/webauthn/device', [App\Http\Controllers\WebAuthnController::class, 'removeDevice'])->name('webauthn.remove');
-
     // WebAuthn QR verification
     Route::post('/qr/verify-options', [App\Http\Controllers\QrAttendanceController::class, 'verificationOptions'])->name('qr.verify.options');
     Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->name('qr.verify.complete');
@@ -341,6 +335,14 @@ Route::middleware(['auth', 'student'])->group(function () {
     // Direct QR Scanner Processing
     Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process')->middleware('device.bound');
     Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct')->middleware('device.bound');
+});
+
+// WebAuthn (Fingerprint / Biometric Management for all authenticated users)
+Route::middleware('auth')->group(function () {
+    Route::get('/webauthn/register-options', [App\Http\Controllers\WebAuthnController::class, 'registerOptions'])->name('webauthn.register.options');
+    Route::post('/webauthn/register', [App\Http\Controllers\WebAuthnController::class, 'register'])->name('webauthn.register');
+    Route::get('/webauthn/devices', [App\Http\Controllers\WebAuthnController::class, 'devices'])->name('webauthn.devices');
+    Route::match(['delete', 'post'], '/webauthn/device', [App\Http\Controllers\WebAuthnController::class, 'removeDevice'])->name('webauthn.remove');
 });
 
 // Teacher Routes (Teachers only)

@@ -72,10 +72,6 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
         }
 
-        if (!is_array($credential) || empty($credential['response'])) {
-            return response()->json(["success" => false, "message" => "Invalid credential data."], 422);
-        }
-
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
 
         $exists = DB::table("webauthn_credentials")
@@ -91,6 +87,61 @@ class WebAuthnController extends Controller
                 "success" => false, 
                 "message" => "This {$typeLabel} credential is already registered on your account."
             ], 409);
+        }
+
+        // Direct camera-based face recognition registration (independent from WebAuthn device verification)
+        $isDirectFace = $biometricType === 'face' && (
+            empty($credential['response']['attestationObject']) || 
+            $request->has('face_descriptor') || 
+            $request->has('face_data')
+        );
+
+        if ($isDirectFace) {
+            try {
+                $faceData = $request->input('face_descriptor') 
+                    ?? $request->input('face_data') 
+                    ?? $request->input('public_key') 
+                    ?? hash('sha256', $credentialId . $user->id . config('app.key'));
+
+                \App\Models\WebauthnCredential::create([
+                    'user_id' => $user->id,
+                    'credential_id' => $credentialId,
+                    'public_key' => (string) $faceData,
+                    'sign_count' => 0,
+                    'device_name' => $deviceName,
+                    'biometric_type' => 'face',
+                    'last_used_at' => now(),
+                ]);
+
+                // Check if user already has recovery codes
+                $hasRecoveryCodes = \App\Models\RecoveryCode::where('user_id', $user->id)->exists();
+                $recoveryCodes = [];
+
+                if (!$hasRecoveryCodes) {
+                    for ($i = 0; $i < 5; $i++) {
+                        $rawCode = strtoupper(Str::random(4) . '-' . Str::random(4));
+                        $recoveryCodes[] = $rawCode;
+                        
+                        \App\Models\RecoveryCode::create([
+                            'user_id' => $user->id,
+                            'code' => \Illuminate\Support\Facades\Hash::make($rawCode),
+                        ]);
+                    }
+                }
+
+                return response()->json([
+                    "success" => true, 
+                    "message" => "Face Recognition Registered Successfully ✓",
+                    "biometric_type" => "face",
+                    "recovery_codes" => $recoveryCodes
+                ]);
+            } catch (\Throwable $e) {
+                return response()->json(["success" => false, "message" => "Failed to store Face Recognition: " . $e->getMessage()], 422);
+            }
+        }
+
+        if (!is_array($credential) || empty($credential['response'])) {
+            return response()->json(["success" => false, "message" => "Invalid credential data."], 422);
         }
 
         try {
@@ -119,9 +170,13 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "message" => "Failed to store {$typeLabel}: " . $e->getMessage()], 422);
         }
 
+        $successMsg = $biometricType === 'face' 
+            ? 'Face Recognition Registered Successfully ✓' 
+            : "{$typeLabel} registered successfully!";
+
         return response()->json([
             "success" => true, 
-            "message" => "{$typeLabel} registered successfully!",
+            "message" => $successMsg,
             "biometric_type" => $biometricType,
             "recovery_codes" => $recoveryCodes
         ]);
