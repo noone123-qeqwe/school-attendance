@@ -627,31 +627,165 @@ input[type="date"], input[type="time"] { color-scheme: dark; }
 
 /* ── 10. PROFILE DROPDOWN ── */
 .fb-dropdown {
-    width: 300px !important; border-radius: 14px !important;
-    border: 1px solid rgba(207,164,111,0.24) !important;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.25) !important;
+    width: 290px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(207, 164, 111, 0.28) !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(207, 164, 111, 0.12) !important;
     padding: 10px !important;
-    background: rgba(17, 9, 6, 0.96) !important;
+    background: #18100d !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 1060 !important;
 }
+
 .fb-profile-header {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px; border-radius: 10px;
-    text-decoration: none; color: #f3e7cd !important; transition: background 0.15s;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    text-decoration: none !important;
+    background: rgba(207, 164, 111, 0.06) !important;
+    border: 1px solid rgba(207, 164, 111, 0.12) !important;
+    color: #f3e7cd !important;
+    cursor: default !important;
 }
-.fb-profile-header:hover { background: rgba(255,235,190,0.08); }
+
+.fb-dropdown-avatar {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    border: 2px solid #cfa46f !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45) !important;
+    flex-shrink: 0 !important;
+}
+
+.fb-dropdown-user-info {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+}
+
+.fb-dropdown-name {
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+    color: #f3e7cd !important;
+    line-height: 1.25 !important;
+}
+
+.fb-dropdown-sub {
+    font-size: 0.76rem !important;
+    color: #b39b82 !important;
+    line-height: 1.2 !important;
+    margin-top: 2px !important;
+}
+
+.fb-dropdown-role-badge {
+    font-size: 0.65rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px;
+    background: rgba(207, 164, 111, 0.16) !important;
+    color: #dfb582 !important;
+    border: 1px solid rgba(207, 164, 111, 0.28) !important;
+    border-radius: 6px !important;
+    padding: 2px 6px !important;
+}
+
+.fb-dropdown-divider {
+    height: 1px !important;
+    margin: 8px 0 !important;
+    background: rgba(207, 164, 111, 0.16) !important;
+    border: none !important;
+}
+
 .fb-icon-circle {
-    width: 36px; height: 36px; background: #43332a;
-    border-radius: 50%; display: flex; align-items: center;
-    justify-content: center; font-size: 1rem; color: #e7d7b4;
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+    max-width: 38px !important;
+    max-height: 38px !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.05rem !important;
+    line-height: 1 !important;
+    background: rgba(207, 164, 111, 0.14) !important;
+    color: #cfa46f !important;
+    border: 1px solid rgba(207, 164, 111, 0.25) !important;
+    transition: all 0.2s ease !important;
 }
+
 .fb-dropdown-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px; border-radius: 10px;
-    color: #f3e7cd !important; font-weight: 500; font-size: 0.875rem;
-    text-decoration: none; width: 100%; border: none; background: none;
-    transition: background 0.15s;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    color: #f3e7cd !important;
+    font-weight: 600 !important;
+    font-size: 0.88rem !important;
+    text-decoration: none !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+    box-shadow: none !important;
+    white-space: nowrap !important;
+    text-align: left !important;
+    cursor: pointer !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
 }
-.fb-dropdown-item:hover { background: rgba(255,235,190,0.08); }
+
+.fb-dropdown-item:hover,
+.fb-dropdown-item:focus {
+    background: rgba(207, 164, 111, 0.12) !important;
+    color: #ffffff !important;
+}
+
+.fb-dropdown-item:hover .fb-icon-settings {
+    background: rgba(207, 164, 111, 0.25) !important;
+    color: #dfb582 !important;
+    transform: scale(1.05);
+}
+
+.fb-dropdown-logout {
+    color: #ef4444 !important;
+}
+
+.fb-dropdown-logout span {
+    white-space: nowrap !important;
+    display: inline-block !important;
+    color: #ef4444 !important;
+    font-weight: 600 !important;
+}
+
+.fb-icon-logout {
+    background: rgba(239, 68, 68, 0.14) !important;
+    color: #ef4444 !important;
+    border: 1px solid rgba(239, 68, 68, 0.28) !important;
+}
+
+.fb-dropdown-logout:hover,
+.fb-dropdown-logout:focus {
+    background: rgba(239, 68, 68, 0.12) !important;
+}
+
+.fb-dropdown-logout:hover span {
+    color: #f87171 !important;
+}
+
+.fb-dropdown-logout:hover .fb-icon-logout {
+    background: rgba(239, 68, 68, 0.25) !important;
+    color: #fca5a5 !important;
+    border-color: #ef4444 !important;
+    transform: scale(1.05);
+}
 
 /* ── 11. DASHBOARD & HOME COMPONENTS ── */
 /* ── ANIMATED COUNTERS ── */

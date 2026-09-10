@@ -280,44 +280,45 @@
                             </div>
                             <i class="bi bi-chevron-down d-none d-md-block" style="font-size:0.7rem;color:rgba(255,255,255,0.75);"></i>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2">
+                        <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2 shadow-lg">
                             <!-- Profile summary (non-clickable, just info) -->
                             <div class="fb-profile-header" style="cursor:default;">
-                                <img src="{{ $profileImageUrl }}" class="user-avatar-img" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
-                                <div>
-                                    <div class="fw-bold" style="font-size:0.9rem;">{{ Auth::user()->name }}</div>
-                                    <div style="font-size:0.75rem;color:#94a3b8;">{{ Auth::user()->student_number ?: (Auth::user()->employee_id ?: Auth::user()->email) }}</div>
+                                <img src="{{ $profileImageUrl }}" class="user-avatar-img fb-dropdown-avatar" alt="{{ Auth::user()->name }}">
+                                <div class="fb-dropdown-user-info overflow-hidden">
+                                    <div class="fb-dropdown-name text-truncate" title="{{ Auth::user()->name }}">{{ Auth::user()->name }}</div>
+                                    <div class="fb-dropdown-sub text-truncate">{{ Auth::user()->student_number ?: (Auth::user()->employee_id ?: Auth::user()->email) }}</div>
+                                    <span class="badge fb-dropdown-role-badge mt-1">{{ ucfirst(Auth::user()->role) }}</span>
                                 </div>
                             </div>
-                            <hr class="my-2" style="border-color:#f1f5f9;">
+                            <div class="fb-dropdown-divider my-2"></div>
                             @if(Auth::user()->isTeacher())
                             <a class="fb-dropdown-item" href="{{ route('teacher.profile') }}">
-                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
                             </a>
                             @elseif(Auth::user()->isAdmin())
                             <a class="fb-dropdown-item" href="{{ route('admin.profile') }}">
-                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
                             </a>
                             @elseif(Auth::user()->isParent())
                             <a class="fb-dropdown-item" href="{{ route('parent.profile') }}">
-                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
                             </a>
                             @elseif(Auth::user()->isStudent())
                             <a class="fb-dropdown-item" href="{{ route('settings') }}">
-                                <div class="fb-icon-circle"><i class="bi bi-gear-fill"></i></div>
+                                <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
                             </a>
                             @endif
-                            <form action="{{ route('logout') }}" method="POST" class="m-0" onsubmit="return confirm('Are you sure you want to log out?');">
+                            <form id="globalLogoutForm" action="{{ route('logout') }}" method="POST" class="d-none">
                                 @csrf
-                                <button type="submit" class="fb-dropdown-item" style="color:#dc2626 !important;">
-                                    <div class="fb-icon-circle" style="background:#fef2f2;color:#dc2626;"><i class="bi bi-box-arrow-right"></i></div>
-                                    <span>Log Out</span>
-                                </button>
                             </form>
+                            <a href="#" class="fb-dropdown-item fb-dropdown-logout" id="globalLogoutBtn" role="button">
+                                <div class="fb-icon-circle fb-icon-logout"><i class="bi bi-box-arrow-right"></i></div>
+                                <span>Log Out</span>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -353,6 +354,16 @@
         const topHeader   = document.getElementById('topHeader');
         const mainContent = document.getElementById('mainContent');
         const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const globalLogoutBtn = document.getElementById('globalLogoutBtn');
+        if (globalLogoutBtn) {
+            globalLogoutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (confirm('Are you sure you want to log out?')) {
+                    const form = document.getElementById('globalLogoutForm');
+                    if (form) form.submit();
+                }
+            });
+        }
 
         // ── TOAST HELPER ──
         function showToast(message, type = 'success', duration = 4500) {

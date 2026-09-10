@@ -1571,9 +1571,12 @@
         min-height: 44px !important;
         display: flex !important;
         align-items: center !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
     }
 
-    /* Fix profile dropdown overflow on mobile */
+    /* Fix profile dropdown overflow and presentation on mobile */
     .dropdown-menu.fb-dropdown {
         position: absolute !important;
         transform: none !important;
@@ -1581,8 +1584,14 @@
         right: 0 !important;
         left: auto !important;
         margin-top: 8px !important;
-        width: 260px !important;
+        width: 280px !important;
         max-width: calc(100vw - 24px) !important;
+        background: #18100d !important;
+        border: 1px solid rgba(207, 164, 111, 0.28) !important;
+        box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(207, 164, 111, 0.12) !important;
+        border-radius: 16px !important;
+        padding: 10px !important;
+        z-index: 1060 !important;
     }
 
     /* Ensure content is not hidden behind the floating mobile nav */
