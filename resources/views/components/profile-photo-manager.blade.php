@@ -17,11 +17,11 @@
     <div class="ppm-avatar-dropzone position-relative"
          id="ppmDropzone"
          style="width: {{ $size }}px; height: {{ $size }}px;"
-         onclick="ppmTriggerPicker(event)"
+         onclick="ppmDropzoneClick(event)"
          role="button"
          tabindex="0"
          aria-label="Change profile photo"
-         title="Click to select or capture a new profile photo">
+         title="Click camera icon to change profile picture">
         
         <div class="ppm-avatar-ring">
             <img id="{{ $avatarId }}"
@@ -31,10 +31,10 @@
                  onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($user->name ?? 'User') }}&background=800000&color=fff&size=256'">
             
             <!-- Desktop Hover Overlay -->
-            <label for="ppmFileInput" class="ppm-avatar-hover-overlay" onclick="ppmTriggerPicker(event)" title="Change photo">
-                <i class="bi bi-camera-fill fs-3"></i>
-                <span class="ppm-hover-text">Change</span>
-            </label>
+            <div class="ppm-avatar-hover-overlay" onclick="ppmTriggerPicker(event)" title="Change photo">
+                <i class="bi bi-camera-fill fs-3" style="pointer-events: none;"></i>
+                <span class="ppm-hover-text" style="pointer-events: none;">Change</span>
+            </div>
 
             <!-- Live Upload / Status Overlay -->
             <div class="ppm-status-overlay d-none" id="ppmStatusOverlay" aria-live="polite">
@@ -47,53 +47,34 @@
             </div>
         </div>
 
-        <!-- Functional Camera Action Badge (Native label for 100% reliable cross-device tap) -->
-        <label for="ppmFileInput" 
-               class="ppm-badge-btn" 
-               id="ppmCameraBadge" 
-               onclick="ppmTriggerPicker(event)" 
-               role="button"
-               tabindex="0"
-               aria-label="Upload new profile photo" 
-               title="Change photo">
-            <i class="bi bi-camera-fill"></i>
-        </label>
+        <!-- Functional Camera Action Badge (The designated trigger to change profile photo) -->
+        <button type="button" 
+                class="ppm-badge-btn" 
+                id="ppmCameraBadge" 
+                onclick="ppmTriggerPicker(event)" 
+                aria-label="Change profile picture" 
+                title="Change profile picture">
+            <i class="bi bi-camera-fill" style="pointer-events: none;"></i>
+        </button>
     </div>
 
-    <!-- Hidden Native File & Camera Inputs (Accessible, zero-size, non-display-none for cross-platform reliability) -->
+    <!-- Hidden Native File Input (Accessible, zero-size, non-display-none for maximum browser compatibility) -->
     <input type="file" 
            id="ppmFileInput" 
-           name="profile_image"
-           style="position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" 
+           style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; opacity: 0;" 
            accept="image/*,image/jpeg,image/png,image/jpg,image/webp,image/gif,image/heic,image/heif" 
            onchange="ppmHandleFileSelect(this)">
 
-    <input type="file" 
-           id="ppmCameraInput" 
-           capture="user"
-           style="position: fixed; top: -9999px; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none;" 
-           accept="image/*" 
-           onchange="ppmHandleFileSelect(this)">
-
-    <!-- Primary Action Buttons: Change Profile Picture & Optional Remove -->
-    <div class="ppm-action-buttons mt-2 d-flex flex-wrap gap-2 {{ $align === 'center' ? 'justify-content-center text-center' : 'justify-content-start' }}" id="ppmActionButtons">
-        <label for="ppmFileInput" 
-               class="btn ppm-btn-update-photo" 
-               id="ppmChangePictureBtn" 
-               onclick="ppmTriggerPicker(event)" 
-               role="button"
-               tabindex="0"
-               title="Change profile picture">
-            <i class="bi bi-camera-fill me-1"></i> Change Profile Picture
-        </label>
-
+    <!-- Optional Remove Action (Strictly displayed when a custom photo exists, no empty gap when absent) -->
+    <div class="ppm-action-buttons {{ $align === 'center' ? 'text-center' : '' }}" 
+         id="ppmActionButtons" 
+         style="{{ $hasCustom ? 'margin-top: 8px;' : 'display: none !important;' }}">
         <button type="button" 
                 class="btn ppm-btn-remove" 
                 id="ppmRemoveBtn" 
                 onclick="ppmPromptRemove()" 
-                style="{{ $hasCustom ? '' : 'display: none !important;' }}"
                 title="Remove photo and restore default initials avatar">
-            <i class="bi bi-trash3 me-1"></i> Remove
+            <i class="bi bi-trash3 me-1"></i> Remove Photo
         </button>
     </div>
 
@@ -108,7 +89,7 @@
 <!-- ========================================== -->
 <!-- PREVIEW & CONFIRMATION MODAL               -->
 <!-- ========================================== -->
-<div class="modal fade ppm-modal" id="ppmPreviewModal" tabindex="-1" aria-labelledby="ppmPreviewModalTitle" aria-hidden="true">
+<div class="modal fade ppm-modal" id="ppmPreviewModal" tabindex="-1" aria-labelledby="ppmPreviewModalTitle" aria-hidden="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content ppm-modal-card p-3">
             <div class="modal-header border-0 pb-1 justify-content-between">
@@ -120,7 +101,7 @@
             <div class="modal-body p-3 text-center">
                 <p class="small text-muted mb-3">Review your new profile picture before saving to your account.</p>
                 
-                <!-- Circular preview ring -->
+                <!-- Circular preview ring matching avatar styling -->
                 <div class="ppm-preview-avatar-wrap mx-auto mb-3">
                     <img id="ppmPreviewImg" src="" alt="Selected Photo Preview" class="ppm-preview-img">
                 </div>
@@ -154,7 +135,7 @@
 <!-- ========================================== -->
 <!-- REMOVE CONFIRMATION MODAL                  -->
 <!-- ========================================== -->
-<div class="modal fade ppm-modal" id="ppmRemoveConfirmModal" tabindex="-1" aria-labelledby="ppmRemoveModalTitle" aria-hidden="true">
+<div class="modal fade ppm-modal" id="ppmRemoveConfirmModal" tabindex="-1" aria-labelledby="ppmRemoveModalTitle" aria-hidden="true" role="dialog">
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content ppm-modal-card text-center p-3">
             <div class="modal-body p-2">
@@ -187,6 +168,7 @@
 /* ── PROFILE PHOTO MANAGER COMPONENT STYLES ── */
 .ppm-container {
     position: relative;
+    display: inline-flex;
 }
 
 .ppm-avatar-dropzone {
@@ -293,13 +275,13 @@
     border-width: 2.5px;
 }
 
-/* Quick Camera Action Badge */
+/* Quick Camera Action Badge (The designated camera icon button) */
 .ppm-badge-btn {
     position: absolute;
     bottom: 0px;
     right: 0px;
-    width: 34px;
-    height: 34px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: linear-gradient(135deg, #dfb582 0%, #cfa46f 50%, #a87d46 100%);
     color: #120a0a;
@@ -309,14 +291,15 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 0.88rem;
+    font-size: 0.95rem;
     padding: 0;
     margin: 0;
     line-height: 1;
     transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.2s ease;
-    z-index: 6;
+    z-index: 10;
     outline: none;
     -webkit-tap-highlight-color: transparent;
+    pointer-events: auto !important;
 }
 
 .ppm-badge-btn::before {
@@ -330,7 +313,7 @@
 
 .ppm-badge-btn:hover {
     transform: scale(1.15);
-    filter: brightness(1.08);
+    filter: brightness(1.1);
     box-shadow: 0 6px 18px rgba(207, 164, 111, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.7);
 }
 
@@ -348,44 +331,14 @@
     margin-bottom: 0;
 }
 
-.ppm-btn-update-photo {
-    background: rgba(207, 164, 111, 0.14);
-    color: #cfa46f;
-    border: 1px solid rgba(207, 164, 111, 0.35);
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 6px 14px;
-    border-radius: 10px;
-    transition: all 0.2s ease;
-    line-height: 1.2;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    user-select: none;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.ppm-btn-update-photo:hover {
-    background: rgba(207, 164, 111, 0.24);
-    color: #f3e7cd;
-    border-color: #cfa46f;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(207, 164, 111, 0.25);
-}
-
-.ppm-btn-update-photo:active {
-    transform: translateY(0);
-}
-
 .ppm-btn-remove {
     background: rgba(239, 68, 68, 0.12);
     color: #fca5a5;
     border: 1px solid rgba(239, 68, 68, 0.28);
     font-size: 0.78rem;
     font-weight: 600;
-    padding: 6px 12px;
-    border-radius: 10px;
+    padding: 5px 12px;
+    border-radius: 99px;
     transition: all 0.2s ease;
     line-height: 1.2;
     display: inline-flex;
@@ -545,8 +498,8 @@
 
 <script>
 /**
- * Profile Photo Manager - Comprehensive Cross-Platform Flow
- * Supports device camera, file picker, interactive image preview modal, confirm/cancel, AJAX upload, and instant cache-busting
+ * Profile Photo Manager
+ * Camera badge triggers device image picker, opens circular preview modal, allows confirm/cancel, and uploads with instant cache-busting
  */
 (function() {
     const state = {
@@ -564,7 +517,7 @@
 
     const targetAvatarId = "{{ $avatarId }}";
 
-    // Teleport modals to <body> to avoid stacking context / clipping issues
+    // Teleport modals to <body> to avoid clipping or stacking context traps
     function teleportModals() {
         ['ppmPreviewModal', 'ppmRemoveConfirmModal'].forEach(id => {
             const el = document.getElementById(id);
@@ -574,7 +527,7 @@
         });
     }
 
-    // Modal Helpers with standalone CSS fallback
+    // Modal Display Helpers
     function showModal(id) {
         teleportModals();
         const el = document.getElementById(id);
@@ -603,26 +556,30 @@
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
     }
 
-    // Trigger device picker synchronously
+    // Trigger device picker synchronously from camera badge or avatar
     window.ppmTriggerPicker = function(e) {
-        const input = document.getElementById('ppmFileInput');
-        if (!input || state.isUploading) return;
-
-        // If click originated from a label associated with ppmFileInput, let native browser behavior handle it
-        if (e && (e.target.tagName === 'LABEL' || e.target.closest('label[for="ppmFileInput"]'))) {
-            input.value = '';
-            return;
-        }
-
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
-        input.value = '';
-        input.click();
+        if (state.isUploading) return;
+
+        const input = document.getElementById('ppmFileInput');
+        if (input) {
+            input.value = '';
+            input.click();
+        }
     };
 
-    // Handle file selection from input
+    // Clicking avatar ring forwards to camera picker
+    window.ppmDropzoneClick = function(e) {
+        if (e.target.closest('#ppmCameraBadge')) {
+            return;
+        }
+        window.ppmTriggerPicker(e);
+    };
+
+    // Handle file selection from camera or file dialog
     window.ppmHandleFileSelect = function(input) {
         if (!input.files || !input.files[0]) {
             return;
@@ -644,7 +601,7 @@
 
         state.pendingFile = file;
 
-        // 3. Read image and show PREVIEW MODAL
+        // 3. Read image and show PREVIEW & CONFIRMATION MODAL
         const reader = new FileReader();
         reader.onload = function(e) {
             state.pendingDataUrl = e.target.result;
@@ -679,18 +636,16 @@
         reader.readAsDataURL(file);
     };
 
-    // Cancel preview
+    // Cancel preview and discard selection
     window.ppmCancelPreview = function() {
         hideModal('ppmPreviewModal');
         state.pendingFile = null;
         state.pendingDataUrl = null;
         const fi = document.getElementById('ppmFileInput');
         if (fi) fi.value = '';
-        const ci = document.getElementById('ppmCameraInput');
-        if (ci) ci.value = '';
     };
 
-    // User confirmed photo in preview modal: proceed with optimization & upload
+    // User confirmed photo in preview modal: execute optimization & upload
     window.ppmExecuteSave = function() {
         if (!state.pendingFile || !state.pendingDataUrl || state.isUploading) return;
 
@@ -703,9 +658,9 @@
         }
         if (cancelBtn) cancelBtn.setAttribute('disabled', 'true');
 
-        setLoadingState(true, 'Saving...');
+        setLoadingState(true, 'Saving photo...');
 
-        // Optimize into 1:1 square JPEG canvas
+        // Optimize into 1:1 square JPEG canvas (max 800x800)
         prepareSquareBlob(state.pendingDataUrl, state.pendingFile, function(uploadBlob) {
             executeUpload(uploadBlob);
         });
@@ -838,15 +793,10 @@
         const errorIcon = document.getElementById('ppmStatusError');
         const statusText = document.getElementById('ppmStatusText');
         const badge = document.getElementById('ppmCameraBadge');
-        const changeBtn = document.getElementById('ppmChangePictureBtn');
 
         if (badge) {
-            badge.style.pointerEvents = isLoading ? 'none' : '';
+            badge.style.pointerEvents = isLoading ? 'none' : 'auto';
             badge.style.opacity = isLoading ? '0.5' : '';
-        }
-        if (changeBtn) {
-            changeBtn.style.pointerEvents = isLoading ? 'none' : '';
-            changeBtn.style.opacity = isLoading ? '0.5' : '';
         }
 
         if (!overlay) return;
@@ -982,7 +932,16 @@
         });
 
         // Toggle Remove button visibility
+        const actionWrap = document.getElementById('ppmActionButtons');
         const removeBtn = document.getElementById('ppmRemoveBtn');
+        if (actionWrap) {
+            if (hasCustom) {
+                actionWrap.removeAttribute('style');
+                actionWrap.style.marginTop = '8px';
+            } else {
+                actionWrap.style.setProperty('display', 'none', 'important');
+            }
+        }
         if (removeBtn) {
             if (hasCustom) {
                 removeBtn.removeAttribute('style');
@@ -1015,6 +974,15 @@
 
     // Keyboard & Drag-and-drop
     function initKeyboardSupport() {
+        const badge = document.getElementById('ppmCameraBadge');
+        if (badge) {
+            badge.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    window.ppmTriggerPicker(e);
+                }
+            });
+        }
         const dropzone = document.getElementById('ppmDropzone');
         if (dropzone) {
             dropzone.addEventListener('keydown', (e) => {
