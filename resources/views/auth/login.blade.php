@@ -620,32 +620,6 @@
             .top-bar, .bottom-bar { display: none; }
         }
 
-        /* Desktop Install Button Responsiveness */
-        @media (max-width: 768px) {
-            #webInstallAppBtn {
-                bottom: 15px !important;
-                right: 15px !important;
-            }
-            #pwaInstallBtn {
-                padding: 12px 20px !important;
-                font-size: 0.85rem !important;
-            }
-        }
-
-        @media (max-width: 480px) {
-            #webInstallAppBtn {
-                bottom: 10px !important;
-                right: 10px !important;
-            }
-            #pwaInstallBtn {
-                padding: 10px 16px !important;
-                font-size: 0.8rem !important;
-                gap: 8px !important;
-            }
-            #pwaInstallBtn i {
-                font-size: 0.95rem !important;
-            }
-        }
     </style>
 </head>
 <body>
@@ -1088,22 +1062,7 @@ if (document.readyState === 'loading') {
     </div>
 </div>
 
-<!-- Desktop/Web Install App Button - Fixed Bottom Right -->
-<div id="webInstallAppBtn" style="position: fixed; bottom: 20px; right: 20px; z-index: 999; display: none;">
-    <button type="button" id="pwaInstallBtn" class="pwa-install-trigger"
-        style="display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-               background: linear-gradient(135deg, rgba(212,175,55,0.98), rgba(180,140,30,0.95)); color: #1a0a0a;
-               border: 2px solid rgba(255, 255, 255, 0.35); border-radius: 16px;
-               padding: 13px 22px; font-size: 0.88rem; font-weight: 800;
-               cursor: pointer; transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
-               box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,175,55,0.3);
-               letter-spacing: 0.5px; text-transform: uppercase;
-               backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-               animation: pwaButtonPulse 3s ease-in-out infinite;">
-        <i class="bi bi-arrow-bar-down" style="font-size: 1.15rem;"></i>
-        <span id="pwaInstallBtnText">Install App</span>
-    </button>
-</div>
+
 
 <!-- Biometric Not Registered / Setup & Status Modal -->
 <div id="biometricModal" class="bio-modal-overlay" style="display:none;" aria-hidden="true" role="dialog" aria-modal="true">
@@ -1187,13 +1146,6 @@ if (document.readyState === 'loading') {
     </div>
 </div>
 
-<style>
-@keyframes pwaButtonPulse {
-    0%, 100% { box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,175,55,0.3); }
-    50% { box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 5px rgba(212,175,55,0.15), 0 0 20px rgba(212,175,55,0.2); }
-}
-</style>
-
 <script @cspNonce>
 // ── PWA INSTALL BUTTON CONTROLLER (LOGIN PAGE) ──────────────────────────────
 (function() {
@@ -1204,24 +1156,12 @@ if (document.readyState === 'loading') {
                window.matchMedia('(display-mode: fullscreen)').matches;
     }
 
-    function isMobileDevice() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    }
-
     function updateInstallVisibility() {
         var isInstalled = checkStandalone();
         var mobileRow = document.getElementById('smartAppDownloadRow');
-        var webContainer = document.getElementById('webInstallAppBtn');
 
-        if (isInstalled) {
-            if (mobileRow) mobileRow.style.display = 'none';
-            if (webContainer) webContainer.style.display = 'none';
-            return;
-        }
-
-        // On desktop/web, show floating bottom-right install button if not installed
-        if (webContainer && !isMobileDevice()) {
-            webContainer.style.display = 'block';
+        if (isInstalled && mobileRow) {
+            mobileRow.style.display = 'none';
         }
     }
 
@@ -1232,28 +1172,6 @@ if (document.readyState === 'loading') {
             e.preventDefault();
             if (typeof window.triggerPwaInstall === 'function') {
                 window.triggerPwaInstall(downloadBtn);
-            }
-        });
-    }
-
-    var pwaInstallBtn = document.getElementById('pwaInstallBtn');
-    if (pwaInstallBtn) {
-        pwaInstallBtn.addEventListener('mouseenter', function() {
-            this.style.background = 'linear-gradient(135deg, rgba(212,175,55,1), rgba(200,160,40,1))';
-            this.style.transform = 'translateY(-3px) scale(1.06)';
-            this.style.boxShadow = '0 14px 36px rgba(0,0,0,0.55), 0 0 0 6px rgba(212,175,55,0.2)';
-        });
-        
-        pwaInstallBtn.addEventListener('mouseleave', function() {
-            this.style.background = 'linear-gradient(135deg, rgba(212,175,55,0.98), rgba(180,140,30,0.95))';
-            this.style.transform = 'translateY(0) scale(1)';
-            this.style.boxShadow = '0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(212,175,55,0.3)';
-        });
-
-        pwaInstallBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof window.triggerPwaInstall === 'function') {
-                window.triggerPwaInstall(pwaInstallBtn);
             }
         });
     }

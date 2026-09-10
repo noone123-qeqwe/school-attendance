@@ -1953,9 +1953,7 @@
         triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
         const banner = document.getElementById('pwaInstallBanner');
         if (banner) banner.style.display = 'none';
-        return;
-        @endauth
-
+        @else
         const standalone = checkIsStandalone();
         const triggers = document.querySelectorAll('.pwa-install-trigger');
         if (standalone) {
@@ -1972,6 +1970,7 @@
         });
 
         scheduleInstallBanner();
+        @endauth
     }
 
     // Initialize display when DOM is ready and window loads
