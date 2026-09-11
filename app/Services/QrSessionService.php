@@ -77,7 +77,8 @@ class QrSessionService
         
         $oldToken = $session->token;
         if ($oldToken) {
-            \Illuminate\Support\Facades\Cache::put("session_prev_token_{$oldToken}", $session->id, 60);
+            // Keep rotated token valid for 300s (5 minutes) grace period to prevent race conditions during refresh
+            \Illuminate\Support\Facades\Cache::put("session_prev_token_{$oldToken}", $session->id, 300);
         }
 
         $session->update([

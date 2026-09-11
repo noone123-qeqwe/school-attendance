@@ -96,23 +96,23 @@ class AttendanceSession extends Model
     }
 
     /**
-     * Generate an easy-to-read 6-digit numeric attendance session code.
+     * Generate an easy-to-read 6-digit numeric attendance session code (padded with leading zeros if needed).
      */
     public static function generateSessionCode(): string
     {
-        return (string) random_int(100000, 999999);
+        return str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     }
 
     /**
-     * Get formatted code (e.g. "849 201").
+     * Get formatted code (e.g. "849 201" or "012 345").
      */
     public function getFormattedCode(): string
     {
-        if (!$this->session_code) return '';
-        $clean = preg_replace('/[^0-9A-Za-z]/', '', $this->session_code);
+        if ($this->session_code === null || $this->session_code === '') return '';
+        $clean = preg_replace('/[^0-9A-Za-z]/', '', (string) $this->session_code);
         if (strlen($clean) === 6) {
             return substr($clean, 0, 3) . ' ' . substr($clean, 3, 3);
         }
-        return $this->session_code;
+        return (string) $this->session_code;
     }
 }

@@ -2090,21 +2090,65 @@ function resetScannerView() {
 }
 
 function extractQrToken(raw) {
-    if (!raw) return '';
-    let str = raw.trim();
-    if (str.includes('/qr/scan/')) {
-        const parts = str.split('/qr/scan/');
-        str = parts[1] ? parts[1].split('?')[0].split('#')[0] : str;
-    } else if (str.startsWith('http://') || str.startsWith('https://')) {
+    if (!raw) return { token: '', code: '' };
+    let str = typeof raw === 'string' ? raw.trim() : String(raw).trim();
+
+    // 1. Support structured JSON QR payload
+    if ((str.startsWith('{') && str.endsWith('}')) || (str.startsWith('[') && str.endsWith(']'))) {
         try {
-            const url = new URL(str);
-            const pathParts = url.pathname.split('/').filter(Boolean);
-            if (pathParts.length > 0) {
-                str = pathParts[pathParts.length - 1];
+            const parsed = JSON.parse(str);
+            if (parsed && typeof parsed === 'object') {
+                let token = parsed.token || parsed.session_token || '';
+                let code = parsed.code || parsed.session_code || '';
+                let url = parsed.scan_url || parsed.url || '';
+                if (!token && url) {
+                    const extracted = extractQrToken(url);
+                    token = extracted.token;
+                    code = code || extracted.code;
+                }
+                return { token: String(token).trim(), code: String(code).trim() };
             }
         } catch(e) {}
     }
-    return str.trim();
+
+    // 2. Support URLs
+    let token = '';
+    let code = '';
+
+    if (str.includes('/qr/scan/')) {
+        const parts = str.split('/qr/scan/');
+        let tail = parts[1] ? parts[1].split('?')[0].split('#')[0] : '';
+        tail = decodeURIComponent(tail).replace(/\/+$/, '').trim();
+        token = tail;
+    } else if (str.startsWith('http://') || str.startsWith('https://')) {
+        try {
+            const urlObj = new URL(str);
+            if (urlObj.searchParams.has('token')) {
+                token = urlObj.searchParams.get('token').trim();
+            }
+            if (urlObj.searchParams.has('code') || urlObj.searchParams.has('session_code')) {
+                code = (urlObj.searchParams.get('code') || urlObj.searchParams.get('session_code')).trim();
+            }
+            if (!token) {
+                const pathParts = urlObj.pathname.split('/').filter(Boolean);
+                if (pathParts.length > 0) {
+                    token = decodeURIComponent(pathParts[pathParts.length - 1]).trim();
+                }
+            }
+        } catch(e) {}
+    }
+
+    if (!token && !code) {
+        // Raw input: check if it matches 6-digit session PIN (e.g. 537651 or 012345)
+        const cleanAlphaNum = str.replace(/[^0-9A-Za-z]/g, '');
+        if (cleanAlphaNum.length >= 4 && cleanAlphaNum.length <= 10 && !str.includes('/')) {
+            code = cleanAlphaNum;
+        } else {
+            token = str;
+        }
+    }
+
+    return { token: token.trim(), code: code.trim() };
 }
 
 async function onQrScanSuccess(decodedText, method = 'qr') {
@@ -2135,7 +2179,8 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
 
     if (window.triggerHaptic) window.triggerHaptic('medium');
 
-    const cleanedToken = extractQrToken(decodedText);
+    const parsedData = extractQrToken(decodedText);
+    const resolvedMethod = (method === 'code' || currentScannerMode === 'code' || (parsedData.code && !parsedData.token)) ? 'code' : 'qr';
 
     if (!studentGeoCoords && navigator.geolocation) {
         try {
@@ -2153,9 +2198,9 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     }
 
     const payload = {
-        token: cleanedToken,
-        code: cleanedToken,
-        method: (method === 'code' || currentScannerMode === 'code') ? 'code' : 'qr',
+        token: parsedData.token || (resolvedMethod === 'code' ? parsedData.code : ''),
+        code: parsedData.code || parsedData.token || '',
+        method: resolvedMethod,
         latitude: studentGeoCoords ? studentGeoCoords.lat : null,
         longitude: studentGeoCoords ? studentGeoCoords.lng : null,
         accuracy: studentGeoCoords ? studentGeoCoords.acc : null
@@ -2306,15 +2351,22 @@ function renderScanError(data) {
     iconBox.style.border = '2px solid rgba(239, 68, 68, 0.4)';
     iconBox.innerHTML = '<i class="bi bi-x-circle-fill" style="color: #f87171;"></i>';
 
-    if (data.error_type === 'schedule_mismatch') {
+    const errType = data.error_type || '';
+    const errDetail = data.error_detail || '';
+
+    if (errType === 'schedule_mismatch') {
         title.textContent = 'Schedule Mismatch';
-    } else if (data.error_type === 'session_closed') {
+    } else if (errDetail === 'session_expired' || errType === 'session_expired') {
+        title.textContent = 'Attendance Session Expired';
+    } else if (errDetail === 'session_inactive' || errType === 'session_inactive' || errType === 'session_closed') {
         title.textContent = 'Attendance Session Ended';
-    } else if (data.error_type === 'invalid_or_expired') {
+    } else if (errDetail === 'invalid_code' || errType === 'invalid_code') {
+        title.textContent = 'Invalid Attendance Code';
+    } else if (errType === 'invalid_or_expired') {
         title.textContent = currentScannerMode === 'code' ? 'Invalid Attendance Code' : 'This QR code is invalid or expired.';
-    } else if (data.error_type === 'location_required') {
+    } else if (errType === 'location_required') {
         title.textContent = 'Location Required';
-    } else if (data.error_type === 'outside_classroom' || (data.message && data.message.toLowerCase().includes('outside'))) {
+    } else if (errType === 'outside_classroom' || (data.message && data.message.toLowerCase().includes('outside'))) {
         title.textContent = 'Outside Classroom Range';
         showOutsideRangePopup(data);
     } else {
@@ -2325,7 +2377,7 @@ function renderScanError(data) {
 
     document.getElementById('resultDetailsBox').style.display = 'none';
     if (retryBtn) retryBtn.style.display = 'block';
-    if (doneBtn) doneBtn.style.display = 'none';
+    if (doneBtn) doneBtn.style.display = 'block';
 
     playErrorTone();
     if (window.triggerHaptic) window.triggerHaptic('error');

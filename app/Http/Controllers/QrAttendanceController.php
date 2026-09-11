@@ -61,16 +61,16 @@ class QrAttendanceController extends Controller
         // Signed URL lasts until session ends (up to 20 minutes)
         $scanUrl = URL::temporarySignedRoute('qr.scan', $sessionEndTime, ['token' => $token]);
 
-        // Ensure the scan URL uses the current request host (useful when using ngrok)
         try {
-            $currentHost = request()->getHost();
+            $currentHttpHost = request()->getHttpHost();
             $currentScheme = request()->getScheme();
 
             $parts = parse_url($scanUrl);
-            if (($parts['host'] ?? '') !== $currentHost) {
+            $origHost = ($parts['host'] ?? '') . (isset($parts['port']) ? (':' . $parts['port']) : '');
+            if ($origHost !== $currentHttpHost) {
                 $path = $parts['path'] ?? '/';
                 $query = isset($parts['query']) ? ('?' . $parts['query']) : '';
-                $scanUrl = $currentScheme . '://' . $currentHost . $path . $query;
+                $scanUrl = $currentScheme . '://' . $currentHttpHost . $path . $query;
             }
         } catch (\Throwable $e) {
             // If request() is not available or parsing fails, fall back to generated URL
@@ -1017,61 +1017,177 @@ class QrAttendanceController extends Controller
             ], 403);
         }
 
-        $rawInput = trim((string) ($request->token ?? $request->code ?? ''));
-        if (empty($rawInput)) {
+        $rawTokenInput = trim((string) ($request->input('token') ?? ''));
+        $rawCodeInput  = trim((string) ($request->input('code') ?? ''));
+
+        if (empty($rawTokenInput) && empty($rawCodeInput)) {
             return response()->json([
                 'success' => false,
+                'error_type' => 'missing_input',
                 'message' => 'Please provide a valid QR code or attendance code.'
             ], 422);
         }
 
-        // Clean token if full URL or path was scanned
-        $rawToken = $rawInput;
-        if (str_contains($rawToken, '/qr/scan/')) {
-            $parts = explode('/qr/scan/', $rawToken);
-            $rawToken = explode('?', $parts[1] ?? '')[0];
-            $rawToken = explode('#', $rawToken)[0];
-        } elseif (filter_var($rawToken, FILTER_VALIDATE_URL)) {
-            $path = trim(parse_url($rawToken, PHP_URL_PATH) ?? '', '/');
-            $segments = explode('/', $path);
-            $lastSegment = end($segments);
-            if (!empty($lastSegment)) {
-                $rawToken = explode('?', $lastSegment)[0];
-                $rawToken = explode('#', $rawToken)[0];
-            }
-        }
+        // Dedicated extraction helpers for JSON payloads, full URLs, and raw codes/tokens
+        $extractedToken = null;
+        $extractedCode  = null;
 
-        $cleanedCode = strtoupper(preg_replace('/[^0-9A-Za-z]/', '', $rawInput));
-        $isCodeMethod = strlen($cleanedCode) <= 10 && !str_contains($rawInput, '/');
-
-        // Look up by token or session_code
-        $session = AttendanceSession::with(['subject.instructor'])
-            ->where(function ($query) use ($rawToken, $cleanedCode, $isCodeMethod) {
-                $query->where('token', $rawToken);
-                if ($isCodeMethod && !empty($cleanedCode)) {
-                    $query->orWhere('session_code', $cleanedCode);
+        $checkJson = function ($str) use (&$extractedToken, &$extractedCode) {
+            if (empty($str)) return false;
+            $trimmed = trim((string) $str);
+            if ((str_starts_with($trimmed, '{') && str_ends_with($trimmed, '}')) || (str_starts_with($trimmed, '[') && str_ends_with($trimmed, ']'))) {
+                $decoded = json_decode($trimmed, true);
+                if (is_array($decoded)) {
+                    if (!empty($decoded['token'])) $extractedToken = trim((string) $decoded['token']);
+                    if (!empty($decoded['session_token'])) $extractedToken = trim((string) $decoded['session_token']);
+                    if (!empty($decoded['code'])) $extractedCode = trim((string) $decoded['code']);
+                    if (!empty($decoded['session_code'])) $extractedCode = trim((string) $decoded['session_code']);
+                    if (empty($extractedToken) && (!empty($decoded['scan_url']) || !empty($decoded['url']))) {
+                        $url = trim((string) ($decoded['scan_url'] ?? $decoded['url']));
+                        if (str_contains($url, '/qr/scan/')) {
+                            $parts = explode('/qr/scan/', $url);
+                            $t = explode('?', $parts[1] ?? '')[0];
+                            $t = explode('#', $t)[0];
+                            $extractedToken = trim(rtrim(urldecode($t), '/'));
+                        }
+                    }
+                    return true;
                 }
-            })
-            ->latest('id')
-            ->first();
+            }
+            return false;
+        };
 
-        // Check if token matches recently rotated token within 60s grace window
-        if (!$session && !empty($rawToken)) {
-            $prevSessionId = Cache::get("session_prev_token_{$rawToken}");
-            if ($prevSessionId) {
-                $session = AttendanceSession::with(['subject.instructor'])->find($prevSessionId);
+        $checkJson($rawTokenInput);
+        $checkJson($rawCodeInput);
+
+        $parseUrl = function ($str) use (&$extractedToken, &$extractedCode) {
+            if (empty($str)) return;
+            $trimmed = trim((string) $str);
+            if (str_contains($trimmed, '/qr/scan/')) {
+                $parts = explode('/qr/scan/', $trimmed);
+                $t = explode('?', $parts[1] ?? '')[0];
+                $t = explode('#', $t)[0];
+                $t = trim(rtrim(urldecode($t), '/'));
+                if (!empty($t)) {
+                    $extractedToken = $t;
+                }
+            } elseif (filter_var($trimmed, FILTER_VALIDATE_URL) || str_starts_with($trimmed, 'http://') || str_starts_with($trimmed, 'https://')) {
+                $parsed = parse_url($trimmed);
+                if (!empty($parsed['query'])) {
+                    parse_str($parsed['query'], $query);
+                    if (!empty($query['token'])) $extractedToken = trim(urldecode($query['token']));
+                    if (!empty($query['code'])) $extractedCode = trim(urldecode($query['code']));
+                    if (!empty($query['session_code'])) $extractedCode = trim(urldecode($query['session_code']));
+                }
+                if (empty($extractedToken) && !empty($parsed['path'])) {
+                    $segments = explode('/', trim($parsed['path'], '/'));
+                    $lastSegment = end($segments);
+                    if (!empty($lastSegment) && strlen($lastSegment) >= 16) {
+                        $extractedToken = trim(rtrim(urldecode($lastSegment), '/'));
+                    }
+                }
+            }
+        };
+
+        if (empty($extractedToken)) {
+            $parseUrl($rawTokenInput);
+            $parseUrl($rawCodeInput);
+        }
+
+        // If no token extracted from URL/JSON, check if rawTokenInput itself is a token
+        if (empty($extractedToken) && !empty($rawTokenInput)) {
+            $cleanToken = trim($rawTokenInput);
+            if (strlen($cleanToken) >= 16 && !str_contains($cleanToken, '/') && !str_contains($cleanToken, ' ')) {
+                $extractedToken = $cleanToken;
             }
         }
 
+        // If no code extracted from JSON/URL, normalize code candidate while strictly preserving leading zeros
+        if (empty($extractedCode)) {
+            $codeCandidate = !empty($rawCodeInput) ? $rawCodeInput : $rawTokenInput;
+            $cleanCandidate = strtoupper(preg_replace('/[^0-9A-Za-z]/', '', (string) $codeCandidate));
+            if (!empty($cleanCandidate) && !str_contains((string) $codeCandidate, '/')) {
+                $extractedCode = $cleanCandidate;
+            }
+        }
+
+        $isCodeMethod = ($request->input('method') === 'code') || (!empty($extractedCode) && empty($extractedToken));
+
+        // Step 1: Look for an ACTIVE session matching token or session_code
+        $session = null;
+        if (!empty($extractedToken) || !empty($extractedCode)) {
+            $session = AttendanceSession::with(['subject.instructor'])
+                ->where('active', true)
+                ->where('session_ends_at', '>', now('Asia/Manila'))
+                ->where(function ($query) use ($extractedToken, $extractedCode) {
+                    if (!empty($extractedToken) && !empty($extractedCode)) {
+                        $query->where('token', $extractedToken)->orWhere('session_code', $extractedCode);
+                    } elseif (!empty($extractedToken)) {
+                        $query->where('token', $extractedToken);
+                    } else {
+                        $query->where('session_code', $extractedCode);
+                    }
+                })
+                ->latest('id')
+                ->first();
+        }
+
+        // Step 2: Check cache for rotated token within grace window (e.g. refreshed within last 5 minutes)
+        if (!$session && !empty($extractedToken)) {
+            $prevSessionId = Cache::get("session_prev_token_{$extractedToken}");
+            if ($prevSessionId) {
+                $prevSession = AttendanceSession::with(['subject.instructor'])->find($prevSessionId);
+                if ($prevSession && $prevSession->active && now('Asia/Manila')->lte($prevSession->session_ends_at)) {
+                    $session = $prevSession;
+                }
+            }
+        }
+
+        // Step 3: If no active session found, query for expired/inactive sessions to provide specific error message
         if (!$session) {
+            $pastSession = null;
+            if (!empty($extractedToken) || !empty($extractedCode)) {
+                $pastSession = AttendanceSession::where(function ($query) use ($extractedToken, $extractedCode) {
+                    if (!empty($extractedToken) && !empty($extractedCode)) {
+                        $query->where('token', $extractedToken)->orWhere('session_code', $extractedCode);
+                    } elseif (!empty($extractedToken)) {
+                        $query->where('token', $extractedToken);
+                    } else {
+                        $query->where('session_code', $extractedCode);
+                    }
+                })->latest('id')->first();
+            }
+
+            if ($pastSession) {
+                if (now('Asia/Manila')->gt($pastSession->session_ends_at)) {
+                    return response()->json([
+                        'success' => false,
+                        'error_type' => 'session_closed',
+                        'error_detail' => 'session_expired',
+                        'message' => 'This attendance session has expired and ended. Codes and QR tokens are only valid while the session is active.'
+                    ], 422);
+                }
+                if (!$pastSession->active) {
+                    return response()->json([
+                        'success' => false,
+                        'error_type' => 'session_closed',
+                        'error_detail' => 'session_inactive',
+                        'message' => 'This attendance session is no longer active and has ended. The instructor has closed this session.'
+                    ], 422);
+                }
+            }
+
             return response()->json([
                 'success' => false,
                 'error_type' => 'invalid_or_expired',
-                'message' => 'Invalid or expired attendance code / QR. Please verify the code on screen or scan the live QR code.'
+                'error_detail' => $isCodeMethod ? 'invalid_code' : 'invalid_token',
+                'message' => $isCodeMethod
+                    ? 'Invalid attendance code. Please verify the 6-digit code on screen.'
+                    : 'Invalid or expired attendance code / QR. Please verify the code on screen or scan the live QR code.'
             ], 422);
         }
 
-        if (!$session->active || now()->gt($session->session_ends_at)) {
+        if (!$session->active || now('Asia/Manila')->gt($session->session_ends_at)) {
             return response()->json([
                 'success' => false,
                 'error_type' => 'session_closed',

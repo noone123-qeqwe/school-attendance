@@ -572,4 +572,140 @@ class QrAttendanceFlowTest extends TestCase
         $this->assertEquals('outside_classroom', $response->json('error_type'));
         $this->assertGreaterThan(50, $response->json('distance'));
     }
+
+    public function test_student_can_clock_in_with_leading_zero_manual_code()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'LZ101',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code
+        ]);
+        $sessionId = $startResponse->json('session_id');
+
+        // Force session code to have leading zeros (e.g. "012345")
+        $session = AttendanceSession::find($sessionId);
+        $session->update(['session_code' => '012345']);
+
+        // Student submits exact manual 6-digit code with leading zero
+        $response = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'code' => '012345',
+            'method' => 'code'
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals('Present', $response->json('status'));
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'subject_code' => $subject->code,
+            'status' => 'Present',
+            'method' => 'code'
+        ]);
+    }
+
+    public function test_student_can_clock_in_with_json_qr_payload()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'JSON101',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code
+        ]);
+        $token = $startResponse->json('token');
+        $sessionCode = $startResponse->json('session_code');
+
+        // Structured JSON payload scanned from camera
+        $jsonPayload = json_encode([
+            'token' => $token,
+            'session_code' => $sessionCode,
+            'subject' => 'JSON101'
+        ]);
+
+        $response = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $jsonPayload
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('success'));
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'subject_code' => $subject->code,
+            'status' => 'Present'
+        ]);
+    }
+
+    public function test_student_can_clock_in_with_url_containing_query_token_and_code()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'URL101',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code
+        ]);
+        $token = $startResponse->json('token');
+
+        // Scanned URL with query string
+        $scannedUrl = "http://127.0.0.1:8000/qr/scan/{$token}?source=camera&device=mobile";
+
+        $response = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'token' => $scannedUrl
+        ]);
+
+        $response->assertOk();
+        $this->assertTrue($response->json('success'));
+
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'subject_code' => $subject->code,
+            'status' => 'Present'
+        ]);
+    }
 }

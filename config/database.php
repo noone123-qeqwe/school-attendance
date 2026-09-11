@@ -60,7 +60,15 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA', is_file('/etc/ssl/certs/ca-certificates.crt') ? '/etc/ssl/certs/ca-certificates.crt' : null),
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA', 
+                    is_file('/etc/ssl/certs/ca-certificates.crt') ? '/etc/ssl/certs/ca-certificates.crt' : (
+                        is_file('C:\xampp\apache\bin\curl-ca-bundle.crt') ? 'C:\xampp\apache\bin\curl-ca-bundle.crt' : (
+                            (ini_get('openssl.cafile') && is_file((string) ini_get('openssl.cafile'))) ? ini_get('openssl.cafile') : (
+                                (ini_get('curl.cainfo') && is_file((string) ini_get('curl.cainfo'))) ? ini_get('curl.cainfo') : null
+                            )
+                        )
+                    )
+                ),
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT', true) === false ? false : null,
             ], fn($value) => $value !== null) : [],
         ],
