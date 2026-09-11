@@ -167,6 +167,13 @@
     <!-- Install Prompt (only shows in browser mode, hidden when installed) -->
     @include('components.mobile.install-prompt')
 
+    <!-- Scanner Modal (Students only) -->
+    @auth
+        @if(auth()->user()->hasRole('student'))
+            @include('partials.student-scanner-modal')
+        @endif
+    @endauth
+
     <!-- Scripts -->
     <script>
         // CSRF Token setup
@@ -207,15 +214,32 @@
                     case 'heavy':
                         navigator.vibrate(30);
                         break;
+                    case 'success':
+                        navigator.vibrate([30, 50, 30]);
+                        break;
+                    case 'error':
+                        navigator.vibrate([50, 30, 50, 30, 50]);
+                        break;
                 }
             }
         }
+
+        // Alias used by the scanner modal
+        window.triggerHaptic = haptic;
 
         // Add haptic to all buttons
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('button, .touchable, .nav-item').forEach(el => {
                 el.addEventListener('touchstart', () => haptic('light'), { passive: true });
             });
+
+            // Auto-open QR scanner when ?open_scanner=1 is in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('open_scanner') === '1' && typeof openStudentScanner === 'function') {
+                setTimeout(() => openStudentScanner('scan'), 200);
+            } else if (urlParams.get('open_code') === '1' && typeof openStudentScanner === 'function') {
+                setTimeout(() => openStudentScanner('code'), 200);
+            }
         });
     </script>
 

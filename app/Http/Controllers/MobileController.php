@@ -164,7 +164,7 @@ class MobileController extends Controller
      */
     public function scan()
     {
-        return redirect()->route('home', ['action' => 'scan']);
+        return view('mobile.scan');
     }
 
     /**

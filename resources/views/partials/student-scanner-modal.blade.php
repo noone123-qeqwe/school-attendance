@@ -1793,7 +1793,12 @@ window.closeOutsideRangePopup = closeOutsideRangePopup;
 function finishScanAndRefresh() {
     clearAutoCloseTimer();
     closeStudentScanner();
-    window.location.reload();
+    // If we're on the dedicated mobile scan page, go to mobile home to show updated status
+    if (window.location.pathname.includes('/mobile/scan')) {
+        window.location.href = '{{ route("mobile.home") }}';
+    } else {
+        window.location.reload();
+    }
 }
 
 function playScanBeep() {

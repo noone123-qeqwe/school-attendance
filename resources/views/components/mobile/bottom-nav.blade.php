@@ -187,5 +187,15 @@
                 }
             });
         });
+
+        // Intercept the Scan button so it opens the QR scanner modal inline
+        // instead of navigating away to a separate page
+        const scanNavItem = document.querySelector('.nav-item[data-route="mobile.scan"]');
+        if (scanNavItem && typeof openStudentScanner === 'function') {
+            scanNavItem.addEventListener('click', function(e) {
+                e.preventDefault();
+                openStudentScanner('scan');
+            });
+        }
     });
 </script>
