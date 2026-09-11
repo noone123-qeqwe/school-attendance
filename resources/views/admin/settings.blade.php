@@ -185,7 +185,7 @@
             <h4 class="saas-heading saas-heading-sm" style="margin-bottom:12px;">System Information</h4>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                 <span class="saas-text-muted" style="font-size:0.85rem;">Version</span>
-                <span style="font-size:0.85rem; font-weight:600; color:var(--saas-gold);">v{{ config('changelog.default_version', '2.3.4') }} (SaaS Edition)</span>
+                <span style="font-size:0.85rem; font-weight:600; color:var(--saas-gold);">v{{ config('changelog.default_version', '2.3.5') }} (SaaS Edition)</span>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
                 <span class="saas-text-muted" style="font-size:0.85rem;">Laravel</span>
@@ -273,7 +273,7 @@ async function checkAdminUpdates() {
             feedback.style.background = 'rgba(16, 185, 129, 0.1)';
             feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
             feedback.style.color = '#6ee7b7';
-            feedback.innerHTML = '<div style="display:flex; align-items:flex-start; gap:8px;"><i class="bi bi-check-circle-fill me-1" style="font-size:1.1rem; color:#22c55e;"></i><div><strong>You’re up to date ✓</strong><div style="font-size:0.85em; opacity:0.9; margin-top:2px;">Your system is already running the latest version (v{{ config('changelog.default_version', '2.3.4') }}).</div></div></div>';
+            feedback.innerHTML = '<div style="display:flex; align-items:flex-start; gap:8px;"><i class="bi bi-check-circle-fill me-1" style="font-size:1.1rem; color:#22c55e;"></i><div><strong>You’re up to date ✓</strong><div style="font-size:0.85em; opacity:0.9; margin-top:2px;">Your system is already running the latest version (v{{ config('changelog.default_version', '2.3.5') }}).</div></div></div>';
         }
     } catch (e) {
         feedback.style.background = 'rgba(239, 68, 68, 0.1)';

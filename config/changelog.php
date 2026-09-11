@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.4'),
-    'default_version' => env('APP_LATEST_VERSION', '2.3.4'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.5'),
+    'default_version' => env('APP_LATEST_VERSION', '2.3.5'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,29 @@ return [
     |
     */
     'releases' => [
+        '2.3.5' => [
+            'version' => '2.3.5',
+            'version_tag' => 'v2.3.5',
+            'title' => 'Mobile Camera Lifecycle, Permissions & Version Sync Fix',
+            'description' => 'Resolved mobile QR camera permissions lifecycle and continuous version synchronization across all client devices and admin update controls.',
+            'features' => [
+                'Direct inline camera permissions dispatch with continuous video stream retention',
+                'Seamless manual 6-digit attendance code entry workflow with instant visual validation',
+                'Continuous over-the-air PWA and service worker version tracking that automatically triggers on all build bumps',
+            ],
+            'improvements' => [
+                'Strict Content Security Policy (CSP) nonce compliance across all dynamic modal and scanner handlers',
+                'Instant client cache invalidation and reliable multi-device update broadcast',
+                'Real-time telemetry badge updates in Admin System Maintenance Center',
+            ],
+            'bugFixes' => [
+                'Fixed version check becoming stuck after a single update by decoupling timestamp persistence from prompt display',
+                'Fixed unresponsive Allow Camera and Enter Code actions on mobile QR scanner',
+                'Fixed missing version badge refresh in 1-Click System Update console',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-11',
+        ],
         '2.3.4' => [
             'version' => '2.3.4',
             'version_tag' => 'v2.3.4',

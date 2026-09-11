@@ -39,6 +39,21 @@ class SoftwareUpdateChangelogTest extends TestCase
         $this->assertTrue($release['has_security_fixes']);
     }
 
+    public function test_changelog_service_returns_metadata_for_version_2_3_5(): void
+    {
+        $release = $this->changelogService->getRelease('2.3.5');
+
+        $this->assertIsArray($release);
+        $this->assertEquals('2.3.5', $release['version']);
+        $this->assertEquals('v2.3.5', $release['version_tag']);
+        $this->assertEquals('VERSION 2.3.5', $release['version_display']);
+        $this->assertNotEmpty($release['title']);
+        $this->assertNotEmpty($release['description']);
+        $this->assertGreaterThanOrEqual(2, count($release['features']));
+        $this->assertNotEmpty($release['improvements']);
+        $this->assertNotEmpty($release['bugFixes']);
+    }
+
     public function test_changelog_service_normalizes_various_version_formats(): void
     {
         $variations = ['v1.4.3', '1.4.3', '143', 'v143', 'v143_1725546549', '143_999999'];
@@ -103,8 +118,8 @@ class SoftwareUpdateChangelogTest extends TestCase
         ]);
 
         $data = $response->json();
-        $latest = (string)config('changelog.default_version', '2.3.4');
-        $installed = (string)config('changelog.installed_version', '2.3.4');
+        $latest = (string)config('changelog.default_version', '2.3.5');
+        $installed = (string)config('changelog.installed_version', '2.3.5');
         $this->assertEquals($latest, $data['latest_version']);
         $this->assertEquals($installed, $data['installed_version']);
         $this->assertNotEmpty($data['changelog']['features']);
@@ -137,8 +152,8 @@ class SoftwareUpdateChangelogTest extends TestCase
         $response->assertSee('pwaDismissUpdatePopupBtn', false);
 
         // Verify version meta tags for both desktop and mobile
-        $latest = (string)config('changelog.default_version', '2.3.4');
-        $installed = (string)config('changelog.installed_version', '2.3.4');
+        $latest = (string)config('changelog.default_version', '2.3.5');
+        $installed = (string)config('changelog.installed_version', '2.3.5');
         $response->assertSee('name="app-installed-version" content="' . $installed . '"', false);
         $response->assertSee('name="app-latest-version" content="' . $latest . '"', false);
 

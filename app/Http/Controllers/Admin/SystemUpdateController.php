@@ -401,6 +401,9 @@ class SystemUpdateController extends Controller
             'success' => $overallSuccess,
             'message' => $overallSuccess ? 'Full 1-click system update completed and broadcasted to all users successfully!' : 'System update completed with warnings or migration errors.',
             'results' => $results,
+            'version' => $newVer ?? null,
+            'sw_version' => $newVer ?? null,
+            'app_version' => 'v' . (string)config('changelog.default_version', '2.3.5'),
             'timestamp' => now()->format('M d, Y h:i:s A')
         ]);
     }
@@ -748,17 +751,20 @@ class SystemUpdateController extends Controller
         $manifestPath = public_path('manifest.json');
         if (File::exists($manifestPath)) {
             $manifestContent = File::get($manifestPath);
-            $appVer = (string)config('changelog.default_version', '2.3.0');
+            $appVer = (string)config('changelog.default_version', '2.3.5');
             $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$appVer}\"", $manifestContent);
             File::put($manifestPath, $manifestContent);
         }
 
         \Illuminate\Support\Facades\Cache::forever('pwa_sw_version', $newVersion);
 
-        // Flush the old mtime-based cached version response so /pwa/version immediately returns the new tag
-        // The new mtime (from the File::put above) will auto-generate a fresh cache key on next request
+        // Flush the old and new mtime-based cached version responses so /pwa/version immediately returns the new tag
+        $newMtime = File::exists($swPath) ? filemtime($swPath) : 0;
         if ($oldMtime) {
             \Illuminate\Support\Facades\Cache::forget('pwa_version_response_' . $oldMtime);
+        }
+        if ($newMtime) {
+            \Illuminate\Support\Facades\Cache::forget('pwa_version_response_' . $newMtime);
         }
 
         return $newVersion;

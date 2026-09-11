@@ -130,7 +130,7 @@
                     </div>
                 </div>
                 <div class="telemetry-value-row">
-                    <div class="telemetry-value-lg gold-gradient-text">v{{ config('changelog.default_version', '2.3.4') }}</div>
+                    <div class="telemetry-value-lg gold-gradient-text" id="currentAppReleaseBadge">v{{ config('changelog.default_version', '2.3.5') }}</div>
                     <span class="version-chip {{ $appEnvironment === 'production' ? 'chip-prod' : 'chip-dev' }}">
                         {{ strtoupper($appEnvironment) }}
                     </span>
@@ -3367,6 +3367,18 @@ async function runFullSystemUpdate() {
 
             for (let i = 1; i <= 4; i++) {
                 setStepState(i, 'completed', 'Completed');
+            }
+
+            const currentBadge = document.getElementById('currentSwVersionBadge');
+            const pwaTag = document.getElementById('pwaVersionTag');
+            const newVersion = data.version || data.sw_version;
+            if (newVersion) {
+                if (currentBadge) currentBadge.textContent = newVersion;
+                if (pwaTag) pwaTag.textContent = newVersion;
+            }
+            if (data.app_version) {
+                const appReleaseEl = document.getElementById('currentAppReleaseBadge');
+                if (appReleaseEl) appReleaseEl.textContent = data.app_version;
             }
 
             stepsList.style.display = 'flex';
