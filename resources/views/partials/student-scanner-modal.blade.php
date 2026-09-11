@@ -82,10 +82,10 @@
                     <h5 class="permission-headline" id="fallbackTitle">Camera Access Required</h5>
                     <p id="scannerFallbackText" class="permission-description">Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.</p>
                     <div class="permission-actions">
-                        <button type="button" class="permission-primary-btn" id="retryCameraBtn" data-action="allow-camera">
-                            <i class="bi bi-camera me-1"></i> Allow Camera
+                        <button type="button" class="permission-primary-btn" id="retryCameraBtn" data-action="allow-camera" onclick="if(typeof requestCameraAgain==='function'){requestCameraAgain()}">
+                            <i class="bi bi-camera me-1"></i> <span id="retryCameraBtnText">Allow Camera</span>
                         </button>
-                        <button type="button" class="permission-secondary-link" data-action="switch-code">
+                        <button type="button" class="permission-secondary-link" data-action="switch-code" onclick="if(typeof switchScannerMode==='function'){switchScannerMode('code')}">
                             Enter Code Manually
                         </button>
                     </div>
@@ -1509,9 +1509,13 @@ function openStudentScanner(initialMode = 'scan') {
 }
 
 async function safeStopScanner() {
-    if (html5QrScanner && isScannerRunning) {
+    console.log('[Scanner] safeStopScanner called');
+    if (html5QrScanner) {
         try {
-            await html5QrScanner.stop();
+            const state = typeof html5QrScanner.getState === 'function' ? html5QrScanner.getState() : null;
+            if (state === 2 || state === 3 || isScannerRunning) {
+                await html5QrScanner.stop();
+            }
         } catch (e) {
             console.warn("[Scanner] Safe stop warning:", e);
         }
@@ -1519,6 +1523,20 @@ async function safeStopScanner() {
     isScannerRunning = false;
     isScannerStarting = false;
     
+    // Stop and release any residual tracks on video elements in reader
+    const reader = document.getElementById('reader');
+    if (reader) {
+        const videos = reader.querySelectorAll('video');
+        videos.forEach(v => {
+            if (v.srcObject) {
+                try {
+                    v.srcObject.getTracks().forEach(t => t.stop());
+                } catch(e) {}
+                v.srcObject = null;
+            }
+        });
+    }
+
     const container = document.getElementById('scannerVideoContainer');
     if (container) container.classList.remove('camera-active');
 
@@ -1533,12 +1551,19 @@ async function safeStopScanner() {
 }
 
 async function safeClearScanner() {
+    console.log('[Scanner] safeClearScanner called');
     await safeStopScanner();
     if (html5QrScanner) {
         try {
             await html5QrScanner.clear();
-        } catch (e) {}
+        } catch (e) {
+            console.warn("[Scanner] Safe clear warning:", e);
+        }
         html5QrScanner = null;
+    }
+    const reader = document.getElementById('reader');
+    if (reader) {
+        reader.innerHTML = '';
     }
 }
 
@@ -1567,8 +1592,14 @@ async function startHtml5Scanner() {
     }
 
     if (isScannerStarting || isScannerRunning) {
-        console.log('[Scanner] Already starting or running, skipping');
-        return;
+        const activeVideo = document.querySelector('#reader video');
+        if (isScannerRunning && activeVideo && !activeVideo.paused && !activeVideo.ended && activeVideo.readyState >= 2) {
+            console.log('[Scanner] Scanner already actively streaming, skipping start');
+            return;
+        }
+        console.log('[Scanner] Scanner flag set but feed not running, resetting state and continuing');
+        isScannerStarting = false;
+        isScannerRunning = false;
     }
 
     console.log('[Scanner] Beginning camera initialization');
@@ -1582,7 +1613,7 @@ async function startHtml5Scanner() {
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
         console.error('[Scanner] Not in secure context');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-        showCameraError("Camera access requires a secure connection (HTTPS) or localhost. Please switch to 6-digit Code entry.", false, true);
+        showCameraError("unsupported", "Camera access requires a secure connection (HTTPS) or localhost. Please switch to 6-digit Code entry.");
         return;
     }
 
@@ -1590,7 +1621,7 @@ async function startHtml5Scanner() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         console.error('[Scanner] Browser does not support mediaDevices');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-        showCameraError("Your browser or device does not support live camera scanning. Please enter the 6-digit Code.", false, true);
+        showCameraError("unsupported", "Your browser or device does not support live camera scanning. Please enter the 6-digit Code.");
         return;
     }
 
@@ -1600,12 +1631,13 @@ async function startHtml5Scanner() {
     if (!libLoaded) {
         console.error('[Scanner] Html5Qrcode library failed to load');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-        showCameraError("Scanner engine is loading. Please enter the 6-digit Code or tap Retry.", false);
+        showCameraError("init_failed", "Unable to start the scanner. Please try again.");
         return;
     }
 
     if (currentScannerMode !== 'scan') {
         console.log('[Scanner] Mode changed during library wait, aborting');
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
         return;
     }
 
@@ -1613,46 +1645,12 @@ async function startHtml5Scanner() {
     console.log('[Scanner] Scanner starting flag set to true');
 
     try {
-        // 4. Request camera permissions explicitly
-        console.log('[Scanner] Requesting camera permission probe');
-        try {
-            const probeStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: { ideal: currentFacingMode } }
-            });
-            console.log('[Scanner] Permission probe successful, stopping probe stream');
-            probeStream.getTracks().forEach(track => track.stop());
-        } catch (permErr) {
-            console.error('[Scanner] Permission probe failed:', permErr.name, permErr.message);
-            isScannerStarting = false;
-            if (loadingOverlay) loadingOverlay.style.display = 'none';
-            if (currentScannerMode !== 'scan') return;
-            if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
-                showCameraError("Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.", true);
-                return;
-            } else if (permErr.name === 'NotFoundError' || permErr.name === 'DevicesNotFoundError') {
-                showCameraError("No camera detected on this device. Please use 'Enter Code'.", false, true);
-                return;
-            } else if (permErr.name === 'NotReadableError' || permErr.name === 'TrackStartError') {
-                showCameraError("Camera is currently in use by another app. Please close other camera apps and tap Retry.", false);
-                return;
-            } else {
-                showCameraError("Camera permission failed: " + (permErr.message || "Unknown error"), false);
-                return;
-            }
-        }
-
-        if (currentScannerMode !== 'scan') {
-            console.log('[Scanner] Mode changed after permission, aborting');
-            isScannerStarting = false;
-            return;
-        }
-
-        // 5. Initialize Html5Qrcode instance
-        console.log('[Scanner] Clearing previous scanner instance');
+        // Clean previous scanner instance cleanly
         await safeClearScanner();
 
         if (currentScannerMode !== 'scan') {
             console.log('[Scanner] Mode changed during clear, aborting');
+            isScannerStarting = false;
             return;
         }
 
@@ -1665,7 +1663,7 @@ async function startHtml5Scanner() {
         html5QrScanner = new Html5Qrcode("reader");
 
         const qrConfig = {
-            fps: 20,
+            fps: 15,
             qrbox: function(viewfinderWidth, viewfinderHeight) {
                 const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
                 const qrboxSize = Math.floor(minEdge * 0.78);
@@ -1676,71 +1674,112 @@ async function startHtml5Scanner() {
             }
         };
 
-        // Try primary facingMode
-        console.log('[Scanner] Attempting to start scanner with facingMode:', currentFacingMode);
+        let started = false;
+        let lastError = null;
+
+        // Strategy 1: Attempt start with facingMode string (standard mobile back camera)
         try {
+            console.log('[Scanner] Attempting start with facingMode:', currentFacingMode);
             await html5QrScanner.start(
-                { facingMode: { ideal: currentFacingMode } },
+                { facingMode: currentFacingMode },
                 qrConfig,
                 onQrScanSuccess
             );
-            console.log('[Scanner] Scanner started successfully with facingMode');
-            if (currentScannerMode !== 'scan') {
-                console.log('[Scanner] Mode changed after start, stopping');
-                safeStopScanner();
-                return;
+            started = true;
+            console.log('[Scanner] Camera started successfully with facingMode');
+        } catch (err1) {
+            console.warn('[Scanner] Start with facingMode failed:', err1.name, err1.message);
+            lastError = err1;
+            // If permission was denied by user, stop trying and present permission error
+            if (err1.name === 'NotAllowedError' || err1.name === 'PermissionDeniedError') {
+                throw err1;
             }
-            onScannerSuccessfullyStarted();
-            return;
-        } catch (firstErr) {
-            console.warn("[Scanner] FacingMode start failed, trying camera enumeration fallback:", firstErr);
+        }
+
+        // Strategy 2: Fallback via camera enumeration (handles multi-lens Android/iOS devices)
+        if (!started && currentScannerMode === 'scan') {
+            try {
+                console.log('[Scanner] Enumerating available cameras for fallback...');
+                const cameras = await Html5Qrcode.getCameras();
+                console.log('[Scanner] Found cameras:', cameras ? cameras.length : 0);
+
+                if (cameras && cameras.length > 0) {
+                    let selectedCamera = cameras[0];
+                    if (currentFacingMode === 'environment') {
+                        const backCam = cameras.find(c => /back|rear|environment|main|world/i.test(c.label));
+                        if (backCam) selectedCamera = backCam;
+                    } else if (currentFacingMode === 'user') {
+                        const frontCam = cameras.find(c => /front|user|selfie|face/i.test(c.label));
+                        if (frontCam) selectedCamera = frontCam;
+                    }
+
+                    console.log('[Scanner] Starting with selected camera ID:', selectedCamera.id, selectedCamera.label);
+                    await html5QrScanner.start(
+                        selectedCamera.id,
+                        qrConfig,
+                        onQrScanSuccess
+                    );
+                    started = true;
+                    console.log('[Scanner] Camera started successfully with camera ID');
+                }
+            } catch (err2) {
+                console.warn('[Scanner] Camera enumeration fallback failed:', err2.name, err2.message);
+                lastError = err2;
+                if (err2.name === 'NotAllowedError' || err2.name === 'PermissionDeniedError') {
+                    throw err2;
+                }
+            }
+        }
+
+        // Strategy 3: Basic ideal constraint fallback
+        if (!started && currentScannerMode === 'scan') {
+            try {
+                console.log('[Scanner] Trying ideal facingMode constraint fallback...');
+                await html5QrScanner.start(
+                    { facingMode: { ideal: currentFacingMode } },
+                    qrConfig,
+                    onQrScanSuccess
+                );
+                started = true;
+                console.log('[Scanner] Camera started with ideal constraint fallback');
+            } catch (err3) {
+                console.warn('[Scanner] Ideal constraint fallback failed:', err3.name, err3.message);
+                lastError = err3;
+            }
+        }
+
+        if (!started) {
+            throw lastError || new Error("Unable to start scanner");
         }
 
         if (currentScannerMode !== 'scan') {
-            console.log('[Scanner] Mode changed during fallback, stopping');
+            console.log('[Scanner] Mode changed after camera start, stopping');
             safeStopScanner();
             return;
         }
 
-        // Camera enumeration fallback for multi-lens mobile devices
-        console.log('[Scanner] Enumerating available cameras');
-        const cameras = await Html5Qrcode.getCameras();
-        console.log('[Scanner] Found cameras:', cameras.length);
-        
-        if (cameras && cameras.length > 0) {
-            let selectedCamera = cameras[0];
-            if (currentFacingMode === 'environment') {
-                const backCam = cameras.find(c => /back|rear|environment|main/i.test(c.label));
-                if (backCam) selectedCamera = backCam;
-            } else if (currentFacingMode === 'user') {
-                const frontCam = cameras.find(c => /front|user|selfie/i.test(c.label));
-                if (frontCam) selectedCamera = frontCam;
-            }
-
-            console.log('[Scanner] Starting with selected camera:', selectedCamera.label);
-            await html5QrScanner.start(
-                selectedCamera.id,
-                qrConfig,
-                onQrScanSuccess
-            );
-            console.log('[Scanner] Scanner started successfully with camera ID');
-            if (currentScannerMode !== 'scan') {
-                console.log('[Scanner] Mode changed after camera start, stopping');
-                safeStopScanner();
-                return;
-            }
-            onScannerSuccessfullyStarted();
-        } else {
-            throw new Error("No cameras detected on this device.");
-        }
+        onScannerSuccessfullyStarted();
     } catch (err) {
         console.error("[Scanner] Camera start failed completely:", err);
         isScannerStarting = false;
         isScannerRunning = false;
         const loadingOverlay = document.getElementById('scannerLoadingOverlay');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
+
         if (currentScannerMode === 'scan') {
-            showCameraError("Camera unavailable or permission denied. Tap 'Allow Camera' or enter the 6-digit Code.", true);
+            const errName = err ? (err.name || '') : '';
+            const errMsg = err ? (err.message || '') : '';
+            console.log('[Scanner] Handling camera error:', errName, errMsg);
+
+            if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
+                showCameraError('permission_denied');
+            } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
+                showCameraError('camera_unavailable', 'No camera detected on this device. Please check that your camera is available and try again.');
+            } else if (errName === 'NotReadableError' || errName === 'TrackStartError' || errMsg.includes('Could not start video source')) {
+                showCameraError('camera_unavailable', 'Unable to access your camera. Please check that your camera is available and try again.');
+            } else {
+                showCameraError('init_failed', 'Unable to start the scanner. Please try again.');
+            }
         }
     }
 }
@@ -1772,20 +1811,17 @@ function onScannerSuccessfullyStarted() {
         torchBtn.style.display = 'inline-flex';
     }
 
-    console.log('[Scanner] Camera started successfully and video feed is now active');
+    console.log('[Scanner] Camera started successfully and live video feed is now active');
 }
 
-function showCameraError(msg, isPermission = false, isUnsupported = false) {
-    console.log('[Scanner] showCameraError called:', msg, 'isPermission:', isPermission, 'isUnsupported:', isUnsupported, 'currentMode:', currentScannerMode);
+function showCameraError(type = 'init_failed', customMsg = null) {
+    console.log('[Scanner] showCameraError called with type:', type, 'customMsg:', customMsg, 'currentMode:', currentScannerMode);
     
     if (currentScannerMode !== 'scan') {
         console.log('[Scanner] Skipping error display - not in scan mode');
         return;
     }
     
-    if (isPermission) {
-        msg = "Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.";
-    }
     const notice = document.getElementById('scannerFallbackNotice');
     const text = document.getElementById('scannerFallbackText');
     const title = document.getElementById('fallbackTitle');
@@ -1797,34 +1833,58 @@ function showCameraError(msg, isPermission = false, isUnsupported = false) {
 
     if (loadingOverlay) loadingOverlay.style.display = 'none';
     if (container) container.classList.remove('camera-active');
-    if (notice) {
-        notice.style.display = 'block';
-        console.log('[Scanner] Fallback notice displayed');
-    }
-    if (text) text.textContent = msg;
     if (laser) laser.style.display = 'none';
 
-    if (title) {
-        if (isPermission) {
-            title.textContent = 'Camera Access Required';
-        } else if (isUnsupported) {
-            title.textContent = 'Unable to access the camera';
-        } else {
-            title.textContent = 'Camera Inactive';
-        }
+    let headline = 'Camera Access Required';
+    let message = 'Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.';
+    let btnText = 'Allow Camera';
+    let btnIcon = 'bi-camera';
+    let iconHtml = '<i class="bi bi-camera-fill text-warning"></i>';
+    let showBtn = true;
+
+    if (type === 'permission_denied') {
+        headline = 'Camera Permission Denied';
+        message = 'Camera permission was denied. Please allow camera access in your device or browser settings.';
+        btnText = 'Retry Camera';
+        btnIcon = 'bi-arrow-repeat';
+        iconHtml = '<i class="bi bi-camera-video-off-fill text-danger"></i>';
+    } else if (type === 'camera_unavailable') {
+        headline = 'Camera Unavailable';
+        message = customMsg || 'Unable to access your camera. Please check that your camera is available and try again.';
+        btnText = 'Retry Camera';
+        btnIcon = 'bi-arrow-repeat';
+        iconHtml = '<i class="bi bi-camera-video-off text-danger"></i>';
+    } else if (type === 'init_failed') {
+        headline = 'Scanner Error';
+        message = customMsg || 'Unable to start the scanner. Please try again.';
+        btnText = 'Retry Camera';
+        btnIcon = 'bi-arrow-repeat';
+        iconHtml = '<i class="bi bi-exclamation-triangle-fill text-warning"></i>';
+    } else if (type === 'unsupported') {
+        headline = 'Camera Not Supported';
+        message = customMsg || 'Your browser or device does not support live camera scanning. Please enter the 6-digit Code.';
+        showBtn = false;
+        iconHtml = '<i class="bi bi-slash-circle text-danger"></i>';
+    } else if (type === 'permission_needed') {
+        headline = 'Camera Access Required';
+        message = 'Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.';
+        btnText = 'Allow Camera';
+        btnIcon = 'bi-camera';
+        iconHtml = '<i class="bi bi-camera-fill text-warning"></i>';
     }
 
-    if (iconWrap) {
-        if (isPermission) {
-            iconWrap.innerHTML = '<i class="bi bi-camera-fill text-warning"></i>';
-        } else {
-            iconWrap.innerHTML = '<i class="bi bi-camera-video-off text-danger"></i>';
-        }
-    }
+    if (title) title.textContent = headline;
+    if (text) text.textContent = message;
+    if (iconWrap) iconWrap.innerHTML = iconHtml;
 
     if (retryBtn) {
-        retryBtn.style.display = isUnsupported ? 'none' : 'inline-flex';
-        retryBtn.innerHTML = '<i class="bi bi-camera me-1"></i> Allow Camera';
+        retryBtn.style.display = showBtn ? 'inline-flex' : 'none';
+        retryBtn.innerHTML = `<i class="bi ${btnIcon} me-1"></i> <span id="retryCameraBtnText">${btnText}</span>`;
+    }
+
+    if (notice) {
+        notice.style.display = 'block';
+        console.log('[Scanner] Fallback notice displayed with headline:', headline);
     }
 }
 
@@ -1837,8 +1897,17 @@ function hideCameraError() {
     }
 }
 
+let lastCameraRequestTime = 0;
 function requestCameraAgain() {
+    const now = Date.now();
+    if (now - lastCameraRequestTime < 500) {
+        console.log('[Scanner] Debouncing rapid requestCameraAgain');
+        return;
+    }
+    lastCameraRequestTime = now;
     console.log('[Scanner] requestCameraAgain called');
+    isScannerStarting = false;
+    isScannerRunning = false;
     hideCameraError();
     startHtml5Scanner();
 }
@@ -2336,6 +2405,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Guarantees buttons work on mobile browsers even when CSP Level 3
     // blocks inline onclick handlers despite 'unsafe-inline' being present
     // alongside a nonce in script-src.
+    let lastDelegatedActionTime = 0;
     function handleModalDelegatedAction(e) {
         const trigger = e.target.closest('[data-action]');
         if (!trigger) return;
@@ -2343,10 +2413,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const action = trigger.getAttribute('data-action');
         if (!action) return;
 
-        // Prevent double-firing from both touch and click
-        if (e.type === 'touchend') {
-            e.preventDefault();
+        const now = Date.now();
+        if (now - lastDelegatedActionTime < 300) {
+            return;
         }
+        lastDelegatedActionTime = now;
 
         // Stop propagation to prevent multiple handlers
         e.stopPropagation();
@@ -2394,14 +2465,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Bind delegated handler on scanner modal
     if (modal) {
         modal.addEventListener('click', handleModalDelegatedAction, true);
-        modal.addEventListener('touchend', handleModalDelegatedAction, true);
     }
 
     // Bind delegated handler on outside-range popup
     const outsidePopup = document.getElementById('outsideRangePopupModal');
     if (outsidePopup) {
         outsidePopup.addEventListener('click', handleModalDelegatedAction, true);
-        outsidePopup.addEventListener('touchend', handleModalDelegatedAction, true);
     }
 
     // Add input event handlers for code entry
@@ -2414,6 +2483,28 @@ document.addEventListener('DOMContentLoaded', () => {
             handleCodeKeydown(e);
         });
     }
+
+    // Resume or check camera on visibility change (e.g. returning from app permissions in Android Settings)
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            const m = document.getElementById('studentScannerModal');
+            if (m && m.style.display === 'flex' && currentScannerMode === 'scan') {
+                const notice = document.getElementById('scannerFallbackNotice');
+                if (!isScannerRunning && (!isScannerStarting || (notice && notice.style.display !== 'none'))) {
+                    console.log('[Scanner] App visible while scanner open - re-checking camera');
+                    requestCameraAgain();
+                }
+            }
+        }
+    });
+
+    // Safely release camera hardware when leaving or navigating away
+    window.addEventListener('pagehide', () => {
+        safeStopScanner();
+    });
+    window.addEventListener('beforeunload', () => {
+        safeStopScanner();
+    });
 
     // Ensure inactive overlays don't swallow pointer events
     const inactiveOverlays = ['scannerLoadingOverlay', 'scannerProcessingOverlay'];

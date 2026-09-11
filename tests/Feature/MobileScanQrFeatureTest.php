@@ -208,4 +208,25 @@ class MobileScanQrFeatureTest extends TestCase
         $response->assertSee('retryCurrentScanMode', false);
         $response->assertSee('window.submitDirectCode = submitDirectCode;', false);
     }
+
+    public function test_camera_scanner_has_robust_lifecycle_and_error_handling_states(): void
+    {
+        $response = $this->actingAs($this->student)
+            ->withSession(['user_role' => 'student'])
+            ->get(route('mobile.home'));
+
+        $response->assertOk();
+
+        // Check Retry Camera button text element
+        $response->assertSee('id="retryCameraBtnText"', false);
+
+        // Check required error handling messages
+        $response->assertSee('Camera permission was denied. Please allow camera access in your device or browser settings.', false);
+        $response->assertSee('Unable to access your camera. Please check that your camera is available and try again.', false);
+        $response->assertSee('Unable to start the scanner. Please try again.', false);
+        $response->assertSee('Retry Camera', false);
+
+        // Ensure destructive probe stream stopping is NOT present
+        $response->assertDontSee('probeStream.getTracks().forEach', false);
+    }
 }
