@@ -332,7 +332,7 @@ if (app()->environment('local', 'testing')) {
 }
 
 // QR Scan (student) - allow public access so guests can scan and login through the QR flow
-Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->name('qr.scan')->middleware('signed');
+Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->name('qr.scan');
 
 Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/qr/confirm', [App\Http\Controllers\QrAttendanceController::class, 'confirm'])->name('qr.confirm')->middleware('device.bound');

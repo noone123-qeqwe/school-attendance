@@ -2362,8 +2362,10 @@ function renderScanError(data) {
         title.textContent = 'Attendance Session Ended';
     } else if (errDetail === 'invalid_code' || errType === 'invalid_code') {
         title.textContent = 'Invalid Attendance Code';
+    } else if (errDetail === 'invalid_token' || errType === 'invalid_token') {
+        title.textContent = 'Invalid QR Code';
     } else if (errType === 'invalid_or_expired') {
-        title.textContent = currentScannerMode === 'code' ? 'Invalid Attendance Code' : 'This QR code is invalid or expired.';
+        title.textContent = currentScannerMode === 'code' ? 'Invalid Attendance Code' : 'Invalid QR Code';
     } else if (errType === 'location_required') {
         title.textContent = 'Location Required';
     } else if (errType === 'outside_classroom' || (data.message && data.message.toLowerCase().includes('outside'))) {

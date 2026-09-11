@@ -14,7 +14,7 @@ class AttendanceSession extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'subject_code', 'created_by', 'token', 'session_code', 'expires_at', 'session_ends_at', 'active',
+        'subject_code', 'created_by', 'token', 'previous_token', 'session_code', 'expires_at', 'session_ends_at', 'active',
         'classroom_lat', 'classroom_lng', 'webauthn_challenge',
     ];
 

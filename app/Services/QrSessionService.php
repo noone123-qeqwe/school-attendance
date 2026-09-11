@@ -82,8 +82,9 @@ class QrSessionService
         }
 
         $session->update([
-            'token'      => AttendanceSession::generateToken($session->subject_code),
-            'expires_at' => now('Asia/Manila')->addSeconds(300)->min($session->session_ends_at),
+            'token'          => AttendanceSession::generateToken($session->subject_code),
+            'previous_token' => $oldToken,
+            'expires_at'     => now('Asia/Manila')->addSeconds(300)->min($session->session_ends_at),
         ]);
         
         return $session;

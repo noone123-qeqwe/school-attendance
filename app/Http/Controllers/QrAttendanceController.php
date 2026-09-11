@@ -57,26 +57,13 @@ class QrAttendanceController extends Controller
 
     private function buildScanUrl(string $token, Carbon $sessionEndTime): string
     {
-        // Give students plenty of time to scan and complete verification
-        // Signed URL lasts until session ends (up to 20 minutes)
-        $scanUrl = URL::temporarySignedRoute('qr.scan', $sessionEndTime, ['token' => $token]);
-
         try {
-            $currentHttpHost = request()->getHttpHost();
-            $currentScheme = request()->getScheme();
-
-            $parts = parse_url($scanUrl);
-            $origHost = ($parts['host'] ?? '') . (isset($parts['port']) ? (':' . $parts['port']) : '');
-            if ($origHost !== $currentHttpHost) {
-                $path = $parts['path'] ?? '/';
-                $query = isset($parts['query']) ? ('?' . $parts['query']) : '';
-                $scanUrl = $currentScheme . '://' . $currentHttpHost . $path . $query;
-            }
+            $baseUrl = request()->schemeAndHttpHost();
         } catch (\Throwable $e) {
-            // If request() is not available or parsing fails, fall back to generated URL
+            $baseUrl = config('app.url');
         }
 
-        return $scanUrl;
+        return rtrim($baseUrl, '/') . '/qr/scan/' . urlencode($token);
     }
 
     private function base64UrlEncode(string $value): string
@@ -191,11 +178,22 @@ class QrAttendanceController extends Controller
         
         $subject = Subject::with('schedules')
             ->where('code', $subjectCode)
-            ->where('instructor_id', $teacher->id)
+            ->where(function ($q) use ($teacher) {
+                $q->where('instructor_id', $teacher->id)
+                  ->orWhere('instructor', $teacher->name);
+                if (in_array($teacher->role, ['admin', 'department_head'])) {
+                    $q->orWhereNotNull('id');
+                }
+            })
             ->firstOrFail();
 
         $activeSession = AttendanceSession::where('subject_code', $subjectCode)
-            ->where('created_by', $teacher->id)
+            ->where(function ($q) use ($teacher) {
+                $q->where('created_by', $teacher->id);
+                if (in_array($teacher->role, ['admin', 'department_head'])) {
+                    $q->orWhereNotNull('id');
+                }
+            })
             ->where('active', true)
             ->where('session_ends_at', '>', now())
             ->latest('id')
@@ -226,6 +224,7 @@ class QrAttendanceController extends Controller
     public function startTeacherSession(Request $request)
     {
         $teacherId = Auth::id();
+        $user = Auth::user();
         $request->validate([
             'subject_code'   => 'required|string|exists:subjects,code',
             'classroom_lat'  => 'nullable|numeric|between:-90,90',
@@ -233,8 +232,13 @@ class QrAttendanceController extends Controller
         ]);
 
         $subject = Subject::where('code', $request->subject_code)->first();
-        if ($subject && $subject->instructor_id !== $teacherId) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        if ($subject) {
+            $isAuthorized = ($subject->instructor_id === $teacherId)
+                || (in_array($user->role, ['admin', 'department_head']))
+                || (!empty($subject->instructor) && strcasecmp(trim($subject->instructor), trim($user->name)) === 0);
+            if (!$isAuthorized) {
+                return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+            }
         }
 
         try {
@@ -285,7 +289,9 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
         }
 
-        if ($session->created_by !== Auth::id()) {
+        $isAuthorized = ($session->created_by === Auth::id())
+            || (in_array(Auth::user()->role, ['admin', 'department_head']));
+        if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
@@ -318,7 +324,9 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
         }
 
-        if ($session->created_by !== Auth::id()) {
+        $isAuthorized = ($session->created_by === Auth::id())
+            || (in_array(Auth::user()->role, ['admin', 'department_head']));
+        if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
@@ -523,7 +531,9 @@ class QrAttendanceController extends Controller
         // Temporarily disable device binding check to prevent false rejections
         // Will re-enable once basic functionality is stable
         
-        $session = AttendanceSession::where('token', $token)->first();
+        $session = AttendanceSession::where('token', $token)
+            ->orWhere('previous_token', $token)
+            ->first();
 
         if (!$session) {
             return view('qr.result', ['status' => 'expired', 'message' => 'This QR code is no longer active. Please scan the latest QR from your teacher.']);
@@ -612,7 +622,9 @@ class QrAttendanceController extends Controller
             'user_id' => optional($request->user())->id,
         ]);
 
-        $session = AttendanceSession::where('token', $request->token)->first();
+        $session = AttendanceSession::where('token', $request->token)
+            ->orWhere('previous_token', $request->token)
+            ->first();
 
         if (!$session) {
             Log::error('QR verificationOptions - attendance session not found', [
@@ -704,7 +716,9 @@ class QrAttendanceController extends Controller
         }
 
         $user    = $request->user();
-        $session = AttendanceSession::where('token', $request->token)->first();
+        $session = AttendanceSession::where('token', $request->token)
+            ->orWhere('previous_token', $request->token)
+            ->first();
 
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'This QR code is no longer active.'], 422);
@@ -1113,7 +1127,7 @@ class QrAttendanceController extends Controller
 
         $isCodeMethod = ($request->input('method') === 'code') || (!empty($extractedCode) && empty($extractedToken));
 
-        // Step 1: Look for an ACTIVE session matching token or session_code
+        // Step 1: Look for an ACTIVE session matching token, previous_token, or session_code
         $session = null;
         if (!empty($extractedToken) || !empty($extractedCode)) {
             $session = AttendanceSession::with(['subject.instructor'])
@@ -1121,9 +1135,12 @@ class QrAttendanceController extends Controller
                 ->where('session_ends_at', '>', now('Asia/Manila'))
                 ->where(function ($query) use ($extractedToken, $extractedCode) {
                     if (!empty($extractedToken) && !empty($extractedCode)) {
-                        $query->where('token', $extractedToken)->orWhere('session_code', $extractedCode);
+                        $query->where('token', $extractedToken)
+                              ->orWhere('previous_token', $extractedToken)
+                              ->orWhere('session_code', $extractedCode);
                     } elseif (!empty($extractedToken)) {
-                        $query->where('token', $extractedToken);
+                        $query->where('token', $extractedToken)
+                              ->orWhere('previous_token', $extractedToken);
                     } else {
                         $query->where('session_code', $extractedCode);
                     }
@@ -1149,9 +1166,12 @@ class QrAttendanceController extends Controller
             if (!empty($extractedToken) || !empty($extractedCode)) {
                 $pastSession = AttendanceSession::where(function ($query) use ($extractedToken, $extractedCode) {
                     if (!empty($extractedToken) && !empty($extractedCode)) {
-                        $query->where('token', $extractedToken)->orWhere('session_code', $extractedCode);
+                        $query->where('token', $extractedToken)
+                              ->orWhere('previous_token', $extractedToken)
+                              ->orWhere('session_code', $extractedCode);
                     } elseif (!empty($extractedToken)) {
-                        $query->where('token', $extractedToken);
+                        $query->where('token', $extractedToken)
+                              ->orWhere('previous_token', $extractedToken);
                     } else {
                         $query->where('session_code', $extractedCode);
                     }
@@ -1182,7 +1202,7 @@ class QrAttendanceController extends Controller
                 'error_type' => 'invalid_or_expired',
                 'error_detail' => $isCodeMethod ? 'invalid_code' : 'invalid_token',
                 'message' => $isCodeMethod
-                    ? 'Invalid attendance code. Please verify the 6-digit code on screen.'
+                    ? 'Invalid attendance code. Please check the 6-digit code on the teacher screen.'
                     : 'Invalid or expired attendance code / QR. Please verify the code on screen or scan the live QR code.'
             ], 422);
         }
@@ -1393,26 +1413,36 @@ class QrAttendanceController extends Controller
 
     private function scheduleMismatchReason(Subject $subject, User $student): ?string
     {
-        // If explicitly enrolled, bypass all implicit schedule mismatch checks
-        $isExplicitlyEnrolled = $student->enrolledSubjects()->where('subject_id', $subject->id)->exists();
-        if ($isExplicitlyEnrolled) {
+        // 1. Explicit enrollment in enrollments table by subject_id
+        if ($student->enrolledSubjects()->where('subject_id', $subject->id)->exists()) {
             return null;
         }
 
-        if ($student->year_level != $subject->year_level) {
+        // 2. Explicit enrollment matching subject code
+        if (\Illuminate\Support\Facades\DB::table('enrollments')
+            ->join('subjects', 'enrollments.subject_id', '=', 'subjects.id')
+            ->where('enrollments.user_id', $student->id)
+            ->where('subjects.code', $subject->code)
+            ->exists()) {
+            return null;
+        }
+
+        // 3. Check year level (if student has year level specified)
+        if ($student->year_level && $subject->year_level && (int)$student->year_level !== (int)$subject->year_level) {
             return "Year mismatch: you are year {$student->year_level}, but this class is year {$subject->year_level}.";
         }
 
-        if ($student->semester != $subject->semester) {
+        // 4. Check semester (if student has semester specified)
+        if ($student->semester && $subject->semester && (int)$student->semester !== (int)$subject->semester) {
             return "Semester mismatch: you are semester {$student->semester}, but this class is semester {$subject->semester}.";
         }
 
-        if (!empty($subject->course) && strcasecmp(trim((string) $student->course), trim((string) $subject->course)) !== 0) {
+        // 5. Course check (case-insensitive, only if both are non-empty)
+        if (!empty($subject->course) && !empty($student->course) && strcasecmp(trim((string) $student->course), trim((string) $subject->course)) !== 0) {
             return "Course mismatch: you are in {$student->course}, but this class is for {$subject->course}.";
         }
 
-        // Students may not have section data in this system.
-        // Only enforce section when the student has a section value set.
+        // 6. Section check (only if both are non-empty)
         if (!empty($subject->section) && !empty($student->section) && strcasecmp(trim((string) $student->section), trim((string) $subject->section)) !== 0) {
             return "Section mismatch: your section is {$student->section}, but this class is section {$subject->section}.";
         }

@@ -58,3 +58,4 @@ isrg-root-x1.pem
 export_database.bat
 test_*.html
 test_response.html
+scratch/
