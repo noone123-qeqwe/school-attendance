@@ -2,6 +2,9 @@
 <div id="studentScannerModal" class="scanner-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-label="Student Attendance Scanner">
     <div class="scanner-modal-card">
         
+        <!-- Mobile Bottom Sheet Drag Indicator -->
+        <div class="scanner-drag-handle" aria-hidden="true"></div>
+
         <!-- Header & Top Floating Bar -->
         <div class="scanner-top-bar">
             <!-- Mobile: Mode Switcher Tabs (QR vs Code) -->
@@ -26,10 +29,10 @@
             </div>
             
             <div class="scanner-top-actions">
-                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="scanner-icon-btn" title="Toggle Flashlight" aria-label="Toggle Flashlight">
+                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="scanner-icon-btn" title="Toggle Flashlight" aria-label="Toggle Flashlight" style="display: none;">
                     <i class="bi bi-lightning-charge"></i>
                 </button>
-                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="scanner-icon-btn" title="Flip Camera" aria-label="Flip Camera">
+                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="scanner-icon-btn" title="Flip Camera" aria-label="Flip Camera" style="display: none !important;">
                     <i class="bi bi-camera-reverse"></i>
                 </button>
                 <button type="button" onclick="closeStudentScanner()" class="scanner-icon-btn close-btn" title="Close" aria-label="Close Scanner">
@@ -42,73 +45,83 @@
         <div id="scannerActiveView" class="scanner-active-content">
             <div class="scanner-hero-heading">
                 <h4 class="scanner-title">Scan Attendance QR</h4>
-                <p class="scanner-sub">Position the teacher’s QR code inside the frame.</p>
             </div>
 
             <!-- Viewfinder Area with Glowing Corner Reticles -->
             <div id="scannerVideoContainer" class="scanner-viewfinder-wrapper">
                 <div id="reader" class="scanner-reader-feed"></div>
                 
-                <!-- 4 Corner Reticle Accents -->
+                <!-- 4 Subtle Corner Reticle Accents (shown when camera active) -->
                 <div class="reticle-corner top-left"></div>
                 <div class="reticle-corner top-right"></div>
                 <div class="reticle-corner bottom-left"></div>
                 <div class="reticle-corner bottom-right"></div>
 
                 <!-- Laser scanning beam -->
-                <div id="scannerLaser" class="scanner-laser-line"></div>
+                <div id="scannerLaser" class="scanner-laser-line" style="display: none;"></div>
 
-                <!-- Guidance Pill -->
-                <div id="scannerGuideBadge" class="scanner-guide-badge">
-                    <i class="bi bi-viewfinder me-1"></i> Position the teacher’s QR code inside the frame.
+                <!-- Camera Loading Overlay -->
+                <div id="scannerLoadingOverlay" class="scanner-loading-overlay" style="display: none;">
+                    <div class="spinner-border text-warning" style="width: 2.4rem; height: 2.4rem; border-width: 2.5px;" role="status"></div>
+                    <div class="loading-title">Starting camera…</div>
+                    <div class="loading-sub">Preparing live video feed</div>
                 </div>
 
-                <!-- Processing Overlay -->
+                <!-- QR Detected / Processing Overlay -->
                 <div id="scannerProcessingOverlay" class="scanner-processing-overlay" style="display: none;">
-                    <div class="spinner-border text-warning mb-3" style="width: 3.2rem; height: 3.2rem; border-width: 3px;" role="status"></div>
-                    <div class="processing-title">Recording Attendance...</div>
-                    <div class="processing-sub">Verifying session & GPS proximity</div>
+                    <div class="spinner-border text-warning mb-2" style="width: 2.8rem; height: 2.8rem; border-width: 3px;" role="status"></div>
+                    <div class="processing-title">QR code detected — verifying…</div>
+                    <div class="processing-sub">Checking session code & GPS range</div>
                 </div>
 
-                <!-- Fallback Notice (Permission Blocked / Unsupported) -->
-                <div id="scannerFallbackNotice" class="scanner-fallback-box" style="display: none;">
-                    <div class="fallback-icon-wrap" id="fallbackIconWrap">
-                        <i class="bi bi-camera-video-off"></i>
+                <!-- Fallback Notice (Permission Blocked / Unsupported / Inactive) -->
+                <div id="scannerFallbackNotice" class="scanner-permission-empty-state" style="display: none;">
+                    <div class="permission-icon-bubble" id="fallbackIconWrap">
+                        <i class="bi bi-camera-fill"></i>
                     </div>
-                    <h5 class="fallback-title" id="fallbackTitle">Camera Inactive</h5>
-                    <p id="scannerFallbackText" class="fallback-text">Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.</p>
-                    <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
-                        <button type="button" class="btn btn-sm btn-outline-warning" id="retryCameraBtn" onclick="requestCameraAgain()" style="border-radius: 12px; font-weight: 700; padding: 7px 16px;">
-                            <i class="bi bi-arrow-repeat me-1"></i> Retry Camera
+                    <h5 class="permission-headline" id="fallbackTitle">Camera Access Required</h5>
+                    <p id="scannerFallbackText" class="permission-description">Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.</p>
+                    <div class="permission-actions">
+                        <button type="button" class="permission-primary-btn" id="retryCameraBtn" onclick="requestCameraAgain()">
+                            <i class="bi bi-camera me-1"></i> Allow Camera
                         </button>
-                        <button type="button" class="btn btn-sm btn-warning text-dark" onclick="switchScannerMode('code')" style="border-radius: 12px; font-weight: 700; padding: 7px 16px;">
-                            <i class="bi bi-key-fill me-1"></i> Use Code
+                        <button type="button" class="permission-secondary-link" onclick="switchScannerMode('code')">
+                            Enter Code Manually
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Quick switch link to code and Cancel button -->
-            <div class="mt-3 text-center d-flex flex-column gap-2 align-items-center">
-                <button type="button" class="scanner-manual-toggle-btn" onclick="switchScannerMode('code')">
-                    <i class="bi bi-key-fill text-warning me-1"></i> Or enter 6-digit Code instead
-                </button>
-                <button type="button" class="scanner-cancel-btn" onclick="closeStudentScanner()" style="border-radius: 12px; color: #b39b82; background: rgba(255,255,255,0.05); border: 1px solid rgba(207,164,111,0.2); padding: 7px 22px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="bi bi-x-circle"></i> Cancel & Return to Dashboard
+            <!-- Single Clean Guidance Instruction Below Scanner -->
+            <div id="scannerGuideBadge" class="scanner-instruction-container">
+                <i class="bi bi-viewfinder text-gold me-1"></i>
+                <span class="scanner-instruction-text">Position the teacher’s QR code inside the frame.</span>
+            </div>
+
+            <!-- Secondary Manual Code Alternative Option -->
+            <div class="scanner-alt-action-card">
+                <span class="scanner-alt-label">Can't scan the QR code?</span>
+                <button type="button" class="scanner-alt-btn" onclick="switchScannerMode('code')">
+                    <i class="bi bi-key-fill me-1"></i> Enter 6-Digit Code
                 </button>
             </div>
+
+            <!-- Clean Bottom Cancel Action -->
+            <button type="button" class="scanner-cancel-action-btn" onclick="closeStudentScanner()">
+                <i class="bi bi-x-circle me-1"></i> Cancel & Return to Dashboard
+            </button>
         </div>
 
         <!-- Mode 2: Direct Code / PIN Input View -->
-        <div id="scannerCodeView" class="scanner-active-content" style="display: none; padding: 10px 0;">
-            <div style="width: 60px; height: 60px; border-radius: 20px; background: linear-gradient(135deg, #cfa46f, #8c6d46); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #181614; margin: 0 auto 14px; box-shadow: 0 8px 24px rgba(207,164,111,0.3);">
+        <div id="scannerCodeView" class="scanner-active-content" style="display: none; padding: 6px 0;">
+            <div style="width: 50px; height: 50px; border-radius: 16px; background: linear-gradient(135deg, #cfa46f, #8c6d46); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #181614; margin: 0 auto 10px; box-shadow: 0 6px 20px rgba(207,164,111,0.28);">
                 <i class="bi bi-key-fill"></i>
             </div>
             
             <h4 class="scanner-title">Enter Attendance Code</h4>
-            <p class="scanner-sub">Type the 6-digit attendance code displayed on the teacher's screen</p>
+            <p class="scanner-sub">Enter the 6-digit attendance code.</p>
 
-            <div class="code-entry-container my-4">
+            <div class="code-entry-container my-3">
                 <input type="text" id="directSessionCodeInput" class="code-entry-input" placeholder="849 201" maxlength="9" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" oninput="formatSessionCodeInput(this)" onkeydown="handleCodeKeydown(event)">
                 <div class="code-entry-hint mt-2">
                     <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
@@ -122,7 +135,7 @@
                 <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" onclick="switchScannerMode('scan')">
                     <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
                 </button>
-                <button type="button" class="btn scanner-secondary-action-btn w-100" onclick="closeStudentScanner()" style="border-radius: 16px; color: #b39b82; background: rgba(255,255,255,0.05); border: 1px solid rgba(207,164,111,0.2); font-weight: 600;">
+                <button type="button" class="scanner-cancel-action-btn" onclick="closeStudentScanner()">
                     <i class="bi bi-x-circle me-1"></i> Cancel & Return to Dashboard
                 </button>
             </div>
@@ -498,24 +511,25 @@
 .scanner-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(8, 8, 10, 0.92);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
+    background: rgba(8, 8, 10, 0.88);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     z-index: 100000 !important;
+    display: flex;
     align-items: center;
     justify-content: center;
     padding: 16px;
 }
 
 .scanner-modal-card {
-    background: linear-gradient(180deg, #1f1b17 0%, #131211 100%);
-    border: 1px solid rgba(207, 164, 111, 0.28);
+    background: linear-gradient(180deg, #1b1714 0%, #11100f 100%);
+    border: 1px solid rgba(207, 164, 111, 0.25);
     border-radius: 28px;
-    max-width: 470px;
+    max-width: 440px;
     width: 100%;
-    padding: 22px 20px;
+    padding: 16px 20px 20px;
     color: #ffffff;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(207, 164, 111, 0.12);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(207, 164, 111, 0.1);
     text-align: center;
     position: relative;
     overflow: hidden;
@@ -523,15 +537,25 @@
 }
 
 @keyframes scannerCardEnter {
-    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    from { opacity: 0; transform: scale(0.96) translateY(12px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Drag indicator for mobile bottom sheet */
+.scanner-drag-handle {
+    width: 38px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 99px;
+    margin: 0 auto 10px;
+    flex-shrink: 0;
 }
 
 /* Mode Switcher (QR vs Code) */
 .scanner-mode-switcher {
     display: inline-flex;
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(207, 164, 111, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(207, 164, 111, 0.22);
     border-radius: 99px;
     padding: 3px;
     gap: 3px;
@@ -547,12 +571,18 @@
     border-radius: 99px;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: inline-flex;
+    align-items: center;
 }
 
 .scanner-mode-tab.active {
-    background: linear-gradient(135deg, #cfa46f, #8c6d46);
-    color: #181614;
-    box-shadow: 0 4px 12px rgba(207, 164, 111, 0.35);
+    background: linear-gradient(135deg, #cfa46f, #a07a4a);
+    color: #141110;
+    box-shadow: 0 3px 10px rgba(207, 164, 111, 0.35);
+}
+
+.scanner-mode-tab:active {
+    transform: scale(0.97);
 }
 
 /* Top Floating Bar */
@@ -560,7 +590,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
 }
 
 .scanner-top-actions {
@@ -570,16 +600,16 @@
 }
 
 .scanner-icon-btn {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     color: #f3e7cd;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1rem;
+    font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -588,93 +618,56 @@
     background: rgba(207, 164, 111, 0.2);
     color: #ffffff;
     border-color: rgba(207, 164, 111, 0.4);
-    transform: scale(1.06);
+    transform: scale(1.05);
 }
 
 .scanner-icon-btn.active-torch {
     background: #cfa46f;
     color: #181614;
     border-color: #ffd700;
-    box-shadow: 0 0 16px rgba(255, 215, 0, 0.6);
+    box-shadow: 0 0 14px rgba(255, 215, 0, 0.6);
 }
 
-.scanner-icon-btn.close-btn:hover {
-    background: rgba(239, 68, 68, 0.2);
+.scanner-icon-btn.close-btn:hover, .scanner-icon-btn.close-btn:active {
+    background: rgba(239, 68, 68, 0.22);
     color: #f87171;
     border-color: rgba(239, 68, 68, 0.4);
 }
 
 /* Heading */
 .scanner-hero-heading {
-    margin-bottom: 14px;
+    margin-bottom: 10px;
 }
 
 .scanner-title {
     font-weight: 800;
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     color: #ffffff;
-    margin-bottom: 2px;
+    margin-bottom: 0;
     letter-spacing: -0.02em;
 }
 
 .scanner-sub {
     color: #b39b82;
-    font-size: 0.82rem;
-    margin-bottom: 0;
-}
-
-/* Code Entry Panel */
-.code-entry-container {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1.5px solid rgba(207, 164, 111, 0.35);
-    border-radius: 22px;
-    padding: 20px 16px;
-    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
-}
-
-.code-entry-input {
-    background: rgba(0, 0, 0, 0.6) !important;
-    border: 2px solid rgba(207, 164, 111, 0.4) !important;
-    color: #ffd700 !important;
-    font-family: 'Consolas', 'Courier New', monospace !important;
-    font-size: 2.2rem !important;
-    font-weight: 900 !important;
-    letter-spacing: 8px !important;
-    text-align: center !important;
-    border-radius: 16px !important;
-    padding: 12px 10px !important;
-    width: 100% !important;
-    text-transform: uppercase !important;
-    box-shadow: 0 0 16px rgba(207, 164, 111, 0.15) !important;
-    transition: all 0.2s !important;
-}
-
-.code-entry-input:focus {
-    border-color: #ffd700 !important;
-    box-shadow: 0 0 24px rgba(255, 215, 0, 0.35) !important;
-    outline: none !important;
-}
-
-.code-entry-hint {
     font-size: 0.78rem;
-    color: #b39b82;
+    margin-top: 3px;
+    margin-bottom: 0;
 }
 
 /* Viewfinder Area */
 .scanner-viewfinder-wrapper {
     position: relative;
-    border-radius: 24px;
+    border-radius: 22px;
     overflow: hidden;
-    background: #000000;
-    width: 100%;
-    max-width: 320px;
+    background: #08080a;
+    width: min(72vw, 260px);
     aspect-ratio: 1 / 1;
-    margin: 0 auto;
+    margin: 0 auto 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid rgba(207, 164, 111, 0.4);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 0 40px rgba(0, 0, 0, 0.9);
+    border: 1.5px solid rgba(207, 164, 111, 0.32);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(0, 0, 0, 0.9);
 }
 
 .scanner-reader-feed {
@@ -689,7 +682,7 @@
 }
 
 .scanner-reader-feed video {
-    border-radius: 22px !important;
+    border-radius: 20px !important;
     object-fit: cover !important;
     width: 100% !important;
     height: 100% !important;
@@ -709,188 +702,366 @@
     display: none !important;
 }
 
-/* Reticle Corner Markers */
+/* Subtle Reticle Corner Markers - Only visible when camera is active */
 .reticle-corner {
     position: absolute;
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     border-color: #ffd700;
     border-style: solid;
     border-width: 0;
     z-index: 14;
     pointer-events: none;
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.75));
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.scanner-viewfinder-wrapper.camera-active .reticle-corner {
+    opacity: 1;
 }
 
 .reticle-corner.top-left {
-    top: 18px;
-    left: 18px;
-    border-top-width: 3.5px;
-    border-left-width: 3.5px;
-    border-top-left-radius: 12px;
+    top: 14px;
+    left: 14px;
+    border-top-width: 3px;
+    border-left-width: 3px;
+    border-top-left-radius: 10px;
 }
 
 .reticle-corner.top-right {
-    top: 18px;
-    right: 18px;
-    border-top-width: 3.5px;
-    border-right-width: 3.5px;
-    border-top-right-radius: 12px;
+    top: 14px;
+    right: 14px;
+    border-top-width: 3px;
+    border-right-width: 3px;
+    border-top-right-radius: 10px;
 }
 
 .reticle-corner.bottom-left {
-    bottom: 18px;
-    left: 18px;
-    border-bottom-width: 3.5px;
-    border-left-width: 3.5px;
-    border-bottom-left-radius: 12px;
+    bottom: 14px;
+    left: 14px;
+    border-bottom-width: 3px;
+    border-left-width: 3px;
+    border-bottom-left-radius: 10px;
 }
 
 .reticle-corner.bottom-right {
-    bottom: 18px;
-    right: 18px;
-    border-bottom-width: 3.5px;
-    border-right-width: 3.5px;
-    border-bottom-right-radius: 12px;
+    bottom: 14px;
+    right: 14px;
+    border-bottom-width: 3px;
+    border-right-width: 3px;
+    border-bottom-right-radius: 10px;
 }
 
-/* Laser Scan Line */
+/* Laser Scan Line - Only active when camera is live */
 .scanner-laser-line {
     position: absolute;
     left: 8%;
     right: 8%;
-    height: 3px;
+    height: 2.5px;
     background: linear-gradient(90deg, transparent, #cfa46f 25%, #ffd700 50%, #cfa46f 75%, transparent);
-    box-shadow: 0 0 18px #ffd700, 0 0 32px rgba(207, 164, 111, 0.7);
+    box-shadow: 0 0 14px #ffd700, 0 0 24px rgba(207, 164, 111, 0.6);
     z-index: 15;
     animation: modernLaserScan 2s ease-in-out infinite;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.scanner-viewfinder-wrapper.camera-active .scanner-laser-line {
+    opacity: 1;
 }
 
 @keyframes modernLaserScan {
-    0% { top: 12%; opacity: 0.25; }
-    50% { top: 86%; opacity: 1; }
-    100% { top: 12%; opacity: 0.25; }
+    0% { top: 14%; opacity: 0.3; }
+    50% { top: 84%; opacity: 1; }
+    100% { top: 14%; opacity: 0.3; }
 }
 
-/* Guidance Badge */
-.scanner-guide-badge {
+/* Camera Loading Overlay */
+.scanner-loading-overlay {
     position: absolute;
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(18, 16, 14, 0.85);
+    inset: 0;
+    background: rgba(14, 13, 12, 0.94);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    color: #f3e7cd;
-    font-size: 0.72rem;
-    font-weight: 600;
-    padding: 5px 14px;
-    border-radius: 99px;
-    z-index: 16;
-    pointer-events: none;
-    white-space: nowrap;
+    z-index: 22;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    padding: 16px;
+}
+
+.loading-title {
+    font-weight: 800;
+    color: #ffffff;
+    font-size: 0.95rem;
+    margin-top: 10px;
+    letter-spacing: -0.01em;
+}
+
+.loading-sub {
+    font-size: 0.74rem;
+    color: #b39b82;
+    margin-top: 2px;
 }
 
 /* Processing Overlay */
 .scanner-processing-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(14, 13, 12, 0.92);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    background: rgba(14, 13, 12, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 25;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 22px;
+    border-radius: 20px;
+    padding: 16px;
 }
 
 .processing-title {
     font-weight: 800;
     color: #ffffff;
-    font-size: 1rem;
+    font-size: 0.95rem;
     letter-spacing: -0.01em;
+    text-align: center;
 }
 
 .processing-sub {
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     color: #b39b82;
     margin-top: 2px;
+    text-align: center;
 }
 
-/* Fallback Notice */
-.scanner-fallback-box {
-    padding: 24px 16px;
+/* Fallback Notice (Permission / Unavailable Empty State) */
+.scanner-permission-empty-state {
+    padding: 18px 16px;
     color: #b39b82;
     text-align: center;
     z-index: 20;
     position: relative;
+    width: 100%;
 }
 
-.fallback-icon-wrap {
-    width: 52px;
-    height: 52px;
+.permission-icon-bubble {
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    color: #f87171;
-    font-size: 1.5rem;
+    background: rgba(207, 164, 111, 0.12);
+    border: 1px solid rgba(207, 164, 111, 0.28);
+    color: #ffd700;
+    font-size: 1.35rem;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 10px;
 }
 
-.fallback-title {
-    font-weight: 700;
+.permission-headline {
+    font-weight: 800;
     color: #ffffff;
-    font-size: 1rem;
+    font-size: 0.95rem;
     margin-bottom: 4px;
+    letter-spacing: -0.01em;
 }
 
-.fallback-text {
-    font-size: 0.8rem;
-    color: #d1c4b2;
-    max-width: 260px;
-    margin: 0 auto;
-    line-height: 1.45;
+.permission-description {
+    font-size: 0.76rem;
+    color: #c4b5a2;
+    max-width: 240px;
+    margin: 0 auto 12px;
+    line-height: 1.4;
 }
 
-.scanner-manual-toggle-btn {
-    background: none;
-    border: none;
-    color: #cfa46f;
+.permission-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.permission-primary-btn {
+    background: linear-gradient(135deg, #cfa46f, #a07a4a);
+    color: #141110;
     font-size: 0.82rem;
-    font-weight: 700;
+    font-weight: 800;
+    border: none;
+    border-radius: 12px;
+    padding: 8px 20px;
     cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(207, 164, 111, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     transition: all 0.2s;
 }
 
-.scanner-manual-toggle-btn:hover {
+.permission-primary-btn:active {
+    transform: scale(0.97);
+}
+
+.permission-secondary-link {
+    background: transparent;
+    border: none;
+    color: #cfa46f;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    padding: 4px 8px;
+    transition: color 0.2s;
+}
+
+.permission-secondary-link:hover, .permission-secondary-link:active {
     color: #ffd700;
-    background: rgba(207, 164, 111, 0.1);
+}
+
+/* Instruction container placed cleanly below scanner */
+.scanner-instruction-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(207, 164, 111, 0.08);
+    border: 1px solid rgba(207, 164, 111, 0.18);
+    border-radius: 99px;
+    padding: 5px 14px;
+    margin: 0 auto 10px;
+    max-width: 92%;
+}
+
+.scanner-instruction-text {
+    color: #f3e7cd;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: normal;
+    text-align: center;
+}
+
+/* Secondary Manual Code Card */
+.scanner-alt-action-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(207, 164, 111, 0.16);
+    border-radius: 14px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.scanner-alt-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #d1c4b2;
+    text-align: left;
+}
+
+.scanner-alt-btn {
+    background: rgba(207, 164, 111, 0.14);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    color: #ffd700;
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    transition: all 0.2s;
+}
+
+.scanner-alt-btn:active {
+    transform: scale(0.97);
+    background: rgba(207, 164, 111, 0.24);
+}
+
+/* Clean bottom cancel action */
+.scanner-cancel-action-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a89279;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 8px 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    transition: all 0.2s;
+}
+
+.scanner-cancel-action-btn:hover, .scanner-cancel-action-btn:active {
+    background: rgba(255, 255, 255, 0.05);
+    color: #f3e7cd;
+    border-color: rgba(207, 164, 111, 0.25);
+}
+
+/* Code Entry Panel */
+.code-entry-container {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1.5px solid rgba(207, 164, 111, 0.3);
+    border-radius: 20px;
+    padding: 16px 14px;
+    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.6);
+}
+
+.code-entry-input {
+    background: rgba(0, 0, 0, 0.6) !important;
+    border: 2px solid rgba(207, 164, 111, 0.4) !important;
+    color: #ffd700 !important;
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    font-size: 2rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 6px !important;
+    text-align: center !important;
+    border-radius: 14px !important;
+    padding: 10px 8px !important;
+    width: 100% !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 0 14px rgba(207, 164, 111, 0.15) !important;
+    transition: all 0.2s !important;
+}
+
+.code-entry-input:focus {
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.35) !important;
+    outline: none !important;
+}
+
+.code-entry-hint {
+    font-size: 0.76rem;
+    color: #b39b82;
 }
 
 /* Result View */
 .scanner-result-content {
-    padding: 8px 0 4px;
+    padding: 6px 0 4px;
     text-align: center;
 }
 
 .result-status-icon-wrap {
-    width: 74px;
-    height: 74px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.3rem;
-    margin: 0 auto 14px;
+    font-size: 2rem;
+    margin: 0 auto 12px;
     animation: resultPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -901,24 +1072,24 @@
 
 .result-headline {
     font-weight: 800;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     letter-spacing: -0.02em;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .result-caption {
     color: #b39b82;
-    font-size: 0.86rem;
-    margin-bottom: 18px;
-    line-height: 1.45;
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+    line-height: 1.4;
 }
 
 .result-summary-card {
     background: rgba(0, 0, 0, 0.4);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 18px;
-    padding: 14px 18px;
-    margin-bottom: 16px;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
     text-align: left;
 }
 
@@ -926,7 +1097,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 7px 0;
+    padding: 6px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -936,7 +1107,7 @@
 }
 
 .result-label {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: #b39b82;
     text-transform: uppercase;
     font-weight: 700;
@@ -944,7 +1115,7 @@
 }
 
 .result-val {
-    font-size: 0.86rem;
+    font-size: 0.82rem;
     color: #f3e7cd;
     font-weight: 600;
     text-align: right;
@@ -963,15 +1134,15 @@
 /* Auto Close Countdown Box */
 .result-autoclose-box {
     background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    border-radius: 14px;
-    padding: 10px 14px;
-    margin-bottom: 14px;
+    border: 1px solid rgba(16, 185, 129, 0.28);
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
     text-align: center;
 }
 
 .autoclose-text {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #34d399;
     margin-bottom: 6px;
@@ -996,25 +1167,34 @@
     background: linear-gradient(135deg, #cfa46f, #8c6d46) !important;
     color: #181614 !important;
     font-weight: 800 !important;
-    padding: 13px !important;
-    border-radius: 16px !important;
-    font-size: 0.95rem !important;
+    padding: 11px !important;
+    border-radius: 14px !important;
+    font-size: 0.9rem !important;
     border: none !important;
-    box-shadow: 0 8px 24px rgba(207, 164, 111, 0.3) !important;
+    box-shadow: 0 6px 20px rgba(207, 164, 111, 0.28) !important;
     transition: all 0.2s !important;
+}
+
+.scanner-primary-action-btn:active {
+    transform: scale(0.98) !important;
 }
 
 .scanner-secondary-action-btn {
     background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
     color: #f3e7cd !important;
     font-weight: 700 !important;
-    padding: 13px !important;
-    border-radius: 16px !important;
-    font-size: 0.95rem !important;
+    padding: 11px !important;
+    border-radius: 14px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.2s !important;
 }
 
-/* ── MOBILE ADAPTIVE VIEWPORT OPTIMIZATIONS ── */
+.scanner-secondary-action-btn:active {
+    transform: scale(0.98) !important;
+}
+
+/* ── MOBILE ADAPTIVE VIEWPORT & SAFE AREA OPTIMIZATIONS ── */
 @media (max-width: 640px) {
     .scanner-modal-backdrop {
         padding: 0;
@@ -1028,50 +1208,48 @@
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         overscroll-behavior: contain;
-        border-radius: 32px 32px 0 0;
+        border-radius: 28px 28px 0 0;
         border-bottom: none;
         border-left: none;
         border-right: none;
-        padding: 20px 18px max(24px, env(safe-area-inset-bottom)) 18px;
+        padding: 12px 18px max(24px, calc(env(safe-area-inset-bottom, 0px) + 16px)) 18px;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(207, 164, 111, 0.15);
+    }
+
+    .scanner-drag-handle {
+        display: block;
     }
 
     .scanner-viewfinder-wrapper {
-        max-width: 300px;
+        width: min(72vw, 260px);
         aspect-ratio: 1 / 1;
-        border-radius: 26px;
+        border-radius: 22px;
+        margin: 0 auto 10px;
     }
 
     .scanner-reader-feed video {
-        border-radius: 24px !important;
+        border-radius: 20px !important;
     }
 
     .scanner-title {
-        font-size: 1.3rem;
+        font-size: 1.15rem;
     }
 
     .code-entry-input {
-        font-size: 2.2rem !important;
-        letter-spacing: 6px !important;
-        padding: 14px 10px !important;
+        font-size: 1.9rem !important;
+        letter-spacing: 5px !important;
+        padding: 10px 6px !important;
     }
-
-    .reticle-corner {
-        width: 30px;
-        height: 30px;
-    }
-
-    .reticle-corner.top-left { top: 16px; left: 16px; }
-    .reticle-corner.top-right { top: 16px; right: 16px; }
-    .reticle-corner.bottom-left { bottom: 16px; left: 16px; }
-    .reticle-corner.bottom-right { bottom: 16px; right: 16px; }
 }
 
 /* ── DESKTOP ONLY / MOBILE ONLY RESPONSIVE RULES ── */
 @media (min-width: 768px) {
-    /* Desktop layout: lock to code-only manual entry only on desktop layouts */
+    .scanner-drag-handle {
+        display: none;
+    }
+
     body:not(.mobile-app-layout):not(:has(.mobile-app)) .scanner-mode-switcher {
         display: none !important;
     }
@@ -1087,15 +1265,14 @@
         display: none !important;
     }
     .scanner-modal-card {
-        max-width: 480px;
+        max-width: 460px;
         width: 100%;
-        padding: 28px 28px 24px;
+        padding: 24px 24px 22px;
         border-radius: 28px;
     }
 }
 
 @media (max-width: 767px) {
-    /* Mobile layout: show switcher and camera elements */
     #desktopScannerHeader {
         display: none !important;
     }
@@ -1125,18 +1302,15 @@ if (navigator.geolocation) {
 }
 
 function isDesktopDevice() {
-    // If inside the dedicated mobile app layout or viewing mobile routes, never treat as desktop
     if (document.querySelector('.mobile-app') || document.body.classList.contains('mobile-app-layout') || window.location.pathname.includes('/mobile')) {
         return false;
     }
-    // Desktop / tablet layout threshold: screen width >= 768px
     return window.innerWidth >= 768;
 }
 
 function switchScannerMode(mode) {
     const card = document.querySelector('.scanner-modal-card');
     if (isDesktopDevice() && mode !== 'scan') {
-        // Enforce code-only mode on desktop layouts
         mode = 'code';
     }
     currentScannerMode = mode;
@@ -1154,8 +1328,7 @@ function switchScannerMode(mode) {
         if (tabCode) tabCode.classList.remove('active');
         if (scanView) scanView.style.display = 'block';
         if (codeView) codeView.style.display = 'none';
-        if (torchBtn) torchBtn.style.display = 'flex';
-        if (flipBtn) flipBtn.style.display = 'flex';
+        if (flipBtn) flipBtn.style.display = 'none'; // Keep extra empty button hidden
         startHtml5Scanner();
     } else {
         if (card) { card.classList.remove('mode-scan'); card.classList.add('mode-code'); }
@@ -1245,7 +1418,6 @@ function openStudentScanner(initialMode = 'scan') {
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
     
-    // Only force code mode on desktop if scan was not explicitly requested
     if (isDesktopDevice() && initialMode !== 'scan') {
         initialMode = 'code';
     }
@@ -1266,8 +1438,18 @@ async function safeStopScanner() {
     }
     isScannerRunning = false;
     isScannerStarting = false;
+    
+    const container = document.getElementById('scannerVideoContainer');
+    if (container) container.classList.remove('camera-active');
+
+    const loadingOverlay = document.getElementById('scannerLoadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+
     const laser = document.getElementById('scannerLaser');
     if (laser) laser.style.display = 'none';
+
+    const torchBtn = document.getElementById('torchCameraBtn');
+    if (torchBtn) torchBtn.style.display = 'none';
 }
 
 async function safeClearScanner() {
@@ -1303,14 +1485,20 @@ async function startHtml5Scanner() {
 
     hideCameraError();
 
+    // Show loading state overlay
+    const loadingOverlay = document.getElementById('scannerLoadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
     // 1. Check secure context (HTTPS / localhost required by browsers for camera)
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
         showCameraError("Camera access requires a secure connection (HTTPS) or localhost. Please switch to 6-digit Code entry.", false, true);
         return;
     }
 
     // 2. Check browser mediaDevices support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
         showCameraError("Your browser or device does not support live camera scanning. Please enter the 6-digit Code.", false, true);
         return;
     }
@@ -1318,6 +1506,7 @@ async function startHtml5Scanner() {
     // 3. Wait for Html5Qrcode library to be loaded
     const libLoaded = await waitForHtml5Qrcode();
     if (!libLoaded) {
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
         showCameraError("Scanner engine is loading. Please enter the 6-digit Code or tap Retry.", false);
         return;
     }
@@ -1333,6 +1522,7 @@ async function startHtml5Scanner() {
             probeStream.getTracks().forEach(track => track.stop());
         } catch (permErr) {
             isScannerStarting = false;
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
             if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
                 showCameraError("Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.", true);
                 return;
@@ -1362,7 +1552,7 @@ async function startHtml5Scanner() {
             fps: 20,
             qrbox: function(viewfinderWidth, viewfinderHeight) {
                 const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const qrboxSize = Math.floor(minEdge * 0.76);
+                const qrboxSize = Math.floor(minEdge * 0.78);
                 return { width: Math.max(qrboxSize, 180), height: Math.max(qrboxSize, 180) };
             },
             experimentalFeatures: {
@@ -1377,10 +1567,7 @@ async function startHtml5Scanner() {
                 qrConfig,
                 onQrScanSuccess
             );
-            isScannerRunning = true;
-            isScannerStarting = false;
-            const laser = document.getElementById('scannerLaser');
-            if (laser) laser.style.display = 'block';
+            onScannerSuccessfullyStarted();
             return;
         } catch (firstErr) {
             console.warn("[Scanner] FacingMode start failed, trying camera enumeration fallback:", firstErr);
@@ -1403,10 +1590,7 @@ async function startHtml5Scanner() {
                 qrConfig,
                 onQrScanSuccess
             );
-            isScannerRunning = true;
-            isScannerStarting = false;
-            const laser = document.getElementById('scannerLaser');
-            if (laser) laser.style.display = 'block';
+            onScannerSuccessfullyStarted();
         } else {
             throw new Error("No cameras detected on this device.");
         }
@@ -1414,7 +1598,29 @@ async function startHtml5Scanner() {
         console.warn("[Scanner] Camera start failed completely:", err);
         isScannerStarting = false;
         isScannerRunning = false;
-        showCameraError("Camera unavailable or permission denied. Tap 'Retry Camera' or enter the 6-digit Code.", true);
+        const loadingOverlay = document.getElementById('scannerLoadingOverlay');
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+        showCameraError("Camera unavailable or permission denied. Tap 'Allow Camera' or enter the 6-digit Code.", true);
+    }
+}
+
+function onScannerSuccessfullyStarted() {
+    isScannerRunning = true;
+    isScannerStarting = false;
+
+    const loadingOverlay = document.getElementById('scannerLoadingOverlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+
+    const container = document.getElementById('scannerVideoContainer');
+    if (container) container.classList.add('camera-active');
+
+    const laser = document.getElementById('scannerLaser');
+    if (laser) laser.style.display = 'block';
+
+    // Show torch button only when camera is active and rear facing
+    const torchBtn = document.getElementById('torchCameraBtn');
+    if (torchBtn && currentFacingMode === 'environment') {
+        torchBtn.style.display = 'inline-flex';
     }
 }
 
@@ -1428,16 +1634,20 @@ function showCameraError(msg, isPermission = false, isUnsupported = false) {
     const iconWrap = document.getElementById('fallbackIconWrap');
     const retryBtn = document.getElementById('retryCameraBtn');
     const laser = document.getElementById('scannerLaser');
+    const loadingOverlay = document.getElementById('scannerLoadingOverlay');
+    const container = document.getElementById('scannerVideoContainer');
 
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
+    if (container) container.classList.remove('camera-active');
     if (notice) notice.style.display = 'block';
     if (text) text.textContent = msg;
     if (laser) laser.style.display = 'none';
 
     if (title) {
         if (isPermission) {
-            title.textContent = 'Camera Permission Required';
+            title.textContent = 'Camera Access Required';
         } else if (isUnsupported) {
-            title.textContent = 'Camera Unsupported';
+            title.textContent = 'Unable to access the camera';
         } else {
             title.textContent = 'Camera Inactive';
         }
@@ -1445,18 +1655,15 @@ function showCameraError(msg, isPermission = false, isUnsupported = false) {
 
     if (iconWrap) {
         if (isPermission) {
-            iconWrap.innerHTML = '<i class="bi bi-shield-lock-fill text-warning"></i>';
-            iconWrap.style.background = 'rgba(245, 158, 11, 0.15)';
-            iconWrap.style.borderColor = 'rgba(245, 158, 11, 0.35)';
+            iconWrap.innerHTML = '<i class="bi bi-camera-fill text-warning"></i>';
         } else {
             iconWrap.innerHTML = '<i class="bi bi-camera-video-off text-danger"></i>';
-            iconWrap.style.background = 'rgba(239, 68, 68, 0.15)';
-            iconWrap.style.borderColor = 'rgba(239, 68, 68, 0.35)';
         }
     }
 
     if (retryBtn) {
         retryBtn.style.display = isUnsupported ? 'none' : 'inline-flex';
+        retryBtn.innerHTML = '<i class="bi bi-camera me-1"></i> Allow Camera';
     }
 }
 
@@ -1527,11 +1734,13 @@ function resetScannerView() {
     const codeView = document.getElementById('scannerCodeView');
     const resultView = document.getElementById('scannerResultView');
     const overlay = document.getElementById('scannerProcessingOverlay');
+    const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     const codeInput = document.getElementById('directSessionCodeInput');
     const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
 
     if (resultView) resultView.style.display = 'none';
     if (overlay) overlay.style.display = 'none';
+    if (loadingOverlay) loadingOverlay.style.display = 'none';
     if (autoCloseNotice) autoCloseNotice.style.display = 'none';
     if (codeInput) codeInput.value = '';
 
@@ -1572,11 +1781,9 @@ function extractQrToken(raw) {
 }
 
 async function onQrScanSuccess(decodedText) {
-    // Prevent multiple accidental scan triggers (in-flight guard)
     if (isScanInFlight) return;
     isScanInFlight = true;
 
-    // Immediately stop camera feed and hide laser
     safeStopScanner();
 
     const overlay = document.getElementById('scannerProcessingOverlay');
@@ -1584,14 +1791,11 @@ async function onQrScanSuccess(decodedText) {
     if (overlay) overlay.style.display = 'flex';
     if (laser) laser.style.display = 'none';
 
-    // Play quick scan beep & haptic
     playScanBeep();
     if (window.triggerHaptic) window.triggerHaptic('medium');
 
-    // Clean scanned token / URL
     const cleanedToken = extractQrToken(decodedText);
 
-    // Fetch fresh GPS if not already captured
     if (!studentGeoCoords && navigator.geolocation) {
         try {
             await new Promise((resolve) => {
@@ -1679,7 +1883,7 @@ function renderScanSuccess(data) {
         iconBox.style.border = '2px solid rgba(16, 185, 129, 0.4)';
         iconBox.innerHTML = '<i class="bi bi-check2-circle" style="color: #34d399;"></i>';
 
-        title.textContent = 'Attendance Recorded Successfully!';
+        title.textContent = 'Attendance Recorded ✓';
         subtitle.textContent = `Your attendance has been confirmed for ${data.subject || 'this class'}.`;
 
         const isPresent = (data.status || 'Present') === 'Present';
@@ -1689,7 +1893,6 @@ function renderScanSuccess(data) {
         playSuccessChime();
         if (window.triggerHaptic) window.triggerHaptic('success');
 
-        // Automatically close and submit flow
         if (autoCloseNotice) {
             autoCloseNotice.style.display = 'block';
             let secondsLeft = 3;
@@ -1745,7 +1948,7 @@ function renderScanError(data) {
     if (data.error_type === 'schedule_mismatch') {
         title.textContent = 'Schedule Mismatch';
     } else if (data.error_type === 'session_closed' || data.error_type === 'invalid_or_expired') {
-        title.textContent = 'Code / QR Expired';
+        title.textContent = 'This QR code is invalid or expired.';
     } else if (data.error_type === 'outside_classroom' || (data.message && data.message.toLowerCase().includes('outside'))) {
         title.textContent = 'Outside Classroom Range';
         showOutsideRangePopup(data);
@@ -1808,7 +2011,6 @@ window.closeOutsideRangePopup = closeOutsideRangePopup;
 function finishScanAndRefresh() {
     clearAutoCloseTimer();
     closeStudentScanner();
-    // If we're on the dedicated mobile scan page, go to mobile home to show updated status
     if (window.location.pathname.includes('/mobile/scan')) {
         window.location.href = '{{ route("mobile.home") }}';
     } else {
@@ -1882,7 +2084,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { openStudentScanner('code'); }, 150);
     }
 
-    // Modal backdrop click to close
     const modal = document.getElementById('studentScannerModal');
     if (modal) {
         modal.addEventListener('click', (e) => {
