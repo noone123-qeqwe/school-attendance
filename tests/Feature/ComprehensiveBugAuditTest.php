@@ -196,7 +196,8 @@ class ComprehensiveBugAuditTest extends TestCase
 
         $scanResponse = $this->actingAs($this->student)
             ->get(route('mobile.scan'));
-        $scanResponse->assertRedirect(route('home', ['action' => 'scan']));
+        $scanResponse->assertOk();
+        $scanResponse->assertSee('Scan Attendance QR');
 
         $historyResponse = $this->actingAs($this->student)
             ->get(route('mobile.history'));

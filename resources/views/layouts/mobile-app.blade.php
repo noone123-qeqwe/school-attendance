@@ -152,7 +152,7 @@
     @include('partials.pwa-tags')
     @stack('styles')
 </head>
-<body>
+<body class="mobile-app-layout">
     <!-- Mobile Header -->
     @include('components.mobile.header')
 
@@ -169,15 +169,16 @@
 
     <!-- Scanner Modal (Students only) -->
     @auth
-        @if(auth()->user()->hasRole('student'))
+        @if(auth()->user()->isStudent() || auth()->user()->hasRole('student'))
             @include('partials.student-scanner-modal')
         @endif
     @endauth
 
     <!-- Scripts -->
-    <script>
+    <script @cspNonce>
         // CSRF Token setup
-        window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        window.csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
 
         // Check if running as installed PWA
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
@@ -228,15 +229,13 @@
         window.triggerHaptic = haptic;
 
         /**
-         * mobileScanButtonTapped — called directly via onclick on any Scan button
-         * in the mobile UI (bottom nav, quick actions, scan page, etc.).
-         *
-         * Fallback chain:
-         *   1. If openStudentScanner() is loaded → open the scanner modal inline
-         *   2. Otherwise → navigate to /mobile/scan which auto-opens it on arrival
+         * mobileScanButtonTapped — opens the QR scanner modal inline or navigates to scan page
          */
         window.mobileScanButtonTapped = function(e) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (e && typeof e.preventDefault === 'function') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
             if ('vibrate' in navigator) { navigator.vibrate(15); }
             if (typeof openStudentScanner === 'function') {
                 openStudentScanner('scan');
@@ -245,7 +244,19 @@
             }
         };
 
-        // Add haptic to all buttons
+        // Delegated touch/click handler for scanner triggers (CSP-safe, works across all dynamic content)
+        function triggerScanAction(e) {
+            const scanTrigger = e.target.closest('#mobileNavScanBtn, [data-action="open-scanner"], .scan-open-btn, .quick-action-primary');
+            if (scanTrigger) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.mobileScanButtonTapped(e);
+            }
+        }
+
+        document.addEventListener('click', triggerScanAction, true);
+
+        // Haptic feedback for interactive elements
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('button, .touchable, .nav-item').forEach(el => {
                 el.addEventListener('touchstart', () => haptic('light'), { passive: true });
@@ -261,7 +272,7 @@
         });
     </script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script @cspNonce src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
 </body>
 </html>

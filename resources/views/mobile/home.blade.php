@@ -49,7 +49,7 @@
     <section class="quick-actions-section">
         <h3 class="section-title">QUICK ACTIONS</h3>
         <div class="quick-actions-grid">
-            <button type="button" onclick="mobileScanButtonTapped(event)" class="quick-action-btn quick-action-primary">
+            <button type="button" id="quickActionScanBtn" data-action="open-scanner" onclick="if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}" class="quick-action-btn quick-action-primary" aria-label="Scan QR Code">
                 <div class="quick-action-icon">
                     <i class="bi bi-qr-code-scan"></i>
                 </div>

@@ -114,7 +114,7 @@
     }
 </style>
 
-<script>
+<script @cspNonce>
     // Auto-hide header on scroll down, show on scroll up
     (function() {
         let lastScroll = 0;

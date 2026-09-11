@@ -18,7 +18,7 @@
         $navItems = [
             ['route' => 'mobile.home',     'icon' => 'house-fill',    'label' => 'Home',     'primary' => false, 'scan' => false],
             ['route' => 'mobile.classes',  'icon' => 'book',          'label' => 'Classes',  'primary' => false, 'scan' => false],
-            ['route' => 'mobile.scan',     'icon' => 'qr-code-scan',  'label' => 'Scan',     'primary' => true,  'scan' => false],
+            ['route' => 'mobile.classes',  'icon' => 'qr-code-scan',  'label' => 'Scan',     'primary' => true,  'scan' => false],
             ['route' => 'mobile.students', 'icon' => 'people',        'label' => 'Students', 'primary' => false, 'scan' => false],
             ['route' => 'mobile.profile',  'icon' => 'person-fill',   'label' => 'Profile',  'primary' => false, 'scan' => false],
         ];
@@ -49,7 +49,8 @@
             <button type="button"
                     class="nav-item nav-item-primary {{ $currentRoute === $item['route'] ? 'active' : '' }}"
                     id="mobileNavScanBtn"
-                    onclick="mobileScanButtonTapped(event)"
+                    data-action="open-scanner"
+                    onclick="if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}"
                     aria-label="Scan QR Code">
                 <i class="bi bi-{{ $item['icon'] }}"></i>
                 <span>{{ $item['label'] }}</span>
@@ -185,6 +186,10 @@
         transform: scale(0.95);
     }
 
+    .nav-item * {
+        pointer-events: none;
+    }
+
     /* Hide on desktop */
     @media (min-width: 768px) {
         .mobile-bottom-nav {
@@ -193,10 +198,41 @@
     }
 </style>
 
-<script>
-    // Touch feedback for all nav items
+<script @cspNonce>
+    // Direct binding for Scan button and touch feedback
     document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.nav-item').forEach(function(el) {
+        const scanBtn = document.getElementById('mobileNavScanBtn');
+        if (scanBtn) {
+            const triggerScan = function(e) {
+                if (e) {
+                    if (typeof e.preventDefault === 'function') e.preventDefault();
+                    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                }
+                if (typeof window.triggerHaptic === 'function') {
+                    window.triggerHaptic('medium');
+                } else if ('vibrate' in navigator) {
+                    navigator.vibrate(15);
+                }
+
+                if (typeof window.openStudentScanner === 'function') {
+                    window.openStudentScanner('scan');
+                } else if (typeof window.mobileScanButtonTapped === 'function') {
+                    window.mobileScanButtonTapped(e);
+                } else {
+                    window.location.href = "{{ route('mobile.scan') }}";
+                }
+            };
+
+            scanBtn.addEventListener('click', triggerScan);
+            scanBtn.addEventListener('touchend', function(e) {
+                const now = Date.now();
+                if (scanBtn._lastTouch && now - scanBtn._lastTouch < 400) return;
+                scanBtn._lastTouch = now;
+                triggerScan(e);
+            }, { passive: false });
+        }
+
+        document.querySelectorAll('.nav-item:not(#mobileNavScanBtn)').forEach(function(el) {
             el.addEventListener('touchstart', function() {
                 if ('vibrate' in navigator) { navigator.vibrate(10); }
             }, { passive: true });

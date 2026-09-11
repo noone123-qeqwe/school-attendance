@@ -183,7 +183,7 @@
     }
 </style>
 
-<script>
+<script @cspNonce>
     // Reuse global deferredPrompt if already registered by pwa-tags
     if (typeof window.deferredPrompt === 'undefined') {
         window.deferredPrompt = null;

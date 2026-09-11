@@ -13,14 +13,14 @@
     </div>
 
     <div class="scan-action-area">
-        <button type="button" class="scan-open-btn touchable" onclick="mobileScanButtonTapped(event)" id="openScannerBtn">
+        <button type="button" class="scan-open-btn touchable" data-action="open-scanner" id="openScannerBtn" onclick="if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}">
             <i class="bi bi-camera-fill"></i>
             <span>Open QR Scanner</span>
         </button>
 
         <p class="scan-divider-text">or</p>
 
-        <button type="button" class="scan-code-btn touchable" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('code')}else{mobileScanButtonTapped(event)}">
+        <button type="button" class="scan-code-btn touchable" id="openCodeBtn" data-action="open-code" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('code')}else if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}">
             <i class="bi bi-key-fill"></i>
             <span>Enter 6-Digit Code Instead</span>
         </button>
@@ -186,17 +186,39 @@
 @endpush
 
 @push('scripts')
-<script>
-    // Auto-open the scanner immediately when this dedicated scan page loads
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function() {
-        // Use mobileScanButtonTapped which is guaranteed to be defined in the layout
+        const openScanBtn = document.getElementById('openScannerBtn');
+        const openCodeBtn = document.getElementById('openCodeBtn');
+
+        if (openScanBtn) {
+            openScanBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (typeof openStudentScanner === 'function') {
+                    openStudentScanner('scan');
+                } else if (typeof mobileScanButtonTapped === 'function') {
+                    mobileScanButtonTapped(e);
+                }
+            });
+        }
+
+        if (openCodeBtn) {
+            openCodeBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (typeof openStudentScanner === 'function') {
+                    openStudentScanner('code');
+                }
+            });
+        }
+
+        // Auto-open the scanner immediately when this dedicated scan page loads
         setTimeout(function() {
-            if (typeof mobileScanButtonTapped === 'function') {
-                mobileScanButtonTapped(null);
-            } else if (typeof openStudentScanner === 'function') {
+            if (typeof openStudentScanner === 'function') {
                 openStudentScanner('scan');
+            } else if (typeof mobileScanButtonTapped === 'function') {
+                mobileScanButtonTapped(null);
             }
-        }, 350);
+        }, 300);
     });
 </script>
 @endpush

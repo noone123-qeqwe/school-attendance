@@ -7,7 +7,7 @@
         <i class="bi bi-folder-fill"></i>
         <span>Classes</span>
     </a>
-    <a href="javascript:void(0)" onclick="if(typeof openStudentScanner === 'function'){ openStudentScanner(); } else { window.location.href='{{ route('home') }}?open_scanner=1'; }" class="mbn-item mbn-item-featured" aria-label="Scan Attendance QR">
+    <button type="button" class="mbn-item mbn-item-featured" id="mbnStudentScanBtn" data-action="open-scanner" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('scan')}else{window.location.href='{{ route('home') }}?open_scanner=1'}" aria-label="Scan Attendance QR" style="background:transparent;border:none;outline:none;cursor:pointer;">
         <div class="mbn-featured-btn">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="mbn-scan-icon-svg">
                 <path d="M3.5 8.5V5.5C3.5 4.4 4.4 3.5 5.5 3.5H8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -21,7 +21,7 @@
             </svg>
         </div>
         <span>Scan</span>
-    </a>
+    </button>
     <a href="{{ route('student.schedule') }}" class="mbn-item {{ request()->routeIs('student.schedule') ? 'active' : '' }}">
         <i class="bi bi-calendar-range-fill"></i>
         <span>Schedule</span>
@@ -31,3 +31,27 @@
         <span>More</span>
     </button>
 </nav>
+
+<script @cspNonce>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('mbnStudentScanBtn');
+    if (btn) {
+        const handler = function(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (typeof triggerHaptic === 'function') triggerHaptic('medium');
+            if (typeof openStudentScanner === 'function') {
+                openStudentScanner('scan');
+            } else {
+                window.location.href = '{{ route("home") }}?open_scanner=1';
+            }
+        };
+        btn.addEventListener('click', handler);
+        btn.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (btn._lastT && now - btn._lastT < 400) return;
+            btn._lastT = now;
+            handler(e);
+        }, { passive: false });
+    }
+});
+</script>

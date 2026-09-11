@@ -42,7 +42,7 @@
         <div id="scannerActiveView" class="scanner-active-content">
             <div class="scanner-hero-heading">
                 <h4 class="scanner-title">Scan Attendance QR</h4>
-                <p class="scanner-sub">Align the teacher's classroom QR code within the frame</p>
+                <p class="scanner-sub">Position the teacher’s QR code inside the frame.</p>
             </div>
 
             <!-- Viewfinder Area with Glowing Corner Reticles -->
@@ -60,7 +60,7 @@
 
                 <!-- Guidance Pill -->
                 <div id="scannerGuideBadge" class="scanner-guide-badge">
-                    <i class="bi bi-viewfinder me-1"></i> Point at screen QR code
+                    <i class="bi bi-viewfinder me-1"></i> Position the teacher’s QR code inside the frame.
                 </div>
 
                 <!-- Processing Overlay -->
@@ -76,7 +76,7 @@
                         <i class="bi bi-camera-video-off"></i>
                     </div>
                     <h5 class="fallback-title" id="fallbackTitle">Camera Inactive</h5>
-                    <p id="scannerFallbackText" class="fallback-text">Please allow camera permissions or switch to Code entry.</p>
+                    <p id="scannerFallbackText" class="fallback-text">Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.</p>
                     <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
                         <button type="button" class="btn btn-sm btn-outline-warning" id="retryCameraBtn" onclick="requestCameraAgain()" style="border-radius: 12px; font-weight: 700; padding: 7px 16px;">
                             <i class="bi bi-arrow-repeat me-1"></i> Retry Camera
@@ -88,10 +88,13 @@
                 </div>
             </div>
 
-            <!-- Quick switch link to code -->
-            <div class="mt-3 text-center">
+            <!-- Quick switch link to code and Cancel button -->
+            <div class="mt-3 text-center d-flex flex-column gap-2 align-items-center">
                 <button type="button" class="scanner-manual-toggle-btn" onclick="switchScannerMode('code')">
                     <i class="bi bi-key-fill text-warning me-1"></i> Or enter 6-digit Code instead
+                </button>
+                <button type="button" class="scanner-cancel-btn" onclick="closeStudentScanner()" style="border-radius: 12px; color: #b39b82; background: rgba(255,255,255,0.05); border: 1px solid rgba(207,164,111,0.2); padding: 7px 22px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="bi bi-x-circle"></i> Cancel & Return to Dashboard
                 </button>
             </div>
         </div>
@@ -118,6 +121,9 @@
                 </button>
                 <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" onclick="switchScannerMode('scan')">
                     <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
+                </button>
+                <button type="button" class="btn scanner-secondary-action-btn w-100" onclick="closeStudentScanner()" style="border-radius: 16px; color: #b39b82; background: rgba(255,255,255,0.05); border: 1px solid rgba(207,164,111,0.2); font-weight: 600;">
+                    <i class="bi bi-x-circle me-1"></i> Cancel & Return to Dashboard
                 </button>
             </div>
         </div>
@@ -492,10 +498,10 @@
 .scanner-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(8, 8, 10, 0.88);
+    background: rgba(8, 8, 10, 0.92);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
-    z-index: 99999;
+    z-index: 100000 !important;
     align-items: center;
     justify-content: center;
     padding: 16px;
@@ -1065,19 +1071,19 @@
 
 /* ── DESKTOP ONLY / MOBILE ONLY RESPONSIVE RULES ── */
 @media (min-width: 768px) {
-    /* Desktop layout: lock to code-only manual entry */
-    .scanner-mode-switcher {
+    /* Desktop layout: lock to code-only manual entry only on desktop layouts */
+    body:not(.mobile-app-layout):not(:has(.mobile-app)) .scanner-mode-switcher {
         display: none !important;
     }
-    #desktopScannerHeader {
+    body:not(.mobile-app-layout):not(:has(.mobile-app)) #desktopScannerHeader {
         display: flex !important;
     }
-    #torchCameraBtn,
-    #flipCameraBtn,
-    #switchToCameraBtn {
+    body:not(.mobile-app-layout):not(:has(.mobile-app)) #torchCameraBtn,
+    body:not(.mobile-app-layout):not(:has(.mobile-app)) #flipCameraBtn,
+    body:not(.mobile-app-layout):not(:has(.mobile-app)) #switchToCameraBtn {
         display: none !important;
     }
-    #scannerActiveView {
+    body:not(.mobile-app-layout):not(:has(.mobile-app)) .scanner-modal-card:not(.mode-scan) #scannerActiveView {
         display: none !important;
     }
     .scanner-modal-card {
@@ -1119,12 +1125,17 @@ if (navigator.geolocation) {
 }
 
 function isDesktopDevice() {
+    // If inside the dedicated mobile app layout or viewing mobile routes, never treat as desktop
+    if (document.querySelector('.mobile-app') || document.body.classList.contains('mobile-app-layout') || window.location.pathname.includes('/mobile')) {
+        return false;
+    }
     // Desktop / tablet layout threshold: screen width >= 768px
     return window.innerWidth >= 768;
 }
 
 function switchScannerMode(mode) {
-    if (isDesktopDevice()) {
+    const card = document.querySelector('.scanner-modal-card');
+    if (isDesktopDevice() && mode !== 'scan') {
         // Enforce code-only mode on desktop layouts
         mode = 'code';
     }
@@ -1137,7 +1148,8 @@ function switchScannerMode(mode) {
     const flipBtn = document.getElementById('flipCameraBtn');
     const switchCamBtn = document.getElementById('switchToCameraBtn');
 
-    if (mode === 'scan' && !isDesktopDevice()) {
+    if (mode === 'scan') {
+        if (card) { card.classList.add('mode-scan'); card.classList.remove('mode-code'); }
         if (tabScan) tabScan.classList.add('active');
         if (tabCode) tabCode.classList.remove('active');
         if (scanView) scanView.style.display = 'block';
@@ -1146,6 +1158,7 @@ function switchScannerMode(mode) {
         if (flipBtn) flipBtn.style.display = 'flex';
         startHtml5Scanner();
     } else {
+        if (card) { card.classList.remove('mode-scan'); card.classList.add('mode-code'); }
         if (tabCode) tabCode.classList.add('active');
         if (tabScan) tabScan.classList.remove('active');
         if (scanView) scanView.style.display = 'none';
@@ -1213,7 +1226,7 @@ function applyResponsiveScannerLayout() {
     const switchCamBtn = document.getElementById('switchToCameraBtn');
     const scanTab = document.getElementById('tabScanMode');
 
-    if (isDesktop) {
+    if (isDesktop && currentScannerMode === 'code') {
         if (modeSwitcher) modeSwitcher.style.display = 'none';
         if (desktopHeader) desktopHeader.style.display = 'flex';
         if (torchBtn) torchBtn.style.display = 'none';
@@ -1232,9 +1245,8 @@ function openStudentScanner(initialMode = 'scan') {
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
     
-    const isDesktop = isDesktopDevice();
-    // On desktop, strictly enforce code entry mode
-    if (isDesktop) {
+    // Only force code mode on desktop if scan was not explicitly requested
+    if (isDesktopDevice() && initialMode !== 'scan') {
         initialMode = 'code';
     }
     modal.style.display = 'flex';
@@ -1280,7 +1292,7 @@ async function waitForHtml5Qrcode(maxWaitMs = 3000) {
 }
 
 async function startHtml5Scanner() {
-    if (isDesktopDevice()) {
+    if (isDesktopDevice() && currentScannerMode !== 'scan') {
         console.log('[Scanner] QR camera scanner is disabled on desktop layouts.');
         return;
     }
@@ -1322,7 +1334,7 @@ async function startHtml5Scanner() {
         } catch (permErr) {
             isScannerStarting = false;
             if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
-                showCameraError("Camera access was denied. Please allow camera permissions in your browser address bar/settings, then tap Retry Camera.", true);
+                showCameraError("Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.", true);
                 return;
             } else if (permErr.name === 'NotFoundError' || permErr.name === 'DevicesNotFoundError') {
                 showCameraError("No camera detected on this device. Please use 'Enter Code'.", false, true);
@@ -1407,6 +1419,9 @@ async function startHtml5Scanner() {
 }
 
 function showCameraError(msg, isPermission = false, isUnsupported = false) {
+    if (isPermission) {
+        msg = "Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.";
+    }
     const notice = document.getElementById('scannerFallbackNotice');
     const text = document.getElementById('scannerFallbackText');
     const title = document.getElementById('fallbackTitle');
