@@ -4,7 +4,7 @@
     $latestVersion = $appVersion ?? $versionService->getVersion();
     $buildId = $appBuild ?? $versionService->getBuild();
     $commitHash = $appCommit ?? $versionService->getCommit();
-    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v344');
+    $swCacheVer = $versionService->getSwVersion();
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
     $initialChangelog = app(\App\Services\ChangelogService::class)->getRelease((string)$latestVersion);
@@ -1421,6 +1421,12 @@
         return 0;
     }
 
+    function parseSwNum(v) {
+        if (!v) return 0;
+        const num = parseInt(String(v).replace(/[^\d]/g, ''), 10);
+        return isNaN(num) ? 0 : num;
+    }
+
     function getInstalledVersion() {
         const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '{{ $installedVersion }}';
         const storedInstalled = localStorage.getItem('pwa_installed_version');
@@ -1454,9 +1460,16 @@
     }
 
     function getInstalledSwVersion() {
-        return localStorage.getItem('pwa_installed_sw_version') ||
-               document.querySelector('meta[name="sw-build-version"]')?.content ||
-               '';
+        const metaSw = document.querySelector('meta[name="sw-build-version"]')?.content || '';
+        const storedSw = localStorage.getItem('pwa_installed_sw_version');
+        if (metaSw && storedSw) {
+            if (parseSwNum(metaSw) >= parseSwNum(storedSw)) {
+                localStorage.setItem('pwa_installed_sw_version', metaSw);
+                return metaSw;
+            }
+            return storedSw;
+        }
+        return metaSw || storedSw || '';
     }
 
     function getLatestVersion(serverData = null) {
@@ -1492,6 +1505,19 @@
     const pageLoadTimestamp = Math.floor(Date.now() / 1000);
     let latestServerTimestamp = serverSwMtime;
 
+    // Immediately sync localStorage with the current document if current page is up to date
+    try {
+        const _mInst = document.querySelector('meta[name="app-installed-version"]')?.content;
+        const _mLat = document.querySelector('meta[name="app-latest-version"]')?.content;
+        const _mSw = document.querySelector('meta[name="sw-build-version"]')?.content;
+        if (_mInst && _mLat && compareSemver(_mLat, _mInst) <= 0) {
+            localStorage.setItem('pwa_installed_version', _mInst);
+            localStorage.setItem('pwa_app_version', _mInst);
+            if (_mSw) localStorage.setItem('pwa_installed_sw_version', _mSw);
+            if (serverSwMtime) localStorage.setItem('pwa_applied_sw_mtime', String(serverSwMtime));
+        }
+    } catch(e) {}
+
     function getAppliedSwMtime() {
         const stored = localStorage.getItem('pwa_applied_sw_mtime');
         if (stored) {
@@ -1504,14 +1530,8 @@
         const installedVer = getInstalledVersion();
         const latestVer = getLatestVersion();
 
-        // 1. Semantic Version update (e.g. 2.3.5 > 2.3.4)
+        // 1. Semantic Version update (e.g. 2.4.1 > 2.4.0)
         if (compareSemver(latestVer, installedVer) > 0) {
-            return true;
-        }
-
-        // 2. Timestamp update (e.g. new build deployed with updated cache)
-        const appliedMtime = getAppliedSwMtime();
-        if (serverSwMtime && appliedMtime && serverSwMtime > appliedMtime) {
             return true;
         }
 
@@ -1552,8 +1572,21 @@
     }
 
     // ── Toast/Prompt Helper: "Update Ready" (When a refresh/restart is required) ──
-    function showUpdateReadyPrompt(version = null, force = false, changelog = null) {
+    function showUpdateReadyPrompt(version = null, force = false, changelog = null, isManualCheck = false) {
         if (version) latestDetectedVersion = version;
+
+        // Prevent duplicate popup if already visible on screen
+        const popup = document.getElementById('pwaSystemUpdatePopup');
+        if (popup && popup.style.display === 'flex' && !force && !isManualCheck) {
+            return;
+        }
+
+        // Suppress prompt within 60s of an applied update reload
+        const justUpdatedRecent = (sessionStorage.getItem('pwa_just_updated') === 'true') ||
+                                  (Date.now() - parseInt(sessionStorage.getItem('pwa_just_updated_at') || '0', 10) < 60000);
+        if (justUpdatedRecent && !isManualCheck) {
+            return;
+        }
 
         ensurePwaModalsInBody();
 
@@ -1562,13 +1595,15 @@
         const sessionDismissedTag = sessionStorage.getItem('pwa_update_dismissed_tag');
         const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
         const tsDismissed = sessionStorage.getItem('pwa_update_dismissed_ts');
+        const localDismissedTag = localStorage.getItem('pwa_update_dismissed_tag');
+        const localDismissedAt = parseInt(localStorage.getItem('pwa_update_dismissed_at') || '0', 10);
+        const DISMISS_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes cooldown
         
-        const isDismissed = (!force) && (
-            (sessionDismissedTag && sessionDismissedTag === currentUpdateKey) ||
-            (!sessionDismissedTag && sessionDismissed === targetVersion && latestServerTimestamp && tsDismissed === String(latestServerTimestamp))
-        );
+        const isSessionDismissed = (sessionDismissedTag && sessionDismissedTag === currentUpdateKey) ||
+            (!sessionDismissedTag && sessionDismissed === targetVersion && latestServerTimestamp && tsDismissed === String(latestServerTimestamp));
+        const isLocalCooldownActive = (localDismissedTag === currentUpdateKey && (Date.now() - localDismissedAt < DISMISS_COOLDOWN_MS));
 
-        if (isDismissed) {
+        if (!isManualCheck && !force && (isSessionDismissed || isLocalCooldownActive)) {
             return;
         }
 
@@ -1601,7 +1636,6 @@
             backdrop.style.display = 'block';
         }
 
-        const popup = document.getElementById('pwaSystemUpdatePopup');
         if (popup) {
             popup.style.display = 'none';
             void popup.offsetHeight;
@@ -1622,7 +1656,7 @@
 
     // Alias for backward compatibility with existing tests and scripts
     function showAppUpdatePopup(version, force = false, changelog = null) {
-        showUpdateReadyPrompt(version, force, changelog);
+        showUpdateReadyPrompt(version, force, changelog, force);
     }
 
     function hideAppUpdatePopup(version) {
@@ -1638,8 +1672,11 @@
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const currentUpdateKey = (targetVersion || '') + '_' + (latestServerTimestamp || '') + '_' + (latestDetectedSwVersion || '');
         sessionStorage.setItem('pwa_update_dismissed_tag', currentUpdateKey);
+        localStorage.setItem('pwa_update_dismissed_tag', currentUpdateKey);
+        localStorage.setItem('pwa_update_dismissed_at', String(Date.now()));
         if (targetVersion) {
             sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
+            localStorage.setItem('pwa_update_dismissed_ver', targetVersion);
         }
         if (latestServerTimestamp) {
             sessionStorage.setItem('pwa_update_dismissed_ts', String(latestServerTimestamp));
@@ -1667,12 +1704,8 @@
             localStorage.setItem('pwa_installed_sw_version', targetSwVer);
         }
         localStorage.setItem('pwa_applied_sw_mtime', String(targetTs));
-        localStorage.removeItem('pwa_update_dismissed_ver');
-        localStorage.removeItem('pwa_update_dismissed_tag');
-        sessionStorage.removeItem('pwa_update_dismissed_ver');
-        sessionStorage.removeItem('pwa_update_dismissed_ts');
-        sessionStorage.removeItem('pwa_update_dismissed_tag');
         sessionStorage.setItem('pwa_just_updated', 'true');
+        sessionStorage.setItem('pwa_just_updated_at', String(Date.now()));
         sessionStorage.setItem('pwa_updated_ver', targetVer);
 
         // Hide prompt immediately
@@ -1712,6 +1745,13 @@
         }
         lastVersionCheckTime = now;
 
+        // Suppress prompt within 60s of an applied update reload
+        const justUpdatedRecent = (sessionStorage.getItem('pwa_just_updated') === 'true') ||
+                                  (Date.now() - parseInt(sessionStorage.getItem('pwa_just_updated_at') || '0', 10) < 60000);
+        if (justUpdatedRecent && !isManualCheck) {
+            return { upToDate: true };
+        }
+
         const installedVer = getInstalledVersion();
         const installedSwVer = getInstalledSwVersion();
         let latestVer = getLatestVersion();
@@ -1742,27 +1782,27 @@
                         updateChangelogUI(updateChangelog);
                     }
 
-                    // 1. Semantic comparison: strictly newer version
+                    // 1. Semantic comparison: strictly newer version (e.g. 2.4.1 > 2.4.0)
                     if (compareSemver(latestVer, installedVer) > 0) {
                         isUpdateAvailable = true;
                     }
-                    // 2. Service Worker cache version changed (e.g. v320 -> v324)
-                    else if (data.sw_version && installedSwVer && data.sw_version !== installedSwVer) {
+                    // 2. Service Worker cache version strictly bumped (e.g. v346 > v345)
+                    else if (data.sw_version && installedSwVer && parseSwNum(data.sw_version) > parseSwNum(installedSwVer)) {
                         isUpdateAvailable = true;
                     }
-                    // 3. Build timestamp updated on server
-                    else if (data.timestamp && appliedMtime && data.timestamp > appliedMtime) {
+                    // 3. Build timestamp updated on server after this page was rendered
+                    else if (data.timestamp && serverSwMtime && data.timestamp > serverSwMtime) {
                         isUpdateAvailable = true;
                     }
-                    // 4. Waiting service worker exists
-                    else if (swRegistration && swRegistration.waiting) {
+                    // 4. Waiting service worker exists with a newer version
+                    else if (swRegistration && swRegistration.waiting && (compareSemver(latestVer, installedVer) > 0 || (data.timestamp && data.timestamp > serverSwMtime))) {
                         isUpdateAvailable = true;
                     }
                 }
             }
         } catch (e) {}
 
-        // Fallback check if offline or network error: compare local metadata or build mtime
+        // Fallback check if offline or network error: compare local metadata
         if (!isUpdateAvailable && checkInstantUpdateAvailable()) {
             isUpdateAvailable = true;
         }
@@ -1785,7 +1825,7 @@
             }
 
             // Show the "Update Ready" prompt with [Refresh Now] [Later]
-            showUpdateReadyPrompt(latestVer, force || isManualCheck, updateChangelog);
+            showUpdateReadyPrompt(latestVer, force || isManualCheck, updateChangelog, isManualCheck);
 
             return { upToDate: false, updateAvailable: true, version: latestVer };
         } else {
@@ -1881,11 +1921,7 @@
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
-                                if (navigator.serviceWorker.controller) {
-                                    checkServerVersion(true);
-                                } else {
-                                    checkServerVersion(false);
-                                }
+                                checkServerVersion(false);
                             }
                         });
                     }
@@ -1895,7 +1931,7 @@
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED')) {
                         console.log('[PWA] Automatic update ready:', event.data.version);
-                        checkServerVersion(true);
+                        checkServerVersion(false);
                     }
                 });
 

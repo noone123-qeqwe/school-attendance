@@ -356,10 +356,10 @@ class VersionService
         } catch (\Throwable $e) {}
 
         // 6. Invalidate Cache
-        Cache::forever('pwa_sw_version', $newSwVersion);
         try {
             Cache::flush();
         } catch (\Throwable $e) {}
+        Cache::forever('pwa_sw_version', $newSwVersion);
 
         return [
             'previous_version' => $currentVer,
@@ -370,5 +370,28 @@ class VersionService
             'sw_version'       => $newSwVersion,
             'release_date'     => $targetDate,
         ];
+    }
+
+    /**
+     * Get the service worker cache version (e.g. 'v345') dynamically from sw.js or cache.
+     */
+    public function getSwVersion(): string
+    {
+        $cached = Cache::get('pwa_sw_version');
+        if (!empty($cached)) {
+            return (string)$cached;
+        }
+
+        $swPath = public_path('sw.js');
+        if (File::exists($swPath)) {
+            $content = @file_get_contents($swPath);
+            if ($content && preg_match('/CACHE_VERSION\s*=\s*[\'"](v?\d+)[\'"]/', $content, $matches)) {
+                $ver = str_starts_with($matches[1], 'v') ? $matches[1] : 'v' . $matches[1];
+                Cache::forever('pwa_sw_version', $ver);
+                return $ver;
+            }
+        }
+
+        return 'v345';
     }
 }

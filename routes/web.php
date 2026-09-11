@@ -101,7 +101,7 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
     $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime, $requestedVer, $changelogService, $versionService) {
         $latestVersion = $versionService->getVersion();
         $installedVersion = $versionService->getInstalledVersion();
-        $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v324');
+        $ver = $versionService->getSwVersion();
         $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
         $targetVer = $requestedVer ?: $latestVersion;
         $changelog = $changelogService->getRelease($targetVer);
