@@ -99,8 +99,8 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
     $cacheKey = 'pwa_version_response_' . $swMtime . ($requestedVer ? '_' . preg_replace('/[^a-zA-Z0-9_.]/', '', $requestedVer) : '');
 
     $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime, $requestedVer, $changelogService) {
-        $latestVersion = (string)config('changelog.default_version', '2.3.5');
-        $installedVersion = (string)config('changelog.installed_version', '2.3.5');
+        $latestVersion = $changelogService->getLatestVersion();
+        $installedVersion = $changelogService->getInstalledVersion();
         $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v324');
         $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
         $targetVer = $requestedVer ?: $latestVersion;
@@ -674,6 +674,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
         Route::post('/system-update/migrate-status', [App\Http\Controllers\Admin\SystemUpdateController::class, 'checkMigrations'])->name('system-update.migrate-status');
         Route::post('/system-update/cache-clear', [App\Http\Controllers\Admin\SystemUpdateController::class, 'clearCaches'])->name('system-update.cache-clear');
         Route::post('/system-update/pwa-bump', [App\Http\Controllers\Admin\SystemUpdateController::class, 'bumpPwaVersion'])->name('system-update.pwa-bump');
+        Route::post('/system-update/app-bump', [App\Http\Controllers\Admin\SystemUpdateController::class, 'bumpAppVersion'])->name('system-update.app-bump');
         Route::post('/system-update/maintenance-toggle', [App\Http\Controllers\Admin\SystemUpdateController::class, 'toggleMaintenance'])->name('system-update.maintenance-toggle');
         Route::post('/system-update/health-check', [App\Http\Controllers\Admin\SystemUpdateController::class, 'runHealthCheck'])->name('system-update.health-check');
         Route::post('/system-update/test-email', [App\Http\Controllers\Admin\SystemUpdateController::class, 'sendTestEmail'])->name('system-update.test-email');

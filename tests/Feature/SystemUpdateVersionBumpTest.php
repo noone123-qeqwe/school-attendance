@@ -11,9 +11,33 @@ class SystemUpdateVersionBumpTest extends TestCase
 {
     use RefreshDatabase;
 
+    private string $initialSwContent = '';
+    private string $initialManifestContent = '';
+
     protected function setUp(): void
     {
         parent::setUp();
+        $swPath = public_path('sw.js');
+        if (File::exists($swPath)) {
+            $this->initialSwContent = File::get($swPath);
+        }
+        $manifestPath = public_path('manifest.json');
+        if (File::exists($manifestPath)) {
+            $this->initialManifestContent = File::get($manifestPath);
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        $swPath = public_path('sw.js');
+        if (!empty($this->initialSwContent) && File::exists($swPath)) {
+            File::put($swPath, $this->initialSwContent);
+        }
+        $manifestPath = public_path('manifest.json');
+        if (!empty($this->initialManifestContent) && File::exists($manifestPath)) {
+            File::put($manifestPath, $this->initialManifestContent);
+        }
+        parent::tearDown();
     }
 
     public function test_multiple_consecutive_pwa_version_bumps_increment_every_time(): void
@@ -55,7 +79,7 @@ class SystemUpdateVersionBumpTest extends TestCase
             $verRes->assertStatus(200);
             $verData = $verRes->json();
             $this->assertEquals($v3, $verData['sw_version']);
-            $this->assertEquals('2.3.5', $verData['latest_version']);
+            $this->assertEquals('2.4.0', $verData['latest_version']);
 
         } finally {
             // Restore original sw.js content so test doesn't dirty git working tree
@@ -84,9 +108,39 @@ class SystemUpdateVersionBumpTest extends TestCase
             $this->assertArrayHasKey('sw_version', $data);
             $this->assertArrayHasKey('app_version', $data);
             $this->assertNotEmpty($data['version']);
-            $this->assertEquals('v2.3.5', $data['app_version']);
+            $this->assertEquals('v2.4.0', $data['app_version']);
+
+            // Subsequent update bump advances patch version and does NOT stay stuck on 2.3.5
+            $res2 = $this->actingAs($superAdmin)->postJson(route('admin.system-update.run'));
+            $res2->assertStatus(200);
+            $data2 = $res2->json();
+            $this->assertEquals('v2.4.1', $data2['app_version']);
         } finally {
             File::put($swPath, $initialContent);
         }
+    }
+
+    public function test_application_semver_bumps_and_does_not_get_stuck(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+            'is_active' => true,
+        ]);
+
+        // Bump 1: from base 2.4.0 to 2.4.1
+        $res1 = $this->actingAs($superAdmin)->postJson(route('admin.system-update.app-bump'));
+        $res1->assertStatus(200);
+        $this->assertEquals('v2.4.1', $res1->json('app_version'));
+
+        // Bump 2: to 2.4.2
+        $res2 = $this->actingAs($superAdmin)->postJson(route('admin.system-update.app-bump'));
+        $res2->assertStatus(200);
+        $this->assertEquals('v2.4.2', $res2->json('app_version'));
+
+        // Verify /pwa/version endpoint reflects the new dynamic version
+        $pwaRes = $this->get('/pwa/version');
+        $pwaRes->assertStatus(200);
+        $this->assertEquals('2.4.2', $pwaRes->json('latest_version'));
     }
 }

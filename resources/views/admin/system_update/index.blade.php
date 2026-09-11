@@ -130,7 +130,10 @@
                     </div>
                 </div>
                 <div class="telemetry-value-row">
-                    <div class="telemetry-value-lg gold-gradient-text" id="currentAppReleaseBadge">v{{ config('changelog.default_version', '2.3.5') }}</div>
+                    <div class="telemetry-value-lg gold-gradient-text" id="currentAppReleaseBadge">v{{ ltrim($appVersion ?? app(\App\Services\ChangelogService::class)->getLatestVersion(), 'v') }}</div>
+                    <button type="button" onclick="bumpAppVersion()" class="mini-action-btn" id="quickAppBumpBtn" title="Increment semantic version release">
+                        <i class="bi bi-arrow-up-circle"></i> Bump
+                    </button>
                     <span class="version-chip {{ $appEnvironment === 'production' ? 'chip-prod' : 'chip-dev' }}">
                         {{ strtoupper($appEnvironment) }}
                     </span>
@@ -3583,6 +3586,33 @@ async function bumpPwa() {
         showToast('Error broadcasting PWA update.', 'error');
     } finally {
         if (btn) btn.disabled = false;
+        if (quickBtn) quickBtn.disabled = false;
+    }
+}
+
+// Granular Operations: Semantic Application Release Bump
+async function bumpAppVersion() {
+    const quickBtn = document.getElementById('quickAppBumpBtn');
+    const badge = document.getElementById('currentAppReleaseBadge');
+
+    if (quickBtn) quickBtn.disabled = true;
+
+    try {
+        const res = await fetch('{{ route("admin.system-update.app-bump") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+        });
+        const data = await res.json();
+        if (data.success && data.app_version) {
+            const verStr = data.app_version.startsWith('v') ? data.app_version : 'v' + data.app_version;
+            if (badge) badge.textContent = verStr;
+            showToast(data.message || ('Application version updated to ' + verStr), 'success');
+        } else {
+            showToast(data.message || 'Failed to bump application release.', 'error');
+        }
+    } catch (e) {
+        showToast('Error bumping application version: ' + e.message, 'error');
+    } finally {
         if (quickBtn) quickBtn.disabled = false;
     }
 }

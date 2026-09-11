@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.5'),
-    'default_version' => env('APP_LATEST_VERSION', '2.3.5'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.4.0'),
+    'default_version' => env('APP_LATEST_VERSION', '2.4.0'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,56 @@ return [
     |
     */
     'releases' => [
+        '2.4.0' => [
+            'version' => '2.4.0',
+            'version_tag' => 'v2.4.0',
+            'title' => 'Continuous Presence Verification & Anti-Escape Attendance Security',
+            'description' => 'Major attendance security overhaul introducing periodic geofence presence verification, background heartbeat staleness audits, anti-teleportation velocity filters, and proxy device protection.',
+            'features' => [
+                'Continuous background presence verification preventing students from checking in and immediately leaving campus',
+                'Periodic geofence auditing with configurable grace periods and automatic escape status transition',
+                'Multi-account proxy device protection preventing buddy clock-in from the same phone',
+                'Real-time attendance registration synchronization across web and mobile attendance history',
+            ],
+            'improvements' => [
+                'Strict GPS teleportation leap filtering (>40 m/s) and mock-location sensor accuracy checks',
+                'Instant location permission revocation detection with automatic presence penalty',
+                'Campus fallback geofencing for sessions created on desktop teacher stations without GPS hardware',
+                'Dynamic system semantic version tracking and automated release updates across all UI dashboards',
+            ],
+            'bugFixes' => [
+                'Fixed attendance records not persisting or appearing in student Attendance History after successful scan',
+                'Fixed QR token validation desynchronization between teacher projector and student scanner',
+                'Fixed teacher QR session countdown timer parsing and session restoration on page reload',
+                'Fixed system version stuck on v2.3.5 across client dashboards and 1-click update consoles',
+            ],
+            'security' => [
+                'Multi-account device fingerprint binding preventing proxy attendance',
+                'Heartbeat staleness tracking detecting closed tabs and background tab suspension',
+                'Strict tamper-resistant geolocation validation and mock coordinate suppression',
+            ],
+            'released_at' => '2026-09-12',
+        ],
+        '2.3.6' => [
+            'version' => '2.3.6',
+            'version_tag' => 'v2.3.6',
+            'title' => 'Mobile Scanner UI/UX Polish & Cross-Environment Code Validation',
+            'description' => 'Redesigned mobile attendance QR scanner layout, fixed dual camera feed conflicts, and improved cross-environment token rotation tolerance.',
+            'features' => [
+                'Redesigned mobile QR Attendance Scanner with balanced layout, polished controls, and smooth video viewport',
+                'Cross-environment token rotation tolerance ensuring valid scans even across time drift',
+            ],
+            'improvements' => [
+                'Eliminated split camera video feed on high-DPI mobile devices',
+                'Optimized QR decoding frame rate for instant barcode capture',
+            ],
+            'bugFixes' => [
+                'Fixed false "QR code invalid or expired" errors caused by clock skew',
+                'Fixed camera orientation distortion on portrait mobile displays',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-11',
+        ],
         '2.3.5' => [
             'version' => '2.3.5',
             'version_tag' => 'v2.3.5',

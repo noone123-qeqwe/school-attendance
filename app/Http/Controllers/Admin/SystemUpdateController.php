@@ -154,6 +154,8 @@ class SystemUpdateController extends Controller
         if ($failedJobsCount > 0) $healthScore -= 5;
         $healthScore = max(0, $healthScore);
 
+        $appVersion = app(\App\Services\ChangelogService::class)->getLatestVersion();
+
         return view('admin.system_update.index', compact(
             'activeTab',
             'isDown',
@@ -161,6 +163,7 @@ class SystemUpdateController extends Controller
             'phpVersion',
             'appEnvironment',
             'debugMode',
+            'appVersion',
             'driver',
             'dbVersion',
             'dbConnected',
@@ -348,10 +351,28 @@ class SystemUpdateController extends Controller
             ];
         }
 
-        // 5. Broadcast Push Announcement to All Registered User Devices
+        // 5. Semantic Version Synchronization & Build Alignment
+        $newAppVer = null;
         try {
-            $updateTitle = '🚀 System Update Complete';
-            $updateBody = 'A new system update was installed. All features and performance optimizations are now live!';
+            $newAppVer = $this->syncOrBumpAppVersionInternal();
+            $results[] = [
+                'step' => 'Semantic Version Synchronization',
+                'status' => 'success',
+                'message' => "Application semantic release synchronized to v{$newAppVer}. Telemetry headers, client manifests, and service caches aligned."
+            ];
+        } catch (\Exception $e) {
+            $results[] = [
+                'step' => 'Semantic Version Synchronization',
+                'status' => 'warning',
+                'message' => 'Version synchronization notice: ' . $e->getMessage()
+            ];
+        }
+
+        // 6. Broadcast Push Announcement to All Registered User Devices
+        try {
+            $resolvedAppVer = $newAppVer ?? app(\App\Services\ChangelogService::class)->getLatestVersion();
+            $updateTitle = '🚀 System Update Complete (v' . $resolvedAppVer . ')';
+            $updateBody = 'Smart Attendance v' . $resolvedAppVer . ' is live! All features, security protections, and performance optimizations are now active.';
             
             app(\App\Services\WebPushService::class)->broadcastAnnouncement(
                 $updateTitle,
@@ -371,7 +392,7 @@ class SystemUpdateController extends Controller
                         'sent_by' => $senderId,
                         'type' => 'system_update',
                         'subject_code' => 'SYS',
-                        'message' => "Smart Attendance full system update applied successfully. New features, security improvements, and optimizations are live.",
+                        'message' => "Smart Attendance updated to v{$resolvedAppVer}. Anti-escape security, continuous presence guardian, and speed optimizations are live.",
                         'is_read' => false,
                         'created_at' => $now,
                         'updated_at' => $now,
@@ -397,13 +418,15 @@ class SystemUpdateController extends Controller
             ];
         }
 
+        $finalAppVer = $newAppVer ?? app(\App\Services\ChangelogService::class)->getLatestVersion();
+
         return response()->json([
             'success' => $overallSuccess,
             'message' => $overallSuccess ? 'Full 1-click system update completed and broadcasted to all users successfully!' : 'System update completed with warnings or migration errors.',
             'results' => $results,
             'version' => $newVer ?? null,
             'sw_version' => $newVer ?? null,
-            'app_version' => 'v' . (string)config('changelog.default_version', '2.3.5'),
+            'app_version' => 'v' . ltrim($finalAppVer, 'v'),
             'timestamp' => now()->format('M d, Y h:i:s A')
         ]);
     }
@@ -751,7 +774,7 @@ class SystemUpdateController extends Controller
         $manifestPath = public_path('manifest.json');
         if (File::exists($manifestPath)) {
             $manifestContent = File::get($manifestPath);
-            $appVer = (string)config('changelog.default_version', '2.3.5');
+            $appVer = app(\App\Services\ChangelogService::class)->getLatestVersion();
             $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$appVer}\"", $manifestContent);
             File::put($manifestPath, $manifestContent);
         }
@@ -768,6 +791,118 @@ class SystemUpdateController extends Controller
         }
 
         return $newVersion;
+    }
+
+    /**
+     * Endpoint to bump the semantic application release version (Super Admin).
+     */
+    public function bumpAppVersion(Request $request)
+    {
+        abort_if(!Auth::user()->isSuperAdmin(), 403);
+        try {
+            $specified = $request->input('version');
+            $newAppVer = $this->bumpAppVersionInternal($specified);
+
+            // Broadcast Web Push announcement for the new semantic release
+            try {
+                app(\App\Services\WebPushService::class)->broadcastAnnouncement(
+                    '⚡ Smart Attendance Release v' . $newAppVer,
+                    "Application update v{$newAppVer} is now live with enhanced security and performance optimizations.",
+                    [
+                        'url' => route('intro'),
+                        'tag' => 'app-release-' . time(),
+                        'version' => 'v' . $newAppVer
+                    ]
+                );
+            } catch (\Throwable $pushErr) {
+                Log::warning('App version bump push error: ' . $pushErr->getMessage());
+            }
+
+            return response()->json([
+                'success' => true,
+                'app_version' => 'v' . $newAppVer,
+                'message' => "Application release version successfully bumped to v{$newAppVer}."
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to bump application release: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Bump semantic application version (patch increment, e.g. 2.4.0 -> 2.4.1).
+     */
+    public function bumpAppVersionInternal(?string $specifiedVersion = null): string
+    {
+        if ($specifiedVersion) {
+            $nextVer = ltrim($specifiedVersion, 'v');
+        } else {
+            $currentVer = app(\App\Services\ChangelogService::class)->getLatestVersion();
+            $nextVer = $this->incrementSemver($currentVer);
+        }
+
+        Setting::set('system_version', $nextVer);
+        Setting::set('installed_version', $nextVer);
+
+        // Synchronize manifest.json
+        $manifestPath = public_path('manifest.json');
+        if (File::exists($manifestPath)) {
+            $manifestContent = File::get($manifestPath);
+            $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$nextVer}\"", $manifestContent);
+            File::put($manifestPath, $manifestContent);
+        }
+
+        // Bust all PWA and version cache keys
+        try {
+            \Illuminate\Support\Facades\Cache::flush();
+        } catch (\Throwable $e) {}
+
+        return $nextVer;
+    }
+
+    /**
+     * Synchronize app version to the latest release, or increment if already on or above release.
+     */
+    public function syncOrBumpAppVersionInternal(): string
+    {
+        $currentSetting = Setting::get('system_version');
+        $latestConfig = (string)config('changelog.default_version', '2.4.0');
+
+        // If not set, or older than latest release, upgrade to latestConfig
+        if (empty($currentSetting) || version_compare($currentSetting, $latestConfig, '<')) {
+            $targetVer = $latestConfig;
+        } else {
+            // Already on or above latest release: advance patch version to reflect new build
+            $targetVer = $this->incrementSemver($currentSetting);
+        }
+
+        Setting::set('system_version', $targetVer);
+        Setting::set('installed_version', $targetVer);
+
+        $manifestPath = public_path('manifest.json');
+        if (File::exists($manifestPath)) {
+            $manifestContent = File::get($manifestPath);
+            $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$targetVer}\"", $manifestContent);
+            File::put($manifestPath, $manifestContent);
+        }
+
+        return $targetVer;
+    }
+
+    /**
+     * Helper to increment semver patch: 2.4.0 -> 2.4.1
+     */
+    private function incrementSemver(string $version): string
+    {
+        $clean = ltrim(trim($version), 'v');
+        $parts = explode('.', $clean);
+        while (count($parts) < 3) {
+            $parts[] = '0';
+        }
+        $parts[2] = ((int)$parts[2]) + 1;
+        return implode('.', $parts);
     }
 
     /**

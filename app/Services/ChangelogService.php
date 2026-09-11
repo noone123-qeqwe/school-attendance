@@ -5,6 +5,36 @@ namespace App\Services;
 class ChangelogService
 {
     /**
+     * Get the resolved latest version, giving priority to dynamic database setting then config.
+     */
+    public function getLatestVersion(): string
+    {
+        try {
+            $setting = \App\Models\Setting::get('system_version');
+            if (!empty($setting)) {
+                return (string)$setting;
+            }
+        } catch (\Throwable $e) {}
+
+        return (string)config('changelog.default_version', '2.4.0');
+    }
+
+    /**
+     * Get the resolved installed version.
+     */
+    public function getInstalledVersion(): string
+    {
+        try {
+            $setting = \App\Models\Setting::get('installed_version');
+            if (!empty($setting)) {
+                return (string)$setting;
+            }
+        } catch (\Throwable $e) {}
+
+        return (string)config('changelog.installed_version', $this->getLatestVersion());
+    }
+
+    /**
      * Retrieve the changelog metadata for a specific or latest version.
      *
      * @param string|null $rawVersion
@@ -13,7 +43,7 @@ class ChangelogService
     public function getRelease(?string $rawVersion = null): array
     {
         $releases = config('changelog.releases', []);
-        $defaultVersion = config('changelog.default_version', '2.3.0');
+        $defaultVersion = $this->getLatestVersion();
 
         if (empty($rawVersion)) {
             $rawVersion = $defaultVersion;
@@ -69,14 +99,8 @@ class ChangelogService
      */
     public function getLatestRelease(): array
     {
-        $releases = config('changelog.releases', []);
-        $first = reset($releases);
-
-        if (!empty($first)) {
-            return $this->formatRelease($first);
-        }
-
-        return $this->buildFallbackRelease(config('changelog.default_version', '2.3.0'));
+        $latestVer = $this->getLatestVersion();
+        return $this->getRelease($latestVer);
     }
 
     /**
