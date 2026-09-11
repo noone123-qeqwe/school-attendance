@@ -681,16 +681,27 @@
     width: 100% !important;
     height: 100% !important;
     overflow: hidden !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    display: block !important;
 }
 
 .scanner-reader-feed video {
-    border-radius: 16px !important;
-    object-fit: cover !important;
+    position: absolute !important;
+    inset: 0 !important;
     width: 100% !important;
     height: 100% !important;
+    border-radius: 16px !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+/* Guard against split screens: Only show the single active video feed */
+.scanner-reader-feed video:not(:last-of-type) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    pointer-events: none !important;
 }
 
 .scanner-reader-feed canvas {
@@ -701,6 +712,26 @@
     border: none !important;
     width: 100% !important;
     height: 100% !important;
+    position: absolute !important;
+    inset: 0 !important;
+    display: block !important;
+}
+
+.scanner-reader-feed #reader__scan_region video {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 16px !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.scanner-reader-feed #reader__scan_region video:not(:last-of-type) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
 }
 
 .scanner-reader-feed #reader__dashboard {
@@ -1275,6 +1306,15 @@
 
     .scanner-reader-feed video {
         border-radius: 16px !important;
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .scanner-reader-feed video:not(:last-of-type) {
+        display: none !important;
     }
 
     .scanner-title {
@@ -1703,6 +1743,10 @@ async function startHtml5Scanner() {
             if (err1.name === 'NotAllowedError' || err1.name === 'PermissionDeniedError') {
                 throw err1;
             }
+            // Clean up any stray video elements left from failed attempt before trying fallback
+            cleanupDuplicateVideos();
+            try { await html5QrScanner.clear(); } catch(e){}
+            html5QrScanner = new Html5Qrcode("reader");
         }
 
         // Strategy 2: Fallback via camera enumeration (handles multi-lens Android/iOS devices)
@@ -1737,6 +1781,10 @@ async function startHtml5Scanner() {
                 if (err2.name === 'NotAllowedError' || err2.name === 'PermissionDeniedError') {
                     throw err2;
                 }
+                // Clean up any stray video elements before Strategy 3
+                cleanupDuplicateVideos();
+                try { await html5QrScanner.clear(); } catch(e){}
+                html5QrScanner = new Html5Qrcode("reader");
             }
         }
 
@@ -1793,6 +1841,29 @@ async function startHtml5Scanner() {
     }
 }
 
+function cleanupDuplicateVideos() {
+    const reader = document.getElementById('reader');
+    if (!reader) return;
+    const videos = Array.from(reader.querySelectorAll('video'));
+    if (videos.length > 1) {
+        console.warn('[Scanner] Cleaning up duplicate video feeds, found:', videos.length);
+        // Keep the last active video element and remove earlier duplicates
+        const activeVideo = videos[videos.length - 1];
+        for (let i = 0; i < videos.length - 1; i++) {
+            const v = videos[i];
+            try {
+                if (v.srcObject && v.srcObject !== activeVideo.srcObject) {
+                    v.srcObject.getTracks().forEach(t => t.stop());
+                }
+                v.srcObject = null;
+            } catch(e) {}
+            try {
+                v.remove();
+            } catch(e) {}
+        }
+    }
+}
+
 function onScannerSuccessfullyStarted() {
     if (currentScannerMode !== 'scan') {
         safeStopScanner();
@@ -1800,6 +1871,9 @@ function onScannerSuccessfullyStarted() {
     }
     isScannerRunning = true;
     isScannerStarting = false;
+
+    // Remove any duplicate or orphaned video tags
+    cleanupDuplicateVideos();
 
     // Hide all overlays and error states
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
