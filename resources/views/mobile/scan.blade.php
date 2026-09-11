@@ -191,6 +191,9 @@
         const openScanBtn = document.getElementById('openScannerBtn');
         const openCodeBtn = document.getElementById('openCodeBtn');
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const preferredMode = urlParams.get('open_code') === '1' ? 'code' : 'scan';
+
         if (openScanBtn) {
             openScanBtn.addEventListener('click', function(e) {
                 e.preventDefault();
@@ -211,10 +214,12 @@
             });
         }
 
-        // Auto-open the scanner immediately when this dedicated scan page loads
+        // Auto-open the modal when this dedicated scan page loads, respecting code vs scan mode
         setTimeout(function() {
+            const modal = document.getElementById('studentScannerModal');
+            if (modal && modal.style.display === 'flex') return;
             if (typeof openStudentScanner === 'function') {
-                openStudentScanner('scan');
+                openStudentScanner(preferredMode);
             } else if (typeof mobileScanButtonTapped === 'function') {
                 mobileScanButtonTapped(null);
             }

@@ -162,4 +162,50 @@ class MobileScanQrFeatureTest extends TestCase
         $this->assertFalse($data['success']);
         $this->assertNotEmpty($data['message']);
     }
+
+    public function test_student_attendance_records_from_manual_6_digit_code(): void
+    {
+        $token = (string) Str::uuid();
+        $session = \App\Models\AttendanceSession::create([
+            'created_by' => $this->teacher->id,
+            'subject_code' => $this->subject->code,
+            'token' => $token,
+            'session_code' => '849201',
+            'expires_at' => now()->addMinutes(15),
+            'session_ends_at' => now()->addMinutes(45),
+            'active' => true,
+            'classroom_lat' => 14.5995,
+            'classroom_lng' => 120.9842,
+        ]);
+
+        // Student submits 6-digit code with code parameter
+        $response = $this->actingAs($this->student)
+            ->withSession(['user_role' => 'student'])
+            ->postJson(route('qr.scan.process'), [
+                'code' => '849 201',
+                'token' => '849201',
+                'latitude' => 14.5995,
+                'longitude' => 120.9842,
+            ]);
+
+        $response->assertOk();
+        $data = $response->json();
+        $this->assertTrue($data['success']);
+        $this->assertEquals($this->subject->code, $data['subject_code']);
+    }
+
+    public function test_manual_code_entry_ui_partial_has_required_elements_and_handlers(): void
+    {
+        $response = $this->actingAs($this->student)
+            ->withSession(['user_role' => 'student'])
+            ->get(route('mobile.home'));
+
+        $response->assertOk();
+        $response->assertSee('id="directSessionCodeInput"', false);
+        $response->assertSee('id="codeSubmitBtn"', false);
+        $response->assertSee('id="tabCodeMode"', false);
+        $response->assertSee('submitDirectCode', false);
+        $response->assertSee('retryCurrentScanMode', false);
+        $response->assertSee('window.submitDirectCode = submitDirectCode;', false);
+    }
 }

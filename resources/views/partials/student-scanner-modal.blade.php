@@ -122,8 +122,8 @@
             <p class="scanner-sub">Enter the 6-digit attendance code.</p>
 
             <div class="code-entry-container my-3">
-                <input type="text" id="directSessionCodeInput" class="code-entry-input" placeholder="849 201" maxlength="9" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" oninput="formatSessionCodeInput(this)" onkeydown="handleCodeKeydown(event)">
-                <div class="code-entry-hint mt-2">
+                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" pattern="[0-9]*" placeholder="849 201" maxlength="7" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false" oninput="formatSessionCodeInput(this, event)" onkeydown="handleCodeKeydown(event)">
+                <div id="codeEntryHint" class="code-entry-hint mt-2">
                     <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
                 </div>
             </div>
@@ -187,7 +187,7 @@
                 <button type="button" id="resultDoneBtn" onclick="finishScanAndRefresh()" class="btn scanner-primary-action-btn flex-fill">
                     <i class="bi bi-check-lg me-1"></i> Done (Back to Dashboard)
                 </button>
-                <button type="button" id="resultRetryBtn" onclick="resetScannerView()" class="btn scanner-secondary-action-btn flex-fill" style="display: none;">
+                <button type="button" id="resultRetryBtn" onclick="retryCurrentScanMode()" class="btn scanner-secondary-action-btn flex-fill" style="display: none;">
                     <i class="bi bi-arrow-repeat me-1"></i> Try Again
                 </button>
             </div>
@@ -1042,6 +1042,11 @@
     outline: none !important;
 }
 
+.code-entry-input.is-invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 16px rgba(239, 68, 68, 0.4) !important;
+}
+
 .code-entry-hint {
     font-size: 0.76rem;
     color: #b39b82;
@@ -1318,9 +1323,15 @@ function switchScannerMode(mode) {
     const tabCode = document.getElementById('tabCodeMode');
     const scanView = document.getElementById('scannerActiveView');
     const codeView = document.getElementById('scannerCodeView');
+    const resultView = document.getElementById('scannerResultView');
     const torchBtn = document.getElementById('torchCameraBtn');
     const flipBtn = document.getElementById('flipCameraBtn');
     const switchCamBtn = document.getElementById('switchToCameraBtn');
+    const codeInput = document.getElementById('directSessionCodeInput');
+    const codeBtn = document.getElementById('codeSubmitBtn');
+    const hint = document.getElementById('codeEntryHint');
+
+    if (resultView) resultView.style.display = 'none';
 
     if (mode === 'scan') {
         if (card) { card.classList.add('mode-scan'); card.classList.remove('mode-code'); }
@@ -1341,6 +1352,14 @@ function switchScannerMode(mode) {
         if (switchCamBtn) {
             switchCamBtn.style.display = isDesktopDevice() ? 'none' : 'block';
         }
+        if (codeBtn) {
+            codeBtn.disabled = false;
+            codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
+        }
+        if (hint) {
+            hint.className = 'code-entry-hint mt-2';
+            hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
+        }
 
         // Stop camera while typing to save battery
         safeStopScanner();
@@ -1354,7 +1373,7 @@ function switchScannerMode(mode) {
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
-function formatSessionCodeInput(el) {
+function formatSessionCodeInput(el, e) {
     let val = el.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
     if (val.length > 6) {
         val = val.substring(0, 6);
@@ -1363,6 +1382,13 @@ function formatSessionCodeInput(el) {
         el.value = val.substring(0, 3) + ' ' + val.substring(3);
     } else {
         el.value = val;
+    }
+
+    el.classList.remove('is-invalid');
+    const hint = document.getElementById('codeEntryHint');
+    if (hint && !hint.classList.contains('text-gold')) {
+        hint.className = 'code-entry-hint mt-2';
+        hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
     }
 
     if (val.length === 6 && window.triggerHaptic) {
@@ -1378,16 +1404,39 @@ function handleCodeKeydown(e) {
 }
 
 function submitDirectCode() {
-    const rawVal = (document.getElementById('directSessionCodeInput')?.value || '').trim();
+    if (isScanInFlight) return;
+
+    const input = document.getElementById('directSessionCodeInput');
+    const rawVal = (input?.value || '').trim();
     const cleanVal = rawVal.replace(/[^0-9A-Za-z]/g, '');
+    const hint = document.getElementById('codeEntryHint');
     
-    if (!cleanVal) {
-        alert('Please enter the 6-digit attendance code shown on the screen.');
-        document.getElementById('directSessionCodeInput')?.focus();
+    if (!cleanVal || cleanVal.length < 6) {
+        if (input) {
+            input.classList.add('is-invalid');
+            input.focus();
+        }
+        if (hint) {
+            hint.className = 'code-entry-hint mt-2 text-danger';
+            hint.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Please enter the full 6-digit attendance code (e.g. 849 201).';
+        }
+        if (window.triggerHaptic) window.triggerHaptic('error');
         return;
     }
 
-    onQrScanSuccess(cleanVal);
+    if (input) input.classList.remove('is-invalid');
+    if (hint) {
+        hint.className = 'code-entry-hint mt-2 text-gold';
+        hint.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Verifying code...';
+    }
+
+    const codeBtn = document.getElementById('codeSubmitBtn');
+    if (codeBtn) {
+        codeBtn.disabled = true;
+        codeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verifying Code…';
+    }
+
+    onQrScanSuccess(cleanVal, 'code');
 }
 
 function applyResponsiveScannerLayout() {
@@ -1421,6 +1470,7 @@ function openStudentScanner(initialMode = 'scan') {
     if (isDesktopDevice() && initialMode !== 'scan') {
         initialMode = 'code';
     }
+    currentScannerMode = initialMode;
     modal.style.display = 'flex';
     
     applyResponsiveScannerLayout();
@@ -1474,6 +1524,10 @@ async function waitForHtml5Qrcode(maxWaitMs = 3000) {
 }
 
 async function startHtml5Scanner() {
+    if (currentScannerMode !== 'scan') {
+        return;
+    }
+
     if (isDesktopDevice() && currentScannerMode !== 'scan') {
         console.log('[Scanner] QR camera scanner is disabled on desktop layouts.');
         return;
@@ -1511,6 +1565,8 @@ async function startHtml5Scanner() {
         return;
     }
 
+    if (currentScannerMode !== 'scan') return;
+
     isScannerStarting = true;
 
     try {
@@ -1523,6 +1579,7 @@ async function startHtml5Scanner() {
         } catch (permErr) {
             isScannerStarting = false;
             if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (currentScannerMode !== 'scan') return;
             if (permErr.name === 'NotAllowedError' || permErr.name === 'PermissionDeniedError') {
                 showCameraError("Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.", true);
                 return;
@@ -1538,8 +1595,15 @@ async function startHtml5Scanner() {
             }
         }
 
+        if (currentScannerMode !== 'scan') {
+            isScannerStarting = false;
+            return;
+        }
+
         // 5. Initialize Html5Qrcode instance
         await safeClearScanner();
+
+        if (currentScannerMode !== 'scan') return;
 
         const readerContainer = document.getElementById('reader');
         if (readerContainer) {
@@ -1567,10 +1631,19 @@ async function startHtml5Scanner() {
                 qrConfig,
                 onQrScanSuccess
             );
+            if (currentScannerMode !== 'scan') {
+                safeStopScanner();
+                return;
+            }
             onScannerSuccessfullyStarted();
             return;
         } catch (firstErr) {
             console.warn("[Scanner] FacingMode start failed, trying camera enumeration fallback:", firstErr);
+        }
+
+        if (currentScannerMode !== 'scan') {
+            safeStopScanner();
+            return;
         }
 
         // Camera enumeration fallback for multi-lens mobile devices
@@ -1590,6 +1663,10 @@ async function startHtml5Scanner() {
                 qrConfig,
                 onQrScanSuccess
             );
+            if (currentScannerMode !== 'scan') {
+                safeStopScanner();
+                return;
+            }
             onScannerSuccessfullyStarted();
         } else {
             throw new Error("No cameras detected on this device.");
@@ -1600,11 +1677,17 @@ async function startHtml5Scanner() {
         isScannerRunning = false;
         const loadingOverlay = document.getElementById('scannerLoadingOverlay');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
-        showCameraError("Camera unavailable or permission denied. Tap 'Allow Camera' or enter the 6-digit Code.", true);
+        if (currentScannerMode === 'scan') {
+            showCameraError("Camera unavailable or permission denied. Tap 'Allow Camera' or enter the 6-digit Code.", true);
+        }
     }
 }
 
 function onScannerSuccessfullyStarted() {
+    if (currentScannerMode !== 'scan') {
+        safeStopScanner();
+        return;
+    }
     isScannerRunning = true;
     isScannerStarting = false;
 
@@ -1625,6 +1708,7 @@ function onScannerSuccessfullyStarted() {
 }
 
 function showCameraError(msg, isPermission = false, isUnsupported = false) {
+    if (currentScannerMode !== 'scan') return;
     if (isPermission) {
         msg = "Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.";
     }
@@ -1737,12 +1821,25 @@ function resetScannerView() {
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     const codeInput = document.getElementById('directSessionCodeInput');
     const autoCloseNotice = document.getElementById('resultAutoCloseNotice');
+    const codeBtn = document.getElementById('codeSubmitBtn');
+    const hint = document.getElementById('codeEntryHint');
 
     if (resultView) resultView.style.display = 'none';
     if (overlay) overlay.style.display = 'none';
     if (loadingOverlay) loadingOverlay.style.display = 'none';
     if (autoCloseNotice) autoCloseNotice.style.display = 'none';
-    if (codeInput) codeInput.value = '';
+    if (codeInput) {
+        codeInput.value = '';
+        codeInput.classList.remove('is-invalid');
+    }
+    if (hint) {
+        hint.className = 'code-entry-hint mt-2';
+        hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
+    }
+    if (codeBtn) {
+        codeBtn.disabled = false;
+        codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
+    }
 
     if (isDesktop) {
         if (activeView) activeView.style.display = 'none';
@@ -1751,10 +1848,6 @@ function resetScannerView() {
         if (currentScannerMode === 'scan') {
             if (activeView) activeView.style.display = 'block';
             if (codeView) codeView.style.display = 'none';
-            const modal = document.getElementById('studentScannerModal');
-            if (modal && modal.style.display === 'flex') {
-                startHtml5Scanner();
-            }
         } else {
             if (activeView) activeView.style.display = 'none';
             if (codeView) codeView.style.display = 'block';
@@ -1780,7 +1873,7 @@ function extractQrToken(raw) {
     return str.trim();
 }
 
-async function onQrScanSuccess(decodedText) {
+async function onQrScanSuccess(decodedText, method = 'qr') {
     if (isScanInFlight) return;
     isScanInFlight = true;
 
@@ -1788,10 +1881,24 @@ async function onQrScanSuccess(decodedText) {
 
     const overlay = document.getElementById('scannerProcessingOverlay');
     const laser = document.getElementById('scannerLaser');
-    if (overlay) overlay.style.display = 'flex';
-    if (laser) laser.style.display = 'none';
+    const codeBtn = document.getElementById('codeSubmitBtn');
+    const hint = document.getElementById('codeEntryHint');
 
-    playScanBeep();
+    if (method === 'code' || currentScannerMode === 'code') {
+        if (codeBtn) {
+            codeBtn.disabled = true;
+            codeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verifying Code…';
+        }
+        if (hint) {
+            hint.className = 'code-entry-hint mt-2 text-gold';
+            hint.innerHTML = '<i class="bi bi-arrow-repeat spin me-1"></i> Verifying code...';
+        }
+    } else {
+        if (overlay) overlay.style.display = 'flex';
+        if (laser) laser.style.display = 'none';
+        playScanBeep();
+    }
+
     if (window.triggerHaptic) window.triggerHaptic('medium');
 
     const cleanedToken = extractQrToken(decodedText);
@@ -1813,6 +1920,8 @@ async function onQrScanSuccess(decodedText) {
 
     const payload = {
         token: cleanedToken,
+        code: cleanedToken,
+        method: (method === 'code' || currentScannerMode === 'code') ? 'code' : 'qr',
         latitude: studentGeoCoords ? studentGeoCoords.lat : null,
         longitude: studentGeoCoords ? studentGeoCoords.lng : null,
         accuracy: studentGeoCoords ? studentGeoCoords.acc : null
@@ -1847,6 +1956,12 @@ async function onQrScanSuccess(decodedText) {
 
 function renderScanSuccess(data) {
     clearAutoCloseTimer();
+
+    const codeBtn = document.getElementById('codeSubmitBtn');
+    if (codeBtn) {
+        codeBtn.disabled = false;
+        codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
+    }
 
     document.getElementById('scannerActiveView').style.display = 'none';
     document.getElementById('scannerCodeView').style.display = 'none';
@@ -1928,6 +2043,18 @@ function renderScanError(data) {
     clearAutoCloseTimer();
     isScanInFlight = false;
 
+    const codeBtn = document.getElementById('codeSubmitBtn');
+    if (codeBtn) {
+        codeBtn.disabled = false;
+        codeBtn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Record Attendance';
+    }
+
+    const hint = document.getElementById('codeEntryHint');
+    if (hint) {
+        hint.className = 'code-entry-hint mt-2';
+        hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
+    }
+
     document.getElementById('scannerActiveView').style.display = 'none';
     document.getElementById('scannerCodeView').style.display = 'none';
     document.getElementById('scannerResultView').style.display = 'block';
@@ -1947,8 +2074,12 @@ function renderScanError(data) {
 
     if (data.error_type === 'schedule_mismatch') {
         title.textContent = 'Schedule Mismatch';
-    } else if (data.error_type === 'session_closed' || data.error_type === 'invalid_or_expired') {
-        title.textContent = 'This QR code is invalid or expired.';
+    } else if (data.error_type === 'session_closed') {
+        title.textContent = 'Attendance Session Ended';
+    } else if (data.error_type === 'invalid_or_expired') {
+        title.textContent = currentScannerMode === 'code' ? 'Invalid Attendance Code' : 'This QR code is invalid or expired.';
+    } else if (data.error_type === 'location_required') {
+        title.textContent = 'Location Required';
     } else if (data.error_type === 'outside_classroom' || (data.message && data.message.toLowerCase().includes('outside'))) {
         title.textContent = 'Outside Classroom Range';
         showOutsideRangePopup(data);
@@ -1956,7 +2087,7 @@ function renderScanError(data) {
         title.textContent = 'Unable to Record Attendance';
     }
 
-    subtitle.textContent = data.message || 'The entered code or QR could not be processed. Please check with your instructor.';
+    subtitle.textContent = data.message || (currentScannerMode === 'code' ? 'The entered code could not be processed. Please check with your instructor.' : 'The QR code could not be processed. Please check with your instructor.');
 
     document.getElementById('resultDetailsBox').style.display = 'none';
     if (retryBtn) retryBtn.style.display = 'block';
@@ -1990,7 +2121,8 @@ function showOutsideRangePopup(data) {
 
 function closeOutsideRangePopup() {
     const modal = document.getElementById('outsideRangePopupModal');
-    if (modal) modal.style.display = 'none';
+    if (!modal) return;
+    modal.style.display = 'none';
 }
 
 function retryScanFromOutsidePopup() {
@@ -2005,6 +2137,23 @@ function useCodeFromOutsidePopup() {
     switchScannerMode('code');
 }
 
+function retryCurrentScanMode() {
+    resetScannerView();
+    if (currentScannerMode === 'code') {
+        switchScannerMode('code');
+    } else {
+        switchScannerMode('scan');
+    }
+}
+
+window.openStudentScanner = openStudentScanner;
+window.closeStudentScanner = closeStudentScanner;
+window.switchScannerMode = switchScannerMode;
+window.submitDirectCode = submitDirectCode;
+window.resetScannerView = resetScannerView;
+window.retryCurrentScanMode = retryCurrentScanMode;
+window.formatSessionCodeInput = formatSessionCodeInput;
+window.handleCodeKeydown = handleCodeKeydown;
 window.showOutsideRangePopup = showOutsideRangePopup;
 window.closeOutsideRangePopup = closeOutsideRangePopup;
 
