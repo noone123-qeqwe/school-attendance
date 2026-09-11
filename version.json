@@ -1,7 +1,7 @@
 {
     "version": "2.4.0",
-    "build": "20260912.001",
-    "commit": "c5aaf02",
+    "build": "20260912.002",
+    "commit": "7bf72b4",
     "release_date": "2026-09-12",
     "channel": "stable",
     "name": "Smart Classroom Attendance System"

@@ -1027,7 +1027,7 @@ if (document.readyState === 'loading') {
         {{-- Version Badge - Visible on Mobile (when bottom bar is hidden) --}}
         <div class="d-block d-md-none text-center anim-fade-up anim-d7" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
             <span style="font-size: 0.7rem; color: rgba(207,164,111,0.5); font-weight: 600; letter-spacing: 0.5px;">
-                VERSION {{ app(\App\Services\ChangelogService::class)->getLatestVersion() }}
+                {{ $appVersionTag }}
             </span>
         </div>
 

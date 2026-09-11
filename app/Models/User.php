@@ -135,6 +135,21 @@ class User extends Authenticatable
             return null;
         }
 
+        // 0. High-performance Fast Path: Direct indexed match on email, employee_id, or student_number
+        // MySQL / TiDB indexed varchar lookups are already case-insensitive and execute via B-tree index (avoiding full table scans)
+        $fastUser = static::query()
+            ->whereNull('deleted_at')
+            ->where(function ($q) use ($raw) {
+                $q->where('email', $raw)
+                  ->orWhere('employee_id', $raw)
+                  ->orWhere('student_number', $raw);
+            })
+            ->first();
+
+        if ($fastUser) {
+            return $fastUser;
+        }
+
         $findInQuery = function ($baseQuery) use ($raw): ?self {
             $lower = strtolower($raw);
 

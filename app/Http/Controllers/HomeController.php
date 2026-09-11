@@ -142,14 +142,16 @@ class HomeController extends Controller
         }
     }
 
+    // Pre-fetch today's attendance records for this user in a single query (avoids N+1 DB roundtrips)
+    $todayAttendances = Attendance::where('user_id', $user->id)
+        ->where('date', $todayDate)
+        ->get()
+        ->keyBy('subject_code');
+
     // 5. Clock-in Check — only Present/Late counts as clocked in
     $alreadyClockedIn = false;
     if ($currentClass) {
-        $existingRecord = Attendance::where('user_id', $user->id)
-            ->where('subject_code', $currentClass->code)
-            ->where('date', $todayDate)
-            ->first();
-
+        $existingRecord = $todayAttendances->get($currentClass->code);
         $alreadyClockedIn = $existingRecord && in_array($existingRecord->status, ['Present', 'Late']);
     }
 
@@ -193,10 +195,7 @@ class HomeController extends Controller
             $classStart = Carbon::parse($todayDate . ' ' . $sched->start_time);
             $classEnd   = Carbon::parse($todayDate . ' ' . $sched->end_time);
 
-            $existing = Attendance::where('user_id', $user->id)
-                ->where('subject_code', $subject->code)
-                ->where('date', $todayDate)
-                ->first();
+            $existing = $todayAttendances->get($subject->code);
 
             $status = 'upcoming';
             if ($existing && in_array($existing->status, ['Present', 'Late'])) {
@@ -258,12 +257,16 @@ class HomeController extends Controller
     // (Already built above to calculate dynamic misses)
 
 
-    // 9. Check for holidays
-    $todayHoliday = Holiday::getHoliday($now->toDateString());
-    $upcomingHolidays = Holiday::getUpcoming(
-        $now->copy()->addDay()->toDateString(),
-        $now->copy()->addDays(7)->toDateString()
-    )->take(3);
+    // 9. Check for holidays (cached for 30 minutes to eliminate WAN roundtrips)
+    $todayHoliday = \Illuminate\Support\Facades\Cache::remember("holiday_{$todayDate}", 1800, function() use ($now) {
+        return Holiday::getHoliday($now->toDateString());
+    });
+    $upcomingHolidays = \Illuminate\Support\Facades\Cache::remember("upcoming_holidays_{$todayDate}", 1800, function() use ($now) {
+        return Holiday::getUpcoming(
+            $now->copy()->addDay()->toDateString(),
+            $now->copy()->addDays(7)->toDateString()
+        )->take(3);
+    });
 
     // 10. Fetch Active Warnings
     $activeWarnings = \App\Models\Warning::where('user_id', $user->id)
@@ -271,12 +274,14 @@ class HomeController extends Controller
         ->orderBy('created_at', 'desc')
         ->get();
 
-    // 11. Fetch Announcements for Events Calendar
-    $announcements = Announcement::with('author')
-        ->published()
-        ->orderBy('created_at', 'desc')
-        ->take(10)
-        ->get();
+    // 11. Fetch Announcements for Events Calendar (cached for 5 minutes)
+    $announcements = \Illuminate\Support\Facades\Cache::remember('student_announcements_recent', 300, function() {
+        return Announcement::with('author')
+            ->published()
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+    });
 
     // 12. Build events calendar data (announcements + holidays + custom events)
     $calendarEvents = collect();
@@ -298,11 +303,13 @@ class HomeController extends Controller
         }
     }
 
-    // Add holidays as events (upcoming next 60 days)
-    $allHolidays = Holiday::getUpcoming(
-        $todayDate,
-        $now->copy()->addDays(60)->toDateString()
-    );
+    // Add holidays as events (upcoming next 60 days, cached for 30 minutes)
+    $allHolidays = \Illuminate\Support\Facades\Cache::remember("all_holidays_60d_{$todayDate}", 1800, function() use ($todayDate, $now) {
+        return Holiday::getUpcoming(
+            $todayDate,
+            $now->copy()->addDays(60)->toDateString()
+        );
+    });
 
     foreach ($allHolidays as $hol) {
         $calendarEvents->push((object) [
@@ -316,13 +323,15 @@ class HomeController extends Controller
         ]);
     }
 
-    // Add school events visible to student
-    $studentEvents = Event::visibleTo($user)
-        ->where('status', '!=', 'cancelled')
-        ->whereDate('date', '>=', $todayDate)
-        ->whereDate('date', '<=', $now->copy()->addDays(60)->toDateString())
-        ->orderBy('date')
-        ->get();
+    // Add school events visible to student (cached for 5 minutes)
+    $studentEvents = \Illuminate\Support\Facades\Cache::remember("student_events_{$user->id}_{$todayDate}", 300, function() use ($user, $todayDate, $now) {
+        return Event::visibleTo($user)
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('date', '>=', $todayDate)
+            ->whereDate('date', '<=', $now->copy()->addDays(60)->toDateString())
+            ->orderBy('date')
+            ->get();
+    });
 
     foreach ($studentEvents as $evt) {
         $calendarEvents->push((object) [

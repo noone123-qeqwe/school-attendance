@@ -121,8 +121,9 @@ class PTController extends Controller
         $authenticated = false;
 
         if ($user) {
+            $trimmedPassword = trim($password);
             $passwordMatches = Hash::check($password, $user->password)
-                || Hash::check(trim($password), $user->password);
+                || ($password !== $trimmedPassword && Hash::check($trimmedPassword, $user->password));
 
             if ($passwordMatches) {
                 // Check if account is deactivated
@@ -145,14 +146,11 @@ class PTController extends Controller
             }
         }
 
-        // Fallback standard attempts if not yet authenticated
-        if (!$authenticated) {
+        // Fallback standard attempts only if user was not resolved by findByIdentifier
+        if (!$authenticated && !$user) {
             $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password], $remember)
                 || Auth::attempt(['email' => $identifier, 'password' => $password], $remember)
-                || Auth::attempt(['employee_id' => $identifier, 'password' => $password], $remember)
-                || Auth::attempt(['student_number' => $identifier, 'password' => trim($password)], $remember)
-                || Auth::attempt(['email' => $identifier, 'password' => trim($password)], $remember)
-                || Auth::attempt(['employee_id' => $identifier, 'password' => trim($password)], $remember);
+                || Auth::attempt(['employee_id' => $identifier, 'password' => $password], $remember);
 
             if ($authenticated) {
                 $user = Auth::user();

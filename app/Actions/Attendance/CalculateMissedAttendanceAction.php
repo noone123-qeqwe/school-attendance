@@ -29,7 +29,7 @@ class CalculateMissedAttendanceAction
         $currentTime = $now->format('H:i:s');
 
         $cacheKey = "student_missed_att_{$student->id}_{$todayDate}_" . floor($now->minute / 5);
-        if (!app()->environment('testing') && $subjects === null && \Illuminate\Support\Facades\Cache::has($cacheKey)) {
+        if (!app()->environment('testing') && \Illuminate\Support\Facades\Cache::has($cacheKey)) {
             return \Illuminate\Support\Facades\Cache::get($cacheKey);
         }
 
@@ -131,7 +131,7 @@ class CalculateMissedAttendanceAction
             $missesPerSubject[$subj->code] = $misses;
         }
 
-        if ($subjects === null) {
+        if (!app()->environment('testing')) {
             \Illuminate\Support\Facades\Cache::put($cacheKey, $missesPerSubject, 300);
         }
 
