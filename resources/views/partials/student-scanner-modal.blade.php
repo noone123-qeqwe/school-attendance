@@ -1554,7 +1554,10 @@ async function waitForHtml5Qrcode(maxWaitMs = 3000) {
 }
 
 async function startHtml5Scanner() {
+    console.log('[Scanner] startHtml5Scanner called, currentMode:', currentScannerMode);
+    
     if (currentScannerMode !== 'scan') {
+        console.log('[Scanner] Aborting - not in scan mode');
         return;
     }
 
@@ -1564,9 +1567,11 @@ async function startHtml5Scanner() {
     }
 
     if (isScannerStarting || isScannerRunning) {
+        console.log('[Scanner] Already starting or running, skipping');
         return;
     }
 
+    console.log('[Scanner] Beginning camera initialization');
     hideCameraError();
 
     // Show loading state overlay
@@ -1575,6 +1580,7 @@ async function startHtml5Scanner() {
 
     // 1. Check secure context (HTTPS / localhost required by browsers for camera)
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        console.error('[Scanner] Not in secure context');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
         showCameraError("Camera access requires a secure connection (HTTPS) or localhost. Please switch to 6-digit Code entry.", false, true);
         return;
@@ -1582,31 +1588,41 @@ async function startHtml5Scanner() {
 
     // 2. Check browser mediaDevices support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('[Scanner] Browser does not support mediaDevices');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
         showCameraError("Your browser or device does not support live camera scanning. Please enter the 6-digit Code.", false, true);
         return;
     }
 
     // 3. Wait for Html5Qrcode library to be loaded
+    console.log('[Scanner] Waiting for Html5Qrcode library');
     const libLoaded = await waitForHtml5Qrcode();
     if (!libLoaded) {
+        console.error('[Scanner] Html5Qrcode library failed to load');
         if (loadingOverlay) loadingOverlay.style.display = 'none';
         showCameraError("Scanner engine is loading. Please enter the 6-digit Code or tap Retry.", false);
         return;
     }
 
-    if (currentScannerMode !== 'scan') return;
+    if (currentScannerMode !== 'scan') {
+        console.log('[Scanner] Mode changed during library wait, aborting');
+        return;
+    }
 
     isScannerStarting = true;
+    console.log('[Scanner] Scanner starting flag set to true');
 
     try {
         // 4. Request camera permissions explicitly
+        console.log('[Scanner] Requesting camera permission probe');
         try {
             const probeStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: { ideal: currentFacingMode } }
             });
+            console.log('[Scanner] Permission probe successful, stopping probe stream');
             probeStream.getTracks().forEach(track => track.stop());
         } catch (permErr) {
+            console.error('[Scanner] Permission probe failed:', permErr.name, permErr.message);
             isScannerStarting = false;
             if (loadingOverlay) loadingOverlay.style.display = 'none';
             if (currentScannerMode !== 'scan') return;
@@ -1626,20 +1642,26 @@ async function startHtml5Scanner() {
         }
 
         if (currentScannerMode !== 'scan') {
+            console.log('[Scanner] Mode changed after permission, aborting');
             isScannerStarting = false;
             return;
         }
 
         // 5. Initialize Html5Qrcode instance
+        console.log('[Scanner] Clearing previous scanner instance');
         await safeClearScanner();
 
-        if (currentScannerMode !== 'scan') return;
+        if (currentScannerMode !== 'scan') {
+            console.log('[Scanner] Mode changed during clear, aborting');
+            return;
+        }
 
         const readerContainer = document.getElementById('reader');
         if (readerContainer) {
             readerContainer.innerHTML = '';
         }
 
+        console.log('[Scanner] Creating new Html5Qrcode instance');
         html5QrScanner = new Html5Qrcode("reader");
 
         const qrConfig = {
@@ -1655,13 +1677,16 @@ async function startHtml5Scanner() {
         };
 
         // Try primary facingMode
+        console.log('[Scanner] Attempting to start scanner with facingMode:', currentFacingMode);
         try {
             await html5QrScanner.start(
                 { facingMode: { ideal: currentFacingMode } },
                 qrConfig,
                 onQrScanSuccess
             );
+            console.log('[Scanner] Scanner started successfully with facingMode');
             if (currentScannerMode !== 'scan') {
+                console.log('[Scanner] Mode changed after start, stopping');
                 safeStopScanner();
                 return;
             }
@@ -1672,12 +1697,16 @@ async function startHtml5Scanner() {
         }
 
         if (currentScannerMode !== 'scan') {
+            console.log('[Scanner] Mode changed during fallback, stopping');
             safeStopScanner();
             return;
         }
 
         // Camera enumeration fallback for multi-lens mobile devices
+        console.log('[Scanner] Enumerating available cameras');
         const cameras = await Html5Qrcode.getCameras();
+        console.log('[Scanner] Found cameras:', cameras.length);
+        
         if (cameras && cameras.length > 0) {
             let selectedCamera = cameras[0];
             if (currentFacingMode === 'environment') {
@@ -1688,12 +1717,15 @@ async function startHtml5Scanner() {
                 if (frontCam) selectedCamera = frontCam;
             }
 
+            console.log('[Scanner] Starting with selected camera:', selectedCamera.label);
             await html5QrScanner.start(
                 selectedCamera.id,
                 qrConfig,
                 onQrScanSuccess
             );
+            console.log('[Scanner] Scanner started successfully with camera ID');
             if (currentScannerMode !== 'scan') {
+                console.log('[Scanner] Mode changed after camera start, stopping');
                 safeStopScanner();
                 return;
             }
@@ -1702,7 +1734,7 @@ async function startHtml5Scanner() {
             throw new Error("No cameras detected on this device.");
         }
     } catch (err) {
-        console.warn("[Scanner] Camera start failed completely:", err);
+        console.error("[Scanner] Camera start failed completely:", err);
         isScannerStarting = false;
         isScannerRunning = false;
         const loadingOverlay = document.getElementById('scannerLoadingOverlay');
@@ -1721,8 +1753,12 @@ function onScannerSuccessfullyStarted() {
     isScannerRunning = true;
     isScannerStarting = false;
 
+    // Hide all overlays and error states
     const loadingOverlay = document.getElementById('scannerLoadingOverlay');
     if (loadingOverlay) loadingOverlay.style.display = 'none';
+
+    const fallbackNotice = document.getElementById('scannerFallbackNotice');
+    if (fallbackNotice) fallbackNotice.style.display = 'none';
 
     const container = document.getElementById('scannerVideoContainer');
     if (container) container.classList.add('camera-active');
@@ -1735,10 +1771,18 @@ function onScannerSuccessfullyStarted() {
     if (torchBtn && currentFacingMode === 'environment') {
         torchBtn.style.display = 'inline-flex';
     }
+
+    console.log('[Scanner] Camera started successfully and video feed is now active');
 }
 
 function showCameraError(msg, isPermission = false, isUnsupported = false) {
-    if (currentScannerMode !== 'scan') return;
+    console.log('[Scanner] showCameraError called:', msg, 'isPermission:', isPermission, 'isUnsupported:', isUnsupported, 'currentMode:', currentScannerMode);
+    
+    if (currentScannerMode !== 'scan') {
+        console.log('[Scanner] Skipping error display - not in scan mode');
+        return;
+    }
+    
     if (isPermission) {
         msg = "Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.";
     }
@@ -1753,7 +1797,10 @@ function showCameraError(msg, isPermission = false, isUnsupported = false) {
 
     if (loadingOverlay) loadingOverlay.style.display = 'none';
     if (container) container.classList.remove('camera-active');
-    if (notice) notice.style.display = 'block';
+    if (notice) {
+        notice.style.display = 'block';
+        console.log('[Scanner] Fallback notice displayed');
+    }
     if (text) text.textContent = msg;
     if (laser) laser.style.display = 'none';
 
@@ -1782,11 +1829,16 @@ function showCameraError(msg, isPermission = false, isUnsupported = false) {
 }
 
 function hideCameraError() {
+    console.log('[Scanner] hideCameraError called');
     const notice = document.getElementById('scannerFallbackNotice');
-    if (notice) notice.style.display = 'none';
+    if (notice) {
+        notice.style.display = 'none';
+        console.log('[Scanner] Fallback notice hidden');
+    }
 }
 
 function requestCameraAgain() {
+    console.log('[Scanner] requestCameraAgain called');
     hideCameraError();
     startHtml5Scanner();
 }
