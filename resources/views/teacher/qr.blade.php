@@ -706,7 +706,7 @@
 
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
 <script nonce="{{ csp_nonce() }}">
-let currentSession = null;
+let currentSession = @json($activeSessionPayload ?? null);
 let refreshInterval = null;
 let clockinInterval = null;
 let timerInterval = null;
@@ -733,11 +733,17 @@ const sidebar = document.getElementById('sidebar');
 const mainSection = document.getElementById('mainSection');
 const locationStatus = document.getElementById('locationStatus');
 
-// Check schedule on page load
+// Check schedule on page load or restore active session
 document.addEventListener('DOMContentLoaded', () => {
-    checkScheduleStatus();
+    if (currentSession) {
+        showQRCode(currentSession.scan_url);
+        updateUIForActiveSession();
+        startIntervals();
+    } else {
+        checkScheduleStatus();
+        scheduleCheckInterval = setInterval(checkScheduleStatus, 30000);
+    }
     captureTeacherLocation();
-    scheduleCheckInterval = setInterval(checkScheduleStatus, 30000);
     subscribeToTeacherAttendanceUpdates();
 });
 
@@ -1227,7 +1233,13 @@ function startSessionTimer(endTimeStr) {
 
     if (timerInterval) clearInterval(timerInterval);
 
-    const targetTime = new Date(endTimeStr).getTime();
+    let targetTime;
+    if (typeof endTimeStr === 'number' || (!isNaN(Number(endTimeStr)) && String(endTimeStr).trim() !== '')) {
+        const num = Number(endTimeStr);
+        targetTime = num < 1e11 ? num * 1000 : num;
+    } else {
+        targetTime = new Date(endTimeStr).getTime();
+    }
 
     timerInterval = setInterval(() => {
         const now = new Date().getTime();

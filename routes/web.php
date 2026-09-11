@@ -206,7 +206,7 @@ Route::middleware('guest')->group(function () {
 
 // Authenticated Routes (Protected) - Shared
 Route::middleware('auth')->group(function () {
-    Route::post('/logout', [PTController::class, 'logout'])->name('logout');
+    Route::match(['get', 'post'], '/logout', [PTController::class, 'logout'])->name('logout');
     Route::get('/password/change', [App\Http\Controllers\HomeController::class, 'showPasswordChangeForm'])->name('password.change.form');
     Route::post('/password/change', [App\Http\Controllers\HomeController::class, 'submitPasswordChange'])->middleware('throttle:password.change')->name('password.change.submit');
 

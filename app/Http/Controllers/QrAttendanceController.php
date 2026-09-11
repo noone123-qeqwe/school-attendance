@@ -194,7 +194,31 @@ class QrAttendanceController extends Controller
             ->where('instructor_id', $teacher->id)
             ->firstOrFail();
 
-        return view('teacher.qr', compact('subject'));
+        $activeSession = AttendanceSession::where('subject_code', $subjectCode)
+            ->where('created_by', $teacher->id)
+            ->where('active', true)
+            ->where('session_ends_at', '>', now())
+            ->latest('id')
+            ->first();
+
+        $activeSessionPayload = null;
+        if ($activeSession) {
+            $activeSessionPayload = [
+                'success'        => true,
+                'session_id'     => $activeSession->id,
+                'token'          => $activeSession->token,
+                'session_code'   => $activeSession->session_code,
+                'formatted_code' => $activeSession->getFormattedCode(),
+                'scan_url'       => $this->buildScanUrl($activeSession->token, $activeSession->session_ends_at),
+                'expires_at'     => $activeSession->expires_at->timestamp,
+                'ttl'            => self::QR_TTL_SECONDS,
+                'session_end'    => $activeSession->session_ends_at->timestamp,
+                'classroom_lat'  => $activeSession->classroom_lat,
+                'classroom_lng'  => $activeSession->classroom_lng,
+            ];
+        }
+
+        return view('teacher.qr', compact('subject', 'activeSessionPayload'));
     }
     // ─────────────────────────────────────────
     // Teacher: Start QR session
@@ -309,7 +333,7 @@ class QrAttendanceController extends Controller
             
             foreach ($students as $student) {
                 // Ensure record exists; if not, mark absent
-                $attendance = \App\Models\Attendance::firstOrCreate(
+                $attendance = \App\Models\Attendance::updateOrCreateRecord(
                     [
                         'user_id' => $student->id,
                         'subject_code' => $session->subject_code,
@@ -320,7 +344,6 @@ class QrAttendanceController extends Controller
                         'time_in' => null,
                         'latitude' => null,
                         'longitude' => null,
-                        'device_id' => null,
                         'excused' => false
                     ]
                 );
