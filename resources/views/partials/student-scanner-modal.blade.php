@@ -94,7 +94,7 @@
 
             <!-- Single Clean Guidance Instruction Below Scanner -->
             <div id="scannerGuideBadge" class="scanner-instruction-container">
-                <i class="bi bi-viewfinder text-gold me-1"></i>
+                <i class="bi bi-camera-fill text-gold me-1"></i>
                 <span class="scanner-instruction-text">Position the teacher’s QR code inside the frame.</span>
             </div>
 
@@ -107,19 +107,19 @@
             </div>
 
             <!-- Clean Bottom Cancel Action -->
-            <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner">
-                <i class="bi bi-x-circle me-1"></i> Cancel & Return to Dashboard
+            <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner" aria-label="Cancel & Return to Dashboard">
+                <i class="bi bi-x-lg me-1"></i> Cancel & Return to Dashboard
             </button>
         </div>
 
         <!-- Mode 2: Direct Code / PIN Input View -->
-        <div id="scannerCodeView" class="scanner-active-content" style="display: none; padding: 6px 0;">
-            <div style="width: 50px; height: 50px; border-radius: 16px; background: linear-gradient(135deg, #cfa46f, #8c6d46); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #181614; margin: 0 auto 10px; box-shadow: 0 6px 20px rgba(207,164,111,0.28);">
+        <div id="scannerCodeView" class="scanner-active-content" style="display: none; padding: 4px 0;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, rgba(207,164,111,0.22), rgba(140,109,70,0.28)); border: 1px solid rgba(207,164,111,0.35); display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #dfb784; margin: 0 auto 8px;">
                 <i class="bi bi-key-fill"></i>
             </div>
             
             <h4 class="scanner-title">Enter Attendance Code</h4>
-            <p class="scanner-sub">Enter the 6-digit attendance code.</p>
+            <p class="scanner-sub">Enter the 6-digit attendance code</p>
 
             <div class="code-entry-container my-3">
                 <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" pattern="[0-9]*" placeholder="849 201" maxlength="7" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false">
@@ -135,8 +135,8 @@
                 <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" data-action="switch-scan">
                     <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
                 </button>
-                <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner">
-                    <i class="bi bi-x-circle me-1"></i> Cancel & Return to Dashboard
+                <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner" aria-label="Cancel & Return to Dashboard">
+                    <i class="bi bi-x-lg me-1"></i> Cancel & Return to Dashboard
                 </button>
             </div>
         </div>
@@ -511,9 +511,9 @@
 .scanner-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(8, 8, 10, 0.88);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(10, 9, 8, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     z-index: 100000 !important;
     display: flex;
     align-items: center;
@@ -522,67 +522,68 @@
 }
 
 .scanner-modal-card {
-    background: linear-gradient(180deg, #1b1714 0%, #11100f 100%);
-    border: 1px solid rgba(207, 164, 111, 0.25);
-    border-radius: 28px;
-    max-width: 440px;
+    background: linear-gradient(180deg, #1b1714 0%, #11100e 100%);
+    border: 1px solid rgba(207, 164, 111, 0.22);
+    border-radius: 24px;
+    max-width: 410px;
     width: 100%;
-    padding: 16px 20px 20px;
+    padding: 16px 18px max(18px, calc(env(safe-area-inset-bottom, 0px) + 12px));
     color: #ffffff;
-    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(207, 164, 111, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(207, 164, 111, 0.1);
     text-align: center;
     position: relative;
     overflow: hidden;
-    animation: scannerCardEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: scannerCardEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes scannerCardEnter {
-    from { opacity: 0; transform: scale(0.96) translateY(12px); }
+    from { opacity: 0; transform: scale(0.96) translateY(10px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Drag indicator for mobile bottom sheet */
+/* Drag indicator - hidden for clean card presentation */
 .scanner-drag-handle {
-    width: 38px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.22);
-    border-radius: 99px;
-    margin: 0 auto 10px;
-    flex-shrink: 0;
+    display: none !important;
 }
 
 /* Mode Switcher (QR vs Code) */
 .scanner-mode-switcher {
     display: inline-flex;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(207, 164, 111, 0.22);
-    border-radius: 99px;
-    padding: 3px;
-    gap: 3px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 999px;
+    padding: 2.5px;
+    gap: 2px;
 }
 
 .scanner-mode-tab {
     background: transparent;
     border: none;
-    color: #b39b82;
-    font-size: 0.78rem;
-    font-weight: 700;
-    padding: 6px 14px;
-    border-radius: 99px;
+    color: #a89582;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 5px 13px;
+    border-radius: 999px;
     cursor: pointer !important;
     touch-action: manipulation !important;
     user-select: none;
     -webkit-user-select: none;
-    -webkit-tap-highlight-color: rgba(207, 164, 111, 0.3);
+    -webkit-tap-highlight-color: transparent;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     display: inline-flex;
     align-items: center;
 }
 
 .scanner-mode-tab.active {
-    background: linear-gradient(135deg, #cfa46f, #a07a4a);
-    color: #141110;
-    box-shadow: 0 3px 10px rgba(207, 164, 111, 0.35);
+    background: linear-gradient(135deg, #cfa46f, #b38954);
+    color: #12100e;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(207, 164, 111, 0.3);
+}
+
+.scanner-mode-tab:not(.active):hover, .scanner-mode-tab:not(.active):active {
+    color: #f3e7cd;
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .scanner-mode-tab:active {
@@ -594,48 +595,48 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .scanner-top-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .scanner-icon-btn {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    color: #f3e7cd;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e5d5c0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .scanner-icon-btn:hover, .scanner-icon-btn:active {
-    background: rgba(207, 164, 111, 0.2);
+    background: rgba(207, 164, 111, 0.18);
     color: #ffffff;
-    border-color: rgba(207, 164, 111, 0.4);
-    transform: scale(1.05);
+    border-color: rgba(207, 164, 111, 0.35);
+    transform: scale(1.04);
 }
 
 .scanner-icon-btn.active-torch {
     background: #cfa46f;
-    color: #181614;
-    border-color: #ffd700;
-    box-shadow: 0 0 14px rgba(255, 215, 0, 0.6);
+    color: #12100e;
+    border-color: #dfb784;
+    box-shadow: 0 0 10px rgba(207, 164, 111, 0.5);
 }
 
 .scanner-icon-btn.close-btn:hover, .scanner-icon-btn.close-btn:active {
-    background: rgba(239, 68, 68, 0.22);
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.4);
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.35);
 }
 
 /* Heading */
@@ -644,34 +645,34 @@
 }
 
 .scanner-title {
-    font-weight: 800;
-    font-size: 1.15rem;
+    font-weight: 700;
+    font-size: 1.05rem;
     color: #ffffff;
     margin-bottom: 0;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
 }
 
 .scanner-sub {
-    color: #b39b82;
-    font-size: 0.78rem;
-    margin-top: 3px;
+    color: #a89582;
+    font-size: 0.75rem;
+    margin-top: 2px;
     margin-bottom: 0;
 }
 
 /* Viewfinder Area */
 .scanner-viewfinder-wrapper {
     position: relative;
-    border-radius: 22px;
+    border-radius: 18px;
     overflow: hidden;
     background: #08080a;
-    width: min(72vw, 260px);
+    width: min(72vw, 248px);
     aspect-ratio: 1 / 1;
-    margin: 0 auto 12px;
+    margin: 0 auto 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1.5px solid rgba(207, 164, 111, 0.32);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), inset 0 0 30px rgba(0, 0, 0, 0.9);
+    border: 1.5px solid rgba(207, 164, 111, 0.28);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 0, 0, 0.8);
 }
 
 .scanner-reader-feed {
@@ -686,7 +687,7 @@
 }
 
 .scanner-reader-feed video {
-    border-radius: 20px !important;
+    border-radius: 16px !important;
     object-fit: cover !important;
     width: 100% !important;
     height: 100% !important;
@@ -706,19 +707,24 @@
     display: none !important;
 }
 
+/* Hide html5-qrcode's default clashing white inner box/shaded region overlay */
+#qr-shaded-region {
+    display: none !important;
+}
+
 /* Subtle Reticle Corner Markers - Only visible when camera is active */
 .reticle-corner {
     position: absolute;
-    width: 22px;
-    height: 22px;
-    border-color: #ffd700;
+    width: 20px;
+    height: 20px;
+    border-color: #cfa46f;
     border-style: solid;
     border-width: 0;
     z-index: 14;
     pointer-events: none;
-    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));
     opacity: 0;
     transition: opacity 0.25s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
 .scanner-viewfinder-wrapper.camera-active .reticle-corner {
@@ -726,47 +732,47 @@
 }
 
 .reticle-corner.top-left {
-    top: 14px;
-    left: 14px;
-    border-top-width: 3px;
-    border-left-width: 3px;
-    border-top-left-radius: 10px;
+    top: 12px;
+    left: 12px;
+    border-top-width: 2.5px;
+    border-left-width: 2.5px;
+    border-top-left-radius: 8px;
 }
 
 .reticle-corner.top-right {
-    top: 14px;
-    right: 14px;
-    border-top-width: 3px;
-    border-right-width: 3px;
-    border-top-right-radius: 10px;
+    top: 12px;
+    right: 12px;
+    border-top-width: 2.5px;
+    border-right-width: 2.5px;
+    border-top-right-radius: 8px;
 }
 
 .reticle-corner.bottom-left {
-    bottom: 14px;
-    left: 14px;
-    border-bottom-width: 3px;
-    border-left-width: 3px;
-    border-bottom-left-radius: 10px;
+    bottom: 12px;
+    left: 12px;
+    border-bottom-width: 2.5px;
+    border-left-width: 2.5px;
+    border-bottom-left-radius: 8px;
 }
 
 .reticle-corner.bottom-right {
-    bottom: 14px;
-    right: 14px;
-    border-bottom-width: 3px;
-    border-right-width: 3px;
-    border-bottom-right-radius: 10px;
+    bottom: 12px;
+    right: 12px;
+    border-bottom-width: 2.5px;
+    border-right-width: 2.5px;
+    border-bottom-right-radius: 8px;
 }
 
 /* Laser Scan Line - Only active when camera is live */
 .scanner-laser-line {
     position: absolute;
-    left: 8%;
-    right: 8%;
-    height: 2.5px;
-    background: linear-gradient(90deg, transparent, #cfa46f 25%, #ffd700 50%, #cfa46f 75%, transparent);
-    box-shadow: 0 0 14px #ffd700, 0 0 24px rgba(207, 164, 111, 0.6);
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(207, 164, 111, 0.5) 25%, #dfb784 50%, rgba(207, 164, 111, 0.5) 75%, transparent);
+    box-shadow: 0 0 10px rgba(207, 164, 111, 0.5);
     z-index: 15;
-    animation: modernLaserScan 2s ease-in-out infinite;
+    animation: modernLaserScan 2.2s ease-in-out infinite;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.25s ease;
@@ -786,29 +792,29 @@
 .scanner-loading-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(14, 13, 12, 0.94);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: rgba(14, 12, 10, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 22;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 20px;
+    border-radius: 18px;
     padding: 16px;
 }
 
 .loading-title {
-    font-weight: 800;
+    font-weight: 700;
     color: #ffffff;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     margin-top: 10px;
     letter-spacing: -0.01em;
 }
 
 .loading-sub {
-    font-size: 0.74rem;
-    color: #b39b82;
+    font-size: 0.72rem;
+    color: #a89582;
     margin-top: 2px;
 }
 
@@ -816,37 +822,37 @@
 .scanner-processing-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(14, 13, 12, 0.94);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(14, 12, 10, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     z-index: 25;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 20px;
+    border-radius: 18px;
     padding: 16px;
 }
 
 .processing-title {
-    font-weight: 800;
+    font-weight: 700;
     color: #ffffff;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     letter-spacing: -0.01em;
     text-align: center;
 }
 
 .processing-sub {
-    font-size: 0.74rem;
-    color: #b39b82;
+    font-size: 0.72rem;
+    color: #a89582;
     margin-top: 2px;
     text-align: center;
 }
 
 /* Fallback Notice (Permission / Unavailable Empty State) */
 .scanner-permission-empty-state {
-    padding: 18px 16px;
-    color: #b39b82;
+    padding: 16px 14px;
+    color: #a89582;
     text-align: center;
     z-index: 50 !important;
     position: relative !important;
@@ -855,35 +861,35 @@
 }
 
 .permission-icon-bubble {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     background: rgba(207, 164, 111, 0.12);
     border: 1px solid rgba(207, 164, 111, 0.28);
-    color: #ffd700;
-    font-size: 1.35rem;
+    color: #dfb784;
+    font-size: 1.25rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 10px;
+    margin: 0 auto 8px;
     pointer-events: none;
 }
 
 .permission-headline {
-    font-weight: 800;
+    font-weight: 700;
     color: #ffffff;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     margin-bottom: 4px;
     letter-spacing: -0.01em;
     pointer-events: none;
 }
 
 .permission-description {
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     color: #c4b5a2;
-    max-width: 250px;
-    margin: 0 auto 12px;
-    line-height: 1.45;
+    max-width: 240px;
+    margin: 0 auto 10px;
+    line-height: 1.4;
     pointer-events: none;
 }
 
@@ -891,22 +897,22 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     position: relative;
     z-index: 52 !important;
     pointer-events: auto !important;
 }
 
 .permission-primary-btn {
-    background: linear-gradient(135deg, #cfa46f, #a07a4a);
-    color: #141110;
-    font-size: 0.82rem;
-    font-weight: 800;
+    background: linear-gradient(135deg, #cfa46f, #b38954);
+    color: #12100e;
+    font-size: 0.8rem;
+    font-weight: 700;
     border: none;
-    border-radius: 12px;
-    padding: 9px 22px;
+    border-radius: 10px;
+    padding: 8px 20px;
     cursor: pointer !important;
-    box-shadow: 0 4px 14px rgba(207, 164, 111, 0.3);
+    box-shadow: 0 4px 12px rgba(207, 164, 111, 0.25);
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -927,12 +933,12 @@
     background: transparent;
     border: none;
     color: #cfa46f;
-    font-size: 0.78rem;
-    font-weight: 700;
+    font-size: 0.76rem;
+    font-weight: 600;
     cursor: pointer !important;
     text-decoration: underline;
     text-underline-offset: 3px;
-    padding: 6px 12px;
+    padding: 4px 10px;
     position: relative;
     z-index: 55 !important;
     pointer-events: auto !important;
@@ -943,7 +949,7 @@
 }
 
 .permission-secondary-link:hover, .permission-secondary-link:active {
-    color: #ffd700;
+    color: #f3e7cd;
 }
 
 /* Instruction container placed cleanly below scanner */
@@ -952,76 +958,80 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: rgba(207, 164, 111, 0.08);
-    border: 1px solid rgba(207, 164, 111, 0.18);
-    border-radius: 99px;
-    padding: 5px 14px;
+    background: rgba(207, 164, 111, 0.07);
+    border: 1px solid rgba(207, 164, 111, 0.16);
+    border-radius: 999px;
+    padding: 5px 12px;
     margin: 0 auto 10px;
-    max-width: 92%;
+    max-width: 94%;
 }
 
 .scanner-instruction-text {
-    color: #f3e7cd;
-    font-size: 0.78rem;
-    font-weight: 600;
+    color: #e5d7c3;
+    font-size: 0.75rem;
+    font-weight: 500;
     letter-spacing: -0.01em;
     white-space: normal;
     text-align: center;
+    line-height: 1.3;
 }
 
 /* Secondary Manual Code Card */
 .scanner-alt-action-card {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(207, 164, 111, 0.16);
-    border-radius: 14px;
-    padding: 8px 12px;
-    margin-bottom: 10px;
-    gap: 10px;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(207, 164, 111, 0.14);
+    border-radius: 12px;
+    padding: 6px 12px;
+    margin: 0 auto 10px;
+    max-width: 320px;
+    width: 100%;
+    gap: 8px;
 }
 
 .scanner-alt-label {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #d1c4b2;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #9c8b78;
     text-align: left;
 }
 
 .scanner-alt-btn {
-    background: rgba(207, 164, 111, 0.14);
-    border: 1px solid rgba(207, 164, 111, 0.3);
-    color: #ffd700;
-    font-size: 0.76rem;
-    font-weight: 700;
-    border-radius: 10px;
-    padding: 6px 12px;
+    background: rgba(207, 164, 111, 0.12);
+    border: 1px solid rgba(207, 164, 111, 0.28);
+    color: #dfb784;
+    font-size: 0.74rem;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 4px 10px;
     cursor: pointer !important;
     touch-action: manipulation !important;
     user-select: none;
     -webkit-user-select: none;
-    -webkit-tap-highlight-color: rgba(207, 164, 111, 0.3);
     display: inline-flex;
     align-items: center;
     white-space: nowrap;
     transition: all 0.2s;
 }
 
-.scanner-alt-btn:active {
-    transform: scale(0.97);
-    background: rgba(207, 164, 111, 0.24);
+.scanner-alt-btn:hover, .scanner-alt-btn:active {
+    background: rgba(207, 164, 111, 0.22);
+    color: #ffffff;
+    border-color: rgba(207, 164, 111, 0.45);
+    transform: scale(0.98);
 }
 
 /* Clean bottom cancel action */
 .scanner-cancel-action-btn {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: #a89279;
-    font-size: 0.8rem;
-    font-weight: 600;
-    border-radius: 12px;
-    padding: 8px 18px;
+    border: none;
+    color: #8c7a67;
+    font-size: 0.78rem;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 6px 14px;
     cursor: pointer !important;
     touch-action: manipulation !important;
     user-select: none;
@@ -1030,73 +1040,71 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    width: 100%;
-    transition: all 0.2s;
+    margin: 0 auto;
+    transition: color 0.2s;
 }
 
 .scanner-cancel-action-btn:hover, .scanner-cancel-action-btn:active {
-    background: rgba(255, 255, 255, 0.05);
-    color: #f3e7cd;
-    border-color: rgba(207, 164, 111, 0.25);
+    color: #dfb784;
 }
 
 /* Code Entry Panel */
 .code-entry-container {
     background: rgba(0, 0, 0, 0.4);
-    border: 1.5px solid rgba(207, 164, 111, 0.3);
-    border-radius: 20px;
-    padding: 16px 14px;
-    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.6);
+    border: 1.5px solid rgba(207, 164, 111, 0.25);
+    border-radius: 16px;
+    padding: 14px 12px;
+    box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.6);
 }
 
 .code-entry-input {
     background: rgba(0, 0, 0, 0.6) !important;
-    border: 2px solid rgba(207, 164, 111, 0.4) !important;
-    color: #ffd700 !important;
+    border: 1.5px solid rgba(207, 164, 111, 0.35) !important;
+    color: #dfb784 !important;
     font-family: 'Consolas', 'Courier New', monospace !important;
-    font-size: 2rem !important;
-    font-weight: 900 !important;
-    letter-spacing: 6px !important;
+    font-size: 1.8rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 5px !important;
     text-align: center !important;
-    border-radius: 14px !important;
-    padding: 10px 8px !important;
+    border-radius: 12px !important;
+    padding: 8px 6px !important;
     width: 100% !important;
     text-transform: uppercase !important;
-    box-shadow: 0 0 14px rgba(207, 164, 111, 0.15) !important;
+    box-shadow: 0 0 12px rgba(207, 164, 111, 0.12) !important;
     transition: all 0.2s !important;
 }
 
 .code-entry-input:focus {
-    border-color: #ffd700 !important;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.35) !important;
+    border-color: #dfb784 !important;
+    box-shadow: 0 0 16px rgba(207, 164, 111, 0.3) !important;
     outline: none !important;
 }
 
 .code-entry-input.is-invalid {
     border-color: #ef4444 !important;
-    box-shadow: 0 0 16px rgba(239, 68, 68, 0.4) !important;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.35) !important;
 }
 
 .code-entry-hint {
-    font-size: 0.76rem;
-    color: #b39b82;
+    font-size: 0.74rem;
+    color: #a89582;
 }
 
 /* Result View */
 .scanner-result-content {
-    padding: 6px 0 4px;
+    padding: 4px 0 2px;
     text-align: center;
 }
 
 .result-status-icon-wrap {
-    width: 64px;
-    height: 64px;
+    width: 58px;
+    height: 58px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    margin: 0 auto 12px;
+    font-size: 1.8rem;
+    margin: 0 auto 10px;
     animation: resultPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -1106,25 +1114,25 @@
 }
 
 .result-headline {
-    font-weight: 800;
-    font-size: 1.2rem;
-    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-size: 1.15rem;
+    letter-spacing: -0.015em;
     margin-bottom: 3px;
 }
 
 .result-caption {
-    color: #b39b82;
-    font-size: 0.82rem;
-    margin-bottom: 14px;
+    color: #a89582;
+    font-size: 0.8rem;
+    margin-bottom: 12px;
     line-height: 1.4;
 }
 
 .result-summary-card {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 12px 16px;
-    margin-bottom: 14px;
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
     text-align: left;
 }
 
@@ -1132,7 +1140,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px 0;
+    padding: 5px 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -1142,15 +1150,15 @@
 }
 
 .result-label {
-    font-size: 0.72rem;
-    color: #b39b82;
+    font-size: 0.7rem;
+    color: #a89582;
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.5px;
 }
 
 .result-val {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: #f3e7cd;
     font-weight: 600;
     text-align: right;
@@ -1169,23 +1177,23 @@
 /* Auto Close Countdown Box */
 .result-autoclose-box {
     background: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.28);
-    border-radius: 12px;
-    padding: 8px 12px;
-    margin-bottom: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.24);
+    border-radius: 10px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
 .autoclose-text {
-    font-size: 0.8rem;
-    font-weight: 700;
+    font-size: 0.78rem;
+    font-weight: 600;
     color: #34d399;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .autoclose-progress-bar {
     width: 100%;
-    height: 4px;
+    height: 3px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 99px;
     overflow: hidden;
@@ -1199,14 +1207,14 @@
 }
 
 .scanner-primary-action-btn {
-    background: linear-gradient(135deg, #cfa46f, #8c6d46) !important;
-    color: #181614 !important;
-    font-weight: 800 !important;
-    padding: 11px !important;
-    border-radius: 14px !important;
-    font-size: 0.9rem !important;
+    background: linear-gradient(135deg, #cfa46f, #b38954) !important;
+    color: #12100e !important;
+    font-weight: 700 !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.88rem !important;
     border: none !important;
-    box-shadow: 0 6px 20px rgba(207, 164, 111, 0.28) !important;
+    box-shadow: 0 4px 14px rgba(207, 164, 111, 0.24) !important;
     transition: all 0.2s !important;
 }
 
@@ -1215,13 +1223,13 @@
 }
 
 .scanner-secondary-action-btn {
-    background: rgba(255, 255, 255, 0.08) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    color: #f3e7cd !important;
-    font-weight: 700 !important;
-    padding: 11px !important;
-    border-radius: 14px !important;
-    font-size: 0.9rem !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #e5d5c0 !important;
+    font-weight: 600 !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.88rem !important;
     transition: all 0.2s !important;
 }
 
@@ -1230,50 +1238,51 @@
 }
 
 /* ── MOBILE ADAPTIVE VIEWPORT & SAFE AREA OPTIMIZATIONS ── */
-@media (max-width: 640px) {
+@media (max-width: 767px) {
     .scanner-modal-backdrop {
-        padding: 0;
-        align-items: flex-end;
+        padding: max(16px, env(safe-area-inset-top, 16px)) 12px max(24px, calc(env(safe-area-inset-bottom, 0px) + 20px)) 12px;
+        align-items: flex-start !important;
+        justify-content: center !important;
     }
 
     .scanner-modal-card {
-        max-width: 100vw;
-        width: 100vw;
-        max-height: 94dvh;
+        max-width: 390px;
+        width: 100%;
+        margin-top: clamp(12px, 5vh, 40px) !important;
+        margin-bottom: auto !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        max-height: calc(100dvh - 36px);
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         overscroll-behavior: contain;
-        border-radius: 28px 28px 0 0;
-        border-bottom: none;
-        border-left: none;
-        border-right: none;
-        padding: 12px 18px max(24px, calc(env(safe-area-inset-bottom, 0px) + 16px)) 18px;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(207, 164, 111, 0.15);
+        border-radius: 24px;
+        border: 1px solid rgba(207, 164, 111, 0.22);
+        padding: 14px 16px max(18px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+        box-shadow: 0 16px 50px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(207, 164, 111, 0.12);
     }
 
     .scanner-drag-handle {
-        display: block;
+        display: none !important;
     }
 
     .scanner-viewfinder-wrapper {
-        width: min(72vw, 260px);
+        width: min(72vw, 248px);
         aspect-ratio: 1 / 1;
-        border-radius: 22px;
+        border-radius: 18px;
         margin: 0 auto 10px;
     }
 
     .scanner-reader-feed video {
-        border-radius: 20px !important;
+        border-radius: 16px !important;
     }
 
     .scanner-title {
-        font-size: 1.15rem;
+        font-size: 1.05rem;
     }
 
     .code-entry-input {
-        font-size: 1.9rem !important;
+        font-size: 1.8rem !important;
         letter-spacing: 5px !important;
         padding: 10px 6px !important;
     }
@@ -2149,7 +2158,7 @@ function renderScanSuccess(data) {
         iconBox.style.border = '2px solid rgba(16, 185, 129, 0.4)';
         iconBox.innerHTML = '<i class="bi bi-check2-circle" style="color: #34d399;"></i>';
 
-        title.textContent = 'Attendance Recorded ✓';
+        title.textContent = 'Attendance recorded successfully ✓';
         subtitle.textContent = `Your attendance has been confirmed for ${data.subject || 'this class'}.`;
 
         const isPresent = (data.status || 'Present') === 'Present';
