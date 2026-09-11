@@ -422,6 +422,67 @@ class QrAttendanceController extends Controller
             ->whereDate('date', today())
             ->get();
 
+        $now = now();
+        $graceMinutes = $session->getGracePeriodMinutes();
+
+        // Staleness audit: Detect students who closed their tab, killed GPS, or abandoned presence monitoring
+        if ($session->active && $now->lte($session->session_ends_at)) {
+            foreach ($todayRecords as $record) {
+                if (!in_array($record->status, ['Present', 'Late'])) {
+                    continue;
+                }
+
+                $dateStr = $record->date instanceof \DateTimeInterface 
+                    ? $record->date->format('Y-m-d') 
+                    : substr((string) $record->date, 0, 10);
+
+                $lastCheck = $record->last_location_check_at 
+                    ?? $record->checked_in_at 
+                    ?? $session->created_at 
+                    ?? now();
+
+                if (!$lastCheck) {
+                    continue;
+                }
+
+                $minutesSinceCheck = abs($now->diffInMinutes(Carbon::parse($lastCheck)));
+
+                // If no heartbeat has arrived for longer than the grace period (abandonment, closed tab, killed GPS)
+                if ($minutesSinceCheck >= $graceMinutes) {
+                    $outsideSince = $record->outside_since ? Carbon::parse($record->outside_since) : Carbon::parse($lastCheck);
+                    $record->update([
+                        'status'                    => 'Escaped',
+                        'escaped_at'                => $now,
+                        'outside_since'             => $outsideSince,
+                        'monitoring_status'         => 'escaped',
+                        'consecutive_outside_count' => max(3, ($record->consecutive_outside_count ?? 0) + 1),
+                    ]);
+                    $record->status = 'Escaped';
+                    $record->monitoring_status = 'escaped';
+                    $record->escaped_at = $now;
+
+                    try {
+                        broadcast(new TeacherAttendanceUpdated(
+                            (int) $session->created_by,
+                            $record->user?->name ?? 'Student',
+                            $session->subject_code,
+                            'Escaped',
+                            'status_override',
+                            (string) $record->user_id,
+                            $record->id
+                        ));
+                    } catch (\Throwable $e) {}
+                } elseif ($minutesSinceCheck >= 2 && $record->monitoring_status !== 'warning') {
+                    // Missed 2+ scheduled pings (scheduled every 45s) -> flag as Warning / Heartbeat Lost
+                    $record->update([
+                        'outside_since'     => $record->outside_since ?? Carbon::parse($lastCheck),
+                        'monitoring_status' => 'warning',
+                    ]);
+                    $record->monitoring_status = 'warning';
+                }
+            }
+        }
+
         $clockins = $students->map(function ($student) use ($todayRecords) {
             $record = $todayRecords->firstWhere('user_id', $student->id);
             $rawStatus = $record ? $record->status : 'Missing';
@@ -598,10 +659,12 @@ class QrAttendanceController extends Controller
     public function verifyPresence(Request $request)
     {
         $request->validate([
-            'session_id' => 'required|integer',
-            'latitude'   => 'required|numeric|between:-90,90',
-            'longitude'  => 'required|numeric|between:-180,180',
-            'accuracy'   => 'nullable|numeric|min:0',
+            'session_id'    => 'required|integer',
+            'latitude'      => 'required_without:error_code|nullable|numeric|between:-90,90',
+            'longitude'     => 'required_without:error_code|nullable|numeric|between:-180,180',
+            'accuracy'      => 'nullable|numeric',
+            'error_code'    => 'nullable|string|max:50',
+            'error_message' => 'nullable|string|max:255',
         ]);
 
         $user = $request->user();
@@ -670,11 +733,87 @@ class QrAttendanceController extends Controller
             ]);
         }
 
+        $now = now();
         $radius = $session->getAllowedRadius();
         $graceMinutes = $session->getGracePeriodMinutes();
+
+        // 1. Client-reported GPS permission denial or location hardware failure
+        if ($request->filled('error_code')) {
+            $outsideSince = $attendance->outside_since ? Carbon::parse($attendance->outside_since) : $now;
+            $newConsecutiveCount = ($attendance->consecutive_outside_count ?? 0) + 1;
+            $elapsedSeconds = abs($now->diffInSeconds($outsideSince));
+            $elapsedMinutes = $outsideSince->diffInMinutes($now);
+
+            // Grace period check
+            if ($elapsedMinutes >= $graceMinutes && $newConsecutiveCount >= 2) {
+                $attendance->update([
+                    'status'                    => 'Escaped',
+                    'escaped_at'                => $now,
+                    'outside_since'             => $outsideSince,
+                    'consecutive_outside_count' => $newConsecutiveCount,
+                    'monitoring_status'         => 'escaped',
+                    'last_location_check_at'    => $now,
+                ]);
+
+                try {
+                    broadcast(new TeacherAttendanceUpdated(
+                        (int) $session->created_by,
+                        $user->name,
+                        $session->subject_code,
+                        'Escaped',
+                        'status_override',
+                        (string) $user->id,
+                        $attendance->id
+                    ));
+                } catch (\Throwable $e) {}
+
+                return response()->json([
+                    'success'           => true,
+                    'status'            => 'Escaped',
+                    'monitoring_status' => 'escaped',
+                    'escaped_at'        => $now->format('h:i A'),
+                    'message'           => 'GPS location was disabled or unavailable for too long. Your attendance has been marked as ESCAPED.'
+                ]);
+            }
+
+            $attendance->update([
+                'outside_since'             => $outsideSince,
+                'consecutive_outside_count' => $newConsecutiveCount,
+                'monitoring_status'         => 'warning',
+                'last_location_check_at'    => $now,
+            ]);
+
+            $remainingGraceSeconds = max(0, ($graceMinutes * 60) - $elapsedSeconds);
+
+            return response()->json([
+                'success'                 => true,
+                'status'                  => $attendance->status,
+                'monitoring_status'       => 'warning',
+                'outside_since'           => $outsideSince->toIso8601String(),
+                'remaining_grace_seconds' => $remainingGraceSeconds,
+                'grace_period_minutes'    => $graceMinutes,
+                'message'                 => 'Warning: Location permission denied or unavailable. Please enable GPS permissions immediately to avoid being marked Escaped.'
+            ]);
+        }
+
         $studentLat = (float) $request->latitude;
         $studentLng = (float) $request->longitude;
         $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+
+        // 2. Suspicious Exact Zero or Negative Accuracy (indicator of mock GPS injection)
+        if ($accuracy !== null && $accuracy <= 0) {
+            $attendance->update([
+                'last_location_check_at' => $now,
+                'monitoring_status'      => 'unreliable_gps',
+            ]);
+
+            return response()->json([
+                'success'           => true,
+                'status'            => $attendance->status,
+                'monitoring_status' => 'unreliable_gps',
+                'message'           => 'Suspicious GPS accuracy reading detected. Retaining current presence status while retrying GPS fix.'
+            ]);
+        }
 
         // GPS Accuracy check: If accuracy reading is very imprecise (>150m and >2.5x radius), do not falsely penalize student
         $isUnreliableAccuracy = ($accuracy !== null && $accuracy > 150 && $accuracy > ($radius * 2.5));
@@ -703,6 +842,40 @@ class QrAttendanceController extends Controller
         $now = now();
 
         if ($distance <= $radius) {
+            // Check for impossible velocity / teleportation leap INTO classroom
+            if ($attendance->last_latitude !== null && $attendance->last_longitude !== null && $attendance->last_location_check_at !== null) {
+                $prevLat = (float) $attendance->last_latitude;
+                $prevLng = (float) $attendance->last_longitude;
+                $distDeltaMeters = $this->distance($studentLat, $studentLng, $prevLat, $prevLng);
+                $secondsElapsed = abs($now->diffInSeconds(Carbon::parse($attendance->last_location_check_at)));
+
+                if ($secondsElapsed >= 5 && $secondsElapsed <= 300 && $distDeltaMeters > 200) {
+                    $speedMps = $distDeltaMeters / $secondsElapsed;
+                    // 40 m/s = 144 km/h (impossible physical movement in a school setting)
+                    if ($speedMps > 40) {
+                        Log::warning('GPS spoofing / teleportation leap into classroom detected', [
+                            'user_id'         => $user->id,
+                            'session_id'      => $session->id,
+                            'speed_kmh'       => round($speedMps * 3.6),
+                            'distance_meters' => round($distDeltaMeters),
+                            'seconds_elapsed' => $secondsElapsed,
+                        ]);
+
+                        $attendance->update([
+                            'last_location_check_at' => $now,
+                            'monitoring_status'      => 'warning',
+                        ]);
+
+                        return response()->json([
+                            'success'           => true,
+                            'status'            => $attendance->status,
+                            'monitoring_status' => 'warning',
+                            'message'           => 'Abnormal location change detected (' . round($speedMps * 3.6) . ' km/h). Retaining verification alert.'
+                        ]);
+                    }
+                }
+            }
+
             // Inside allowed attendance area!
             $wasWarning = ($attendance->monitoring_status === 'warning' || $attendance->outside_since !== null);
 
@@ -843,8 +1016,40 @@ class QrAttendanceController extends Controller
             return response()->json(['has_active_session' => false]);
         }
 
-        $elapsedSeconds = $attendance->outside_since ? abs(now()->diffInSeconds(Carbon::parse($attendance->outside_since))) : 0;
+        $now = now();
         $graceMinutes = $session->getGracePeriodMinutes();
+        $attDateStr = $attendance->date instanceof \DateTimeInterface 
+            ? $attendance->date->format('Y-m-d') 
+            : substr((string) $attendance->date, 0, 10);
+
+        $lastCheck = $attendance->last_location_check_at 
+            ?? $attendance->checked_in_at 
+            ?? $session->created_at 
+            ?? now();
+
+        if ($lastCheck && in_array($attendance->status, ['Present', 'Late'])) {
+            $minutesSinceLast = abs($now->diffInMinutes(Carbon::parse($lastCheck)));
+            if ($minutesSinceLast >= $graceMinutes) {
+                $attendance->update([
+                    'status'                    => 'Escaped',
+                    'escaped_at'                => $now,
+                    'outside_since'             => $attendance->outside_since ?? Carbon::parse($lastCheck),
+                    'monitoring_status'         => 'escaped',
+                    'consecutive_outside_count' => max(3, ($attendance->consecutive_outside_count ?? 0) + 1),
+                ]);
+                $attendance->status = 'Escaped';
+                $attendance->monitoring_status = 'escaped';
+                $attendance->escaped_at = $now;
+            } elseif ($minutesSinceLast >= 2 && $attendance->monitoring_status !== 'warning') {
+                $attendance->update([
+                    'outside_since'     => $attendance->outside_since ?? Carbon::parse($lastCheck),
+                    'monitoring_status' => 'warning',
+                ]);
+                $attendance->monitoring_status = 'warning';
+            }
+        }
+
+        $elapsedSeconds = $attendance->outside_since ? abs(now()->diffInSeconds(Carbon::parse($attendance->outside_since))) : 0;
         $remainingSeconds = max(0, ($graceMinutes * 60) - $elapsedSeconds);
 
         return response()->json([
@@ -1148,6 +1353,30 @@ class QrAttendanceController extends Controller
                 'success' => false,
                 'message' => 'This class is not in your schedule. ' . $mismatchReason,
             ], 422);
+        }
+
+        // Proxy Attendance Check (Prevent one physical device from clocking in multiple students for the same session)
+        $currentDeviceHash = $user->deviceBinding?->device_hash;
+        if ($currentDeviceHash) {
+            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where('device_hash', $currentDeviceHash)
+                ->where('user_id', '!=', $user->id)
+                ->pluck('user_id');
+
+            if ($otherUserIdsOnSameDevice->isNotEmpty()) {
+                $alreadyClockedInPeer = Attendance::where('session_id', $session->id)
+                    ->whereIn('user_id', $otherUserIdsOnSameDevice)
+                    ->whereIn('status', ['Present', 'Late'])
+                    ->with('user')
+                    ->first();
+
+                if ($alreadyClockedInPeer) {
+                    return response()->json([
+                        'success'    => false,
+                        'error_type' => 'proxy_device_detected',
+                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user?->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
+                    ], 422);
+                }
+            }
         }
 
         $schoolLat    = $session->classroom_lat ?? $this->getSchoolLat();
@@ -1704,36 +1933,74 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        // 3. Geofence Distance Check (if coordinates provided and session coordinates exist)
+        // 2.5 Proxy Attendance Check (Prevent one physical device from clocking in multiple students for the same session)
+        $currentDeviceHash = $user->deviceBinding?->device_hash;
+        if ($currentDeviceHash) {
+            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where('device_hash', $currentDeviceHash)
+                ->where('user_id', '!=', $user->id)
+                ->pluck('user_id');
+
+            if ($otherUserIdsOnSameDevice->isNotEmpty()) {
+                $alreadyClockedInPeer = Attendance::where('session_id', $session->id)
+                    ->whereIn('user_id', $otherUserIdsOnSameDevice)
+                    ->whereIn('status', ['Present', 'Late'])
+                    ->with('user')
+                    ->first();
+
+                if ($alreadyClockedInPeer) {
+                    Log::warning('Proxy attendance attempt blocked in processScan', [
+                        'current_user_id' => $user->id,
+                        'peer_user_id'    => $alreadyClockedInPeer->user_id,
+                        'session_id'      => $session->id,
+                        'device_hash'     => $currentDeviceHash,
+                    ]);
+
+                    return response()->json([
+                        'success'    => false,
+                        'error_type' => 'proxy_device_detected',
+                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user?->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
+                    ], 422);
+                }
+            }
+        }
+
+        // 3. Geofence Distance Check
         $schoolLat = $session->classroom_lat ?? $this->getSchoolLat();
         $schoolLng = $session->classroom_lng ?? $this->getSchoolLng();
-        $radiusMeters = \App\Models\Setting::get('gps_radius', $this->getRadiusMeters());
+        $radiusMeters = $session->allowed_radius ?? (int) \App\Models\Setting::get('gps_radius', $this->getRadiusMeters());
 
-        if ($session->classroom_lat !== null) {
-            if (!$request->filled('latitude') || !$request->filled('longitude')) {
+        $hasCoordinates = $request->filled('latitude') && $request->filled('longitude');
+
+        if ($hasCoordinates) {
+            $studentLat = (float) $request->latitude;
+            $studentLng = (float) $request->longitude;
+            $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+
+            if ($accuracy !== null && $accuracy <= 0) {
                 return response()->json([
-                    'success' => false,
-                    'error_type' => 'location_required',
-                    'message' => 'Location coordinates are required to verify you are present in the classroom. Please enable GPS permissions and try again.'
+                    'success'    => false,
+                    'error_type' => 'unreliable_gps',
+                    'message'    => 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.'
                 ], 422);
             }
 
-            $distance = $this->distance(
-                (float) $request->latitude,
-                (float) $request->longitude,
-                $schoolLat,
-                $schoolLng
-            );
+            $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
 
             if ($distance > $radiusMeters) {
                 return response()->json([
-                    'success' => false,
+                    'success'    => false,
                     'error_type' => 'outside_classroom',
-                    'distance' => round($distance),
-                    'radius' => $radiusMeters,
-                    'message' => 'You are outside the classroom boundary (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Please scan inside the classroom.'
+                    'distance'   => round($distance),
+                    'radius'     => $radiusMeters,
+                    'message'    => 'You are outside the classroom boundary (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Please scan inside the classroom.'
                 ], 422);
             }
+        } elseif ($session->classroom_lat !== null) {
+            return response()->json([
+                'success'    => false,
+                'error_type' => 'location_required',
+                'message'    => 'Location coordinates are required to verify you are present in the classroom. Please enable GPS permissions and try again.'
+            ], 422);
         }
 
         // 4. Calculate Timing (Present vs Late threshold)

@@ -375,4 +375,191 @@ class PresenceVerificationSecurityTest extends TestCase
         $this->assertEquals('Present', $att->status);
         $this->assertEquals('completed', $att->monitoring_status);
     }
+
+    public function test_heartbeat_staleness_sweep_transitions_silent_abandonment_to_escaped()
+    {
+        // Student clocks in
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+        ]);
+
+        $att = Attendance::where('user_id', $this->student->id)->first();
+        $this->assertEquals('Present', $att->status);
+
+        // Student closes tab / kills browser for 10 minutes (exceeding 5-minute grace period)
+        $att->update([
+            'last_location_check_at' => now()->subMinutes(10),
+            'checked_in_at'          => now()->subMinutes(10),
+        ]);
+
+        // Teacher screen polls clockins
+        $response = $this->actingAs($this->teacher)->getJson('/teacher/qr/clockins?session_id=' . $this->session->id);
+        $response->assertStatus(200);
+
+        // Verify that the staleness audit automatically detected silence and marked student as Escaped
+        $att->refresh();
+        $this->assertEquals('Escaped', $att->status);
+        $this->assertEquals('escaped', $att->monitoring_status);
+        $this->assertNotNull($att->escaped_at);
+
+        $studentClockin = collect($response->json('clockins'))->firstWhere('id', $this->student->id);
+        $this->assertEquals('Escaped', $studentClockin['status']);
+    }
+
+    public function test_location_permission_denial_reports_and_triggers_grace_period()
+    {
+        // Student clocks in
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+        ]);
+
+        // Student revokes location permissions in browser -> Guardian posts error_code
+        $response = $this->actingAs($this->student)->postJson('/student/presence-verify', [
+            'session_id'    => $this->session->id,
+            'error_code'    => 'permission_denied',
+            'error_message' => 'User denied Geolocation',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success'           => true,
+                'status'            => 'Present',
+                'monitoring_status' => 'warning',
+            ]);
+
+        $this->assertGreaterThan(0, $response->json('remaining_grace_seconds'));
+
+        $att = Attendance::where('user_id', $this->student->id)->first();
+        $this->assertEquals('Present', $att->status);
+        $this->assertEquals('warning', $att->monitoring_status);
+        $this->assertNotNull($att->outside_since);
+    }
+
+    public function test_geofence_enforced_when_coordinates_provided_even_if_teacher_coords_null()
+    {
+        // Teacher creates session without GPS coordinates (e.g. from a desktop PC)
+        $this->session->update([
+            'classroom_lat' => null,
+            'classroom_lng' => null,
+        ]);
+
+        // Student attempts to scan from far away (14.9000, 121.5000 is ~60km away)
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 14.9000,
+            'longitude' => 121.5000,
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success'    => false,
+                'error_type' => 'outside_classroom',
+            ]);
+    }
+
+    public function test_teleportation_leap_into_classroom_blocked()
+    {
+        // Student clocks in outside classroom (far away)
+        Attendance::create([
+            'user_id'                => $this->student->id,
+            'session_id'             => $this->session->id,
+            'subject_id'             => $this->subject->id,
+            'subject_code'           => $this->subject->code,
+            'date'                   => today()->toDateString(),
+            'status'                 => 'Present',
+            'last_latitude'          => $this->classroomLat + 0.05, // ~5.5 km away
+            'last_longitude'         => $this->classroomLng + 0.05,
+            'last_location_check_at' => now()->subSeconds(10), // 10 seconds ago
+            'monitoring_status'      => 'warning',
+        ]);
+
+        // 10 seconds later, student claims to be directly inside classroom (speed ~ 550 m/s)
+        $response = $this->actingAs($this->student)->postJson('/student/presence-verify', [
+            'session_id' => $this->session->id,
+            'latitude'   => $this->classroomLat,
+            'longitude'  => $this->classroomLng,
+            'accuracy'   => 15.0,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success'           => true,
+                'status'            => 'Present',
+                'monitoring_status' => 'warning',
+            ]);
+
+        $this->assertStringContainsString('Abnormal location change detected', $response->json('message'));
+    }
+
+    public function test_proxy_attendance_blocked_when_same_device_used_by_multiple_students()
+    {
+        $peerStudent = User::factory()->create([
+            'role'       => 'student',
+            'year_level' => 2,
+            'semester'   => 1,
+            'course'     => 'BSIT',
+            'section'    => '2B',
+        ]);
+        $peerStudent->enrolledSubjects()->attach($this->subject->id);
+
+        $rawKey = 'shared_device_secret_xyz';
+        $deviceHash = hash_hmac('sha256', $rawKey, config('app.key'));
+
+        // Bind both student accounts to the same device hash
+        \App\Models\DeviceBinding::create([
+            'user_id'     => $this->student->id,
+            'device_hash' => $deviceHash,
+        ]);
+        \App\Models\DeviceBinding::create([
+            'user_id'     => $peerStudent->id,
+            'device_hash' => $deviceHash,
+        ]);
+
+        // First student successfully clocks in from this device
+        $clockIn1 = $this->actingAs($this->student)
+            ->withSession(['device_bound_session' => true])
+            ->postJson('/qr/scan-process', [
+                'token'              => $this->session->token,
+                'latitude'           => $this->classroomLat,
+                'longitude'          => $this->classroomLng,
+                'device_fingerprint' => $rawKey,
+            ]);
+        $clockIn1->assertStatus(200)->assertJson(['success' => true]);
+
+        // Second student attempts to clock in into the same session using the same device
+        $clockIn2 = $this->actingAs($peerStudent)
+            ->withSession(['device_bound_session' => true])
+            ->postJson('/qr/scan-process', [
+                'token'              => $this->session->token,
+                'latitude'           => $this->classroomLat,
+                'longitude'          => $this->classroomLng,
+                'device_fingerprint' => $rawKey,
+            ]);
+
+        $clockIn2->assertStatus(422)
+            ->assertJson([
+                'success'    => false,
+                'error_type' => 'proxy_device_detected',
+            ]);
+    }
+
+    public function test_suspicious_zero_accuracy_rejected()
+    {
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy'  => 0.0, // Mock/injected GPS sensor reading
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success'    => false,
+                'error_type' => 'unreliable_gps',
+            ]);
+    }
 }

@@ -209,8 +209,9 @@
                         this.pingBtn.innerHTML = '<i class="bi bi-geo-alt-fill"></i>';
                     }
                 },
-                (error) => {
-                    this.handleLocationError(error.message);
+                async (error) => {
+                    await this.reportLocationFailure(error);
+                    this.handleLocationError(error.message, error.code);
                     this.isChecking = false;
                     if (isManual && this.pingBtn) {
                         this.pingBtn.disabled = false;
@@ -219,6 +220,34 @@
                 },
                 { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
             );
+        }
+
+        async reportLocationFailure(error) {
+            if (!this.activeSession) return;
+            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const errCode = (error && error.code === 1) ? 'permission_denied' : 'position_unavailable';
+            try {
+                const res = await fetch('{{ route("student.presence.verify") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': token
+                    },
+                    body: JSON.stringify({
+                        session_id: this.activeSession.session_id,
+                        error_code: errCode,
+                        error_message: error ? error.message : 'Location access failed'
+                    })
+                });
+
+                const data = await res.json();
+                if (data && (data.success || data.monitoring_status)) {
+                    this.updateUiState(data);
+                }
+            } catch (e) {
+                console.warn('[PresenceGuardian] Error reporting failure:', e);
+            }
         }
 
         async sendVerificationPayload(coords) {
@@ -257,12 +286,15 @@
             }
         }
 
-        handleLocationError(msg) {
+        handleLocationError(msg, code) {
+            const isDenied = (code === 1 || code === 'permission_denied');
             if (this.subTitleEl) {
-                this.subTitleEl.textContent = 'Location unavailable. Reopen app & allow GPS.';
+                this.subTitleEl.textContent = isDenied 
+                    ? 'GPS permission denied. Enable location to avoid Escape.' 
+                    : 'Location unavailable. Please check GPS signal.';
             }
             if (this.distanceVal) {
-                this.distanceVal.textContent = 'GPS Unavailable';
+                this.distanceVal.textContent = isDenied ? 'Permission Denied' : 'GPS Unavailable';
             }
         }
 

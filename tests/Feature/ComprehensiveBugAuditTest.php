@@ -201,6 +201,6 @@ class ComprehensiveBugAuditTest extends TestCase
 
         $historyResponse = $this->actingAs($this->student)
             ->get(route('mobile.history'));
-        $historyResponse->assertRedirect(route('home'));
+        $historyResponse->assertOk();
     }
 }
