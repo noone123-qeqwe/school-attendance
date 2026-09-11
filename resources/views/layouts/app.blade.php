@@ -1074,6 +1074,7 @@
         </script>
         @if(!Auth::user()->isAdmin() && !Auth::user()->isTeacher() && !Auth::user()->isParent())
             @include('partials.student-scanner-modal')
+            @include('partials.student-presence-guardian')
         @endif
     @endauth
     @auth

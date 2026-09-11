@@ -2312,6 +2312,10 @@ function renderScanSuccess(data) {
         }
     }
 
+    if (window.studentPresenceGuardian) {
+        window.studentPresenceGuardian.syncActiveSession();
+    }
+
     document.getElementById('resultSubject').textContent = (data.subject || 'Subject') + (data.subject_code ? ' (' + data.subject_code + ')' : '');
     document.getElementById('resultInstructor').textContent = data.instructor || 'Instructor';
     document.getElementById('resultSection').textContent = data.section || 'Regular';

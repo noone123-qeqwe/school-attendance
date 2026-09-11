@@ -11,7 +11,7 @@ class QrSessionService
     /**
      * Start a new QR attendance session.
      */
-    public function startSession($teacherId, $subjectCode, $lat = null, $lng = null)
+    public function startSession($teacherId, $subjectCode, $lat = null, $lng = null, $radiusMeters = null, $gracePeriodMinutes = null)
     {
         $subject = \App\Models\Subject::with('schedules')->where('code', $subjectCode)->first();
         if (!$subject) {
@@ -52,15 +52,17 @@ class QrSessionService
         }
             
         return AttendanceSession::create([
-            'subject_code'    => $subjectCode,
-            'created_by'      => $teacherId,
-            'token'           => AttendanceSession::generateToken($subjectCode),
-            'session_code'    => $sessionCode,
-            'expires_at'      => $now->copy()->addSeconds(300)->min($sessionEnd),
-            'session_ends_at' => $sessionEnd,
-            'active'          => true,
-            'classroom_lat'   => $lat,
-            'classroom_lng'   => $lng,
+            'subject_code'         => $subjectCode,
+            'created_by'           => $teacherId,
+            'token'                => AttendanceSession::generateToken($subjectCode),
+            'session_code'         => $sessionCode,
+            'expires_at'           => $now->copy()->addSeconds(300)->min($sessionEnd),
+            'session_ends_at'      => $sessionEnd,
+            'active'               => true,
+            'classroom_lat'        => $lat,
+            'classroom_lng'        => $lng,
+            'radius_meters'        => $radiusMeters ?? (int) \App\Models\Setting::get('gps_radius', 50),
+            'grace_period_minutes' => $gracePeriodMinutes ?? (int) \App\Models\Setting::get('presence_grace_minutes', 5),
         ]);
     }
     

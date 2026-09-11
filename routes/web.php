@@ -348,6 +348,10 @@ Route::middleware(['auth', 'student'])->group(function () {
     // Direct QR Scanner Processing
     Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process')->middleware('device.bound');
     Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct')->middleware('device.bound');
+
+    // Continuous Presence Verification
+    Route::post('/student/presence-verify', [App\Http\Controllers\QrAttendanceController::class, 'verifyPresence'])->name('student.presence.verify')->middleware('device.bound');
+    Route::get('/student/active-presence-session', [App\Http\Controllers\QrAttendanceController::class, 'getActivePresenceSession'])->name('student.presence.active');
 });
 
 // WebAuthn (Fingerprint / Biometric Management for all authenticated users)

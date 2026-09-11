@@ -607,11 +607,13 @@
                     <small id="rosterCountBadge" style="color: #cfa46f; font-weight: 700; font-size: 0.75rem;">0 Checked In</small>
                 </div>
 
-                <!-- Filter Pills: All, Present, Late, Missing -->
-                <div class="roster-filter-pills">
+                <!-- Filter Pills: All, Present, Late, Outside, Escaped, Missing -->
+                <div class="roster-filter-pills" style="display: flex; flex-wrap: wrap; gap: 5px; padding: 0.75rem 1.25rem 0;">
                     <button type="button" class="roster-pill active" onclick="setRosterFilter('all', this)">All</button>
                     <button type="button" class="roster-pill" onclick="setRosterFilter('present', this)">Present (<span id="countPillPresent">0</span>)</button>
                     <button type="button" class="roster-pill" onclick="setRosterFilter('late', this)">Late (<span id="countPillLate">0</span>)</button>
+                    <button type="button" class="roster-pill" onclick="setRosterFilter('outside', this)" style="border-color: rgba(245,158,11,0.4);"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Outside (<span id="countPillOutside">0</span>)</button>
+                    <button type="button" class="roster-pill" onclick="setRosterFilter('escaped', this)" style="border-color: rgba(239,68,68,0.4);"><i class="bi bi-person-x-fill text-danger me-1"></i>Escaped (<span id="countPillEscaped">0</span>)</button>
                     <button type="button" class="roster-pill" onclick="setRosterFilter('missing', this)">Unmarked (<span id="countPillMissing">0</span>)</button>
                 </div>
 
@@ -1286,6 +1288,10 @@ function renderClockinsList() {
         items = items.filter(c => c.status === 'Present');
     } else if (activeRosterFilter === 'late') {
         items = items.filter(c => c.status === 'Late');
+    } else if (activeRosterFilter === 'outside') {
+        items = items.filter(c => c.status === 'Outside Area');
+    } else if (activeRosterFilter === 'escaped') {
+        items = items.filter(c => c.status === 'Escaped');
     } else if (activeRosterFilter === 'missing') {
         items = items.filter(c => c.status === 'Missing' || c.status === 'Absent');
     }
@@ -1311,10 +1317,32 @@ function renderClockinsList() {
     }
 
     clockinsList.innerHTML = items.map(clockin => {
-        const isPresentOrLate = clockin.status === 'Present' || clockin.status === 'Late';
         const justArrivedClass = knownClockedInIds.has(clockin.id) ? 'just-arrived' : '';
+        
+        let badgeHtml = '';
+        if (clockin.status === 'Escaped') {
+            badgeHtml = `<span class="status-badge" style="background: rgba(239,68,68,0.22); color: #f87171; border: 1px solid rgba(239,68,68,0.45); font-weight: 700;"><i class="bi bi-person-x-fill me-1"></i>Escaped</span>`;
+        } else if (clockin.status === 'Outside Area') {
+            badgeHtml = `<span class="status-badge" style="background: rgba(245,158,11,0.22); color: #fbbf24; border: 1px solid rgba(245,158,11,0.45); font-weight: 700;"><i class="bi bi-exclamation-diamond-fill me-1"></i>Outside ${clockin.distance ? '(' + clockin.distance + ')' : ''}</span>`;
+        } else if (clockin.status === 'Present') {
+            badgeHtml = `<span class="status-badge status-present"><i class="bi bi-check-circle-fill me-1"></i>Present</span>`;
+        } else if (clockin.status === 'Late') {
+            badgeHtml = `<span class="status-badge status-late"><i class="bi bi-clock-fill me-1"></i>Late</span>`;
+        } else {
+            badgeHtml = `<span class="status-badge status-missing">Unmarked</span>`;
+        }
+
+        let metaHtml = `<div style="font-size: 0.7rem; color: #b39b82; margin-top: 2px;">In: ${clockin.time}</div>`;
+        if (clockin.status === 'Escaped') {
+            metaHtml = `<div style="font-size: 0.68rem; color: #f87171; font-weight: 600; margin-top: 2px;">Left area: ${clockin.escaped_at || clockin.outside_since || 'Active'}</div>`;
+        } else if (clockin.status === 'Outside Area') {
+            metaHtml = `<div style="font-size: 0.68rem; color: #fbbf24; font-weight: 600; margin-top: 2px;">Outside: ${clockin.outside_since || clockin.last_verified || 'Warning'}</div>`;
+        } else if (clockin.last_verified && ['Present', 'Late'].includes(clockin.status)) {
+            metaHtml = `<div style="font-size: 0.68rem; color: #94a3b8; margin-top: 2px;" title="Last presence check">Verified: ${clockin.last_verified} ${clockin.distance ? '(' + clockin.distance + ')' : ''}</div>`;
+        }
+
         return `
-            <div class="clockin-item ${clockin.status === 'Missing' ? 'status-missing' : ''} ${justArrivedClass}" id="clockin-row-${clockin.id}">
+            <div class="clockin-item ${clockin.status === 'Missing' ? 'status-missing' : ''} ${justArrivedClass}" id="clockin-row-${clockin.id}" style="${clockin.status === 'Escaped' ? 'border-left: 3px solid #ef4444;' : (clockin.status === 'Outside Area' ? 'border-left: 3px solid #f59e0b;' : '')}">
                 <div class="clockin-avatar">
                     <div class="avatar-circle">${(clockin.name || 'ST').substring(0, 2).toUpperCase()}</div>
                 </div>
@@ -1323,9 +1351,9 @@ function renderClockinsList() {
                     <div style="font-size: 0.74rem; font-family: monospace; color: #b39b82;">${clockin.student_number}</div>
                 </div>
                 <div class="clockin-status text-end d-flex align-items-center gap-2">
-                    <div style="text-align: right; min-width: 65px;">
-                        <span class="status-badge status-${clockin.status.toLowerCase()}">${clockin.status}</span>
-                        <div style="font-size: 0.7rem; color: #b39b82; margin-top: 2px;">${clockin.time}</div>
+                    <div style="text-align: right; min-width: 80px;">
+                        ${badgeHtml}
+                        ${metaHtml}
                     </div>
                     <div class="dropdown">
                         <button class="btn btn-sm" style="background:transparent; border:none; padding:4px; color: #b39b82;" data-bs-toggle="dropdown" aria-label="Status actions">
@@ -1334,6 +1362,7 @@ function renderClockinsList() {
                         <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="background: #1a1512; border: 1px solid rgba(212,175,55,0.25); font-size: 0.85rem; padding: 6px; border-radius: 12px;">
                             <li><a class="dropdown-item fw-bold text-success" href="#" onclick="overrideStatus(${clockin.id}, 'Present', event)" style="border-radius: 8px; padding: 6px 12px;"><i class="bi bi-check-circle me-2"></i>Mark Present</a></li>
                             <li><a class="dropdown-item fw-bold text-warning" href="#" onclick="overrideStatus(${clockin.id}, 'Late', event)" style="border-radius: 8px; padding: 6px 12px;"><i class="bi bi-clock me-2"></i>Mark Late</a></li>
+                            <li><a class="dropdown-item fw-bold" href="#" onclick="overrideStatus(${clockin.id}, 'Escaped', event)" style="border-radius: 8px; padding: 6px 12px; color: #f87171;"><i class="bi bi-person-x me-2"></i>Mark Escaped</a></li>
                             <li><a class="dropdown-item fw-bold text-danger" href="#" onclick="overrideStatus(${clockin.id}, 'Absent', event)" style="border-radius: 8px; padding: 6px 12px;"><i class="bi bi-x-circle me-2"></i>Mark Absent</a></li>
                         </ul>
                     </div>
@@ -1349,7 +1378,9 @@ function updateStatsCounters(stats) {
     const total = stats.total_students || 0;
     const present = stats.present !== undefined ? stats.present : (stats.clocked_in || 0);
     const late = stats.late || 0;
-    const clockedIn = stats.clocked_in || (present + late);
+    const outsideArea = stats.outside_area || 0;
+    const escaped = stats.escaped || 0;
+    const clockedIn = stats.clocked_in || (present + late + escaped);
     const absent = stats.absent !== undefined ? stats.absent : Math.max(0, total - clockedIn);
     const progress = stats.progress || (total > 0 ? Math.round((clockedIn / total) * 100) : 0);
 
@@ -1372,9 +1403,13 @@ function updateStatsCounters(stats) {
     // Filter pill counts
     const pillPres = document.getElementById('countPillPresent');
     const pillLate = document.getElementById('countPillLate');
+    const pillOutside = document.getElementById('countPillOutside');
+    const pillEscaped = document.getElementById('countPillEscaped');
     const pillMiss = document.getElementById('countPillMissing');
     if (pillPres) pillPres.textContent = present;
     if (pillLate) pillLate.textContent = late;
+    if (pillOutside) pillOutside.textContent = outsideArea;
+    if (pillEscaped) pillEscaped.textContent = escaped;
     if (pillMiss) pillMiss.textContent = absent;
 
     // Projector modal live count

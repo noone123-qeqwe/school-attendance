@@ -171,6 +171,7 @@
     @auth
         @if(auth()->user()->isStudent() || auth()->user()->hasRole('student'))
             @include('partials.student-scanner-modal')
+            @include('partials.student-presence-guardian')
         @endif
     @endauth
 

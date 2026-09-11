@@ -31,11 +31,28 @@ class Attendance extends Model
         'method',
         'device_id',
         'academic_year_id',
+        'checked_in_at',
+        'last_location_check_at',
+        'last_latitude',
+        'last_longitude',
+        'last_accuracy',
+        'last_distance_meters',
+        'outside_since',
+        'consecutive_outside_count',
+        'escaped_at',
+        'monitoring_status',
     ];
 
     protected $casts = [
         'date' => 'date:Y-m-d',
         'excused' => 'boolean',
+        'checked_in_at' => 'datetime',
+        'last_location_check_at' => 'datetime',
+        'outside_since' => 'datetime',
+        'escaped_at' => 'datetime',
+        'consecutive_outside_count' => 'integer',
+        'last_distance_meters' => 'float',
+        'last_accuracy' => 'float',
     ];
 
     public function setDateAttribute($value)

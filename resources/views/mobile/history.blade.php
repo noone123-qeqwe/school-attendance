@@ -86,12 +86,14 @@
                             'Present' => 'success',
                             'Late'    => 'warning',
                             'Absent'  => 'danger',
+                            'Escaped' => 'danger',
                             default   => 'secondary'
                         };
                         $statusIcon = match($record->status) {
                             'Present' => 'check-circle-fill',
                             'Late'    => 'clock-fill',
                             'Absent'  => 'x-circle-fill',
+                            'Escaped' => 'person-x-fill',
                             default   => 'circle'
                         };
                         $methodLabel = match($record->method) {

@@ -226,9 +226,11 @@ class QrAttendanceController extends Controller
         $teacherId = Auth::id();
         $user = Auth::user();
         $request->validate([
-            'subject_code'   => 'required|string|exists:subjects,code',
-            'classroom_lat'  => 'nullable|numeric|between:-90,90',
-            'classroom_lng'  => 'nullable|numeric|between:-180,180',
+            'subject_code'         => 'required|string|exists:subjects,code',
+            'classroom_lat'        => 'nullable|numeric|between:-90,90',
+            'classroom_lng'        => 'nullable|numeric|between:-180,180',
+            'radius_meters'        => 'nullable|integer|min:10|max:1000',
+            'grace_period_minutes' => 'nullable|integer|min:1|max:60',
         ]);
 
         $subject = Subject::where('code', $request->subject_code)->first();
@@ -246,29 +248,35 @@ class QrAttendanceController extends Controller
                 $teacherId, 
                 $request->subject_code, 
                 $request->classroom_lat, 
-                $request->classroom_lng
+                $request->classroom_lng,
+                $request->radius_meters,
+                $request->grace_period_minutes
             );
 
             Log::info('Teacher session started', [
-                'session_id' => $session->id,
+                'session_id'   => $session->id,
                 'subject_code' => $request->subject_code,
-                'teacher_id' => $teacherId,
+                'teacher_id'   => $teacherId,
                 'session_ends' => $session->session_ends_at->toDateTimeString(),
+                'radius'       => $session->getAllowedRadius(),
+                'grace_period' => $session->getGracePeriodMinutes(),
             ]);
 
             return response()->json([
-                'success'        => true,
-                'session_id'     => $session->id,
-                'token'          => $session->token,
-                'session_code'   => $session->session_code,
-                'formatted_code' => $session->getFormattedCode(),
-                'scan_url'       => $this->buildScanUrl($session->token, $session->session_ends_at),
-                'expires_at'     => $session->expires_at->timestamp,
-                'ttl'            => self::QR_TTL_SECONDS,
-                'session_end'    => $session->session_ends_at->timestamp,
-                'classroom_lat'  => $session->classroom_lat,
-                'classroom_lng'  => $session->classroom_lng,
-                'message'        => 'QR & Code attendance session started successfully!'
+                'success'              => true,
+                'session_id'           => $session->id,
+                'token'                => $session->token,
+                'session_code'         => $session->session_code,
+                'formatted_code'       => $session->getFormattedCode(),
+                'scan_url'             => $this->buildScanUrl($session->token, $session->session_ends_at),
+                'expires_at'           => $session->expires_at->timestamp,
+                'ttl'                  => self::QR_TTL_SECONDS,
+                'session_end'          => $session->session_ends_at->timestamp,
+                'classroom_lat'        => $session->classroom_lat,
+                'classroom_lng'        => $session->classroom_lng,
+                'radius_meters'        => $session->getAllowedRadius(),
+                'grace_period_minutes' => $session->getGracePeriodMinutes(),
+                'message'              => 'QR & Code attendance session started successfully!'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -380,7 +388,11 @@ class QrAttendanceController extends Controller
                     'total_students' => 0,
                     'clocked_in'     => 0,
                     'inside_radius'  => 0,
+                    'present'        => 0,
                     'late'           => 0,
+                    'outside_area'   => 0,
+                    'escaped'        => 0,
+                    'absent'         => 0,
                     'progress'       => 0,
                 ],
             ]);
@@ -393,7 +405,11 @@ class QrAttendanceController extends Controller
                     'total_students' => 0,
                     'clocked_in'     => 0,
                     'inside_radius'  => 0,
+                    'present'        => 0,
                     'late'           => 0,
+                    'outside_area'   => 0,
+                    'escaped'        => 0,
+                    'absent'         => 0,
                     'progress'       => 0,
                 ],
             ]);
@@ -408,18 +424,50 @@ class QrAttendanceController extends Controller
 
         $clockins = $students->map(function ($student) use ($todayRecords) {
             $record = $todayRecords->firstWhere('user_id', $student->id);
-            $status = $record ? $record->status : 'Missing';
-            
+            $rawStatus = $record ? $record->status : 'Missing';
+            $monitoringStatus = $record ? ($record->monitoring_status ?? 'active') : null;
+
+            // Determine status for teacher display
+            if ($rawStatus === 'Escaped') {
+                $status = 'Escaped';
+            } elseif ($rawStatus !== 'Missing' && $rawStatus !== 'Absent' && $monitoringStatus === 'warning') {
+                $status = 'Outside Area';
+            } else {
+                $status = $rawStatus;
+            }
+
+            $distanceText = null;
+            if ($record && $record->last_distance_meters !== null) {
+                $distanceText = round($record->last_distance_meters) . 'm';
+            }
+
+            $lastVerifiedText = null;
+            if ($record && $record->last_location_check_at) {
+                $lastVerifiedText = Carbon::parse($record->last_location_check_at)->format('h:i A');
+            }
+
             return [
-                'id'             => $student->id,
-                'name'           => $student->name,
-                'student_number' => $student->student_number ?? '—',
-                'status'         => $status,
-                'time'           => ($record && $record->time_in) ? Carbon::parse($record->time_in)->format('h:i A') : '—',
-                'avatar'         => $student->profile_image
+                'id'                => $student->id,
+                'name'              => $student->name,
+                'student_number'    => $student->student_number ?? '—',
+                'status'            => $status,
+                'raw_status'        => $rawStatus,
+                'monitoring_status' => $monitoringStatus,
+                'time'              => ($record && $record->time_in) ? Carbon::parse($record->time_in)->format('h:i A') : '—',
+                'last_verified'     => $lastVerifiedText,
+                'distance'          => $distanceText,
+                'outside_since'     => ($record && $record->outside_since) ? Carbon::parse($record->outside_since)->format('h:i A') : null,
+                'escaped_at'        => ($record && $record->escaped_at) ? Carbon::parse($record->escaped_at)->format('h:i A') : null,
+                'avatar'            => $student->profile_image
                     ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/' . $student->profile_image))
                     : 'https://ui-avatars.com/api/?name=' . urlencode($student->name) . '&background=7c2d12&color=fff&size=80',
-                'sort_order'     => $record && in_array($record->status, ['Present', 'Late']) ? 0 : 1
+                'sort_order'        => match($status) {
+                    'Escaped'      => 0,
+                    'Outside Area' => 1,
+                    'Present'      => 2,
+                    'Late'         => 3,
+                    default        => 4
+                }
             ];
         })->sortBy([
             ['sort_order', 'asc'],
@@ -428,9 +476,11 @@ class QrAttendanceController extends Controller
 
         $totalStudents = $students->count();
 
-        $present = $todayRecords->where('status', 'Present')->count();
-        $clockedIn = $present + $todayRecords->where('status', 'Late')->count();
-        $late = $todayRecords->where('status', 'Late')->count();
+        $escaped = $todayRecords->where('status', 'Escaped')->count();
+        $outsideArea = $todayRecords->where('monitoring_status', 'warning')->where('status', '!=', 'Escaped')->count();
+        $present = $todayRecords->where('status', 'Present')->where('monitoring_status', '!=', 'warning')->count();
+        $late = $todayRecords->where('status', 'Late')->where('monitoring_status', '!=', 'warning')->count();
+        $clockedIn = $todayRecords->whereIn('status', ['Present', 'Late', 'Escaped'])->count();
         $absent = max(0, $totalStudents - $clockedIn);
         $progress = $totalStudents > 0 ? round(($clockedIn / $totalStudents) * 100) : 0;
 
@@ -441,8 +491,10 @@ class QrAttendanceController extends Controller
                 'clocked_in'     => $clockedIn,
                 'present'        => $present,
                 'late'           => $late,
+                'outside_area'   => $outsideArea,
+                'escaped'        => $escaped,
                 'absent'         => $absent,
-                'inside_radius'  => 0,
+                'inside_radius'  => $present + $late,
                 'progress'       => $progress,
             ],
         ]);
@@ -456,34 +508,55 @@ class QrAttendanceController extends Controller
         $request->validate([
             'session_id' => 'required|integer',
             'student_id' => 'required|integer',
-            'status'     => 'required|string|in:Present,Absent,Late'
+            'status'     => 'required|string|in:Present,Absent,Late,Escaped'
         ]);
 
         $session = AttendanceSession::find($request->session_id);
         if (!$session) {
-            return response()->json(['success' => false, 'message' => 'Session not found.']);
+            return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
         }
 
         $student = User::where('id', $request->student_id)->where('role', 'student')->first();
         if (!$student) {
-            return response()->json(['success' => false, 'message' => 'Student not found.']);
+            return response()->json(['success' => false, 'message' => 'Student not found.'], 404);
         }
 
         $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $request) {
+            $isAbsent = $request->status === 'Absent';
+            $isEscaped = $request->status === 'Escaped';
+            $now = now();
+
+            $existing = Attendance::where('user_id', $student->id)
+                ->where('date', today()->toDateString())
+                ->where(function ($q) use ($session) {
+                    $q->where('session_id', $session->id)
+                      ->orWhere('subject_code', $session->subject_code);
+                })
+                ->first();
+
+            $timeIn = $isAbsent ? null : ($existing && $existing->time_in ? $existing->time_in : $now->format('H:i:s'));
+
             $att = Attendance::updateOrCreateRecord(
                 [
-                    'user_id' => $student->id,
+                    'user_id'      => $student->id,
                     'subject_code' => $session->subject_code,
-                    'date' => today()->toDateString(),
+                    'date'         => today()->toDateString(),
                 ],
                 [
-                    'status' => $request->status,
-                    'time_in' => $request->status === 'Absent' ? null : now(),
-                    'latitude' => null,
-                    'longitude' => null,
-                    'method' => 'manual',
-                    'excused' => false,
-                    'academic_year_id' => \App\Models\AcademicYear::where('is_current', true)->value('id'),
+                    'status'                    => $request->status,
+                    'time_in'                   => $timeIn,
+                    'session_id'                => $session->id,
+                    'subject_id'                => $session->subject?->id,
+                    'subject_name'              => $session->subject?->name,
+                    'class'                     => $session->subject?->section ?? $student->section ?? 'Regular',
+                    'method'                    => 'manual',
+                    'excused'                   => false,
+                    'academic_year_id'          => \App\Models\AcademicYear::where('is_current', true)->value('id'),
+                    'outside_since'             => $isEscaped ? ($existing->outside_since ?? $now) : null,
+                    'consecutive_outside_count' => $isEscaped ? 3 : 0,
+                    'escaped_at'                => $isEscaped ? $now : null,
+                    'monitoring_status'         => $isEscaped ? 'escaped' : ($isAbsent ? 'inactive' : 'active'),
+                    'last_location_check_at'    => $now,
                 ]
             );
 
@@ -498,11 +571,13 @@ class QrAttendanceController extends Controller
                     $student->name,
                     $session->subject_code,
                     $att->status,
-                    'clock_in'
+                    'status_override',
+                    (string) $student->id,
+                    $att->id
                 ));
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('Teacher attendance broadcast failed on override', [
-                    'error' => $e->getMessage(),
+                    'error'      => $e->getMessage(),
                     'session_id' => $session->id,
                 ]);
             }
@@ -510,7 +585,283 @@ class QrAttendanceController extends Controller
             return $att;
         }, 3);
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => "Student status updated to {$request->status}.",
+            'status'  => $attendance->status,
+        ]);
+    }
+
+    // ─────────────────────────────────────────
+    // Student: Periodic Presence Verification Ping
+    // ─────────────────────────────────────────
+    public function verifyPresence(Request $request)
+    {
+        $request->validate([
+            'session_id' => 'required|integer',
+            'latitude'   => 'required|numeric|between:-90,90',
+            'longitude'  => 'required|numeric|between:-180,180',
+            'accuracy'   => 'nullable|numeric|min:0',
+        ]);
+
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated.'], 401);
+        }
+
+        $session = AttendanceSession::with('subject')->find($request->session_id);
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'Attendance session not found.'], 404);
+        }
+
+        // Check if session has expired or ended
+        if (!$session->active || now()->gt($session->session_ends_at)) {
+            $att = Attendance::where('user_id', $user->id)
+                ->where('date', today()->toDateString())
+                ->where(function ($q) use ($session) {
+                    $q->where('session_id', $session->id);
+                    if ($session->subject) {
+                        $q->orWhere('subject_id', $session->subject->id);
+                    }
+                    $q->orWhere('subject_code', $session->subject_code);
+                })
+                ->first();
+
+            if ($att && $att->status !== 'Escaped' && $att->monitoring_status !== 'completed') {
+                $att->update(['monitoring_status' => 'completed']);
+            }
+
+            return response()->json([
+                'success'           => true,
+                'session_active'    => false,
+                'monitoring_status' => 'completed',
+                'status'            => $att ? $att->status : 'Present',
+                'message'           => 'Attendance session has ended. Presence monitoring finalized.'
+            ]);
+        }
+
+        // Find student attendance record
+        $attendance = Attendance::where('user_id', $user->id)
+            ->where('date', today()->toDateString())
+            ->where(function ($q) use ($session) {
+                $q->where('session_id', $session->id);
+                if ($session->subject) {
+                    $q->orWhere('subject_id', $session->subject->id);
+                }
+                $q->orWhere('subject_code', $session->subject_code);
+            })
+            ->first();
+
+        if (!$attendance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No clock-in record found for this session. Please scan or enter attendance code first.'
+            ], 404);
+        }
+
+        // If student is already marked Escaped, escape remains final unless teacher overrides
+        if ($attendance->status === 'Escaped') {
+            return response()->json([
+                'success'           => true,
+                'status'            => 'Escaped',
+                'monitoring_status' => 'escaped',
+                'escaped_at'        => $attendance->escaped_at ? $attendance->escaped_at->format('h:i A') : null,
+                'message'           => 'Your attendance was marked as ESCAPED because you remained outside the attendance area. Contact your instructor if this was an error.'
+            ]);
+        }
+
+        $radius = $session->getAllowedRadius();
+        $graceMinutes = $session->getGracePeriodMinutes();
+        $studentLat = (float) $request->latitude;
+        $studentLng = (float) $request->longitude;
+        $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+
+        // GPS Accuracy check: If accuracy reading is very imprecise (>150m and >2.5x radius), do not falsely penalize student
+        $isUnreliableAccuracy = ($accuracy !== null && $accuracy > 150 && $accuracy > ($radius * 2.5));
+        if ($isUnreliableAccuracy) {
+            $attendance->update([
+                'last_location_check_at' => now(),
+                'last_accuracy'          => $accuracy,
+                'monitoring_status'      => ($attendance->monitoring_status === 'warning') ? 'warning' : 'unreliable_gps',
+            ]);
+
+            return response()->json([
+                'success'           => true,
+                'status'            => $attendance->status,
+                'monitoring_status' => 'unreliable_gps',
+                'accuracy'          => $accuracy,
+                'radius'            => $radius,
+                'message'           => 'GPS signal accuracy is low (' . round($accuracy) . 'm). Retaining current presence status while retrying GPS fix.'
+            ]);
+        }
+
+        // Server-side Haversine distance calculation
+        $schoolLat = (float) ($session->classroom_lat ?? $this->getSchoolLat());
+        $schoolLng = (float) ($session->classroom_lng ?? $this->getSchoolLng());
+        $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
+
+        $now = now();
+
+        if ($distance <= $radius) {
+            // Inside allowed attendance area!
+            $wasWarning = ($attendance->monitoring_status === 'warning' || $attendance->outside_since !== null);
+
+            $attendance->update([
+                'last_location_check_at'    => $now,
+                'last_latitude'             => $studentLat,
+                'last_longitude'            => $studentLng,
+                'last_accuracy'             => $accuracy,
+                'last_distance_meters'      => $distance,
+                'outside_since'             => null,
+                'consecutive_outside_count' => 0,
+                'monitoring_status'         => 'active',
+            ]);
+
+            if ($wasWarning) {
+                // Return to normal presence
+                try {
+                    broadcast(new TeacherAttendanceUpdated(
+                        (int) $session->created_by,
+                        $user->name,
+                        $session->subject_code,
+                        $attendance->status,
+                        'presence_restored',
+                        (string) $user->id,
+                        $attendance->id
+                    ));
+                } catch (\Throwable $e) {}
+            }
+
+            return response()->json([
+                'success'           => true,
+                'status'            => $attendance->status,
+                'monitoring_status' => 'active',
+                'distance'          => round($distance),
+                'radius'            => $radius,
+                'message'           => 'Presence verified inside classroom (' . round($distance) . 'm).'
+            ]);
+        }
+
+        // Outside allowed attendance area:
+        $newConsecutiveCount = ($attendance->consecutive_outside_count ?? 0) + 1;
+        $outsideSince = $attendance->outside_since ? Carbon::parse($attendance->outside_since) : $now;
+        $elapsedSeconds = abs($now->diffInSeconds($outsideSince));
+        $elapsedMinutes = $outsideSince->diffInMinutes($now);
+
+        // Grace period check: Must exceed configured grace minutes AND have at least 2 consecutive failed readings
+        if ($elapsedMinutes >= $graceMinutes && $newConsecutiveCount >= 2) {
+            // Mark ESCAPED
+            $attendance->update([
+                'status'                    => 'Escaped',
+                'escaped_at'                => $now,
+                'outside_since'             => $outsideSince,
+                'consecutive_outside_count' => $newConsecutiveCount,
+                'monitoring_status'         => 'escaped',
+                'last_location_check_at'    => $now,
+                'last_latitude'             => $studentLat,
+                'last_longitude'            => $studentLng,
+                'last_accuracy'             => $accuracy,
+                'last_distance_meters'      => $distance,
+            ]);
+
+            try {
+                broadcast(new TeacherAttendanceUpdated(
+                    (int) $session->created_by,
+                    $user->name,
+                    $session->subject_code,
+                    'Escaped',
+                    'status_override',
+                    (string) $user->id,
+                    $attendance->id
+                ));
+            } catch (\Throwable $e) {}
+
+            return response()->json([
+                'success'           => true,
+                'status'            => 'Escaped',
+                'monitoring_status' => 'escaped',
+                'distance'          => round($distance),
+                'radius'            => $radius,
+                'escaped_at'        => $now->format('h:i A'),
+                'message'           => 'You have left the allowed attendance area (' . round($distance) . 'm away). Your attendance has been marked as ESCAPED because you remained outside the required attendance area.'
+            ]);
+        }
+
+        // Outside area, but still within grace period: Warning State
+        $attendance->update([
+            'outside_since'             => $outsideSince,
+            'consecutive_outside_count' => $newConsecutiveCount,
+            'monitoring_status'         => 'warning',
+            'last_location_check_at'    => $now,
+            'last_latitude'             => $studentLat,
+            'last_longitude'            => $studentLng,
+            'last_accuracy'             => $accuracy,
+            'last_distance_meters'      => $distance,
+        ]);
+
+        $remainingGraceSeconds = max(0, ($graceMinutes * 60) - $elapsedSeconds);
+
+        return response()->json([
+            'success'                 => true,
+            'status'                  => $attendance->status,
+            'monitoring_status'       => 'warning',
+            'distance'                => round($distance),
+            'radius'                  => $radius,
+            'outside_since'           => $outsideSince->toIso8601String(),
+            'remaining_grace_seconds' => $remainingGraceSeconds,
+            'grace_period_minutes'    => $graceMinutes,
+            'message'                 => 'Warning: You are outside the allowed attendance area (' . round($distance) . 'm away). Please return to the classroom within ' . ceil($remainingGraceSeconds / 60) . ' minute(s) to avoid being marked Escaped.'
+        ]);
+    }
+
+    // ─────────────────────────────────────────
+    // Student: Get Active Presence Monitoring Session
+    // ─────────────────────────────────────────
+    public function getActivePresenceSession(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['has_active_session' => false], 401);
+        }
+
+        $todayDate = today()->toDateString();
+        $attendance = Attendance::with('session.subject')
+            ->where('user_id', $user->id)
+            ->where('date', $todayDate)
+            ->whereNotNull('session_id')
+            ->latest('id')
+            ->first();
+
+        if (!$attendance || !$attendance->session) {
+            return response()->json(['has_active_session' => false]);
+        }
+
+        $session = $attendance->session;
+        $isSessionActive = $session->active && now()->lte($session->session_ends_at);
+
+        if (!$isSessionActive) {
+            return response()->json(['has_active_session' => false]);
+        }
+
+        $elapsedSeconds = $attendance->outside_since ? abs(now()->diffInSeconds(Carbon::parse($attendance->outside_since))) : 0;
+        $graceMinutes = $session->getGracePeriodMinutes();
+        $remainingSeconds = max(0, ($graceMinutes * 60) - $elapsedSeconds);
+
+        return response()->json([
+            'has_active_session'      => true,
+            'session_id'              => $session->id,
+            'subject_code'            => $session->subject_code,
+            'subject_name'            => $session->subject?->name ?? $session->subject_code,
+            'status'                  => $attendance->status,
+            'monitoring_status'       => $attendance->monitoring_status ?? 'active',
+            'radius'                  => $session->getAllowedRadius(),
+            'grace_period_minutes'    => $graceMinutes,
+            'session_ends_at'         => $session->session_ends_at->timestamp,
+            'last_distance'           => $attendance->last_distance_meters ? round($attendance->last_distance_meters) : null,
+            'outside_since'           => $attendance->outside_since ? $attendance->outside_since->toIso8601String() : null,
+            'remaining_grace_seconds' => $remainingSeconds,
+            'escaped_at'              => $attendance->escaped_at ? $attendance->escaped_at->format('h:i A') : null,
+        ]);
     }
 
     // ─────────────────────────────────────────
@@ -935,27 +1286,37 @@ class QrAttendanceController extends Controller
                     'date'         => $todayDate,
                 ],
                 [
-                    'subject_name'     => $subject->name,
-                    'class'            => $subject->section ?? $user->section ?? 'Regular',
-                    'session_id'       => $session->id,
-                    'status'           => $status,
-                    'excused'          => false,
-                    'excuse_note'      => null,
-                    'time_in'          => $now->format('H:i:s'),
-                    'latitude'         => $request->latitude,
-                    'longitude'        => $request->longitude,
-                    'gps_accuracy'     => $request->filled('accuracy') ? $request->accuracy : null,
-                    'method'           => 'qr',
-                    'academic_year_id' => $currentAcademicYearId,
+                    'subject_name'              => $subject->name,
+                    'class'                     => $subject->section ?? $user->section ?? 'Regular',
+                    'session_id'                => $session->id,
+                    'status'                    => $status,
+                    'excused'                   => false,
+                    'excuse_note'               => null,
+                    'time_in'                   => $now->format('H:i:s'),
+                    'checked_in_at'             => $now,
+                    'last_location_check_at'    => $now,
+                    'last_latitude'             => $request->latitude,
+                    'last_longitude'            => $request->longitude,
+                    'last_accuracy'             => $request->filled('accuracy') ? $request->accuracy : null,
+                    'last_distance_meters'      => isset($distance) ? $distance : 0,
+                    'outside_since'             => null,
+                    'consecutive_outside_count' => 0,
+                    'escaped_at'                => null,
+                    'monitoring_status'         => 'active',
+                    'latitude'                  => $request->latitude,
+                    'longitude'                 => $request->longitude,
+                    'gps_accuracy'              => $request->filled('accuracy') ? $request->accuracy : null,
+                    'method'                    => 'qr',
+                    'academic_year_id'          => $currentAcademicYearId,
                 ]
             );
         } catch (\Illuminate\Database\QueryException $e) {
             // Check if it's a unique constraint violation (code 23000 or 23505)
             if ($e->getCode() == '23000' || $e->getCode() == '23505') {
                 Log::warning('QR race condition prevented duplicate attendance', [
-                    'student_id' => $user->id,
+                    'student_id'   => $user->id,
                     'subject_code' => $session->subject_code,
-                    'date' => $todayDate,
+                    'date'         => $todayDate,
                 ]);
                 $attendance = Attendance::where('user_id', $user->id)
                     ->where('date', $todayDate)
@@ -968,15 +1329,25 @@ class QrAttendanceController extends Controller
                 // If it exists but is absent, we can update it safely
                 if ($attendance && $attendance->status === 'Absent') {
                     $attendance->update([
-                        'status'       => $status,
-                        'time_in'      => $now->format('H:i:s'),
-                        'latitude'     => $request->latitude,
-                        'longitude'    => $request->longitude,
-                        'method'       => 'qr',
-                        'excused'      => false,
-                        'session_id'   => $session->id,
-                        'subject_id'   => $subject->id,
-                        'subject_name' => $subject->name,
+                        'status'                    => $status,
+                        'time_in'                   => $now->format('H:i:s'),
+                        'checked_in_at'             => $now,
+                        'last_location_check_at'    => $now,
+                        'last_latitude'             => $request->latitude,
+                        'last_longitude'            => $request->longitude,
+                        'last_accuracy'             => $request->filled('accuracy') ? $request->accuracy : null,
+                        'last_distance_meters'      => isset($distance) ? $distance : 0,
+                        'outside_since'             => null,
+                        'consecutive_outside_count' => 0,
+                        'escaped_at'                => null,
+                        'monitoring_status'         => 'active',
+                        'latitude'                  => $request->latitude,
+                        'longitude'                 => $request->longitude,
+                        'method'                    => 'qr',
+                        'excused'                   => false,
+                        'session_id'                => $session->id,
+                        'subject_id'                => $subject->id,
+                        'subject_name'              => $subject->name,
                     ]);
                 }
             } else {
@@ -1019,30 +1390,34 @@ class QrAttendanceController extends Controller
             ));
         } catch (\Throwable $e) {
             Log::warning('Teacher attendance broadcast failed', [
-                'error' => $e->getMessage(),
+                'error'        => $e->getMessage(),
                 'subject_code' => $session->subject_code,
-                'session_id' => $session->id,
-                'teacher_id' => $session->created_by,
+                'session_id'   => $session->id,
+                'teacher_id'   => $session->created_by,
             ]);
         }
 
         return response()->json([
-            'success'       => true,
-            'redirect'      => route('home'),
-            'message'       => 'Attendance recorded successfully.',
-            'attendance_id' => (string) $attendance->id,
-            'attendanceId'  => (string) $attendance->id,
-            'student_id'    => (string) $user->id,
-            'studentId'     => (string) $user->id,
-            'subject'       => $subject->name,
-            'subject_id'    => (string) $subject->id,
-            'subjectId'     => (string) $subject->id,
-            'subject_code'  => $subject->code,
-            'session_id'    => (string) $session->id,
-            'sessionId'     => (string) $session->id,
-            'status'        => $status,
-            'time'          => $now->format('h:i A'),
-            'date'          => $now->format('F j, Y'),
+            'success'              => true,
+            'redirect'             => route('home'),
+            'message'              => 'Attendance recorded successfully.',
+            'attendance_id'        => (string) $attendance->id,
+            'attendanceId'         => (string) $attendance->id,
+            'student_id'           => (string) $user->id,
+            'studentId'            => (string) $user->id,
+            'subject'              => $subject->name,
+            'subject_id'           => (string) $subject->id,
+            'subjectId'            => (string) $subject->id,
+            'subject_code'         => $subject->code,
+            'session_id'           => (string) $session->id,
+            'sessionId'            => (string) $session->id,
+            'status'               => $status,
+            'time'                 => $now->format('h:i A'),
+            'date'                 => $now->format('F j, Y'),
+            'radius'               => $session->getAllowedRadius(),
+            'grace_period_minutes' => $session->getGracePeriodMinutes(),
+            'monitoring_active'    => true,
+            'session_ends_at'      => $session->session_ends_at ? $session->session_ends_at->timestamp : null,
         ]);
     }
 
@@ -1395,18 +1770,28 @@ class QrAttendanceController extends Controller
                     'date'         => $todayDate,
                 ],
                 [
-                    'subject_name'     => $subject->name,
-                    'class'            => $subject->section ?? $user->section ?? 'Regular',
-                    'session_id'       => $session->id,
-                    'status'           => $status,
-                    'excused'          => false,
-                    'excuse_note'      => null,
-                    'time_in'          => $now->format('H:i:s'),
-                    'latitude'         => $request->latitude,
-                    'longitude'        => $request->longitude,
-                    'gps_accuracy'     => $request->accuracy,
-                    'method'           => $isCodeMethod ? 'code' : 'qr',
-                    'academic_year_id' => $currentAcademicYearId,
+                    'subject_name'              => $subject->name,
+                    'class'                     => $subject->section ?? $user->section ?? 'Regular',
+                    'session_id'                => $session->id,
+                    'status'                    => $status,
+                    'excused'                   => false,
+                    'excuse_note'               => null,
+                    'time_in'                   => $now->format('H:i:s'),
+                    'checked_in_at'             => $now,
+                    'last_location_check_at'    => $now,
+                    'last_latitude'             => $request->latitude,
+                    'last_longitude'            => $request->longitude,
+                    'last_accuracy'             => $request->accuracy,
+                    'last_distance_meters'      => isset($distance) ? $distance : 0,
+                    'outside_since'             => null,
+                    'consecutive_outside_count' => 0,
+                    'escaped_at'                => null,
+                    'monitoring_status'         => 'active',
+                    'latitude'                  => $request->latitude,
+                    'longitude'                 => $request->longitude,
+                    'gps_accuracy'              => $request->accuracy,
+                    'method'                    => $isCodeMethod ? 'code' : 'qr',
+                    'academic_year_id'          => $currentAcademicYearId,
                 ]
             );
         } catch (\Exception $e) {
@@ -1467,25 +1852,29 @@ class QrAttendanceController extends Controller
         $instructorName = ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : ($subject->instructorUser->name ?? 'Instructor')));
 
         return response()->json([
-            'success'            => true,
-            'already_clocked_in' => false,
-            'status'             => $status,
-            'time'               => $now->format('h:i A'),
-            'date'               => $now->format('F j, Y'),
-            'student_name'       => $user->name,
-            'student_id'         => (string) $user->id,
-            'studentId'          => (string) $user->id,
-            'subject'            => $subject->name,
-            'subject_id'         => (string) $subject->id,
-            'subjectId'          => (string) $subject->id,
-            'subject_code'       => $subject->code,
-            'attendance_id'      => (string) $attendance->id,
-            'attendanceId'       => (string) $attendance->id,
-            'section'            => $subject->section ?? $user->section ?? 'Regular',
-            'instructor'         => $instructorName,
-            'session_id'         => (string) $session->id,
-            'sessionId'          => (string) $session->id,
-            'message'            => 'Attendance recorded successfully.'
+            'success'              => true,
+            'already_clocked_in'   => false,
+            'status'               => $status,
+            'time'                 => $now->format('h:i A'),
+            'date'                 => $now->format('F j, Y'),
+            'student_name'         => $user->name,
+            'student_id'           => (string) $user->id,
+            'studentId'            => (string) $user->id,
+            'subject'              => $subject->name,
+            'subject_id'           => (string) $subject->id,
+            'subjectId'            => (string) $subject->id,
+            'subject_code'         => $subject->code,
+            'attendance_id'        => (string) $attendance->id,
+            'attendanceId'         => (string) $attendance->id,
+            'section'              => $subject->section ?? $user->section ?? 'Regular',
+            'instructor'           => $instructorName,
+            'session_id'           => (string) $session->id,
+            'sessionId'            => (string) $session->id,
+            'radius'               => $session->getAllowedRadius(),
+            'grace_period_minutes' => $session->getGracePeriodMinutes(),
+            'monitoring_active'    => true,
+            'session_ends_at'      => $session->session_ends_at ? $session->session_ends_at->timestamp : null,
+            'message'              => 'Attendance recorded successfully.'
         ]);
     }
 

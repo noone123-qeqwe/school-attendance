@@ -15,14 +15,26 @@ class AttendanceSession extends Model
 
     protected $fillable = [
         'subject_code', 'created_by', 'token', 'previous_token', 'session_code', 'expires_at', 'session_ends_at', 'active',
-        'classroom_lat', 'classroom_lng', 'webauthn_challenge',
+        'classroom_lat', 'classroom_lng', 'radius_meters', 'grace_period_minutes', 'webauthn_challenge',
     ];
 
     protected $casts = [
-        'expires_at'      => 'datetime',
-        'session_ends_at' => 'datetime',
-        'active'          => 'boolean',
+        'expires_at'           => 'datetime',
+        'session_ends_at'      => 'datetime',
+        'active'               => 'boolean',
+        'radius_meters'        => 'integer',
+        'grace_period_minutes' => 'integer',
     ];
+
+    public function getAllowedRadius(): int
+    {
+        return (int) ($this->radius_meters ?: \App\Models\Setting::get('gps_radius', 50));
+    }
+
+    public function getGracePeriodMinutes(): int
+    {
+        return (int) ($this->grace_period_minutes ?: \App\Models\Setting::get('presence_grace_minutes', 5));
+    }
 
     public function subject()
     {
