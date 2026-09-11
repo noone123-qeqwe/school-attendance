@@ -130,7 +130,7 @@
                     </div>
                 </div>
                 <div class="telemetry-value-row">
-                    <div class="telemetry-value-lg gold-gradient-text">v2.1.0</div>
+                    <div class="telemetry-value-lg gold-gradient-text">v{{ config('changelog.default_version', '2.3.4') }}</div>
                     <span class="version-chip {{ $appEnvironment === 'production' ? 'chip-prod' : 'chip-dev' }}">
                         {{ strtoupper($appEnvironment) }}
                     </span>

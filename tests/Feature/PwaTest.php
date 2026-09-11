@@ -21,7 +21,7 @@ class PwaTest extends TestCase
         $this->assertEquals('/', $manifest['start_url']);
         $this->assertEquals('#1a1a1a', $manifest['background_color']);
         $this->assertEquals('#1a1a1a', $manifest['theme_color']);
-        $this->assertEquals((string)config('changelog.default_version', '2.3.2'), $manifest['version']);
+        $this->assertEquals((string)config('changelog.default_version', '2.3.4'), $manifest['version']);
         $this->assertArrayHasKey('launch_handler', $manifest);
         
         $this->assertNotEmpty($manifest['icons']);

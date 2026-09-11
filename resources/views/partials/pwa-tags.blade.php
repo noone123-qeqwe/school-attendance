@@ -1,6 +1,6 @@
 @php
-    $installedVersion = (string)config('changelog.installed_version', '2.3.1');
-    $latestVersion = (string)config('changelog.default_version', '2.3.1');
+    $installedVersion = (string)config('changelog.installed_version', '2.3.4');
+    $latestVersion = (string)config('changelog.default_version', '2.3.4');
     $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', $latestVersion);
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
@@ -1205,7 +1205,7 @@
                     </div>
                     <h4 class="pwa-hero-title" id="pwaHeroTitle">Smart Classroom Attendance</h4>
                     <div class="pwa-hero-meta" id="pwaHeroMeta">
-                        <span id="pwaHeroVersion">v{{ config('changelog.default_version', '2.3.0') }}</span>
+                        <span id="pwaHeroVersion">v{{ config('changelog.default_version', '2.3.4') }}</span>
                         <span class="pwa-meta-dot">•</span>
                         <span id="pwaHeroSize">~4 MB</span>
                         <span class="pwa-meta-dot">•</span>
@@ -1372,7 +1372,7 @@
 
         const badge = document.getElementById('pwaUpdateVersionBadge');
         if (badge) {
-            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '2.3.0'));
+            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '2.3.4'));
         }
 
         const titleEl = document.getElementById('pwaUpdateTitle');
@@ -1415,7 +1415,7 @@
     }
 
     function getInstalledVersion() {
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.1';
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.4';
         const storedInstalled = localStorage.getItem('pwa_installed_version');
         
         // If metaInstalled is newer than storedInstalled, auto-sync localStorage
@@ -1443,7 +1443,7 @@
             return metaInstalled;
         }
 
-        return '2.3.1';
+        return '2.3.4';
     }
 
     function getLatestVersion(serverData = null) {
@@ -1454,7 +1454,7 @@
             return serverData.changelog.version;
         }
         const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content;
-        return metaLatest || '2.3.1';
+        return metaLatest || '2.3.4';
     }
 
     // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──
@@ -1484,8 +1484,8 @@
         if (stored) {
             return parseInt(stored, 10);
         }
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.1';
-        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content || '2.3.1';
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '2.3.4';
+        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content || '2.3.4';
         // If user is already on the latest semver release, default applied mtime to current server mtime
         if (compareSemver(metaLatest, metaInstalled) <= 0 && serverSwMtime) {
             localStorage.setItem('pwa_applied_sw_mtime', String(serverSwMtime));

@@ -1,6 +1,6 @@
 {
   "name": "smart-classroom-attendance",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "Smart Classroom Attendance System - QR, GPS, and Biometric-Based Attendance Monitoring",
   "main": "server.js",
   "scripts": {

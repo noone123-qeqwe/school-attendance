@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.3'),
-    'default_version' => env('APP_LATEST_VERSION', '2.3.3'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.4'),
+    'default_version' => env('APP_LATEST_VERSION', '2.3.4'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,28 @@ return [
     |
     */
     'releases' => [
+        '2.3.4' => [
+            'version' => '2.3.4',
+            'version_tag' => 'v2.3.4',
+            'title' => 'Mobile Camera Scanner & CSP Fix',
+            'description' => 'Resolved unresponsive mobile Scan button with direct inline camera permissions dispatch, CSP script nonce security, and instant viewfinder activation.',
+            'features' => [
+                'Direct-action mobile QR scanner trigger with immediate camera permissions request',
+                'Dedicated full-screen mobile camera viewfinder overlay with haptic scanning feedback',
+            ],
+            'improvements' => [
+                'Strict Content Security Policy (CSP) script nonce compliance for all dynamic event listeners',
+                'Eliminated touch-event race conditions on mobile bottom navigation buttons',
+                'Instant attendance record validation and seamless status redirection',
+            ],
+            'bugFixes' => [
+                'Fixed unresponsive Scan button in mobile bottom navigation capsule',
+                'Fixed JavaScript event binding race preventing camera from launching on mobile devices',
+                'Fixed missing triggerHaptic helper in standalone scanner view',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-11',
+        ],
         '2.3.3' => [
             'version' => '2.3.3',
             'version_tag' => 'v2.3.3',
