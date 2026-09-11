@@ -2264,8 +2264,8 @@ function renderScanSuccess(data) {
         iconBox.style.border = '2px solid rgba(59, 130, 246, 0.4)';
         iconBox.innerHTML = '<i class="bi bi-info-circle-fill" style="color: #60a5fa;"></i>';
         
-        title.textContent = 'Already Clocked In';
-        subtitle.textContent = data.message || 'You have already recorded your attendance for this class today.';
+        title.textContent = 'Attendance Already Recorded';
+        subtitle.textContent = data.message || 'Attendance already recorded for this session.';
         
         badge.className = 'badge bg-info text-dark';
         badge.textContent = data.status || 'Present';
@@ -2278,7 +2278,7 @@ function renderScanSuccess(data) {
         iconBox.innerHTML = '<i class="bi bi-check2-circle" style="color: #34d399;"></i>';
 
         title.textContent = 'Attendance recorded successfully ✓';
-        subtitle.textContent = `Your attendance has been confirmed for ${data.subject || 'this class'}.`;
+        subtitle.textContent = data.message || `Your attendance has been confirmed for ${data.subject || 'this class'}.`;
 
         const isPresent = (data.status || 'Present') === 'Present';
         badge.className = isPresent ? 'badge bg-success' : 'badge bg-warning text-dark';
@@ -2454,7 +2454,7 @@ function finishScanAndRefresh() {
     clearAutoCloseTimer();
     closeStudentScanner();
     if (window.location.pathname.includes('/mobile/scan')) {
-        window.location.href = '{{ route("mobile.home") }}';
+        window.location.href = '{{ route("mobile.history") }}';
     } else {
         window.location.reload();
     }

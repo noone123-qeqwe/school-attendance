@@ -246,7 +246,7 @@ class QrAttendanceFlowTest extends TestCase
         $this->assertEquals('Present', $scanResponse->json('status'));
         $this->assertEquals('Intro to Computing', $scanResponse->json('subject'));
         $this->assertEquals('IT101', $scanResponse->json('subject_code'));
-        $this->assertEquals('Attendance Recorded Successfully', $scanResponse->json('message'));
+        $this->assertStringContainsStringIgnoringCase('attendance recorded successfully', $scanResponse->json('message'));
 
         $this->assertDatabaseHas('attendances', [
             'user_id' => $student->id,

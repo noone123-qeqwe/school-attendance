@@ -154,13 +154,13 @@ class DeviceBindingService
         }
 
         // Tier 3: Session flag — set during the login `bind()` call
-        if ($request->session()->has('device_bound_session') && $request->session()->get('device_bound_session')) {
+        if ($request->hasSession() && $request->session()->has('device_bound_session') && $request->session()->get('device_bound_session')) {
             $this->touchBinding($binding, $request);
             return true;
         }
 
         // Tier 4: Session ID direct match
-        if ($binding->session_id && $binding->session_id === $request->session()->getId()) {
+        if ($binding->session_id && $request->hasSession() && $binding->session_id === $request->session()->getId()) {
             $this->touchBinding($binding, $request);
             return true;
         }

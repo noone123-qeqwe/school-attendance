@@ -42,6 +42,11 @@ class AttendanceSession extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class, 'session_id');
+    }
+
     public function isTokenValid(): bool
     {
         return $this->active && $this->expires_at && $this->expires_at->isFuture();

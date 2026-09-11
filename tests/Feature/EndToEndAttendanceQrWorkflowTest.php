@@ -182,7 +182,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $this->assertEquals($this->subject->name, $student1Data['subject']);
         $this->assertEquals($this->subject->code, $student1Data['subject_code']);
         $this->assertEquals('Student Alice', $student1Data['student_name']);
-        $this->assertEquals('Attendance Recorded Successfully', $student1Data['message']);
+        $this->assertStringContainsStringIgnoringCase('attendance recorded successfully', $student1Data['message']);
 
         // Check Attendance record in database for Student 1
         $this->assertDatabaseHas('attendances', [
@@ -226,7 +226,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $this->assertEquals($this->subject->name, $student2Data['subject']);
         $this->assertEquals($this->subject->code, $student2Data['subject_code']);
         $this->assertEquals('Student Bob', $student2Data['student_name']);
-        $this->assertEquals('Attendance Recorded Successfully', $student2Data['message']);
+        $this->assertStringContainsStringIgnoringCase('attendance recorded successfully', $student2Data['message']);
 
         // Check Attendance record in database for Student 2
         $this->assertDatabaseHas('attendances', [

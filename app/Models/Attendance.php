@@ -16,6 +16,9 @@ class Attendance extends Model
         'user_id',
         'subject_id',
         'subject_code',
+        'subject_name',
+        'class',
+        'session_id',
         'status',
         'excused',
         'excuse_note',
@@ -112,7 +115,12 @@ class Attendance extends Model
 
     public function subject(): BelongsTo
     {
-        return $this->belongsTo(Subject::class, 'subject_id');
+        return $this->belongsTo(Subject::class, 'subject_id')->withTrashed();
+    }
+
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(AttendanceSession::class, 'session_id');
     }
 
     public function setSubjectCodeAttribute($value)
@@ -122,6 +130,9 @@ class Attendance extends Model
             $subject = \App\Models\Subject::where('code', $value)->first();
             if ($subject) {
                 $this->attributes['subject_id'] = $subject->id;
+                if (!isset($this->attributes['subject_name'])) {
+                    $this->attributes['subject_name'] = $subject->name;
+                }
             }
         }
     }
@@ -147,31 +158,78 @@ class Attendance extends Model
     }
 
     /**
-     * Safely update or create an attendance record, handling soft-deleted rows.
+     * Safely update or create an attendance record, handling soft-deleted rows and composite keys.
      */
     public static function updateOrCreateRecord(array $attributes, array $values = []): self
     {
-        $instance = static::withTrashed()->where($attributes)->first();
+        $allData = array_merge($attributes, $values);
+        $userId = $allData['user_id'] ?? ($attributes['user_id'] ?? null);
+        $date = isset($allData['date']) ? \Carbon\Carbon::parse($allData['date'])->format('Y-m-d') : null;
+        $subjectId = $allData['subject_id'] ?? ($attributes['subject_id'] ?? null);
+        $subjectCode = $allData['subject_code'] ?? ($attributes['subject_code'] ?? null);
+
+        // Auto-resolve subject_id and subject_name if missing
+        if (!$subjectId && $subjectCode) {
+            $subject = \App\Models\Subject::where('code', $subjectCode)->first();
+            if ($subject) {
+                $subjectId = $subject->id;
+                $allData['subject_id'] = $subject->id;
+                if (empty($allData['subject_name'])) {
+                    $allData['subject_name'] = $subject->name;
+                }
+            }
+        } elseif ($subjectId && empty($allData['subject_name'])) {
+            $subject = \App\Models\Subject::find($subjectId);
+            if ($subject) {
+                $allData['subject_name'] = $subject->name;
+                if (empty($allData['subject_code'])) {
+                    $allData['subject_code'] = $subject->code;
+                }
+            }
+        }
+
+        // 1. Primary lookup: user_id + date + (subject_id or subject_code)
+        $findExisting = function () use ($attributes, $userId, $date, $subjectId, $subjectCode) {
+            $query = static::withTrashed();
+            if ($userId && $date) {
+                $query->where('user_id', $userId)->where('date', $date);
+                $query->where(function ($q) use ($subjectId, $subjectCode) {
+                    if ($subjectId && $subjectCode) {
+                        $q->where('subject_id', $subjectId)
+                          ->orWhere('subject_code', $subjectCode);
+                    } elseif ($subjectId) {
+                        $q->where('subject_id', $subjectId);
+                    } elseif ($subjectCode) {
+                        $q->where('subject_code', $subjectCode);
+                    }
+                });
+                return $query->first();
+            }
+            return static::withTrashed()->where($attributes)->first();
+        };
+
+        $instance = $findExisting();
 
         if ($instance) {
             if ($instance->trashed()) {
                 $instance->restore();
             }
-            $instance->fill($values);
+            $instance->fill($allData);
             $instance->save();
 
             return $instance;
         }
 
         try {
-            return static::create(array_merge($attributes, $values));
+            return static::create($allData);
         } catch (\Illuminate\Database\QueryException $e) {
-            $instance = static::withTrashed()->where($attributes)->first();
+            // Check for unique key constraint collision (code 23000 or 23505)
+            $instance = $findExisting();
             if ($instance) {
                 if ($instance->trashed()) {
                     $instance->restore();
                 }
-                $instance->fill($values);
+                $instance->fill($allData);
                 $instance->save();
 
                 return $instance;

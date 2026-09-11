@@ -134,23 +134,26 @@ if (!$scheduledDays->contains($todayFull)) {
     $status = $now->lte($lateThreshold) ? 'Present' : 'Late';
 
     // 4. SAVE RECORD (Atomic transaction with 3-attempt concurrency retry)
-    $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $request, $todayDate, $status, $now) {
-        $record = Attendance::updateOrCreate(
+    $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($user, $subject, $request, $todayDate, $status, $now) {
+        $record = Attendance::updateOrCreateRecord(
             [
-                'user_id' => $user->id,
+                'user_id'      => $user->id,
+                'subject_id'   => $subject->id,
                 'subject_code' => $request->subject_code,
-                'date' => $todayDate
+                'date'         => $todayDate,
             ],
             [
+                'subject_name' => $subject->name,
+                'class'        => $subject->section ?? $user->section ?? 'Regular',
                 // If attendance is marked Present/Late, it cannot also be "excused" (excused applies only to Absent).
-                'status' => $status,
-                'excused' => false,
-                'excuse_note' => null,
-                'time_in' => $now->format('H:i:s'),
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
+                'status'       => $status,
+                'excused'      => false,
+                'excuse_note'  => null,
+                'time_in'      => $now->format('H:i:s'),
+                'latitude'     => $request->latitude,
+                'longitude'    => $request->longitude,
                 'gps_accuracy' => $request->accuracy,
-                'method' => 'manual_gps',
+                'method'       => 'manual_gps',
             ]
         );
 

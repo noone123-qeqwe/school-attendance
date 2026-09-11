@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\DeviceHelper;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Subject;
 use App\Models\Attendance;
@@ -130,7 +131,7 @@ class MobileController extends Controller
 
             $recentActivity[$dateLabel][] = [
                 'title' => ucfirst($att->status),
-                'subtitle' => ($att->subject->name ?? $att->subject_code) . ' - ' . ($att->subject->schedules->first()->room ?? 'Room TBA'),
+                'subtitle' => ($att->subject->name ?? $att->subject_code) . ' - ' . ($att->subject?->schedules?->first()?->room ?? 'Room TBA'),
                 'time' => $att->time_in ? Carbon::parse($att->time_in)->format('g:i A') : '',
                 'icon' => $icon,
                 'status' => $status,
@@ -170,9 +171,37 @@ class MobileController extends Controller
     /**
      * Mobile attendance history
      */
-    public function history()
+    public function history(Request $request)
     {
-        return redirect()->route('home');
+        $user = Auth::user();
+
+        if (!$user->isStudent()) {
+            return redirect()->route('home');
+        }
+
+        $records = Attendance::with(['subject', 'excuseSubmission', 'correction'])
+            ->where('user_id', $user->id)
+            ->orderBy('date', 'desc')
+            ->orderBy('time_in', 'desc')
+            ->get();
+
+        $totalPresent = $records->where('status', 'Present')->where('excused', false)->count();
+        $totalLate    = $records->where('status', 'Late')->where('excused', false)->count();
+        $totalAbsent  = $records->where('status', 'Absent')->where('excused', false)->count();
+        $totalExcused = $records->where('excused', true)->count();
+        $totalCount   = $records->count();
+        $attendanceRate = $totalCount > 0 ? round((($totalPresent + $totalLate) / $totalCount) * 100) : 0;
+
+        $stats = [
+            'total'           => $totalCount,
+            'present'         => $totalPresent,
+            'late'            => $totalLate,
+            'absent'          => $totalAbsent,
+            'excused'         => $totalExcused,
+            'attendance_rate' => $attendanceRate,
+        ];
+
+        return view('mobile.history', compact('records', 'stats'));
     }
 
     /**

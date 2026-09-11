@@ -854,15 +854,36 @@ class QrAttendanceController extends Controller
         }
 
         $existing = Attendance::where('user_id', $user->id)
-            ->where('subject_code', $session->subject_code)
             ->where('date', $todayDate)
+            ->where(function ($q) use ($session) {
+                if ($session->subject) {
+                    $q->where('subject_id', $session->subject->id)
+                      ->orWhere('subject_code', $session->subject_code);
+                } else {
+                    $q->where('subject_code', $session->subject_code);
+                }
+            })
             ->first();
 
         if ($existing && in_array($existing->status, ['Present', 'Late'])) {
+            $subj = $session->subject;
+            $subjName = $subj ? $subj->name : $session->subject_code;
+            $subjId = $subj ? (string) $subj->id : '';
             return response()->json([
-                'success'  => true,
-                'redirect' => route('home'),
-                'message'  => 'You have already clocked in for this class.',
+                'success'            => true,
+                'already_clocked_in' => true,
+                'redirect'           => route('home'),
+                'message'            => 'Attendance already recorded for this session. You have already clocked in.',
+                'attendance_id'      => (string) $existing->id,
+                'attendanceId'       => (string) $existing->id,
+                'student_id'         => (string) $user->id,
+                'studentId'          => (string) $user->id,
+                'subject'            => $subjName,
+                'subject_id'         => $subjId,
+                'subjectId'          => $subjId,
+                'session_id'         => (string) $session->id,
+                'sessionId'          => (string) $session->id,
+                'status'             => $existing->status,
             ]);
         }
 
@@ -907,17 +928,24 @@ class QrAttendanceController extends Controller
 
         try {
             $attendance = Attendance::updateOrCreateRecord(
-                ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
                 [
-                    'status'       => $status,
-                    'excused'      => false,
-                    'excuse_note'  => null,
-                    'time_in'      => $now->format('H:i:s'),
-                    'latitude'     => $request->latitude,
-                    'longitude'    => $request->longitude,
-                    'gps_accuracy' => $request->filled('accuracy') ? $request->accuracy : null,
-                    'method'       => 'qr',
-                    'subject_id'   => $subject->id ?? null,
+                    'user_id'      => $user->id,
+                    'subject_id'   => $subject->id,
+                    'subject_code' => $session->subject_code,
+                    'date'         => $todayDate,
+                ],
+                [
+                    'subject_name'     => $subject->name,
+                    'class'            => $subject->section ?? $user->section ?? 'Regular',
+                    'session_id'       => $session->id,
+                    'status'           => $status,
+                    'excused'          => false,
+                    'excuse_note'      => null,
+                    'time_in'          => $now->format('H:i:s'),
+                    'latitude'         => $request->latitude,
+                    'longitude'        => $request->longitude,
+                    'gps_accuracy'     => $request->filled('accuracy') ? $request->accuracy : null,
+                    'method'           => 'qr',
                     'academic_year_id' => $currentAcademicYearId,
                 ]
             );
@@ -930,24 +958,37 @@ class QrAttendanceController extends Controller
                     'date' => $todayDate,
                 ]);
                 $attendance = Attendance::where('user_id', $user->id)
-                    ->where('subject_code', $session->subject_code)
                     ->where('date', $todayDate)
+                    ->where(function ($q) use ($subject, $session) {
+                        $q->where('subject_id', $subject->id)
+                          ->orWhere('subject_code', $session->subject_code);
+                    })
                     ->first();
                 
                 // If it exists but is absent, we can update it safely
                 if ($attendance && $attendance->status === 'Absent') {
                     $attendance->update([
-                        'status'    => $status,
-                        'time_in'   => $now->format('H:i:s'),
-                        'latitude'  => $request->latitude,
-                        'longitude' => $request->longitude,
-                        'method'    => 'qr',
-                        'excused'   => false,
+                        'status'       => $status,
+                        'time_in'      => $now->format('H:i:s'),
+                        'latitude'     => $request->latitude,
+                        'longitude'    => $request->longitude,
+                        'method'       => 'qr',
+                        'excused'      => false,
+                        'session_id'   => $session->id,
+                        'subject_id'   => $subject->id,
+                        'subject_name' => $subject->name,
                     ]);
                 }
             } else {
                 throw $e;
             }
+        }
+
+        if (!$attendance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to save attendance record. Please try again or notify your instructor.'
+            ], 500);
         }
 
         event(new \App\Events\AttendanceMarked($attendance));
@@ -986,9 +1027,22 @@ class QrAttendanceController extends Controller
         }
 
         return response()->json([
-            'success'  => true,
-            'redirect' => route('home'),
-            'message'  => "Clock-in successful! Status: {$status}",
+            'success'       => true,
+            'redirect'      => route('home'),
+            'message'       => 'Attendance recorded successfully.',
+            'attendance_id' => (string) $attendance->id,
+            'attendanceId'  => (string) $attendance->id,
+            'student_id'    => (string) $user->id,
+            'studentId'     => (string) $user->id,
+            'subject'       => $subject->name,
+            'subject_id'    => (string) $subject->id,
+            'subjectId'     => (string) $subject->id,
+            'subject_code'  => $subject->code,
+            'session_id'    => (string) $session->id,
+            'sessionId'     => (string) $session->id,
+            'status'        => $status,
+            'time'          => $now->format('h:i A'),
+            'date'          => $now->format('F j, Y'),
         ]);
     }
 
@@ -1238,26 +1292,40 @@ class QrAttendanceController extends Controller
 
         // 2. Prevent duplicate scan
         $existing = Attendance::where('user_id', $user->id)
-            ->where('subject_code', $session->subject_code)
             ->where('date', $todayDate)
+            ->where(function ($q) use ($subject, $session) {
+                if ($subject && $subject->id) {
+                    $q->where('subject_id', $subject->id)
+                      ->orWhere('subject_code', $session->subject_code);
+                } else {
+                    $q->where('subject_code', $session->subject_code);
+                }
+            })
             ->first();
 
         if ($existing && in_array($existing->status, ['Present', 'Late'])) {
             $existingTime = $existing->time_in ? Carbon::parse($existing->time_in)->format('h:i A') : 'Earlier';
+            $instructorName = ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : ($subject->instructorUser->name ?? 'Instructor')));
             return response()->json([
-                'success' => true,
+                'success'            => true,
                 'already_clocked_in' => true,
-                'status' => $existing->status,
-                'time' => $existingTime,
-                'date' => Carbon::parse($existing->date)->format('F j, Y'),
-                'student_name' => $user->name,
-                'student_id' => $user->student_number ?? (string) $user->id,
-                'subject' => $subject->name,
-                'subject_code' => $subject->code,
-                'section' => $subject->section ?? $user->section ?? 'Regular',
-                'instructor' => ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : 'Instructor')),
-                'session_id' => $session->id,
-                'message' => "You have already clocked in for this class today at {$existingTime}."
+                'status'             => $existing->status,
+                'time'               => $existingTime,
+                'date'               => Carbon::parse($existing->date)->format('F j, Y'),
+                'student_name'       => $user->name,
+                'student_id'         => (string) $user->id,
+                'studentId'          => (string) $user->id,
+                'subject'            => $subject->name,
+                'subject_id'         => (string) $subject->id,
+                'subjectId'          => (string) $subject->id,
+                'subject_code'       => $subject->code,
+                'attendance_id'      => (string) $existing->id,
+                'attendanceId'       => (string) $existing->id,
+                'section'            => $subject->section ?? $user->section ?? 'Regular',
+                'instructor'         => $instructorName,
+                'session_id'         => (string) $session->id,
+                'sessionId'          => (string) $session->id,
+                'message'            => 'Attendance already recorded for this session. You have already clocked in.'
             ]);
         }
 
@@ -1320,17 +1388,24 @@ class QrAttendanceController extends Controller
         // 5. Record Attendance in Database
         try {
             $attendance = Attendance::updateOrCreateRecord(
-                ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
                 [
-                    'status' => $status,
-                    'excused' => false,
-                    'excuse_note' => null,
-                    'time_in' => $now->format('H:i:s'),
-                    'latitude' => $request->latitude,
-                    'longitude' => $request->longitude,
-                    'gps_accuracy' => $request->accuracy,
-                    'method' => $isCodeMethod ? 'code' : 'qr',
-                    'subject_id' => $subject->id ?? null,
+                    'user_id'      => $user->id,
+                    'subject_id'   => $subject->id,
+                    'subject_code' => $session->subject_code,
+                    'date'         => $todayDate,
+                ],
+                [
+                    'subject_name'     => $subject->name,
+                    'class'            => $subject->section ?? $user->section ?? 'Regular',
+                    'session_id'       => $session->id,
+                    'status'           => $status,
+                    'excused'          => false,
+                    'excuse_note'      => null,
+                    'time_in'          => $now->format('H:i:s'),
+                    'latitude'         => $request->latitude,
+                    'longitude'        => $request->longitude,
+                    'gps_accuracy'     => $request->accuracy,
+                    'method'           => $isCodeMethod ? 'code' : 'qr',
                     'academic_year_id' => $currentAcademicYearId,
                 ]
             );
@@ -1341,8 +1416,11 @@ class QrAttendanceController extends Controller
                 'exception' => $e
             ]);
             $attendance = Attendance::where('user_id', $user->id)
-                ->where('subject_code', $session->subject_code)
                 ->where('date', $todayDate)
+                ->where(function ($q) use ($subject, $session) {
+                    $q->where('subject_id', $subject->id)
+                      ->orWhere('subject_code', $session->subject_code);
+                })
                 ->first();
         }
 
@@ -1386,20 +1464,28 @@ class QrAttendanceController extends Controller
             // Ignore broadcast failure in local/test
         }
 
+        $instructorName = ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : ($subject->instructorUser->name ?? 'Instructor')));
+
         return response()->json([
-            'success' => true,
+            'success'            => true,
             'already_clocked_in' => false,
-            'status' => $status,
-            'time' => $now->format('h:i A'),
-            'date' => $now->format('F j, Y'),
-            'student_name' => $user->name,
-            'student_id' => $user->student_number ?? (string) $user->id,
-            'subject' => $subject->name,
-            'subject_code' => $subject->code,
-            'section' => $subject->section ?? $user->section ?? 'Regular',
-            'instructor' => ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : 'Instructor')),
-            'session_id' => $session->id,
-            'message' => 'Attendance Recorded Successfully'
+            'status'             => $status,
+            'time'               => $now->format('h:i A'),
+            'date'               => $now->format('F j, Y'),
+            'student_name'       => $user->name,
+            'student_id'         => (string) $user->id,
+            'studentId'          => (string) $user->id,
+            'subject'            => $subject->name,
+            'subject_id'         => (string) $subject->id,
+            'subjectId'          => (string) $subject->id,
+            'subject_code'       => $subject->code,
+            'attendance_id'      => (string) $attendance->id,
+            'attendanceId'       => (string) $attendance->id,
+            'section'            => $subject->section ?? $user->section ?? 'Regular',
+            'instructor'         => $instructorName,
+            'session_id'         => (string) $session->id,
+            'sessionId'          => (string) $session->id,
+            'message'            => 'Attendance recorded successfully.'
         ]);
     }
 
