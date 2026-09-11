@@ -13,6 +13,7 @@ class SystemUpdateVersionBumpTest extends TestCase
 
     private string $initialSwContent = '';
     private string $initialManifestContent = '';
+    private string $initialVersionContent = '';
 
     protected function setUp(): void
     {
@@ -25,6 +26,10 @@ class SystemUpdateVersionBumpTest extends TestCase
         if (File::exists($manifestPath)) {
             $this->initialManifestContent = File::get($manifestPath);
         }
+        $versionPath = base_path('version.json');
+        if (File::exists($versionPath)) {
+            $this->initialVersionContent = File::get($versionPath);
+        }
     }
 
     protected function tearDown(): void
@@ -36,6 +41,10 @@ class SystemUpdateVersionBumpTest extends TestCase
         $manifestPath = public_path('manifest.json');
         if (!empty($this->initialManifestContent) && File::exists($manifestPath)) {
             File::put($manifestPath, $this->initialManifestContent);
+        }
+        $versionPath = base_path('version.json');
+        if (!empty($this->initialVersionContent) && File::exists($versionPath)) {
+            File::put($versionPath, $this->initialVersionContent);
         }
         parent::tearDown();
     }

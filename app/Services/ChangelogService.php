@@ -5,33 +5,19 @@ namespace App\Services;
 class ChangelogService
 {
     /**
-     * Get the resolved latest version, giving priority to dynamic database setting then config.
+     * Get the resolved latest version from centralized VersionService.
      */
     public function getLatestVersion(): string
     {
-        try {
-            $setting = \App\Models\Setting::get('system_version');
-            if (!empty($setting)) {
-                return (string)$setting;
-            }
-        } catch (\Throwable $e) {}
-
-        return (string)config('changelog.default_version', '2.4.0');
+        return app(VersionService::class)->getVersion();
     }
 
     /**
-     * Get the resolved installed version.
+     * Get the resolved installed version from centralized VersionService.
      */
     public function getInstalledVersion(): string
     {
-        try {
-            $setting = \App\Models\Setting::get('installed_version');
-            if (!empty($setting)) {
-                return (string)$setting;
-            }
-        } catch (\Throwable $e) {}
-
-        return (string)config('changelog.installed_version', $this->getLatestVersion());
+        return app(VersionService::class)->getInstalledVersion();
     }
 
     /**

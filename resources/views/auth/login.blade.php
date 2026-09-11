@@ -643,7 +643,7 @@
         <a href="{{ route('terms') }}">Terms & Conditions</a>
         <a href="javascript:void(0)" data-footer-modal="contact">Contact Us</a>
         <span style="color: rgba(207,164,111,0.6); font-weight: 600; margin-left: 12px; pointer-events: all;">
-            v{{ app(\App\Services\ChangelogService::class)->getLatestVersion() }}
+            {{ $appVersionTag }}
         </span>
     </div>
 </div>

@@ -8,14 +8,49 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
 use App\Http\Middleware\SecurityHeaders;
+use App\Services\VersionService;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function register(): void {}
+    public function register(): void
+    {
+        $this->app->singleton(VersionService::class, function () {
+            return new VersionService();
+        });
+    }
 
     public function boot(): void
     {
+        // ── Centralized Application Version Directives & Global View Sharing ───
+        Blade::directive('appVersion', function () {
+            return '<?php echo e(app(\App\Services\VersionService::class)->getVersion()); ?>';
+        });
+        Blade::directive('appVersionTag', function () {
+            return '<?php echo e(app(\App\Services\VersionService::class)->getVersionTag()); ?>';
+        });
+        Blade::directive('appBuild', function () {
+            return '<?php echo e(app(\App\Services\VersionService::class)->getBuild()); ?>';
+        });
+        Blade::directive('appReleaseDate', function () {
+            return '<?php echo e(app(\App\Services\VersionService::class)->getFormattedReleaseDate()); ?>';
+        });
+
+        View::composer('*', function ($view) {
+            $versionService = app(VersionService::class);
+            $view->with([
+                'appVersion'          => $versionService->getVersion(),
+                'appVersionTag'       => $versionService->getVersionTag(),
+                'appBuild'            => $versionService->getBuild(),
+                'appCommit'           => $versionService->getCommit(),
+                'appReleaseDate'      => $versionService->getFormattedReleaseDate(),
+                'appInstalledVersion' => $versionService->getInstalledVersion(),
+                'appIsUpToDate'       => $versionService->isUpToDate(),
+                'appMetadata'         => $versionService->getFullMetadata(),
+            ]);
+        });
+
         // ── CSP nonce Blade directive ─────────────────────────────────────────
         // @cspNonce  → renders: nonce="<per-request-value>"
         Blade::directive('cspNonce', function () {

@@ -91,29 +91,33 @@ Route::get('/SmartAttendance.apk', function () {
 });
 
 // Real-time PWA Version Checker with memory cache
-Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService) {
+Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService, \App\Services\VersionService $versionService) {
     // Use sw.js mtime in cache key so any file change (manual edit or bump) instantly busts cache
     $swPath = public_path('sw.js');
     $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
     $requestedVer = $request->query('v');
     $cacheKey = 'pwa_version_response_' . $swMtime . ($requestedVer ? '_' . preg_replace('/[^a-zA-Z0-9_.]/', '', $requestedVer) : '');
 
-    $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime, $requestedVer, $changelogService) {
-        $latestVersion = $changelogService->getLatestVersion();
-        $installedVersion = $changelogService->getInstalledVersion();
+    $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime, $requestedVer, $changelogService, $versionService) {
+        $latestVersion = $versionService->getVersion();
+        $installedVersion = $versionService->getInstalledVersion();
         $ver = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v324');
         $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
         $targetVer = $requestedVer ?: $latestVersion;
         $changelog = $changelogService->getRelease($targetVer);
 
         return [
-            'version' => $versionTag,
-            'sw_version' => (string)$ver,
-            'latest_version' => $latestVersion,
+            'version'           => $versionTag,
+            'sw_version'        => (string)$ver,
+            'latest_version'    => $latestVersion,
             'installed_version' => $installedVersion,
-            'current_version' => $installedVersion,
-            'timestamp' => $swMtime,
-            'changelog' => $changelog,
+            'current_version'   => $installedVersion,
+            'build'             => $versionService->getBuild(),
+            'commit'            => $versionService->getCommit(),
+            'release_date'      => $versionService->getReleaseDate(),
+            'is_up_to_date'     => $versionService->isUpToDate(),
+            'timestamp'         => $swMtime,
+            'changelog'         => $changelog,
         ];
     });
 

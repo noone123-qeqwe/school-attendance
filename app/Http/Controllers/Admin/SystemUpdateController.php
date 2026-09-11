@@ -335,26 +335,17 @@ class SystemUpdateController extends Controller
             ];
         }
 
-        // 4. Bump Service Worker / PWA Asset Version
+        // 4 & 5. Semantic Release Generation & PWA Asset Cache Busting
+        $newAppVer = null;
+        $newVer = null;
         try {
-            $newVer = $this->bumpPwaVersionInternal();
+            $newAppVer = $this->syncOrBumpAppVersionInternal();
+            $newVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v344');
             $results[] = [
                 'step' => 'PWA & Client App Broadcast',
                 'status' => 'success',
                 'message' => "PWA Service Worker cache version bumped to {$newVer}. All student, teacher, and admin clients will receive the fresh build automatically."
             ];
-        } catch (\Exception $e) {
-            $results[] = [
-                'step' => 'PWA & Client App Broadcast',
-                'status' => 'warning',
-                'message' => 'PWA Broadcast warning: ' . $e->getMessage()
-            ];
-        }
-
-        // 5. Semantic Version Synchronization & Build Alignment
-        $newAppVer = null;
-        try {
-            $newAppVer = $this->syncOrBumpAppVersionInternal();
             $results[] = [
                 'step' => 'Semantic Version Synchronization',
                 'status' => 'success',
@@ -801,13 +792,15 @@ class SystemUpdateController extends Controller
         abort_if(!Auth::user()->isSuperAdmin(), 403);
         try {
             $specified = $request->input('version');
-            $newAppVer = $this->bumpAppVersionInternal($specified);
+            $type = $request->input('type', 'patch');
+            $release = app(\App\Services\VersionService::class)->createRelease($type, $specified);
+            $newAppVer = $release['version'];
 
             // Broadcast Web Push announcement for the new semantic release
             try {
                 app(\App\Services\WebPushService::class)->broadcastAnnouncement(
                     '⚡ Smart Attendance Release v' . $newAppVer,
-                    "Application update v{$newAppVer} is now live with enhanced security and performance optimizations.",
+                    "Application update v{$newAppVer} (Build {$release['build']}) is now live with enhanced security and performance optimizations.",
                     [
                         'url' => route('intro'),
                         'tag' => 'app-release-' . time(),
@@ -821,7 +814,10 @@ class SystemUpdateController extends Controller
             return response()->json([
                 'success' => true,
                 'app_version' => 'v' . $newAppVer,
-                'message' => "Application release version successfully bumped to v{$newAppVer}."
+                'build' => $release['build'],
+                'sw_version' => $release['sw_version'],
+                'release_date' => $release['release_date'],
+                'message' => "Application release version successfully bumped to v{$newAppVer} (Build {$release['build']})."
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -836,30 +832,11 @@ class SystemUpdateController extends Controller
      */
     public function bumpAppVersionInternal(?string $specifiedVersion = null): string
     {
-        if ($specifiedVersion) {
-            $nextVer = ltrim($specifiedVersion, 'v');
-        } else {
-            $currentVer = app(\App\Services\ChangelogService::class)->getLatestVersion();
-            $nextVer = $this->incrementSemver($currentVer);
-        }
-
-        Setting::set('system_version', $nextVer);
-        Setting::set('installed_version', $nextVer);
-
-        // Synchronize manifest.json
-        $manifestPath = public_path('manifest.json');
-        if (File::exists($manifestPath)) {
-            $manifestContent = File::get($manifestPath);
-            $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$nextVer}\"", $manifestContent);
-            File::put($manifestPath, $manifestContent);
-        }
-
-        // Bust all PWA and version cache keys
-        try {
-            \Illuminate\Support\Facades\Cache::flush();
-        } catch (\Throwable $e) {}
-
-        return $nextVer;
+        $currentSetting = Setting::get('system_version');
+        $baseVer = !empty($currentSetting) ? $currentSetting : app(\App\Services\VersionService::class)->getVersion();
+        $targetVer = $specifiedVersion ? ltrim($specifiedVersion, 'v') : $this->incrementSemver($baseVer);
+        $release = app(\App\Services\VersionService::class)->createRelease('patch', $targetVer);
+        return $release['version'];
     }
 
     /**
@@ -870,25 +847,14 @@ class SystemUpdateController extends Controller
         $currentSetting = Setting::get('system_version');
         $latestConfig = (string)config('changelog.default_version', '2.4.0');
 
-        // If not set, or older than latest release, upgrade to latestConfig
         if (empty($currentSetting) || version_compare($currentSetting, $latestConfig, '<')) {
             $targetVer = $latestConfig;
         } else {
-            // Already on or above latest release: advance patch version to reflect new build
             $targetVer = $this->incrementSemver($currentSetting);
         }
 
-        Setting::set('system_version', $targetVer);
-        Setting::set('installed_version', $targetVer);
-
-        $manifestPath = public_path('manifest.json');
-        if (File::exists($manifestPath)) {
-            $manifestContent = File::get($manifestPath);
-            $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$targetVer}\"", $manifestContent);
-            File::put($manifestPath, $manifestContent);
-        }
-
-        return $targetVer;
+        $release = app(\App\Services\VersionService::class)->createRelease('patch', $targetVer);
+        return $release['version'];
     }
 
     /**
@@ -896,13 +862,7 @@ class SystemUpdateController extends Controller
      */
     private function incrementSemver(string $version): string
     {
-        $clean = ltrim(trim($version), 'v');
-        $parts = explode('.', $clean);
-        while (count($parts) < 3) {
-            $parts[] = '0';
-        }
-        $parts[2] = ((int)$parts[2]) + 1;
-        return implode('.', $parts);
+        return app(\App\Services\VersionService::class)->incrementSemver($version, 'patch');
     }
 
     /**

@@ -130,7 +130,7 @@
                     </div>
                 </div>
                 <div class="telemetry-value-row">
-                    <div class="telemetry-value-lg gold-gradient-text" id="currentAppReleaseBadge">v{{ ltrim($appVersion ?? app(\App\Services\ChangelogService::class)->getLatestVersion(), 'v') }}</div>
+                    <div class="telemetry-value-lg gold-gradient-text" id="currentAppReleaseBadge">{{ $appVersionTag }}</div>
                     <button type="button" onclick="bumpAppVersion()" class="mini-action-btn" id="quickAppBumpBtn" title="Increment semantic version release">
                         <i class="bi bi-arrow-up-circle"></i> Bump
                     </button>
@@ -139,7 +139,7 @@
                     </span>
                 </div>
                 <div class="telemetry-footer">
-                    <span class="telemetry-sub">Laravel {{ $laravelVersion }} • Debug: <strong class="{{ $debugMode ? 'text-amber' : 'text-emerald' }}">{{ $debugMode ? 'ON' : 'OFF' }}</strong></span>
+                    <span class="telemetry-sub">Build: <strong id="currentAppBuildText" class="text-white">{{ $appBuild }}</strong> • Commit: <code class="text-gold">{{ $appCommit }}</code> • {{ $appReleaseDate }}</span>
                 </div>
             </div>
 
@@ -3606,6 +3606,8 @@ async function bumpAppVersion() {
         if (data.success && data.app_version) {
             const verStr = data.app_version.startsWith('v') ? data.app_version : 'v' + data.app_version;
             if (badge) badge.textContent = verStr;
+            const buildText = document.getElementById('currentAppBuildText');
+            if (buildText && data.build) buildText.textContent = data.build;
             showToast(data.message || ('Application version updated to ' + verStr), 'success');
         } else {
             showToast(data.message || 'Failed to bump application release.', 'error');

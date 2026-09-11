@@ -12,3 +12,43 @@ if (!function_exists("csp_nonce")) {
         return request()->attributes->get(SecurityHeaders::NONCE_KEY, "");
     }
 }
+
+if (!function_exists('app_version')) {
+    /**
+     * Get the centralized application version (e.g. '2.4.0').
+     */
+    function app_version(): string
+    {
+        return app(\App\Services\VersionService::class)->getVersion();
+    }
+}
+
+if (!function_exists('app_version_tag')) {
+    /**
+     * Get the centralized application version tag (e.g. 'v2.4.0').
+     */
+    function app_version_tag(): string
+    {
+        return app(\App\Services\VersionService::class)->getVersionTag();
+    }
+}
+
+if (!function_exists('app_build')) {
+    /**
+     * Get the application build identifier (e.g. '20260912.001').
+     */
+    function app_build(): string
+    {
+        return app(\App\Services\VersionService::class)->getBuild();
+    }
+}
+
+if (!function_exists('app_release_date')) {
+    /**
+     * Get the formatted application release date.
+     */
+    function app_release_date(): string
+    {
+        return app(\App\Services\VersionService::class)->getFormattedReleaseDate();
+    }
+}

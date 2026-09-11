@@ -1,7 +1,10 @@
 @php
-    $installedVersion = app(\App\Services\ChangelogService::class)->getInstalledVersion();
-    $latestVersion = app(\App\Services\ChangelogService::class)->getLatestVersion();
-    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v324');
+    $versionService = app(\App\Services\VersionService::class);
+    $installedVersion = $appInstalledVersion ?? $versionService->getInstalledVersion();
+    $latestVersion = $appVersion ?? $versionService->getVersion();
+    $buildId = $appBuild ?? $versionService->getBuild();
+    $commitHash = $appCommit ?? $versionService->getCommit();
+    $swCacheVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v344');
     $swFileMtime = file_exists(public_path('sw.js')) ? filemtime(public_path('sw.js')) : time();
     $swQueryVer = 'v' . preg_replace('/[^0-9]/', '', (string)$swCacheVer) . '_' . $swFileMtime;
     $initialChangelog = app(\App\Services\ChangelogService::class)->getRelease((string)$latestVersion);
@@ -17,6 +20,8 @@
 <meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
 <meta name="app-installed-version" content="{{ $installedVersion }}">
 <meta name="app-latest-version" content="{{ $latestVersion }}">
+<meta name="app-build-id" content="{{ $buildId }}">
+<meta name="app-commit-hash" content="{{ $commitHash }}">
 <meta name="sw-build-version" content="{{ $swCacheVer }}">
 <meta name="sw-build-mtime" content="{{ $swFileMtime }}">
 
