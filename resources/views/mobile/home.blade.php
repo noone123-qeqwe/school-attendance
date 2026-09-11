@@ -49,12 +49,12 @@
     <section class="quick-actions-section">
         <h3 class="section-title">QUICK ACTIONS</h3>
         <div class="quick-actions-grid">
-            <a href="{{ route('mobile.scan') }}" class="quick-action-btn quick-action-primary">
+            <button type="button" onclick="mobileScanButtonTapped(event)" class="quick-action-btn quick-action-primary">
                 <div class="quick-action-icon">
                     <i class="bi bi-qr-code-scan"></i>
                 </div>
                 <span class="quick-action-label">Scan QR</span>
-            </a>
+            </button>
             
             <a href="{{ route('mobile.history') }}" class="quick-action-btn">
                 <div class="quick-action-icon">
@@ -290,6 +290,12 @@
         align-items: center;
         gap: 12px;
         transition: all 0.2s ease;
+        /* button element reset */
+        cursor: pointer;
+        font-family: inherit;
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
     }
 
     .quick-action-btn:active {

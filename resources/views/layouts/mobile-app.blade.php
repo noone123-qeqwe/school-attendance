@@ -227,6 +227,24 @@
         // Alias used by the scanner modal
         window.triggerHaptic = haptic;
 
+        /**
+         * mobileScanButtonTapped — called directly via onclick on any Scan button
+         * in the mobile UI (bottom nav, quick actions, scan page, etc.).
+         *
+         * Fallback chain:
+         *   1. If openStudentScanner() is loaded → open the scanner modal inline
+         *   2. Otherwise → navigate to /mobile/scan which auto-opens it on arrival
+         */
+        window.mobileScanButtonTapped = function(e) {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if ('vibrate' in navigator) { navigator.vibrate(15); }
+            if (typeof openStudentScanner === 'function') {
+                openStudentScanner('scan');
+            } else {
+                window.location.href = '{{ route("mobile.scan") }}';
+            }
+        };
+
         // Add haptic to all buttons
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('button, .touchable, .nav-item').forEach(el => {

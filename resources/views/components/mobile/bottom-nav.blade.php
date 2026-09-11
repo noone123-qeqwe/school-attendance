@@ -1,54 +1,67 @@
 @php
     $user = auth()->user();
     $currentRoute = Route::currentRouteName();
+    $isStudent = $user->isStudent();
     
     // Role-based navigation items
     $navItems = [];
     
-    if ($user->hasRole('student')) {
+    if ($isStudent) {
         $navItems = [
-            ['route' => 'mobile.home', 'icon' => 'house-fill', 'label' => 'Home', 'primary' => false],
-            ['route' => 'mobile.attendance', 'icon' => 'clipboard-check', 'label' => 'Attend', 'primary' => false],
-            ['route' => 'mobile.scan', 'icon' => 'qr-code-scan', 'label' => 'Scan', 'primary' => true],
-            ['route' => 'mobile.history', 'icon' => 'clock-history', 'label' => 'History', 'primary' => false],
-            ['route' => 'mobile.profile', 'icon' => 'person-fill', 'label' => 'Profile', 'primary' => false],
+            ['route' => 'mobile.home',       'icon' => 'house-fill',     'label' => 'Home',    'primary' => false, 'scan' => false],
+            ['route' => 'mobile.attendance',  'icon' => 'clipboard-check','label' => 'Attend',  'primary' => false, 'scan' => false],
+            ['route' => 'mobile.scan',        'icon' => 'qr-code-scan',   'label' => 'Scan',    'primary' => true,  'scan' => true],
+            ['route' => 'mobile.history',     'icon' => 'clock-history',  'label' => 'History', 'primary' => false, 'scan' => false],
+            ['route' => 'mobile.profile',     'icon' => 'person-fill',    'label' => 'Profile', 'primary' => false, 'scan' => false],
         ];
-    } elseif ($user->hasRole('teacher')) {
+    } elseif ($user->isTeacher()) {
         $navItems = [
-            ['route' => 'mobile.home', 'icon' => 'house-fill', 'label' => 'Home', 'primary' => false],
-            ['route' => 'mobile.classes', 'icon' => 'book', 'label' => 'Classes', 'primary' => false],
-            ['route' => 'mobile.scan', 'icon' => 'qr-code-scan', 'label' => 'Scan', 'primary' => true],
-            ['route' => 'mobile.students', 'icon' => 'people', 'label' => 'Students', 'primary' => false],
-            ['route' => 'mobile.profile', 'icon' => 'person-fill', 'label' => 'Profile', 'primary' => false],
+            ['route' => 'mobile.home',     'icon' => 'house-fill',    'label' => 'Home',     'primary' => false, 'scan' => false],
+            ['route' => 'mobile.classes',  'icon' => 'book',          'label' => 'Classes',  'primary' => false, 'scan' => false],
+            ['route' => 'mobile.scan',     'icon' => 'qr-code-scan',  'label' => 'Scan',     'primary' => true,  'scan' => false],
+            ['route' => 'mobile.students', 'icon' => 'people',        'label' => 'Students', 'primary' => false, 'scan' => false],
+            ['route' => 'mobile.profile',  'icon' => 'person-fill',   'label' => 'Profile',  'primary' => false, 'scan' => false],
         ];
-    } elseif ($user->hasRole('parent')) {
+    } elseif ($user->isParent()) {
         $navItems = [
-            ['route' => 'mobile.home', 'icon' => 'house-fill', 'label' => 'Home', 'primary' => false],
-            ['route' => 'mobile.children', 'icon' => 'people', 'label' => 'Children', 'primary' => false],
-            ['route' => 'mobile.attendance', 'icon' => 'clipboard-check', 'label' => 'Attend', 'primary' => true],
-            ['route' => 'mobile.reports', 'icon' => 'bar-chart', 'label' => 'Reports', 'primary' => false],
-            ['route' => 'mobile.profile', 'icon' => 'person-fill', 'label' => 'Profile', 'primary' => false],
+            ['route' => 'mobile.home',       'icon' => 'house-fill',     'label' => 'Home',     'primary' => false, 'scan' => false],
+            ['route' => 'mobile.children',   'icon' => 'people',         'label' => 'Children', 'primary' => false, 'scan' => false],
+            ['route' => 'mobile.attendance', 'icon' => 'clipboard-check','label' => 'Attend',   'primary' => true,  'scan' => false],
+            ['route' => 'mobile.reports',    'icon' => 'bar-chart',      'label' => 'Reports',  'primary' => false, 'scan' => false],
+            ['route' => 'mobile.profile',    'icon' => 'person-fill',    'label' => 'Profile',  'primary' => false, 'scan' => false],
         ];
     } else {
         // Admin or other roles
         $navItems = [
-            ['route' => 'mobile.home', 'icon' => 'house-fill', 'label' => 'Home', 'primary' => false],
-            ['route' => 'mobile.dashboard', 'icon' => 'speedometer2', 'label' => 'Dashboard', 'primary' => false],
-            ['route' => 'mobile.students', 'icon' => 'people', 'label' => 'Students', 'primary' => true],
-            ['route' => 'mobile.reports', 'icon' => 'bar-chart', 'label' => 'Reports', 'primary' => false],
-            ['route' => 'mobile.settings', 'icon' => 'gear-fill', 'label' => 'Settings', 'primary' => false],
+            ['route' => 'mobile.home',      'icon' => 'house-fill',   'label' => 'Home',      'primary' => false, 'scan' => false],
+            ['route' => 'mobile.dashboard', 'icon' => 'speedometer2', 'label' => 'Dashboard', 'primary' => false, 'scan' => false],
+            ['route' => 'mobile.students',  'icon' => 'people',       'label' => 'Students',  'primary' => true,  'scan' => false],
+            ['route' => 'mobile.reports',   'icon' => 'bar-chart',    'label' => 'Reports',   'primary' => false, 'scan' => false],
+            ['route' => 'mobile.settings',  'icon' => 'gear-fill',    'label' => 'Settings',  'primary' => false, 'scan' => false],
         ];
     }
 @endphp
 
-<nav class="mobile-bottom-nav">
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
     @foreach($navItems as $item)
-        <a href="{{ route($item['route']) }}" 
-           class="nav-item {{ $item['primary'] ? 'nav-item-primary' : '' }} {{ $currentRoute === $item['route'] ? 'active' : '' }}"
-           data-route="{{ $item['route'] }}">
-            <i class="bi bi-{{ $item['icon'] }}"></i>
-            <span>{{ $item['label'] }}</span>
-        </a>
+        @if($item['scan'] && $isStudent)
+            {{-- Student Scan button: always opens the scanner modal directly --}}
+            <button type="button"
+                    class="nav-item nav-item-primary {{ $currentRoute === $item['route'] ? 'active' : '' }}"
+                    id="mobileNavScanBtn"
+                    onclick="mobileScanButtonTapped(event)"
+                    aria-label="Scan QR Code">
+                <i class="bi bi-{{ $item['icon'] }}"></i>
+                <span>{{ $item['label'] }}</span>
+            </button>
+        @else
+            <a href="{{ route($item['route']) }}"
+               class="nav-item {{ $item['primary'] ? 'nav-item-primary' : '' }} {{ $currentRoute === $item['route'] ? 'active' : '' }}"
+               data-route="{{ $item['route'] }}">
+                <i class="bi bi-{{ $item['icon'] }}"></i>
+                <span>{{ $item['label'] }}</span>
+            </a>
+        @endif
     @endforeach
 </nav>
 
@@ -87,6 +100,12 @@
         border-radius: 12px;
         margin: 4px 2px;
         position: relative;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        -webkit-appearance: none;
+        appearance: none;
+        font-family: inherit;
     }
 
     .nav-item i {
@@ -99,7 +118,7 @@
         transition: all 0.2s ease;
     }
 
-    /* Primary Action Button (usually Scan) */
+    /* Primary Action Button (Scan) */
     .nav-item-primary {
         margin-top: -8px;
     }
@@ -175,27 +194,12 @@
 </style>
 
 <script>
-    // Add active class handling
+    // Touch feedback for all nav items
     document.addEventListener('DOMContentLoaded', function() {
-        const navItems = document.querySelectorAll('.nav-item');
-        
-        navItems.forEach(item => {
-            item.addEventListener('click', function(e) {
-                // Haptic feedback
-                if ('vibrate' in navigator) {
-                    navigator.vibrate(10);
-                }
-            });
+        document.querySelectorAll('.nav-item').forEach(function(el) {
+            el.addEventListener('touchstart', function() {
+                if ('vibrate' in navigator) { navigator.vibrate(10); }
+            }, { passive: true });
         });
-
-        // Intercept the Scan button so it opens the QR scanner modal inline
-        // instead of navigating away to a separate page
-        const scanNavItem = document.querySelector('.nav-item[data-route="mobile.scan"]');
-        if (scanNavItem && typeof openStudentScanner === 'function') {
-            scanNavItem.addEventListener('click', function(e) {
-                e.preventDefault();
-                openStudentScanner('scan');
-            });
-        }
     });
 </script>

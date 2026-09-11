@@ -13,14 +13,14 @@
     </div>
 
     <div class="scan-action-area">
-        <button type="button" class="scan-open-btn touchable" onclick="openStudentScanner('scan')" id="openScannerBtn">
+        <button type="button" class="scan-open-btn touchable" onclick="mobileScanButtonTapped(event)" id="openScannerBtn">
             <i class="bi bi-camera-fill"></i>
             <span>Open QR Scanner</span>
         </button>
 
         <p class="scan-divider-text">or</p>
 
-        <button type="button" class="scan-code-btn touchable" onclick="openStudentScanner('code')">
+        <button type="button" class="scan-code-btn touchable" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('code')}else{mobileScanButtonTapped(event)}">
             <i class="bi bi-key-fill"></i>
             <span>Enter 6-Digit Code Instead</span>
         </button>
@@ -189,12 +189,14 @@
 <script>
     // Auto-open the scanner immediately when this dedicated scan page loads
     document.addEventListener('DOMContentLoaded', function() {
-        if (typeof openStudentScanner === 'function') {
-            // Small delay to let the page render first
-            setTimeout(function() {
+        // Use mobileScanButtonTapped which is guaranteed to be defined in the layout
+        setTimeout(function() {
+            if (typeof mobileScanButtonTapped === 'function') {
+                mobileScanButtonTapped(null);
+            } else if (typeof openStudentScanner === 'function') {
                 openStudentScanner('scan');
-            }, 300);
-        }
+            }
+        }, 350);
     });
 </script>
 @endpush
