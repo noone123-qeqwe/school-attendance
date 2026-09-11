@@ -9,10 +9,10 @@
         <div class="scanner-top-bar">
             <!-- Mobile: Mode Switcher Tabs (QR vs Code) -->
             <div class="scanner-mode-switcher" id="mobileModeSwitcher">
-                <button type="button" id="tabScanMode" class="scanner-mode-tab active" onclick="switchScannerMode('scan')">
+                <button type="button" id="tabScanMode" class="scanner-mode-tab active" data-action="switch-scan">
                     <i class="bi bi-qr-code-scan me-1"></i> Scan QR
                 </button>
-                <button type="button" id="tabCodeMode" class="scanner-mode-tab" onclick="switchScannerMode('code')">
+                <button type="button" id="tabCodeMode" class="scanner-mode-tab" data-action="switch-code">
                     <i class="bi bi-key-fill me-1"></i> Enter Code
                 </button>
             </div>
@@ -29,13 +29,13 @@
             </div>
             
             <div class="scanner-top-actions">
-                <button type="button" id="torchCameraBtn" onclick="toggleTorch()" class="scanner-icon-btn" title="Toggle Flashlight" aria-label="Toggle Flashlight" style="display: none;">
+                <button type="button" id="torchCameraBtn" data-action="toggle-torch" class="scanner-icon-btn" title="Toggle Flashlight" aria-label="Toggle Flashlight" style="display: none;">
                     <i class="bi bi-lightning-charge"></i>
                 </button>
-                <button type="button" id="flipCameraBtn" onclick="toggleCameraFacing()" class="scanner-icon-btn" title="Flip Camera" aria-label="Flip Camera" style="display: none !important;">
+                <button type="button" id="flipCameraBtn" data-action="flip-camera" class="scanner-icon-btn" title="Flip Camera" aria-label="Flip Camera" style="display: none !important;">
                     <i class="bi bi-camera-reverse"></i>
                 </button>
-                <button type="button" onclick="closeStudentScanner()" class="scanner-icon-btn close-btn" title="Close" aria-label="Close Scanner">
+                <button type="button" data-action="close-scanner" class="scanner-icon-btn close-btn" title="Close" aria-label="Close Scanner">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
@@ -82,10 +82,10 @@
                     <h5 class="permission-headline" id="fallbackTitle">Camera Access Required</h5>
                     <p id="scannerFallbackText" class="permission-description">Camera access is required to scan the attendance QR code. Please allow camera access in your device settings.</p>
                     <div class="permission-actions">
-                        <button type="button" class="permission-primary-btn" id="retryCameraBtn" onclick="requestCameraAgain()">
+                        <button type="button" class="permission-primary-btn" id="retryCameraBtn" data-action="allow-camera">
                             <i class="bi bi-camera me-1"></i> Allow Camera
                         </button>
-                        <button type="button" class="permission-secondary-link" onclick="switchScannerMode('code')">
+                        <button type="button" class="permission-secondary-link" data-action="switch-code">
                             Enter Code Manually
                         </button>
                     </div>
@@ -101,13 +101,13 @@
             <!-- Secondary Manual Code Alternative Option -->
             <div class="scanner-alt-action-card">
                 <span class="scanner-alt-label">Can't scan the QR code?</span>
-                <button type="button" class="scanner-alt-btn" onclick="switchScannerMode('code')">
+                <button type="button" class="scanner-alt-btn" data-action="switch-code">
                     <i class="bi bi-key-fill me-1"></i> Enter 6-Digit Code
                 </button>
             </div>
 
             <!-- Clean Bottom Cancel Action -->
-            <button type="button" class="scanner-cancel-action-btn" onclick="closeStudentScanner()">
+            <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner">
                 <i class="bi bi-x-circle me-1"></i> Cancel & Return to Dashboard
             </button>
         </div>
@@ -122,20 +122,20 @@
             <p class="scanner-sub">Enter the 6-digit attendance code.</p>
 
             <div class="code-entry-container my-3">
-                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" pattern="[0-9]*" placeholder="849 201" maxlength="7" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false" oninput="formatSessionCodeInput(this, event)" onkeydown="handleCodeKeydown(event)">
+                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" pattern="[0-9]*" placeholder="849 201" maxlength="7" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false">
                 <div id="codeEntryHint" class="code-entry-hint mt-2">
                     <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
                 </div>
             </div>
 
             <div class="d-flex flex-column gap-2">
-                <button type="button" id="codeSubmitBtn" class="btn scanner-primary-action-btn w-100" onclick="submitDirectCode()">
+                <button type="button" id="codeSubmitBtn" class="btn scanner-primary-action-btn w-100" data-action="submit-code">
                     <i class="bi bi-check2-circle me-1"></i> Record Attendance
                 </button>
-                <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" onclick="switchScannerMode('scan')">
+                <button type="button" id="switchToCameraBtn" class="btn scanner-secondary-action-btn w-100" data-action="switch-scan">
                     <i class="bi bi-camera-fill me-1"></i> Switch to Camera Scan
                 </button>
-                <button type="button" class="scanner-cancel-action-btn" onclick="closeStudentScanner()">
+                <button type="button" class="scanner-cancel-action-btn" data-action="close-scanner">
                     <i class="bi bi-x-circle me-1"></i> Cancel & Return to Dashboard
                 </button>
             </div>
@@ -184,10 +184,10 @@
 
             <!-- Action Buttons -->
             <div class="d-flex gap-2 w-100 mt-2">
-                <button type="button" id="resultDoneBtn" onclick="finishScanAndRefresh()" class="btn scanner-primary-action-btn flex-fill">
+                <button type="button" id="resultDoneBtn" data-action="result-done" class="btn scanner-primary-action-btn flex-fill">
                     <i class="bi bi-check-lg me-1"></i> Done (Back to Dashboard)
                 </button>
-                <button type="button" id="resultRetryBtn" onclick="retryCurrentScanMode()" class="btn scanner-secondary-action-btn flex-fill" style="display: none;">
+                <button type="button" id="resultRetryBtn" data-action="result-retry" class="btn scanner-secondary-action-btn flex-fill" style="display: none;">
                     <i class="bi bi-arrow-repeat me-1"></i> Try Again
                 </button>
             </div>
@@ -200,7 +200,7 @@
 <div id="outsideRangePopupModal" class="outside-range-popup-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="outsideRangeTitle">
     <div class="outside-range-popup-card">
         <!-- Close icon button -->
-        <button type="button" class="outside-range-close-btn" onclick="closeOutsideRangePopup()" aria-label="Close dialog">
+        <button type="button" class="outside-range-close-btn" data-action="close-outside-popup" aria-label="Close dialog">
             <i class="bi bi-x-lg"></i>
         </button>
 
@@ -243,13 +243,13 @@
 
         <!-- Action Buttons -->
         <div class="outside-range-actions">
-            <button type="button" class="outside-range-btn-primary" onclick="retryScanFromOutsidePopup()">
+            <button type="button" class="outside-range-btn-primary" data-action="outside-retry-scan">
                 <i class="bi bi-qr-code-scan me-1"></i> Scan QR Code Again
             </button>
-            <button type="button" class="outside-range-btn-secondary" onclick="useCodeFromOutsidePopup()">
+            <button type="button" class="outside-range-btn-secondary" data-action="outside-enter-code">
                 <i class="bi bi-key-fill me-1"></i> Enter 6-Digit Code
             </button>
-            <button type="button" class="outside-range-btn-text" onclick="closeOutsideRangePopup()">
+            <button type="button" class="outside-range-btn-text" data-action="close-outside-popup">
                 Dismiss
             </button>
         </div>
@@ -569,7 +569,11 @@
     font-weight: 700;
     padding: 6px 14px;
     border-radius: 99px;
-    cursor: pointer;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: rgba(207, 164, 111, 0.3);
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     display: inline-flex;
     align-items: center;
@@ -844,9 +848,10 @@
     padding: 18px 16px;
     color: #b39b82;
     text-align: center;
-    z-index: 20;
-    position: relative;
+    z-index: 50 !important;
+    position: relative !important;
     width: 100%;
+    pointer-events: auto !important;
 }
 
 .permission-icon-bubble {
@@ -861,6 +866,7 @@
     align-items: center;
     justify-content: center;
     margin: 0 auto 10px;
+    pointer-events: none;
 }
 
 .permission-headline {
@@ -869,21 +875,26 @@
     font-size: 0.95rem;
     margin-bottom: 4px;
     letter-spacing: -0.01em;
+    pointer-events: none;
 }
 
 .permission-description {
     font-size: 0.76rem;
     color: #c4b5a2;
-    max-width: 240px;
+    max-width: 250px;
     margin: 0 auto 12px;
-    line-height: 1.4;
+    line-height: 1.45;
+    pointer-events: none;
 }
 
 .permission-actions {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    position: relative;
+    z-index: 52 !important;
+    pointer-events: auto !important;
 }
 
 .permission-primary-btn {
@@ -893,12 +904,18 @@
     font-weight: 800;
     border: none;
     border-radius: 12px;
-    padding: 8px 20px;
-    cursor: pointer;
+    padding: 9px 22px;
+    cursor: pointer !important;
     box-shadow: 0 4px 14px rgba(207, 164, 111, 0.3);
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    position: relative;
+    z-index: 55 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
     transition: all 0.2s;
 }
 
@@ -910,12 +927,18 @@
     background: transparent;
     border: none;
     color: #cfa46f;
-    font-size: 0.76rem;
+    font-size: 0.78rem;
     font-weight: 700;
-    cursor: pointer;
+    cursor: pointer !important;
     text-decoration: underline;
     text-underline-offset: 3px;
-    padding: 4px 8px;
+    padding: 6px 12px;
+    position: relative;
+    z-index: 55 !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
     transition: color 0.2s;
 }
 
@@ -974,7 +997,11 @@
     font-weight: 700;
     border-radius: 10px;
     padding: 6px 12px;
-    cursor: pointer;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: rgba(207, 164, 111, 0.3);
     display: inline-flex;
     align-items: center;
     white-space: nowrap;
@@ -995,7 +1022,10 @@
     font-weight: 600;
     border-radius: 12px;
     padding: 8px 18px;
-    cursor: pointer;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
+    user-select: none;
+    -webkit-user-select: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -2156,6 +2186,11 @@ window.formatSessionCodeInput = formatSessionCodeInput;
 window.handleCodeKeydown = handleCodeKeydown;
 window.showOutsideRangePopup = showOutsideRangePopup;
 window.closeOutsideRangePopup = closeOutsideRangePopup;
+window.requestCameraAgain = requestCameraAgain;
+window.toggleTorch = toggleTorch;
+window.toggleCameraFacing = toggleCameraFacing;
+window.retryScanFromOutsidePopup = retryScanFromOutsidePopup;
+window.useCodeFromOutsidePopup = useCodeFromOutsidePopup;
 
 function finishScanAndRefresh() {
     clearAutoCloseTimer();
@@ -2166,6 +2201,7 @@ function finishScanAndRefresh() {
         window.location.reload();
     }
 }
+window.finishScanAndRefresh = finishScanAndRefresh;
 
 function playScanBeep() {
     try {
@@ -2235,12 +2271,112 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const modal = document.getElementById('studentScannerModal');
     if (modal) {
+        // Close on backdrop click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 closeStudentScanner();
             }
         });
     }
+
+    // ── CSP-safe delegated event handler for ALL modal actions ──
+    // This handles both click and touchend events via data-action attributes.
+    // Guarantees buttons work on mobile browsers even when CSP Level 3
+    // blocks inline onclick handlers despite 'unsafe-inline' being present
+    // alongside a nonce in script-src.
+    function handleModalDelegatedAction(e) {
+        const trigger = e.target.closest('[data-action]');
+        if (!trigger) return;
+
+        const action = trigger.getAttribute('data-action');
+        if (!action) return;
+
+        // Prevent double-firing from both touch and click
+        if (e.type === 'touchend') {
+            e.preventDefault();
+        }
+
+        // Stop propagation to prevent multiple handlers
+        e.stopPropagation();
+
+        switch (action) {
+            case 'switch-scan':
+                switchScannerMode('scan');
+                break;
+            case 'switch-code':
+                switchScannerMode('code');
+                break;
+            case 'allow-camera':
+                requestCameraAgain();
+                break;
+            case 'submit-code':
+                submitDirectCode();
+                break;
+            case 'close-scanner':
+                closeStudentScanner();
+                break;
+            case 'toggle-torch':
+                toggleTorch();
+                break;
+            case 'flip-camera':
+                toggleCameraFacing();
+                break;
+            case 'result-done':
+                finishScanAndRefresh();
+                break;
+            case 'result-retry':
+                retryCurrentScanMode();
+                break;
+            case 'outside-retry-scan':
+                retryScanFromOutsidePopup();
+                break;
+            case 'outside-enter-code':
+                useCodeFromOutsidePopup();
+                break;
+            case 'close-outside-popup':
+                closeOutsideRangePopup();
+                break;
+        }
+    }
+
+    // Bind delegated handler on scanner modal
+    if (modal) {
+        modal.addEventListener('click', handleModalDelegatedAction, true);
+        modal.addEventListener('touchend', handleModalDelegatedAction, true);
+    }
+
+    // Bind delegated handler on outside-range popup
+    const outsidePopup = document.getElementById('outsideRangePopupModal');
+    if (outsidePopup) {
+        outsidePopup.addEventListener('click', handleModalDelegatedAction, true);
+        outsidePopup.addEventListener('touchend', handleModalDelegatedAction, true);
+    }
+
+    // Add input event handlers for code entry
+    const codeInput = document.getElementById('directSessionCodeInput');
+    if (codeInput) {
+        codeInput.addEventListener('input', function(e) {
+            formatSessionCodeInput(this, e);
+        });
+        codeInput.addEventListener('keydown', function(e) {
+            handleCodeKeydown(e);
+        });
+    }
+
+    // Ensure inactive overlays don't swallow pointer events
+    const inactiveOverlays = ['scannerLoadingOverlay', 'scannerProcessingOverlay'];
+    inactiveOverlays.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            // Use MutationObserver to toggle pointer-events based on display
+            const observer = new MutationObserver(() => {
+                el.style.pointerEvents = (el.style.display === 'none') ? 'none' : 'auto';
+            });
+            observer.observe(el, { attributes: true, attributeFilter: ['style'] });
+            // Initial state
+            el.style.pointerEvents = (el.style.display === 'none') ? 'none' : 'auto';
+        }
+    });
 });
 
 // Window resize adaptive listener
