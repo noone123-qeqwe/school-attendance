@@ -439,7 +439,7 @@ class QrAttendanceController extends Controller
         }
 
         $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $request) {
-            $att = Attendance::updateOrCreate(
+            $att = Attendance::updateOrCreateRecord(
                 [
                     'user_id' => $student->id,
                     'subject_code' => $session->subject_code,
@@ -869,7 +869,7 @@ class QrAttendanceController extends Controller
         $currentAcademicYearId = \App\Models\AcademicYear::where('is_current', true)->value('id');
 
         try {
-            $attendance = Attendance::updateOrCreate(
+            $attendance = Attendance::updateOrCreateRecord(
                 ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
                 [
                     'status'       => $status,
@@ -1160,7 +1160,7 @@ class QrAttendanceController extends Controller
 
         // 5. Record Attendance in Database
         try {
-            $attendance = Attendance::updateOrCreate(
+            $attendance = Attendance::updateOrCreateRecord(
                 ['user_id' => $user->id, 'subject_code' => $session->subject_code, 'date' => $todayDate],
                 [
                     'status' => $status,
@@ -1176,10 +1176,22 @@ class QrAttendanceController extends Controller
                 ]
             );
         } catch (\Exception $e) {
+            Log::error('Failed to record attendance in processScan: ' . $e->getMessage(), [
+                'user_id' => $user->id,
+                'subject_code' => $session->subject_code,
+                'exception' => $e
+            ]);
             $attendance = Attendance::where('user_id', $user->id)
                 ->where('subject_code', $session->subject_code)
                 ->where('date', $todayDate)
                 ->first();
+        }
+
+        if (!$attendance) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to save attendance record. Please try again or notify your instructor.'
+            ], 500);
         }
 
         // 6. Broadcast Real-Time Update to Teacher

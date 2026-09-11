@@ -11,12 +11,25 @@ class StudentMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (!auth()->check()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'require_login' => true,
+                    'message' => 'Please log in to proceed.',
+                ], 401);
+            }
             return redirect()->route('login');
         }
 
         $user = auth()->user();
         
         if (!$user->isStudent()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only enrolled students can record attendance.',
+                ], 403);
+            }
             if ($user->isAdmin()) {
                 return redirect()->route('admin.dashboard');
             } elseif ($user->isTeacher()) {

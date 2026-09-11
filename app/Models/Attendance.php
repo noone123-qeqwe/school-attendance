@@ -145,4 +145,38 @@ class Attendance extends Model
     {
         return $this->belongsTo(AcademicYear::class);
     }
+
+    /**
+     * Safely update or create an attendance record, handling soft-deleted rows.
+     */
+    public static function updateOrCreateRecord(array $attributes, array $values = []): self
+    {
+        $instance = static::withTrashed()->where($attributes)->first();
+
+        if ($instance) {
+            if ($instance->trashed()) {
+                $instance->restore();
+            }
+            $instance->fill($values);
+            $instance->save();
+
+            return $instance;
+        }
+
+        try {
+            return static::create(array_merge($attributes, $values));
+        } catch (\Illuminate\Database\QueryException $e) {
+            $instance = static::withTrashed()->where($attributes)->first();
+            if ($instance) {
+                if ($instance->trashed()) {
+                    $instance->restore();
+                }
+                $instance->fill($values);
+                $instance->save();
+
+                return $instance;
+            }
+            throw $e;
+        }
+    }
 }
