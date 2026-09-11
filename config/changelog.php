@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.2'),
-    'default_version' => env('APP_LATEST_VERSION', '2.3.2'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.3.3'),
+    'default_version' => env('APP_LATEST_VERSION', '2.3.3'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,28 @@ return [
     |
     */
     'releases' => [
+        '2.3.3' => [
+            'version' => '2.3.3',
+            'version_tag' => 'v2.3.3',
+            'title' => 'Mobile QR Scanner Fix',
+            'description' => 'Fixed the mobile QR scanner so tapping the Scan button immediately opens the camera scanner inline without navigating away.',
+            'features' => [
+                'Mobile Scan button now opens the QR camera scanner instantly',
+                'Dedicated mobile scan page that auto-launches the scanner on load',
+            ],
+            'improvements' => [
+                'Scanner modal is now available on all mobile pages, not just the desktop view',
+                'After a successful scan, app redirects to home screen showing updated attendance status',
+                'Enhanced haptic feedback patterns for scan success and error states',
+            ],
+            'bugFixes' => [
+                'Fixed Scan button navigating to desktop home instead of opening the camera',
+                'Fixed missing triggerHaptic function reference in the mobile scanner',
+                'Fixed scanner not auto-closing and refreshing correctly on mobile',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-11',
+        ],
         '2.3.2' => [
             'version' => '2.3.2',
             'version_tag' => 'v2.3.2',
