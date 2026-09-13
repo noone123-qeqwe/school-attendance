@@ -74,9 +74,12 @@
 
                 <div class="col-md-4">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Course</label>
-                    <input type="hidden" name="course" value="BSCS">
-                    <input type="text" class="adm-input" value="BSCS" disabled 
-                           style="width:100%; background:#f0fdf4; color:#16a34a; font-weight:700; letter-spacing:0.5px;">
+                    <select name="course" class="adm-input" required style="width:100%;">
+                        <option value="">Select Course</option>
+                        @foreach(['BSCS','BSIT','BSIS'] as $c)
+                        <option value="{{ $c }}" {{ old('course', $subject->course) == $c ? 'selected' : '' }}>{{ $c }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
                 <div class="col-md-4">

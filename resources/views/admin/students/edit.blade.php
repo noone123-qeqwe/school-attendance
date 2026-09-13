@@ -30,9 +30,8 @@
                 </div>
                 <div class="col-md-4">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Course</label>
-                    <input type="hidden" name="course" value="BSCS">
-                    <input type="text" class="adm-input" value="BSCS" disabled 
-                           style="width:100%; background:#f0fdf4; color:#16a34a; font-weight:700; letter-spacing:0.5px;">
+                    <input type="text" class="adm-input" value="{{ $student->course ?: 'BSCS' }}" readonly style="width:100%;background:#f8fafc;color:#475569;font-weight:600;cursor:not-allowed;">
+                    <input type="hidden" name="course" value="{{ $student->course ?: 'BSCS' }}">
                 </div>
                 <div class="col-md-4">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Year Level</label>

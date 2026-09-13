@@ -103,9 +103,13 @@
                     <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
                         Course
                     </label>
+                    <input type="text" 
+                           class="adm-input" 
+                           value="BSCS (BS Computer Science)" 
+                           readonly 
+                           style="width: 100%; background: #f8fafc; color: #475569; font-weight: 600; cursor: not-allowed;" 
+                           title="BSCS is automatically registered as the course for all students">
                     <input type="hidden" name="course" value="BSCS">
-                    <input type="text" class="adm-input" value="BSCS" disabled 
-                           style="width:100%; background:#f0fdf4; color:#16a34a; font-weight:700; letter-spacing:0.5px;">
                 </div>
                 
                 <div class="col-md-4">

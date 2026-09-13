@@ -20,7 +20,7 @@ class UserService
         return User::create([
             'name' => trim($data['name']),
             'student_number' => $studentNumber,
-            'course' => $data['course'],
+            'course' => !empty($data['course']) ? $data['course'] : 'BSCS',
             'year_level' => (int) $data['year_level'],
             'semester' => (int) $data['semester'],
             'email' => strtolower(trim($data['email'])),

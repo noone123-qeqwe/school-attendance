@@ -30,8 +30,13 @@ class User extends Authenticatable
     protected static function booted(): void
     {
         static::creating(function (User $user) {
-            if ($user->role === 'student' && empty($user->student_number)) {
-                $user->student_number = static::generateStudentNumber();
+            if ($user->role === 'student') {
+                if (empty($user->student_number)) {
+                    $user->student_number = static::generateStudentNumber();
+                }
+                if (empty($user->course)) {
+                    $user->course = 'BSCS';
+                }
             }
         });
     }

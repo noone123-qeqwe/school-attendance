@@ -223,7 +223,7 @@ class AdminController extends Controller
                          'name'              => trim($request->name),
                          'student_number'    => $studentNumber,
                          'email'             => strtolower(trim($request->email)),
-                         'course'            => $request->course,
+                         'course'            => $request->course ?: 'BSCS',
                          'year_level'        => $request->year_level,
                          'semester'          => $request->semester,
                          'password'          => Hash::make($request->password),
@@ -414,7 +414,7 @@ class AdminController extends Controller
                     }
 
                     $studentNumber = ($idIdx !== null && isset($row[$idIdx])) ? trim($row[$idIdx]) : null;
-                    $course        = ($courseIdx !== null && isset($row[$courseIdx])) ? trim($row[$courseIdx]) : null;
+                    $course        = ($courseIdx !== null && isset($row[$courseIdx]) && !empty(trim($row[$courseIdx]))) ? trim($row[$courseIdx]) : 'BSCS';
                     $yearLevel     = ($yearIdx !== null && isset($row[$yearIdx]) && is_numeric(trim($row[$yearIdx]))) ? (int)trim($row[$yearIdx]) : null;
                     $semester      = ($semIdx !== null && isset($row[$semIdx]) && is_numeric(trim($row[$semIdx]))) ? (int)trim($row[$semIdx]) : null;
                     $section       = ($sectionIdx !== null && isset($row[$sectionIdx])) ? trim($row[$sectionIdx]) : 'A';
@@ -433,7 +433,7 @@ class AdminController extends Controller
                         'name'              => $name,
                         'email'             => $email,
                         'student_number'    => $studentNumber ?: ($existing ? $existing->student_number : null),
-                        'course'            => $course ?: null,
+                        'course'            => $course ?: 'BSCS',
                         'year_level'        => $yearLevel,
                         'semester'          => $semester,
                         'section'           => $section ?: 'A',

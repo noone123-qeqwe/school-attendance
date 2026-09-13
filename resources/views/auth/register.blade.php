@@ -573,16 +573,11 @@
                                 </div>
                                 <div class="field-feedback" id="feedback-student_number"></div>
 
+                                <input type="hidden" name="course" id="course" value="BSCS">
+                                <div class="field-feedback" id="feedback-course" style="display:none;"></div>
+
                                 <div class="row g-2 mb-1">
-                                    <div class="col-7">
-                                        <div class="form-floating-custom mb-0" id="wrap-course">
-                                            <input type="hidden" name="course" id="course" value="BSCS">
-                                            <input type="text" value="BSCS" disabled style="background: rgba(207,164,111,0.08); color: #CFA46F; font-weight: 700; letter-spacing: 0.5px; cursor: default;">
-                                            <label for="course">Course</label>
-                                        </div>
-                                        <div class="field-feedback" id="feedback-course"></div>
-                                    </div>
-                                    <div class="col-5">
+                                    <div class="col-6">
                                         <div class="form-floating-custom mb-0" id="wrap-year_level">
                                             <select name="year_level" id="year_level">
                                                 <option value="" disabled {{ old('year_level') ? '' : 'selected' }}></option>
@@ -595,19 +590,20 @@
                                         </div>
                                         <div class="field-feedback" id="feedback-year_level"></div>
                                     </div>
+                                    <div class="col-6">
+                                        <div class="form-floating-custom mb-0" id="wrap-semester">
+                                            <select name="semester" id="semester">
+                                                <option value="" disabled {{ old('semester') ? '' : 'selected' }}></option>
+                                                <option value="1" {{ old('semester', '1')=='1'?'selected':'' }}>1st Semester</option>
+                                                <option value="2" {{ old('semester')=='2'?'selected':'' }}>2nd Semester</option>
+                                                <option value="Summer" {{ old('semester')=='Summer'?'selected':'' }}>Summer</option>
+                                            </select>
+                                            <label for="semester">Semester</label>
+                                            <i class="bi bi-chevron-down select-arrow"></i>
+                                        </div>
+                                        <div class="field-feedback" id="feedback-semester"></div>
+                                    </div>
                                 </div>
-
-                                <div class="form-floating-custom mb-1 mt-2" id="wrap-semester">
-                                    <select name="semester" id="semester">
-                                        <option value="" disabled {{ old('semester') ? '' : 'selected' }}></option>
-                                        <option value="1" {{ old('semester', '1')=='1'?'selected':'' }}>1st Semester</option>
-                                        <option value="2" {{ old('semester')=='2'?'selected':'' }}>2nd Semester</option>
-                                        <option value="Summer" {{ old('semester')=='Summer'?'selected':'' }}>Summer</option>
-                                    </select>
-                                    <label for="semester">Semester</label>
-                                    <i class="bi bi-chevron-down select-arrow"></i>
-                                </div>
-                                <div class="field-feedback" id="feedback-semester"></div>
 
                             </div>
                         </div>
@@ -894,7 +890,7 @@
                 if (dynamicFields) dynamicFields.style.display = 'block';
                 if (studentFields) studentFields.style.display = 'block';
                 if (sNum) sNum.required = true;
-                if (crs) crs.required = true;
+                if (crs && crs.tagName === 'SELECT') crs.required = true;
                 if (yLvl) yLvl.required = true;
                 if (sem) sem.required = true;
             } else {
@@ -989,11 +985,6 @@
             }
 
             if (fieldId === 'course') {
-                if (!el.value) {
-                    setFieldFeedback('course', false, 'Please select your course.');
-                    return false;
-                }
-                setFieldFeedback('course', true, 'Valid');
                 return true;
             }
 
@@ -1090,14 +1081,9 @@
                         if (showInlineErrors) setFieldFeedback('student_number', true, 'Valid');
                     }
 
-                    // Course
-                    const crsVal = crs ? crs.value : '';
-                    if (!crsVal) {
-                        if (showInlineErrors) setFieldFeedback('course', false, 'Please select your course.');
-                        isValid = false;
-                        if (!firstErrorMsg) firstErrorMsg = 'Please select your course.';
-                    } else {
-                        if (showInlineErrors) setFieldFeedback('course', true, 'Valid');
+                    // Course (Automatically set to BSCS)
+                    if (crs && !crs.value) {
+                        crs.value = 'BSCS';
                     }
 
                     // Year Level
@@ -1741,7 +1727,7 @@
             }
 
             const crsSelect = document.getElementById('course');
-            if (crsSelect) {
+            if (crsSelect && crsSelect.tagName === 'SELECT') {
                 crsSelect.addEventListener('change', () => validateSingleField('course', true));
             }
 

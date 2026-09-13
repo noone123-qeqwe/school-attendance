@@ -24,8 +24,12 @@
                 <i class="bi bi-search"></i>
                 <input type="text" name="search" class="saas-search-input" placeholder="Search code..." value="{{ request('search') }}">
             </div>
-            <input type="hidden" name="course" value="BSCS">
-            <span class="saas-input" style="width:120px; padding:6px 12px; background:#f0fdf4; color:#16a34a; font-weight:700; display:inline-block; text-align:center;">BSCS</span>
+            <select name="course" class="saas-input saas-select" style="width:120px; padding:6px 30px 6px 12px;">
+                <option value="">Course (All)</option>
+                <option value="BSCS" {{ request('course')=='BSCS'?'selected':'' }}>BSCS</option>
+                <option value="BSIT" {{ request('course')=='BSIT'?'selected':'' }}>BSIT</option>
+                <option value="BSIS" {{ request('course')=='BSIS'?'selected':'' }}>BSIS</option>
+            </select>
             <select name="year" class="saas-input saas-select" style="width:110px; padding:6px 30px 6px 12px;">
                 <option value="">Year (All)</option>
                 @foreach([1,2,3,4,5] as $y)
@@ -143,8 +147,11 @@
                     </div>
                     <div class="saas-form-group">
                         <label class="saas-label">Course</label>
-                        <input type="hidden" name="course" value="BSCS">
-                        <input type="text" class="saas-input" value="BSCS" disabled style="background:#f0fdf4; color:#16a34a; font-weight:700;">
+                        <select name="course" class="saas-input saas-select" required>
+                            <option value="BSCS">BSCS</option>
+                            <option value="BSIT">BSIT</option>
+                            <option value="BSIS">BSIS</option>
+                        </select>
                     </div>
                 </div>
                 

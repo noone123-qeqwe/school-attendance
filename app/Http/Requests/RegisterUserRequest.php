@@ -26,11 +26,6 @@ class RegisterUserRequest extends FormRequest
             }
         }
 
-        // Auto-set course to BSCS (single-course system)
-        if ($this->role === 'student' || $this->routeIs('admin.student.store')) {
-            $this->merge(['course' => 'BSCS']);
-        }
-
         if ($this->has('first_name') && $this->has('surname')) {
             $name = trim($this->first_name);
             $middleName = trim((string)$this->middle_name);
@@ -39,6 +34,13 @@ class RegisterUserRequest extends FormRequest
             }
             $name .= ' ' . trim($this->surname);
             $this->merge(['name' => $name]);
+        }
+
+        // Automatically set student course to BSCS if student role
+        if ($this->input('role') === 'student' || $this->role === 'student' || $this->routeIs('admin.student.store')) {
+            $this->merge([
+                'course' => $this->input('course') ?: 'BSCS',
+            ]);
         }
     }
 
@@ -67,7 +69,7 @@ class RegisterUserRequest extends FormRequest
             } else {
                 $rules['student_number'] = 'nullable|alpha_num|size:7|unique:users,student_number';
             }
-            $rules['course']         = 'required|string';
+            $rules['course']         = 'nullable|string';
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';
 
