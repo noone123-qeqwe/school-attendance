@@ -110,9 +110,39 @@ class OtpController extends Controller
     // ─────────────────────────────────────────
     // FORGOT PASSWORD — Step 1: Verify Account (Student/Account ID + Email)
     // ─────────────────────────────────────────
-    public function forgotForm()
+    // ─────────────────────────────────────────
+    // FORGOT PASSWORD — Step 1: Verify Account (Student ID / Email)
+    // ─────────────────────────────────────────
+    public function forgotForm(Request $request)
     {
-        return view('auth.forgot-password');
+        $accountUser = null;
+        $maskedEmail = null;
+        $accountIdentifierType = null;
+        $accountIdentifierValue = null;
+        $errorMessage = null;
+
+        $rawIdentifier = trim((string) $request->input('identifier', $request->input('account_id', '')));
+
+        if ($rawIdentifier !== '') {
+            $user = User::findByRecoveryIdentifier($rawIdentifier);
+
+            if ($user && $user->isActive()) {
+                $accountUser = $user;
+                $maskedEmail = OtpService::maskEmail($user->email);
+                $accountIdentifierType = str_contains($rawIdentifier, '@') ? 'Email' : 'Student ID';
+                $accountIdentifierValue = $rawIdentifier;
+            } else {
+                $errorMessage = 'Unable to verify the account. Please check your Student ID or email address.';
+            }
+        }
+
+        return view('auth.forgot-password', compact(
+            'accountUser',
+            'maskedEmail',
+            'accountIdentifierType',
+            'accountIdentifierValue',
+            'errorMessage'
+        ));
     }
 
     public function sendForgotOtp(Request $request)
@@ -125,6 +155,7 @@ class OtpController extends Controller
             ($request->input('purpose') === 'forgot_password' && 
              empty($request->input('account_id')) && 
              empty($request->input('student_id')) && 
+             empty($request->input('identifier')) &&
              session('otp_verified_account'));
 
         if ($isResend && session('otp_verified_account') && session('otp_user_id')) {
@@ -161,104 +192,200 @@ class OtpController extends Controller
             }
         }
 
-        // 2. Validate presence of both Account ID and Email
-        $request->validate([
-            'account_id' => 'required_without:identifier|nullable|string|max:255',
-            'identifier' => 'required_without:account_id|nullable|string|max:255',
-            'email'      => 'required|string|email|max:255',
-        ], [
-            'account_id.required_without' => 'Please enter your Student ID or Account ID.',
-            'identifier.required_without' => 'Please enter your Student ID or Account ID.',
-            'email.required'              => 'Please enter your registered email address.',
-            'email.email'                 => 'Please enter a valid email address.',
-        ]);
+        $rawAccountId  = trim((string) $request->input('account_id', $request->input('student_id', '')));
+        $rawEmail      = trim((string) $request->input('email', $request->input('gmail', '')));
+        $rawIdentifier = trim((string) $request->input('identifier', ''));
 
-        $rawAccountId      = trim((string) $request->input('account_id', $request->input('student_id', $request->input('identifier', ''))));
-        $rawEmail          = trim((string) $request->input('email', $request->input('gmail', '')));
-        $cleanEnteredEmail = strtolower($rawEmail);
+        // Determine if dual-verification mode (both Account ID and Email submitted, and no single identifier)
+        $isDualVerification = ($rawAccountId !== '' && $rawEmail !== '' && $rawIdentifier === '');
 
-        // 3. Check rate limiting & cooldowns on both inputs and IP
-        $cooldown = max(
-            Otp::getCooldownRemaining($cleanEnteredEmail, 'forgot_password'),
-            Otp::getCooldownRemaining($rawAccountId, 'forgot_password')
-        );
+        if ($isDualVerification) {
+            // ─────────────────────────────────────────
+            // DUAL VERIFICATION MODE (Account ID + Email Match)
+            // ─────────────────────────────────────────
+            $cleanEnteredEmail = strtolower($rawEmail);
 
-        if ($cooldown > 0) {
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success'    => false,
-                    'status'     => 'error',
-                    'error'      => 'OTP_RATE_LIMITED',
-                    'message'    => "Please wait {$cooldown} seconds before requesting another code.",
-                    'cooldown'   => $cooldown,
-                    'retryAfter' => $cooldown,
-                    'retry_after'=> $cooldown,
-                ], 429);
-            }
-            return back()->withInput()->withErrors([
-                'email' => "Please wait {$cooldown} seconds before requesting another code."
-            ]);
-        }
+            $cooldown = max(
+                Otp::getCooldownRemaining($cleanEnteredEmail, 'forgot_password'),
+                Otp::getCooldownRemaining($rawAccountId, 'forgot_password')
+            );
 
-        // 4. Look up account by Account ID / Student ID first (independent of email)
-        $user = User::findByAccountId($rawAccountId);
-
-        if (!$user) {
-            // Mitigate enumeration and brute force attacks
-            Otp::setCooldown($cleanEnteredEmail, 'forgot_password');
-            Otp::setCooldown($rawAccountId, 'forgot_password');
-            Otp::setCooldown($ip, 'forgot_password');
-            Log::warning("Forgot password verification failed: Account ID [{$rawAccountId}] not found.");
-
-            $safeError = 'Unable to verify the account. Please check your Student ID and email address.';
-
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'status'  => 'error',
-                    'error'   => 'ACCOUNT_NOT_FOUND',
-                    'message' => $safeError,
-                ], 422);
+            if ($cooldown > 0) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success'    => false,
+                        'status'     => 'error',
+                        'error'      => 'OTP_RATE_LIMITED',
+                        'message'    => "Please wait {$cooldown} seconds before requesting another code.",
+                        'cooldown'   => $cooldown,
+                        'retryAfter' => $cooldown,
+                        'retry_after'=> $cooldown,
+                    ], 429);
+                }
+                return back()->withInput()->withErrors([
+                    'email' => "Please wait {$cooldown} seconds before requesting another code."
+                ]);
             }
 
-            return back()->withInput()->withErrors([
-                'account_id' => $safeError,
-            ]);
-        }
+            $user = User::findByAccountId($rawAccountId);
 
-        // 5. Retrieve registered email and compare exactly with entered email
-        $registeredEmail = strtolower(trim((string) $user->email));
+            if (!$user) {
+                Otp::setCooldown($cleanEnteredEmail, 'forgot_password');
+                Otp::setCooldown($rawAccountId, 'forgot_password');
+                Otp::setCooldown($ip, 'forgot_password');
+                Log::warning("Forgot password verification failed: Account ID [{$rawAccountId}] not found.");
 
-        if ($cleanEnteredEmail !== $registeredEmail) {
-            // Mismatch: do NOT send OTP, do NOT allow password reset
-            Otp::setCooldown($cleanEnteredEmail, 'forgot_password');
-            Otp::setCooldown($ip, 'forgot_password');
-            Log::warning("Forgot password verification failed: Email mismatch for account [ID: {$user->id}, AccountID: {$rawAccountId}].");
+                $safeError = 'Unable to verify the account. Please check your Student ID and email address.';
 
-            $mismatchError = 'The email address you entered is not the email registered to this account.';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'status'  => 'error',
+                        'error'   => 'ACCOUNT_NOT_FOUND',
+                        'message' => $safeError,
+                    ], 422);
+                }
 
-            if ($request->expectsJson() || $request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'status'  => 'error',
-                    'error'   => 'EMAIL_MISMATCH',
-                    'message' => $mismatchError,
-                ], 422);
+                return back()->withInput()->withErrors([
+                    'account_id' => $safeError,
+                ]);
             }
 
-            return back()->withInput()
-                         ->with('account_verification_failed', true)
-                         ->withErrors(['email' => $mismatchError]);
+            $registeredEmail = strtolower(trim((string) $user->email));
+
+            if ($cleanEnteredEmail !== $registeredEmail) {
+                Otp::setCooldown($cleanEnteredEmail, 'forgot_password');
+                Otp::setCooldown($ip, 'forgot_password');
+                Log::warning("Forgot password verification failed: Email mismatch for account [ID: {$user->id}, AccountID: {$rawAccountId}].");
+
+                $mismatchError = 'The email address you entered is not the email registered to this account.';
+
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'status'  => 'error',
+                        'error'   => 'EMAIL_MISMATCH',
+                        'message' => $mismatchError,
+                    ], 422);
+                }
+
+                return back()->withInput()
+                             ->with('account_verification_failed', true)
+                             ->withErrors(['email' => $mismatchError]);
+            }
+        } else {
+            // ─────────────────────────────────────────
+            // INTELLIGENT RECOVERY MODE (Reusing Login Identifier)
+            // ─────────────────────────────────────────
+            $effectiveIdentifier = $rawIdentifier !== '' ? $rawIdentifier : ($rawAccountId !== '' ? $rawAccountId : $rawEmail);
+
+            if ($effectiveIdentifier === '') {
+                $request->validate([
+                    'identifier' => 'required|string|max:255',
+                ], [
+                    'identifier.required' => 'Please enter your Student ID or registered email address.',
+                ]);
+            }
+
+            $cooldown = Otp::getCooldownRemaining($effectiveIdentifier, 'forgot_password');
+            if ($cooldown > 0) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success'    => false,
+                        'status'     => 'error',
+                        'error'      => 'OTP_RATE_LIMITED',
+                        'message'    => "Please wait {$cooldown} seconds before requesting another code.",
+                        'cooldown'   => $cooldown,
+                        'retryAfter' => $cooldown,
+                        'retry_after'=> $cooldown,
+                    ], 429);
+                }
+                return back()->withInput()->withErrors([
+                    'identifier' => "Please wait {$cooldown} seconds before requesting another code."
+                ]);
+            }
+
+            $user = User::findByRecoveryIdentifier($effectiveIdentifier);
+
+            if (!$user) {
+                Otp::setCooldown($effectiveIdentifier, 'forgot_password');
+                Otp::setCooldown($ip, 'forgot_password');
+                Log::warning("Forgot password lookup failed: Identifier [{$effectiveIdentifier}] not found.");
+
+                $safeError = 'Unable to verify the account. Please check your Student ID or email address.';
+
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'status'  => 'error',
+                        'error'   => 'ACCOUNT_NOT_FOUND',
+                        'message' => $safeError,
+                    ], 422);
+                }
+
+                return back()->withInput()->withErrors([
+                    'identifier' => $safeError,
+                ]);
+            }
+
+            if (!$user->isActive()) {
+                $inactiveError = 'This account is inactive or disabled. Please contact the administrator.';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'status'  => 'error',
+                        'error'   => 'ACCOUNT_INACTIVE',
+                        'message' => $inactiveError,
+                    ], 422);
+                }
+                return back()->withInput()->withErrors(['identifier' => $inactiveError]);
+            }
+
+            $registeredEmail = strtolower(trim((string) $user->email));
+
+            if ($registeredEmail === '' || !filter_var($registeredEmail, FILTER_VALIDATE_EMAIL)) {
+                $noEmailError = 'No valid registered email address is found for this account. Please contact an administrator.';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'status'  => 'error',
+                        'error'   => 'NO_REGISTERED_EMAIL',
+                        'message' => $noEmailError,
+                    ], 422);
+                }
+                return back()->withInput()->withErrors(['identifier' => $noEmailError]);
+            }
+
+            $emailCooldown = Otp::getCooldownRemaining($registeredEmail, 'forgot_password');
+            if ($emailCooldown > 0) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success'    => false,
+                        'status'     => 'error',
+                        'error'      => 'OTP_RATE_LIMITED',
+                        'message'    => "Please wait {$emailCooldown} seconds before requesting another code.",
+                        'cooldown'   => $emailCooldown,
+                        'retryAfter' => $emailCooldown,
+                        'retry_after'=> $emailCooldown,
+                    ], 429);
+                }
+                return back()->withInput()->withErrors([
+                    'identifier' => "Please wait {$emailCooldown} seconds before requesting another code."
+                ]);
+            }
         }
 
-        // 6. Verification Succeeded! Create secure OTP flow session
+        // ─────────────────────────────────────────
+        // Step 6: Verification Succeeded! Create secure recovery session
+        // ─────────────────────────────────────────
         $maskedEmail = OtpService::maskEmail($registeredEmail);
         $flowToken   = bin2hex(random_bytes(16));
 
         session([
             'otp_verified_account' => true,
+            'account_verified'     => true,
             'otp_user_id'          => $user->id,
-            'otp_account_id'       => $rawAccountId,
+            'otp_account_id'       => $user->student_number ?? $user->employee_id ?? (string) $user->id,
             'otp_email'            => $registeredEmail,
             'otp_masked_email'     => $maskedEmail,
             'otp_flow_token'       => $flowToken,
@@ -268,7 +395,9 @@ class OtpController extends Controller
             'otp_identifier'       => $registeredEmail,
         ]);
 
-        // 7. Generate and send OTP strictly to the verified registered email
+        // ─────────────────────────────────────────
+        // Step 7: Generate and send OTP strictly to the verified registered email
+        // ─────────────────────────────────────────
         try {
             $this->otpService->sendOtp($registeredEmail, 'forgot_password', $user->id, $user->name, $requestId);
         } catch (\Exception $e) {
@@ -276,6 +405,8 @@ class OtpController extends Controller
                 'exception' => get_class($e),
                 'code'      => $e->getCode(),
             ]);
+
+            $errorField = $isDualVerification ? 'email' : 'identifier';
 
             if ($request->expectsJson() || $request->ajax()) {
                 $status = $e->getCode() === 429 ? 429 : 500;
@@ -292,7 +423,7 @@ class OtpController extends Controller
                 ], $status);
             }
             return back()->withInput()->withErrors([
-                'email' => 'Unable to send the verification code right now. Please try again later.'
+                $errorField => 'Unable to send the verification code right now. Please try again later.'
             ]);
         }
 

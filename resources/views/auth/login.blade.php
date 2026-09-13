@@ -987,7 +987,7 @@ if (document.readyState === 'loading') {
                     <input type="checkbox" name="remember" id="rememberMe" value="1" checked style="width: 16px; height: 16px; accent-color: #d4af37; cursor: pointer; border-radius: 4px;">
                     <span>Remember me</span>
                 </label>
-                <a href="{{ route('otp.forgot.form') }}" style="color: rgba(212,175,55,0.9); text-decoration: none; font-weight: 500; transition: color 0.2s;">
+                <a href="{{ route('otp.forgot.form') }}" id="forgotPasswordLink" style="color: rgba(212,175,55,0.9); text-decoration: none; font-weight: 500; transition: color 0.2s;">
                     Forgot password?
                 </a>
             </div>
@@ -2064,7 +2064,8 @@ if (document.readyState === 'loading') {
 } else {
     setupBiometricListeners();
 }
-// Expose functions globally on window
+
+// Expose functions globally on window
 window.handleBiometricLogin = handleBiometricLogin;
 window.performBiometricLogin = performBiometricLogin;
 window.openBiometricModal = openBiometricModal;
@@ -2080,6 +2081,31 @@ window.closeBiometricModalAndFocusIdentifier = closeBiometricModalAndFocusIdenti
         idInput.value = '{{ old('identifier') }}';
     }
 @endif
+
+// Intelligently forward login identifier to Forgot Password flow
+function updateForgotHref() {
+    var link = document.getElementById('forgotPasswordLink');
+    var input = document.getElementById('idInput');
+    if (!link || !input) return;
+    var base = '{{ route('otp.forgot.form') }}';
+    var val = input.value ? input.value.trim() : '';
+    if (val) {
+        link.href = base + '?identifier=' + encodeURIComponent(val);
+    } else {
+        link.href = base;
+    }
+}
+
+var idInputElem = document.getElementById('idInput');
+var forgotLinkElem = document.getElementById('forgotPasswordLink');
+if (idInputElem) {
+    idInputElem.addEventListener('input', updateForgotHref);
+    idInputElem.addEventListener('change', updateForgotHref);
+    updateForgotHref();
+}
+if (forgotLinkElem) {
+    forgotLinkElem.addEventListener('click', updateForgotHref);
+}
 </script>
 </body>
 </html>

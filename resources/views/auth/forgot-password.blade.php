@@ -129,32 +129,24 @@
 
 <div class="otp-wrapper">
     <div class="otp-card">
+        @if(!empty($accountUser))
+        {{-- State A: Account Found from Login or Direct Identifier Lookup --}}
         <div class="text-center">
-            <div class="step-badge">
-                <i class="bi bi-shield-lock-fill"></i> Step 1: Verify Account
+            <div class="step-badge" style="background:rgba(34,197,94,0.14); border-color:rgba(34,197,94,0.36); color:#86efac;">
+                <i class="bi bi-shield-check"></i> Account Found
             </div>
-            <div class="otp-icon"><i class="bi bi-person-check-fill"></i></div>
-            <h2 class="reset-title">Verify Your Account</h2>
-            <p class="reset-subtitle">Enter your Student ID / Account ID and registered Gmail to confirm ownership before resetting your password.</p>
+            <div class="otp-icon" style="background:rgba(34,197,94,0.18); box-shadow:0 12px 32px rgba(34,197,94,0.22);">
+                <i class="bi bi-person-check-fill" style="color:#86efac;"></i>
+            </div>
+            <h2 class="reset-title">Account Found</h2>
+            <p class="reset-subtitle">We found your account.</p>
         </div>
 
         @if(session('info'))
         <div class="alert-info mt-3"><i class="bi bi-info-circle me-2"></i>{{ session('info') }}</div>
         @endif
 
-        @if(session('account_verification_failed') || ($errors->has('email') && str_contains($errors->first('email'), 'not the email registered')))
-        <div class="alert-err mt-3">
-            <div class="alert-err-title">
-                <i class="bi bi-x-circle-fill" style="color:#ef4444; font-size:1.15rem;"></i> Account Verification Failed
-            </div>
-            <div style="font-weight:600; color:#fee2e2;">
-                The email address does not match the email registered to this account.
-            </div>
-            <div class="alert-err-sub">
-                Please enter the email address associated with your account.
-            </div>
-        </div>
-        @elseif($errors->any())
+        @if($errors->any())
         <div class="alert-err mt-3">
             <div class="alert-err-title">
                 <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b; font-size:1.1rem;"></i> Unable to Verify Account
@@ -163,45 +155,78 @@
         </div>
         @endif
 
+        <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:18px; padding:18px 20px; margin-top:20px; text-align:center;">
+            <div style="font-weight:700; font-size:1.1rem; color:#ffffff; margin-bottom:6px;">
+                {{ $accountUser->name }}
+            </div>
+            <div style="display:inline-flex; align-items:center; gap:6px; background:rgba(216,179,92,0.15); border:1px solid rgba(216,179,92,0.3); border-radius:12px; padding:3px 10px; font-size:0.8rem; color:#d8b35c; margin-bottom:14px;">
+                <span>{{ $accountIdentifierType }}: <strong>{{ $accountIdentifierValue }}</strong></span>
+            </div>
+            <div style="font-size:0.9rem; color:rgba(248,231,211,0.85); line-height:1.5;">
+                Your verification code will be sent to:<br>
+                <strong style="color:#ffffff; font-size:1.15rem; letter-spacing:0.5px;">{{ $maskedEmail }}</strong>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ route('otp.forgot.send') }}" class="mt-4">
+            @csrf
+            <input type="hidden" name="identifier" value="{{ $accountIdentifierValue }}">
+
+            <button type="submit" class="submit-btn" id="send-otp-btn">
+                <i class="bi bi-send-fill me-2"></i>Send OTP
+            </button>
+        </form>
+
+        <div class="text-center mt-3">
+            <a href="{{ route('otp.forgot.form') }}" style="font-size:0.84rem; color:rgba(248,231,211,0.7); text-decoration:none;">
+                <i class="bi bi-arrow-repeat me-1"></i>Not your account? Use another identifier
+            </a>
+        </div>
+
+        @else
+        {{-- State B: Find Your Account (Fallback when no identifier entered or unknown) --}}
+        <div class="text-center">
+            <div class="step-badge">
+                <i class="bi bi-shield-lock-fill"></i> Step 1: Find Account
+            </div>
+            <div class="otp-icon"><i class="bi bi-person-bounding-box"></i></div>
+            <h2 class="reset-title">Find Your Account</h2>
+            <p class="reset-subtitle">Enter your Student ID or registered email to continue.</p>
+        </div>
+
+        @if(session('info'))
+        <div class="alert-info mt-3"><i class="bi bi-info-circle me-2"></i>{{ session('info') }}</div>
+        @endif
+
+        @if(!empty($errorMessage) || $errors->any())
+        <div class="alert-err mt-3">
+            <div class="alert-err-title">
+                <i class="bi bi-exclamation-triangle-fill" style="color:#f59e0b; font-size:1.1rem;"></i> Unable to Verify Account
+            </div>
+            <div>{{ $errorMessage ?: $errors->first() }}</div>
+        </div>
+        @endif
+
         <form method="POST" action="{{ route('otp.forgot.send') }}" class="mt-4">
             @csrf
 
-            <!-- Student ID / Account ID -->
+            <!-- Student ID or Registered Email -->
             <div class="field-input-group">
-                <label class="field-label" for="account_id">Student ID / Account ID</label>
+                <label class="field-label" for="identifier">Student ID or Registered Email</label>
                 <div style="position:relative;">
                     <i class="bi bi-person-badge field-icon"></i>
                     <input type="text"
-                           name="account_id"
-                           id="account_id"
+                           name="identifier"
+                           id="identifier"
                            class="field-input"
-                           placeholder="e.g. 20260001 or Account ID"
-                           value="{{ old('account_id', old('identifier')) }}"
+                           placeholder="e.g. 20260001 or student@gmail.com"
+                           value="{{ old('identifier', old('account_id', request('identifier', ''))) }}"
                            required
                            autocomplete="username"
                            autofocus>
                 </div>
-                @if($errors->has('account_id'))
-                <p style="color:#f8c6c6;font-size:.82rem;margin-top:6px;">{{ $errors->first('account_id') }}</p>
-                @endif
-            </div>
-
-            <!-- Registered Gmail / Email Address -->
-            <div class="field-input-group">
-                <label class="field-label" for="email">Registered Gmail / Email</label>
-                <div style="position:relative;">
-                    <i class="bi bi-envelope-fill field-icon"></i>
-                    <input type="email"
-                           name="email"
-                           id="email"
-                           class="field-input"
-                           placeholder="e.g. student@gmail.com"
-                           value="{{ old('email') }}"
-                           required
-                           autocomplete="email">
-                </div>
-                @if($errors->has('email'))
-                <p style="color:#f8c6c6;font-size:.82rem;margin-top:6px;">{{ $errors->first('email') }}</p>
+                @if($errors->has('identifier'))
+                <p style="color:#f8c6c6;font-size:.82rem;margin-top:6px;">{{ $errors->first('identifier') }}</p>
                 @endif
             </div>
 
@@ -209,6 +234,7 @@
                 <i class="bi bi-arrow-right-circle-fill me-2"></i>Continue
             </button>
         </form>
+        @endif
 
         <div class="back-link">
             Remember your password? <a href="{{ route('login') }}">Sign in</a>

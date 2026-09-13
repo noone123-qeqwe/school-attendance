@@ -337,6 +337,42 @@ class User extends Authenticatable
         return null;
     }
 
+    /**
+     * Find user account for password recovery, intelligently detecting Student ID vs Email.
+     */
+    public static function findByRecoveryIdentifier(?string $identifier): ?self
+    {
+        $raw = trim((string) $identifier);
+        if ($raw === '') {
+            return null;
+        }
+
+        // 1. If it contains '@', prioritize email lookup
+        if (str_contains($raw, '@')) {
+            $lower = strtolower($raw);
+            $user = static::whereNull('deleted_at')
+                ->where(function ($q) use ($raw, $lower) {
+                    $q->where('email', $raw)
+                      ->orWhereRaw('LOWER(email) = ?', [$lower])
+                      ->orWhereRaw('LOWER(TRIM(email)) = ?', [$lower]);
+                })
+                ->first();
+
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // 2. Try Student ID / Employee ID / Account ID lookup
+        $user = static::findByAccountId($raw);
+        if ($user) {
+            return $user;
+        }
+
+        // 3. Fallback to general identifier resolution
+        return static::findByIdentifier($raw);
+    }
+
     public function isActive(): bool
     {
         return (bool) ($this->is_active ?? true) && !$this->trashed();
