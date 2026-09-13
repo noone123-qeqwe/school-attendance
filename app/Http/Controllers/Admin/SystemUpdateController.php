@@ -845,13 +845,8 @@ class SystemUpdateController extends Controller
     public function syncOrBumpAppVersionInternal(): string
     {
         $currentSetting = Setting::get('system_version');
-        $latestConfig = (string)config('changelog.default_version', '2.4.0');
-
-        if (empty($currentSetting) || version_compare($currentSetting, $latestConfig, '<')) {
-            $targetVer = $latestConfig;
-        } else {
-            $targetVer = $this->incrementSemver($currentSetting);
-        }
+        $activeVer = !empty($currentSetting) ? $currentSetting : app(\App\Services\VersionService::class)->getVersion();
+        $targetVer = $this->incrementSemver($activeVer);
 
         $release = app(\App\Services\VersionService::class)->createRelease('patch', $targetVer);
         return $release['version'];

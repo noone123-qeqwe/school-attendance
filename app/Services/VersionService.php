@@ -37,32 +37,45 @@ class VersionService
      */
     public function getVersion(): string
     {
-        // 1. Check if explicitly overridden via config (e.g. tests or environment overrides)
-        $changelogDef = config('changelog.default_version');
-        if (!empty($changelogDef) && $changelogDef !== '2.4.0') {
-            return (string)$changelogDef;
-        }
-        $configVer = config('version.version');
-        if (!empty($configVer) && $configVer !== '2.4.0') {
-            return (string)$configVer;
-        }
+        $sources = [];
 
-        // 2. Check database setting override if present
+        // 1. Database setting (persisted across updates and dynamic bumps)
         try {
             $dbSetting = Setting::get('system_version');
             if (!empty($dbSetting)) {
-                return (string)$dbSetting;
+                $sources[] = ltrim(trim((string)$dbSetting), 'v');
             }
         } catch (\Throwable $e) {}
 
-        // 3. Check version.json (primary centralized file source of truth)
+        // 2. Centralized version.json on disk (shipped with deployments)
         $file = $this->getFileData();
         if (!empty($file['version'])) {
-            return (string)$file['version'];
+            $sources[] = ltrim(trim((string)$file['version']), 'v');
         }
 
-        // 4. Default fallback
-        return (string)($configVer ?: ($changelogDef ?: '2.4.0'));
+        // 3. Environment or config overrides
+        $envVer = env('APP_VERSION', env('APP_LATEST_VERSION'));
+        if (!empty($envVer)) {
+            $sources[] = ltrim(trim((string)$envVer), 'v');
+        }
+        $configVer = config('version.version');
+        if (!empty($configVer)) {
+            $sources[] = ltrim(trim((string)$configVer), 'v');
+        }
+        $changelogDef = config('changelog.default_version');
+        if (!empty($changelogDef)) {
+            $sources[] = ltrim(trim((string)$changelogDef), 'v');
+        }
+
+        // 4. Select the highest valid semantic version among all sources
+        $highest = '2.4.1';
+        foreach ($sources as $ver) {
+            if (version_compare($ver, $highest, '>')) {
+                $highest = $ver;
+            }
+        }
+
+        return $highest;
     }
 
     /**
@@ -161,19 +174,19 @@ class VersionService
      */
     public function getInstalledVersion(): string
     {
-        // 1. Check if explicitly overridden via config (e.g. tests)
-        $configInstalled = config('version.installed_version') ?: config('changelog.installed_version');
-        if (!empty($configInstalled) && $configInstalled !== '2.4.0') {
-            return (string)$configInstalled;
-        }
-
-        // 2. Check database setting
+        // 1. Check database setting
         try {
             $installed = Setting::get('installed_version');
             if (!empty($installed)) {
-                return (string)$installed;
+                return ltrim(trim((string)$installed), 'v');
             }
         } catch (\Throwable $e) {}
+
+        // 2. Check config overrides if set in environment
+        $configInstalled = env('APP_INSTALLED_VERSION');
+        if (!empty($configInstalled)) {
+            return ltrim(trim((string)$configInstalled), 'v');
+        }
 
         return $this->getVersion();
     }

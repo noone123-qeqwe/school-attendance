@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.4.0'),
-    'default_version' => env('APP_LATEST_VERSION', '2.4.0'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.4.1'),
+    'default_version' => env('APP_LATEST_VERSION', '2.4.1'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,32 @@ return [
     |
     */
     'releases' => [
+        '2.4.1' => [
+            'version' => '2.4.1',
+            'version_tag' => 'v2.4.1',
+            'title' => 'Forgot Password Deliverability & Version Progression Update',
+            'description' => 'Transactional email delivery overhaul via direct Brevo HTTP API, streamlined email-only authentication workflows, and dynamic system release version progression.',
+            'features' => [
+                'Guaranteed transactional OTP delivery for all users across any email domain bypassing cloud SMTP blocks',
+                'Simplified and secure email-focused password reset verification interface',
+                'Dynamic semantic version auto-synchronization ensuring version numbers advance cleanly upon update',
+            ],
+            'improvements' => [
+                'Prioritized direct HTTPS port 443 delivery for zero cloud firewall throttling',
+                'Automatic fallback and graceful retry across secondary email mailers',
+                'Seamless case-insensitive and trimmed email identifier normalization',
+            ],
+            'bugFixes' => [
+                'Fixed Forgot Password OTP emails failing to reach external recipients due to provider sandbox restrictions',
+                'Fixed system release version remaining frozen at v2.4.0 after updates and continuous deployments',
+                'Fixed session authentication state loss during OTP password reset completion',
+            ],
+            'security' => [
+                'Zero secret leakage in client logs and robust cryptographic 6-digit OTP generation',
+                'Isolated per-user verification attempt rate limiting and cooldown enforcement',
+            ],
+            'released_at' => '2026-09-13',
+        ],
         '2.4.0' => [
             'version' => '2.4.0',
             'version_tag' => 'v2.4.0',
