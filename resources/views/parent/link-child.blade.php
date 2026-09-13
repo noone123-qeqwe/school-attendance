@@ -32,11 +32,11 @@
     <x-card type="section" style="padding: 40px;">
         <div id="step1">
             <h4 style="color: #f3e7cd; margin-bottom: 16px; font-weight: 700;">Step 1: Enter Student ID</h4>
-            <p style="color: #b39b82; margin-bottom: 32px; font-size: 0.95rem; line-height: 1.5;">Please enter your child's 7-character Student ID. We will send a one-time password (OTP) to their registered school email address for verification.</p>
+            <p style="color: #b39b82; margin-bottom: 32px; font-size: 0.95rem; line-height: 1.5;">Please enter your child's Student ID. We will send a one-time password (OTP) to their registered school email address for verification.</p>
             
             <div class="mb-4">
                 <label style="color: #cfa46f; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">Student ID</label>
-                <input type="text" id="student_number" class="ent-glass-input" placeholder="e.g. 2021001" maxlength="7">
+                <input type="text" id="student_number" class="ent-glass-input" placeholder="e.g. 20260001" maxlength="50">
             </div>
 
             <button type="button" id="btn-send-otp" class="ent-btn ent-btn-primary w-100" style="padding: 14px; font-size: 1.05rem; font-weight: 700;">
@@ -98,9 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     btnSendOtp.addEventListener('click', async () => {
-        const studentNumber = document.getElementById('student_number').value;
-        if(studentNumber.length !== 7) {
-            showStatus('Please enter a valid 7-character student ID.', true);
+        const studentNumber = document.getElementById('student_number').value.trim();
+        if(!studentNumber || studentNumber.length < 3) {
+            showStatus('Please enter a valid student ID.', true);
             return;
         }
 

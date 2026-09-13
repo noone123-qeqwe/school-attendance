@@ -16,13 +16,7 @@ class ParentService
      */
     public function initiateLink(User $parent, string $studentNumber): void
     {
-        $student = User::where('student_number', $studentNumber)
-                       ->where('role', 'student')
-                       ->first();
-
-        if (!$student) {
-            throw new Exception("Student not found with that Student ID.");
-        }
+        $student = $this->findStudent($studentNumber);
 
         $cooldown = Otp::getCooldownRemaining($student->id, 'parent_link');
         if ($cooldown > 0) {
@@ -42,13 +36,7 @@ class ParentService
      */
     public function verifyAndLink(User $parent, string $studentNumber, string $otpCode): void
     {
-        $student = User::where('student_number', $studentNumber)
-                       ->where('role', 'student')
-                       ->first();
-
-        if (!$student) {
-            throw new Exception("Student not found with that Student ID.");
-        }
+        $student = $this->findStudent($studentNumber);
 
         $otpRecord = Otp::where('user_id', $student->id)
                         ->where('code', $otpCode)
@@ -69,5 +57,28 @@ class ParentService
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    /**
+     * Resolve a student account by student number or identifier.
+     */
+    protected function findStudent(string $studentNumber): User
+    {
+        $student = User::where('student_number', trim($studentNumber))
+                       ->where('role', 'student')
+                       ->first();
+
+        if (!$student) {
+            $resolved = User::findByIdentifier(trim($studentNumber));
+            if ($resolved && $resolved->role === 'student') {
+                $student = $resolved;
+            }
+        }
+
+        if (!$student) {
+            throw new Exception("Student not found with that Student ID.");
+        }
+
+        return $student;
     }
 }

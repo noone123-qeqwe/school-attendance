@@ -28,7 +28,34 @@
     </div>
 </div>
 
-@if(session('success'))
+@if(session('created_student_id'))
+<div class="card mb-4" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.25) 100%); border: 1.5px solid rgba(52, 211, 153, 0.4); border-radius: 14px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.35);">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(52, 211, 153, 0.25); display: flex; align-items: center; justify-content: center; color: #34d399; font-size: 1.6rem;">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+            <div>
+                <div style="font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: 0.3px;">
+                    ✅ Student Created Successfully
+                </div>
+                <div style="color: #d1fae5; font-size: 0.9rem; margin-top: 3px;">
+                    Account successfully created for <strong>{{ session('created_student_name') }}</strong>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3 p-2 px-3" style="background: rgba(0, 0, 0, 0.45); border: 1px dashed rgba(52, 211, 153, 0.5); border-radius: 10px;">
+            <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.8px; color: #86efac; font-weight: 700;">Student ID:</div>
+                <div style="font-size: 1.4rem; font-family: 'Courier New', monospace; font-weight: 800; color: #ffffff; letter-spacing: 1.5px;" id="createdStudentIdVal">{{ session('created_student_id') }}</div>
+            </div>
+            <button type="button" class="btn btn-sm" id="btnCopyCreatedId" onclick="copyCreatedId('{{ session('created_student_id') }}')" style="background: #22c55e; color: #052e16; font-weight: 700; border-radius: 8px; padding: 8px 16px; border: none; cursor: pointer; transition: all 0.2s;" title="Copy to clipboard">
+                <i class="bi bi-clipboard me-1" id="copyIdIcon"></i> <span id="copyIdText">Copy ID</span>
+            </button>
+        </div>
+    </div>
+</div>
+@elseif(session('success'))
 <div class="alert alert-success d-flex align-items-center mb-4" style="background:rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.4); color:#4ade80; border-radius:10px; padding:12px 16px;">
     <i class="bi bi-check-circle-fill me-2 fs-5"></i>
     <div>{{ session('success') }}</div>
@@ -287,11 +314,29 @@ function closeImportModal() {
     }
 }
 
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeImportModal();
+function copyCreatedId(id) {
+    if (!navigator.clipboard) {
+        const temp = document.createElement('textarea');
+        temp.value = id;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+    } else {
+        navigator.clipboard.writeText(id).catch(err => console.error('Copy failed', err));
     }
-});
+    const icon = document.getElementById('copyIdIcon');
+    const txt = document.getElementById('copyIdText');
+    const btn = document.getElementById('btnCopyCreatedId');
+    if (icon) icon.className = 'bi bi-check2 me-1';
+    if (txt) txt.textContent = 'Copied!';
+    if (btn) btn.style.background = '#86efac';
+    setTimeout(() => {
+        if (icon) icon.className = 'bi bi-clipboard me-1';
+        if (txt) txt.textContent = 'Copy ID';
+        if (btn) btn.style.background = '#22c55e';
+    }, 2500);
+}
 </script>
 
 <!-- Import CSV Modal -->

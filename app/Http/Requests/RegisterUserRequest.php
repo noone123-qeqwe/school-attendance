@@ -57,7 +57,7 @@ class RegisterUserRequest extends FormRequest
         }
 
         if ($this->role === 'student') {
-            $rules['student_number'] = 'required|alpha_num|size:7|unique:users';
+            $rules['student_number'] = 'nullable|string|max:50|unique:users,student_number';
             $rules['course']         = 'required|string';
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';

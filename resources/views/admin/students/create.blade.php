@@ -20,7 +20,33 @@
         </div>
         @endif
 
-        @if(session('success'))
+        @if(session('created_student_id'))
+        <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1.5px solid #34d399; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; background: #10b981; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        <i class="bi bi-check2"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; color: #065f46; font-size: 0.95rem;">
+                            ✅ Student Created Successfully
+                        </div>
+                        <div style="color: #047857; font-size: 0.85rem; margin-top: 2px;">
+                            {{ session('created_student_name') }} has been assigned:
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; background: #ffffff; padding: 6px 14px; border-radius: 8px; border: 1px solid #a7f3d0;">
+                    <span style="font-family: 'Courier New', monospace; font-weight: 800; font-size: 1.25rem; color: #065f46; letter-spacing: 1px;" id="copyIdCreate">{{ session('created_student_id') }}</span>
+                    <button type="button" class="adm-btn adm-btn-primary" style="padding: 4px 10px; font-size: 0.75rem;" onclick="navigator.clipboard.writeText('{{ session('created_student_id') }}'); this.innerText='Copied!';">
+                        <i class="bi bi-clipboard me-1"></i>Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if(session('success') && !session('created_student_id'))
         <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#16a34a;border-radius:10px;padding:10px 14px;font-size:.85rem;margin-bottom:16px;">
             {{ session('success') }}
         </div>
@@ -51,17 +77,19 @@
                 
                 <div class="col-md-6">
                     <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
-                        Student ID *
+                        Student ID
                     </label>
-                    <input type="text" 
-                           name="student_number" 
-                           class="adm-input" 
-                           value="{{ old('student_number') }}" 
-                           maxlength="7" 
-                           pattern="[a-zA-Z0-9]{7}" 
-                           required 
-                           placeholder="e.g. A123456"
-                           style="width: 100%;">
+                    <div style="position: relative;">
+                        <input type="text" 
+                               class="adm-input" 
+                               value="[Auto-generated: {{ $nextStudentId ?? (date('Y') . '0001') }}]" 
+                               disabled 
+                               readonly
+                               style="width: 100%; background: #f8fafc; color: #0284c7; font-weight: 700; font-family: 'Courier New', monospace; border: 1.5px dashed #93c5fd; cursor: not-allowed; letter-spacing: 0.5px;">
+                    </div>
+                    <small style="color: #64748b; font-size: 0.73rem; margin-top: 4px; display: block;">
+                        <i class="bi bi-info-circle me-1"></i>Automatically assigned by the system upon creation.
+                    </small>
                 </div>
 
                 <!-- Academic Information -->
@@ -218,8 +246,8 @@
     const addStudentForm = document.getElementById('addStudentForm');
     const csrfToken = document.querySelector('input[name="_token"]').value;
 
-    // Real-time form validation
-    const requiredFields = ['name', 'student_number', 'course', 'year_level', 'semester', 'password'];
+    // Real-time form validation (Student ID is automatically assigned by system)
+    const requiredFields = ['name', 'course', 'year_level', 'semester', 'password'];
     const formInputs = requiredFields.map(name => document.querySelector(`[name="${name}"]`));
 
     function validateForm() {

@@ -13,6 +13,7 @@ use App\Http\Requests\RegisterUserRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\Controller;
@@ -194,7 +195,8 @@ class AdminController extends Controller
 
      public function createStudent()
      {
-         return view('admin.students.create');
+         $nextStudentId = User::previewNextStudentNumber();
+         return view('admin.students.create', compact('nextStudentId'));
      }
 
      public function storeStudent(RegisterUserRequest $request)
@@ -208,20 +210,40 @@ class AdminController extends Controller
          // Clear the session so it cannot be reused
          session()->forget('admin_reg_email_verified');
 
-         $student = User::create([
-             'name'           => trim($request->name),
-             'student_number' => $request->student_number,
-             'email'          => strtolower(trim($request->email)),
-             'course'         => $request->course,
-             'year_level'     => $request->year_level,
-             'semester'       => $request->semester,
-             'password'       => Hash::make($request->password),
-             'role'           => 'student',
-             'email_verified_at' => now(),
-         ]);
+         $maxAttempts = 5;
+         $student = null;
+         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+             try {
+                 $student = DB::transaction(function () use ($request) {
+                     $studentNumber = $request->filled('student_number')
+                         ? trim($request->student_number)
+                         : User::generateStudentNumber();
+
+                     return User::create([
+                         'name'              => trim($request->name),
+                         'student_number'    => $studentNumber,
+                         'email'             => strtolower(trim($request->email)),
+                         'course'            => $request->course,
+                         'year_level'        => $request->year_level,
+                         'semester'          => $request->semester,
+                         'password'          => Hash::make($request->password),
+                         'role'              => 'student',
+                         'email_verified_at' => now(),
+                     ]);
+                 });
+                 break;
+             } catch (\Illuminate\Database\QueryException $e) {
+                 if ($attempt < $maxAttempts && str_contains($e->getMessage(), 'student_number')) {
+                     continue;
+                 }
+                 throw $e;
+             }
+         }
 
          return redirect()->route('admin.students')
-             ->with('success', "Student '{$student->name}' added successfully.");
+             ->with('success', "Student '{$student->name}' added successfully.")
+             ->with('created_student_id', $student->student_number)
+             ->with('created_student_name', $student->name);
      }
 
      public function searchStudents(Request $request)
@@ -410,7 +432,7 @@ class AdminController extends Controller
                     $attributes = [
                         'name'              => $name,
                         'email'             => $email,
-                        'student_number'    => $studentNumber ?: null,
+                        'student_number'    => $studentNumber ?: ($existing ? $existing->student_number : null),
                         'course'            => $course ?: null,
                         'year_level'        => $yearLevel,
                         'semester'          => $semester,

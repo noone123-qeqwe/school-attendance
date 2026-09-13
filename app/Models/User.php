@@ -24,6 +24,19 @@ class User extends Authenticatable
     }
 
     /**
+     * The "booted" method of the model.
+     * Automatically assigns a generated Student ID to new student accounts if not already provided.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if ($user->role === 'student' && empty($user->student_number)) {
+                $user->student_number = static::generateStudentNumber();
+            }
+        });
+    }
+
+    /**
      * Get and set the user's name correctly capitalized.
      */
     protected function name(): Attribute
@@ -425,43 +438,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Generate a unique student number automatically.
-     * Format: YYYYNNN (e.g., 2026001, 2026002)
-     * Where YYYY is current year and NNN is sequential 3-digit number
+     * Generate a unique student number automatically using the database-backed concurrency-safe sequence.
+     * Format: YYYY + sequential number (e.g., 20260001, 20260002)
      */
-    public static function generateStudentNumber(): string
+    public static function generateStudentNumber(?string $year = null): string
     {
-        $year = date('Y');
-        
-        // Find the latest student number for this year
-        $latestStudent = static::where('student_number', 'LIKE', $year . '%')
-            ->where('role', 'student')
-            ->orderByRaw('CAST(student_number AS UNSIGNED) DESC')
-            ->first();
-        
-        if ($latestStudent && $latestStudent->student_number) {
-            // Extract the numeric part after the year and increment
-            $studentNumberStr = (string) $latestStudent->student_number;
-            if (strlen($studentNumberStr) >= 4 && substr($studentNumberStr, 0, 4) === $year) {
-                $lastNumber = (int) substr($studentNumberStr, 4);
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1;
-            }
-        } else {
-            // Start from 1 if no students exist for this year
-            $newNumber = 1;
-        }
-        
-        // Format: YYYY + 3-digit number (e.g., 2026001)
-        $studentNumber = $year . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-        
-        // Ensure uniqueness (in case of race conditions)
-        while (static::where('student_number', $studentNumber)->exists()) {
-            $newNumber++;
-            $studentNumber = $year . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-        }
-        
-        return $studentNumber;
+        return app(\App\Services\StudentIdService::class)->generateNextId($year);
+    }
+
+    /**
+     * Preview the next student number without incrementing the sequence or locking records.
+     */
+    public static function previewNextStudentNumber(?string $year = null): string
+    {
+        return app(\App\Services\StudentIdService::class)->previewNextId($year);
     }
 }

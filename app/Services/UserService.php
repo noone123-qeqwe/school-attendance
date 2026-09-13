@@ -13,9 +13,13 @@ class UserService
      */
     public function createStudent(array $data)
     {
+        $studentNumber = !empty($data['student_number'])
+            ? trim($data['student_number'])
+            : User::generateStudentNumber();
+
         return User::create([
             'name' => trim($data['name']),
-            'student_number' => $data['student_number'],
+            'student_number' => $studentNumber,
             'course' => $data['course'],
             'year_level' => (int) $data['year_level'],
             'semester' => (int) $data['semester'],

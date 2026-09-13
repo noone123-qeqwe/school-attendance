@@ -154,7 +154,7 @@ class ParentController extends Controller
     public function sendLinkOtp(Request $request)
     {
         $request->validate([
-            'student_number' => 'required|string|size:7',
+            'student_number' => 'required|string|max:50',
         ]);
 
         try {
@@ -172,7 +172,7 @@ class ParentController extends Controller
     public function verifyLinkOtp(Request $request)
     {
         $request->validate([
-            'student_number' => 'required|string|size:7',
+            'student_number' => 'required|string|max:50',
             'otp' => 'required|string|size:6',
         ]);
 
