@@ -60,14 +60,12 @@ class RegistrationContinueFlowTest extends TestCase
         $response->assertSee('id="feedback-semester"', false);
     }
 
-    public function test_register_page_course_is_a_selectable_dropdown(): void
+    public function test_register_page_course_is_auto_set_to_bscs(): void
     {
         $response = $this->get('/register');
 
-        $response->assertSee('<select name="course" id="course">', false);
-        $response->assertSee('<option value="BSCS"', false);
-        $response->assertSee('<option value="BSIT"', false);
-        $response->assertSee('<option value="BSIS"', false);
+        $response->assertSee('name="course" id="course" value="BSCS"', false);
+        $response->assertDontSee('<select name="course"', false);
     }
 
     public function test_exact_student_registration_payload_succeeds(): void

@@ -42,7 +42,7 @@ class PTController extends Controller
         if ($request->role === 'student') {
             // Auto-generate student number if not provided
             $userData['student_number'] = $request->student_number ?: User::generateStudentNumber();
-            $userData['course'] = $request->course;
+            $userData['course'] = 'BSCS';
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
             $userData['section'] = $request->section;

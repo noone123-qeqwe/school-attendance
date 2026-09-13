@@ -26,6 +26,11 @@ class RegisterUserRequest extends FormRequest
             }
         }
 
+        // Auto-set course to BSCS (single-course system)
+        if ($this->role === 'student' || $this->routeIs('admin.student.store')) {
+            $this->merge(['course' => 'BSCS']);
+        }
+
         if ($this->has('first_name') && $this->has('surname')) {
             $name = trim($this->first_name);
             $middleName = trim((string)$this->middle_name);

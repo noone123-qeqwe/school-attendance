@@ -101,17 +101,11 @@
                 
                 <div class="col-md-4">
                     <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
-                        Course *
+                        Course
                     </label>
-                    <select name="course" 
-                            class="adm-input" 
-                            required 
-                            style="width: 100%;">
-                        <option value="">Select Course</option>
-                        @foreach(['BSCS' => 'BS Computer Science', 'BSIT' => 'BS Information Technology', 'BSIS' => 'BS Information Systems'] as $code => $name)
-                        <option value="{{ $code }}" {{ old('course')==$code?'selected':'' }}>{{ $code }} - {{ $name }}</option>
-                        @endforeach
-                    </select>
+                    <input type="hidden" name="course" value="BSCS">
+                    <input type="text" class="adm-input" value="BSCS" disabled 
+                           style="width:100%; background:#f0fdf4; color:#16a34a; font-weight:700; letter-spacing:0.5px;">
                 </div>
                 
                 <div class="col-md-4">

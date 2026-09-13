@@ -54,12 +54,9 @@
             </div>
             <div class="col-md-2">
                 <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Course</label>
-                <select name="course" class="form-control">
-                    <option value="">All</option>
-                    <option value="BSIT" {{ request('course') == 'BSIT' ? 'selected' : '' }}>BSIT</option>
-                    <option value="BSCS" {{ request('course') == 'BSCS' ? 'selected' : '' }}>BSCS</option>
-                    <option value="BSIS" {{ request('course') == 'BSIS' ? 'selected' : '' }}>BSIS</option>
-                </select>
+                <input type="hidden" name="course" value="BSCS">
+                <input type="text" class="form-control" value="BSCS" disabled 
+                       style="background:#f0fdf4; color:#16a34a; font-weight:700; letter-spacing:0.5px;">
             </div>
             <div class="col-md-2">
                 <label class="text-muted text-uppercase" style="font-size: 0.75rem; font-weight: 700;">Year</label>

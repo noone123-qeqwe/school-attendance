@@ -576,14 +576,9 @@
                                 <div class="row g-2 mb-1">
                                     <div class="col-7">
                                         <div class="form-floating-custom mb-0" id="wrap-course">
-                                            <select name="course" id="course">
-                                                <option value="" disabled {{ old('course') ? '' : 'selected' }}></option>
-                                                <option value="BSCS" {{ old('course', 'BSCS') == 'BSCS' ? 'selected' : '' }}>BSCS</option>
-                                                <option value="BSIT" {{ old('course') == 'BSIT' ? 'selected' : '' }}>BSIT</option>
-                                                <option value="BSIS" {{ old('course') == 'BSIS' ? 'selected' : '' }}>BSIS</option>
-                                            </select>
+                                            <input type="hidden" name="course" id="course" value="BSCS">
+                                            <input type="text" value="BSCS" disabled style="background: rgba(207,164,111,0.08); color: #CFA46F; font-weight: 700; letter-spacing: 0.5px; cursor: default;">
                                             <label for="course">Course</label>
-                                            <i class="bi bi-chevron-down select-arrow"></i>
                                         </div>
                                         <div class="field-feedback" id="feedback-course"></div>
                                     </div>
