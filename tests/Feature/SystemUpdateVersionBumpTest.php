@@ -14,6 +14,7 @@ class SystemUpdateVersionBumpTest extends TestCase
     private string $initialSwContent = '';
     private string $initialManifestContent = '';
     private string $initialVersionContent = '';
+    private string $initialPackageContent = '';
 
     protected function setUp(): void
     {
@@ -29,6 +30,10 @@ class SystemUpdateVersionBumpTest extends TestCase
         $versionPath = base_path('version.json');
         if (File::exists($versionPath)) {
             $this->initialVersionContent = File::get($versionPath);
+        }
+        $packagePath = base_path('package.json');
+        if (File::exists($packagePath)) {
+            $this->initialPackageContent = File::get($packagePath);
         }
     }
 
@@ -46,19 +51,18 @@ class SystemUpdateVersionBumpTest extends TestCase
         if (!empty($this->initialVersionContent) && File::exists($versionPath)) {
             File::put($versionPath, $this->initialVersionContent);
         }
+        $packagePath = base_path('package.json');
+        if (!empty($this->initialPackageContent) && File::exists($packagePath)) {
+            File::put($packagePath, $this->initialPackageContent);
+        }
         parent::tearDown();
     }
 
     private function getBaselineVersion(): string
     {
-        $versionPath = base_path('version.json');
-        if (File::exists($versionPath)) {
-            $data = json_decode(File::get($versionPath), true);
-            if (!empty($data['version'])) {
-                return (string) $data['version'];
-            }
-        }
-        return config('version.version', '2.4.2');
+        $versionService = app(\App\Services\VersionService::class);
+        $versionService->refresh();
+        return $versionService->getVersion();
     }
 
     private function bumpSemver(string $version, int $increment = 1): string
@@ -178,5 +182,39 @@ class SystemUpdateVersionBumpTest extends TestCase
         $pwaRes = $this->get('/pwa/version');
         $pwaRes->assertStatus(200);
         $this->assertEquals($this->bumpSemver($base, 2), $pwaRes->json('latest_version'));
+    }
+
+    public function test_consecutive_system_updates_move_version_multiple_times_and_never_get_stuck(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+            'is_active' => true,
+        ]);
+
+        $base = $this->getBaselineVersion();
+
+        // Perform 4 consecutive full system updates
+        for ($i = 1; $i <= 4; $i++) {
+            $expectedVer = 'v' . $this->bumpSemver($base, $i);
+
+            $res = $this->actingAs($superAdmin)->postJson(route('admin.system-update.run'));
+            $res->assertStatus(200);
+            $data = $res->json();
+
+            $this->assertTrue($data['success'], "Update #{$i} must succeed");
+            $this->assertEquals($expectedVer, $data['app_version'], "Update #{$i} must advance to {$expectedVer}, got {$data['app_version']}");
+
+            // Verify database setting matches
+            $this->assertEquals($this->bumpSemver($base, $i), \App\Models\Setting::get('system_version'));
+
+            // Verify VersionService matches
+            $this->assertEquals($this->bumpSemver($base, $i), app(\App\Services\VersionService::class)->getVersion());
+        }
+
+        // Verify final /pwa/version endpoint matches base+4
+        $pwaRes = $this->get('/pwa/version');
+        $pwaRes->assertStatus(200);
+        $this->assertEquals($this->bumpSemver($base, 4), $pwaRes->json('latest_version'));
     }
 }

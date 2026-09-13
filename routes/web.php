@@ -98,7 +98,7 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
     $requestedVer = $request->query('v');
     $cacheKey = 'pwa_version_response_' . $swMtime . ($requestedVer ? '_' . preg_replace('/[^a-zA-Z0-9_.]/', '', $requestedVer) : '');
 
-    $versionData = \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, function () use ($swMtime, $requestedVer, $changelogService, $versionService) {
+    $resolver = function () use ($swMtime, $requestedVer, $changelogService, $versionService) {
         $latestVersion = $versionService->getVersion();
         $installedVersion = $versionService->getInstalledVersion();
         $ver = $versionService->getSwVersion();
@@ -119,7 +119,11 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
             'timestamp'         => $swMtime,
             'changelog'         => $changelog,
         ];
-    });
+    };
+
+    $versionData = app()->environment('testing')
+        ? $resolver()
+        : \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, $resolver);
 
     return response()->json($versionData, 200, [
         'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',

@@ -340,7 +340,7 @@ class SystemUpdateController extends Controller
         $newVer = null;
         try {
             $newAppVer = $this->syncOrBumpAppVersionInternal();
-            $newVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v344');
+            $newVer = \Illuminate\Support\Facades\Cache::get('pwa_sw_version', 'v350');
             $results[] = [
                 'step' => 'PWA & Client App Broadcast',
                 'status' => 'success',
@@ -359,9 +359,17 @@ class SystemUpdateController extends Controller
             ];
         }
 
+        // Invalidate and re-prime view and route caches AFTER version is bumped
+        try {
+            Artisan::call('view:clear');
+            Artisan::call('cache:clear');
+            try { Artisan::call('config:clear'); } catch (\Throwable $ex) {}
+            try { Artisan::call('route:clear'); } catch (\Throwable $ex) {}
+        } catch (\Throwable $e) {}
+
         // 6. Broadcast Push Announcement to All Registered User Devices
         try {
-            $resolvedAppVer = $newAppVer ?? app(\App\Services\ChangelogService::class)->getLatestVersion();
+            $resolvedAppVer = $newAppVer ?? app(\App\Services\VersionService::class)->getVersion();
             $updateTitle = '🚀 System Update Complete (v' . $resolvedAppVer . ')';
             $updateBody = 'Smart Attendance v' . $resolvedAppVer . ' is live! All features, security protections, and performance optimizations are now active.';
             
@@ -409,7 +417,8 @@ class SystemUpdateController extends Controller
             ];
         }
 
-        $finalAppVer = $newAppVer ?? app(\App\Services\ChangelogService::class)->getLatestVersion();
+        $finalAppVer = $newAppVer ?? app(\App\Services\VersionService::class)->getVersion();
+        $currentBuild = app(\App\Services\VersionService::class)->getBuild();
 
         return response()->json([
             'success' => $overallSuccess,
@@ -418,6 +427,7 @@ class SystemUpdateController extends Controller
             'version' => $newVer ?? null,
             'sw_version' => $newVer ?? null,
             'app_version' => 'v' . ltrim($finalAppVer, 'v'),
+            'build' => $currentBuild,
             'timestamp' => now()->format('M d, Y h:i:s A')
         ]);
     }
@@ -765,7 +775,7 @@ class SystemUpdateController extends Controller
         $manifestPath = public_path('manifest.json');
         if (File::exists($manifestPath)) {
             $manifestContent = File::get($manifestPath);
-            $appVer = app(\App\Services\ChangelogService::class)->getLatestVersion();
+            $appVer = app(\App\Services\VersionService::class)->getVersion();
             $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$appVer}\"", $manifestContent);
             File::put($manifestPath, $manifestContent);
         }
@@ -795,6 +805,10 @@ class SystemUpdateController extends Controller
             $type = $request->input('type', 'patch');
             $release = app(\App\Services\VersionService::class)->createRelease($type, $specified);
             $newAppVer = $release['version'];
+
+            // Clear compiled view cache so new version badge and asset query hashes take effect immediately
+            try { Artisan::call('view:clear'); } catch (\Throwable $ex) {}
+            try { Artisan::call('cache:clear'); } catch (\Throwable $ex) {}
 
             // Broadcast Web Push announcement for the new semantic release
             try {
@@ -832,23 +846,25 @@ class SystemUpdateController extends Controller
      */
     public function bumpAppVersionInternal(?string $specifiedVersion = null): string
     {
-        $currentSetting = Setting::get('system_version');
-        $baseVer = !empty($currentSetting) ? $currentSetting : app(\App\Services\VersionService::class)->getVersion();
-        $targetVer = $specifiedVersion ? ltrim($specifiedVersion, 'v') : $this->incrementSemver($baseVer);
-        $release = app(\App\Services\VersionService::class)->createRelease('patch', $targetVer);
+        $versionService = app(\App\Services\VersionService::class);
+        $versionService->refresh();
+        $baseVer = $versionService->getVersion();
+        $targetVer = $specifiedVersion ? ltrim(trim($specifiedVersion), 'vV ') : $this->incrementSemver($baseVer);
+        $release = $versionService->createRelease('patch', $targetVer);
         return $release['version'];
     }
 
     /**
      * Synchronize app version to the latest release, or increment if already on or above release.
      */
-    public function syncOrBumpAppVersionInternal(): string
+    public function syncOrBumpAppVersionInternal(?string $targetVersion = null): string
     {
-        $currentSetting = Setting::get('system_version');
-        $activeVer = !empty($currentSetting) ? $currentSetting : app(\App\Services\VersionService::class)->getVersion();
-        $targetVer = $this->incrementSemver($activeVer);
+        $versionService = app(\App\Services\VersionService::class);
+        $versionService->refresh();
+        $activeVer = $versionService->getVersion();
+        $targetVer = $targetVersion ? ltrim(trim($targetVersion), 'vV ') : $this->incrementSemver($activeVer);
 
-        $release = app(\App\Services\VersionService::class)->createRelease('patch', $targetVer);
+        $release = $versionService->createRelease('patch', $targetVer);
         return $release['version'];
     }
 

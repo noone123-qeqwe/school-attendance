@@ -6,8 +6,8 @@ return [
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.4.1'),
-    'default_version' => env('APP_LATEST_VERSION', '2.4.1'),
+    'installed_version' => env('APP_INSTALLED_VERSION', '2.4.4'),
+    'default_version' => env('APP_LATEST_VERSION', '2.4.4'),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +24,68 @@ return [
     |
     */
     'releases' => [
+        '2.4.4' => [
+            'version' => '2.4.4',
+            'version_tag' => 'v2.4.4',
+            'title' => 'Continuous Semantic Version Progression & Deployment Resiliency',
+            'description' => 'Permanent resolution for version progression stalls across system updates and cloud deployments with durable database persistence and post-update cache invalidation.',
+            'features' => [
+                'Unstoppable consecutive version auto-progression across 1-click update consoles and background releases',
+                'Durable database-first release state storage resilient to read-only container filesystems and cloud restarts',
+                'Dynamic semver comparison eliminating artificial version floor traps',
+            ],
+            'improvements' => [
+                'Post-update cache invalidation guaranteeing immediate visibility of fresh version badges across all dashboards',
+                'Graceful multi-manifest disk synchronization with non-blocking error recovery',
+                'Real-time Service Worker cache busting and PWA asset alignment on every release',
+            ],
+            'bugFixes' => [
+                'Fixed system release version moving once to 2.4.2 and remaining frozen on subsequent updates',
+                'Fixed outdated compiled view cache serving stale release tags after full system updates',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-13',
+        ],
+        '2.4.3' => [
+            'version' => '2.4.3',
+            'version_tag' => 'v2.4.3',
+            'title' => 'Dual Account & Email Verification Security in Forgot Password Flow',
+            'description' => 'Two-factor account recovery requiring matching Student/Employee ID and registered email before OTP generation, zero email leakage, and anti-tampering protection.',
+            'features' => [
+                'Strict dual verification requiring matching Account ID and registered Gmail before OTP issuance',
+                'Session-bound recovery tokens preventing URL parameter spoofing across multi-step reset forms',
+            ],
+            'improvements' => [
+                'Clean contextual error feedback on mismatched credentials without leaking account existence',
+                'Unified account verification across both web and mobile API forgot password endpoints',
+            ],
+            'bugFixes' => [
+                'Fixed arbitrary email submissions requesting OTPs for unrelated user accounts',
+            ],
+            'security' => [
+                'Multi-factor identity confirmation before triggering transactional reset tokens',
+            ],
+            'released_at' => '2026-09-13',
+        ],
+        '2.4.2' => [
+            'version' => '2.4.2',
+            'version_tag' => 'v2.4.2',
+            'title' => 'Automatic Concurrency-Safe Student ID Generation System',
+            'description' => 'Automated Student ID sequence generation with atomic database locking, eliminating manual ID entry and preventing race-condition duplicate IDs.',
+            'features' => [
+                'Automatic unique Student ID allocation in YYYYNNNN format (e.g. 20260001)',
+                'Concurrency-safe pessimistic locking ensuring zero ID collisions during simultaneous student registrations',
+            ],
+            'improvements' => [
+                'Automatic sequence recovery from highest existing database identifier on initial startup',
+                'Immediate QR card generation for newly generated Student IDs upon registration',
+            ],
+            'bugFixes' => [
+                'Fixed manual Student ID typing overhead and duplicate ID assignment errors during bulk intake',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-13',
+        ],
         '2.4.1' => [
             'version' => '2.4.1',
             'version_tag' => 'v2.4.1',

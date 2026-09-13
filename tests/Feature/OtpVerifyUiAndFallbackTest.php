@@ -24,8 +24,13 @@ class OtpVerifyUiAndFallbackTest extends TestCase
 
     public function test_otp_verify_view_renders_with_csp_nonce_and_6_digit_inputs()
     {
-        $response = $this->withSession(['otp_identifier' => 'student@example.com'])
-            ->get('/verify-otp?purpose=forgot_password');
+        $user = User::factory()->create(['email' => 'student@example.com']);
+        $response = $this->withSession([
+            'otp_identifier'       => 'student@example.com',
+            'otp_verified_account' => true,
+            'otp_user_id'          => $user->id,
+            'otp_email'            => $user->email,
+        ])->get('/verify-otp?purpose=forgot_password');
 
         $response->assertStatus(200);
         $content = $response->getContent();
@@ -90,7 +95,12 @@ class OtpVerifyUiAndFallbackTest extends TestCase
         ]);
 
         // Submit form simulating browser where otpHidden was empty, but otp_digits[] was submitted
-        $response = $this->withSession(['otp_identifier' => $user->email])
+        $response = $this->withSession([
+            'otp_identifier'       => $user->email,
+            'otp_verified_account' => true,
+            'otp_user_id'          => $user->id,
+            'otp_email'            => $user->email,
+        ])
             ->post('/verify-otp', [
                 'purpose'    => 'forgot_password',
                 'identifier' => $user->email,
@@ -119,7 +129,12 @@ class OtpVerifyUiAndFallbackTest extends TestCase
             'attempts'   => 0,
         ]);
 
-        $response = $this->withSession(['otp_identifier' => $user->email])
+        $response = $this->withSession([
+            'otp_identifier'       => $user->email,
+            'otp_verified_account' => true,
+            'otp_user_id'          => $user->id,
+            'otp_email'            => $user->email,
+        ])
             ->from('/verify-otp?purpose=forgot_password')
             ->post('/verify-otp', [
                 'purpose'    => 'forgot_password',

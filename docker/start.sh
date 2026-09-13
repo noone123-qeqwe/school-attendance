@@ -21,6 +21,9 @@ mkdir -p /var/www/html/storage/logs \
 # Ensure write permissions
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+touch /var/www/html/version.json 2>/dev/null || true
+chown www-data:www-data /var/www/html/version.json /var/www/html/package.json /var/www/html/public/manifest.json /var/www/html/public/sw.js 2>/dev/null || true
+chmod 664 /var/www/html/version.json /var/www/html/package.json /var/www/html/public/manifest.json /var/www/html/public/sw.js 2>/dev/null || true
 
 # Generate temporary APP_KEY fallback if not provided in environment
 if [ -z "$APP_KEY" ]; then
@@ -66,6 +69,8 @@ fi
 
 # Cache config, routes, views, and events for production performance
 echo "⚡ Optimizing Laravel for production..."
+php artisan config:clear || true
+php artisan view:clear || true
 php artisan optimize || true
 php artisan event:cache || true
 php artisan view:cache || true

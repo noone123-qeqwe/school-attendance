@@ -3383,6 +3383,10 @@ async function runFullSystemUpdate() {
                 const appReleaseEl = document.getElementById('currentAppReleaseBadge');
                 if (appReleaseEl) appReleaseEl.textContent = data.app_version;
             }
+            if (data.build) {
+                const buildEl = document.getElementById('currentAppBuildText');
+                if (buildEl) buildEl.textContent = data.build;
+            }
 
             stepsList.style.display = 'flex';
             stepsList.innerHTML = data.results.map(r => `

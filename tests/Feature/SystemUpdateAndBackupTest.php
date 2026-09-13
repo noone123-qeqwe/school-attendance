@@ -14,9 +14,31 @@ class SystemUpdateAndBackupTest extends TestCase
     protected User $superAdmin;
     protected User $regularAdmin;
 
+    private string $initialSwContent = '';
+    private string $initialManifestContent = '';
+    private string $initialVersionContent = '';
+    private string $initialPackageContent = '';
+
     protected function setUp(): void
     {
         parent::setUp();
+
+        $swPath = public_path('sw.js');
+        if (\Illuminate\Support\Facades\File::exists($swPath)) {
+            $this->initialSwContent = \Illuminate\Support\Facades\File::get($swPath);
+        }
+        $manifestPath = public_path('manifest.json');
+        if (\Illuminate\Support\Facades\File::exists($manifestPath)) {
+            $this->initialManifestContent = \Illuminate\Support\Facades\File::get($manifestPath);
+        }
+        $versionPath = base_path('version.json');
+        if (\Illuminate\Support\Facades\File::exists($versionPath)) {
+            $this->initialVersionContent = \Illuminate\Support\Facades\File::get($versionPath);
+        }
+        $packagePath = base_path('package.json');
+        if (\Illuminate\Support\Facades\File::exists($packagePath)) {
+            $this->initialPackageContent = \Illuminate\Support\Facades\File::get($packagePath);
+        }
 
         $this->superAdmin = User::factory()->create([
             'role' => 'admin',
@@ -31,6 +53,28 @@ class SystemUpdateAndBackupTest extends TestCase
             'email' => 'deptadmin@school.test',
             'must_change_password' => false,
         ]);
+    }
+
+    protected function tearDown(): void
+    {
+        $swPath = public_path('sw.js');
+        if (!empty($this->initialSwContent) && \Illuminate\Support\Facades\File::exists($swPath)) {
+            \Illuminate\Support\Facades\File::put($swPath, $this->initialSwContent);
+        }
+        $manifestPath = public_path('manifest.json');
+        if (!empty($this->initialManifestContent) && \Illuminate\Support\Facades\File::exists($manifestPath)) {
+            \Illuminate\Support\Facades\File::put($manifestPath, $this->initialManifestContent);
+        }
+        $versionPath = base_path('version.json');
+        if (!empty($this->initialVersionContent) && \Illuminate\Support\Facades\File::exists($versionPath)) {
+            \Illuminate\Support\Facades\File::put($versionPath, $this->initialVersionContent);
+        }
+        $packagePath = base_path('package.json');
+        if (!empty($this->initialPackageContent) && \Illuminate\Support\Facades\File::exists($packagePath)) {
+            \Illuminate\Support\Facades\File::put($packagePath, $this->initialPackageContent);
+        }
+
+        parent::tearDown();
     }
 
     public function test_super_admin_can_access_system_update_center(): void
