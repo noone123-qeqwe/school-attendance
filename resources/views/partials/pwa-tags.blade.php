@@ -2004,15 +2004,19 @@
     function syncPwaInstallVisibility() {
         const triggers = document.querySelectorAll('.pwa-install-trigger');
         const banner = document.getElementById('pwaInstallBanner');
+        const downloadRow = document.getElementById('smartAppDownloadRow');
         @auth
         // On authenticated dashboard/portal: ensure no install triggers or banner are visible
         triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
         if (banner) banner.style.display = 'none';
+        if (downloadRow) downloadRow.style.display = 'none';
         @else
         const standalone = checkIsStandalone();
-        if (standalone) {
+        const installedFlag = localStorage.getItem('pwa_app_installed') === 'true';
+        if (standalone || installedFlag) {
             triggers.forEach(el => { el.style.setProperty('display', 'none', 'important'); el.style.visibility = 'hidden'; });
             if (banner) banner.style.display = 'none';
+            if (downloadRow) downloadRow.style.display = 'none';
             return;
         }
 
@@ -2742,9 +2746,12 @@
         deferredPrompt = null;
         const installBanner = document.getElementById('pwaInstallBanner');
         const iosModal = document.getElementById('pwaIosModal');
+        const downloadRow = document.getElementById('smartAppDownloadRow');
         if (installBanner) installBanner.style.display = 'none';
         if (iosModal) iosModal.style.display = 'none';
+        if (downloadRow) downloadRow.style.display = 'none';
         localStorage.setItem('pwa_prompt_dismissed', 'true');
+        localStorage.setItem('pwa_app_installed', 'true');
         document.querySelectorAll('.pwa-install-trigger').forEach(el => {
             el.style.display = 'none';
         });

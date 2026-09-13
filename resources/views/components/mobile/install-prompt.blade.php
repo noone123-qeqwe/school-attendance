@@ -249,6 +249,7 @@
         document.getElementById('installPrompt').style.display = 'none';
         localStorage.removeItem('installPromptDismissed');
         localStorage.removeItem('installPromptDismissTime');
+        localStorage.setItem('pwa_app_installed', 'true');
     });
 
     // Detect when user returns to browser after uninstalling

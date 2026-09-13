@@ -1156,12 +1156,41 @@ if (document.readyState === 'loading') {
                window.matchMedia('(display-mode: fullscreen)').matches;
     }
 
-    function updateInstallVisibility() {
-        var isInstalled = checkStandalone();
-        var mobileRow = document.getElementById('smartAppDownloadRow');
+    function checkInstalledFlag() {
+        return localStorage.getItem('pwa_app_installed') === 'true';
+    }
 
-        if (isInstalled && mobileRow) {
+    async function checkRelatedApps() {
+        if ('getInstalledRelatedApps' in navigator) {
+            try {
+                var related = await navigator.getInstalledRelatedApps();
+                if (related && related.length > 0) {
+                    localStorage.setItem('pwa_app_installed', 'true');
+                    return true;
+                }
+            } catch(e) {}
+        }
+        return false;
+    }
+
+    function hideInstallRow() {
+        var mobileRow = document.getElementById('smartAppDownloadRow');
+        if (mobileRow) {
             mobileRow.style.display = 'none';
+        }
+    }
+
+    async function updateInstallVisibility() {
+        // 1. Immediate checks (synchronous)
+        if (checkStandalone() || checkInstalledFlag()) {
+            hideInstallRow();
+            return;
+        }
+
+        // 2. Async check via getInstalledRelatedApps API
+        var relatedInstalled = await checkRelatedApps();
+        if (relatedInstalled) {
+            hideInstallRow();
         }
     }
 
@@ -1176,14 +1205,20 @@ if (document.readyState === 'loading') {
         });
     }
 
+    // Hide immediately when PWA is installed during this session
+    window.addEventListener('appinstalled', function() {
+        localStorage.setItem('pwa_app_installed', 'true');
+        hideInstallRow();
+    });
+
     // Check visibility on load, DOM ready, and focus
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', updateInstallVisibility);
+        document.addEventListener('DOMContentLoaded', function() { updateInstallVisibility(); });
     } else {
         updateInstallVisibility();
     }
-    window.addEventListener('load', updateInstallVisibility);
-    window.addEventListener('focus', updateInstallVisibility);
+    window.addEventListener('load', function() { updateInstallVisibility(); });
+    window.addEventListener('focus', function() { updateInstallVisibility(); });
 })();
 </script>
 
