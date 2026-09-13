@@ -72,13 +72,16 @@ class OtpService
         string $otpGenerated = 'YES',
         string $providerAccepted = 'UNKNOWN',
         ?string $messageId = null,
-        string $outcome = 'SUCCESS'
+        string $outcome = 'SUCCESS',
+        ?int $userId = null,
+        ?string $errorCategory = null
     ): void {
         $maskedEmail = self::maskEmail($email);
         $maskedIp = self::maskIp($ip);
 
-        Log::info("OTP REQUEST\n" . implode("\n", [
+        $lines = [
             "Request ID: " . $requestId,
+            "User ID: " . ($userId ?: 'N/A'),
             "Email: " . $maskedEmail,
             "Timestamp: " . now()->toIso8601String(),
             "Purpose: " . $purpose,
@@ -90,7 +93,13 @@ class OtpService
             "Provider accepted: " . $providerAccepted,
             "Message ID: " . ($messageId ?: 'N/A'),
             "Result: " . $outcome,
-        ]));
+        ];
+
+        if ($errorCategory) {
+            $lines[] = "Error Category: " . $errorCategory;
+        }
+
+        Log::info("OTP REQUEST\n" . implode("\n", $lines));
     }
 
     /**
@@ -171,17 +180,24 @@ class OtpService
                 Otp::setCooldown($userId, $purpose);
             }
 
+            // Resolve user if not explicitly passed
+            $user = null;
+            if ($userId) {
+                $user = User::find($userId);
+            } else {
+                $user = User::findByIdentifier($cleanEmail);
+                if ($user) {
+                    $userId = $user->id;
+                    Otp::setCooldown($userId, $purpose);
+                }
+            }
+
             // 5. Invalidate previous OTPs & generate new 6-digit code
             $otp = Otp::generateForEmail($cleanEmail, $purpose, $userId);
 
             // Resolve name if not explicitly passed
             if (!$recipientName) {
-                if ($userId) {
-                    $recipientName = User::find($userId)?->name ?? 'User';
-                } else {
-                    $user = User::where('email', $cleanEmail)->first();
-                    $recipientName = $user?->name ?? 'User';
-                }
+                $recipientName = $user?->name ?? 'User';
             }
 
             // 6. Deliver email through decoupled EmailDeliveryService
@@ -219,7 +235,8 @@ class OtpService
                     otpGenerated: 'YES',
                     providerAccepted: 'YES',
                     messageId: $delivery->messageId,
-                    outcome: 'SUCCESS'
+                    outcome: 'SUCCESS',
+                    userId: $userId
                 );
 
                 return $result;
@@ -230,6 +247,9 @@ class OtpService
 
             // Set brief 5s buffer on provider crash so user isn't stuck with 30s lock
             Otp::setCooldown($cleanEmail, $purpose, 5);
+            if ($userId) {
+                Otp::setCooldown($userId, $purpose, 5);
+            }
 
             $this->logStructuredRequest(
                 requestId: $logRequestId,
@@ -241,7 +261,9 @@ class OtpService
                 otpGenerated: 'YES',
                 providerAccepted: 'NO',
                 messageId: null,
-                outcome: 'FAILED'
+                outcome: 'FAILED',
+                userId: $userId,
+                errorCategory: 'PROVIDER_REJECTED'
             );
 
             throw new Exception($delivery->error ?: 'Unable to send verification code. Please try again.', $delivery->statusCode ?: 500);
@@ -265,23 +287,31 @@ class OtpService
             ? self::maskEmail($cleanIdentifier)
             : substr($cleanIdentifier, 0, 2) . '***';
 
-        // Check if user exists by email, student_number, or employee_id
+        // Check if user exists using comprehensive identifier resolution
+        $user = null;
         if (!$userId) {
-            $user = User::where('email', $cleanIdentifier)
-                ->orWhere('student_number', $cleanIdentifier)
-                ->orWhere('employee_id', $cleanIdentifier)
-                ->first();
+            $user = User::findByIdentifier($cleanIdentifier);
             if ($user) {
                 $userId = $user->id;
             }
+        } else {
+            $user = User::find($userId);
         }
 
-        // Look for matching active OTP record
+        $registeredEmail = null;
+        if ($user && !empty($user->email)) {
+            $registeredEmail = strtolower(trim((string) $user->email));
+        }
+
+        // Look for matching active OTP record (matched by clean identifier, registered email, or user ID)
         $otpRecord = Otp::where('purpose', $purpose)
             ->where('code', $cleanCode)
             ->where('used', false)
-            ->where(function ($query) use ($cleanIdentifier, $userId) {
+            ->where(function ($query) use ($cleanIdentifier, $userId, $registeredEmail) {
                 $query->where('email', $cleanIdentifier);
+                if ($registeredEmail && $registeredEmail !== $cleanIdentifier) {
+                    $query->orWhere('email', $registeredEmail);
+                }
                 if ($userId) {
                     $query->orWhere('user_id', $userId);
                 }
@@ -295,8 +325,11 @@ class OtpService
             $expired = Otp::where('purpose', $purpose)
                 ->where('code', $cleanCode)
                 ->where('expires_at', '<=', now())
-                ->where(function ($query) use ($cleanIdentifier, $userId) {
+                ->where(function ($query) use ($cleanIdentifier, $userId, $registeredEmail) {
                     $query->where('email', $cleanIdentifier);
+                    if ($registeredEmail && $registeredEmail !== $cleanIdentifier) {
+                        $query->orWhere('email', $registeredEmail);
+                    }
                     if ($userId) {
                         $query->orWhere('user_id', $userId);
                     }
@@ -315,6 +348,9 @@ class OtpService
             $fails = Otp::recordFailedVerify($userId ?: $cleanIdentifier, $purpose);
             if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
                 Otp::invalidatePrevious($cleanIdentifier, $purpose);
+                if ($registeredEmail && $registeredEmail !== $cleanIdentifier) {
+                    Otp::invalidatePrevious($registeredEmail, $purpose);
+                }
                 if ($userId) {
                     Otp::invalidatePrevious($userId, $purpose);
                 }
@@ -346,14 +382,21 @@ class OtpService
         Otp::clearFailedVerify($userId ?: $cleanIdentifier, $purpose);
         $otpRecord->update(['used' => true]);
 
-        Log::info("OTP verified successfully [purpose: {$purpose}, recipient: {$maskedIdentifier}]");
+        // Resolve authoritative user ID from all available sources
+        $authoritativeUserId = $userId ?: ($otpRecord->user_id ?? $user?->id);
+        if (!$authoritativeUserId && !empty($otpRecord->email)) {
+            $resolvedUser = User::findByIdentifier($otpRecord->email);
+            $authoritativeUserId = $resolvedUser?->id;
+        }
+
+        Log::info("OTP verified successfully [purpose: {$purpose}, recipient: {$maskedIdentifier}, user_id: " . ($authoritativeUserId ?: 'none') . "]");
 
         return [
             'success' => true,
             'status'  => 'verified',
             'message' => 'Email verified successfully.',
             'otp'     => $otpRecord,
-            'user_id' => $userId,
+            'user_id' => $authoritativeUserId,
         ];
     }
 }

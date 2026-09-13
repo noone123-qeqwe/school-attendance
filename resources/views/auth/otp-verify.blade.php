@@ -177,11 +177,15 @@
             <h2 class="reset-title" style="font-size:1.4rem; font-weight:800; letter-spacing:0.5px; margin-bottom:8px;">VERIFY YOUR EMAIL</h2>
             @php
                 $effectiveIdentifier = $identifier ?? session('otp_identifier') ?? old('identifier', old('email', ''));
+                $displayEmail = $maskedEmail ?? session('otp_masked_email') ?? '';
             @endphp
             <p class="reset-subtitle" style="font-size:0.92rem; color:rgba(248,231,211,0.8); line-height:1.5; margin:0;">
                 We sent a verification code to:
-                @if(!empty($effectiveIdentifier))
-                <br><strong style="color:#ffffff; font-size:1.05rem; word-break:break-all;">{{ $effectiveIdentifier }}</strong>
+                @if(!empty($displayEmail) && $displayEmail !== $effectiveIdentifier)
+                <br><strong style="color:#ffffff; font-size:1.05rem; word-break:break-all;">{{ $displayEmail }}</strong>
+                <span style="font-size:0.8rem; color:rgba(248,231,211,0.6); display:block; margin-top:2px;">(Account: {{ $effectiveIdentifier }})</span>
+                @elseif(!empty($effectiveIdentifier))
+                <br><strong style="color:#ffffff; font-size:1.05rem; word-break:break-all;">{{ $displayEmail ?: $effectiveIdentifier }}</strong>
                 @endif
             </p>
             <div style="margin-top:10px; display:inline-flex; align-items:center; gap:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:10px; padding:6px 12px; font-size:0.8rem; color:#fde68a;">

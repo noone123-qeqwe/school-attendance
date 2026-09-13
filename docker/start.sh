@@ -37,6 +37,7 @@ export MAIL_USERNAME="${MAIL_USERNAME:-osmenacolleges.attendance@gmail.com}"
 export MAIL_PASSWORD="${MAIL_PASSWORD:-zskulbswpldmxqfp}"
 export MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-osmenacolleges.attendance@gmail.com}"
 export MAIL_FROM_NAME="${MAIL_FROM_NAME:-Smart Classroom Attendance System}"
+export BREVO_API_KEY="${BREVO_API_KEY:-}"
 
 # Run storage symlink
 echo "🔗 Ensuring storage symlink..."

@@ -84,23 +84,24 @@ class EmailDeliveryService
         Log::info("EmailDeliveryService: Sending OTP [purpose: {$purpose}, recipient: {$recipientEmail}, provider: {$providerName}]");
 
         // 1. Check HTTP API providers first (works over HTTPS port 443; never blocked on cloud/Render free tier)
-        $resendKey = config('services.resend.key') ?: env('RESEND_API_KEY');
-
-        if (!empty($resendKey) && !app()->runningUnitTests()) {
-            $httpRes = $this->sendViaResendHttp($recipientEmail, $otpCode, $purpose, $recipientName, $resendKey, $requestId);
-            if ($httpRes->success) {
-                return $httpRes;
-            }
-            Log::warning("Resend HTTP delivery failed, falling back to standard mailer: {$httpRes->error}");
-        }
-
+        // Try Brevo first: It has an authenticated, verified sender that reliably delivers to any email domain
         $brevoKey = config('services.brevo.key') ?: env('BREVO_API_KEY');
         if (!empty($brevoKey) && !app()->runningUnitTests()) {
             $httpRes = $this->sendViaBrevoHttp($recipientEmail, $otpCode, $purpose, $recipientName, $brevoKey, $requestId);
             if ($httpRes->success) {
                 return $httpRes;
             }
-            Log::warning("Brevo HTTP delivery failed, falling back to standard mailer: {$httpRes->error}");
+            Log::warning("Brevo HTTP delivery failed, falling back to next provider: {$httpRes->error}");
+        }
+
+        // Try Resend next (works if API key is provided and custom domain or owner recipient is used)
+        $resendKey = config('services.resend.key') ?: env('RESEND_API_KEY');
+        if (!empty($resendKey) && !app()->runningUnitTests()) {
+            $httpRes = $this->sendViaResendHttp($recipientEmail, $otpCode, $purpose, $recipientName, $resendKey, $requestId);
+            if ($httpRes->success) {
+                return $httpRes;
+            }
+            Log::warning("Resend HTTP delivery failed, falling back to standard mailer: {$httpRes->error}");
         }
 
         // 2. Guard against unconfigured or dummy email drivers (prevents false success)
@@ -381,9 +382,14 @@ class EmailDeliveryService
                 );
             }
 
+            $body = $response->body() ?: 'Resend API returned an error';
+            if (str_contains($body, 'only send testing emails') || str_contains($body, 'verify a domain')) {
+                Log::warning("Resend unverified domain restriction: Resend account cannot send to external recipient [{$recipientEmail}]. Secondary provider will deliver message.");
+            }
+
             return EmailDeliveryResult::rejected(
                 provider: 'resend (http api, port 443)',
-                error: $response->body() ?: 'Resend API returned an error',
+                error: $body,
                 statusCode: $response->status()
             );
         } catch (Throwable $e) {

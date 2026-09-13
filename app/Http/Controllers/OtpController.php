@@ -124,7 +124,8 @@ class OtpController extends Controller
             'email'      => 'required_without:identifier|nullable|string|max:255',
         ]);
 
-        $identifier = strtolower(trim((string) $request->input('identifier', $request->input('email', ''))));
+        $rawIdentifier = trim((string) $request->input('identifier', $request->input('email', '')));
+        $identifier = str_contains($rawIdentifier, '@') ? strtolower($rawIdentifier) : $rawIdentifier;
         $requestId  = $request->header('X-Request-Id') ?: $request->input('request_id');
 
         $cooldown = Otp::getCooldownRemaining($identifier, 'forgot_password');
@@ -145,52 +146,71 @@ class OtpController extends Controller
             ]);
         }
 
-        $user = User::where('email', $identifier)
-            ->orWhere('student_number', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->first();
-
-        // Store identifier stably in session
-        session(['otp_identifier' => $identifier]);
+        // Search user via comprehensive identifier resolution (email, student number, employee id)
+        $user = User::findByIdentifier($identifier);
 
         if ($user) {
+            $registeredEmail = strtolower(trim((string) $user->email));
+            $maskedEmail = OtpService::maskEmail($registeredEmail);
+
+            // Store identifier and verified account info stably in session
+            session([
+                'otp_identifier'   => $identifier,
+                'otp_user_id'      => $user->id,
+                'otp_email'        => $registeredEmail,
+                'otp_masked_email' => $maskedEmail,
+            ]);
+
             try {
-                $this->otpService->sendOtp($user->email, 'forgot_password', $user->id, $user->name, $requestId);
+                $this->otpService->sendOtp($registeredEmail, 'forgot_password', $user->id, $user->name, $requestId);
             } catch (\Exception $e) {
+                Log::error("Failed to send forgot password OTP for user [ID: {$user->id}]: " . $e->getMessage(), [
+                    'exception' => get_class($e),
+                    'code'      => $e->getCode(),
+                ]);
+
                 if ($request->expectsJson() || $request->ajax()) {
                     $status = $e->getCode() === 429 ? 429 : 500;
-                    $cooldownRem = $status === 429 ? Otp::getCooldownRemaining($user->email, 'forgot_password') : 0;
+                    $cooldownRem = $status === 429 ? Otp::getCooldownRemaining($registeredEmail, 'forgot_password') : 0;
                     return response()->json([
                         'success'    => false,
                         'status'     => 'error',
                         'error'      => $status === 429 ? 'OTP_RATE_LIMITED' : 'OTP_SEND_FAILED',
                         'message'    => $status === 429 
                             ? "Please wait {$cooldownRem} seconds before requesting another code." 
-                            : 'Unable to send verification code. Please try again.',
+                            : 'Unable to send the verification code right now. Please try again later.',
                         'cooldown'   => $cooldownRem,
                         'retryAfter' => $cooldownRem,
                     ], $status);
                 }
                 return back()->withInput()->withErrors([
-                    'identifier' => 'Unable to send verification code. Please try again.'
+                    'identifier' => 'Unable to send the verification code right now. Please try again later.'
                 ]);
             }
         } else {
             // Mitigate user enumeration
             Otp::setCooldown($identifier, 'forgot_password');
-            Log::warning("Forgot password OTP requested for non-existent identifier: {$identifier}");
+            Log::warning("Forgot password OTP requested for non-existent identifier: " . OtpService::maskEmail($identifier));
+
+            session([
+                'otp_identifier'   => $identifier,
+                'otp_user_id'      => null,
+                'otp_email'        => null,
+                'otp_masked_email' => str_contains($identifier, '@') ? OtpService::maskEmail($identifier) : $identifier,
+            ]);
         }
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
-                'success'    => true,
-                'message'    => 'If your account is registered, a verification code has been sent.',
-                'cooldown'   => Otp::COOLDOWN_SECONDS,
-                'retryAfter' => Otp::COOLDOWN_SECONDS,
+                'success'      => true,
+                'message'      => 'If your account is registered, a verification code has been sent.',
+                'cooldown'     => Otp::COOLDOWN_SECONDS,
+                'retryAfter'   => Otp::COOLDOWN_SECONDS,
+                'masked_email' => session('otp_masked_email'),
             ]);
         }
 
-        // Always return the same neutral message regardless of whether user exists
+        // Neutral notification for user privacy
         return redirect()->route('otp.verify.form', ['purpose' => 'forgot_password'])
                          ->with('info', 'If your account is registered, a verification code has been sent.');
     }
@@ -202,7 +222,8 @@ class OtpController extends Controller
     {
         $purpose = $request->get('purpose', 'forgot_password');
         $identifier = session('otp_identifier') ?? $request->get('identifier', '');
-        return view('auth.otp-verify', compact('purpose', 'identifier'));
+        $maskedEmail = session('otp_masked_email') ?? '';
+        return view('auth.otp-verify', compact('purpose', 'identifier', 'maskedEmail'));
     }
 
     public function verifyOtp(Request $request)
@@ -219,8 +240,11 @@ class OtpController extends Controller
 
         // Accept "identifier" (new unified field), legacy "email", or fallback to session
         $identifierInput = $request->input('identifier', $request->input('email', session('otp_identifier', '')));
-        $identifier = strtolower(trim((string) $identifierInput));
-        $otpClean   = trim((string) $request->otp);
+        $identifier = trim((string) $identifierInput);
+        if (str_contains($identifier, '@')) {
+            $identifier = strtolower($identifier);
+        }
+        $otpClean = trim((string) $request->otp);
 
         if (empty($identifier)) {
             return back()->withErrors(['identifier' => 'Please enter your email, student number, or employee ID.'])->withInput();
@@ -236,7 +260,8 @@ class OtpController extends Controller
             'otp.digits'   => 'The verification code must be exactly 6 digits.',
         ]);
 
-        $result = $this->otpService->verifyOtp($identifier, $otpClean, $request->purpose);
+        $knownUserId = session('otp_user_id');
+        $result = $this->otpService->verifyOtp($identifier, $otpClean, $request->purpose, $knownUserId);
 
         if (!$result['success']) {
             return back()->with('otp_identifier', $identifier)
@@ -244,7 +269,11 @@ class OtpController extends Controller
                          ->withInput();
         }
 
-        session(['otp_verified_user' => $result['user_id'], 'otp_purpose' => $request->purpose]);
+        $verifiedUserId = $result['user_id'] ?: $knownUserId;
+        session([
+            'otp_verified_user' => $verifiedUserId,
+            'otp_purpose'       => $request->purpose,
+        ]);
 
         return redirect()->route('otp.reset.form');
     }
@@ -262,7 +291,8 @@ class OtpController extends Controller
 
     public function resetPassword(Request $request)
     {
-        if (!session('otp_verified_user')) {
+        $userId = session('otp_verified_user');
+        if (!$userId) {
             return redirect()->route('otp.forgot.form');
         }
 
@@ -271,12 +301,24 @@ class OtpController extends Controller
             'password_confirmation' => 'required',
         ]);
 
-        $user = User::find(session('otp_verified_user'));
+        $user = User::find($userId);
         if ($user) {
             $user->update(['password' => Hash::make($request->password)]);
+
+            // Invalidate any remaining unused forgot_password OTPs for this user
+            Otp::invalidatePrevious($user->email, 'forgot_password');
+            Otp::invalidatePrevious($user->id, 'forgot_password');
         }
 
-        session()->forget(['otp_verified_user', 'otp_purpose', 'otp_identifier']);
+        session()->forget([
+            'otp_verified_user',
+            'otp_purpose',
+            'otp_identifier',
+            'otp_user_id',
+            'otp_email',
+            'otp_masked_email',
+        ]);
+
         return redirect()->route('login')->with('success', 'Password reset successfully! You can now log in.');
     }
 

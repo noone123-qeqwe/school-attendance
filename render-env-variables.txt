@@ -41,6 +41,8 @@ MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-app-password
 MAIL_FROM_ADDRESS=your-email@gmail.com
 MAIL_FROM_NAME=Smart Classroom Attendance System
+# Brevo HTTP API (Port 443 HTTPS - bypasses cloud SMTP blocking)
+BREVO_API_KEY=your_brevo_api_key
 
 === SMS SERVICE ===
 SEMAPHORE_API_KEY=your_semaphore_api_key_here

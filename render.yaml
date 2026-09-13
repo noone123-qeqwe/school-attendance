@@ -68,3 +68,5 @@ services:
         value: osmenacolleges.attendance@gmail.com
       - key: MAIL_FROM_NAME
         value: "Smart Classroom Attendance System"
+      - key: BREVO_API_KEY
+        sync: false

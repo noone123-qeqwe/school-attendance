@@ -52,13 +52,10 @@ class OtpApiController extends Controller
         Otp::setCooldown($identifier, $purpose);
 
         // 4. Look up user if exists, or generate guest/registration OTP
-        $user = User::where('email', $identifier)
-            ->orWhere('student_number', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->first();
+        $user = User::findByIdentifier($identifier);
 
         if ($user) {
-            $otp = Otp::generate($user->id, $purpose);
+            $otp = Otp::generateForEmail($user->email, $purpose, $user->id);
 
             try {
                 app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, $purpose, $user->name);
@@ -105,18 +102,19 @@ class OtpApiController extends Controller
         $code       = trim((string) $request->input('otp'));
 
         // Resolve user by email, student_number, or employee_id
-        $user   = User::where('email', $identifier)
-            ->orWhere('student_number', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->first();
+        $user   = User::findByIdentifier($identifier);
         $userId = $user?->id ?? $identifier;
 
         $otpRecord = null;
         if ($user) {
-            $otpRecord = Otp::where('user_id', $user->id)
+            $otpRecord = Otp::where('purpose', $purpose)
                 ->where('code', $code)
-                ->where('purpose', $purpose)
                 ->where('used', false)
+                ->where(function ($query) use ($user, $identifier) {
+                    $query->where('user_id', $user->id)
+                          ->orWhere('email', $identifier)
+                          ->orWhere('email', $user->email);
+                })
                 ->where('expires_at', '>', now())
                 ->latest()
                 ->first();
@@ -204,16 +202,17 @@ class OtpApiController extends Controller
         Otp::setCooldown($identifier, 'forgot_password');
         Otp::setCooldown($ip, 'forgot_password');
 
-        $user = User::where('email', $identifier)
-            ->orWhere('student_number', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->first();
+        $user = User::findByIdentifier($identifier);
 
         if ($user) {
-            $otp = Otp::generate($user->id, 'forgot_password');
+            $otp = Otp::generateForEmail($user->email, 'forgot_password', $user->id);
 
             try {
-                app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'forgot_password', $user->name);
+                $delivery = app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'forgot_password', $user->name);
+                if (!$delivery->success) {
+                    $otp->update(['used' => true]);
+                    Log::error("API Password Reset Mail rejected by provider for [{$user->email}]: " . $delivery->error);
+                }
             } catch (\Exception $e) {
                 Log::error("API Password Reset Mail failed: " . $e->getMessage());
             }
@@ -239,11 +238,12 @@ class OtpApiController extends Controller
             'password' => 'required|min:8|confirmed',
         ]);
 
-        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', '')))));
-        $user = User::where('email', $identifier)
-            ->orWhere('student_number', $identifier)
-            ->orWhere('employee_id', $identifier)
-            ->first();
+        $identifier = trim((string) $request->input('email', $request->input('identifier', $request->input('username', ''))));
+        if (str_contains($identifier, '@')) {
+            $identifier = strtolower($identifier);
+        }
+
+        $user = User::findByIdentifier($identifier);
 
         if (!$user) {
             // Non-enumerating response
@@ -254,10 +254,14 @@ class OtpApiController extends Controller
             ], 422);
         }
 
-        $otpRecord = Otp::where('user_id', $user->id)
+        $otpRecord = Otp::where('purpose', 'forgot_password')
             ->where('code', $request->otp)
-            ->where('purpose', 'forgot_password')
             ->where('used', false)
+            ->where(function ($query) use ($user, $identifier) {
+                $query->where('user_id', $user->id)
+                      ->orWhere('email', $identifier)
+                      ->orWhere('email', $user->email);
+            })
             ->where('expires_at', '>', now())
             ->latest()
             ->first();
@@ -265,9 +269,8 @@ class OtpApiController extends Controller
         if (!$otpRecord) {
             $fails = Otp::recordFailedVerify($user->id, 'forgot_password');
             if ($fails >= Otp::MAX_VERIFY_ATTEMPTS) {
-                Otp::where('user_id', $user->id)
-                    ->where('purpose', 'forgot_password')
-                    ->update(['used' => true]);
+                Otp::invalidatePrevious($user->email, 'forgot_password');
+                Otp::invalidatePrevious($user->id, 'forgot_password');
 
                 return response()->json([
                     'status' => 'error',
@@ -284,6 +287,10 @@ class OtpApiController extends Controller
         Otp::clearFailedVerify($user->id, 'forgot_password');
         $otpRecord->update(['used' => true]);
         $user->update(['password' => Hash::make($request->password)]);
+
+        // Invalidate any remaining forgot_password OTPs for this user
+        Otp::invalidatePrevious($user->email, 'forgot_password');
+        Otp::invalidatePrevious($user->id, 'forgot_password');
 
         return response()->json([
             'status' => 'success',
