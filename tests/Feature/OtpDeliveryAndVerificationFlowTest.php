@@ -272,28 +272,39 @@ class OtpDeliveryAndVerificationFlowTest extends TestCase
             'password' => Hash::make('OldPassword123!'),
         ]);
 
-        // 1. Request forgot password OTP
+        // 1. Request forgot password OTP with verified account relationship
         $sendRes = $this->post('/forgot-password', [
-            'identifier' => 'forgotstudent@gmail.com',
+            'account_id' => $user->student_number,
+            'email'      => 'forgotstudent@gmail.com',
         ]);
         $sendRes->assertRedirect(route('otp.verify.form', ['purpose' => 'forgot_password']));
 
         $otp = Otp::where('user_id', $user->id)->where('purpose', 'forgot_password')->first();
         $this->assertNotNull($otp);
 
-        // 2. Verify OTP
-        $verifyRes = $this->post('/verify-otp', [
+        // 2. Verify OTP within the verified account session
+        $verifyRes = $this->withSession([
+            'otp_verified_account' => true,
+            'otp_user_id'          => $user->id,
+            'otp_email'            => $user->email,
+            'otp_purpose'          => 'forgot_password',
+        ])->post('/verify-otp', [
             'identifier' => 'forgotstudent@gmail.com',
             'otp'        => $otp->code,
             'purpose'    => 'forgot_password',
         ]);
         $verifyRes->assertRedirect(route('otp.reset.form'));
 
-        // 3. Reset Password
+        // 3. Reset Password with verified reset session
+        $resetToken = bin2hex(random_bytes(32));
         $resetRes = $this->withSession([
-            'otp_verified_user' => $user->id,
-            'otp_purpose'       => 'forgot_password',
+            'password_reset_user_id' => $user->id,
+            'password_reset_token'   => $resetToken,
+            'password_reset_expires' => now()->addMinutes(15)->timestamp,
+            'otp_verified_user'      => $user->id,
+            'otp_purpose'            => 'forgot_password',
         ])->post('/reset-password', [
+            'reset_token'           => $resetToken,
             'password'              => 'NewPassword123!',
             'password_confirmation' => 'NewPassword123!',
         ]);

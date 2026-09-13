@@ -167,61 +167,120 @@ class OtpApiController extends Controller
     }
 
     /**
-     * Password reset request with flood protection (/api/reset, /api/forgot-password).
+     * Password reset request with strict Account ID + Email verification (/api/reset, /api/forgot-password).
      */
     public function requestPasswordReset(Request $request)
     {
-        $identifier = strtolower(trim((string) $request->input('email', $request->input('identifier', $request->input('username', '')))));
-        $ip = $request->ip() ?: 'unknown';
+        $rawAccountId = trim((string) $request->input('account_id', $request->input('student_id', '')));
+        $rawEmail     = trim((string) $request->input('email', $request->input('gmail', $request->input('identifier', ''))));
+        $ip           = $request->ip() ?: 'unknown';
 
-        // 1. Enforce cooldown per email/identifier
-        $cooldown = $identifier !== '' ? Otp::getCooldownRemaining($identifier, 'forgot_password') : 0;
+        // For forgot-password routes, both account_id and email are strictly required
+        $isForgotPasswordEndpoint = $request->is('api/forgot-password') || $request->is('forgot-password');
+
+        if ($isForgotPasswordEndpoint && (empty($rawAccountId) || empty($rawEmail))) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'Both your Account ID / Student ID and registered email address are required.',
+                'errors'  => [
+                    'account_id' => empty($rawAccountId) ? ['The Account ID / Student ID field is required.'] : [],
+                    'email'      => empty($rawEmail) ? ['The email field is required.'] : [],
+                ],
+            ], 422);
+        }
+
+        if (empty($rawAccountId) && empty($rawEmail)) {
+            return response()->json([
+                'status'  => 'error',
+                'success' => false,
+                'message' => 'The email or account identifier field is required.',
+            ], 422);
+        }
+
+        $cleanEmail = strtolower($rawEmail);
+
+        // 2. Enforce cooldown per email/identifier/IP
+        $cooldown = max(
+            $cleanEmail !== '' ? Otp::getCooldownRemaining($cleanEmail, 'forgot_password') : 0,
+            $rawAccountId !== '' ? Otp::getCooldownRemaining($rawAccountId, 'forgot_password') : 0
+        );
 
         if ($cooldown > 0) {
             return response()->json([
-                'status' => 'error',
-                'success' => false,
-                'error' => 'OTP_RATE_LIMITED',
-                'message' => "Please wait {$cooldown} seconds before requesting another password reset.",
-                'cooldown' => $cooldown,
-                'retryAfter' => $cooldown,
+                'status'      => 'error',
+                'success'     => false,
+                'error'       => 'OTP_RATE_LIMITED',
+                'message'     => "Please wait {$cooldown} seconds before requesting another password reset.",
+                'cooldown'    => $cooldown,
+                'retryAfter'  => $cooldown,
                 'retry_after' => $cooldown,
             ], 429);
         }
 
-        // 2. Validate identifier presence
-        if (empty($identifier)) {
-            return response()->json([
-                'status' => 'error',
-                'success' => false,
-                'message' => 'The email or identifier field is required.',
-                'errors' => ['email' => ['The email/identifier field is required.']],
-            ], 422);
+        // 3. Look up account
+        if (!empty($rawAccountId)) {
+            $user = User::findByAccountId($rawAccountId);
+            if (!$user) {
+                if ($cleanEmail !== '') Otp::setCooldown($cleanEmail, 'forgot_password');
+                Otp::setCooldown($rawAccountId, 'forgot_password');
+                Otp::setCooldown($ip, 'forgot_password');
+
+                return response()->json([
+                    'status'  => 'error',
+                    'success' => false,
+                    'error'   => 'ACCOUNT_NOT_FOUND',
+                    'message' => 'Unable to verify the account. Please check your Student ID and email address.',
+                ], 422);
+            }
+
+            // 4. Retrieve registered email and compare against entered email
+            $registeredEmail = strtolower(trim((string) $user->email));
+
+            if ($cleanEmail !== '' && $cleanEmail !== $registeredEmail) {
+                Otp::setCooldown($cleanEmail, 'forgot_password');
+                Otp::setCooldown($ip, 'forgot_password');
+
+                return response()->json([
+                    'status'  => 'error',
+                    'success' => false,
+                    'error'   => 'EMAIL_MISMATCH',
+                    'message' => 'The email address you entered is not the email registered to this account.',
+                ], 422);
+            }
+        } else {
+            // Legacy /api/reset lookup by email/identifier
+            $user = User::findByIdentifier($cleanEmail);
+            $registeredEmail = $user ? strtolower(trim((string) $user->email)) : $cleanEmail;
         }
 
-        Otp::setCooldown($identifier, 'forgot_password');
+        // Set cooldown timers
+        if (!empty($cleanEmail)) Otp::setCooldown($cleanEmail, 'forgot_password');
+        if (!empty($rawAccountId)) Otp::setCooldown($rawAccountId, 'forgot_password');
         Otp::setCooldown($ip, 'forgot_password');
 
-        $user = User::findByIdentifier($identifier);
-
         if ($user) {
-            $otp = Otp::generateForEmail($user->email, 'forgot_password', $user->id);
+            $otp = Otp::generateForEmail($registeredEmail, 'forgot_password', $user->id);
+            $maskedEmail = \App\Services\OtpService::maskEmail($registeredEmail);
 
             try {
-                $delivery = app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'forgot_password', $user->name);
+                $delivery = app(EmailDeliveryService::class)->sendOtp($registeredEmail, $otp->code, 'forgot_password', $user->name);
                 if (!$delivery->success) {
                     $otp->update(['used' => true]);
-                    Log::error("API Password Reset Mail rejected by provider for [{$user->email}]: " . $delivery->error);
+                    Log::error("API Password Reset Mail rejected by provider for [{$registeredEmail}]: " . $delivery->error);
                 }
             } catch (\Exception $e) {
                 Log::error("API Password Reset Mail failed: " . $e->getMessage());
             }
+        } else {
+            $maskedEmail = \App\Services\OtpService::maskEmail($cleanEmail);
         }
 
         return response()->json([
-            'status' => 'success',
-            'success' => true,
-            'message' => 'If your account is registered, a password reset code has been sent.',
+            'status'           => 'success',
+            'success'          => true,
+            'message'          => "If your account is registered, a password reset code has been sent.",
+            'masked_email'     => $maskedEmail ?? null,
             'cooldown_seconds' => Otp::COOLDOWN_SECONDS,
         ]);
     }
@@ -232,24 +291,38 @@ class OtpApiController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required_without:identifier',
-            'identifier' => 'required_without:email',
-            'otp' => 'required|digits:6',
-            'password' => 'required|min:8|confirmed',
+            'email'                 => 'required_without:identifier|nullable',
+            'identifier'            => 'required_without:email|nullable',
+            'account_id'            => 'nullable|string',
+            'otp'                   => 'required|digits:6',
+            'password'              => 'required|min:8|confirmed',
+            'password_confirmation' => 'required',
         ]);
 
-        $identifier = trim((string) $request->input('email', $request->input('identifier', $request->input('username', ''))));
-        if (str_contains($identifier, '@')) {
-            $identifier = strtolower($identifier);
+        $rawIdentifier = trim((string) $request->input('identifier', $request->input('email', $request->input('account_id', ''))));
+        $cleanEmail    = strtolower(trim((string) $request->input('email', '')));
+        $rawAccountId  = trim((string) $request->input('account_id', $request->input('student_id', '')));
+
+        if (!empty($rawAccountId) && !empty($cleanEmail)) {
+            $user = User::findByAccountId($rawAccountId);
+            if (!$user || strtolower(trim((string) $user->email)) !== $cleanEmail) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Account verification failed. Account ID and email do not match.',
+                ], 422);
+            }
+        } elseif (!empty($rawAccountId)) {
+            $user = User::findByAccountId($rawAccountId);
+        } elseif (!empty($cleanEmail)) {
+            $user = User::where('email', $cleanEmail)->first();
+        } else {
+            $user = User::findByIdentifier($rawIdentifier);
         }
 
-        $user = User::findByIdentifier($identifier);
-
         if (!$user) {
-            // Non-enumerating response
-            Otp::recordFailedVerify($identifier, 'forgot_password');
+            Otp::recordFailedVerify($rawIdentifier ?: 'unknown', 'forgot_password');
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Invalid or expired reset code.',
             ], 422);
         }
@@ -257,10 +330,15 @@ class OtpApiController extends Controller
         $otpRecord = Otp::where('purpose', 'forgot_password')
             ->where('code', $request->otp)
             ->where('used', false)
-            ->where(function ($query) use ($user, $identifier) {
+            ->where(function ($query) use ($user, $cleanEmail, $rawIdentifier) {
                 $query->where('user_id', $user->id)
-                      ->orWhere('email', $identifier)
                       ->orWhere('email', $user->email);
+                if (!empty($cleanEmail)) {
+                    $query->orWhere('email', $cleanEmail);
+                }
+                if (!empty($rawIdentifier) && str_contains($rawIdentifier, '@')) {
+                    $query->orWhere('email', strtolower($rawIdentifier));
+                }
             })
             ->where('expires_at', '>', now())
             ->latest()
@@ -273,13 +351,13 @@ class OtpApiController extends Controller
                 Otp::invalidatePrevious($user->id, 'forgot_password');
 
                 return response()->json([
-                    'status' => 'error',
+                    'status'  => 'error',
                     'message' => 'Too many failed attempts. Reset code invalidated.',
                 ], 422);
             }
 
             return response()->json([
-                'status' => 'error',
+                'status'  => 'error',
                 'message' => 'Invalid or expired reset code.',
             ], 422);
         }
@@ -293,7 +371,7 @@ class OtpApiController extends Controller
         Otp::invalidatePrevious($user->id, 'forgot_password');
 
         return response()->json([
-            'status' => 'success',
+            'status'  => 'success',
             'message' => 'Password reset successfully.',
         ]);
     }

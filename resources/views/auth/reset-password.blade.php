@@ -100,10 +100,13 @@
 
 <div class="otp-wrapper">
     <div class="otp-card">
+            <div class="step-badge" style="display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; background:rgba(216,179,92,0.14); border:1px solid rgba(216,179,92,0.3); color:#d8b35c; font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:14px;">
+                <i class="bi bi-shield-check"></i> Step 4: Create New Password
+            </div>
             <div class="otp-icon"><i class="bi bi-key-fill"></i></div>
             <div class="text-center mb-4">
-                <h2 class="reset-title">Set New Password</h2>
-                <p class="reset-subtitle">OTP verified. Choose a strong new password.</p>
+                <h2 class="reset-title">Create New Password</h2>
+                <p class="reset-subtitle">Account verified. Choose a strong new password to complete recovery.</p>
             </div>
         @if($errors->any())
         <div class="alert-err"><i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}</div>
@@ -111,6 +114,7 @@
 
         <form method="POST" action="{{ route('otp.reset') }}">
             @csrf
+            <input type="hidden" name="reset_token" value="{{ $resetToken ?? session('password_reset_token') }}">
             <div>
                 <label class="field-label">New Password</label>
                 <div class="pw-wrap">

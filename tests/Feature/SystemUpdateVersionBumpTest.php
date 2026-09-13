@@ -49,6 +49,25 @@ class SystemUpdateVersionBumpTest extends TestCase
         parent::tearDown();
     }
 
+    private function getBaselineVersion(): string
+    {
+        $versionPath = base_path('version.json');
+        if (File::exists($versionPath)) {
+            $data = json_decode(File::get($versionPath), true);
+            if (!empty($data['version'])) {
+                return (string) $data['version'];
+            }
+        }
+        return config('version.version', '2.4.2');
+    }
+
+    private function bumpSemver(string $version, int $increment = 1): string
+    {
+        $parts = explode('.', $version);
+        $parts[2] = (int)($parts[2] ?? 0) + $increment;
+        return implode('.', $parts);
+    }
+
     public function test_multiple_consecutive_pwa_version_bumps_increment_every_time(): void
     {
         $superAdmin = User::factory()->create([
@@ -60,6 +79,7 @@ class SystemUpdateVersionBumpTest extends TestCase
         $swPath = public_path('sw.js');
         $this->assertFileExists($swPath);
         $initialContent = File::get($swPath);
+        $baseVersion = $this->getBaselineVersion();
 
         try {
             // Bump 1
@@ -88,7 +108,7 @@ class SystemUpdateVersionBumpTest extends TestCase
             $verRes->assertStatus(200);
             $verData = $verRes->json();
             $this->assertEquals($v3, $verData['sw_version']);
-            $this->assertEquals('2.4.0', $verData['latest_version']);
+            $this->assertEquals($baseVersion, $verData['latest_version']);
 
         } finally {
             // Restore original sw.js content so test doesn't dirty git working tree
@@ -106,6 +126,9 @@ class SystemUpdateVersionBumpTest extends TestCase
 
         $swPath = public_path('sw.js');
         $initialContent = File::get($swPath);
+        $base = $this->getBaselineVersion();
+        $expectedNext1 = 'v' . $this->bumpSemver($base, 1);
+        $expectedNext2 = 'v' . $this->bumpSemver($base, 2);
 
         try {
             $res = $this->actingAs($superAdmin)->postJson(route('admin.system-update.run'));
@@ -117,13 +140,13 @@ class SystemUpdateVersionBumpTest extends TestCase
             $this->assertArrayHasKey('sw_version', $data);
             $this->assertArrayHasKey('app_version', $data);
             $this->assertNotEmpty($data['version']);
-            $this->assertEquals('v2.4.0', $data['app_version']);
+            $this->assertEquals($expectedNext1, $data['app_version']);
 
             // Subsequent update bump advances patch version and does NOT stay stuck on 2.3.5
             $res2 = $this->actingAs($superAdmin)->postJson(route('admin.system-update.run'));
             $res2->assertStatus(200);
             $data2 = $res2->json();
-            $this->assertEquals('v2.4.1', $data2['app_version']);
+            $this->assertEquals($expectedNext2, $data2['app_version']);
         } finally {
             File::put($swPath, $initialContent);
         }
@@ -137,19 +160,23 @@ class SystemUpdateVersionBumpTest extends TestCase
             'is_active' => true,
         ]);
 
-        // Bump 1: from base 2.4.0 to 2.4.1
+        $base = $this->getBaselineVersion();
+        $expectedBump1 = 'v' . $this->bumpSemver($base, 1);
+        $expectedBump2 = 'v' . $this->bumpSemver($base, 2);
+
+        // Bump 1
         $res1 = $this->actingAs($superAdmin)->postJson(route('admin.system-update.app-bump'));
         $res1->assertStatus(200);
-        $this->assertEquals('v2.4.1', $res1->json('app_version'));
+        $this->assertEquals($expectedBump1, $res1->json('app_version'));
 
-        // Bump 2: to 2.4.2
+        // Bump 2
         $res2 = $this->actingAs($superAdmin)->postJson(route('admin.system-update.app-bump'));
         $res2->assertStatus(200);
-        $this->assertEquals('v2.4.2', $res2->json('app_version'));
+        $this->assertEquals($expectedBump2, $res2->json('app_version'));
 
         // Verify /pwa/version endpoint reflects the new dynamic version
         $pwaRes = $this->get('/pwa/version');
         $pwaRes->assertStatus(200);
-        $this->assertEquals('2.4.2', $pwaRes->json('latest_version'));
+        $this->assertEquals($this->bumpSemver($base, 2), $pwaRes->json('latest_version'));
     }
 }

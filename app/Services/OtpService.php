@@ -23,21 +23,15 @@ class OtpService
      */
     public static function maskEmail(string $email): string
     {
-        $parts = explode('@', $email);
+        $parts = explode('@', trim($email));
         if (count($parts) !== 2) {
             return '***';
         }
         $name = $parts[0];
         $domain = $parts[1];
 
-        $len = strlen($name);
-        if ($len <= 2) {
-            $maskedName = substr($name, 0, 1) . '*';
-        } else {
-            $maskedName = substr($name, 0, 1) . str_repeat('*', min(5, $len - 2)) . substr($name, -1);
-        }
-
-        return $maskedName . '@' . $domain;
+        $prefix = mb_substr($name, 0, 1);
+        return $prefix . '*****@' . $domain;
     }
 
     /**

@@ -174,11 +174,30 @@
     <div class="otp-card">
         <div class="otp-icon"><i class="bi bi-shield-check"></i></div>
         <div class="text-center mb-3">
-            <h2 class="reset-title" style="font-size:1.4rem; font-weight:800; letter-spacing:0.5px; margin-bottom:8px;">VERIFY YOUR EMAIL</h2>
             @php
                 $effectiveIdentifier = $identifier ?? session('otp_identifier') ?? old('identifier', old('email', ''));
                 $displayEmail = $maskedEmail ?? session('otp_masked_email') ?? '';
             @endphp
+
+            @if($purpose === 'forgot_password')
+            <div style="background:rgba(34,197,94,0.14); border:1px solid rgba(34,197,94,0.36); border-radius:16px; padding:14px 18px; margin-bottom:16px; text-align:center;">
+                <div style="color:#86efac; font-weight:800; font-size:1.05rem; display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:4px;">
+                    <i class="bi bi-patch-check-fill" style="font-size:1.25rem;"></i> Account Verified ✓
+                </div>
+                <div style="color:rgba(248,231,211,0.9); font-size:0.88rem; margin-bottom:4px;">
+                    We've verified your account.
+                </div>
+                <div style="color:rgba(248,231,211,0.95); font-size:0.92rem;">
+                    OTP has been sent to:<br>
+                    <strong style="color:#ffffff; font-size:1.1rem; letter-spacing:0.5px;">{{ $displayEmail ?: $effectiveIdentifier }}</strong>
+                </div>
+            </div>
+            <h2 class="reset-title" style="font-size:1.4rem; font-weight:800; letter-spacing:0.5px; margin-bottom:6px;">VERIFY OTP</h2>
+            <p class="reset-subtitle" style="font-size:0.9rem; color:rgba(248,231,211,0.8); margin:0;">
+                Enter the code sent to your registered email.
+            </p>
+            @else
+            <h2 class="reset-title" style="font-size:1.4rem; font-weight:800; letter-spacing:0.5px; margin-bottom:8px;">VERIFY YOUR EMAIL</h2>
             <p class="reset-subtitle" style="font-size:0.92rem; color:rgba(248,231,211,0.8); line-height:1.5; margin:0;">
                 We sent a verification code to:
                 @if(!empty($displayEmail))
@@ -187,6 +206,7 @@
                 <br><strong style="color:#ffffff; font-size:1.05rem; word-break:break-all;">{{ $effectiveIdentifier }}</strong>
                 @endif
             </p>
+            @endif
             <div style="margin-top:10px; display:inline-flex; align-items:center; gap:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); border-radius:10px; padding:6px 12px; font-size:0.8rem; color:#fde68a;">
                 <span>⚠️ Check your <strong>Spam / Junk folder</strong> if the email does not appear in your inbox.</span>
             </div>
@@ -519,7 +539,7 @@
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ identifier: identifier.trim(), request_id: requestId })
+                body: JSON.stringify({ identifier: identifier.trim(), request_id: requestId, is_resend: true })
             }).then(async r => {
                 const isJson = r.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await r.json() : null;

@@ -262,6 +262,81 @@ class User extends Authenticatable
         return null;
     }
 
+    /**
+     * Find a user account by their Student ID, Employee ID, or Account ID (excluding direct email lookup).
+     */
+    public static function findByAccountId(?string $accountId): ?self
+    {
+        $raw = trim((string) $accountId);
+        if ($raw === '') {
+            return null;
+        }
+
+        $lower = strtolower($raw);
+
+        // 1. Direct match on student_number or employee_id
+        $user = static::whereNull('deleted_at')
+            ->where(function ($q) use ($raw, $lower) {
+                $q->where('student_number', $raw)
+                  ->orWhere('employee_id', $raw)
+                  ->orWhereRaw('LOWER(student_number) = ?', [$lower])
+                  ->orWhereRaw('LOWER(employee_id) = ?', [$lower]);
+            })->first();
+
+        if ($user) {
+            return $user;
+        }
+
+        // 2. Clean non-alphanumeric characters (e.g. 070-3250, T-2024-001)
+        $clean = preg_replace('/[^a-zA-Z0-9]/', '', $raw);
+        if ($clean !== '' && $clean !== $raw) {
+            $cleanLower = strtolower($clean);
+            $user = static::whereNull('deleted_at')
+                ->where(function ($q) use ($clean, $cleanLower) {
+                    $q->where('student_number', $clean)
+                      ->orWhere('employee_id', $clean)
+                      ->orWhereRaw('LOWER(student_number) = ?', [$cleanLower])
+                      ->orWhereRaw('LOWER(employee_id) = ?', [$cleanLower])
+                      ->orWhereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
+                      ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean]);
+                })->first();
+
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // 3. Numeric checks: padded/unpadded institutional numbers or primary key id
+        if (ctype_digit($raw)) {
+            $num = (int) $raw;
+            $padded7 = sprintf('%07d', $num);
+            $user = static::whereNull('deleted_at')
+                ->where(function ($q) use ($raw, $padded7, $num) {
+                    $q->where('student_number', $padded7)
+                      ->orWhere('employee_id', $padded7)
+                      ->orWhere('student_number', (string)$num)
+                      ->orWhere('employee_id', (string)$num)
+                      ->orWhere('id', $num);
+                })->first();
+
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // 4. Fallback for accounts without student_number or employee_id (e.g. admin or parent who entered email as account identifier)
+        if (str_contains($raw, '@')) {
+            $user = static::whereNull('deleted_at')
+                ->where('email', $lower)
+                ->first();
+            if ($user) {
+                return $user;
+            }
+        }
+
+        return null;
+    }
+
     public function isActive(): bool
     {
         return (bool) ($this->is_active ?? true) && !$this->trashed();
