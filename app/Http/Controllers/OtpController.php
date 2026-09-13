@@ -125,11 +125,19 @@ class OtpController extends Controller
 
         if ($rawIdentifier !== '') {
             $user = User::findByRecoveryIdentifier($rawIdentifier);
+            $registeredEmail = strtolower(trim((string) ($user ? $user->email : '')));
+            $hasValidEmail = ($registeredEmail !== '' && filter_var($registeredEmail, FILTER_VALIDATE_EMAIL));
 
-            if ($user && $user->isActive()) {
+            if ($user && $user->isActive() && $hasValidEmail) {
                 $accountUser = $user;
-                $maskedEmail = OtpService::maskEmail($user->email);
-                $accountIdentifierType = str_contains($rawIdentifier, '@') ? 'Email' : 'Student ID';
+                $maskedEmail = OtpService::maskEmail($registeredEmail);
+                if (str_contains($rawIdentifier, '@')) {
+                    $accountIdentifierType = 'Email';
+                } elseif (!empty($user->employee_id) && ($rawIdentifier === $user->employee_id || $user->isTeacher() || $user->isAdmin() || empty($user->student_number))) {
+                    $accountIdentifierType = 'Employee ID';
+                } else {
+                    $accountIdentifierType = 'Student ID';
+                }
                 $accountIdentifierValue = $rawIdentifier;
             } else {
                 $errorMessage = 'Unable to verify the account. Please check your Student ID or email address.';
@@ -179,6 +187,18 @@ class OtpController extends Controller
                     $this->otpService->sendOtp($registeredEmail, 'forgot_password', $user->id, $user->name, $requestId);
                 } catch (\Exception $e) {
                     Log::error("Failed to resend forgot password OTP for user [ID: {$user->id}]: " . $e->getMessage());
+                    $status = $e->getCode() === 429 ? 429 : 500;
+                    $cooldownRem = $status === 429 ? Otp::getCooldownRemaining($registeredEmail, 'forgot_password') : 0;
+                    return response()->json([
+                        'success'    => false,
+                        'status'     => 'error',
+                        'error'      => $status === 429 ? 'OTP_RATE_LIMITED' : 'OTP_SEND_FAILED',
+                        'message'    => $status === 429 
+                            ? "Please wait {$cooldownRem} seconds before requesting another code." 
+                            : 'Unable to send the verification code right now. Please try again later.',
+                        'cooldown'   => $cooldownRem,
+                        'retryAfter' => $cooldownRem,
+                    ], $status);
                 }
 
                 return response()->json([
@@ -401,6 +421,20 @@ class OtpController extends Controller
         try {
             $this->otpService->sendOtp($registeredEmail, 'forgot_password', $user->id, $user->name, $requestId);
         } catch (\Exception $e) {
+            session()->forget([
+                'otp_verified_account',
+                'account_verified',
+                'otp_user_id',
+                'otp_account_id',
+                'otp_email',
+                'otp_masked_email',
+                'otp_flow_token',
+                'otp_attempts',
+                'otp_verified_at',
+                'otp_purpose',
+                'otp_identifier',
+            ]);
+
             Log::error("Failed to send forgot password OTP for user [ID: {$user->id}]: " . $e->getMessage(), [
                 'exception' => get_class($e),
                 'code'      => $e->getCode(),

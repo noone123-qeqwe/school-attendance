@@ -276,4 +276,99 @@ class LoginToForgotPasswordFlowTest extends TestCase
 
         $this->assertAuthenticatedAs($user);
     }
+
+    public function test_teacher_with_employee_id_shows_account_found_and_employee_id_badge(): void
+    {
+        $teacher = User::factory()->teacher()->create([
+            'name'        => 'Prof. John Smith',
+            'employee_id' => 'EMP-2026',
+            'email'       => 'teacher@school.test',
+        ]);
+
+        $response = $this->get('/forgot-password?identifier=EMP-2026');
+        $response->assertStatus(200);
+        $response->assertSee('Account Found');
+        $response->assertSee('Prof. John Smith');
+        $response->assertSee('Employee ID');
+        $response->assertSee('EMP-2026');
+        $response->assertSee('t*****@school.test');
+    }
+
+    public function test_deactivated_account_recovery_is_safely_blocked(): void
+    {
+        $user = User::factory()->create([
+            'student_number' => '20269991',
+            'email'          => 'deactivated@school.test',
+            'is_active'      => false,
+        ]);
+
+        // GET shows safe error
+        $getRes = $this->get('/forgot-password?identifier=20269991');
+        $getRes->assertStatus(200);
+        $getRes->assertSee('Unable to verify the account. Please check your Student ID or email address.');
+
+        // POST rejects recovery
+        $postRes = $this->from('/forgot-password')->post('/forgot-password', [
+            'identifier' => '20269991',
+        ]);
+        $postRes->assertRedirect('/forgot-password');
+        $postRes->assertSessionHasErrors('identifier');
+        $this->assertEquals(0, Otp::where('user_id', $user->id)->count());
+    }
+
+    public function test_account_with_invalid_or_missing_email_safely_fails(): void
+    {
+        $user = User::factory()->create([
+            'student_number' => '20269992',
+            'email'          => '',
+        ]);
+
+        $getRes = $this->get('/forgot-password?identifier=20269992');
+        $getRes->assertStatus(200);
+        $getRes->assertSee('Unable to verify the account. Please check your Student ID or email address.');
+
+        $postRes = $this->from('/forgot-password')->post('/forgot-password', [
+            'identifier' => '20269992',
+        ]);
+        $postRes->assertRedirect('/forgot-password');
+        $postRes->assertSessionHasErrors('identifier');
+        $this->assertEquals(0, Otp::where('user_id', $user->id)->count());
+    }
+
+    public function test_resend_otp_invalidates_previous_otp_and_preserves_verified_email(): void
+    {
+        $user = User::factory()->create([
+            'student_number' => '20260055',
+            'email'          => 'student55@school.test',
+        ]);
+
+        // Initial request
+        $this->post('/forgot-password', ['identifier' => '20260055']);
+        $firstOtp = Otp::where('user_id', $user->id)->where('purpose', 'forgot_password')->first();
+        $this->assertNotNull($firstOtp);
+        $this->assertFalse((bool)$firstOtp->used);
+
+        // Fast-forward cooldown to simulate waiting
+        Cache::flush();
+
+        // Trigger Resend OTP via AJAX
+        $resendRes = $this->postJson('/forgot-password', [
+            'is_resend'  => true,
+            'purpose'    => 'forgot_password',
+            'identifier' => 'student55@school.test',
+        ]);
+
+        $resendRes->assertStatus(200);
+        $resendRes->assertJson(['success' => true]);
+
+        // First OTP is invalidated (used = true)
+        $firstOtp->refresh();
+        $this->assertTrue((bool)$firstOtp->used);
+
+        // New OTP exists and is sent to the same email
+        $newOtp = Otp::where('user_id', $user->id)->where('purpose', 'forgot_password')->where('used', false)->latest()->first();
+        $this->assertNotNull($newOtp);
+        $this->assertEquals('student55@school.test', $newOtp->email);
+        $this->assertNotEquals($firstOtp->code, $newOtp->code);
+    }
 }

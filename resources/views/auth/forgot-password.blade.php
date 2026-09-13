@@ -247,4 +247,22 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var forms = document.querySelectorAll('form');
+    forms.forEach(function(f) {
+        f.addEventListener('submit', function() {
+            var btn = f.querySelector('button[type="submit"]');
+            if (btn && !btn.disabled) {
+                setTimeout(function() {
+                    btn.disabled = true;
+                    btn.style.opacity = '0.75';
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...';
+                }, 10);
+            }
+        });
+    });
+});
+</script>
 @endsection

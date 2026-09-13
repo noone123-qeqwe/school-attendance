@@ -2105,6 +2105,9 @@ if (idInputElem) {
 }
 if (forgotLinkElem) {
     forgotLinkElem.addEventListener('click', updateForgotHref);
+    forgotLinkElem.addEventListener('mouseenter', updateForgotHref);
+    forgotLinkElem.addEventListener('focus', updateForgotHref);
+    forgotLinkElem.addEventListener('touchstart', updateForgotHref);
 }
 </script>
 </body>
