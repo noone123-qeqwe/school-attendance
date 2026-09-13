@@ -117,15 +117,18 @@ class OtpController extends Controller
 
     public function sendForgotOtp(Request $request)
     {
-        // Accept email, student_number, or employee_id via a unified "identifier" field.
-        // Legacy "email" field is also accepted for backward-compatibility.
+        // Accept "email" as primary field, with "identifier" fallback for API backward-compatibility
         $request->validate([
+            'email'      => 'required_without:identifier|nullable|email|max:255',
             'identifier' => 'required_without:email|nullable|string|max:255',
-            'email'      => 'required_without:identifier|nullable|string|max:255',
+        ], [
+            'email.required'      => 'Please enter your registered email address.',
+            'email.email'         => 'Please enter a valid email address.',
+            'identifier.required' => 'Please enter your registered email address.',
         ]);
 
-        $rawIdentifier = trim((string) $request->input('identifier', $request->input('email', '')));
-        $identifier = str_contains($rawIdentifier, '@') ? strtolower($rawIdentifier) : $rawIdentifier;
+        $rawIdentifier = trim((string) $request->input('email', $request->input('identifier', '')));
+        $identifier = strtolower($rawIdentifier);
         $requestId  = $request->header('X-Request-Id') ?: $request->input('request_id');
 
         $cooldown = Otp::getCooldownRemaining($identifier, 'forgot_password');
@@ -141,8 +144,9 @@ class OtpController extends Controller
                     'retry_after'=> $cooldown,
                 ], 429);
             }
+            $errorField = $request->filled('email') ? 'email' : 'identifier';
             return back()->withInput()->withErrors([
-                'identifier' => "Please wait {$cooldown} seconds before requesting another code."
+                $errorField => "Please wait {$cooldown} seconds before requesting another code."
             ]);
         }
 
@@ -247,7 +251,10 @@ class OtpController extends Controller
         $otpClean = trim((string) $request->otp);
 
         if (empty($identifier)) {
-            return back()->withErrors(['identifier' => 'Please enter your email, student number, or employee ID.'])->withInput();
+            return back()->withErrors([
+                'email'      => 'Please enter your email address.',
+                'identifier' => 'Please enter your email address.',
+            ])->withInput();
         }
 
         session(['otp_identifier' => $identifier]);
