@@ -160,9 +160,10 @@ class HomeController extends Controller
     $subjects->load('schedules');
 
     // 7. Fetch Attendance History
-    $records = Attendance::with('subject') 
+    $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction']) 
         ->where('user_id', $user->id)
-        ->orderBy('created_at', 'desc')
+        ->orderBy('date', 'desc')
+        ->orderBy('time_in', 'desc')
         ->get();
 
     // 8. Stats Calculation — Option B (overall rate)
@@ -431,10 +432,11 @@ class HomeController extends Controller
             return redirect()->route('home');
         }
 
-        // Fetch all attendance records with subject relation
-        $records = Attendance::with('subject')
+        // Fetch all attendance records with subject, schedules, instructor, and excuse relation
+        $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction'])
             ->where('user_id', $user->id)
             ->orderBy('date', 'desc')
+            ->orderBy('time_in', 'desc')
             ->get();
 
         return view('student.attendance-calendar', compact('records'));

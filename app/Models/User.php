@@ -510,11 +510,13 @@ class User extends Authenticatable
         });
         
         // If subject specifies a section, it must match the student's section
-        $query->where(function ($q) {
-            $q->whereNull('section')
-              ->orWhere('section', '')
-              ->orWhere('section', $this->section);
-        });
+        if (!empty($this->section)) {
+            $query->where(function ($q) {
+                $q->whereNull('section')
+                  ->orWhere('section', '')
+                  ->orWhere('section', $this->section);
+            });
+        }
             
         $implicit = $query->get();
             

@@ -20,8 +20,8 @@ class AttendanceController extends Controller
         $user = Auth::user();
 
         
-        // Get all records with subject and excuse submission relationships, newest first
-        $records = Attendance::with(['subject', 'excuseSubmission'])
+        // Get all records with subject schedules, instructor, excuse submission and correction relationships, newest first
+        $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction'])
             ->where('user_id', $user->id)
             ->orderBy('date', 'desc')
             ->orderBy('time_in', 'desc')

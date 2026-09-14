@@ -610,17 +610,27 @@
         <div class="records-container" id="recordsContainer">
             @forelse($records as $i => $record)
             <div class="record-card" data-status="{{ $record->status }}">
+                @php
+                    $dayName = \Carbon\Carbon::parse($record->date)->format('l');
+                    $sched = $record->subject?->schedules?->firstWhere('day', $dayName) ?? $record->subject?->schedules?->first();
+                    $schedStr = $sched ? \Carbon\Carbon::parse($sched->start_time)->format('g:i A') . ' – ' . \Carbon\Carbon::parse($sched->end_time)->format('g:i A') : 'Schedule TBA';
+                    $clockInTime = $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('g:i A') : ($record->checked_in_at ? $record->checked_in_at->format('g:i A') : null);
+                    $clockInText = $clockInTime ?? ($record->status === 'Absent' ? 'No clock-in' : '—');
+                    $instName = $record->subject?->instructorUser?->name ?? $record->subject?->instructor ?? 'Instructor TBA';
+                @endphp
                 <div class="record-header">
                     <div class="record-subject">
                         <h4>{{ $record->subject->name ?? $record->subject_code }}</h4>
                         <div class="record-meta">
                             <span class="record-date">{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}</span>
-                            <span class="record-day">{{ \Carbon\Carbon::parse($record->date)->format('l') }}</span>
+                            <span class="record-day">{{ $dayName }}</span>
+                            <span style="color:rgba(245,234,215,0.4);">•</span>
+                            <span style="font-size:0.75rem; color:#ffd166;"><i class="bi bi-person me-1"></i>{{ $instName }}</span>
                         </div>
                     </div>
                     <div class="record-status">
                         @if($record->excused)
-                            <span class="status-badge badge-excused" style="background:#f0fdf4;color:#16a34a;padding:4px 12px;border-radius:12px;font-size:.75rem;font-weight:600;">Excused</span>
+                            <span class="status-badge badge-excused">Excused</span>
                         @elseif($record->status === 'Present')
                             <span class="status-badge badge-present">Present</span>
                         @elseif($record->status === 'Late')
@@ -634,12 +644,22 @@
                 <div class="record-body">
                     <div class="record-details">
                         <div class="detail-item">
-                            <span class="detail-label">Time In</span>
-                            <span class="detail-value">{{ $record->time_in ? \Carbon\Carbon::parse($record->time_in)->format('h:i A') : '—' }}</span>
+                            <span class="detail-label">Schedule</span>
+                            <span class="detail-value">{{ $schedStr }}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Record #</span>
-                            <span class="detail-value">{{ $i + 1 }}</span>
+                            <span class="detail-label">Actual Clock-in</span>
+                            <span class="detail-value" style="{{ $record->status === 'Absent' ? 'color:#f87171;' : ($record->status === 'Present' ? 'color:#4ade80;' : ($record->status === 'Late' ? 'color:#fbbf24;' : '')) }}">
+                                {{ $clockInText }}
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Clock-out</span>
+                            <span class="detail-value">{{ $record->time_out ? \Carbon\Carbon::parse($record->time_out)->format('g:i A') : '—' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Remarks</span>
+                            <span class="detail-value">{{ $record->excuse_note ?? $record->excuseSubmission?->reason ?? ($record->excused ? 'Excused Absence' : '—') }}</span>
                         </div>
                     </div>
                     
