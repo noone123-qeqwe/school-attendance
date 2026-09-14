@@ -294,6 +294,7 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/notifications', [App\Http\Controllers\HomeController::class, 'notifications'])->name('notifications');
     Route::get('/notifications/poll', [App\Http\Controllers\HomeController::class, 'pollNotifications'])->name('notifications.poll');
     Route::post('/notifications/read', [App\Http\Controllers\HomeController::class, 'markNotificationsRead'])->name('notifications.read');
+    Route::post('/notifications/{notification}/read', [App\Http\Controllers\HomeController::class, 'markSingleNotificationRead'])->name('notifications.markRead');
     Route::delete('/notifications/{notification}', [App\Http\Controllers\HomeController::class, 'deleteNotification'])->name('notifications.delete');
     Route::post('/notifications/{notification}/archive', [App\Http\Controllers\HomeController::class, 'archiveNotification'])->name('notifications.archive');
     Route::post('/notifications/{notification}/unarchive', [App\Http\Controllers\HomeController::class, 'unarchiveNotification'])->name('notifications.unarchive');

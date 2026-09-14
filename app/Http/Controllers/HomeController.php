@@ -451,18 +451,52 @@ class HomeController extends Controller
     {
         $user = Auth::user();
         
-        // Get notifications based on status filter
-        $query = Notification::where('user_id', $user->id);
+        $query = Notification::with(['sender', 'subject'])->where('user_id', $user->id);
         
-        if (request('status') === 'archived') {
+        $status = request('status');
+        if ($status === 'archived') {
             $query->archived();
+        } elseif ($status === 'unread') {
+            $query->active()->where('is_read', false);
         } else {
             $query->active();
         }
-        
-        $notifications = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('notifications', compact('notifications'));
+        if (request()->filled('type')) {
+            $type = request('type');
+            if ($type === 'warning') {
+                $query->where('type', 'like', '%warning%');
+            } elseif ($type === 'absence') {
+                $query->where('type', 'absence');
+            } elseif ($type === 'system') {
+                $query->where('type', 'system_update');
+            } else {
+                $query->where('type', $type);
+            }
+        }
+
+        if (request()->filled('search')) {
+            $search = request('search');
+            $query->where(function($q) use ($search) {
+                $q->where('message', 'like', "%{$search}%")
+                  ->orWhere('subject_code', 'like', "%{$search}%")
+                  ->orWhereHas('subject', function($sq) use ($search) {
+                      $sq->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        $counts = [
+            'active' => Notification::where('user_id', $user->id)->active()->count(),
+            'unread' => Notification::where('user_id', $user->id)->active()->where('is_read', false)->count(),
+            'archived' => Notification::where('user_id', $user->id)->archived()->count(),
+            'warnings' => Notification::where('user_id', $user->id)->active()->where('type', 'like', '%warning%')->count(),
+            'absences' => Notification::where('user_id', $user->id)->active()->where('type', 'absence')->count(),
+        ];
+
+        $notifications = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+
+        return view('notifications', compact('notifications', 'counts'));
     }
 
     public function markNotificationsRead()
@@ -471,7 +505,37 @@ class HomeController extends Controller
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
-        return response()->json(['success' => true]);
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'unread_count' => 0
+            ]);
+        }
+
+        return back()->with('success', 'All notifications marked as read.');
+    }
+
+    public function markSingleNotificationRead(\App\Models\Notification $notification)
+    {
+        if ($notification->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $notification->update(['is_read' => true]);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
+                ->active()
+                ->where('is_read', false)
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'unread_count' => $unreadCount
+            ]);
+        }
+
+        return back()->with('success', 'Notification marked as read.');
     }
 
     public function deleteNotification(\App\Models\Notification $notification)
@@ -481,7 +545,20 @@ class HomeController extends Controller
         }
 
         $notification->delete();
-        return response()->json(['success' => true]);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
+                ->active()
+                ->where('is_read', false)
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'unread_count' => $unreadCount
+            ]);
+        }
+
+        return back()->with('success', 'Notification deleted.');
     }
 
     public function archiveNotification(\App\Models\Notification $notification)
@@ -491,7 +568,20 @@ class HomeController extends Controller
         }
 
         $notification->archive();
-        return response()->json(['success' => true]);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
+                ->active()
+                ->where('is_read', false)
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'unread_count' => $unreadCount
+            ]);
+        }
+
+        return back()->with('success', 'Notification archived.');
     }
 
     public function unarchiveNotification(\App\Models\Notification $notification)
@@ -501,7 +591,20 @@ class HomeController extends Controller
         }
 
         $notification->unarchive();
-        return response()->json(['success' => true]);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())
+                ->active()
+                ->where('is_read', false)
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'unread_count' => $unreadCount
+            ]);
+        }
+
+        return back()->with('success', 'Notification unarchived.');
     }
 
     public function pollNotifications()

@@ -689,6 +689,16 @@
     var quickActionChips = [];
 
     @auth
+        @php
+            if (Auth::user()->isParent()) {
+                $pChildIds = Auth::user()->children()->pluck('users.id');
+                $unreadNotifsCount = \App\Models\Notification::whereIn('user_id', $pChildIds)->where('is_read', false)->count();
+            } else {
+                $unreadNotifsCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count();
+            }
+            $notifBadgeText = $unreadNotifsCount > 0 ? ($unreadNotifsCount > 9 ? '9+ New' : $unreadNotifsCount . ' New') : 'Alerts';
+        @endphp
+
         @if(Auth::user()->isAdmin())
             navItems = [
                 { id: 'dashboard', label: 'Dashboard', hint: 'Admin portal & university overview', icon: 'bi-grid-fill', color: '#ffd166', bg: 'rgba(255, 209, 102, 0.12)', category: 'navigation', badge: 'Admin', url: '{{ route("admin.dashboard") }}' },
@@ -697,7 +707,8 @@
                 { id: 'subjects', label: 'Subjects & Schedules', hint: 'Course curriculum and timetables', icon: 'bi-book-fill', color: '#2dd4bf', bg: 'rgba(45, 212, 191, 0.12)', category: 'academic', badge: 'Curriculum', url: '{{ route("admin.subjects") }}' },
                 { id: 'attendance', label: 'Attendance Logs', hint: 'University-wide attendance records', icon: 'bi-clipboard-check-fill', color: '#fde68a', bg: 'rgba(253, 230, 138, 0.12)', category: 'academic', badge: 'Logs', url: '{{ route("admin.attendance") }}' },
                 { id: 'qr', label: 'QR Management', hint: 'Active QR attendance sessions', icon: 'bi-qr-code-scan', color: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', category: 'action', badge: 'Session', url: '{{ route("admin.qr") }}' },
-                { id: 'departments', label: 'Departments', hint: 'Academic departments & deans', icon: 'bi-building-fill', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.12)', category: 'system', badge: 'Org', url: '{{ route("admin.departments.index") }}' },
+                { id: 'notifications', label: 'Notifications', hint: 'Campus alerts & system notifications', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'system', badge: '{{ $notifBadgeText }}', url: '{{ route("admin.notifications") }}' },
+                { id: 'departments', label: 'Departments', hint: 'Academic departments & deans', icon: 'bi-building-fill', color: '#fbbf24', bg: 'rgba(251, 113, 133, 0.12)', category: 'system', badge: 'Org', url: '{{ route("admin.departments.index") }}' },
                 { id: 'courses', label: 'Courses & Degrees', hint: 'Degree programs & majors', icon: 'bi-mortarboard-fill', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', category: 'academic', badge: 'Programs', url: '{{ route("admin.courses.index") }}' },
                 { id: 'sections', label: 'Sections', hint: 'Class sections and student cohorts', icon: 'bi-diagram-3-fill', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.12)', category: 'academic', badge: 'Sections', url: '{{ route("admin.sections.index") }}' },
                 { id: 'announcements', label: 'Announcements', hint: 'Broadcast campus announcements', icon: 'bi-megaphone-fill', color: '#f97316', bg: 'rgba(249, 115, 22, 0.12)', category: 'action', badge: 'Broadcast', url: '{{ route("admin.announcements.index") }}' },
@@ -727,7 +738,7 @@
                 { id: 'students', label: 'Student Directory', hint: 'Browse enrolled student profiles', icon: 'bi-people-fill', color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.12)', category: 'academic', badge: 'Directory', url: '{{ route("teacher.students") }}' },
                 { id: 'reports', label: 'Attendance Reports', hint: 'Generate attendance export & reports', icon: 'bi-bar-chart-fill', color: '#2dd4bf', bg: 'rgba(45, 212, 191, 0.12)', category: 'academic', badge: 'Analytics', url: '{{ route("teacher.reports") }}' },
                 { id: 'calendar', label: 'Holiday Calendar', hint: 'School events & academic calendar', icon: 'bi-calendar-event-fill', color: '#4ade80', bg: 'rgba(74, 222, 128, 0.12)', category: 'navigation', badge: 'Calendar', url: '{{ route("teacher.calendar") }}' },
-                { id: 'notifications', label: 'Notifications', hint: 'Alerts and system updates', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: 'Alerts', url: '{{ route("teacher.notifications") }}' },
+                { id: 'notifications', label: 'Notifications', hint: 'Alerts and system updates', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: '{{ $notifBadgeText }}', url: '{{ route("teacher.notifications") }}' },
                 { id: 'profile', label: 'My Profile', hint: 'Instructor credentials & settings', icon: 'bi-person-circle', color: '#cbd5e1', bg: 'rgba(203, 213, 225, 0.12)', category: 'system', badge: 'Account', url: '{{ route("teacher.profile") }}' }
             ];
             quickActionChips = [
@@ -742,7 +753,7 @@
                 { id: 'calendar', label: 'School Calendar', hint: 'Academic schedule, exams & holidays', icon: 'bi-calendar-event-fill', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', category: 'academic', badge: 'Calendar', url: '{{ route("parent.calendar") }}' },
                 { id: 'excuses', label: 'Excuse Letters', hint: 'Submit excuse for student absence', icon: 'bi-file-earmark-text-fill', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', category: 'action', badge: 'Excuses', url: '{{ route("parent.excuses") }}' },
                 { id: 'link', label: 'Link a Child', hint: 'Connect student account with code', icon: 'bi-link-45deg', color: '#34d399', bg: 'rgba(52, 211, 153, 0.12)', category: 'action', badge: 'Connect', url: '{{ route("parent.link.form") }}' },
-                { id: 'notifications', label: 'Notifications', hint: 'Attendance alerts & warnings', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: 'Alerts', url: '{{ route("parent.notifications") }}' }
+                { id: 'notifications', label: 'Notifications', hint: 'Attendance alerts & warnings', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: '{{ $notifBadgeText }}', url: '{{ route("parent.notifications") }}' }
             ];
             quickActionChips = [
                 { label: 'Calendar', icon: 'bi-calendar-event-fill', url: '{{ route("parent.calendar") }}' },
@@ -758,7 +769,7 @@
                 { id: 'records', label: 'Attendance Records', hint: 'Subject breakdown & clock-in history', icon: 'bi-clock-history', color: '#fde68a', bg: 'rgba(253, 230, 138, 0.12)', category: 'academic', badge: 'History', url: '{{ route("attendance.records") }}' },
                 { id: 'calendar', label: 'Attendance Calendar', hint: 'Interactive monthly attendance calendar', icon: 'bi-calendar-check-fill', color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.12)', category: 'academic', badge: 'Calendar', url: '{{ route("student.attendance.calendar") }}' },
                 { id: 'excuses', label: 'Excuse Submissions', hint: 'Submit absence excuse & check status', icon: 'bi-file-earmark-medical-fill', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', category: 'action', badge: 'Excuses', url: '{{ route("excuses") }}' },
-                { id: 'notifications', label: 'Notifications', hint: 'Class announcements & attendance warnings', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: 'Alerts', url: '{{ route("notifications") }}' },
+                { id: 'notifications', label: 'Notifications', hint: 'Class announcements & attendance warnings', icon: 'bi-bell-fill', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.12)', category: 'navigation', badge: '{{ $notifBadgeText }}', url: '{{ route("notifications") }}' },
                 { id: 'settings', label: 'Settings', hint: 'Account preferences, security & profile', icon: 'bi-gear-fill', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', category: 'system', badge: 'Account', url: '{{ route("settings") }}' }
             ];
             quickActionChips = [
