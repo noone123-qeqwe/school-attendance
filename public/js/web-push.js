@@ -55,7 +55,8 @@ window.WebPushManager = (function() {
             } else {
                 console.log('[WebPush] User is not subscribed.');
                 if (Notification.permission === 'granted') {
-                    subscribe();
+                    // Re-subscribe silently in the background without user-facing toasts
+                    subscribe(false);
                 }
             }
 
@@ -110,9 +111,11 @@ window.WebPushManager = (function() {
     }
 
     // Subscribe user to Push Notifications
-    async function subscribe() {
+    async function subscribe(interactive = true) {
         if (!isSupported()) {
-            showToast('Push notifications are not supported by your browser.', 'warning');
+            if (interactive) {
+                showToast('Push notifications are not supported by your browser.', 'warning');
+            }
             return false;
         }
 
@@ -122,14 +125,26 @@ window.WebPushManager = (function() {
             const keyData = await keyRes.json();
 
             if (!keyData.success || !keyData.publicKey) {
-                showToast('Push notifications are not configured on the server yet.', 'warning');
+                console.warn('[WebPush] Push notifications are not configured on the server yet.');
+                if (interactive) {
+                    showToast('Push notifications are not configured on the server yet.', 'warning');
+                }
                 return false;
             }
 
             // 2. Request Notification permission
-            const permission = await Notification.requestPermission();
+            let permission = Notification.permission;
             if (permission !== 'granted') {
-                showToast('Push notification permission was declined or blocked.', 'warning');
+                if (!interactive) {
+                    return false;
+                }
+                permission = await Notification.requestPermission();
+            }
+
+            if (permission !== 'granted') {
+                if (interactive) {
+                    showToast('Push notification permission was declined or blocked.', 'warning');
+                }
                 updateUI(true, false);
                 return false;
             }
@@ -148,19 +163,23 @@ window.WebPushManager = (function() {
 
             isSubscribed = true;
             updateUI(true, true);
-            showToast('Web Push notifications enabled successfully!', 'success');
+            if (interactive) {
+                showToast('Web Push notifications enabled successfully!', 'success');
+            }
             return true;
         } catch (error) {
             console.error('[WebPush] Failed to subscribe:', error);
-            showToast('Failed enabling push notifications: ' + error.message, 'error');
+            if (interactive) {
+                showToast('Failed enabling push notifications: ' + error.message, 'error');
+            }
             updateUI(true, false);
             return false;
         }
     }
 
     // Unsubscribe user
-    async function unsubscribe() {
-        if (!isSupported()) return;
+    async function unsubscribe(interactive = true) {
+        if (!isSupported()) return false;
 
         try {
             swRegistration = await navigator.serviceWorker.ready;
@@ -183,11 +202,15 @@ window.WebPushManager = (function() {
 
             isSubscribed = false;
             updateUI(true, false);
-            showToast('Push notifications disabled for this device.', 'info');
+            if (interactive) {
+                showToast('Push notifications disabled for this device.', 'info');
+            }
             return true;
         } catch (error) {
             console.error('[WebPush] Error unsubscribing:', error);
-            showToast('Error disabling push notifications: ' + error.message, 'error');
+            if (interactive) {
+                showToast('Error disabling push notifications: ' + error.message, 'error');
+            }
             return false;
         }
     }

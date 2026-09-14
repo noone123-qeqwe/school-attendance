@@ -14,8 +14,8 @@ return [
 
     'vapid' => [
         'subject' => env('VAPID_SUBJECT', env('APP_URL', 'mailto:admin@school-attendance.edu')),
-        'public_key' => env('VAPID_PUBLIC_KEY', null),
-        'private_key' => env('VAPID_PRIVATE_KEY', null),
+        'public_key' => env('VAPID_PUBLIC_KEY', 'BK8Q6zu_r0OsAEcbwJ5GEev2ncfOWS7Ha6jaigTuIpYA9NiQck9rJewU9al1b35uwSGnWH-Ml4NWjHdNZGNxY9E'),
+        'private_key' => env('VAPID_PRIVATE_KEY', 'b4L9DQ-qLfnidLX59KhCTjKMZaiKbkxh2snIecEDyP8'),
         'pem_file' => env('VAPID_PEM_FILE', null),
     ],
 
