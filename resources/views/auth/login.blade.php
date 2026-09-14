@@ -637,7 +637,7 @@
 
 <!-- Bottom bar -->
 <div class="bottom-bar">
-    <span>&copy; {{ date('Y') }} Smart Classroom Attendance System. All rights reserved.</span>
+    <span>&copy; {{ date('Y') }} Osmeña Colleges. All rights reserved.</span>
     <div class="bottom-links">
         <a href="{{ route('privacy') }}">Privacy Policy</a>
         <a href="{{ route('terms') }}">Terms & Conditions</a>
