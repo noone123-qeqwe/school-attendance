@@ -1,13 +1,25 @@
 <?php
 
+$versionFile = base_path('version.json');
+$rootVersion = '2.4.5';
+if (file_exists($versionFile)) {
+    $raw = @file_get_contents($versionFile);
+    if (!empty($raw)) {
+        $decoded = @json_decode($raw, true);
+        if (!empty($decoded['version'])) {
+            $rootVersion = (string)$decoded['version'];
+        }
+    }
+}
+
 return [
     /*
     |--------------------------------------------------------------------------
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', '2.4.4'),
-    'default_version' => env('APP_LATEST_VERSION', '2.4.4'),
+    'installed_version' => env('APP_INSTALLED_VERSION', $rootVersion),
+    'default_version' => env('APP_LATEST_VERSION', $rootVersion),
 
     /*
     |--------------------------------------------------------------------------
@@ -24,6 +36,30 @@ return [
     |
     */
     'releases' => [
+        '2.4.5' => [
+            'version' => '2.4.5',
+            'version_tag' => 'v2.4.5',
+            'title' => 'Automated Student ID Generation & Unstoppable Version Progression',
+            'description' => 'Complete removal of manual Student ID inputs across registration and admin interfaces with concurrency-safe auto-generation, automatic BSCS program assignment, and dynamic multi-source semantic version progression.',
+            'features' => [
+                '100% automated server-side Student ID allocation removing manual ID entry entirely from registration and creation workflows',
+                'Universal BSCS academic program auto-assignment across all intake, filtering, and model lifecycles',
+                'Dynamic multi-source semantic version progression engine resilient to container restarts and stale database records',
+            ],
+            'improvements' => [
+                'PWA installation state detection intelligently hiding install prompts for already installed devices',
+                'Two-factor account recovery and hardened OTP deliverability with zero credential leakage',
+                'Automatic self-healing database version synchronization on deployment',
+            ],
+            'bugFixes' => [
+                'Resolved application release version freezing on previous database states across cloud environments',
+                'Removed redundant manual Student ID fields and validation conflicts during registration',
+            ],
+            'security' => [
+                'Hardened tamper-proof Student ID generation sequence with atomic database row locks',
+            ],
+            'released_at' => '2026-09-14',
+        ],
         '2.4.4' => [
             'version' => '2.4.4',
             'version_tag' => 'v2.4.4',
