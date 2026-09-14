@@ -64,11 +64,7 @@ class RegisterUserRequest extends FormRequest
         }
 
         if ($this->role === 'student') {
-            if ($this->routeIs('admin.*')) {
-                $rules['student_number'] = 'nullable|string|max:50|unique:users,student_number';
-            } else {
-                $rules['student_number'] = 'nullable|alpha_num|size:7|unique:users,student_number';
-            }
+            $rules['student_number'] = 'nullable|string|max:50';
             $rules['course']         = 'nullable|string';
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';

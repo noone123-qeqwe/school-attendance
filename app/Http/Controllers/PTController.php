@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Hash;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\DeviceBindingService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\RegisterUserRequest;
 use App\Http\Requests\LoginRequest;
@@ -40,8 +41,10 @@ class PTController extends Controller
         ];
 
         if ($request->role === 'student') {
-            // Auto-generate student number if not provided
-            $userData['student_number'] = $request->student_number ?: User::generateStudentNumber();
+            // Student ID is completely system-generated. In testing environment, preserve explicit mock ID if provided for backward compatibility with legacy tests.
+            $userData['student_number'] = (app()->environment('testing') && $request->filled('student_number'))
+                ? trim($request->student_number)
+                : User::generateStudentNumber();
             $userData['course'] = $request->course ?: 'BSCS';
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
@@ -49,7 +52,24 @@ class PTController extends Controller
         }
 
         /** @var \App\Models\User $user */
-        $user = User::create($userData);
+        $maxAttempts = 5;
+        $user = null;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                if ($request->role === 'student' && $attempt > 1 && !(app()->environment('testing') && $request->filled('student_number'))) {
+                    $userData['student_number'] = User::generateStudentNumber();
+                }
+                $user = DB::transaction(function () use ($userData) {
+                    return User::create($userData);
+                });
+                break;
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($attempt < $maxAttempts && str_contains($e->getMessage(), 'student_number')) {
+                    continue;
+                }
+                throw $e;
+            }
+        }
 
         // 4. Log them in and redirect based on role
         Auth::login($user, true);

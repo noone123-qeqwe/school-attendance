@@ -62,7 +62,7 @@
                     </h6>
                 </div>
                 
-                <div class="col-md-6">
+                <div class="col-12">
                     <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
                         Full Name *
                     </label>
@@ -73,23 +73,6 @@
                            required 
                            placeholder="Enter student's full name"
                            style="width: 100%;">
-                </div>
-                
-                <div class="col-md-6">
-                    <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
-                        Student ID
-                    </label>
-                    <div style="position: relative;">
-                        <input type="text" 
-                               class="adm-input" 
-                               value="[Auto-generated: {{ $nextStudentId ?? (date('Y') . '0001') }}]" 
-                               disabled 
-                               readonly
-                               style="width: 100%; background: #f8fafc; color: #0284c7; font-weight: 700; font-family: 'Courier New', monospace; border: 1.5px dashed #93c5fd; cursor: not-allowed; letter-spacing: 0.5px;">
-                    </div>
-                    <small style="color: #64748b; font-size: 0.73rem; margin-top: 4px; display: block;">
-                        <i class="bi bi-info-circle me-1"></i>Automatically assigned by the system upon creation.
-                    </small>
                 </div>
 
                 <!-- Academic Information -->

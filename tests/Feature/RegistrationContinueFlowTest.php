@@ -22,7 +22,8 @@ class RegistrationContinueFlowTest extends TestCase
         $response->assertSee('id="surname"', false);
         $response->assertSee('id="role_student"', false);
         $response->assertSee('id="role_parent"', false);
-        $response->assertSee('id="student_number"', false);
+        $response->assertDontSee('id="student_number"', false);
+        $response->assertDontSee('Student ID (Optional', false);
         $response->assertSee('id="course"', false);
         $response->assertSee('id="year_level"', false);
         $response->assertSee('id="semester"', false);
@@ -54,7 +55,7 @@ class RegistrationContinueFlowTest extends TestCase
         $response->assertSee('id="feedback-middle_name"', false);
         $response->assertSee('id="feedback-surname"', false);
         $response->assertSee('id="feedback-role"', false);
-        $response->assertSee('id="feedback-student_number"', false);
+        $response->assertDontSee('id="feedback-student_number"', false);
         $response->assertSee('id="feedback-course"', false);
         $response->assertSee('id="feedback-year_level"', false);
         $response->assertSee('id="feedback-semester"', false);
@@ -78,7 +79,6 @@ class RegistrationContinueFlowTest extends TestCase
             'middle_name' => 'Almosara',
             'surname' => 'Herminado',
             'role' => 'student',
-            'student_number' => '2311969',
             'course' => 'BSCS',
             'year_level' => 4,
             'semester' => '1',
@@ -95,11 +95,14 @@ class RegistrationContinueFlowTest extends TestCase
             'name' => 'Janessa Almosara Herminado',
             'email' => 'janessa.herminado@example.com',
             'role' => 'student',
-            'student_number' => '2311969',
             'course' => 'BSCS',
             'year_level' => 4,
             'semester' => '1',
         ]);
+
+        $user = User::where('email', 'janessa.herminado@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertNotEmpty($user->student_number);
     }
 
     public function test_student_registration_without_middle_name_succeeds(): void
@@ -112,7 +115,6 @@ class RegistrationContinueFlowTest extends TestCase
             'middle_name' => '',
             'surname' => 'Herminado',
             'role' => 'student',
-            'student_number' => '2311970',
             'course' => 'BSCS',
             'year_level' => 4,
             'semester' => '1',
@@ -125,38 +127,82 @@ class RegistrationContinueFlowTest extends TestCase
         $response = $this->post('/register', $payload);
 
         $response->assertRedirect('/home');
-        $this->assertDatabaseHas('users', [
-            'name' => 'Janessa Herminado',
-            'email' => 'janessa.nomn@example.com',
-            'role' => 'student',
-            'student_number' => '2311970',
-        ]);
+        $user = User::where('email', 'janessa.nomn@example.com')->first();
+        $this->assertNotNull($user);
+        $this->assertNotEmpty($user->student_number);
     }
 
-    public function test_student_registration_rejects_invalid_student_number_length(): void
+    public function test_student_registration_auto_generates_unique_sequential_student_ids(): void
     {
-        session(['reg_email_verified' => 'invalid.id@example.com']);
-
-        $payload = [
-            'first_name' => 'Janessa',
-            'surname' => 'Herminado',
+        session(['reg_email_verified' => 'student1@example.com']);
+        $payload1 = [
+            'first_name' => 'Alice',
+            'surname' => 'Smith',
             'role' => 'student',
-            'student_number' => '231196', // Only 6 characters
             'course' => 'BSCS',
-            'year_level' => 4,
+            'year_level' => 1,
             'semester' => '1',
-            'email' => 'invalid.id@example.com',
+            'email' => 'student1@example.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
             'terms' => '1',
         ];
+        $this->post('/register', $payload1)->assertRedirect('/home');
 
-        $response = $this->post('/register', $payload);
+        $student1 = User::where('email', 'student1@example.com')->first();
+        $this->assertNotNull($student1);
+        $this->assertNotEmpty($student1->student_number);
 
-        $response->assertSessionHasErrors(['student_number']);
-        $this->assertDatabaseMissing('users', [
-            'email' => 'invalid.id@example.com',
+        auth()->logout();
+        session(['reg_email_verified' => 'student2@example.com']);
+        $payload2 = [
+            'first_name' => 'Bob',
+            'surname' => 'Jones',
+            'role' => 'student',
+            'course' => 'BSCS',
+            'year_level' => 1,
+            'semester' => '1',
+            'email' => 'student2@example.com',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
+            'terms' => '1',
+        ];
+        $this->post('/register', $payload2)->assertRedirect('/home');
+
+        $student2 = User::where('email', 'student2@example.com')->first();
+        $this->assertNotNull($student2);
+        $this->assertNotEmpty($student2->student_number);
+
+        // Student IDs must be strictly unique and permanent
+        $this->assertNotEquals($student1->student_number, $student2->student_number);
+    }
+
+    public function test_admin_store_student_auto_generates_id_and_flashes_to_session(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email_verified_at' => now(),
         ]);
+
+        session(['admin_reg_email_verified' => 'admin.created@example.com']);
+
+        $response = $this->actingAs($admin)->post(route('admin.student.store'), [
+            'name' => 'Admin Created Student',
+            'email' => 'admin.created@example.com',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'year_level' => 1,
+            'semester' => 1,
+        ]);
+
+        $response->assertRedirect(route('admin.students'));
+
+        $student = User::where('email', 'admin.created@example.com')->first();
+        $this->assertNotNull($student);
+        $this->assertNotEmpty($student->student_number);
+
+        $response->assertSessionHas('created_student_id', $student->student_number);
+        $response->assertSessionHas('created_student_name', $student->name);
     }
 
     public function test_parent_registration_does_not_require_student_fields(): void
