@@ -374,65 +374,407 @@
         .mobile-warning-section .warning-subtitle { font-size: 0.74rem !important; }
         .mobile-warning-section .warning-card-item { padding: 10px 10px !important; }
         .mobile-warning-section .warning-card-message { font-size: 0.8rem !important; }
-        .premium-hero-card h1 { font-size: 1.05rem !important; }
-        .premium-hero-card .d-md-none .btn-modern-primary,
-        .premium-hero-card .d-md-none .btn-modern-glass { font-size: 0.78rem !important; padding: 9px 12px !important; }
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       STUDENT HERO DASHBOARD BANNER (Redesigned & Premium)
+       ══════════════════════════════════════════════════════════════ */
+    .student-hero-banner {
+        background: linear-gradient(135deg, rgba(38, 14, 12, 0.96) 0%, rgba(20, 10, 8, 0.98) 50%, rgba(30, 16, 12, 0.94) 100%) !important;
+        border: 1px solid rgba(212, 175, 55, 0.24) !important;
+        border-radius: 24px !important;
+        padding: 24px 28px !important;
+        position: relative !important;
+        overflow: hidden !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        margin-bottom: 24px !important;
+    }
+
+    .student-hero-banner::before {
+        content: '';
+        position: absolute;
+        top: 18px;
+        bottom: 18px;
+        left: 0;
+        width: 5px;
+        background: linear-gradient(180deg, #ffd166 0%, #cfa46f 50%, #8b5a2b 100%);
+        border-radius: 0 6px 6px 0;
+        box-shadow: 0 0 14px rgba(212, 175, 55, 0.45);
+    }
+
+    .student-hero-banner::after {
+        content: '';
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 240px;
+        height: 240px;
+        background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    .student-hero-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .student-hero-identity {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        flex: 1 1 340px;
+        min-width: 0;
+    }
+
+    .student-hero-avatar-wrap {
+        position: relative;
+        width: 66px;
+        height: 66px;
+        min-width: 66px;
+        border-radius: 20px;
+        padding: 2px;
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.7) 0%, rgba(139, 90, 43, 0.35) 100%);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(212, 175, 55, 0.15);
+        flex-shrink: 0;
+    }
+
+    .student-hero-avatar {
+        width: 100%;
+        height: 100%;
+        border-radius: 18px;
+        object-fit: cover;
+        background: #1a0f0a;
+        display: block;
+    }
+
+    .student-avatar-pulse {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #10b981;
+        border: 2px solid #140d07;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+    }
+
+    .student-hero-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .student-greeting-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 99px;
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(180, 130, 40, 0.06) 100%);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        color: #f3d18e;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+
+    .student-hero-name {
+        color: #ffffff;
+        font-weight: 800;
+        margin: 0 0 8px 0;
+        font-size: clamp(1.35rem, 3.8vw, 2.15rem);
+        line-height: 1.15;
+        letter-spacing: -0.025em;
+        overflow-wrap: break-word;
+        word-break: normal;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .student-hero-chips {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .student-info-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 11px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #e5d7c4;
+        font-size: 0.8rem;
+        font-weight: 600;
+        line-height: 1.3;
+        transition: all 0.2s ease;
+    }
+
+    .student-info-chip:hover {
+        background: rgba(212, 175, 55, 0.1);
+        border-color: rgba(212, 175, 55, 0.25);
+        color: #fff;
+    }
+
+    .student-info-chip.chip-gold {
+        background: rgba(212, 175, 55, 0.12);
+        border-color: rgba(212, 175, 55, 0.28);
+        color: #f3d18e;
+    }
+
+    .student-info-chip.chip-status {
+        background: rgba(16, 185, 129, 0.12);
+        border-color: rgba(16, 185, 129, 0.28);
+        color: #6ee7b7;
+    }
+
+    .student-status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #10b981;
+        display: inline-block;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+    }
+
+    /* Right side clock & live widgets */
+    .student-hero-widgets {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .student-clock-card {
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(212, 175, 55, 0.22);
+        border-radius: 16px;
+        padding: 10px 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        min-width: 190px;
+    }
+
+    .student-clock-time {
+        color: #ffd166;
+        font-size: 1.35rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.02em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        line-height: 1.2;
+    }
+
+    .student-clock-date {
+        color: #b39b82;
+        font-size: 0.78rem;
+        font-weight: 500;
+        margin-top: 3px;
+    }
+
+    .student-hero-badges-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .student-rate-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 10px;
+        border-radius: 99px;
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.25);
+        color: #4ade80;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .student-streak-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 99px;
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.25);
+        color: #fbbf24;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 767.98px) {
+        .student-hero-banner {
+            padding: 18px 16px !important;
+            border-radius: 18px !important;
+            margin-bottom: 16px !important;
+        }
+        .student-hero-inner {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+        }
+        .student-hero-identity {
+            gap: 14px !important;
+            flex: 1 1 100% !important;
+        }
+        .student-hero-avatar-wrap {
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            border-radius: 16px !important;
+        }
+        .student-hero-avatar {
+            border-radius: 14px !important;
+        }
+        .student-hero-name {
+            font-size: 1.25rem !important;
+            margin-bottom: 6px !important;
+        }
+        .student-greeting-pill {
+            font-size: 0.68rem !important;
+            padding: 2px 8px !important;
+            margin-bottom: 4px !important;
+        }
+        .student-info-chip {
+            font-size: 0.75rem !important;
+            padding: 3px 9px !important;
+            border-radius: 8px !important;
+        }
+        .student-hero-widgets {
+            align-items: stretch !important;
+            width: 100% !important;
+            gap: 8px !important;
+        }
+        .student-clock-card {
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 9px 14px !important;
+            min-width: 0 !important;
+            width: 100% !important;
+            border-radius: 12px !important;
+        }
+        .student-clock-time {
+            font-size: 1.1rem !important;
+        }
+        .student-clock-date {
+            font-size: 0.72rem !important;
+            margin-top: 0 !important;
+        }
+        .student-hero-badges-row {
+            justify-content: flex-start !important;
+        }
+    }
+
+    @media (max-width: 360px) {
+        .student-hero-banner {
+            padding: 14px 12px !important;
+        }
+        .student-hero-avatar-wrap {
+            width: 46px !important;
+            height: 46px !important;
+            min-width: 46px !important;
+        }
+        .student-hero-name {
+            font-size: 1.1rem !important;
+        }
+        .student-info-chip {
+            font-size: 0.7rem !important;
+            padding: 2px 7px !important;
+        }
     }
 </style>
 
 <!-- Hero Banner -->
-<div class="premium-hero-card mb-4">
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
-        <div class="d-flex align-items-center gap-3">
-            <div>
-                <div style="color: var(--gold); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">{{ $greeting }}</div>
-                <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 5vw, 2.2rem); line-height: 1.1; letter-spacing: -0.5px;">{{ Auth::user()->name }}</h1>
-                <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
-                    {{ Auth::user()->course }} — Year {{ Auth::user()->year_level }}, Sem {{ Auth::user()->semester }}
-                </div>
-                <div class="mt-2 d-flex gap-2 flex-wrap align-items-center">
-                    @php
-                        $hasFingerprint = Auth::user()->webauthnCredentials()->exists();
-                    @endphp
-                    @if($hasFingerprint)
-                        <a href="{{ route('settings') }}#tab-fingerprint" style="text-decoration:none;">
-                            <span class="modern-chip modern-chip-present" title="Biometric Authentication Enabled">
-                                <i class="bi bi-fingerprint"></i> Biometric Verified
-                            </span>
-                        </a>
+<div class="student-hero-banner premium-hero-card mb-4">
+    <div class="student-hero-inner">
+        <!-- Identity: Avatar + Details -->
+        <div class="student-hero-identity">
+            <div class="student-hero-avatar-wrap">
+                <img src="{{ Auth::user()->profile_photo_url_with_version }}" alt="{{ Auth::user()->name }}" class="student-hero-avatar">
+                <div class="student-avatar-pulse" title="Active Student"></div>
+            </div>
+            <div class="student-hero-info">
+                <div class="student-greeting-pill">
+                    @if(now()->hour < 12)
+                        <i class="bi bi-brightness-alt-high-fill text-warning"></i>
+                    @elseif(now()->hour < 17)
+                        <i class="bi bi-sun-fill" style="color: #fbbf24;"></i>
                     @else
-                        <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" style="text-decoration:none;">
-                            <span class="modern-chip modern-chip-gold" title="Click to register device biometrics">
-                                <i class="bi bi-fingerprint"></i> Set up Biometrics
-                            </span>
-                        </a>
+                        <i class="bi bi-moon-stars-fill" style="color: #fbbf24;"></i>
                     @endif
+                    <span>{{ $greeting }}</span>
                 </div>
-                <!-- Mobile-only compact CTA -->
-                <div class="d-md-none mt-3 d-flex gap-2">
-                    <button type="button" onclick="openStudentScanner('scan')" class="btn-modern-primary flex-fill justify-content-center" style="padding: 10px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 12px;">
-                        <i class="bi bi-qr-code-scan me-1"></i> Scan / Enter Code
-                    </button>
-                    <a href="{{ route('excuses') }}" class="btn-modern-glass flex-fill justify-content-center" style="padding: 10px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 12px;">
-                        <i class="bi bi-envelope-paper-fill me-1"></i> Excuse
-                    </a>
+                <h1 class="student-hero-name">{{ Auth::user()->name }}</h1>
+                <div class="student-hero-chips">
+                    @if(!empty(Auth::user()->student_number))
+                        <span class="student-info-chip chip-gold" title="Student Identification Number">
+                            <i class="bi bi-person-badge-fill text-gold"></i>
+                            <span>{{ Auth::user()->student_number }}</span>
+                        </span>
+                    @endif
+                    <span class="student-info-chip" title="Enrolled Degree Program">
+                        <i class="bi bi-mortarboard-fill" style="color: #60a5fa;"></i>
+                        <span>{{ Auth::user()->course ?? 'BSCS' }}</span>
+                    </span>
+                    <span class="student-info-chip" title="Academic Standing">
+                        <i class="bi bi-layers-fill" style="color: #a78bfa;"></i>
+                        <span>Year {{ Auth::user()->year_level ?? '1' }} • Sem {{ Auth::user()->semester ?? '1' }}</span>
+                    </span>
+                    @if(!empty(Auth::user()->section))
+                        <span class="student-info-chip" title="Class Section">
+                            <i class="bi bi-people-fill" style="color: #34d399;"></i>
+                            <span>Sec {{ Auth::user()->section }}</span>
+                        </span>
+                    @endif
+                    <span class="student-info-chip chip-status" title="Enrollment Status">
+                        <span class="student-status-dot"></span>
+                        <span>Active Student</span>
+                    </span>
                 </div>
             </div>
         </div>
-        <!-- Desktop: Clock + CTA (hidden on mobile) -->
-        <div class="d-none d-md-flex flex-column gap-2" style="min-width: 250px;">
-            <div class="hero-clock-pill" style="align-items: center; text-align: center; width: 100%;">
-                <div class="hero-clock-time" style="justify-content: center;">
-                    <i class="bi bi-clock"></i> <span id="studentClock">{{ now()->format('h:i A') }}</span>
+
+        <!-- Right Side: Live Clock & Campus Overview -->
+        <div class="student-hero-widgets">
+            <div class="student-clock-card hero-clock-pill">
+                <div class="student-clock-time hero-clock-time">
+                    <i class="bi bi-clock"></i>
+                    <span id="studentClock">{{ now()->format('h:i A') }}</span>
                 </div>
-                <div class="hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
+                <div class="student-clock-date hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            <button type="button" onclick="openStudentScanner('code')" class="btn-modern-primary w-100 justify-content-center" style="padding: 12px; font-size: 0.95rem;">
-                <i class="bi bi-key-fill me-2"></i> Enter Attendance Code
-            </button>
-            <a href="{{ route('excuses') }}" class="btn-modern-glass w-100 justify-content-center" style="padding: 10px; font-size: 0.88rem;">
-                <i class="bi bi-envelope-paper-fill"></i> Submit Excuse / Leave
-            </a>
+            <div class="student-hero-badges-row">
+                @if(isset($attendanceRate))
+                    <span class="student-rate-badge" title="Overall Attendance Rate">
+                        <i class="bi bi-shield-check"></i>
+                        <span>{{ $attendanceRate }}% Attendance</span>
+                    </span>
+                @endif
+                @if(isset($streakCount) && $streakCount > 0)
+                    <span class="student-streak-badge" title="Consecutive Attendance Streak">
+                        <span>🔥 {{ $streakCount }} Day{{ $streakCount > 1 ? 's' : '' }} Streak</span>
+                    </span>
+                @endif
+            </div>
         </div>
     </div>
 </div>

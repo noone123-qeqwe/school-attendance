@@ -62,19 +62,20 @@ class StudentResponsiveAttendanceTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/id="moreSheetContent"[\s\S]*?<span class="more-sheet-item-label">Settings<\/span>/', $html);
     }
 
-    public function test_home_dashboard_has_responsive_attendance_action_buttons(): void
+    public function test_home_dashboard_has_clean_student_hero_banner_without_redundant_action_buttons(): void
     {
         $response = $this->actingAs($this->student)->get('/home');
 
         $response->assertStatus(200);
 
-        // Desktop CTA (code entry)
-        $response->assertSee("openStudentScanner('code')", false);
-        $response->assertSee('Enter Attendance Code');
+        // Verify redundant CTAs and biometrics are removed from student dashboard hero
+        $response->assertDontSee('Set up Biometrics');
+        $response->assertDontSee('Scan / Enter Code');
 
-        // Mobile CTA (scan/code entry)
-        $response->assertSee("openStudentScanner('scan')", false);
-        $response->assertSee('Scan / Enter Code');
+        // Verify clean student identity elements and widgets are present
+        $response->assertSee($this->student->name);
+        $response->assertSee($this->student->course);
+        $response->assertSee('studentClock');
     }
 
     public function test_attendance_records_page_has_responsive_attendance_action_buttons(): void
