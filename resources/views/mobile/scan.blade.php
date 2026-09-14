@@ -24,6 +24,11 @@
             <i class="bi bi-key-fill"></i>
             <span>Enter 6-Digit Code Instead</span>
         </button>
+
+        <button type="button" class="scan-paste-btn touchable" id="openPasteBtn" data-action="paste-copied-code" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('code', true)}else if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Paste Copied Code</span>
+        </button>
     </div>
 
     <div class="scan-info-card">
@@ -157,6 +162,29 @@
         background: var(--bg-card-hover);
     }
 
+    .scan-paste-btn {
+        width: 100%;
+        padding: 14px 24px;
+        background: linear-gradient(135deg, rgba(207, 164, 111, 0.22), rgba(140, 109, 70, 0.32));
+        color: #dfb784;
+        border: 1px solid rgba(207, 164, 111, 0.5);
+        border-radius: 16px;
+        font-size: 15px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 10px;
+    }
+
+    .scan-paste-btn:active {
+        transform: scale(0.96);
+        background: linear-gradient(135deg, rgba(207, 164, 111, 0.35), rgba(140, 109, 70, 0.45));
+    }
+
     .scan-info-card {
         width: 100%;
         background: var(--bg-card);
@@ -190,6 +218,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const openScanBtn = document.getElementById('openScannerBtn');
         const openCodeBtn = document.getElementById('openCodeBtn');
+        const openPasteBtn = document.getElementById('openPasteBtn');
 
         const urlParams = new URLSearchParams(window.location.search);
         const preferredMode = urlParams.get('open_code') === '1' ? 'code' : 'scan';
@@ -210,6 +239,15 @@
                 e.preventDefault();
                 if (typeof openStudentScanner === 'function') {
                     openStudentScanner('code');
+                }
+            });
+        }
+
+        if (openPasteBtn) {
+            openPasteBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (typeof openStudentScanner === 'function') {
+                    openStudentScanner('code', true);
                 }
             });
         }

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Subject;
 use App\Models\User;
+use App\Models\Attendance;
 use App\Models\AttendanceSession;
 use App\Services\WebauthnService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -707,5 +708,90 @@ class QrAttendanceFlowTest extends TestCase
             'subject_code' => $subject->code,
             'status' => 'Present'
         ]);
+    }
+
+    public function test_system_accepts_copied_code_with_prefixes_and_formatting()
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id,
+            'code' => 'COPY101',
+            'name' => 'Copied Code Class',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSIT',
+            'section' => '1A'
+        ]);
+
+        \App\Models\Schedule::create([
+            'subject_id' => $subject->id,
+            'day' => today()->format('l'),
+            'start_time' => now()->subMinutes(5)->format('H:i:s'),
+            'end_time' => now()->addMinutes(55)->format('H:i:s')
+        ]);
+
+        $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $subject->code,
+            'classroom_lat' => 14.5000,
+            'classroom_lng' => 121.0000
+        ]);
+        $sessionCode = $startResponse->json('session_code');
+
+        // Test 1: Copied with "Code: 849201" prefix
+        $copiedText = "Code: " . $sessionCode;
+        $response = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'code' => $copiedText,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001
+        ]);
+        $response->assertOk();
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals('Present', $response->json('status'));
+
+        // Reset attendance record for subsequent tests
+        Attendance::where('user_id', $student->id)->where('subject_code', $subject->code)->delete();
+
+        // Test 2: Copied with spaced format "849 201"
+        $spacedCode = substr($sessionCode, 0, 3) . ' ' . substr($sessionCode, 3, 3);
+        $response2 = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'code' => "  " . $spacedCode . "  ",
+            'latitude' => 14.5001,
+            'longitude' => 121.0001
+        ]);
+        $response2->assertOk();
+        $this->assertTrue($response2->json('success'));
+
+        Attendance::where('user_id', $student->id)->where('subject_code', $subject->code)->delete();
+
+        // Test 3: Copied with sentence "Your attendance code is 849201."
+        $chatMsg = "Hello class! Attendance code: " . $sessionCode . " please clock in now.";
+        $response3 = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'code' => $chatMsg,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001
+        ]);
+        $response3->assertOk();
+        $this->assertTrue($response3->json('success'));
+
+        Attendance::where('user_id', $student->id)->where('subject_code', $subject->code)->delete();
+
+        // Test 4: Copied scan link in code field
+        $token = $startResponse->json('token');
+        $copiedUrl = "https://attendance.school.test/qr/scan/" . $token;
+        $response4 = $this->actingAs($student)->postJson('/qr/scan-process', [
+            'code' => $copiedUrl,
+            'latitude' => 14.5001,
+            'longitude' => 121.0001
+        ]);
+        $response4->assertOk();
+        $this->assertTrue($response4->json('success'));
     }
 }

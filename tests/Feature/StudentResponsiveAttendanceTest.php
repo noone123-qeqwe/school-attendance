@@ -161,4 +161,26 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertSee('isScanInFlight', false);
         $response->assertSee('extractQrToken(', false);
     }
+
+    public function test_scanner_modal_has_paste_copied_code_features_and_clipboard_support(): void
+    {
+        $response = $this->actingAs($this->student)->get('/home');
+        $response->assertStatus(200);
+
+        // Paste buttons & actions
+        $response->assertSee('id="pasteClipboardBtn"', false);
+        $response->assertSee('data-action="paste-copied-code"', false);
+        $response->assertSee('id="cameraPasteBtn"', false);
+        $response->assertSee('Paste Copied Code');
+
+        // JS paste handling
+        $response->assertSee('pasteCopiedCodeFromClipboard()', false);
+        $response->assertSee('handleCopiedCodeInput(', false);
+
+        // Mobile scan page paste button
+        $mobileResponse = $this->actingAs($this->student)->get('/mobile/scan');
+        $mobileResponse->assertStatus(200);
+        $mobileResponse->assertSee('id="openPasteBtn"', false);
+        $mobileResponse->assertSee('Paste Copied Code');
+    }
 }

@@ -1735,11 +1735,15 @@ class QrAttendanceController extends Controller
         $parseUrl = function ($str) use (&$extractedToken, &$extractedCode) {
             if (empty($str)) return;
             $trimmed = trim((string) $str);
+            // Support extracting URLs even if wrapped inside text or quotes
+            if (preg_match('/https?:\/\/[^\s\'"<>]+/', $trimmed, $urlMatch)) {
+                $trimmed = $urlMatch[0];
+            }
             if (str_contains($trimmed, '/qr/scan/')) {
                 $parts = explode('/qr/scan/', $trimmed);
                 $t = explode('?', $parts[1] ?? '')[0];
                 $t = explode('#', $t)[0];
-                $t = trim(rtrim(urldecode($t), '/'));
+                $t = trim(rtrim(urldecode($t), "/'\".,;:)]}"));
                 if (!empty($t)) {
                     $extractedToken = $t;
                 }
@@ -1755,7 +1759,7 @@ class QrAttendanceController extends Controller
                     $segments = explode('/', trim($parsed['path'], '/'));
                     $lastSegment = end($segments);
                     if (!empty($lastSegment) && strlen($lastSegment) >= 16) {
-                        $extractedToken = trim(rtrim(urldecode($lastSegment), '/'));
+                        $extractedToken = trim(rtrim(urldecode($lastSegment), "/'\".,;:)]}"));
                     }
                 }
             }
@@ -1766,6 +1770,40 @@ class QrAttendanceController extends Controller
             $parseUrl($rawCodeInput);
         }
 
+        // Helper to extract 6-digit session PINs from copied text (e.g. "Code: 849 201", "849-201", "PIN: 849201", etc.)
+        $extractSessionPin = function ($str) {
+            if (empty($str)) return null;
+            $s = trim((string) $str);
+            // 1. Prefix pattern like "code: 849201", "PIN 849 201", "Attendance Code: 849-201"
+            if (preg_match('/(?:code|pin|session|attendance)[:\s#\-_]*([0-9]{3})[\s\-_]*([0-9]{3})\b/i', $s, $m)) {
+                return $m[1] . $m[2];
+            }
+            if (preg_match('/(?:code|pin|session|attendance)[:\s#\-_]*([0-9]{6})\b/i', $s, $m)) {
+                return $m[1];
+            }
+            // 2. Exact 6 consecutive digits or 3+3 digits surrounded by word boundaries / whitespace
+            if (preg_match('/(?<![0-9])([0-9]{3})[\s\-_]+([0-9]{3})(?![0-9])/', $s, $m)) {
+                return $m[1] . $m[2];
+            }
+            if (preg_match('/(?<![0-9])([0-9]{6})(?![0-9])/', $s, $m)) {
+                return $m[1];
+            }
+            // 3. Clean alphanumeric exactly 6 characters
+            $clean = strtoupper(preg_replace('/[^0-9A-Za-z]/', '', $s));
+            if (strlen($clean) === 6) {
+                return $clean;
+            }
+            // 4. Ends with 6 digits (e.g. "CODE849201")
+            if (preg_match('/([0-9]{6})$/', $clean, $m)) {
+                return $m[1];
+            }
+            return null;
+        };
+
+        if (empty($extractedCode)) {
+            $extractedCode = $extractSessionPin($rawCodeInput) ?: $extractSessionPin($rawTokenInput);
+        }
+
         // If no token extracted from URL/JSON, check if rawTokenInput itself is a token
         if (empty($extractedToken) && !empty($rawTokenInput)) {
             $cleanToken = trim($rawTokenInput);
@@ -1774,7 +1812,7 @@ class QrAttendanceController extends Controller
             }
         }
 
-        // If no code extracted from JSON/URL, normalize code candidate while strictly preserving leading zeros
+        // If still no code extracted, normalize code candidate while strictly preserving leading zeros
         if (empty($extractedCode)) {
             $codeCandidate = !empty($rawCodeInput) ? $rawCodeInput : $rawTokenInput;
             $cleanCandidate = strtoupper(preg_replace('/[^0-9A-Za-z]/', '', (string) $codeCandidate));

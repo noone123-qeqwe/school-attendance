@@ -1281,11 +1281,23 @@
             });
             box.addEventListener('paste', function(e) {
                 e.preventDefault();
-                const pasteData = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
-                pasteData.split('').forEach((char, index) => {
+                const raw = (e.clipboardData || window.clipboardData).getData('text') || '';
+                const pinMatch = raw.match(/(?:code|pin|otp)[:\s#\-_]*([0-9]{6})\b/i) ||
+                                 raw.match(/\b([0-9]{6})\b/) ||
+                                 raw.match(/([0-9]{3})[\s\-_]+([0-9]{3})/);
+                let clean = '';
+                if (pinMatch) {
+                    clean = pinMatch[1] ? (pinMatch[2] ? pinMatch[1] + pinMatch[2] : pinMatch[1]) : pinMatch[0].replace(/\D/g, '');
+                } else {
+                    clean = raw.replace(/\D/g, '').slice(0, 6);
+                }
+                clean.split('').forEach((char, index) => {
                     if(otpBoxes[index]) otpBoxes[index].value = char;
                 });
-                if (pasteData.length === 6) otpBoxes[5].focus();
+                if (clean.length === 6) {
+                    if (otpBoxes[5]) otpBoxes[5].focus();
+                    setTimeout(verifyOtpAndSubmit, 250);
+                }
             });
         });
 

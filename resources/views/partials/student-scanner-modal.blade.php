@@ -100,10 +100,15 @@
 
             <!-- Secondary Manual Code Alternative Option -->
             <div class="scanner-alt-action-card">
-                <span class="scanner-alt-label">Can't scan the QR code?</span>
-                <button type="button" class="scanner-alt-btn" data-action="switch-code">
-                    <i class="bi bi-key-fill me-1"></i> Enter 6-Digit Code
-                </button>
+                <span class="scanner-alt-label">Have a code or link?</span>
+                <div class="d-flex gap-2 w-100 mt-1">
+                    <button type="button" class="scanner-alt-btn flex-fill" data-action="paste-copied-code" id="cameraPasteBtn" title="Paste attendance code from clipboard">
+                        <i class="bi bi-clipboard-check me-1"></i> Paste Code
+                    </button>
+                    <button type="button" class="scanner-alt-btn flex-fill" data-action="switch-code" id="cameraManualCodeBtn" title="Type attendance code manually">
+                        <i class="bi bi-key-fill me-1"></i> Enter Code
+                    </button>
+                </div>
             </div>
 
             <!-- Clean Bottom Cancel Action -->
@@ -119,16 +124,19 @@
             </div>
             
             <h4 class="scanner-title">Enter Attendance Code</h4>
-            <p class="scanner-sub">Enter the 6-digit attendance code</p>
+            <p class="scanner-sub">Enter or paste the code shared by your teacher</p>
 
             <div class="code-entry-container my-3">
-                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" pattern="[0-9]*" placeholder="849 201" maxlength="7" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false">
+                <input type="text" id="directSessionCodeInput" class="code-entry-input" inputmode="numeric" placeholder="849 201" maxlength="500" autocomplete="one-time-code" autocorrect="off" autocapitalize="characters" spellcheck="false">
                 <div id="codeEntryHint" class="code-entry-hint mt-2">
                     <i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token
                 </div>
             </div>
 
             <div class="d-flex flex-column gap-2">
+                <button type="button" id="pasteClipboardBtn" class="btn scanner-paste-action-btn w-100" data-action="paste-copied-code" title="Paste code from clipboard">
+                    <i class="bi bi-clipboard-check me-1"></i> Paste Copied Code
+                </button>
                 <button type="button" id="codeSubmitBtn" class="btn scanner-primary-action-btn w-100" data-action="submit-code">
                     <i class="bi bi-check2-circle me-1"></i> Record Attendance
                 </button>
@@ -1253,6 +1261,32 @@
     transform: scale(0.98) !important;
 }
 
+.scanner-paste-action-btn {
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.18), rgba(140, 109, 70, 0.28)) !important;
+    border: 1px solid rgba(207, 164, 111, 0.45) !important;
+    color: #dfb784 !important;
+    font-weight: 700 !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+    font-size: 0.88rem !important;
+    transition: all 0.2s !important;
+    box-shadow: 0 4px 12px rgba(207, 164, 111, 0.15) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.scanner-paste-action-btn:hover, .scanner-paste-action-btn:focus {
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.32), rgba(140, 109, 70, 0.45)) !important;
+    border-color: #dfb784 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 16px rgba(207, 164, 111, 0.28) !important;
+}
+
+.scanner-paste-action-btn:active {
+    transform: scale(0.98) !important;
+}
+
 .scanner-secondary-action-btn {
     background: rgba(255, 255, 255, 0.06) !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
@@ -1453,7 +1487,16 @@ function switchScannerMode(mode) {
 }
 
 function formatSessionCodeInput(el, e) {
-    let val = el.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+    if (!el) return;
+    const raw = el.value || '';
+    
+    // If pasted or contains more than 7 characters, or contains url/prefixes like code:, pin:, etc.
+    if (raw.length > 7 || /http|\/qr\/|code|pin|session/i.test(raw)) {
+        handleCopiedCodeInput(raw);
+        return;
+    }
+
+    let val = raw.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
     if (val.length > 6) {
         val = val.substring(0, 6);
     }
@@ -1465,7 +1508,7 @@ function formatSessionCodeInput(el, e) {
 
     el.classList.remove('is-invalid');
     const hint = document.getElementById('codeEntryHint');
-    if (hint && !hint.classList.contains('text-gold')) {
+    if (hint && !hint.classList.contains('text-gold') && !hint.classList.contains('text-success')) {
         hint.className = 'code-entry-hint mt-2';
         hint.innerHTML = '<i class="bi bi-shield-check text-warning me-1"></i> 6-digit session PIN or QR token';
     }
@@ -1482,22 +1525,118 @@ function handleCodeKeydown(e) {
     }
 }
 
+function handleCopiedCodeInput(rawText) {
+    if (!rawText) return;
+    const text = String(rawText).trim();
+    if (!text) return;
+
+    if (currentScannerMode !== 'code') {
+        switchScannerMode('code');
+    }
+
+    const input = document.getElementById('directSessionCodeInput');
+    const hint = document.getElementById('codeEntryHint');
+    const parsed = extractQrToken(text);
+
+    if (parsed.code && parsed.code.length === 6) {
+        const c = parsed.code.toUpperCase();
+        if (input) {
+            input.value = c.substring(0, 3) + ' ' + c.substring(3);
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        }
+        if (hint) {
+            hint.className = 'code-entry-hint mt-2 text-success';
+            hint.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> Copied code accepted: <strong>' + (input ? input.value : c) + '</strong>';
+        }
+        if (window.triggerHaptic) window.triggerHaptic('success');
+        
+        setTimeout(() => {
+            submitDirectCode();
+        }, 300);
+        return;
+    }
+
+    if (parsed.token || (parsed.code && parsed.code.length >= 4)) {
+        const valToDisplay = parsed.code || (parsed.token.length > 20 ? parsed.token.substring(0, 16) + '…' : parsed.token);
+        if (input) {
+            input.value = valToDisplay;
+            input.classList.remove('is-invalid');
+            input.classList.add('is-valid');
+        }
+        if (hint) {
+            hint.className = 'code-entry-hint mt-2 text-success';
+            hint.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> Copied attendance code detected!';
+        }
+        if (window.triggerHaptic) window.triggerHaptic('success');
+
+        setTimeout(() => {
+            onQrScanSuccess(parsed.token || parsed.code, 'code');
+        }, 300);
+        return;
+    }
+
+    if (input) {
+        const clean = text.replace(/[^0-9A-Za-z]/g, '').toUpperCase();
+        if (clean.length > 3) {
+            input.value = clean.substring(0, 3) + ' ' + clean.substring(3, 6);
+        } else {
+            input.value = clean.substring(0, 6);
+        }
+        input.focus();
+    }
+    if (hint) {
+        hint.className = 'code-entry-hint mt-2 text-warning';
+        hint.innerHTML = '<i class="bi bi-info-circle me-1"></i> Check that your copied code contains a valid 6-digit PIN.';
+    }
+}
+
+async function pasteCopiedCodeFromClipboard() {
+    let text = '';
+    try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+            text = await navigator.clipboard.readText();
+        }
+    } catch (err) {
+        console.warn('[Scanner] Clipboard readText error or permission denied:', err);
+    }
+
+    if (text) {
+        handleCopiedCodeInput(text);
+    } else {
+        switchScannerMode('code');
+        const input = document.getElementById('directSessionCodeInput');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+        const hint = document.getElementById('codeEntryHint');
+        if (hint) {
+            hint.className = 'code-entry-hint mt-2 text-warning';
+            hint.innerHTML = '<i class="bi bi-clipboard me-1"></i> Please paste your copied code directly into the box (Ctrl+V or long-press).';
+        }
+    }
+}
+
 function submitDirectCode() {
     if (isScanInFlight) return;
 
     const input = document.getElementById('directSessionCodeInput');
     const rawVal = (input?.value || '').trim();
-    const cleanVal = rawVal.replace(/[^0-9A-Za-z]/g, '');
     const hint = document.getElementById('codeEntryHint');
     
-    if (!cleanVal || cleanVal.length < 6) {
+    const parsed = extractQrToken(rawVal);
+    const codeVal = parsed.code || (parsed.token ? '' : rawVal.replace(/[^0-9A-Za-z]/g, ''));
+    const tokenVal = parsed.token;
+
+    if (!codeVal && !tokenVal) {
         if (input) {
             input.classList.add('is-invalid');
             input.focus();
         }
         if (hint) {
             hint.className = 'code-entry-hint mt-2 text-danger';
-            hint.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Please enter the full 6-digit attendance code (e.g. 849 201).';
+            hint.innerHTML = '<i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Please enter or paste the 6-digit attendance code (e.g. 849 201).';
         }
         if (window.triggerHaptic) window.triggerHaptic('error');
         return;
@@ -1515,7 +1654,7 @@ function submitDirectCode() {
         codeBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verifying Code…';
     }
 
-    onQrScanSuccess(cleanVal, 'code');
+    onQrScanSuccess(tokenVal || codeVal, 'code');
 }
 
 function applyResponsiveScannerLayout() {
@@ -1542,7 +1681,7 @@ function applyResponsiveScannerLayout() {
     }
 }
 
-function openStudentScanner(initialMode = 'scan') {
+function openStudentScanner(initialMode = 'scan', autoPaste = false) {
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
     
@@ -1555,6 +1694,12 @@ function openStudentScanner(initialMode = 'scan') {
     applyResponsiveScannerLayout();
     resetScannerView();
     switchScannerMode(initialMode);
+
+    if (autoPaste) {
+        setTimeout(() => {
+            pasteCopiedCodeFromClipboard();
+        }, 120);
+    }
 }
 
 async function safeStopScanner() {
@@ -2111,18 +2256,21 @@ function extractQrToken(raw) {
         } catch(e) {}
     }
 
-    // 2. Support URLs
+    // 2. Support URLs (including URLs embedded in copied text)
     let token = '';
     let code = '';
+
+    const urlMatch = str.match(/https?:\/\/[^\s'"<>]+/);
+    const candidateUrl = urlMatch ? urlMatch[0] : (str.startsWith('http://') || str.startsWith('https://') ? str : null);
 
     if (str.includes('/qr/scan/')) {
         const parts = str.split('/qr/scan/');
         let tail = parts[1] ? parts[1].split('?')[0].split('#')[0] : '';
-        tail = decodeURIComponent(tail).replace(/\/+$/, '').trim();
+        tail = decodeURIComponent(tail).replace(/['".,;:)\/]+$/, '').trim();
         token = tail;
-    } else if (str.startsWith('http://') || str.startsWith('https://')) {
+    } else if (candidateUrl) {
         try {
-            const urlObj = new URL(str);
+            const urlObj = new URL(candidateUrl);
             if (urlObj.searchParams.has('token')) {
                 token = urlObj.searchParams.get('token').trim();
             }
@@ -2132,19 +2280,32 @@ function extractQrToken(raw) {
             if (!token) {
                 const pathParts = urlObj.pathname.split('/').filter(Boolean);
                 if (pathParts.length > 0) {
-                    token = decodeURIComponent(pathParts[pathParts.length - 1]).trim();
+                    token = decodeURIComponent(pathParts[pathParts.length - 1]).replace(/['".,;:)\/]+$/, '').trim();
                 }
             }
         } catch(e) {}
     }
 
     if (!token && !code) {
-        // Raw input: check if it matches 6-digit session PIN (e.g. 537651 or 012345)
-        const cleanAlphaNum = str.replace(/[^0-9A-Za-z]/g, '');
-        if (cleanAlphaNum.length >= 4 && cleanAlphaNum.length <= 10 && !str.includes('/')) {
-            code = cleanAlphaNum;
+        // Look for 6-digit session PINs from copied strings (e.g. "Code: 849201", "PIN 849 201", "849-201", "Attendance Code: 849 201")
+        const pinMatch = str.match(/(?:code|pin|session|attendance)[:\s#\-_]*([0-9]{3})[\s\-_]*([0-9]{3})\b/i) ||
+                         str.match(/(?:code|pin|session|attendance)[:\s#\-_]*([0-9]{6})\b/i) ||
+                         str.match(/(?<![0-9])([0-9]{3})[\s\-_]+([0-9]{3})(?![0-9])/) ||
+                         str.match(/(?<![0-9])([0-9]{6})(?![0-9])/);
+        if (pinMatch) {
+            code = pinMatch[1] ? (pinMatch[2] ? pinMatch[1] + pinMatch[2] : pinMatch[1]) : pinMatch[0].replace(/\D/g, '');
         } else {
-            token = str;
+            const cleanAlphaNum = str.replace(/[^0-9A-Za-z]/g, '');
+            if (cleanAlphaNum.length >= 4 && cleanAlphaNum.length <= 10 && !str.includes('/')) {
+                const endDigits = cleanAlphaNum.match(/[0-9]{6}$/);
+                if (endDigits) {
+                    code = endDigits[0];
+                } else {
+                    code = cleanAlphaNum;
+                }
+            } else {
+                token = str;
+            }
         }
     }
 
@@ -2570,6 +2731,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'switch-code':
                 switchScannerMode('code');
                 break;
+            case 'paste-copied-code':
+            case 'paste-code':
+                pasteCopiedCodeFromClipboard();
+                break;
             case 'allow-camera':
                 requestCameraAgain();
                 break;
@@ -2623,7 +2788,28 @@ document.addEventListener('DOMContentLoaded', () => {
         codeInput.addEventListener('keydown', function(e) {
             handleCodeKeydown(e);
         });
+        codeInput.addEventListener('paste', function(e) {
+            const pastedText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+            if (pastedText) {
+                e.preventDefault();
+                handleCopiedCodeInput(pastedText);
+            }
+        });
     }
+
+    // Modal-wide paste support (Ctrl+V anywhere while modal is open)
+    document.addEventListener('paste', function(e) {
+        const m = document.getElementById('studentScannerModal');
+        if (!m || m.style.display !== 'flex') return;
+        if (e.target && e.target !== codeInput && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+            return;
+        }
+        const pastedText = (e.clipboardData || window.clipboardData)?.getData('text') || '';
+        if (pastedText) {
+            e.preventDefault();
+            handleCopiedCodeInput(pastedText);
+        }
+    });
 
     // Resume or check camera on visibility change (e.g. returning from app permissions in Android Settings)
     document.addEventListener('visibilitychange', () => {

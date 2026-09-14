@@ -396,7 +396,15 @@
         input.addEventListener('paste', function(e) {
             e.preventDefault();
             const pasteData = (e.clipboardData || window.clipboardData)?.getData('text') || '';
-            const cleanPaste = pasteData.replace(/\D/g, '').slice(0, 6);
+            const pinMatch = pasteData.match(/(?:code|pin|otp)[:\s#\-_]*([0-9]{6})\b/i) ||
+                             pasteData.match(/\b([0-9]{6})\b/) ||
+                             pasteData.match(/([0-9]{3})[\s\-_]+([0-9]{3})/);
+            let cleanPaste = '';
+            if (pinMatch) {
+                cleanPaste = pinMatch[1] ? (pinMatch[2] ? pinMatch[1] + pinMatch[2] : pinMatch[1]) : pinMatch[0].replace(/\D/g, '');
+            } else {
+                cleanPaste = pasteData.replace(/\D/g, '').slice(0, 6);
+            }
             if (cleanPaste) {
                 distributeCode(cleanPaste, 0);
             }
