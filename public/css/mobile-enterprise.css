@@ -204,9 +204,13 @@
         background: rgba(207, 164, 111, 0.15) !important;
     }
 
-    /* Keyboard Avoidance */
-    body.keyboard-open .mobile-bottom-nav {
-        display: none !important;
+    /* Keyboard & Modal Avoidance */
+    body.keyboard-open .mobile-bottom-nav,
+    body.modal-open .mobile-bottom-nav {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translateY(120%) !important;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important;
     }
     body.keyboard-open {
         padding-bottom: 0 !important;
@@ -256,6 +260,13 @@
         background: rgba(255, 255, 255, 0.2);
         margin: 0 auto 12px auto;
         flex-shrink: 0;
+    }
+    #daySummaryModal .modal-content::before,
+    #attendanceRecordsModal .modal-content::before,
+    .modal-content:has(.day-modal-sheet-handle)::before,
+    .modal-content:has(.scal-sheet-handle)::before,
+    .modal-content:has(.bottom-sheet-handle)::before {
+        display: none !important;
     }
     .modal-body {
         overflow-y: auto !important;

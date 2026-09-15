@@ -35,12 +35,44 @@
     $calendarJson = [];
     foreach ($dayRecordsMap as $day => $recs) {
         $dateKey = \Carbon\Carbon::create($calYear, $calMonth, $day)->format('Y-m-d');
-        $calendarJson[$dateKey] = collect($recs)->map(fn($r) => [
-            'subject' => $r->subject->name ?? $r->subject_code,
-            'code'    => $r->subject_code,
-            'status'  => $r->status,
-            'time_in' => $r->time_in ? \Carbon\Carbon::parse($r->time_in)->format('h:i A') : null,
-        ])->values()->toArray();
+        $calendarJson[$dateKey] = collect($recs)->map(function($r) {
+            $schedStart = $r->subject?->start_time ? \Carbon\Carbon::parse($r->subject->start_time)->format('g:i A') : null;
+            $schedEnd   = $r->subject?->end_time   ? \Carbon\Carbon::parse($r->subject->end_time)->format('g:i A')   : null;
+            $schedText  = ($schedStart && $schedEnd) ? "{$schedStart} – {$schedEnd}" : ($r->subject?->schedule_time ?? 'Flexible Schedule');
+
+            $clockInTime = $r->time_in 
+                ? \Carbon\Carbon::parse($r->time_in)->format('g:i A') 
+                : ($r->checked_in_at ? $r->checked_in_at->format('g:i A') : null);
+
+            $clockOutTime = $r->time_out 
+                ? \Carbon\Carbon::parse($r->time_out)->format('g:i A') 
+                : null;
+
+            $status = $r->status ? ucfirst(strtolower($r->status)) : 'Absent';
+            $clockInDisplay = $clockInTime ?? ($status === 'Absent' ? 'No clock-in' : '—');
+
+            $instructorName = $r->subject?->instructorUser?->name 
+                           ?? $r->subject?->instructor 
+                           ?? 'Instructor TBA';
+
+            $remarks = $r->excuse_note 
+                    ?? $r->excuseSubmission?->reason 
+                    ?? ($r->excused ? 'Excused Absence' : null);
+
+            return [
+                'id'             => $r->id,
+                'subject'        => $r->subject->name ?? $r->subject_name ?? $r->subject_code ?? 'Class',
+                'code'           => $r->subject_code ?? ($r->subject->code ?? ''),
+                'instructor'     => $instructorName,
+                'schedule'       => $schedText,
+                'status'         => $status,
+                'status_lower'   => strtolower($status),
+                'time_in'        => $clockInTime,
+                'clock_in'       => $clockInDisplay,
+                'time_out'       => $clockOutTime,
+                'remarks'        => $remarks,
+            ];
+        })->values()->toArray();
     }
 
     $today     = now()->day;
@@ -324,16 +356,6 @@
         font-weight: 600;
     }
 
-    @media (max-width: 576px) {
-        .att-cal-cell { font-size: 0.75rem; border-radius: 8px; }
-        .att-cal-dot { width: 4px; height: 4px; }
-        .att-cal-nav { padding: 16px 16px 12px; }
-        .att-cal-grid { padding: 0 10px 12px; gap: 3px; }
-        .att-cal-header { padding: 0 10px; }
-        .att-cal-stats { padding: 10px 12px; gap: 4px; }
-        .att-cal-stat { padding: 4px 10px; font-size: 0.7rem; }
-    }
-    
     .premium-select {
         border: 1px solid rgba(207, 164, 111, 0.3);
     }
@@ -344,6 +366,424 @@
     .premium-select option {
         background-color: #1e293b;
         color: #f3e7cd;
+    }
+
+    /* Modal Stacking Context & Backdrop */
+    #daySummaryModal {
+        z-index: 10060 !important;
+    }
+    .modal-backdrop {
+        z-index: 10050 !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        background: rgba(0, 0, 0, 0.72) !important;
+    }
+
+    #daySummaryModal .modal-dialog {
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    #daySummaryModal .modal-content {
+        background: linear-gradient(180deg, #18120d 0%, #0d0806 100%) !important;
+        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+        border-radius: 26px !important;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85), 0 0 40px rgba(207, 164, 111, 0.08) !important;
+        position: relative;
+    }
+    #daySummaryModal .modal-content::before {
+        display: none !important;
+    }
+
+    .scal-sheet-handle,
+    .day-modal-sheet-handle {
+        width: 42px;
+        height: 4.5px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 99px;
+        margin: 12px auto 4px auto;
+        display: none;
+        flex-shrink: 0;
+    }
+
+    /* Top Action Bar */
+    .day-modal-action-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px 8px 20px;
+    }
+    .day-nav-stepper {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 3px;
+        gap: 2px;
+    }
+    .day-nav-step-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: transparent;
+        border: none;
+        color: #cfa46f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .day-nav-step-btn:hover {
+        background: rgba(207, 164, 111, 0.15);
+        color: #ffd166;
+    }
+    .day-nav-step-btn:active {
+        transform: scale(0.92);
+    }
+    .day-nav-today-btn {
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 8px;
+        background: rgba(207, 164, 111, 0.12);
+        border: 1px solid rgba(207, 164, 111, 0.25);
+        color: #ffd166;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .day-nav-today-btn:hover {
+        background: rgba(207, 164, 111, 0.25);
+        border-color: #ffd166;
+        color: #fff;
+    }
+    .day-modal-close-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #cfa46f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .day-modal-close-btn:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.35);
+        color: #f87171;
+        transform: rotate(90deg);
+    }
+
+    /* Date & Badges Title Row */
+    .day-modal-header-content {
+        padding: 4px 20px 14px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .day-modal-date {
+        font-size: 1.24rem;
+        font-weight: 800;
+        color: #f8fafc;
+        letter-spacing: -0.015em;
+        margin: 0 0 8px 0;
+        line-height: 1.25;
+    }
+    .day-summary-badges {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .day-summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+    .day-summary-chip.chip-count {
+        background: rgba(207, 164, 111, 0.12);
+        color: #f3ede4;
+        border: 1px solid rgba(207, 164, 111, 0.25);
+    }
+    .day-summary-chip.chip-present {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .day-summary-chip.chip-late {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .day-summary-chip.chip-absent {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .day-summary-chip.chip-empty {
+        background: rgba(255, 255, 255, 0.04);
+        color: #a8937e;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Section Header */
+    .day-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 16px 0 12px 0;
+    }
+    .day-section-label {
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: #cfa46f;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .day-section-icon {
+        color: #cfa46f;
+        font-size: 0.8rem;
+    }
+    .day-section-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #b39b82;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    /* Subject Detail Cards */
+    .att-detail-card {
+        background: linear-gradient(145deg, rgba(32, 24, 20, 0.9) 0%, rgba(18, 13, 11, 0.95) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 16px 18px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        backdrop-filter: blur(12px);
+    }
+    .att-detail-card.status-border-present {
+        border-left: 4px solid #10b981 !important;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.06);
+    }
+    .att-detail-card.status-border-late {
+        border-left: 4px solid #f59e0b !important;
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.06);
+    }
+    .att-detail-card.status-border-absent {
+        border-left: 4px solid #ef4444 !important;
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.06);
+    }
+
+    .att-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .att-card-subject-title {
+        font-weight: 800;
+        font-size: 1.05rem;
+        color: #f8fafc;
+        line-height: 1.32;
+        margin-bottom: 6px;
+    }
+    .att-card-meta {
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .att-code-pill {
+        background: rgba(207, 164, 111, 0.15);
+        color: #ffd166;
+        border: 1px solid rgba(207, 164, 111, 0.35);
+        font-weight: 800;
+        font-size: 0.74rem;
+        padding: 2px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.04em;
+    }
+    .att-instructor-pill {
+        color: #c5b3a1;
+        font-size: 0.78rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .att-status-badge {
+        padding: 5px 12px;
+        border-radius: 10px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .att-status-badge.present {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+    }
+    .att-status-badge.late {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+    }
+    .att-status-badge.absent {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+    }
+
+    /* Grid for Schedule & Clock-in */
+    .att-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 12px 14px;
+    }
+    .att-grid-col-label {
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #cfa46f;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .att-grid-col-val {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #f1f5f9;
+    }
+
+    /* Excuse Request Button for Absent Classes */
+    .day-card-excuse-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: rgba(207, 164, 111, 0.08);
+        border: 1px dashed rgba(207, 164, 111, 0.3);
+        color: #ffd166;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .day-card-excuse-btn:hover {
+        background: rgba(207, 164, 111, 0.18);
+        border-color: #ffd166;
+        color: #fff;
+    }
+
+    /* Empty state */
+    .day-empty-card {
+        text-align: center;
+        padding: 38px 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        border: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+    .day-empty-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        background: rgba(207, 164, 111, 0.1);
+        border: 1px solid rgba(207, 164, 111, 0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 14px;
+        color: #ffd166;
+        font-size: 1.6rem;
+    }
+
+    @media (max-width: 768px) {
+        .att-cal-cell { font-size: 0.75rem; border-radius: 8px; }
+        .att-cal-dot { width: 4px; height: 4px; }
+        .att-cal-nav { padding: 16px 16px 12px; }
+        .att-cal-grid { padding: 0 10px 12px; gap: 3px; }
+        .att-cal-header { padding: 0 10px; }
+        .att-cal-stats { padding: 10px 12px; gap: 4px; }
+        .att-cal-stat { padding: 4px 10px; font-size: 0.7rem; }
+
+        /* Responsive Mobile Bottom Sheet for Day Summary Modal */
+        #daySummaryModal .modal-dialog {
+            margin: 0 !important;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 88vh !important;
+            display: flex !important;
+            align-items: flex-end !important;
+            transform: translateY(0) !important;
+        }
+        #daySummaryModal .modal-content {
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            border-top-left-radius: 28px !important;
+            border-top-right-radius: 28px !important;
+            max-height: 88vh !important;
+            overflow-y: auto !important;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 20px)) !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+        #daySummaryModal .modal-content::before {
+            display: none !important;
+        }
+        .day-modal-sheet-handle,
+        .scal-sheet-handle {
+            display: block !important;
+        }
+        .day-modal-action-bar {
+            padding: 10px 16px 6px 16px;
+        }
+        .day-modal-header-content {
+            padding: 2px 16px 12px 16px;
+        }
+        .day-modal-date {
+            font-size: 1.12rem;
+        }
+        .att-detail-card {
+            padding: 14px 14px;
+        }
     }
 </style>
 
@@ -446,8 +886,10 @@
                             if ($cellStatus) $cellClasses .= ' ' . $cellStatus;
                         @endphp
                         <div class="{{ $cellClasses }}"
-                             @if($hasRecords) onclick="showAttDetail('{{ $dateKey }}', {{ $d }})" @endif
-                             @if($hasRecords) title="Click to view details" @endif>
+                             id="calTile_{{ $dateKey }}"
+                             @if($hasRecords) role="button" tabindex="0" onclick="showAttDetail('{{ $dateKey }}', {{ $d }})" @endif
+                             @if($hasRecords) title="Click to view details" @endif
+                             style="touch-action: manipulation;">
                             <span>{{ $d }}</span>
                             @if($hasRecords && count($dayStatuses) > 1)
                                 <div class="att-cal-dots">
@@ -488,27 +930,53 @@
 </div>
 @endif
 
-{{-- ── Day Summary Inspector Modal ───────────────────────────────────────────────── --}}
+{{-- ── Day Summary Inspector Modal (Subject-by-Subject Attendance Details) ───────────────── --}}
 <div class="modal fade" id="daySummaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.8);">
-            <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
-                <div>
-                    <h3 style="font-weight:800;font-size:1.25rem;color:#f3ede4;margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
-                    <div style="font-size:0.85rem;color:#b39b82;display:flex;align-items:center;gap:8px;margin-top:6px;" id="daySummarySubtitle">
-                        <span id="daySummaryStatusDot" style="width:8px;height:8px;border-radius:50%;display:inline-block;"></span>
-                        <span id="daySummaryStatusText" style="font-weight:600;">Status</span>
-                    </div>
+        <div class="modal-content">
+            <div class="scal-sheet-handle day-modal-sheet-handle"></div>
+            <!-- Action bar with Stepper & Close -->
+            <div class="day-modal-action-bar">
+                <div class="day-nav-stepper">
+                    <button type="button" class="day-nav-step-btn" onclick="navigateDayModal(-1)" title="Previous Day" aria-label="Previous Day">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button type="button" class="day-nav-today-btn" onclick="goToTodayModal()" title="Jump to Today">
+                        Today
+                    </button>
+                    <button type="button" class="day-nav-step-btn" onclick="navigateDayModal(1)" title="Next Day" aria-label="Next Day">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
+                <button type="button" class="day-modal-close-btn" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" title="Close Inspector" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
-            <div class="px-4 pb-4 pt-2">
-                <div style="font-size:0.75rem;font-weight:800;color:#cfa46f;text-transform:uppercase;letter-spacing:0.08em;margin:16px 0 12px 0;" id="daySummarySectionTitle">Subjects Breakdown</div>
-                <div id="daySummaryContent" class="d-flex flex-column gap-2">
+            <!-- Header Content: Date & Dynamic Micro-badges -->
+            <div class="day-modal-header-content">
+                <h3 class="day-modal-date" id="daySummaryTitle">Date</h3>
+                <div class="day-summary-badges" id="daySummarySubtitle">
+                    <span class="day-summary-chip chip-empty" id="daySummaryStatusText">
+                        <span id="daySummaryStatusDot" style="width:7px; height:7px; border-radius:50%; background:#ffd166; display:inline-block;"></span>
+                        Attendance Details
+                    </span>
+                </div>
+            </div>
+            <!-- Body Content -->
+            <div class="px-4 pb-4 pt-1">
+                <div class="day-section-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="day-section-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+                        <span class="day-section-label" id="daySummarySectionTitle">Subjects Breakdown</span>
+                    </div>
+                    <span class="day-section-badge" id="daySummarySectionCount">1 Subject</span>
+                </div>
+                <div id="daySummaryContent" class="d-flex flex-column gap-3">
                     <!-- dynamically populated -->
                 </div>
-                <div style="font-size:0.75rem;color:#8f826f;text-align:center;margin-top:18px;">
-                    <i class="bi bi-info-circle me-1"></i> All classes & attendance entries for this day are listed above.
+                <div style="font-size:0.75rem; color:#8f826f; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="bi bi-shield-check text-gold" style="color:#cfa46f;"></i>
+                    <span>Real-time subject-by-subject attendance records for this date.</span>
                 </div>
             </div>
         </div>
@@ -518,74 +986,201 @@
 <script>
 var attCalendarData = @json($calendarJson);
 let dayModalInstance = null;
+let currentSelectedDateKey = '{{ $calYear }}-{{ str_pad($calMonth, 2, '0', STR_PAD_LEFT) }}-{{ str_pad(($isCurrentMonth && $today ? $today : 14), 2, '0', STR_PAD_LEFT) }}';
+const selectedChildId = {{ $selectedChild ? $selectedChild->id : 'null' }};
+
+function closeDaySummaryModal() {
+    const modalEl = document.getElementById('daySummaryModal');
+    if (modalEl) {
+        if (dayModalInstance) {
+            try { dayModalInstance.hide(); } catch (e) {}
+        }
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        modalEl.setAttribute('aria-hidden', 'true');
+        modalEl.removeAttribute('aria-modal');
+    }
+    document.body.classList.remove('modal-open');
+    const fb = document.querySelector('.scal-fallback-backdrop');
+    if (fb) fb.remove();
+}
+
+function selectCalendarDay(dateKey, day, openModal = true) {
+    document.querySelectorAll('.att-cal-cell.selected').forEach(el => el.classList.remove('selected'));
+
+    const tile = document.getElementById('calTile_' + dateKey);
+    if (tile) {
+        tile.classList.add('selected');
+    }
+    currentSelectedDateKey = dateKey;
+
+    if (openModal) {
+        showAttDetail(dateKey, day);
+    }
+}
+
+function navigateDayModal(delta) {
+    if (!currentSelectedDateKey) return;
+    const dt = new Date(currentSelectedDateKey + 'T00:00:00');
+    dt.setDate(dt.getDate() + delta);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const d = String(dt.getDate()).padStart(2, '0');
+    const newDateKey = `${y}-${m}-${d}`;
+    selectCalendarDay(newDateKey, dt.getDate(), true);
+}
+
+function goToTodayModal() {
+    const todayStr = '{{ now()->format("Y-m-d") }}';
+    const dt = new Date(todayStr + 'T00:00:00');
+    selectCalendarDay(todayStr, dt.getDate(), true);
+}
 
 function showAttDetail(dateKey, day) {
+    currentSelectedDateKey = dateKey;
     const titleEl = document.getElementById('daySummaryTitle');
-    const subText = document.getElementById('daySummaryStatusText');
-    const subDot = document.getElementById('daySummaryStatusDot');
+    const subtitleEl = document.getElementById('daySummarySubtitle');
     const contentEl = document.getElementById('daySummaryContent');
+    const sectionCountEl = document.getElementById('daySummarySectionCount');
 
     const dt = new Date(dateKey + 'T00:00:00');
-    titleEl.textContent = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const formattedDate = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    if (titleEl) titleEl.textContent = formattedDate;
 
     const records = attCalendarData[dateKey] || [];
-    if (records.length === 0) {
-        subDot.style.background = '#8f826f';
-        subText.textContent = 'No attendance recorded';
-        contentEl.innerHTML = `
-            <div style="text-align:center; padding: 32px 16px; color:#8f826f; background:rgba(255,255,255,0.02); border-radius:14px; border:1px dashed rgba(255,255,255,0.06);">
-                <i class="bi bi-calendar-x" style="font-size:2rem; display:block; margin-bottom:8px; opacity:0.5; color:#cfa46f;"></i>
-                <div style="font-weight:600; font-size:0.9rem; color:#f3ede4;">No records for this date</div>
-                <div style="font-size:0.78rem; margin-top:4px;">Enjoy your free time or check schedule!</div>
-            </div>`;
-    } else {
-        const hasAbsent = records.some(r => r.status === 'Absent');
-        const hasLate = records.some(r => r.status === 'Late');
-        const allPresent = records.every(r => r.status === 'Present');
+    if (sectionCountEl) {
+        sectionCountEl.textContent = `${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}`;
+    }
 
-        if (hasAbsent) {
-            subDot.style.background = '#ef4444';
-            subText.textContent = 'Absent in ' + records.filter(r => r.status === 'Absent').length + ' class(es)';
-        } else if (hasLate) {
-            subDot.style.background = '#f59e0b';
-            subText.textContent = 'Late in ' + records.filter(r => r.status === 'Late').length + ' class(es)';
-        } else if (allPresent) {
-            subDot.style.background = '#10b981';
-            subText.textContent = '100% Present (' + records.length + ' class' + (records.length > 1 ? 'es' : '') + ')';
-        } else {
-            subDot.style.background = '#3b82f6';
-            subText.textContent = records.length + ' classes attended';
+    if (records.length === 0) {
+        if (subtitleEl) {
+            subtitleEl.innerHTML = `
+                <span class="day-summary-chip chip-empty">
+                    <i class="bi bi-calendar-x text-gold me-1"></i> No recorded classes
+                </span>`;
         }
+        if (contentEl) {
+            contentEl.innerHTML = `
+                <div class="day-empty-card">
+                    <div class="day-empty-icon">
+                        <i class="bi bi-calendar2-check"></i>
+                    </div>
+                    <div style="font-weight:800; font-size:1.05rem; color:#f3ede4; margin-bottom:6px;">No Classes Recorded</div>
+                    <div style="font-size:0.82rem; color:#8f826f; max-width:280px; margin:0 auto; line-height:1.5;">There are no class attendance entries scheduled or recorded for this date.</div>
+                </div>`;
+        }
+    } else {
+        const presentCount = records.filter(r => r.status_lower === 'present').length;
+        const lateCount = records.filter(r => r.status_lower === 'late').length;
+        const absentCount = records.filter(r => r.status_lower === 'absent').length;
+
+        let badgesHtml = `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#cfa46f;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
+        if (presentCount > 0) {
+            badgesHtml += `<span class="day-summary-chip chip-present"><i class="bi bi-check-circle-fill me-1"></i> ${presentCount} Present</span>`;
+        }
+        if (lateCount > 0) {
+            badgesHtml += `<span class="day-summary-chip chip-late"><i class="bi bi-clock-fill me-1"></i> ${lateCount} Late</span>`;
+        }
+        if (absentCount > 0) {
+            badgesHtml += `<span class="day-summary-chip chip-absent"><i class="bi bi-x-circle-fill me-1"></i> ${absentCount} Absent</span>`;
+        }
+        if (subtitleEl) subtitleEl.innerHTML = badgesHtml;
 
         let html = '';
         records.forEach(r => {
-            const statusClass = (r.status || 'Present').toLowerCase();
-            const statusIcon = statusClass === 'present' ? 'bi-check-circle-fill' : (statusClass === 'late' ? 'bi-clock-fill' : 'bi-x-circle-fill');
+            const statusKey = r.status_lower || (r.status ? r.status.toLowerCase() : 'absent');
+            let statusIcon = 'bi-x-circle-fill';
+            let borderClass = 'status-border-absent';
+            let statusBadgeClass = 'absent';
+
+            if (statusKey === 'present') {
+                statusIcon = 'bi-check-circle-fill';
+                borderClass = 'status-border-present';
+                statusBadgeClass = 'present';
+            } else if (statusKey === 'late') {
+                statusIcon = 'bi-clock-fill';
+                borderClass = 'status-border-late';
+                statusBadgeClass = 'late';
+            }
+
+            const clockInVal = r.clock_in || (r.time_in ? r.time_in : (statusKey === 'absent' ? 'No clock-in' : '—'));
+            const excuseLink = (statusKey === 'absent' && selectedChildId && r.id)
+                ? `<a href="/parent/child/${selectedChildId}/excuse/${r.id}" class="day-card-excuse-btn">
+                       <span><i class="bi bi-file-earmark-plus me-1"></i> Submit Excuse for Child</span>
+                       <i class="bi bi-arrow-right-short" style="font-size:1.1rem;"></i>
+                   </a>`
+                : '';
+
             html += `
-                <div class="subject-card">
-                    <div class="subject-card-icon">
-                        <i class="bi bi-journal-bookmark-fill"></i>
+                <div class="att-detail-card ${borderClass}">
+                    <div class="att-card-header">
+                        <div style="flex:1; min-width:200px;">
+                            <div class="att-card-subject-title">${r.subject || 'Subject'}</div>
+                            <div class="att-card-meta">
+                                ${r.code ? `<span class="att-code-pill">${r.code}</span>` : ''}
+                                ${r.instructor ? `<span class="att-instructor-pill"><i class="bi bi-person-fill"></i> ${r.instructor}</span>` : ''}
+                            </div>
+                        </div>
+                        <span class="att-status-badge ${statusBadgeClass}">
+                            <i class="bi ${statusIcon}"></i> ${r.status || 'Status'}
+                        </span>
                     </div>
-                    <div class="subject-card-info">
-                        <div class="subject-card-title">${r.subject || 'Subject'}</div>
-                        <div style="font-size:0.75rem; color:#cfa46f; font-weight:700; margin-bottom:4px;">${r.code || ''}</div>
-                        ${r.time_in ? `<div class="subject-card-time"><i class="bi bi-clock"></i> Clock-in: <strong>${r.time_in}</strong></div>` : ''}
+
+                    <div class="att-info-grid">
+                        <div>
+                            <div class="att-grid-col-label"><i class="bi bi-calendar3"></i> Schedule</div>
+                            <div class="att-grid-col-val">${r.schedule || 'Flexible'}</div>
+                        </div>
+                        <div>
+                            <div class="att-grid-col-label"><i class="bi bi-box-arrow-in-right"></i> Actual Clock-in</div>
+                            <div class="att-grid-col-val" style="${statusKey === 'absent' ? 'color:#f87171;' : ''}">${clockInVal}</div>
+                        </div>
                     </div>
-                    <span class="subject-card-badge ${statusClass}">
-                        <i class="bi ${statusIcon} me-1"></i>${r.status}
-                    </span>
+
+                    ${r.remarks ? `<div style="font-size:0.75rem; color:#ffd166; margin-top:8px; display:flex; align-items:center; gap:6px;"><i class="bi bi-info-circle-fill"></i> ${r.remarks}</div>` : ''}
+                    ${excuseLink}
                 </div>
             `;
         });
-        contentEl.innerHTML = html;
+        if (contentEl) contentEl.innerHTML = html;
     }
 
-    if (!dayModalInstance) {
-        dayModalInstance = new bootstrap.Modal(document.getElementById('daySummaryModal'));
+    const modalEl = document.getElementById('daySummaryModal');
+    if (modalEl) {
+        if (modalEl.parentNode !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+        try {
+            if (!dayModalInstance) {
+                dayModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            }
+            dayModalInstance.show();
+        } catch (err) {
+            console.warn('Day summary modal fallback:', err);
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.setAttribute('aria-modal', 'true');
+            modalEl.removeAttribute('aria-hidden');
+            document.body.classList.add('modal-open');
+            let fb = document.querySelector('.scal-fallback-backdrop');
+            if (!fb) {
+                fb = document.createElement('div');
+                fb.className = 'modal-backdrop fade show scal-fallback-backdrop';
+                fb.style.zIndex = '10050';
+                document.body.appendChild(fb);
+                fb.onclick = closeDaySummaryModal;
+            }
+        }
     }
-    dayModalInstance.show();
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const dModal = document.getElementById('daySummaryModal');
+    if (dModal && dModal.parentNode !== document.body) {
+        document.body.appendChild(dModal);
+    }
+});
 </script>
 
 @endsection

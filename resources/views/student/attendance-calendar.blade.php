@@ -384,23 +384,372 @@
         font-weight: 600;
     }
 
-    /* Modal z-indexes & backdrop to guarantee display above mobile navigation */
+    /* ═══════════════════════════════════════════════════════════
+       LUXURY DAY SUMMARY INSPECTOR MODAL & CARDS
+       ═══════════════════════════════════════════════════════════ */
     #daySummaryModal {
         z-index: 10060 !important;
     }
     .modal-backdrop {
         z-index: 10050 !important;
-    }
-    .scal-sheet-handle {
-        width: 44px;
-        height: 5px;
-        background: rgba(255, 255, 255, 0.22);
-        border-radius: 3px;
-        margin: 12px auto 4px auto;
-        display: none;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        background: rgba(0, 0, 0, 0.72) !important;
     }
 
-    @media (max-width: 576px) {
+    #daySummaryModal .modal-dialog {
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    #daySummaryModal .modal-content {
+        background: linear-gradient(180deg, #18120d 0%, #0d0806 100%) !important;
+        border: 1px solid rgba(212, 175, 55, 0.2) !important;
+        border-radius: 26px !important;
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.85), 0 0 40px rgba(207, 164, 111, 0.08) !important;
+        position: relative;
+    }
+    #daySummaryModal .modal-content::before {
+        display: none !important;
+    }
+
+    .scal-sheet-handle,
+    .day-modal-sheet-handle {
+        width: 42px;
+        height: 4.5px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 99px;
+        margin: 12px auto 4px auto;
+        display: none;
+        flex-shrink: 0;
+    }
+
+    /* Top Action Bar */
+    .day-modal-action-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px 8px 20px;
+    }
+    .day-nav-stepper {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 3px;
+        gap: 2px;
+    }
+    .day-nav-step-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: transparent;
+        border: none;
+        color: #cfa46f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .day-nav-step-btn:hover {
+        background: rgba(207, 164, 111, 0.15);
+        color: #ffd166;
+    }
+    .day-nav-step-btn:active {
+        transform: scale(0.92);
+    }
+    .day-nav-today-btn {
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 8px;
+        background: rgba(207, 164, 111, 0.12);
+        border: 1px solid rgba(207, 164, 111, 0.25);
+        color: #ffd166;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .day-nav-today-btn:hover {
+        background: rgba(207, 164, 111, 0.25);
+        border-color: #ffd166;
+        color: #fff;
+    }
+    .day-modal-close-btn {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: #cfa46f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .day-modal-close-btn:hover {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.35);
+        color: #f87171;
+        transform: rotate(90deg);
+    }
+
+    /* Date & Badges Title Row */
+    .day-modal-header-content {
+        padding: 4px 20px 14px 20px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .day-modal-date {
+        font-size: 1.24rem;
+        font-weight: 800;
+        color: #f8fafc;
+        letter-spacing: -0.015em;
+        margin: 0 0 8px 0;
+        line-height: 1.25;
+    }
+    .day-summary-badges {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .day-summary-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+    .day-summary-chip.chip-count {
+        background: rgba(207, 164, 111, 0.12);
+        color: #f3ede4;
+        border: 1px solid rgba(207, 164, 111, 0.25);
+    }
+    .day-summary-chip.chip-present {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .day-summary-chip.chip-late {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .day-summary-chip.chip-absent {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .day-summary-chip.chip-empty {
+        background: rgba(255, 255, 255, 0.04);
+        color: #a8937e;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Section Header */
+    .day-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 16px 0 12px 0;
+    }
+    .day-section-label {
+        font-size: 0.74rem;
+        font-weight: 800;
+        color: #cfa46f;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .day-section-icon {
+        color: #cfa46f;
+        font-size: 0.8rem;
+    }
+    .day-section-badge {
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #b39b82;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    /* Subject Detail Cards */
+    .att-detail-card {
+        background: linear-gradient(145deg, rgba(32, 24, 20, 0.9) 0%, rgba(18, 13, 11, 0.95) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 16px 18px;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        backdrop-filter: blur(12px);
+    }
+    .att-detail-card.status-border-present {
+        border-left: 4px solid #10b981 !important;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.06);
+    }
+    .att-detail-card.status-border-late {
+        border-left: 4px solid #f59e0b !important;
+        box-shadow: 0 6px 20px rgba(245, 158, 11, 0.06);
+    }
+    .att-detail-card.status-border-absent {
+        border-left: 4px solid #ef4444 !important;
+        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.06);
+    }
+
+    .att-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .att-card-subject-title {
+        font-weight: 800;
+        font-size: 1.05rem;
+        color: #f8fafc;
+        line-height: 1.32;
+        margin-bottom: 6px;
+    }
+    .att-card-meta {
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .att-code-pill {
+        background: rgba(207, 164, 111, 0.15);
+        color: #ffd166;
+        border: 1px solid rgba(207, 164, 111, 0.35);
+        font-weight: 800;
+        font-size: 0.74rem;
+        padding: 2px 8px;
+        border-radius: 6px;
+        letter-spacing: 0.04em;
+    }
+    .att-instructor-pill {
+        color: #c5b3a1;
+        font-size: 0.78rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .att-status-badge {
+        padding: 5px 12px;
+        border-radius: 10px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+    .att-status-badge.present {
+        background: rgba(16, 185, 129, 0.12);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+    }
+    .att-status-badge.late {
+        background: rgba(245, 158, 11, 0.12);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+    }
+    .att-status-badge.absent {
+        background: rgba(239, 68, 68, 0.12);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
+    }
+
+    /* Grid for Schedule & Clock-in */
+    .att-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 12px 14px;
+    }
+    .att-grid-col-label {
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #cfa46f;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .att-grid-col-val {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #f1f5f9;
+    }
+
+    /* Excuse Request Button for Absent Classes */
+    .day-card-excuse-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 10px;
+        background: rgba(207, 164, 111, 0.08);
+        border: 1px dashed rgba(207, 164, 111, 0.3);
+        color: #ffd166;
+        font-size: 0.76rem;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    .day-card-excuse-btn:hover {
+        background: rgba(207, 164, 111, 0.18);
+        border-color: #ffd166;
+        color: #fff;
+    }
+
+    /* Empty state */
+    .day-empty-card {
+        text-align: center;
+        padding: 38px 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        border: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+    .day-empty-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        background: rgba(207, 164, 111, 0.1);
+        border: 1px solid rgba(207, 164, 111, 0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 14px;
+        color: #ffd166;
+        font-size: 1.6rem;
+    }
+
+    @media (max-width: 768px) {
         .att-cal-cell { font-size: 0.75rem; border-radius: 8px; }
         .att-cal-dot { width: 4px; height: 4px; }
         .att-cal-nav { padding: 16px 16px 12px; }
@@ -426,8 +775,8 @@
         #daySummaryModal .modal-content {
             border-bottom-left-radius: 0 !important;
             border-bottom-right-radius: 0 !important;
-            border-top-left-radius: 26px !important;
-            border-top-right-radius: 26px !important;
+            border-top-left-radius: 28px !important;
+            border-top-right-radius: 28px !important;
             max-height: 88vh !important;
             overflow-y: auto !important;
             -webkit-overflow-scrolling: touch !important;
@@ -435,8 +784,8 @@
             border-bottom: none !important;
             width: 100% !important;
         }
-        .scal-sheet-handle {
-            display: block;
+        .day-modal-sheet-handle {
+            display: block !important;
         }
     }
 </style>
@@ -559,33 +908,50 @@
 {{-- ── Day Summary Inspector Modal (Subject-by-Subject Attendance Details) ───────────────── --}}
 <div class="modal fade" id="daySummaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
-            <div class="scal-sheet-handle"></div>
-            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
-                <div class="d-flex align-items-center gap-3">
-                    <button type="button" class="btn btn-sm" onclick="navigateDayModal(-1)" title="Previous Day" style="width:32px; height:32px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#cfa46f; display:inline-flex; align-items:center; justify-content:center; padding:0;">
+        <div class="modal-content">
+            <div class="scal-sheet-handle day-modal-sheet-handle"></div>
+            <!-- Action bar with Stepper & Close -->
+            <div class="day-modal-action-bar">
+                <div class="day-nav-stepper">
+                    <button type="button" class="day-nav-step-btn" onclick="navigateDayModal(-1)" title="Previous Day" aria-label="Previous Day">
                         <i class="bi bi-chevron-left"></i>
                     </button>
-                    <div>
-                        <h3 style="font-weight:800; font-size:1.2rem; color:#f3ede4; margin:0;" id="daySummaryTitle">Date</h3>
-                        <div style="font-size:0.82rem; color:#b39b82; display:flex; align-items:center; gap:8px; margin-top:4px;" id="daySummarySubtitle">
-                            <span id="daySummaryStatusDot" style="width:8px; height:8px; border-radius:50%; display:inline-block; background:#ffd166;"></span>
-                            <span id="daySummaryStatusText" style="font-weight:600;">Attendance Details</span>
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-sm" onclick="navigateDayModal(1)" title="Next Day" style="width:32px; height:32px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#cfa46f; display:inline-flex; align-items:center; justify-content:center; padding:0;">
+                    <button type="button" class="day-nav-today-btn" onclick="goToTodayModal()" title="Jump to Today">
+                        Today
+                    </button>
+                    <button type="button" class="day-nav-step-btn" onclick="navigateDayModal(1)" title="Next Day" aria-label="Next Day">
                         <i class="bi bi-chevron-right"></i>
                     </button>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeDaySummaryModal()"></button>
+                <button type="button" class="day-modal-close-btn" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" title="Close Inspector" aria-label="Close">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
-            <div class="px-4 pb-4 pt-2">
-                <div style="font-size:0.75rem; font-weight:800; color:#cfa46f; text-transform:uppercase; letter-spacing:0.08em; margin:16px 0 12px 0;" id="daySummarySectionTitle">Subjects Breakdown</div>
+            <!-- Header Content: Date & Dynamic Micro-badges -->
+            <div class="day-modal-header-content">
+                <h3 class="day-modal-date" id="daySummaryTitle">Date</h3>
+                <div class="day-summary-badges" id="daySummarySubtitle">
+                    <span class="day-summary-chip chip-empty" id="daySummaryStatusText">
+                        <span id="daySummaryStatusDot" style="width:7px; height:7px; border-radius:50%; background:#ffd166; display:inline-block;"></span>
+                        Attendance Details
+                    </span>
+                </div>
+            </div>
+            <!-- Body Content -->
+            <div class="px-4 pb-4 pt-1">
+                <div class="day-section-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="day-section-icon"><i class="bi bi-grid-1x2-fill"></i></span>
+                        <span class="day-section-label" id="daySummarySectionTitle">Subjects Breakdown</span>
+                    </div>
+                    <span class="day-section-badge" id="daySummarySectionCount">1 Subject</span>
+                </div>
                 <div id="daySummaryContent" class="d-flex flex-column gap-3">
                     <!-- dynamically populated -->
                 </div>
-                <div style="font-size:0.75rem; color:#8f826f; text-align:center; margin-top:18px;">
-                    <i class="bi bi-info-circle me-1"></i> Real-time subject-by-subject attendance records for this date.
+                <div style="font-size:0.75rem; color:#8f826f; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
+                    <i class="bi bi-shield-check text-gold" style="color:#cfa46f;"></i>
+                    <span>Real-time subject-by-subject attendance records for this date.</span>
                 </div>
             </div>
         </div>
@@ -638,29 +1004,43 @@ function navigateDayModal(delta) {
     selectCalendarDay(newDateKey, dt.getDate(), true);
 }
 
+function goToTodayModal() {
+    const todayStr = '{{ now()->format("Y-m-d") }}';
+    const dt = new Date(todayStr + 'T00:00:00');
+    selectCalendarDay(todayStr, dt.getDate(), true);
+}
+
 function showAttDetail(dateKey, day) {
     currentSelectedDateKey = dateKey;
     const titleEl = document.getElementById('daySummaryTitle');
-    const subText = document.getElementById('daySummaryStatusText');
-    const subDot = document.getElementById('daySummaryStatusDot');
+    const subtitleEl = document.getElementById('daySummarySubtitle');
     const contentEl = document.getElementById('daySummaryContent');
+    const sectionCountEl = document.getElementById('daySummarySectionCount');
 
     const dt = new Date(dateKey + 'T00:00:00');
     const formattedDate = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     if (titleEl) titleEl.textContent = formattedDate;
 
     const records = attCalendarData[dateKey] || [];
+    if (sectionCountEl) {
+        sectionCountEl.textContent = `${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}`;
+    }
+
     if (records.length === 0) {
-        if (subDot) subDot.style.background = '#8f826f';
-        if (subText) subText.textContent = 'No attendance recorded';
+        if (subtitleEl) {
+            subtitleEl.innerHTML = `
+                <span class="day-summary-chip chip-empty">
+                    <i class="bi bi-calendar-x text-gold me-1"></i> No recorded classes
+                </span>`;
+        }
         if (contentEl) {
             contentEl.innerHTML = `
-                <div style="text-align:center; padding: 36px 18px; color:#8f826f; background:rgba(255,255,255,0.02); border-radius:18px; border:1px dashed rgba(255,255,255,0.08);">
-                    <div style="width:52px; height:52px; border-radius:16px; background:rgba(207,164,111,0.1); border:1px solid rgba(207,164,111,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; color:#cfa46f; font-size:1.5rem;">
-                        <i class="bi bi-calendar-x"></i>
+                <div class="day-empty-card">
+                    <div class="day-empty-icon">
+                        <i class="bi bi-calendar2-check"></i>
                     </div>
-                    <div style="font-weight:700; font-size:1rem; color:#f3ede4; margin-bottom:6px;">No attendance records for this date.</div>
-                    <div style="font-size:0.82rem; color:#8f826f; max-width:280px; margin:0 auto;">There are no recorded class attendance entries for this day. Enjoy your free time or check your schedule!</div>
+                    <div style="font-weight:800; font-size:1.05rem; color:#f3ede4; margin-bottom:6px;">No Classes Recorded</div>
+                    <div style="font-size:0.82rem; color:#8f826f; max-width:280px; margin:0 auto; line-height:1.5;">There are no class attendance entries scheduled or recorded for this date.</div>
                 </div>`;
         }
     } else {
@@ -668,82 +1048,91 @@ function showAttDetail(dateKey, day) {
         const lateCount = records.filter(r => r.status_lower === 'late').length;
         const absentCount = records.filter(r => r.status_lower === 'absent').length;
 
-        let statusSummary = [];
-        if (presentCount > 0) statusSummary.push(`${presentCount} Present`);
-        if (lateCount > 0) statusSummary.push(`${lateCount} Late`);
-        if (absentCount > 0) statusSummary.push(`${absentCount} Absent`);
-
-        let dotColor = '#10b981';
-        if (absentCount > 0 && presentCount === 0 && lateCount === 0) dotColor = '#ef4444';
-        else if (lateCount > 0 && absentCount === 0 && presentCount === 0) dotColor = '#f59e0b';
-        else if (statusSummary.length > 1) dotColor = '#ffd166';
-
-        if (subDot) subDot.style.background = dotColor;
-        if (subText) subText.textContent = `${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'} (${statusSummary.join(', ')})`;
+        let badgesHtml = `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#cfa46f;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
+        if (presentCount > 0) {
+            badgesHtml += `<span class="day-summary-chip chip-present"><i class="bi bi-check-circle-fill me-1"></i> ${presentCount} Present</span>`;
+        }
+        if (lateCount > 0) {
+            badgesHtml += `<span class="day-summary-chip chip-late"><i class="bi bi-clock-fill me-1"></i> ${lateCount} Late</span>`;
+        }
+        if (absentCount > 0) {
+            badgesHtml += `<span class="day-summary-chip chip-absent"><i class="bi bi-x-circle-fill me-1"></i> ${absentCount} Absent</span>`;
+        }
+        if (subtitleEl) subtitleEl.innerHTML = badgesHtml;
 
         let html = '';
         records.forEach(r => {
             const st = (r.status_lower || 'absent');
             let iconClass = 'bi-x-circle-fill';
             let clockInColor = '#f87171';
+            let borderStatusClass = 'status-border-absent';
 
             if (st === 'present') {
                 iconClass = 'bi-check-circle-fill';
-                clockInColor = '#4ade80';
+                clockInColor = '#34d399';
+                borderStatusClass = 'status-border-present';
             } else if (st === 'late') {
                 iconClass = 'bi-clock-fill';
                 clockInColor = '#fbbf24';
+                borderStatusClass = 'status-border-late';
             }
 
             const clockInText = r.clock_in || (st === 'absent' ? 'No clock-in' : '—');
             const isNoClockIn = clockInText.toLowerCase().includes('no clock-in');
 
             html += `
-                <div class="att-detail-card" style="background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:16px 18px; transition:all 0.2s ease;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:12px; flex-wrap:wrap;">
+                <div class="att-detail-card ${borderStatusClass}">
+                    <div class="att-card-header">
                         <div style="flex:1; min-width:180px;">
-                            <div style="font-weight:800; font-size:1.02rem; color:#f3ede4; line-height:1.3; margin-bottom:4px;">${escapeHtml(r.subject)}</div>
-                            <div style="font-size:0.8rem; color:#cfa46f; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                                <span style="background:rgba(207,164,111,0.12); padding:2px 8px; border-radius:6px; font-weight:700; border:1px solid rgba(207,164,111,0.25);">${escapeHtml(r.code)}</span>
-                                <span style="color:rgba(255,255,255,0.25);">•</span>
-                                <span style="color:#b39b82;"><i class="bi bi-person me-1"></i>${escapeHtml(r.instructor)}</span>
+                            <div class="att-card-subject-title">${escapeHtml(r.subject)}</div>
+                            <div class="att-card-meta">
+                                <span class="att-code-pill">${escapeHtml(r.code)}</span>
+                                <span style="color:rgba(255,255,255,0.2);">•</span>
+                                <span class="att-instructor-pill"><i class="bi bi-person-fill text-gold-muted me-1"></i>${escapeHtml(r.instructor)}</span>
                             </div>
                         </div>
-                        <span class="subject-card-badge ${st}" style="padding:6px 12px; border-radius:10px; font-size:0.75rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; display:inline-flex; align-items:center; gap:5px;">
+                        <span class="att-status-badge ${st}">
                             <i class="bi ${iconClass}"></i> ${escapeHtml(r.status)}
                         </span>
                     </div>
 
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.03); border-radius:12px; padding:12px 14px;">
+                    <div class="att-info-grid">
                         <div>
-                            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#8f826f; margin-bottom:2px;">
-                                <i class="bi bi-calendar3 me-1"></i> Schedule
+                            <div class="att-grid-col-label">
+                                <i class="bi bi-calendar3 text-gold"></i> Schedule
                             </div>
-                            <div style="font-size:0.85rem; font-weight:600; color:#f3ede4;">${escapeHtml(r.schedule)}</div>
+                            <div class="att-grid-col-val">${escapeHtml(r.schedule)}</div>
                         </div>
                         <div>
-                            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#8f826f; margin-bottom:2px;">
-                                <i class="bi bi-box-arrow-in-right me-1"></i> Actual Clock-in
+                            <div class="att-grid-col-label">
+                                <i class="bi bi-fingerprint text-gold"></i> Actual Clock-in
                             </div>
-                            <div style="font-size:0.85rem; font-weight:700; color:${isNoClockIn ? '#f87171' : clockInColor};">
+                            <div class="att-grid-col-val" style="color:${isNoClockIn ? '#f87171' : clockInColor};">
+                                ${isNoClockIn ? '<i class="bi bi-x-circle me-1"></i>' : (st === 'present' ? '<i class="bi bi-check2 me-1"></i>' : '<i class="bi bi-clock-history me-1"></i>')}
                                 ${escapeHtml(clockInText)}
                             </div>
                         </div>
                         ${r.time_out ? `
                         <div>
-                            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#8f826f; margin-bottom:2px;">
-                                <i class="bi bi-box-arrow-right me-1"></i> Clock-out
+                            <div class="att-grid-col-label">
+                                <i class="bi bi-box-arrow-right text-gold"></i> Clock-out
                             </div>
-                            <div style="font-size:0.85rem; font-weight:600; color:#b39b82;">${escapeHtml(r.time_out)}</div>
+                            <div class="att-grid-col-val" style="color:#b39b82;">${escapeHtml(r.time_out)}</div>
                         </div>` : ''}
                         ${r.remarks ? `
                         <div style="grid-column: 1 / -1;">
-                            <div style="font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:#8f826f; margin-bottom:2px;">
-                                <i class="bi bi-chat-left-text me-1"></i> Remarks
+                            <div class="att-grid-col-label">
+                                <i class="bi bi-chat-left-text text-gold"></i> Remarks
                             </div>
                             <div style="font-size:0.82rem; font-weight:500; color:#ffd166;">${escapeHtml(r.remarks)}</div>
                         </div>` : ''}
                     </div>
+
+                    ${st === 'absent' ? `
+                    <a href="{{ route('excuses.create_general') }}" class="day-card-excuse-btn">
+                        <span><i class="bi bi-file-earmark-medical me-1"></i> File Excuse Request for this Absence</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>` : ''}
                 </div>
             `;
         });
