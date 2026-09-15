@@ -1,0 +1,76 @@
+name: Automatic Application Versioning
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - 'README.md'
+      - '.gitignore'
+      - '.vscode/**'
+      - 'docs/**'
+
+concurrency:
+  group: auto-version-bump-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  auto_version_bump:
+    name: Auto Increment Version & Release
+    runs-on: ubuntu-latest
+    if: >-
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      !contains(github.event.head_commit.message, 'chore(release):') &&
+      github.actor != 'github-actions[bot]'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, json, pdo, pdo_sqlite
+          coverage: none
+
+      - name: Configure Git Bot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Verify Push Needs Version Bump
+        id: check_bump
+        run: |
+          # If version.json was already modified in this commit, skip double-bumping
+          if git diff-tree --no-commit-id --name-only -r HEAD | grep -q "^version\.json$"; then
+            echo "version.json was already modified in this push. Skipping auto-bump."
+            echo "should_bump=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_bump=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Execute Automated Version Increment
+        id: bump
+        if: steps.check_bump.outputs.should_bump == 'true'
+        run: |
+          php scripts/version-bump.php --ci
+
+      - name: Commit, Tag & Push New Application Version
+        if: steps.check_bump.outputs.should_bump == 'true' && steps.bump.outputs.bumped == 'true'
+        run: |
+          NEW_VER="${{ steps.bump.outputs.new_version }}"
+          echo "Committing release v${NEW_VER}..."
+          git pull --rebase origin ${{ github.ref_name }}
+          git add version.json package.json public/manifest.json public/sw.js
+          git commit -m "chore(release): bump version to ${NEW_VER} [skip ci]"
+          git tag -a "v${NEW_VER}" -m "Release v${NEW_VER}"
+          git push origin HEAD:${{ github.ref_name }} --follow-tags

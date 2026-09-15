@@ -36,6 +36,28 @@ return [
     |
     */
     'releases' => [
+        '2.4.6' => [
+            'version' => '2.4.6',
+            'version_tag' => 'v2.4.6',
+            'title' => 'Automated GitHub Versioning & Compact Mobile Experience',
+            'description' => 'Automated application versioning integrated with GitHub workflow, single authoritative version state, and space-efficient mobile Student Dashboard layout.',
+            'features' => [
+                'Automated semantic patch version progression on every GitHub push and release deployment',
+                'Single authoritative version source of truth preventing desynchronization across client, disk, and database',
+                'Compact, space-efficient mobile Student Dashboard with optimized vertical metrics and clean navigation flow',
+            ],
+            'improvements' => [
+                'Safe CI/CD integration with commit loop prevention and concurrency protection',
+                'Dynamic multi-client update notification and service worker cache invalidation',
+                'Automatic database version self-healing from codebase artifacts upon deployment',
+            ],
+            'bugFixes' => [
+                'Resolved excessive vertical spacing on mobile student screens',
+                'Prevented version stall or reset across server container reboots',
+            ],
+            'security' => [],
+            'released_at' => '2026-09-16',
+        ],
         '2.4.5' => [
             'version' => '2.4.5',
             'version_tag' => 'v2.4.5',

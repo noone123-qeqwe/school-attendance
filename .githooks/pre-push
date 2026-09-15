@@ -1,0 +1,14 @@
+#!/bin/sh
+# Git pre-push hook for automatic application versioning
+# To activate: git config core.hooksPath .githooks
+
+echo "[Auto-Versioning] Running pre-push version check..."
+
+# Run dry run to verify
+php scripts/version-bump.php --dry-run
+if [ $? -ne 0 ]; then
+    echo "[Auto-Versioning] Version bump validation failed. Aborting push."
+    exit 1
+fi
+
+exit 0
