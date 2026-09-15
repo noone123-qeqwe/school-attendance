@@ -61,7 +61,7 @@
         padding-left: var(--mobile-pad) !important;
         padding-right: var(--mobile-pad) !important;
         padding-top: 0 !important;
-        padding-bottom: 20px !important;
+        padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 20px) + 32px) !important;
     }
 
     /* ═════════════════════════════════════════════

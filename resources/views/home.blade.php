@@ -489,13 +489,12 @@
     .student-hero-banner::before {
         content: '';
         position: absolute;
-        top: 18px;
-        bottom: 18px;
+        top: 0;
         left: 0;
-        width: 5px;
-        background: linear-gradient(180deg, #ffd166 0%, #cfa46f 50%, #8b5a2b 100%);
-        border-radius: 0 6px 6px 0;
-        box-shadow: 0 0 14px rgba(212, 175, 55, 0.45);
+        right: 0;
+        height: 2.5px;
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 209, 102, 0.8) 25%, rgba(207, 164, 111, 1) 50%, rgba(255, 209, 102, 0.8) 75%, transparent 100%);
+        box-shadow: 0 0 16px rgba(212, 175, 55, 0.55);
     }
 
     .student-hero-banner::after {
@@ -550,14 +549,14 @@
 
     .student-avatar-pulse {
         position: absolute;
-        bottom: -2px;
-        right: -2px;
-        width: 14px;
-        height: 14px;
+        bottom: 1px;
+        right: 1px;
+        width: 13px;
+        height: 13px;
         border-radius: 50%;
         background: #10b981;
-        border: 2px solid #140d07;
-        box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+        border: 2px solid #1a0f0a;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.85);
     }
 
     .student-hero-info {
@@ -692,14 +691,34 @@
     .student-rate-badge {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 4px 10px;
+        gap: 6px;
+        padding: 4px 12px;
         border-radius: 99px;
-        background: rgba(16, 185, 129, 0.12);
-        border: 1px solid rgba(16, 185, 129, 0.25);
-        color: #4ade80;
-        font-size: 0.75rem;
+        font-size: 0.76rem;
         font-weight: 700;
+        letter-spacing: 0.01em;
+        transition: all 0.2s ease;
+    }
+
+    .student-rate-badge.rate-good {
+        background: rgba(16, 185, 129, 0.14);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        color: #34d399;
+        box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
+    }
+
+    .student-rate-badge.rate-warning {
+        background: rgba(245, 158, 11, 0.14);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+        color: #fbbf24;
+        box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+    }
+
+    .student-rate-badge.rate-danger {
+        background: rgba(239, 68, 68, 0.14);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+        color: #f87171;
+        box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
     }
 
     .student-streak-badge {
@@ -777,6 +796,10 @@
         }
         .student-hero-badges-row {
             justify-content: flex-start !important;
+        }
+        #realStats {
+            gap: 10px !important;
+            margin-bottom: 18px !important;
         }
     }
 
@@ -860,8 +883,13 @@
             </div>
             <div class="student-hero-badges-row">
                 @if(isset($attendanceRate))
-                    <span class="student-rate-badge" title="Overall Attendance Rate">
-                        <i class="bi bi-shield-check"></i>
+                    @php
+                        $rateVal = (float) $attendanceRate;
+                        $rateClass = $rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger');
+                        $rateIcon = $rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill');
+                    @endphp
+                    <span class="student-rate-badge {{ $rateClass }}" title="Overall Attendance Rate: {{ $attendanceRate }}%">
+                        <i class="bi {{ $rateIcon }}"></i>
                         <span>{{ $attendanceRate }}% Attendance</span>
                     </span>
                 @endif
