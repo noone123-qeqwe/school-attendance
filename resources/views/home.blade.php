@@ -1192,10 +1192,10 @@
             <i class="bi bi-calendar-check-fill"></i>
             <span>Attendance Calendar</span>
         </a>
-        <a href="#breakdownSection" class="student-quick-nav-item">
+        <button type="button" class="student-quick-nav-item" onclick="openSubjectBreakdownModal()" title="View Subject Attendance Breakdown">
             <i class="bi bi-bar-chart-fill"></i>
             <span>Subject Breakdown</span>
-        </a>
+        </button>
         <button type="button" class="student-quick-nav-item" onclick="openAttendanceRecordsModal()" title="View Complete Attendance Records">
             <i class="bi bi-journal-text"></i>
             <span>View Records</span>
@@ -2032,104 +2032,96 @@
     </div>
 </div>
 
-{{-- ── Subject Attendance Breakdown ─────────────────────────────────── --}}
-<div class="row g-4 mb-4" id="breakdownSection">
-    <div class="col-12">
-        <div class="scal-card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="width:38px; height:38px; border-radius:12px; background:rgba(207,164,111,0.15); display:flex; align-items:center; justify-content:center; color:#cfa46f; font-size:1.15rem; flex-shrink:0;">
+{{-- ── Subject Attendance Breakdown Modal ─────────────────────────────── --}}
+<div class="modal fade" id="subjectBreakdownModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+            {{-- Mobile sheet handle --}}
+            <div class="scal-sheet-handle" style="display:none; width:42px; height:4.5px; background:rgba(255,255,255,0.22); border-radius:99px; margin:12px auto 4px auto;"></div>
+            {{-- Header --}}
+            <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom" style="border-color:rgba(255,255,255,0.06)!important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:40px; height:40px; border-radius:12px; background:rgba(139,92,246,0.15); border:1px solid rgba(139,92,246,0.3); display:flex; align-items:center; justify-content:center; color:#a78bfa; font-size:1.2rem;">
                         <i class="bi bi-pie-chart-fill"></i>
                     </div>
                     <div>
-                        <span style="font-size:1.15rem; font-weight:800; color:#f3e7cd; display:block; line-height:1.2;">Subject Breakdown</span>
-                        <span style="font-size:0.78rem; color:#b39b82; font-weight:500;">Attendance rate & records per enrolled subject</span>
+                        <h3 style="font-weight:800; font-size:1.2rem; color:#f3ede4; margin:0;">Subject Breakdown</h3>
+                        <div style="font-size:0.78rem; color:#b39b82; margin-top:2px;">Attendance rate &amp; records per enrolled subject</div>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:8px;">
+                <div class="d-flex align-items-center gap-3">
                     <span class="badge" style="background:rgba(207,164,111,0.12); color:#ffd166; border:1px solid rgba(207,164,111,0.25); font-size:0.78rem; font-weight:700; padding:6px 12px; border-radius:10px;">
-                        {{ count($subjectStats ?? []) }} Subjects Enrolled
+                        {{ count($subjectStats ?? []) }} Subjects
                     </span>
-                    <a href="{{ route('student.classes') }}" class="btn btn-sm" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#ffd166; font-weight:700; font-size:0.78rem; border-radius:10px; padding:6px 12px;">
-                        My Classes <i class="bi bi-chevron-right ms-1"></i>
-                    </a>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
             </div>
-
-            @if(empty($subjectStats) || count($subjectStats) === 0)
-                <div style="text-align:center; padding:36px 20px; background:rgba(255,255,255,0.02); border-radius:18px; border:1px dashed rgba(255,255,255,0.08);">
-                    <div style="width:48px; height:48px; border-radius:14px; background:rgba(207,164,111,0.1); border:1px solid rgba(207,164,111,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; color:#ffd166; font-size:1.3rem;">
-                        <i class="bi bi-journal-x"></i>
+            {{-- Body --}}
+            <div class="px-4 py-4" style="max-height:72vh; overflow-y:auto;">
+                @if(empty($subjectStats) || count($subjectStats) === 0)
+                    <div style="text-align:center; padding:42px 20px; background:rgba(255,255,255,0.02); border-radius:18px; border:1px dashed rgba(255,255,255,0.08);">
+                        <div style="width:52px; height:52px; border-radius:14px; background:rgba(207,164,111,0.1); border:1px solid rgba(207,164,111,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; color:#ffd166; font-size:1.4rem;">
+                            <i class="bi bi-journal-x"></i>
+                        </div>
+                        <p style="color:#b39b82; font-size:0.9rem; font-weight:600; margin:0;">No enrolled subject records found</p>
                     </div>
-                    <p style="color:#b39b82; font-size:0.9rem; font-weight:600; margin:0;">No enrolled subject records found</p>
-                </div>
-            @else
-                <div class="row g-3">
-                    @foreach($subjectStats as $sub)
-                        @php
-                            $rateColor = '#10b981';
-                            $rateBg = 'rgba(16,185,129,0.12)';
-                            $rateBorder = 'rgba(16,185,129,0.3)';
-                            if ($sub->rate < 75) {
-                                $rateColor = '#ef4444';
-                                $rateBg = 'rgba(239,68,68,0.12)';
-                                $rateBorder = 'rgba(239,68,68,0.3)';
-                            } elseif ($sub->rate < 90) {
-                                $rateColor = '#f59e0b';
-                                $rateBg = 'rgba(245,158,11,0.12)';
-                                $rateBorder = 'rgba(245,158,11,0.3)';
-                            }
-                        @endphp
-                        <div class="col-12 col-md-6">
-                            <div class="subject-minimal-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px 20px; height:100%; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.25s cubic-bezier(0.16,1,0.3,1);">
-                                <div>
-                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
-                                        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
-                                            <span style="background:rgba(207,164,111,0.15); color:#ffd166; border:1px solid rgba(207,164,111,0.25); font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:7px; flex-shrink:0;">
-                                                {{ $sub->code }}
-                                            </span>
-                                            <span style="font-size:0.92rem; font-weight:700; color:#f3ede4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $sub->name }}">
-                                                {{ $sub->name }}
-                                            </span>
+                @else
+                    <div class="row g-3">
+                        @foreach($subjectStats as $sub)
+                            @php
+                                $brkRateColor = '#10b981';
+                                $brkRateBg    = 'rgba(16,185,129,0.12)';
+                                $brkRateBorder= 'rgba(16,185,129,0.3)';
+                                if ($sub->rate < 75) {
+                                    $brkRateColor  = '#ef4444';
+                                    $brkRateBg     = 'rgba(239,68,68,0.12)';
+                                    $brkRateBorder = 'rgba(239,68,68,0.3)';
+                                } elseif ($sub->rate < 90) {
+                                    $brkRateColor  = '#f59e0b';
+                                    $brkRateBg     = 'rgba(245,158,11,0.12)';
+                                    $brkRateBorder = 'rgba(245,158,11,0.3)';
+                                }
+                            @endphp
+                            <div class="col-12 col-md-6">
+                                <div class="subject-minimal-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px 20px; height:100%; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.25s cubic-bezier(0.16,1,0.3,1);">
+                                    <div>
+                                        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
+                                            <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                                <span style="background:rgba(207,164,111,0.15); color:#ffd166; border:1px solid rgba(207,164,111,0.25); font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:7px; flex-shrink:0;">{{ $sub->code }}</span>
+                                                <span style="font-size:0.92rem; font-weight:700; color:#f3ede4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $sub->name }}">{{ $sub->name }}</span>
+                                            </div>
+                                            <span class="badge" style="background:{{ $brkRateBg }}; color:{{ $brkRateColor }}; border:1px solid {{ $brkRateBorder }}; font-size:0.82rem; font-weight:800; padding:4px 10px; border-radius:8px; flex-shrink:0;">{{ $sub->rate }}%</span>
                                         </div>
-                                        <span class="badge" style="background:{{ $rateBg }}; color:{{ $rateColor }}; border:1px solid {{ $rateBorder }}; font-size:0.82rem; font-weight:800; padding:4px 10px; border-radius:8px; flex-shrink:0;">
-                                            {{ $sub->rate }}%
-                                        </span>
+                                        <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; margin-bottom:14px;">
+                                            <div style="width:{{ min(100, $sub->rate) }}%; height:100%; background:{{ $brkRateColor }}; border-radius:99px; transition:width 0.6s cubic-bezier(0.16,1,0.3,1);"></div>
+                                        </div>
                                     </div>
-
-                                    {{-- Slim Modern Progress Bar --}}
-                                    <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; margin-bottom:14px;">
-                                        <div style="width:{{ min(100, $sub->rate) }}%; height:100%; background:{{ $rateColor }}; border-radius:99px; transition:width 0.6s cubic-bezier(0.16,1,0.3,1);"></div>
+                                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.04);">
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#10b981;">{{ $sub->present }}</strong> Present</span>
+                                            <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#f59e0b;">{{ $sub->late }}</strong> Late</span>
+                                            <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#ef4444;">{{ $sub->absent }}</strong> Absent</span>
+                                            @if($sub->excused > 0)
+                                                <span style="font-size:0.76rem; color:#b39b82;"><strong style="color:#8b5cf6;">{{ $sub->excused }}</strong> Excused</span>
+                                            @endif
+                                        </div>
+                                        <span style="font-size:0.72rem; color:#8f826f; font-weight:600;">{{ $sub->total }} Sessions</span>
                                     </div>
-                                </div>
-
-                                {{-- Micro Attendance Metrics --}}
-                                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.04);">
-                                    <div style="display:flex; align-items:center; gap:10px;">
-                                        <span style="font-size:0.76rem; color:#b39b82;">
-                                            <strong style="color:#10b981;">{{ $sub->present }}</strong> Present
-                                        </span>
-                                        <span style="font-size:0.76rem; color:#b39b82;">
-                                            <strong style="color:#f59e0b;">{{ $sub->late }}</strong> Late
-                                        </span>
-                                        <span style="font-size:0.76rem; color:#b39b82;">
-                                            <strong style="color:#ef4444;">{{ $sub->absent }}</strong> Absent
-                                        </span>
-                                        @if($sub->excused > 0)
-                                            <span style="font-size:0.76rem; color:#b39b82;">
-                                                <strong style="color:#8b5cf6;">{{ $sub->excused }}</strong> Excused
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <span style="font-size:0.72rem; color:#8f826f; font-weight:600;">
-                                        {{ $sub->total }} Sessions
-                                    </span>
                                 </div>
                             </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+            {{-- Footer --}}
+            <div class="px-4 py-3 border-top d-flex justify-content-between align-items-center" style="border-color:rgba(255,255,255,0.06)!important; background:rgba(255,255,255,0.01);">
+                <a href="{{ route('student.classes') }}" class="btn btn-sm" style="background:rgba(207,164,111,0.1); border:1px solid rgba(207,164,111,0.3); color:#ffd166; font-weight:700; font-size:0.82rem; border-radius:12px; padding:7px 16px;">
+                    <i class="bi bi-book-fill me-1"></i> My Classes
+                </a>
+                <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); color:#f3ede4; font-weight:700; font-size:0.82rem; border-radius:12px; padding:7px 18px;">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -2633,6 +2625,38 @@ function openAttendanceRecordsModal() {
     }
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
+
+function openSubjectBreakdownModal() {
+    const modalEl = document.getElementById('subjectBreakdownModal');
+    if (!modalEl) return;
+    if (modalEl.parentNode !== document.body) {
+        document.body.appendChild(modalEl);
+    }
+    try {
+        if (window.bootstrap && window.bootstrap.Modal) {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } else {
+            throw new Error('Bootstrap not ready');
+        }
+    } catch (err) {
+        modalEl.classList.add('show');
+        modalEl.style.display = 'block';
+        modalEl.setAttribute('aria-modal', 'true');
+        modalEl.removeAttribute('aria-hidden');
+        document.body.classList.add('modal-open');
+    }
+    if (window.triggerHaptic) window.triggerHaptic('light');
+}
+
+// Auto-open Breakdown modal when ?open_breakdown=1 is present in URL
+(function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('open_breakdown') === '1') {
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(openSubjectBreakdownModal, 400);
+        });
+    }
+})();
 
 function filterAttendanceRecords() {
     const searchVal = (document.getElementById('recordsSearchInput')?.value || '').toLowerCase().trim();

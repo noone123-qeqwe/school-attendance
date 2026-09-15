@@ -932,6 +932,10 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-clipboard-data-fill"></i></div>
                         <span class="more-sheet-item-label">Records</span>
                     </a>
+                    <a href="javascript:void(0)" onclick="closeMoreSheet(); if(typeof openSubjectBreakdownModal==='function'){openSubjectBreakdownModal();}else{window.location.href='{{ route('home') }}?open_breakdown=1';}" class="more-sheet-item" data-color="purple">
+                        <div class="more-sheet-item-icon"><i class="bi bi-pie-chart-fill"></i></div>
+                        <span class="more-sheet-item-label">Breakdown</span>
+                    </a>
                     <a href="{{ route('notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
                         <span class="more-sheet-item-label">Notifications</span>
