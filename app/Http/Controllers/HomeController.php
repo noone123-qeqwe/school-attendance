@@ -275,93 +275,9 @@ class HomeController extends Controller
         ->orderBy('created_at', 'desc')
         ->get();
 
-    // 11. Fetch Announcements for Events Calendar (cached for 5 minutes)
-    $announcements = \Illuminate\Support\Facades\Cache::remember('student_announcements_recent', 300, function() {
-        return Announcement::with('author')
-            ->published()
-            ->orderBy('created_at', 'desc')
-            ->take(10)
-            ->get();
-    });
+    // 11. Build events calendar data (holidays + custom events + exams)
+    [$calendarEvents, $eventsMap] = $this->getStudentCalendarEventsMap($user);
 
-    // 12. Build events calendar data (announcements + holidays + custom events)
-    $calendarEvents = collect();
-
-    // Add announcements as events (upcoming/recent)
-    foreach ($announcements as $ann) {
-        $eventDate = $ann->scheduled_for ? $ann->scheduled_for->toDateString() : $ann->created_at->toDateString();
-        if ($eventDate >= $todayDate) {
-            $calendarEvents->push((object) [
-                'type'  => 'announcement',
-                'title' => $ann->title,
-                'content' => \Illuminate\Support\Str::limit($ann->content, 120),
-                'date'  => $eventDate,
-                'author' => $ann->author->name ?? 'Admin',
-                'author_role' => $ann->author->role ?? 'admin',
-                'audience' => $ann->target_audience,
-                'created_at' => $ann->created_at,
-            ]);
-        }
-    }
-
-    // Add holidays as events (upcoming next 60 days, cached for 30 minutes)
-    $allHolidays = \Illuminate\Support\Facades\Cache::remember("all_holidays_60d_{$todayDate}", 1800, function() use ($todayDate, $now) {
-        return Holiday::getUpcoming(
-            $todayDate,
-            $now->copy()->addDays(60)->toDateString()
-        );
-    });
-
-    foreach ($allHolidays as $hol) {
-        $calendarEvents->push((object) [
-            'type'  => 'holiday',
-            'title' => $hol->name,
-            'content' => $hol->description ?? 'No classes',
-            'date'  => $hol->date instanceof \DateTimeInterface ? $hol->date->toDateString() : Carbon::parse($hol->date)->toDateString(),
-            'author' => null,
-            'audience' => 'All',
-            'created_at' => $hol->created_at,
-        ]);
-    }
-
-    // Add school events visible to student (cached for 5 minutes)
-    $studentEvents = \Illuminate\Support\Facades\Cache::remember("student_events_{$user->id}_{$todayDate}", 300, function() use ($user, $todayDate, $now) {
-        return Event::visibleTo($user)
-            ->where('status', '!=', 'cancelled')
-            ->whereDate('date', '>=', $todayDate)
-            ->whereDate('date', '<=', $now->copy()->addDays(60)->toDateString())
-            ->orderBy('date')
-            ->get();
-    });
-
-    foreach ($studentEvents as $evt) {
-        $calendarEvents->push((object) [
-            'type'  => $evt->type,
-            'title' => $evt->name,
-            'content' => $evt->description ?? $evt->location ?? '',
-            'date'  => $evt->date->toDateString(),
-            'author' => null,
-            'audience' => 'Students',
-            'created_at' => $evt->created_at,
-        ]);
-    }
-
-    // Deduplicate by date + title and sort ascending by date
-    $calendarEvents = $calendarEvents
-        ->unique(fn($evt) => $evt->date . '_' . strtolower(trim($evt->title)))
-        ->sortBy('date')
-        ->values();
-
-    // Build events map for calendar dots
-    $eventsMap = [];
-    foreach ($calendarEvents as $evt) {
-        $eventsMap[$evt->date][] = [
-            'type'    => $evt->type,
-            'title'   => $evt->title,
-            'content' => $evt->content,
-            'author'  => $evt->author,
-        ];
-    }
 
     // 13. Per-Subject Attendance Breakdown
     $subjectStats = collect();
@@ -414,7 +330,6 @@ class HomeController extends Controller
         'totalAbsent',
         'streakCount',
         'todaySchedule',
-        'announcements',
         'calendarEvents',
         'eventsMap',
         'subjectStats'
@@ -439,7 +354,117 @@ class HomeController extends Controller
             ->orderBy('time_in', 'desc')
             ->get();
 
-        return view('student.attendance-calendar', compact('records'));
+        [$calendarEvents, $eventsMap] = $this->getStudentCalendarEventsMap($user);
+
+        return view('student.attendance-calendar', compact('records', 'calendarEvents', 'eventsMap'));
+    }
+
+    /**
+     * Build unified calendar events, exams, and holidays for a student.
+     */
+    private function getStudentCalendarEventsMap(User $user, $calYear = null, $calMonth = null): array
+    {
+        $now = now();
+        $year = (int) ($calYear ?? request('cal_year', $now->year));
+        $month = (int) ($calMonth ?? request('cal_month', $now->month));
+
+        $viewMonthStart = Carbon::create($year, $month, 1)->startOfMonth()->toDateString();
+        $viewMonthEnd   = Carbon::create($year, $month, 1)->endOfMonth()->toDateString();
+
+        $rangeStart = min($viewMonthStart, $now->copy()->subDays(60)->toDateString());
+        $rangeEnd   = max($viewMonthEnd, $now->copy()->addDays(90)->toDateString());
+
+        // 1. Fetch active holidays in range
+        $holidays = Holiday::active()
+            ->whereDate('date', '>=', $rangeStart)
+            ->whereDate('date', '<=', $rangeEnd)
+            ->orderBy('date')
+            ->get();
+
+        // 2. Fetch student-visible events (exams, school events, etc.) with subject relation
+        $studentEvents = Event::visibleTo($user)
+            ->with('subject')
+            ->where('status', '!=', 'cancelled')
+            ->whereDate('date', '>=', $rangeStart)
+            ->whereDate('date', '<=', $rangeEnd)
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
+
+        $calendarEvents = collect();
+
+        foreach ($holidays as $hol) {
+            $dateStr = $hol->date instanceof \DateTimeInterface 
+                ? $hol->date->format('Y-m-d') 
+                : Carbon::parse($hol->date)->format('Y-m-d');
+
+            $calendarEvents->push((object)[
+                'id'          => 'hol_' . $hol->id,
+                'type'        => 'holiday',
+                'title'       => $hol->name,
+                'description' => $hol->description ?? 'No classes',
+                'date'        => $dateStr,
+                'time'        => null,
+                'location'    => null,
+                'subject'     => null,
+            ]);
+        }
+
+        foreach ($studentEvents as $evt) {
+            $dateStr = $evt->date instanceof \DateTimeInterface 
+                ? $evt->date->format('Y-m-d') 
+                : Carbon::parse($evt->date)->format('Y-m-d');
+
+            $type = match($evt->type) {
+                'exam' => 'exam',
+                'holiday' => 'holiday',
+                default => 'event',
+            };
+
+            $timeStr = null;
+            if ($evt->start_time && $evt->end_time) {
+                $startFormatted = Carbon::parse($evt->start_time)->format('g:i A');
+                $endFormatted   = Carbon::parse($evt->end_time)->format('g:i A');
+                $timeStr = "{$startFormatted} – {$endFormatted}";
+            } elseif ($evt->start_time) {
+                $timeStr = Carbon::parse($evt->start_time)->format('g:i A');
+            }
+
+            $subjectName = $evt->subject ? ($evt->subject->name ?? $evt->subject->code) : null;
+
+            $calendarEvents->push((object)[
+                'id'          => 'evt_' . $evt->id,
+                'type'        => $type,
+                'title'       => $evt->name,
+                'description' => $evt->description ?? '',
+                'date'        => $dateStr,
+                'time'        => $timeStr,
+                'location'    => $evt->location ?? null,
+                'subject'     => $subjectName,
+            ]);
+        }
+
+        // Deduplicate identical items on same date
+        $calendarEvents = $calendarEvents
+            ->unique(fn($evt) => $evt->date . '_' . $evt->type . '_' . strtolower(trim($evt->title)))
+            ->sortBy('date')
+            ->values();
+
+        $eventsMap = [];
+        foreach ($calendarEvents as $evt) {
+            $eventsMap[$evt->date][] = [
+                'id'          => $evt->id,
+                'type'        => $evt->type,
+                'title'       => $evt->title,
+                'description' => $evt->description,
+                'date'        => $evt->date,
+                'time'        => $evt->time,
+                'location'    => $evt->location,
+                'subject'     => $evt->subject,
+            ];
+        }
+
+        return [$calendarEvents, $eventsMap];
     }
 
     public function settings()

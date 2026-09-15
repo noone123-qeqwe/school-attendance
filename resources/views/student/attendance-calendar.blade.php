@@ -22,14 +22,32 @@
         $dayRecordsMap[$day][] = $r;
     }
 
+    $eventsMap = $eventsMap ?? [];
+
     $dayDotsMap = [];
-    foreach ($dayRecordsMap as $day => $recs) {
+    for ($d = 1; $d <= $calEnd->day; $d++) {
         $dots = [];
-        $statuses = collect($recs)->pluck('status')->map(fn($s) => strtolower($s))->unique();
-        if ($statuses->contains('present')) $dots[] = 'present';
-        if ($statuses->contains('late'))    $dots[] = 'late';
-        if ($statuses->contains('absent'))  $dots[] = 'absent';
-        $dayDotsMap[$day] = $dots;
+        $dDateKey = \Carbon\Carbon::create($calYear, $calMonth, $d)->format('Y-m-d');
+
+        // 1. Attendance dots (present, late, absent)
+        if (isset($dayRecordsMap[$d])) {
+            $statuses = collect($dayRecordsMap[$d])->pluck('status')->map(fn($s) => strtolower($s))->unique();
+            if ($statuses->contains('present')) $dots[] = 'present';
+            if ($statuses->contains('late'))    $dots[] = 'late';
+            if ($statuses->contains('absent'))  $dots[] = 'absent';
+        }
+
+        // 2. Exam, Event, and Holiday dots
+        if (isset($eventsMap[$dDateKey])) {
+            $eTypes = collect($eventsMap[$dDateKey])->pluck('type')->unique();
+            if ($eTypes->contains('exam'))    $dots[] = 'exam';
+            if ($eTypes->contains('event'))   $dots[] = 'event';
+            if ($eTypes->contains('holiday')) $dots[] = 'holiday';
+        }
+
+        if (!empty($dots)) {
+            $dayDotsMap[$d] = array_values(array_unique($dots));
+        }
     }
 
     $calendarJson = [];
@@ -231,6 +249,22 @@
         border: 1.5px solid rgba(96, 165, 250, 0.4);
     }
 
+    .att-cal-cell.status-exam {
+        background: rgba(100, 20, 60, 0.45);
+        color: #f472b6;
+        border: 1.5px solid rgba(236, 72, 153, 0.4);
+    }
+    .att-cal-cell.status-event {
+        background: rgba(60, 25, 120, 0.45);
+        color: #c4b5fd;
+        border: 1.5px solid rgba(139, 92, 246, 0.4);
+    }
+    .att-cal-cell.status-holiday {
+        background: rgba(5, 60, 50, 0.45);
+        color: #86efac;
+        border: 1.5px solid rgba(74, 222, 128, 0.4);
+    }
+
     /* Status dots row inside the cell */
     .att-cal-dots {
         display: flex;
@@ -244,6 +278,9 @@
     .att-cal-dot.present { background: #4ade80; }
     .att-cal-dot.late    { background: #fbbf24; }
     .att-cal-dot.absent  { background: #f87171; }
+    .att-cal-dot.exam    { background: #ec4899; }
+    .att-cal-dot.event   { background: #8b5cf6; }
+    .att-cal-dot.holiday { background: #4ade80; }
 
     /* Stats bar */
     .att-cal-stats {
@@ -840,12 +877,18 @@
                                 $statusCount = count($dayStatuses);
                                 if ($statusCount > 1) {
                                     $cellStatus = 'status-mixed';
-                                } elseif (in_array('present', $dayStatuses)) {
-                                    $cellStatus = 'status-present';
-                                } elseif (in_array('late', $dayStatuses)) {
-                                    $cellStatus = 'status-late';
                                 } elseif (in_array('absent', $dayStatuses)) {
                                     $cellStatus = 'status-absent';
+                                } elseif (in_array('late', $dayStatuses)) {
+                                    $cellStatus = 'status-late';
+                                } elseif (in_array('present', $dayStatuses)) {
+                                    $cellStatus = 'status-present';
+                                } elseif (in_array('exam', $dayStatuses)) {
+                                    $cellStatus = 'status-exam';
+                                } elseif (in_array('event', $dayStatuses)) {
+                                    $cellStatus = 'status-event';
+                                } elseif (in_array('holiday', $dayStatuses)) {
+                                    $cellStatus = 'status-holiday';
                                 }
                             }
 
@@ -939,19 +982,12 @@
             </div>
             <!-- Body Content -->
             <div class="px-4 pb-4 pt-1">
-                <div class="day-section-header">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="day-section-icon"><i class="bi bi-grid-1x2-fill"></i></span>
-                        <span class="day-section-label" id="daySummarySectionTitle">Subjects Breakdown</span>
-                    </div>
-                    <span class="day-section-badge" id="daySummarySectionCount">1 Subject</span>
-                </div>
                 <div id="daySummaryContent" class="d-flex flex-column gap-3">
-                    <!-- dynamically populated -->
+                    <!-- dynamically populated with ATTENDANCE and EVENTS / IMPORTANT DATES sections -->
                 </div>
                 <div style="font-size:0.75rem; color:#8f826f; text-align:center; margin-top:20px; display:flex; align-items:center; justify-content:center; gap:6px;">
                     <i class="bi bi-shield-check text-gold" style="color:#cfa46f;"></i>
-                    <span>Real-time subject-by-subject attendance records for this date.</span>
+                    <span>Real-time records, events, and schedules for this date.</span>
                 </div>
             </div>
         </div>
@@ -960,6 +996,7 @@
 
 <script nonce="{{ csp_nonce() }}">
 var attCalendarData = @json($calendarJson);
+var eventsCalendarData = @json($eventsMap ?? []);
 let dayModalInstance = null;
 let currentSelectedDateKey = '{{ $calYear }}-{{ str_pad($calMonth, 2, '0', STR_PAD_LEFT) }}-{{ str_pad(($isCurrentMonth && $today ? $today : 14), 2, '0', STR_PAD_LEFT) }}';
 
@@ -1015,128 +1052,263 @@ function showAttDetail(dateKey, day) {
     const titleEl = document.getElementById('daySummaryTitle');
     const subtitleEl = document.getElementById('daySummarySubtitle');
     const contentEl = document.getElementById('daySummaryContent');
-    const sectionCountEl = document.getElementById('daySummarySectionCount');
 
     const dt = new Date(dateKey + 'T00:00:00');
     const formattedDate = dt.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     if (titleEl) titleEl.textContent = formattedDate;
 
     const records = attCalendarData[dateKey] || [];
-    if (sectionCountEl) {
-        sectionCountEl.textContent = `${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}`;
-    }
+    const dayEvents = (eventsCalendarData && eventsCalendarData[dateKey]) ? eventsCalendarData[dateKey] : [];
 
-    if (records.length === 0) {
+    if (records.length === 0 && dayEvents.length === 0) {
         if (subtitleEl) {
             subtitleEl.innerHTML = `
                 <span class="day-summary-chip chip-empty">
-                    <i class="bi bi-calendar-x text-gold me-1"></i> No recorded classes
+                    <i class="bi bi-calendar-x text-gold me-1"></i> No records or events
                 </span>`;
         }
         if (contentEl) {
             contentEl.innerHTML = `
-                <div class="day-empty-card">
-                    <div class="day-empty-icon">
-                        <i class="bi bi-calendar2-check"></i>
+                <div class="day-empty-card" style="padding: 36px 20px; text-align: center;">
+                    <div class="day-empty-icon" style="margin-bottom: 14px;">
+                        <i class="bi bi-calendar2-x" style="font-size: 2.4rem; color: #b39b82; opacity: 0.6;"></i>
                     </div>
-                    <div style="font-weight:800; font-size:1.05rem; color:#f3ede4; margin-bottom:6px;">No Classes Recorded</div>
-                    <div style="font-size:0.82rem; color:#8f826f; max-width:280px; margin:0 auto; line-height:1.5;">There are no class attendance entries scheduled or recorded for this date.</div>
+                    <div style="font-weight:800; font-size:1.05rem; color:#f3ede4; margin-bottom:6px;">No records or events for this date.</div>
+                    <div style="font-size:0.82rem; color:#8f826f; max-width:300px; margin:0 auto; line-height:1.5;">There are no attendance records, classes, exams, events, or holidays scheduled for this date.</div>
                 </div>`;
         }
     } else {
-        const presentCount = records.filter(r => r.status_lower === 'present').length;
-        const lateCount = records.filter(r => r.status_lower === 'late').length;
-        const absentCount = records.filter(r => r.status_lower === 'absent').length;
+        // Dynamic summary badges in modal header
+        let badgesHtml = '';
+        if (records.length > 0) {
+            const presentCount = records.filter(r => r.status_lower === 'present').length;
+            const lateCount = records.filter(r => r.status_lower === 'late').length;
+            const absentCount = records.filter(r => r.status_lower === 'absent').length;
 
-        let badgesHtml = `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#cfa46f;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
-        if (presentCount > 0) {
-            badgesHtml += `<span class="day-summary-chip chip-present"><i class="bi bi-check-circle-fill me-1"></i> ${presentCount} Present</span>`;
+            badgesHtml += `<span class="day-summary-chip chip-count"><i class="bi bi-journal-bookmark-fill me-1" style="color:#cfa46f;"></i> ${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>`;
+            if (presentCount > 0) {
+                badgesHtml += `<span class="day-summary-chip chip-present"><i class="bi bi-check-circle-fill me-1"></i> ${presentCount} Present</span>`;
+            }
+            if (lateCount > 0) {
+                badgesHtml += `<span class="day-summary-chip chip-late"><i class="bi bi-clock-fill me-1"></i> ${lateCount} Late</span>`;
+            }
+            if (absentCount > 0) {
+                badgesHtml += `<span class="day-summary-chip chip-absent"><i class="bi bi-x-circle-fill me-1"></i> ${absentCount} Absent</span>`;
+            }
         }
-        if (lateCount > 0) {
-            badgesHtml += `<span class="day-summary-chip chip-late"><i class="bi bi-clock-fill me-1"></i> ${lateCount} Late</span>`;
-        }
-        if (absentCount > 0) {
-            badgesHtml += `<span class="day-summary-chip chip-absent"><i class="bi bi-x-circle-fill me-1"></i> ${absentCount} Absent</span>`;
+
+        if (dayEvents.length > 0) {
+            const holidays = dayEvents.filter(e => e.type === 'holiday');
+            const exams = dayEvents.filter(e => e.type === 'exam');
+            const events = dayEvents.filter(e => e.type !== 'holiday' && e.type !== 'exam');
+
+            if (holidays.length > 0) {
+                badgesHtml += `<span class="day-summary-chip" style="background:rgba(74,222,128,0.15); color:#4ade80; border:1px solid rgba(74,222,128,0.3);"><i class="bi bi-flag-fill me-1"></i> ${holidays.length === 1 ? 'Holiday' : holidays.length + ' Holidays'}</span>`;
+            }
+            if (exams.length > 0) {
+                badgesHtml += `<span class="day-summary-chip" style="background:rgba(236,72,153,0.15); color:#ec4899; border:1px solid rgba(236,72,153,0.3);"><i class="bi bi-award-fill me-1"></i> ${exams.length === 1 ? 'Exam' : exams.length + ' Exams'}</span>`;
+            }
+            if (events.length > 0) {
+                badgesHtml += `<span class="day-summary-chip" style="background:rgba(139,92,246,0.15); color:#c4b5fd; border:1px solid rgba(139,92,246,0.3);"><i class="bi bi-calendar-event-fill me-1"></i> ${events.length === 1 ? 'Event' : events.length + ' Events'}</span>`;
+            }
         }
         if (subtitleEl) subtitleEl.innerHTML = badgesHtml;
 
-        let html = '';
-        records.forEach(r => {
-            const st = (r.status_lower || 'absent');
-            let iconClass = 'bi-x-circle-fill';
-            let clockInColor = '#f87171';
-            let borderStatusClass = 'status-border-absent';
+        let fullHtml = '';
 
-            if (st === 'present') {
-                iconClass = 'bi-check-circle-fill';
-                clockInColor = '#34d399';
-                borderStatusClass = 'status-border-present';
-            } else if (st === 'late') {
-                iconClass = 'bi-clock-fill';
-                clockInColor = '#fbbf24';
-                borderStatusClass = 'status-border-late';
-            }
-
-            const clockInText = r.clock_in || (st === 'absent' ? 'No clock-in' : '—');
-            const isNoClockIn = clockInText.toLowerCase().includes('no clock-in');
-
-            html += `
-                <div class="att-detail-card ${borderStatusClass}">
-                    <div class="att-card-header">
-                        <div style="flex:1; min-width:180px;">
-                            <div class="att-card-subject-title">${escapeHtml(r.subject)}</div>
-                            <div class="att-card-meta">
-                                <span class="att-code-pill">${escapeHtml(r.code)}</span>
-                                <span style="color:rgba(255,255,255,0.2);">•</span>
-                                <span class="att-instructor-pill"><i class="bi bi-person-fill text-gold-muted me-1"></i>${escapeHtml(r.instructor)}</span>
-                            </div>
-                        </div>
-                        <span class="att-status-badge ${st}">
-                            <i class="bi ${iconClass}"></i> ${escapeHtml(r.status)}
-                        </span>
+        // 1. ATTENDANCE SECTION
+        if (records.length > 0) {
+            fullHtml += `
+                <div class="day-section-header mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="day-section-icon"><i class="bi bi-journal-check"></i></span>
+                        <span class="day-section-label">ATTENDANCE</span>
                     </div>
-
-                    <div class="att-info-grid">
-                        <div>
-                            <div class="att-grid-col-label">
-                                <i class="bi bi-calendar3 text-gold"></i> Schedule
-                            </div>
-                            <div class="att-grid-col-val">${escapeHtml(r.schedule)}</div>
-                        </div>
-                        <div>
-                            <div class="att-grid-col-label">
-                                <i class="bi bi-fingerprint text-gold"></i> Actual Clock-in
-                            </div>
-                            <div class="att-grid-col-val" style="color:${isNoClockIn ? '#f87171' : clockInColor};">
-                                ${isNoClockIn ? '<i class="bi bi-x-circle me-1"></i>' : (st === 'present' ? '<i class="bi bi-check2 me-1"></i>' : '<i class="bi bi-clock-history me-1"></i>')}
-                                ${escapeHtml(clockInText)}
-                            </div>
-                        </div>
-                        ${r.time_out ? `
-                        <div>
-                            <div class="att-grid-col-label">
-                                <i class="bi bi-box-arrow-right text-gold"></i> Clock-out
-                            </div>
-                            <div class="att-grid-col-val" style="color:#b39b82;">${escapeHtml(r.time_out)}</div>
-                        </div>` : ''}
-                        ${r.remarks ? `
-                        <div style="grid-column: 1 / -1;">
-                            <div class="att-grid-col-label">
-                                <i class="bi bi-chat-left-text text-gold"></i> Remarks
-                            </div>
-                            <div style="font-size:0.82rem; font-weight:500; color:#ffd166;">${escapeHtml(r.remarks)}</div>
-                        </div>` : ''}
-                    </div>
-
-                    ${st === 'absent' ? `
-                    <a href="{{ route('excuses.create_general') }}" class="day-card-excuse-btn">
-                        <span><i class="bi bi-file-earmark-medical me-1"></i> File Excuse Request for this Absence</span>
-                        <i class="bi bi-arrow-right"></i>
-                    </a>` : ''}
+                    <span class="day-section-badge">${records.length} ${records.length === 1 ? 'Subject' : 'Subjects'}</span>
                 </div>
+                <div class="d-flex flex-column gap-3 mb-4">
             `;
-        });
-        if (contentEl) contentEl.innerHTML = html;
+
+            records.forEach(r => {
+                const st = (r.status_lower || 'absent');
+                let iconClass = 'bi-x-circle-fill';
+                let clockInColor = '#f87171';
+                let borderStatusClass = 'status-border-absent';
+
+                if (st === 'present') {
+                    iconClass = 'bi-check-circle-fill';
+                    clockInColor = '#34d399';
+                    borderStatusClass = 'status-border-present';
+                } else if (st === 'late') {
+                    iconClass = 'bi-clock-fill';
+                    clockInColor = '#fbbf24';
+                    borderStatusClass = 'status-border-late';
+                }
+
+                const clockInText = r.clock_in || (st === 'absent' ? 'No clock-in' : '—');
+                const isNoClockIn = clockInText.toLowerCase().includes('no clock-in');
+
+                fullHtml += `
+                    <div class="att-detail-card ${borderStatusClass}">
+                        <div class="att-card-header">
+                            <div style="flex:1; min-width:180px;">
+                                <div class="att-card-subject-title">${escapeHtml(r.subject)}</div>
+                                <div class="att-card-meta">
+                                    <span class="att-code-pill">${escapeHtml(r.code)}</span>
+                                    <span style="color:rgba(255,255,255,0.2);">•</span>
+                                    <span class="att-instructor-pill"><i class="bi bi-person-fill text-gold-muted me-1"></i>${escapeHtml(r.instructor)}</span>
+                                </div>
+                            </div>
+                            <span class="att-status-badge ${st}">
+                                <i class="bi ${iconClass}"></i> ${escapeHtml(r.status)}
+                            </span>
+                        </div>
+
+                        <div class="att-info-grid">
+                            <div>
+                                <div class="att-grid-col-label">
+                                    <i class="bi bi-calendar3 text-gold"></i> Schedule
+                                </div>
+                                <div class="att-grid-col-val">${escapeHtml(r.schedule)}</div>
+                            </div>
+                            <div>
+                                <div class="att-grid-col-label">
+                                    <i class="bi bi-fingerprint text-gold"></i> Actual Clock-in
+                                </div>
+                                <div class="att-grid-col-val" style="color:${isNoClockIn ? '#f87171' : clockInColor};">
+                                    ${isNoClockIn ? '<i class="bi bi-x-circle me-1"></i>' : (st === 'present' ? '<i class="bi bi-check2 me-1"></i>' : '<i class="bi bi-clock-history me-1"></i>')}
+                                    ${escapeHtml(clockInText)}
+                                </div>
+                            </div>
+                            ${r.time_out ? `
+                            <div>
+                                <div class="att-grid-col-label">
+                                    <i class="bi bi-box-arrow-right text-gold"></i> Clock-out
+                                </div>
+                                <div class="att-grid-col-val" style="color:#b39b82;">${escapeHtml(r.time_out)}</div>
+                            </div>` : ''}
+                            ${r.remarks ? `
+                            <div style="grid-column: 1 / -1;">
+                                <div class="att-grid-col-label">
+                                    <i class="bi bi-chat-left-text text-gold"></i> Remarks
+                                </div>
+                                <div style="font-size:0.82rem; font-weight:500; color:#ffd166;">${escapeHtml(r.remarks)}</div>
+                            </div>` : ''}
+                        </div>
+
+                        ${st === 'absent' ? `
+                        <a href="{{ route('excuses.create_general') }}" class="day-card-excuse-btn">
+                            <span><i class="bi bi-file-earmark-medical me-1"></i> File Excuse Request for this Absence</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>` : ''}
+                    </div>
+                `;
+            });
+
+            fullHtml += `</div>`;
+        }
+
+        // 2. EVENTS / IMPORTANT DATES SECTION
+        if (dayEvents.length > 0) {
+            fullHtml += `
+                <div class="day-section-header mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="day-section-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.3);">
+                            <i class="bi bi-calendar-event-fill"></i>
+                        </span>
+                        <span class="day-section-label">EVENTS / IMPORTANT DATES</span>
+                    </div>
+                    <span class="day-section-badge" style="background: rgba(139, 92, 246, 0.12); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.25);">
+                        ${dayEvents.length} ${dayEvents.length === 1 ? 'Entry' : 'Entries'}
+                    </span>
+                </div>
+                <div class="d-flex flex-column gap-3">
+            `;
+
+            dayEvents.forEach(evt => {
+                const isExam = evt.type === 'exam';
+                const isHoliday = evt.type === 'holiday';
+
+                let badgeText = 'Event';
+                let badgeStyle = 'background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.35);';
+                let borderStyle = 'border-left: 4px solid #8b5cf6;';
+                let iconClass = 'bi-calendar-event-fill';
+
+                if (isExam) {
+                    badgeText = 'Exam';
+                    badgeStyle = 'background: rgba(236, 72, 153, 0.15); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.35);';
+                    borderStyle = 'border-left: 4px solid #ec4899;';
+                    iconClass = 'bi-award-fill';
+                } else if (isHoliday) {
+                    badgeText = 'Holiday';
+                    badgeStyle = 'background: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.35);';
+                    borderStyle = 'border-left: 4px solid #4ade80;';
+                    iconClass = 'bi-flag-fill';
+                }
+
+                let metaRows = '';
+
+                // Subject row (e.g. Mathematics for Exam)
+                if (evt.subject) {
+                    metaRows += `
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #ffd166; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-book-half" style="font-size: 0.85rem; color: #cfa46f;"></i>
+                            <span>${escapeHtml(evt.subject)}</span>
+                        </div>
+                    `;
+                }
+
+                // Time row (e.g. 9:00 AM – 4:00 PM or 8:00 AM – 10:00 AM)
+                if (evt.time) {
+                    metaRows += `
+                        <div style="font-size: 0.85rem; font-weight: 600; color: #f3ede4; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-clock-fill" style="font-size: 0.8rem; color: #cfa46f;"></i>
+                            <span>${escapeHtml(evt.time)}</span>
+                        </div>
+                    `;
+                }
+
+                // Location row (e.g. School Gym)
+                if (evt.location) {
+                    metaRows += `
+                        <div style="font-size: 0.85rem; font-weight: 600; color: #b39b82; margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-geo-alt-fill" style="font-size: 0.8rem; color: #cfa46f;"></i>
+                            <span>${escapeHtml(evt.location)}</span>
+                        </div>
+                    `;
+                }
+
+                // Description row (e.g. No classes)
+                if (evt.description && evt.description.trim() !== '') {
+                    metaRows += `
+                        <div style="font-size: 0.82rem; color: #8f826f; margin-top: 6px; line-height: 1.45;">
+                            ${escapeHtml(evt.description)}
+                        </div>
+                    `;
+                }
+
+                fullHtml += `
+                    <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); ${borderStyle} border-radius: 14px; padding: 16px 18px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 99px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; ${badgeStyle} margin-bottom: 6px;">
+                                    <i class="bi ${iconClass}"></i>
+                                    <span>${badgeText}</span>
+                                </div>
+                                <div style="font-weight: 800; color: #f3ede4; font-size: 1.1rem; line-height: 1.3;">
+                                    ${escapeHtml(evt.title)}
+                                </div>
+                                ${metaRows}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            fullHtml += `</div>`;
+        }
+
+        if (contentEl) contentEl.innerHTML = fullHtml;
     }
 
     const modalEl = document.getElementById('daySummaryModal');

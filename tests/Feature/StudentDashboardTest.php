@@ -262,4 +262,142 @@ class StudentDashboardTest extends TestCase
         $this->assertStringContainsString('overflow-wrap: break-word !important;', $content);
         $this->assertStringContainsString('word-break: normal !important;', $content);
     }
+
+    // ─────────────────────────────────────────
+    // ATTENDANCE CALENDAR & EVENTS INTEGRATION
+    // ─────────────────────────────────────────
+
+    public function test_upcoming_events_section_is_removed_and_schedule_is_full_width(): void
+    {
+        $response = $this->actingAs($this->student)->get('/home');
+
+        $response->assertStatus(200);
+        // Verify separate Upcoming Events section is completely removed
+        $response->assertDontSee('Upcoming Events');
+        $response->assertDontSee('Full Calendar');
+        $response->assertDontSee('No upcoming events or holidays');
+
+        // Verify Today's Schedule takes full width (col-12)
+        $content = $response->getContent();
+        $this->assertStringContainsString('<div class="col-12">', $content);
+        $this->assertStringContainsString("Today's Schedule", $content);
+    }
+
+    public function test_attendance_calendar_integrates_events_exams_and_holidays(): void
+    {
+        $subject = Subject::create([
+            'code' => 'CS101',
+            'name' => 'Mathematics',
+            'year_level' => 2,
+            'semester' => 1,
+            'course' => 'BSCS',
+        ]);
+
+        // 1. Attendance record on Sept 14, 2026
+        Attendance::create([
+            'user_id' => $this->student->id,
+            'subject_code' => 'CS101',
+            'status' => 'Present',
+            'date' => '2026-09-14',
+            'time_in' => '07:52:00',
+        ]);
+
+        // 2. School Event on Sept 18, 2026
+        \App\Models\Event::create([
+            'name' => 'Science Fair',
+            'description' => 'Annual Science Exhibition',
+            'date' => '2026-09-18',
+            'start_time' => '09:00:00',
+            'end_time' => '16:00:00',
+            'location' => 'School Gym',
+            'type' => 'school_event',
+            'status' => 'scheduled',
+            'created_by' => $this->student->id,
+        ]);
+
+        // 3. Exam on Sept 19, 2026 (linked to subject)
+        \App\Models\Event::create([
+            'name' => 'Midterm Examination',
+            'description' => 'Mathematics Midterm Test',
+            'date' => '2026-09-19',
+            'start_time' => '08:00:00',
+            'end_time' => '10:00:00',
+            'class_id' => $subject->id,
+            'type' => 'exam',
+            'status' => 'scheduled',
+            'created_by' => $this->student->id,
+        ]);
+
+        // 4. Holiday on Sept 20, 2026
+        \App\Models\Holiday::create([
+            'name' => 'National Holiday',
+            'description' => 'No classes',
+            'date' => '2026-09-20',
+            'type' => 'national',
+            'is_active' => true,
+            'created_by' => $this->student->id,
+        ]);
+
+        $response = $this->actingAs($this->student)->get('/home?cal_year=2026&cal_month=9');
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+
+        // Check Attendance Calendar title & View Records button
+        $this->assertStringContainsString('Attendance Calendar', $content);
+        $this->assertStringContainsString('View Records', $content);
+
+        // Check calendar legend indicators
+        $this->assertStringContainsString('Present', $content);
+        $this->assertStringContainsString('Late', $content);
+        $this->assertStringContainsString('Absent', $content);
+        $this->assertStringContainsString('Exam', $content);
+        $this->assertStringContainsString('Event', $content);
+        $this->assertStringContainsString('Holiday', $content);
+
+        // Check dot indicators in calendar
+        $this->assertStringContainsString('dot-present', $content);
+        $this->assertStringContainsString('dot-event', $content);
+        $this->assertStringContainsString('dot-exam', $content);
+        $this->assertStringContainsString('dot-holiday', $content);
+
+        // Check day cell status classes
+        $this->assertStringContainsString('status-event', $content);
+        $this->assertStringContainsString('status-exam', $content);
+        $this->assertStringContainsString('status-holiday', $content);
+
+        // Check events map JSON payload passed to JavaScript
+        $this->assertStringContainsString('Science Fair', $content);
+        $this->assertStringContainsString('School Gym', $content);
+        $this->assertStringContainsString('Midterm Examination', $content);
+        $this->assertStringContainsString('National Holiday', $content);
+
+        // Check Day Summary Inspector modal structure
+        $this->assertStringContainsString('daySummaryModal', $content);
+        $this->assertStringContainsString('No records or events for this date.', $content);
+        $this->assertStringContainsString('EVENTS / IMPORTANT DATES', $content);
+        $this->assertStringContainsString('ATTENDANCE', $content);
+    }
+
+    public function test_student_attendance_calendar_dedicated_page_renders_events(): void
+    {
+        \App\Models\Holiday::create([
+            'name' => 'Special Non-Working Holiday',
+            'description' => 'No classes today',
+            'date' => '2026-09-21',
+            'type' => 'national',
+            'is_active' => true,
+            'created_by' => $this->student->id,
+        ]);
+
+        $response = $this->actingAs($this->student)->get(route('student.attendance.calendar', ['cal_year' => 2026, 'cal_month' => 9]));
+        $response->assertStatus(200);
+
+        $content = $response->getContent();
+        $this->assertStringContainsString('Attendance Calendar', $content);
+        $this->assertStringContainsString('Special Non-Working Holiday', $content);
+        $this->assertStringContainsString('att-cal-dot holiday', $content);
+        $this->assertStringContainsString('No records or events for this date.', $content);
+    }
 }
+
