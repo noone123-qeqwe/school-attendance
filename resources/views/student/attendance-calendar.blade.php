@@ -168,18 +168,27 @@
         font-weight: 700;
         color: #f3ede4;
         position: relative;
-        cursor: default;
+        cursor: pointer !important;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(255, 209, 102, 0.2);
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         gap: 3px;
+        user-select: none;
+        -webkit-user-select: none;
     }
-    .att-cal-cell.has-records {
-        cursor: pointer;
+    .att-cal-cell:empty {
+        cursor: default !important;
+        pointer-events: none;
     }
-    .att-cal-cell.has-records:hover {
+    .att-cal-cell:hover:not(:empty) {
         transform: translateY(-2px);
         box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
         border-color: rgba(207, 164, 111, 0.3);
         z-index: 2;
+    }
+    .att-cal-cell:active:not(:empty) {
+        transform: scale(0.95);
+        background: rgba(255, 209, 102, 0.12);
     }
     .att-cal-cell.is-today {
         background: rgba(255, 209, 102, 0.08) !important;
@@ -375,6 +384,22 @@
         font-weight: 600;
     }
 
+    /* Modal z-indexes & backdrop to guarantee display above mobile navigation */
+    #daySummaryModal {
+        z-index: 10060 !important;
+    }
+    .modal-backdrop {
+        z-index: 10050 !important;
+    }
+    .scal-sheet-handle {
+        width: 44px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.22);
+        border-radius: 3px;
+        margin: 12px auto 4px auto;
+        display: none;
+    }
+
     @media (max-width: 576px) {
         .att-cal-cell { font-size: 0.75rem; border-radius: 8px; }
         .att-cal-dot { width: 4px; height: 4px; }
@@ -383,6 +408,36 @@
         .att-cal-header { padding: 0 10px; }
         .att-cal-stats { padding: 10px 12px; gap: 4px; }
         .att-cal-stat { padding: 4px 10px; font-size: 0.7rem; }
+
+        /* Responsive Mobile Bottom Sheet for Day Summary Modal */
+        #daySummaryModal .modal-dialog {
+            margin: 0 !important;
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            max-height: 88vh !important;
+            display: flex !important;
+            align-items: flex-end !important;
+            transform: translateY(0) !important;
+        }
+        #daySummaryModal .modal-content {
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+            border-top-left-radius: 26px !important;
+            border-top-right-radius: 26px !important;
+            max-height: 88vh !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom, 16px)) !important;
+            border-bottom: none !important;
+            width: 100% !important;
+        }
+        .scal-sheet-handle {
+            display: block;
+        }
     }
 </style>
 
@@ -458,6 +513,8 @@
                              id="calTile_{{ $dateKey }}"
                              data-date="{{ $dateKey }}"
                              data-day="{{ $d }}"
+                             role="button"
+                             tabindex="0"
                              onclick="selectCalendarDay('{{ $dateKey }}', {{ $d }})"
                              title="Click to view attendance for {{ $dayDate->format('M d, Y') }}">
                             <span>{{ $d }}</span>
@@ -503,6 +560,7 @@
 <div class="modal fade" id="daySummaryModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content" style="background:#0f0a08; border:1px solid rgba(255,255,255,0.1); border-radius:24px; box-shadow:0 30px 80px rgba(0,0,0,0.85);">
+            <div class="scal-sheet-handle"></div>
             <div class="d-flex justify-content-between align-items-center px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
                 <div class="d-flex align-items-center gap-3">
                     <button type="button" class="btn btn-sm" onclick="navigateDayModal(-1)" title="Previous Day" style="width:32px; height:32px; border-radius:10px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#cfa46f; display:inline-flex; align-items:center; justify-content:center; padding:0;">
@@ -519,7 +577,7 @@
                         <i class="bi bi-chevron-right"></i>
                     </button>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeDaySummaryModal()"></button>
             </div>
             <div class="px-4 pb-4 pt-2">
                 <div style="font-size:0.75rem; font-weight:800; color:#cfa46f; text-transform:uppercase; letter-spacing:0.08em; margin:16px 0 12px 0;" id="daySummarySectionTitle">Subjects Breakdown</div>
@@ -538,6 +596,22 @@
 var attCalendarData = @json($calendarJson);
 let dayModalInstance = null;
 let currentSelectedDateKey = '{{ $calYear }}-{{ str_pad($calMonth, 2, '0', STR_PAD_LEFT) }}-{{ str_pad(($isCurrentMonth && $today ? $today : 14), 2, '0', STR_PAD_LEFT) }}';
+
+function closeDaySummaryModal() {
+    const modalEl = document.getElementById('daySummaryModal');
+    if (modalEl) {
+        if (dayModalInstance) {
+            try { dayModalInstance.hide(); } catch (e) {}
+        }
+        modalEl.classList.remove('show');
+        modalEl.style.display = 'none';
+        modalEl.setAttribute('aria-hidden', 'true');
+        modalEl.removeAttribute('aria-modal');
+    }
+    document.body.classList.remove('modal-open');
+    const fb = document.querySelector('.scal-fallback-backdrop');
+    if (fb) fb.remove();
+}
 
 function selectCalendarDay(dateKey, day, openModal = true) {
     document.querySelectorAll('.att-cal-cell.selected').forEach(el => el.classList.remove('selected'));
@@ -678,10 +752,34 @@ function showAttDetail(dateKey, day) {
 
     const modalEl = document.getElementById('daySummaryModal');
     if (modalEl) {
-        if (!dayModalInstance) {
-            dayModalInstance = new bootstrap.Modal(modalEl);
+        if (modalEl.parentNode !== document.body) {
+            document.body.appendChild(modalEl);
         }
-        dayModalInstance.show();
+        try {
+            if (!dayModalInstance && window.bootstrap && window.bootstrap.Modal) {
+                dayModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            }
+            if (dayModalInstance) {
+                dayModalInstance.show();
+            } else {
+                throw new Error('Bootstrap Modal not available');
+            }
+        } catch (err) {
+            console.warn('Day summary modal fallback invoked:', err);
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.setAttribute('aria-modal', 'true');
+            modalEl.removeAttribute('aria-hidden');
+            document.body.classList.add('modal-open');
+            let fb = document.querySelector('.scal-fallback-backdrop');
+            if (!fb) {
+                fb = document.createElement('div');
+                fb.className = 'modal-backdrop fade show scal-fallback-backdrop';
+                fb.style.zIndex = '10050';
+                document.body.appendChild(fb);
+                fb.onclick = closeDaySummaryModal;
+            }
+        }
     }
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
@@ -695,6 +793,35 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Relocate modal directly to document.body to escape any CSS transform/stacking context on mobile
+    const dModal = document.getElementById('daySummaryModal');
+    if (dModal && dModal.parentNode !== document.body) {
+        document.body.appendChild(dModal);
+    }
+
+    // Direct event listener binding for all non-empty calendar cells
+    document.querySelectorAll('.att-cal-cell[data-date]').forEach(tile => {
+        tile.addEventListener('click', function(e) {
+            const dKey = this.getAttribute('data-date');
+            const dNum = parseInt(this.getAttribute('data-day'), 10);
+            if (dKey) {
+                selectCalendarDay(dKey, dNum, true);
+            }
+        });
+        tile.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                const dKey = this.getAttribute('data-date');
+                const dNum = parseInt(this.getAttribute('data-day'), 10);
+                if (dKey) {
+                    selectCalendarDay(dKey, dNum, true);
+                }
+            }
+        });
+    });
+});
 </script>
 
 @endsection

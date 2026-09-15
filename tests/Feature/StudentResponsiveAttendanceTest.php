@@ -196,4 +196,42 @@ class StudentResponsiveAttendanceTest extends TestCase
         $mobileResponse->assertSee('id="openPasteBtn"', false);
         $mobileResponse->assertSee('Paste Copied Code');
     }
+
+    public function test_calendar_day_tiles_and_modals_have_mobile_responsiveness_and_touch_support(): void
+    {
+        // 1. Student Dashboard (/home)
+        $homeResponse = $this->actingAs($this->student)->get('/home');
+        $homeResponse->assertStatus(200);
+
+        // Day summary inspector modal & mobile sheet handle
+        $homeResponse->assertSee('id="daySummaryModal"', false);
+        $homeResponse->assertSee('class="scal-sheet-handle', false);
+        $homeResponse->assertSee('closeDaySummaryModal()', false);
+
+        // Calendar tiles touch action and accessibility
+        $homeResponse->assertSee('touch-action: manipulation', false);
+        $homeResponse->assertSee('role="button"', false);
+        $homeResponse->assertSee('tabindex="0"', false);
+        $homeResponse->assertSee('calTile_', false);
+
+        // Stacking context fix: relocation to document.body and high z-index above bottom nav
+        $homeResponse->assertSee('document.body.appendChild(dModal)', false);
+        $homeResponse->assertSee('10060 !important', false);
+
+        // 2. Student School Calendar (/student/calendar)
+        $calResponse = $this->actingAs($this->student)->get(route('student.calendar'));
+        $calResponse->assertStatus(200);
+        $calResponse->assertSee('id="daySummaryModal"', false);
+        $calResponse->assertSee('touch-action: manipulation', false);
+        $calResponse->assertSee('scalDayClick(', false);
+        $calResponse->assertSee('closeDaySummaryModal()', false);
+
+        // 3. Student Attendance Calendar (/student/attendance-calendar)
+        $attCalResponse = $this->actingAs($this->student)->get(route('student.attendance.calendar'));
+        $attCalResponse->assertStatus(200);
+        $attCalResponse->assertSee('id="daySummaryModal"', false);
+        $attCalResponse->assertSee('touch-action: manipulation', false);
+        $attCalResponse->assertSee('closeDaySummaryModal()', false);
+        $attCalResponse->assertSee('document.body.appendChild(dModal)', false);
+    }
 }

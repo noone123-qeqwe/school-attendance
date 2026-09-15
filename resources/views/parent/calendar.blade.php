@@ -517,6 +517,13 @@
 .ent-modal-value  { font-size: 0.95rem; color: #f3ede4; display: flex; align-items: center; gap: 8px; font-weight: 500; }
 
 /* Bottom sheet */
+#daySummaryModal,
+#eventDetailModal {
+    z-index: 10060 !important;
+}
+.modal-backdrop {
+    z-index: 10050 !important;
+}
 .modal-dialog-bottom { display: flex; align-items: flex-end; min-height: 100%; margin: 0; padding: 0; }
 @media (min-width: 576px) {
     .modal-dialog-bottom { align-items: center; margin: 1.75rem auto; max-width: 500px; min-height: calc(100% - 3.5rem); }
@@ -526,11 +533,11 @@
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 24px 24px 0 0;
     width: 100%;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 16px));
     box-shadow: 0 -10px 40px rgba(0,0,0,0.6);
 }
-@media (min-width: 576px) { .bottom-sheet-content { border-radius: 24px; } }
-.bottom-sheet-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 12px auto; }
+@media (min-width: 576px) { .bottom-sheet-content { border-radius: 24px; padding-bottom: 0; } }
+.bottom-sheet-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.22); border-radius: 2px; margin: 12px auto; display: block; }
 
 /* Subject cards */
 .subject-card {
@@ -860,7 +867,7 @@
 <div class="modal fade" id="daySummaryModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-bottom modal-dialog-scrollable">
         <div class="modal-content bottom-sheet-content">
-            <div class="bottom-sheet-handle d-none"></div>
+            <div class="bottom-sheet-handle"></div>
             <div class="d-flex justify-content-between align-items-start px-4 pt-4 pb-3 border-bottom position-relative" style="border-color:rgba(255,255,255,0.06)!important;">
                 <div>
                     <h3 style="font-weight:700;font-size:1.2rem;color:#f3ede4;margin:0;padding-right:24px;" id="daySummaryTitle">Date</h3>
@@ -869,7 +876,7 @@
                         <span id="daySummaryStatusText">Status</span>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:20px;right:20px;"></button>
             </div>
             <div class="px-4 pb-4">
                 <h6 style="font-size:0.78rem;font-weight:700;color:#8b7d70;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>
@@ -884,7 +891,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 /* ═══════════════════════════════════════════════════
    Squircle Attendance Calendar — Parent View
    ═══════════════════════════════════════════════════ */
@@ -1252,13 +1259,52 @@ function scalDayClick(dateStr) {
         else                 { dot.style.background = '#6b7280'; txt.textContent = 'No Status'; }
     }
 
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('daySummaryModal')).show();
+    const modalEl = document.getElementById('daySummaryModal');
+    if (modalEl) {
+        if (modalEl.parentNode !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+        try {
+            bootstrap.Modal.getOrCreateInstance(modalEl).show();
+        } catch (err) {
+            console.warn('scalDayClick fallback:', err);
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+            modalEl.setAttribute('aria-modal', 'true');
+            modalEl.removeAttribute('aria-hidden');
+            document.body.classList.add('modal-open');
+            let fb = document.querySelector('.scal-fallback-backdrop');
+            if (!fb) {
+                fb = document.createElement('div');
+                fb.className = 'modal-backdrop fade show scal-fallback-backdrop';
+                fb.style.zIndex = '10050';
+                document.body.appendChild(fb);
+                fb.onclick = closeDaySummaryModal;
+            }
+        }
+    }
+}
+
+function closeDaySummaryModal() {
+    const m = document.getElementById('daySummaryModal');
+    if (m) {
+        try { bootstrap.Modal.getOrCreateInstance(m).hide(); } catch (e) {}
+        m.classList.remove('show');
+        m.style.display = 'none';
+        m.setAttribute('aria-hidden', 'true');
+        m.removeAttribute('aria-modal');
+    }
+    document.body.classList.remove('modal-open');
+    const fb = document.querySelector('.scal-fallback-backdrop');
+    if (fb) fb.remove();
 }
 
 /* ── Init ───────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
-    document.body.appendChild(document.getElementById('eventDetailModal'));
-    document.body.appendChild(document.getElementById('daySummaryModal'));
+    const edm = document.getElementById('eventDetailModal');
+    if (edm && edm.parentNode !== document.body) document.body.appendChild(edm);
+    const dsm = document.getElementById('daySummaryModal');
+    if (dsm && dsm.parentNode !== document.body) document.body.appendChild(dsm);
     scalLoadAndRender();
 
     // Touch swipe for mobile
