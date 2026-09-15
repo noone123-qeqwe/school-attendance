@@ -1476,7 +1476,8 @@
        LUXURY DAY SUMMARY INSPECTOR MODAL & CARDS
        ═══════════════════════════════════════════════════════════ */
     #daySummaryModal,
-    #attendanceRecordsModal {
+    #attendanceRecordsModal,
+    #subjectBreakdownModal {
         z-index: 10060 !important;
     }
     .modal-backdrop {
