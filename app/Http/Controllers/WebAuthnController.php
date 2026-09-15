@@ -74,6 +74,22 @@ class WebAuthnController extends Controller
 
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
 
+        // Check if this credential is already registered to another user
+        $existsOther = DB::table("webauthn_credentials")
+            ->where("user_id", "!=", $user->id)
+            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                $query->where('credential_id', $credentialId)
+                      ->orWhere('credential_id', $normalizedCredentialId);
+            })
+            ->exists();
+
+        if ($existsOther) {
+            return response()->json([
+                "success" => false, 
+                "message" => "This {$typeLabel} credential is already registered to another account."
+            ], 409);
+        }
+
         $exists = DB::table("webauthn_credentials")
             ->where("user_id", $user->id)
             ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
@@ -185,38 +201,60 @@ class WebAuthnController extends Controller
     public function loginOptions(Request $request, WebauthnService $webauthn)
     {
         $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
-        if (!$raw || !is_string($raw)) {
-            return response()->json(["success" => false, "code" => "IDENTIFIER_REQUIRED", "message" => "Please enter your Student ID or Email."], 422);
-        }
-
-        $identifier = trim($raw);
-        $user = $this->findUserByIdentifier($identifier);
-
-        if (!$user) {
-            return response()->json(["success" => false, "code" => "ACCOUNT_NOT_FOUND", "message" => "Account not found for \"{$identifier}\"."], 404);
-        }
-
-        if (!$user->isActive()) {
-            return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
-        }
         
-        $credentials = $user->webauthnCredentials()->exists() || DB::table("webauthn_credentials")->where("user_id", $user->id)->exists();
-        if (!$credentials) {
-            return response()->json([
-                "success" => false,
-                "code" => "NOT_REGISTERED",
-                "user_exists" => true,
+        // Targeted account lookup if identifier provided
+        if ($raw && is_string($raw) && trim($raw) !== '') {
+            $identifier = trim($raw);
+            $user = $this->findUserByIdentifier($identifier);
+
+            if (!$user) {
+                return response()->json(["success" => false, "code" => "ACCOUNT_NOT_FOUND", "message" => "Account not found for \"{$identifier}\"."], 404);
+            }
+
+            if (!$user->isActive()) {
+                return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
+            }
+            
+            // Only consider valid WebAuthn credentials (or valid face credentials with public key)
+            $credentials = $user->webauthnCredentials()
+                ->where(function ($q) {
+                    $q->whereNull('biometric_type')
+                      ->orWhere('biometric_type', '!=', 'face')
+                      ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
+                })
+                ->exists();
+
+            if (!$credentials) {
+                return response()->json([
+                    "success" => false,
+                    "code" => "NOT_REGISTERED",
+                    "user_exists" => true,
+                    "user_id" => $user->id,
+                    "identifier" => $user->student_number ?? $user->email ?? $identifier,
+                    "user_name" => $user->name,
+                    "message" => "You haven't enabled biometric sign-in for this account yet."
+                ], 404);
+            }
+            
+            session(["webauthn_login_user_id" => $user->id]);
+            $options = $webauthn->authenticationOptions($user);
+            
+            return response()->json(array_merge($options['publicKey'], [
+                "success" => true,
                 "user_id" => $user->id,
                 "identifier" => $user->student_number ?? $user->email ?? $identifier,
                 "user_name" => $user->name,
-                "message" => "You haven't enabled biometric sign-in for this account yet."
-            ], 404);
+            ]));
         }
-        
-        session(["webauthn_login_user_id" => $user->id]);
-        $options = $webauthn->authenticationOptions($user);
-        
-        return response()->json(array_merge($options['publicKey'], ["success" => true]));
+
+        // Discoverable / Passkey mode: No identifier passed
+        session()->forget("webauthn_login_user_id");
+        $options = $webauthn->authenticationOptions(null);
+
+        return response()->json(array_merge($options['publicKey'], [
+            "success" => true,
+            "discoverable" => true,
+        ]));
     }
 
     public function setupOptions(Request $request, WebauthnService $webauthn)
@@ -294,6 +332,24 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "message" => "Credential ID is required."], 422);
         }
 
+        $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
+
+        // Check if this credential ID is registered to another user
+        $existsOther = DB::table("webauthn_credentials")
+            ->where("user_id", "!=", $user->id)
+            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                $query->where('credential_id', $credentialId)
+                      ->orWhere('credential_id', $normalizedCredentialId);
+            })
+            ->exists();
+
+        if ($existsOther) {
+            return response()->json([
+                "success" => false,
+                "message" => "This biometric credential is already registered to another account."
+            ], 409);
+        }
+
         try {
             $stored = $webauthn->storeCredential($user, $credential);
             $stored->forceFill([
@@ -305,6 +361,8 @@ class WebAuthnController extends Controller
 
             Auth::login($user, true);
             $request->session()->regenerate();
+            $request->session()->put('user_role', $user->role);
+            $request->session()->put('login_timestamp', now()->toString());
 
             if ($user->isStudent()) {
                 app(\App\Services\DeviceBindingService::class)->bind($user, $request);
@@ -313,7 +371,7 @@ class WebAuthnController extends Controller
             $redirectUrl = route('home');
             if ($user->isAdmin()) {
                 $redirectUrl = route('admin.dashboard');
-            } elseif ($user->isTeacher()) {
+            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
                 $redirectUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
                 $redirectUrl = route('parent.dashboard');
@@ -326,7 +384,11 @@ class WebAuthnController extends Controller
                 "redirect" => $redirectUrl
             ]);
         } catch (\Throwable $e) {
-            return response()->json(["success" => false, "message" => "Failed to enable biometrics: " . $e->getMessage()], 422);
+            $isConflict = str_contains($e->getMessage(), 'already registered') || str_contains($e->getMessage(), 'another account');
+            return response()->json([
+                "success" => false,
+                "message" => "Failed to enable biometrics: " . $e->getMessage()
+            ], $isConflict ? 409 : 422);
         }
     }
 
@@ -336,93 +398,137 @@ class WebAuthnController extends Controller
      */
     private function findUserByIdentifier(string $identifier): ?User
     {
-        $user = User::where("student_number", $identifier)
-            ->orWhere("email", $identifier)
-            ->orWhere("employee_id", $identifier)
-            ->orWhereRaw("LOWER(email) = ?", [strtolower($identifier)])
-            ->orWhereRaw("LOWER(student_number) = ?", [strtolower($identifier)])
-            ->orWhereRaw("LOWER(employee_id) = ?", [strtolower($identifier)])
-            ->first();
-
-        // Also check if hyphens/spaces were omitted or added
-        if (!$user) {
-            $clean = preg_replace('/[^a-zA-Z0-9]/', '', $identifier);
-            if ($clean !== '') {
-                $user = User::whereRaw("REPLACE(REPLACE(student_number, '-', ''), ' ', '') = ?", [$clean])
-                    ->orWhereRaw("REPLACE(REPLACE(employee_id, '-', ''), ' ', '') = ?", [$clean])
-                    ->first();
-            }
+        $raw = trim($identifier);
+        if ($raw === '') {
+            return null;
         }
-
-        return $user;
+        return User::findByIdentifier($raw);
     }
 
     public function login(Request $request, WebauthnService $webauthn)
     {
         $request->validate(["credential_id" => "required|string", "assertion" => "required|array"]);
-        $userId = session("webauthn_login_user_id");
-        
-        // Resilient fallback: If session was lost or expired, look up user from request identifier
-        if (!$userId) {
-            $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
-            if ($raw && is_string($raw)) {
-                $fallbackUser = $this->findUserByIdentifier(trim($raw));
-                if ($fallbackUser) {
-                    $userId = $fallbackUser->id;
-                }
-            }
+        $credentialId = $request->input('credential_id') ?? $request->input('assertion.id');
+        $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
+
+        // 1. Identify credential and its owning user from database
+        $dbCredential = \App\Models\WebauthnCredential::with('user')
+            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                $query->where('credential_id', $credentialId)
+                      ->orWhere('credential_id', $normalizedCredentialId);
+            })
+            ->first();
+
+        // 2. Check if an account was targeted via session or request input
+        $sessionUserId = session("webauthn_login_user_id");
+        $rawIdentifier = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
+        $expectedUser = null;
+
+        if ($sessionUserId) {
+            $expectedUser = User::find($sessionUserId);
+        } elseif ($rawIdentifier && is_string($rawIdentifier) && trim($rawIdentifier) !== '') {
+            $expectedUser = $this->findUserByIdentifier(trim($rawIdentifier));
         }
-        
+
+        $user = null;
+
+        if ($dbCredential && $dbCredential->user) {
+            $user = $dbCredential->user;
+
+            // Security check: If a specific user was expected, verify the credential belongs to them
+            if ($expectedUser && $expectedUser->id !== $user->id) {
+                \Illuminate\Support\Facades\Log::warning('WebAuthn account mismatch attempt', [
+                    'expected_user_id' => $expectedUser->id,
+                    'credential_user_id' => $user->id,
+                    'credential_id' => $credentialId,
+                ]);
+                return response()->json([
+                    "success" => false,
+                    "code" => "CREDENTIAL_MISMATCH",
+                    "message" => "This biometric credential belongs to a different account ({$user->name}). Please select the correct account or sign in with password.",
+                ], 403);
+            }
+        } elseif ($expectedUser) {
+            // Fallback check against expected user's credentials
+            $user = $expectedUser;
+            $dbCredential = $user->webauthnCredentials()
+                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                    $query->where('credential_id', $credentialId)
+                          ->orWhere('credential_id', $normalizedCredentialId);
+                })
+                ->first();
+        }
+
         \Illuminate\Support\Facades\Log::info('WebAuthn login attempt', [
-            'user_id' => $userId,
+            'user_id' => $user?->id,
+            'credential_id' => $credentialId,
             'session_id' => session()->getId(),
             'assertion_received' => !empty($request->assertion),
         ]);
-        
-        if (!$userId) {
-            \Illuminate\Support\Facades\Log::error('WebAuthn login - no user_id in session or request', [
-                'session_keys' => array_keys(session()->all()),
+
+        if (!$user || !$dbCredential) {
+            \Illuminate\Support\Facades\Log::error('WebAuthn login - unrecognized credential', [
+                'credential_id' => $credentialId,
+                'session_user_id' => $sessionUserId,
             ]);
-            return response()->json(["success" => false, "message" => "Session expired. Please try again."], 401);
+            return response()->json([
+                "success" => false,
+                "code" => "CREDENTIAL_NOT_FOUND",
+                "message" => "Unrecognized biometric credential. Please register your biometric sign-in first or log in with password."
+            ], 401);
         }
-        
-        $user = User::find($userId);
-        if (!$user) return response()->json(["success" => false, "message" => "User not found."], 401);
 
         if (!$user->isActive()) {
-            return response()->json(["success" => false, "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
+            return response()->json([
+                "success" => false,
+                "code" => "ACCOUNT_DEACTIVATED",
+                "message" => "Your account has been deactivated. Please contact the school administrator."
+            ], 403);
         }
-        
+
         try {
-            $webauthn->verifyAssertion($user, $request->assertion);
+            $webauthn->verifyAssertion($user, $request->assertion, $dbCredential);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('WebAuthn verification failed', [
-                'user_id' => $userId,
+                'user_id' => $user->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            return response()->json(["success" => false, "message" => "WebAuthn verification failed: " . $e->getMessage()], 401);
+            return response()->json(["success" => false, "message" => "Biometric authentication failed: " . $e->getMessage()], 401);
         }
-        
+
         Auth::login($user, true);
         $request->session()->regenerate();
         session()->forget(["webauthn_login_user_id"]);
+        $request->session()->put('user_role', $user->role);
+        $request->session()->put('login_timestamp', now()->toString());
 
         // Bind device on WebAuthn login too (same as password login)
         if ($user->isStudent()) {
             app(\App\Services\DeviceBindingService::class)->bind($user, $request);
         }
-        
+
         $redirectUrl = route('home');
         if ($user->isAdmin()) {
             $redirectUrl = route('admin.dashboard');
-        } elseif ($user->isTeacher()) {
+        } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
             $redirectUrl = route('teacher.dashboard');
         } elseif ($user->isParent()) {
             $redirectUrl = route('parent.dashboard');
         }
 
-        return response()->json(["success" => true, "redirect" => $redirectUrl]);
+        return response()->json([
+            "success" => true,
+            "user" => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role,
+                'identifier' => $user->student_number ?? $user->email,
+            ],
+            "role" => $user->role,
+            "redirect" => $redirectUrl,
+            "dashboard_url" => $redirectUrl,
+        ]);
     }
 
     public function removeDevice(Request $request)

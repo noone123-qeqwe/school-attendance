@@ -15,6 +15,9 @@ class WebauthnService
         $challenge = random_bytes(32);
         session(['webauthn.register_challenge' => $this->base64UrlEncode($challenge)]);
 
+        $userIdentifier = $user->email ?: ($user->student_number ?: ($user->employee_id ?: 'user_' . $user->id));
+        $displayName = $user->name ?: $userIdentifier;
+
         return [
             'publicKey' => [
                 'challenge' => $this->base64UrlEncode($challenge),
@@ -22,8 +25,8 @@ class WebauthnService
                 'user' => [
                     // Hash user ID to 32 bytes (some Android authenticators throw NotReadableError for short IDs)
                     'id' => $this->base64UrlEncode(hash('sha256', (string) $user->id, true)),
-                    'name' => $user->email,
-                    'displayName' => $user->name,
+                    'name' => $userIdentifier,
+                    'displayName' => $displayName,
                 ],
                 'pubKeyCredParams' => [
                     ['type' => 'public-key', 'alg' => -7],
@@ -32,10 +35,14 @@ class WebauthnService
                 'authenticatorSelection' => [
                     'authenticatorAttachment' => 'platform',
                     'userVerification' => 'preferred',
+                    'residentKey' => 'preferred',
+                    'requireResidentKey' => false,
                 ],
                 'timeout' => 60000,
                 'attestation' => 'none',
                 'excludeCredentials' => $user->webauthnCredentials
+                    ->whereNotNull('public_key')
+                    ->filter(fn ($c) => str_contains((string)$c->public_key, 'BEGIN PUBLIC KEY'))
                     ->map(fn ($credential) => [
                         'type' => 'public-key',
                         'id' => $credential->credential_id,
@@ -63,39 +70,87 @@ class WebauthnService
 
         session()->forget('webauthn.register_challenge');
 
-        return WebauthnCredential::updateOrCreate(
-            ['credential_id' => $credentialId],
-            [
-                'user_id' => $user->id,
+        $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
+
+        // Security check: verify this credential is not already registered to a DIFFERENT user
+        $existingOtherUser = WebauthnCredential::where('user_id', '!=', $user->id)
+            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                $query->where('credential_id', $credentialId);
+                if ($normalizedCredentialId !== $credentialId) {
+                    $query->orWhere('credential_id', $normalizedCredentialId);
+                }
+            })
+            ->first();
+
+        if ($existingOtherUser) {
+            throw new RuntimeException('This biometric device is already registered to another account.');
+        }
+
+        // Check if already registered by the same user -> update it
+        $existing = WebauthnCredential::where('user_id', $user->id)
+            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                $query->where('credential_id', $credentialId);
+                if ($normalizedCredentialId !== $credentialId) {
+                    $query->orWhere('credential_id', $normalizedCredentialId);
+                }
+            })
+            ->first();
+
+        if ($existing) {
+            $existing->forceFill([
                 'public_key' => $publicKey,
                 'sign_count' => $parsed['sign_count'],
-                'device_name' => 'Phone fingerprint',
-            ]
-        );
+                'last_used_at' => now(),
+            ])->save();
+
+            return $existing;
+        }
+
+        return WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => $credentialId,
+            'public_key' => $publicKey,
+            'sign_count' => $parsed['sign_count'],
+            'device_name' => 'Biometric Device',
+            'biometric_type' => 'fingerprint',
+            'last_used_at' => now(),
+        ]);
     }
 
-    public function authenticationOptions(User $user): array
+    public function authenticationOptions(?User $user = null): array
     {
         $challenge = random_bytes(32);
         session(['webauthn.auth_challenge' => $this->base64UrlEncode($challenge)]);
+
+        $allowCredentials = [];
+        if ($user) {
+            $allowCredentials = $user->webauthnCredentials()
+                ->where(function ($q) {
+                    $q->whereNull('biometric_type')
+                      ->orWhere('biometric_type', '!=', 'face')
+                      ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
+                })
+                ->get()
+                ->map(fn ($credential) => [
+                    'type' => 'public-key',
+                    'id' => $credential->credential_id,
+                ])
+                ->values()
+                ->toArray();
+        }
 
         return [
             'publicKey' => [
                 'challenge' => $this->base64UrlEncode($challenge),
                 'rpId' => $this->rpId(),
-                'allowCredentials' => $user->webauthnCredentials()->get()
-                    ->map(fn ($credential) => [
-                        'type' => 'public-key',
-                        'id' => $credential->credential_id,
-                    ])
-                    ->values(),
+                'allowCredentials' => $allowCredentials,
                 'userVerification' => 'preferred',
                 'timeout' => 60000,
             ],
         ];
     }
 
-    public function verifyAssertion(User $user, array $assertion): WebauthnCredential
+    public function verifyAssertion(User $user, array $assertion, ?WebauthnCredential $credential = null): WebauthnCredential
     {
         $credentialId = $assertion['id'] ?? null;
         $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
@@ -107,20 +162,43 @@ class WebauthnService
             'session_challenge' => session('webauthn.auth_challenge') ? 'present' : 'missing',
         ]);
         
-        $credential = $user->webauthnCredentials()
-            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+        if (!$credential) {
+            $credential = $user->webauthnCredentials()
+                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                    $query->where('credential_id', $credentialId);
+                    if ($normalizedCredentialId !== $credentialId) {
+                        $query->orWhere('credential_id', $normalizedCredentialId);
+                    }
+                })
+                ->first();
+        }
+
+        if (!$credential) {
+            // Also check global lookup to see if credential belongs to another account
+            $otherCredential = WebauthnCredential::where(function ($query) use ($credentialId, $normalizedCredentialId) {
                 $query->where('credential_id', $credentialId);
                 if ($normalizedCredentialId !== $credentialId) {
                     $query->orWhere('credential_id', $normalizedCredentialId);
                 }
-            })
-            ->first();
+            })->first();
 
-        if (!$credential) {
+            if ($otherCredential && $otherCredential->user_id !== $user->id) {
+                Log::warning('WebAuthn credential belongs to another user', [
+                    'expected_user_id' => $user->id,
+                    'credential_user_id' => $otherCredential->user_id,
+                ]);
+                throw new RuntimeException('This biometric credential belongs to a different account.');
+            }
+
             Log::error('WebAuthn credential not found', [
                 'user_id' => $user->id,
+                'credential_id' => $credentialId,
             ]);
             throw new RuntimeException('Unknown biometric credential.');
+        }
+
+        if ($credential->user_id !== $user->id) {
+            throw new RuntimeException('This biometric credential belongs to a different account.');
         }
 
         Log::debug('WebAuthn credential found', [

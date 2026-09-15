@@ -939,13 +939,18 @@ if (document.readyState === 'loading') {
             @endif
 
             <!-- ID or Email  -  system detects role automatically -->
-            <div class="glass-input-wrap anim-fade-up anim-d4">
+            <div class="glass-input-wrap anim-fade-up anim-d4" style="position: relative;">
                 <i class="bi bi-person-fill g-icon"></i>
                 <input type="text" name="identifier" id="idInput"
                        class="glass-input @error('identifier') is-invalid @enderror"
                        placeholder="Student ID or Email"
                        required autocomplete="username"
-                       value="{{ old('identifier') }}">
+                       value="{{ old('identifier') }}"
+                       style="padding-right: 42px;">
+                <button type="button" id="clearIdBtn" title="Switch account / Clear" aria-label="Switch account or clear input"
+                        style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; padding: 4px 7px; border-radius: 6px; display: none; transition: all 0.2s;">
+                    <i class="bi bi-x-lg"></i>
+                </button>
             </div>
             @error('identifier')
                 <div class="invalid-feedback-custom anim-fade-up anim-d4">{{ $message }}</div>
@@ -1242,9 +1247,19 @@ try {
     }
 } catch (e) {}
 
-// Remember identifier in localStorage
+// Remember identifier in localStorage & Account Switcher
 var idInput = document.getElementById('idInput');
 var rememberCheckbox = document.getElementById('rememberMe');
+var clearIdBtn = document.getElementById('clearIdBtn');
+
+function updateClearBtnVisibility() {
+    if (!clearIdBtn || !idInput) return;
+    if (idInput.value && idInput.value.trim().length > 0) {
+        clearIdBtn.style.display = 'block';
+    } else {
+        clearIdBtn.style.display = 'none';
+    }
+}
 
 try {
     var savedId = localStorage.getItem('attendance_saved_identifier');
@@ -1253,6 +1268,25 @@ try {
         if (rememberCheckbox) rememberCheckbox.checked = true;
     }
 } catch (e) {}
+updateClearBtnVisibility();
+
+if (clearIdBtn) {
+    clearIdBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (idInput) {
+            idInput.value = '';
+            idInput.focus();
+        }
+        try {
+            localStorage.removeItem('attendance_saved_identifier');
+        } catch (e) {}
+        updateClearBtnVisibility();
+        hideFpMessage();
+        if (typeof updateForgotHref === 'function') {
+            updateForgotHref();
+        }
+    });
+}
 
 function clearErrorStates() {
     var alerts = document.querySelectorAll('.glass-alert, .invalid-feedback-custom');
@@ -1260,10 +1294,12 @@ function clearErrorStates() {
     if (idInput) idInput.classList.remove('is-invalid');
     var pass = document.getElementById('loginPassword');
     if (pass) pass.classList.remove('is-invalid');
+    updateClearBtnVisibility();
 }
 
 if (idInput) {
     idInput.addEventListener('input', clearErrorStates);
+    idInput.addEventListener('change', updateClearBtnVisibility);
 }
 var passInput = document.getElementById('loginPassword');
 if (passInput) {
@@ -1719,6 +1755,14 @@ async function startBiometricRegistration(identifier, password) {
         var regResult = await saveRes.json();
 
         if (regResult.success) {
+            try {
+                localStorage.setItem('attendance_saved_identifier', identifier);
+                if (idInput) {
+                    idInput.value = identifier;
+                    if (typeof updateClearBtnVisibility === 'function') updateClearBtnVisibility();
+                }
+            } catch (e) {}
+
             openBiometricModal({
                 title: '✓ BIOMETRIC SIGN-IN ENABLED',
                 identifier: identifier,
@@ -1778,12 +1822,15 @@ async function handleBiometricLogin() {
     if (!identifier) {
         openBiometricModal({
             title: 'STUDENT ID OR EMAIL REQUIRED',
-            message: 'Please enter your <strong>Student ID or Email</strong> first so the system can verify your registered biometric credentials.',
+            message: 'Please enter your <strong>Student ID or Email</strong> first so the system can verify your registered biometric credentials.<br><br><span style="font-size:0.85rem;color:rgba(212,175,55,0.9);">If you have registered a passkey on this device, you can also proceed directly.</span>',
             badgeType: 'warning',
             primaryBtnText: '<i class="bi bi-person-fill me-2"></i>ENTER STUDENT ID / EMAIL',
-            secondaryBtnText: 'USE PASSWORD',
+            secondaryBtnText: '<i class="bi bi-passkey me-2"></i>USE DEVICE PASSKEY',
             onPrimaryClick: closeBiometricModalAndFocusIdentifier,
-            onSecondaryClick: closeBiometricModalAndFocusPassword
+            onSecondaryClick: function() {
+                closeBiometricModal();
+                performBiometricLogin('');
+            }
         });
         showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
         if (idInput) {
@@ -1798,12 +1845,13 @@ async function handleBiometricLogin() {
 }
 
 async function performBiometricLogin(studentNumber) {
+    studentNumber = (studentNumber || '').trim();
     if (fpRowBtn) {
         fpRowBtn.disabled = true;
         fpRowBtn.style.opacity = '0.7';
     }
     if (fpLabel) fpLabel.textContent = 'Connecting to server...';
-    if (fpHint) fpHint.textContent = 'Looking up credentials for ' + studentNumber + '...';
+    if (fpHint) fpHint.textContent = studentNumber ? ('Looking up credentials for ' + studentNumber + '...') : 'Finding passkey on device...';
     if (fpIcon) fpIcon.className = 'bi bi-hourglass-split';
     if (fpArrow) fpArrow.className = 'bi bi-hourglass-split fp-row-arrow';
 
@@ -1885,13 +1933,13 @@ async function performBiometricLogin(studentNumber) {
             return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
         });
 
-        if (allowCredentials.length === 0) {
+        if (studentNumber && allowCredentials.length === 0) {
             resetBiometricButton();
             openBiometricSetupModal(studentNumber);
             return;
         }
 
-        // Account HAS biometric credential registered. Directly trigger system prompt!
+        // Trigger WebAuthn credential retrieval
         var challenge = base64ToUint8Array(opts.challenge);
         var rpId = opts.rpId || window.location.hostname;
         var hostname = window.location.hostname;
@@ -1899,10 +1947,13 @@ async function performBiometricLogin(studentNumber) {
         
         var getPublicKey = {
             challenge: challenge,
-            allowCredentials: allowCredentials,
             userVerification: 'preferred',
             timeout: 60000
         };
+        
+        if (allowCredentials.length > 0) {
+            getPublicKey.allowCredentials = allowCredentials;
+        }
         
         if (rpId && !isIp) {
             getPublicKey.rpId = rpId;
@@ -1963,14 +2014,27 @@ async function performBiometricLogin(studentNumber) {
             if (fpIcon) fpIcon.className = 'bi bi-check-circle-fill text-success';
             if (fpArrow) fpArrow.className = 'bi bi-check2 fp-row-arrow text-success';
             if (fpRowBtn) fpRowBtn.style.opacity = '1';
+
+            if (result.user && result.user.identifier) {
+                try {
+                    localStorage.setItem('attendance_saved_identifier', result.user.identifier);
+                    if (idInput) {
+                        idInput.value = result.user.identifier;
+                        if (typeof updateClearBtnVisibility === 'function') updateClearBtnVisibility();
+                    }
+                } catch(e) {}
+            }
             
             window.location.href = result.redirect || '{{ route("home") }}';
         } else {
             resetBiometricButton();
             var failMsg = result.message || 'Biometric authentication was not recognized.';
             showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + failMsg);
+            
+            var modalTitle = result.code === 'CREDENTIAL_MISMATCH' ? 'ACCOUNT MISMATCH' : 'BIOMETRIC AUTHENTICATION FAILED';
+            
             openBiometricModal({
-                title: 'BIOMETRIC AUTHENTICATION FAILED',
+                title: modalTitle,
                 identifier: studentNumber,
                 message: failMsg + '<br><br>Please try again or use your password to sign in.',
                 badgeType: 'danger',
