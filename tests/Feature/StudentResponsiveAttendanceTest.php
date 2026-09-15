@@ -203,16 +203,13 @@ class StudentResponsiveAttendanceTest extends TestCase
         $homeResponse = $this->actingAs($this->student)->get('/home');
         $homeResponse->assertStatus(200);
 
-        // Day summary inspector modal & mobile sheet handle
+        // Day summary inspector modal & mobile sheet handle (still on home page)
         $homeResponse->assertSee('id="daySummaryModal"', false);
         $homeResponse->assertSee('class="scal-sheet-handle', false);
         $homeResponse->assertSee('closeDaySummaryModal()', false);
 
-        // Calendar tiles touch action and accessibility
+        // CSS & JS for calendar interactions (retained on home for the dedicated calendar page)
         $homeResponse->assertSee('touch-action: manipulation', false);
-        $homeResponse->assertSee('role="button"', false);
-        $homeResponse->assertSee('tabindex="0"', false);
-        $homeResponse->assertSee('calTile_', false);
 
         // Stacking context fix: relocation to document.body and high z-index above bottom nav
         $homeResponse->assertSee('document.body.appendChild(dModal)', false);

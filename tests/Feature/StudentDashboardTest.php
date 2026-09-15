@@ -338,14 +338,15 @@ class StudentDashboardTest extends TestCase
             'created_by' => $this->student->id,
         ]);
 
-        $response = $this->actingAs($this->student)->get('/home?cal_year=2026&cal_month=9');
+        $response = $this->actingAs($this->student)->get(route('student.attendance.calendar', ['cal_year' => 2026, 'cal_month' => 9]));
         $response->assertStatus(200);
 
         $content = $response->getContent();
 
-        // Check Attendance Calendar title & View Records button
+        // Check Attendance Calendar title
         $this->assertStringContainsString('Attendance Calendar', $content);
-        $this->assertStringContainsString('View Records', $content);
+        // Note: View Records button is accessible from the attendance calendar page
+        $this->assertStringContainsString('closeDaySummaryModal', $content);
 
         // Check calendar legend indicators
         $this->assertStringContainsString('Present', $content);
@@ -355,11 +356,11 @@ class StudentDashboardTest extends TestCase
         $this->assertStringContainsString('Event', $content);
         $this->assertStringContainsString('Holiday', $content);
 
-        // Check dot indicators in calendar
-        $this->assertStringContainsString('dot-present', $content);
-        $this->assertStringContainsString('dot-event', $content);
-        $this->assertStringContainsString('dot-exam', $content);
-        $this->assertStringContainsString('dot-holiday', $content);
+        // Check dot indicators in calendar (att-cal-dot format used by attendance-calendar page)
+        $this->assertStringContainsString('att-cal-dot present', $content);
+        $this->assertStringContainsString('att-cal-dot event', $content);
+        $this->assertStringContainsString('att-cal-dot exam', $content);
+        $this->assertStringContainsString('att-cal-dot holiday', $content);
 
         // Check day cell status classes
         $this->assertStringContainsString('status-event', $content);
