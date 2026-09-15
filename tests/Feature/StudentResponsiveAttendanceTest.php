@@ -48,7 +48,7 @@ class StudentResponsiveAttendanceTest extends TestCase
         $this->assertStringNotContainsString('student/biometrics', $sidebar);
     }
 
-    public function test_settings_is_removed_from_sidebar_and_mobile_more_sheet(): void
+    public function test_settings_and_biometrics_are_removed_from_sidebar_and_mobile_more_sheet(): void
     {
         $this->actingAs($this->student);
         $sidebar = view('layouts.sidebars.student')->render();
@@ -58,8 +58,9 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertOk();
         $html = $response->getContent();
 
-        // Ensure moreSheetContent does not contain Settings link
+        // Ensure moreSheetContent does not contain Settings or Biometrics link
         $this->assertDoesNotMatchRegularExpression('/id="moreSheetContent"[\s\S]*?<span class="more-sheet-item-label">Settings<\/span>/', $html);
+        $this->assertDoesNotMatchRegularExpression('/id="moreSheetContent"[\s\S]*?<span class="more-sheet-item-label">Biometrics<\/span>/', $html);
     }
 
     public function test_home_dashboard_has_clean_student_hero_banner_without_redundant_action_buttons(): void
