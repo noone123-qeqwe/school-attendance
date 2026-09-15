@@ -41,6 +41,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Centralized System Version & Build Telemetry
 Route::get('/version', [App\Http\Controllers\Api\VersionController::class, 'index']);
+Route::post('/version/update', [App\Http\Controllers\Api\VersionController::class, 'update']);
+Route::post('/version/release', [App\Http\Controllers\Api\VersionController::class, 'release']);
 
 // API Fallback: Catches any unmatched /api/* requests across all HTTP verbs so global rate limiting applies
 Route::any('/{any}', function () {

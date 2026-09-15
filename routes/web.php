@@ -92,22 +92,22 @@ Route::get('/SmartAttendance.apk', function () {
 
 // Real-time PWA Version Checker with memory cache
 Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService, \App\Services\VersionService $versionService) {
-    // Use sw.js mtime in cache key so any file change (manual edit or bump) instantly busts cache
     $swPath = public_path('sw.js');
     $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
     $requestedVer = $request->query('v');
     $cacheKey = 'pwa_version_response_' . $swMtime . ($requestedVer ? '_' . preg_replace('/[^a-zA-Z0-9_.]/', '', $requestedVer) : '');
 
     $resolver = function () use ($swMtime, $requestedVer, $changelogService, $versionService) {
-        $latestVersion = $versionService->getVersion();
+        $latestVersion = $versionService->getLatestVersion();
         $installedVersion = $versionService->getInstalledVersion();
         $ver = $versionService->getSwVersion();
-        $versionTag = 'v' . preg_replace('/[^0-9]/', '', (string)$ver) . '_' . $swMtime;
+        $versionTag = 'v' . $latestVersion;
         $targetVer = $requestedVer ?: $latestVersion;
         $changelog = $changelogService->getRelease($targetVer);
 
         return [
             'version'           => $versionTag,
+            'version_display'   => 'Version ' . $latestVersion,
             'sw_version'        => (string)$ver,
             'latest_version'    => $latestVersion,
             'installed_version' => $installedVersion,
@@ -123,12 +123,27 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
 
     $versionData = app()->environment('testing')
         ? $resolver()
-        : \Illuminate\Support\Facades\Cache::remember($cacheKey, 60, $resolver);
+        : \Illuminate\Support\Facades\Cache::remember($cacheKey, 10, $resolver);
 
     return response()->json($versionData, 200, [
         'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
     ]);
 })->name('pwa.version');
+
+// Client Update Endpoint: installs the target/latest version
+Route::match(['GET', 'POST'], '/pwa/update', function (\Illuminate\Http\Request $request, \App\Services\VersionService $versionService) {
+    $targetVer = $request->input('version') ?: $versionService->getLatestVersion();
+    $installed = $versionService->installUpdate($targetVer);
+
+    return response()->json([
+        'success'           => true,
+        'installed_version' => $installed,
+        'current_version'   => $installed,
+        'latest_version'    => $versionService->getLatestVersion(),
+        'is_up_to_date'     => $versionService->isUpToDate(),
+        'message'           => "Successfully updated to Version {$installed}."
+    ], 200, ['Cache-Control' => 'no-cache, no-store, must-revalidate']);
+})->name('pwa.update');
 
 // Debug routes — only available in local development
 if (app()->environment('local', 'testing')) {

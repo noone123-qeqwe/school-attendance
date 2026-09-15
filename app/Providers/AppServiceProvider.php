@@ -39,13 +39,17 @@ class AppServiceProvider extends ServiceProvider
 
         View::composer('*', function ($view) {
             $versionService = app(VersionService::class);
+            $latestVer = $versionService->getLatestVersion();
+            $installedVer = $versionService->getInstalledVersion();
             $view->with([
-                'appVersion'          => $versionService->getVersion(),
-                'appVersionTag'       => $versionService->getVersionTag(),
+                'appVersion'          => $latestVer,
+                'appVersionTag'       => 'v' . $installedVer,
+                'appCurrentVersion'   => $installedVer,
+                'appLatestVersion'    => $latestVer,
                 'appBuild'            => $versionService->getBuild(),
                 'appCommit'           => $versionService->getCommit(),
                 'appReleaseDate'      => $versionService->getFormattedReleaseDate(),
-                'appInstalledVersion' => $versionService->getInstalledVersion(),
+                'appInstalledVersion' => $installedVer,
                 'appIsUpToDate'       => $versionService->isUpToDate(),
                 'appMetadata'         => $versionService->getFullMetadata(),
             ]);

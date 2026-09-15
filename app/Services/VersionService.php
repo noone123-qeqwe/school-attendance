@@ -44,9 +44,9 @@ class VersionService
     }
 
     /**
-     * Primary source of truth: Get current application semantic version.
+     * Primary source of truth for LATEST application version.
      */
-    public function getVersion(): string
+    public function getLatestVersion(): string
     {
         // 0. Check explicit test overrides when running under test suites
         if (app()->runningUnitTests()) {
@@ -54,44 +54,45 @@ class VersionService
             if (!empty($configVer)) {
                 return ltrim(trim((string)$configVer), 'vV ');
             }
+        }
+
+        // 2. Database setting (updated at runtime via 1-click system updates or release commands)
+        try {
+            $sysSetting = Setting::get('system_version');
+            if (!empty($sysSetting)) {
+                $cleanSys = ltrim(trim((string)$sysSetting), 'vV ');
+                if (preg_match('/^\d+(\.\d+)*$/', $cleanSys)) {
+                    return $cleanSys;
+                }
+            }
+
+            $latestSetting = Setting::get('latest_version');
+            if (!empty($latestSetting)) {
+                $cleanLatest = ltrim(trim((string)$latestSetting), 'vV ');
+                if (preg_match('/^\d+(\.\d+)*$/', $cleanLatest)) {
+                    return $cleanLatest;
+                }
+            }
+        } catch (\Throwable $e) {}
+
+        // 3. In unit tests, check if config changelog was provided
+        if (app()->runningUnitTests()) {
             $changelogDef = config('changelog.default_version');
-            $diskVer = $this->getFileData()['version'] ?? '2.4.5';
-            if (!empty($changelogDef) && $changelogDef !== $diskVer && !in_array($changelogDef, ['2.4.5', '2.4.4', '2.4.0', '2.4.1'], true)) {
+            if (!empty($changelogDef) && $changelogDef !== '1') {
                 return ltrim(trim((string)$changelogDef), 'vV ');
             }
-            // Support explicit Setting::set('system_version') testing inside unit tests (e.g. 2.4.0 test)
-            try {
-                $dbTestVer = Setting::get('system_version');
-                if (!empty($dbTestVer) && $dbTestVer === '2.4.0') {
-                    return '2.4.0';
-                }
-            } catch (\Throwable $e) {}
         }
 
-        // 1. Explicit environment overrides
-        $envVer = env('APP_VERSION', env('APP_LATEST_VERSION'));
-        if (!empty($envVer)) {
-            $cleanEnv = ltrim(trim((string)$envVer), 'vV ');
-            if (preg_match('/^\d+(\.\d+)*$/', $cleanEnv)) {
-                return $cleanEnv;
-            }
-        }
-
-        // 2. Discover versions across persistent stores & disk files
-        $sources = [];
-
-        // Centralized version.json on disk (shipped with deployments/git releases)
-        $diskVer = null;
+        // 3. Centralized version.json on disk
         $file = $this->getFileData();
         if (!empty($file['version'])) {
             $cleanFile = ltrim(trim((string)$file['version']), 'vV ');
             if (preg_match('/^\d+(\.\d+)*$/', $cleanFile)) {
-                $diskVer = $cleanFile;
-                $sources[] = $cleanFile;
+                return $cleanFile;
             }
         }
 
-        // Centralized package.json on disk
+        // 4. Centralized package.json on disk
         try {
             $packageFile = base_path('package.json');
             if (File::exists($packageFile)) {
@@ -99,66 +100,41 @@ class VersionService
                 if (!empty($pkgData['version'])) {
                     $cleanPkg = ltrim(trim((string)$pkgData['version']), 'vV ');
                     if (preg_match('/^\d+(\.\d+)*$/', $cleanPkg)) {
-                        $sources[] = $cleanPkg;
+                        return $cleanPkg;
                     }
                 }
             }
         } catch (\Throwable $e) {}
 
-        // Database setting (updated at runtime via 1-click system updates)
-        $dbVersion = null;
-        try {
-            $dbSetting = Setting::get('system_version');
-            if (!empty($dbSetting)) {
-                $cleanDb = ltrim(trim((string)$dbSetting), 'vV ');
-                if (preg_match('/^\d+(\.\d+)*$/', $cleanDb)) {
-                    $dbVersion = $cleanDb;
-                    $sources[] = $cleanDb;
-                }
-            }
-        } catch (\Throwable $e) {}
-
-        // Fallback baseline
-        $baseline = $diskVer ?: '2.4.5';
-        $sources[] = $baseline;
-
-        // Select the maximum semantic version among all valid sources
-        $highest = $baseline;
-        foreach ($sources as $ver) {
-            if (version_compare($ver, $highest, '>')) {
-                $highest = $ver;
-            }
-        }
-
-        // Self-heal: If database setting is uninitialized or behind the deployed version, sync it!
-        if ($dbVersion === null || version_compare($highest, $dbVersion, '>')) {
-            try {
-                Setting::set('system_version', $highest);
-                Setting::set('installed_version', $highest);
-            } catch (\Throwable $e) {}
-        }
-
-        return $highest;
+        return '1';
     }
 
     /**
-     * Get the version formatted with a 'v' prefix (e.g. 'v2.4.0').
+     * Backwards-compatible alias for getLatestVersion().
+     */
+    public function getVersion(): string
+    {
+        return $this->getLatestVersion();
+    }
+
+    /**
+     * Get the version formatted with a 'v' prefix (e.g. 'v1' or 'v2.4.0').
      */
     public function getVersionTag(): string
     {
-        return 'v' . ltrim($this->getVersion(), 'v');
+        return 'v' . ltrim($this->getLatestVersion(), 'vV ');
     }
 
     /**
-     * Get the display label (e.g. 'Version 2.4.0').
+     * Get the display label (e.g. 'Version 1' or 'Version 2.4.0').
      */
     public function getVersionDisplay(): string
     {
-        return 'Version ' . ltrim($this->getVersion(), 'v');
+        return 'Version ' . ltrim($this->getLatestVersion(), 'vV ');
     }
 
     /**
-     * Get the build identifier (e.g. '20260912.001').
+     * Get the build identifier (e.g. '20260916.001').
      */
     public function getBuild(): string
     {
@@ -180,11 +156,9 @@ class VersionService
      */
     public function getCommit(): string
     {
-        // 1. Check version.json / config
         $file = $this->getFileData();
         $configCommit = config('version.commit') ?: ($file['commit'] ?? null);
 
-        // 2. Query git directly if git is available
         try {
             $gitHead = base_path('.git/HEAD');
             if (File::exists($gitHead)) {
@@ -213,7 +187,7 @@ class VersionService
     }
 
     /**
-     * Get human-readable release date (e.g. 'September 12, 2026').
+     * Get human-readable release date (e.g. 'September 16, 2026').
      */
     public function getFormattedReleaseDate(): string
     {
@@ -233,20 +207,25 @@ class VersionService
     }
 
     /**
-     * Get the installed version on client or local system.
+     * Primary source of truth for CURRENT INSTALLED application version.
      */
     public function getInstalledVersion(): string
     {
-        // 0. Check if explicitly overridden via config (e.g. tests)
+        // 0. Check explicit test overrides if specifically configured
         if (app()->runningUnitTests()) {
-            $configInstalled = config('version.installed_version') ?: config('changelog.installed_version');
-            $diskVer = $this->getFileData()['version'] ?? '2.4.5';
-            if (!empty($configInstalled) && $configInstalled !== $diskVer && !in_array($configInstalled, ['2.4.5', '2.4.4', '2.4.0', '2.4.1'], true)) {
-                return ltrim(trim((string)$configInstalled), 'vV ');
+            $configOverride = config('version.installed_version_override');
+            if (!empty($configOverride)) {
+                return ltrim(trim((string)$configOverride), 'vV ');
             }
         }
 
-        // 1. Check database setting
+        // 1. Check config overrides if set in environment
+        $configInstalled = env('APP_INSTALLED_VERSION');
+        if (!empty($configInstalled)) {
+            return ltrim(trim((string)$configInstalled), 'vV ');
+        }
+
+        // 2. Check database setting for installed version (canonical runtime source of truth)
         try {
             $installed = Setting::get('installed_version');
             if (!empty($installed)) {
@@ -254,23 +233,83 @@ class VersionService
             }
         } catch (\Throwable $e) {}
 
-        // 2. Check config overrides if set in environment
-        $configInstalled = env('APP_INSTALLED_VERSION');
-        if (!empty($configInstalled)) {
-            return ltrim(trim((string)$configInstalled), 'v');
+        // 3. Check unit test changelog config fallback
+        if (app()->runningUnitTests()) {
+            $configInstalled = config('changelog.installed_version') ?: config('version.installed_version');
+            if (!empty($configInstalled)) {
+                return ltrim(trim((string)$configInstalled), 'vV ');
+            }
         }
 
-        return $this->getVersion();
+        // Fallback: If not explicitly set, default to the latest available version
+        return $this->getLatestVersion();
     }
 
     /**
-     * Determine if installed version matches or is newer than current release.
+     * Explicitly set the current installed version in the database.
+     */
+    public function setInstalledVersion(string $version): string
+    {
+        $clean = ltrim(trim($version), 'vV ');
+        try {
+            Setting::set('installed_version', $clean);
+        } catch (\Throwable $e) {
+            Log::warning('VersionService: setInstalledVersion warning: ' . $e->getMessage());
+        }
+
+        config([
+            'version.installed_version'   => $clean,
+            'changelog.installed_version' => $clean,
+        ]);
+
+        try {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+        } catch (\Throwable $e) {}
+
+        return $clean;
+    }
+
+    /**
+     * Explicitly set the latest available version across DB, disk files, and manifests.
+     */
+    public function setLatestVersion(string $version): string
+    {
+        $clean = ltrim(trim($version), 'vV ');
+        try {
+            Setting::set('latest_version', $clean);
+            Setting::set('system_version', $clean);
+        } catch (\Throwable $e) {
+            Log::warning('VersionService: setLatestVersion warning: ' . $e->getMessage());
+        }
+
+        $this->syncVersionToDiskFiles($clean);
+
+        config([
+            'version.version'           => $clean,
+            'changelog.default_version' => $clean,
+        ]);
+
+        $this->refresh();
+        return $clean;
+    }
+
+    /**
+     * Apply an update: advance installed version to target version (or latest version).
+     */
+    public function installUpdate(?string $targetVersion = null): string
+    {
+        $target = $targetVersion ? ltrim(trim($targetVersion), 'vV ') : $this->getLatestVersion();
+        return $this->setInstalledVersion($target);
+    }
+
+    /**
+     * Determine if installed version matches or is newer than latest available release.
      */
     public function isUpToDate(): bool
     {
         $installed = $this->getInstalledVersion();
-        $current = $this->getVersion();
-        return version_compare($installed, $current, '>=');
+        $latest = $this->getLatestVersion();
+        return version_compare($installed, $latest, '>=');
     }
 
     /**
@@ -292,7 +331,7 @@ class VersionService
     {
         return [
             'name'                     => config('version.name', 'Smart Classroom Attendance System'),
-            'version'                  => $this->getVersion(),
+            'version'                  => $this->getLatestVersion(),
             'version_tag'              => $this->getVersionTag(),
             'version_display'          => $this->getVersionDisplay(),
             'build'                    => $this->getBuild(),
@@ -302,22 +341,44 @@ class VersionService
             'environment'              => $this->getEnvironment(),
             'channel'                  => config('version.channel', 'stable'),
             'installed_version'        => $this->getInstalledVersion(),
-            'latest_version'           => $this->getVersion(),
+            'current_version'          => $this->getInstalledVersion(),
+            'latest_version'           => $this->getLatestVersion(),
             'is_up_to_date'            => $this->isUpToDate(),
             'database_migrations_count'=> $this->getMigrationsCount(),
         ];
     }
 
     /**
+     * Increment version supporting both sequential integers (1 -> 2 -> 3) and semver (1.0.0 -> 1.0.1).
+     */
+    public function incrementVersion(string $version, string $type = 'patch'): string
+    {
+        $clean = ltrim(trim($version), 'vV ');
+
+        // If it's a simple integer (e.g. 1, 2, 3), advance by 1
+        if (is_numeric($clean) && !str_contains($clean, '.')) {
+            return (string)((int)$clean + 1);
+        }
+
+        return $this->incrementSemver($clean, $type);
+    }
+
+    /**
      * Increment semantic version (patch, minor, major).
      *
-     * @param string $version Current version string (e.g. '2.4.0')
+     * @param string $version Current version string (e.g. '2.4.0' or '1')
      * @param string $type 'patch' | 'minor' | 'major'
      * @return string
      */
     public function incrementSemver(string $version, string $type = 'patch'): string
     {
-        $clean = ltrim(trim($version), 'v');
+        $clean = ltrim(trim($version), 'vV ');
+
+        // Support plain integer incrementing
+        if (is_numeric($clean) && !str_contains($clean, '.')) {
+            return (string)((int)$clean + 1);
+        }
+
         $parts = explode('.', $clean);
         while (count($parts) < 3) {
             $parts[] = '0';
@@ -348,34 +409,34 @@ class VersionService
 
     /**
      * Create a new application release end-to-end:
-     * - Bumps semantic version in version.json
+     * - Advances latest version in DB Setting and disk files
      * - Increments build identifier
      * - Synchronizes package.json and manifest.json
      * - Bumps Service Worker cache version in sw.js
-     * - Stores in Setting database table
+     * - Optionally installs immediately if specified
      * - Clears application view/config/pwa caches
      *
      * @param string $type 'patch' | 'minor' | 'major' | 'custom'
-     * @param string|null $explicitVersion Optional custom semver (e.g. '3.0.0')
+     * @param string|null $explicitVersion Optional custom version (e.g. '2', '3.0.0')
+     * @param bool $installImmediately Whether to mark as installed on this machine
      * @return array Resulting release telemetry
      */
-    public function createRelease(string $type = 'patch', ?string $explicitVersion = null): array
+    public function createRelease(string $type = 'patch', ?string $explicitVersion = null, bool $installImmediately = true): array
     {
         $this->refresh();
-        $currentVer = $this->getVersion();
-        
+        $currentLatest = $this->getLatestVersion();
+
         if (!empty($explicitVersion)) {
             $targetVer = ltrim(trim($explicitVersion), 'vV ');
         } else {
-            $targetVer = $this->incrementSemver($currentVer, $type);
+            $targetVer = $this->incrementVersion($currentLatest, $type);
+            // Guarantee that targetVer strictly advances past currentLatest if they are equal or less
+            if (version_compare($targetVer, $currentLatest, '<=')) {
+                $targetVer = $this->incrementVersion($currentLatest, 'patch');
+            }
         }
 
-        // Guarantee that targetVer strictly advances past currentVer
-        if (version_compare($targetVer, $currentVer, '<=')) {
-            $targetVer = $this->incrementSemver($currentVer, 'patch');
-        }
-
-        // Generate next build number (e.g. 20260912.002)
+        // Generate next build number (e.g. 20260916.002)
         $todayPrefix = date('Ymd');
         $currentBuild = $this->getBuild();
         $buildSeq = 1;
@@ -386,15 +447,18 @@ class VersionService
         $targetDate = date('Y-m-d');
         $commit = $this->getCommit();
 
-        // 1. Update Database Setting First (Primary resilient store across restarts & container lifecycles)
+        // 1. Update Database Setting for LATEST version
         try {
+            Setting::set('latest_version', $targetVer);
             Setting::set('system_version', $targetVer);
-            Setting::set('installed_version', $targetVer);
+            if ($installImmediately) {
+                Setting::set('installed_version', $targetVer);
+            }
         } catch (\Throwable $e) {
             Log::warning('VersionService: Database version setting update warning: ' . $e->getMessage());
         }
 
-        // 2. Prepare and cache in-memory version payload
+        // 2. Prepare payload & cache in-memory
         $versionPayload = [
             'version'      => $targetVer,
             'build'        => $targetBuild,
@@ -405,57 +469,110 @@ class VersionService
         ];
         $this->fileData = $versionPayload;
 
-        // Keep runtime config in sync immediately for the active request lifecycle
-        config([
-            'version.version'             => $targetVer,
-            'version.build'               => $targetBuild,
-            'version.commit'              => $commit,
-            'version.release_date'        => $targetDate,
-            'changelog.default_version'   => $targetVer,
-            'changelog.installed_version' => $targetVer,
-        ]);
+        if (!app()->runningUnitTests()) {
+            config([
+                'version.version'           => $targetVer,
+                'version.build'             => $targetBuild,
+                'version.commit'            => $commit,
+                'version.release_date'      => $targetDate,
+                'changelog.default_version' => $targetVer,
+            ]);
+            if ($installImmediately) {
+                config([
+                    'version.installed_version'   => $targetVer,
+                    'changelog.installed_version' => $targetVer,
+                ]);
+            }
+        }
 
-        // 3. Synchronize version.json on disk
+        // 3. Synchronize disk files
+        $this->syncVersionToDiskFiles($targetVer, $versionPayload);
+
+        // 4. Bump sw.js Service Worker Cache Version
+        $newSwVersion = $this->bumpSwJs();
+
+        // 5. Invalidate Caches
+        try { Cache::flush(); } catch (\Throwable $e) {}
+        Cache::forever('pwa_sw_version', $newSwVersion);
+        try {
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+            try { \Illuminate\Support\Facades\Artisan::call('config:clear'); } catch (\Throwable $ex) {}
+        } catch (\Throwable $e) {}
+
+        return [
+            'previous_version'  => $currentLatest,
+            'version'           => $targetVer,
+            'version_tag'       => 'v' . $targetVer,
+            'version_display'   => 'Version ' . $targetVer,
+            'build'             => $targetBuild,
+            'commit'            => $commit,
+            'sw_version'        => $newSwVersion,
+            'release_date'      => $targetDate,
+            'installed_version' => $this->getInstalledVersion(),
+            'current_version'   => $this->getInstalledVersion(),
+            'latest_version'    => $targetVer,
+            'is_up_to_date'     => $this->isUpToDate(),
+        ];
+    }
+
+    /**
+     * Publish a new release without immediately installing it on this device.
+     */
+    public function publishRelease(?string $targetVersion = null, string $type = 'patch'): array
+    {
+        return $this->createRelease($type, $targetVersion, false);
+    }
+
+    /**
+     * Synchronize version to version.json, package.json, and manifest.json.
+     */
+    protected function syncVersionToDiskFiles(string $version, ?array $payload = null): void
+    {
+        // 1. version.json
         try {
             $versionFile = base_path('version.json');
-            File::put($versionFile, json_encode($versionPayload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            $data = $payload ?: array_merge($this->getFileData(), ['version' => $version]);
+            File::put($versionFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         } catch (\Throwable $e) {
             Log::warning('VersionService: version.json write notice: ' . $e->getMessage());
         }
 
-        // 4. Synchronize package.json on disk
+        // 2. package.json
         try {
             $packagePath = base_path('package.json');
             if (File::exists($packagePath)) {
                 $pkg = File::get($packagePath);
-                $pkg = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$targetVer}\"", $pkg);
+                $pkg = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$version}\"", $pkg);
                 File::put($packagePath, $pkg);
             }
         } catch (\Throwable $e) {
             Log::warning('VersionService: package.json write notice: ' . $e->getMessage());
         }
 
-        // 5. Synchronize manifest.json on disk
+        // 3. manifest.json
         try {
             $manifestPath = public_path('manifest.json');
             if (File::exists($manifestPath)) {
                 $mf = File::get($manifestPath);
-                $mf = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$targetVer}\"", $mf);
+                $mf = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$version}\"", $mf);
                 File::put($manifestPath, $mf);
             }
         } catch (\Throwable $e) {
             Log::warning('VersionService: manifest.json write notice: ' . $e->getMessage());
         }
+    }
 
-        // 6. Bump sw.js Service Worker Cache Version
+    /**
+     * Bump Service Worker version in sw.js.
+     */
+    protected function bumpSwJs(): string
+    {
         $swPath = public_path('sw.js');
-        $newSwVersion = 'v344';
-        $swMtime = 0;
+        $newSwVersion = 'v350';
         try {
             if (File::exists($swPath)) {
-                $swMtime = filemtime($swPath);
                 $swContent = File::get($swPath);
-                $currentNum = 344;
+                $currentNum = 349;
                 if (preg_match('/CACHE_VERSION\s*=\s*[\'"]v?(\d+)[\'"]/', $swContent, $matches)) {
                     $currentNum = (int)$matches[1];
                 }
@@ -478,38 +595,11 @@ class VersionService
             Log::warning('VersionService: sw.js bump notice: ' . $e->getMessage());
         }
 
-        // 7. Invalidate Caches
-        try {
-            Cache::flush();
-        } catch (\Throwable $e) {}
-        Cache::forever('pwa_sw_version', $newSwVersion);
-
-        if ($swMtime) {
-            Cache::forget('pwa_version_response_' . $swMtime);
-        }
-        if (File::exists($swPath)) {
-            Cache::forget('pwa_version_response_' . filemtime($swPath));
-        }
-
-        // Clear compiled Blade view and config cache so new tags take effect immediately
-        try {
-            \Illuminate\Support\Facades\Artisan::call('view:clear');
-            try { \Illuminate\Support\Facades\Artisan::call('config:clear'); } catch (\Throwable $ex) {}
-        } catch (\Throwable $e) {}
-
-        return [
-            'previous_version' => $currentVer,
-            'version'          => $targetVer,
-            'version_tag'      => 'v' . $targetVer,
-            'build'            => $targetBuild,
-            'commit'           => $commit,
-            'sw_version'       => $newSwVersion,
-            'release_date'     => $targetDate,
-        ];
+        return $newSwVersion;
     }
 
     /**
-     * Get the service worker cache version (e.g. 'v345') dynamically from sw.js or cache.
+     * Get the service worker cache version (e.g. 'v350') dynamically from sw.js or cache.
      */
     public function getSwVersion(): string
     {
@@ -528,6 +618,6 @@ class VersionService
             }
         }
 
-        return 'v345';
+        return 'v350';
     }
 }

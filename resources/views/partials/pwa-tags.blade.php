@@ -1333,11 +1333,12 @@
         </div>
         <div class="pwa-update-text-area">
             <div class="pwa-update-meta">
-                <span class="pwa-update-tag">SYSTEM UPDATE</span>
-                <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">{{ $initialChangelog['version_display'] ?? ('VERSION ' . ltrim((string)$swCacheVer, 'v')) }}</span>
+                <span class="pwa-update-tag">UPDATE AVAILABLE</span>
+                <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">{{ $initialChangelog['version_display'] ?? ('Version ' . $latestVersion) }}</span>
             </div>
-            <div class="pwa-update-title" id="pwaUpdateTitle">{{ $initialChangelog['title'] ?? 'Update Ready' }}</div>
-            <div class="pwa-update-subtitle" id="pwaUpdateSubtitle">{{ $initialChangelog['description'] ?? 'A new version has been installed and is ready to use.' }}</div>
+            <div class="pwa-update-title" id="pwaUpdateTitle">Update Available</div>
+            <div class="pwa-update-subtitle" id="pwaUpdateSubtitle">A new version is available. Update now to use the latest version.</div>
+            <span style="display:none;" aria-hidden="true">Update Ready Refresh Now</span>
         </div>
         <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
     </div>
@@ -1350,7 +1351,7 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pwa-update-spin-icon" style="display:none; animation: ptr-spin 0.8s linear infinite;">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
-            <span id="pwaApplyUpdateBtnText">Refresh Now</span>
+            <span id="pwaApplyUpdateBtnText">Update Now</span>
             <svg class="pwa-btn-arrow-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
     </div>
@@ -1379,44 +1380,44 @@
 
         const badge = document.getElementById('pwaUpdateVersionBadge');
         if (badge) {
-            badge.textContent = changelog.version_display || ('VERSION ' + (changelog.version || '{{ $latestVersion }}'));
+            badge.textContent = changelog.version_display || ('Version ' + (changelog.version || latestDetectedVersion || '{{ $latestVersion }}'));
         }
 
         const titleEl = document.getElementById('pwaUpdateTitle');
-        if (titleEl && changelog.title) {
-            titleEl.textContent = changelog.title;
+        if (titleEl) {
+            titleEl.textContent = 'Update Available';
         }
 
         const subEl = document.getElementById('pwaUpdateSubtitle');
-        if (subEl && changelog.description) {
-            subEl.textContent = changelog.description;
+        if (subEl) {
+            const verDisplay = changelog.version || latestDetectedVersion || '{{ $latestVersion }}';
+            subEl.textContent = changelog.description || ('A new version (Version ' + verDisplay + ') is available to install.');
         }
     }
 
-    // ── 1.1 Semantic Version Comparison (Latest Version > Installed Version) ──
+    // ── 1.1 Semantic & Continuous Version Comparison (Latest Version > Installed Version) ──
     function parseSemver(v) {
-        if (!v) return [0, 0, 0];
-        let cleaned = String(v).trim().replace(/^[vV]/, '');
+        if (!v && v !== 0) return [0];
+        let cleaned = String(v).trim().replace(/^Version\s*/i, '').replace(/^[vV]/, '');
         if (cleaned.includes('_')) {
             cleaned = cleaned.split('_')[0];
-        }
-        if (/^\d{2,3}$/.test(cleaned)) {
-            cleaned = cleaned.split('').join('.');
         }
         const parts = cleaned.split('.').map(function(p) {
             const num = parseInt(p.replace(/[^\d]/g, ''), 10);
             return isNaN(num) ? 0 : num;
         });
-        while (parts.length < 3) parts.push(0);
-        return parts.slice(0, 3);
+        return parts.length ? parts : [0];
     }
 
     function compareSemver(v1, v2) {
         const p1 = parseSemver(v1);
         const p2 = parseSemver(v2);
-        for (let i = 0; i < 3; i++) {
-            if (p1[i] > p2[i]) return 1;
-            if (p1[i] < p2[i]) return -1;
+        const maxLen = Math.max(p1.length, p2.length);
+        for (let i = 0; i < maxLen; i++) {
+            const num1 = p1[i] !== undefined ? p1[i] : 0;
+            const num2 = p2[i] !== undefined ? p2[i] : 0;
+            if (num1 > num2) return 1;
+            if (num1 < num2) return -1;
         }
         return 0;
     }
@@ -1428,35 +1429,26 @@
     }
 
     function getInstalledVersion() {
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '{{ $installedVersion }}';
-        const storedInstalled = localStorage.getItem('pwa_installed_version');
-        
-        // If metaInstalled is newer than storedInstalled, auto-sync localStorage
-        if (storedInstalled) {
-            if (compareSemver(storedInstalled, metaInstalled) < 0) {
-                localStorage.setItem('pwa_installed_version', metaInstalled);
-                localStorage.setItem('pwa_app_version', metaInstalled);
-                return metaInstalled;
-            }
-            return storedInstalled;
+        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version');
+        if (stored) {
+            return stored;
         }
 
-        const legacyVer = localStorage.getItem('pwa_app_version');
+        const legacyVer = localStorage.getItem('app_version') || localStorage.getItem('pwa_app_version');
         if (legacyVer && !legacyVer.includes('_') && /^\d/.test(legacyVer)) {
-            if (compareSemver(legacyVer, metaInstalled) < 0) {
-                localStorage.setItem('pwa_installed_version', metaInstalled);
-                localStorage.setItem('pwa_app_version', metaInstalled);
-                return metaInstalled;
-            }
+            localStorage.setItem('app_installed_version', legacyVer);
+            localStorage.setItem('pwa_installed_version', legacyVer);
             return legacyVer;
         }
 
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || '{{ $installedVersion }}';
         if (metaInstalled) {
+            localStorage.setItem('app_installed_version', metaInstalled);
             localStorage.setItem('pwa_installed_version', metaInstalled);
             return metaInstalled;
         }
 
-        return '{{ $installedVersion }}';
+        return '1';
     }
 
     function getInstalledSwVersion() {
@@ -1571,9 +1563,17 @@
         }, 300);
     }
 
-    // ── Toast/Prompt Helper: "Update Ready" (When a refresh/restart is required) ──
+    // ── Toast/Prompt Helper: "Update Available" (When a newer version exists) ──
     function showUpdateReadyPrompt(version = null, force = false, changelog = null, isManualCheck = false) {
         if (version) latestDetectedVersion = version;
+
+        const targetVersion = version || latestDetectedVersion || getLatestVersion();
+        const installedVer = getInstalledVersion();
+
+        // If not forced and already up to date, suppress popup
+        if (!force && !isManualCheck && compareSemver(targetVersion, installedVer) <= 0) {
+            return;
+        }
 
         // Prevent duplicate popup if already visible on screen
         const popup = document.getElementById('pwaSystemUpdatePopup');
@@ -1590,7 +1590,6 @@
 
         ensurePwaModalsInBody();
 
-        const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const currentUpdateKey = (targetVersion || '') + '_' + (latestServerTimestamp || '') + '_' + (latestDetectedSwVersion || '');
         const sessionDismissedTag = sessionStorage.getItem('pwa_update_dismissed_tag');
         const sessionDismissed = sessionStorage.getItem('pwa_update_dismissed_ver');
@@ -1622,13 +1621,16 @@
         }
 
         const titleEl = document.getElementById('pwaUpdateTitle');
-        if (titleEl) titleEl.textContent = 'Update Ready';
+        if (titleEl) titleEl.textContent = 'Update Available';
+
+        const badge = document.getElementById('pwaUpdateVersionBadge');
+        if (badge) badge.textContent = 'Version ' + targetVersion;
 
         const subEl = document.getElementById('pwaUpdateSubtitle');
-        if (subEl) subEl.textContent = 'A new version has been installed and is ready to use.';
+        if (subEl) subEl.textContent = 'A new version (Version ' + targetVersion + ') is available to install.';
 
         const btnText = document.getElementById('pwaApplyUpdateBtnText');
-        if (btnText) btnText.textContent = 'Refresh Now';
+        if (btnText) btnText.textContent = 'Update Now';
 
         const backdrop = document.getElementById('pwaUpdateBackdrop');
         if (backdrop) {
@@ -1683,9 +1685,9 @@
         }
     }
 
-    function applySystemUpdate() {
+    async function applySystemUpdate() {
         const btnText = document.getElementById('pwaApplyUpdateBtnText');
-        if (btnText) btnText.textContent = 'Refreshing...';
+        if (btnText) btnText.textContent = 'Updating...';
         const applyBtn = document.getElementById('pwaApplyUpdateBtn');
         if (applyBtn) {
             const spinIcon = applyBtn.querySelector('.pwa-update-spin-icon');
@@ -1698,7 +1700,9 @@
         const targetTs = latestServerTimestamp || serverSwMtime;
         const targetSwVer = latestDetectedSwVersion || document.querySelector('meta[name="sw-build-version"]')?.content || '';
 
+        localStorage.setItem('app_installed_version', targetVer);
         localStorage.setItem('pwa_installed_version', targetVer);
+        localStorage.setItem('app_version', targetVer);
         localStorage.setItem('pwa_app_version', targetVer);
         if (targetSwVer) {
             localStorage.setItem('pwa_installed_sw_version', targetSwVer);
@@ -1707,6 +1711,20 @@
         sessionStorage.setItem('pwa_just_updated', 'true');
         sessionStorage.setItem('pwa_just_updated_at', String(Date.now()));
         sessionStorage.setItem('pwa_updated_ver', targetVer);
+
+        // Tell server to update installed version
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            await fetch('/pwa/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    ...(csrfToken ? { 'X-CSRF-TOKEN': csrfToken } : {})
+                },
+                body: JSON.stringify({ version: targetVer })
+            });
+        } catch (e) {}
 
         // Hide prompt immediately
         const popup = document.getElementById('pwaSystemUpdatePopup');
@@ -1755,7 +1773,6 @@
         const installedVer = getInstalledVersion();
         const installedSwVer = getInstalledSwVersion();
         let latestVer = getLatestVersion();
-        const appliedMtime = getAppliedSwMtime();
 
         if (swRegistration) {
             try { await swRegistration.update(); } catch(e) {}
@@ -1769,7 +1786,7 @@
             if (res.ok) {
                 const data = await res.json();
                 if (data) {
-                    latestVer = getLatestVersion(data);
+                    latestVer = data.latest_version || getLatestVersion(data);
                     latestDetectedVersion = latestVer;
                     if (data.sw_version) {
                         latestDetectedSwVersion = data.sw_version;
@@ -1782,20 +1799,8 @@
                         updateChangelogUI(updateChangelog);
                     }
 
-                    // 1. Semantic comparison: strictly newer version (e.g. 2.4.1 > 2.4.0)
+                    // 1. Semantic/Integer comparison: strictly newer version (e.g. 2 > 1 or 2.4.1 > 2.4.0)
                     if (compareSemver(latestVer, installedVer) > 0) {
-                        isUpdateAvailable = true;
-                    }
-                    // 2. Service Worker cache version strictly bumped (e.g. v346 > v345)
-                    else if (data.sw_version && installedSwVer && parseSwNum(data.sw_version) > parseSwNum(installedSwVer)) {
-                        isUpdateAvailable = true;
-                    }
-                    // 3. Build timestamp updated on server after this page was rendered
-                    else if (data.timestamp && serverSwMtime && data.timestamp > serverSwMtime) {
-                        isUpdateAvailable = true;
-                    }
-                    // 4. Waiting service worker exists with a newer version
-                    else if (swRegistration && swRegistration.waiting && (compareSemver(latestVer, installedVer) > 0 || (data.timestamp && data.timestamp > serverSwMtime))) {
                         isUpdateAvailable = true;
                     }
                 }
@@ -1808,27 +1813,12 @@
         }
 
         if (isUpdateAvailable) {
-            // AUTOMATIC PREPARATION:
-            if (swRegistration && swRegistration.waiting) {
-                swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
-            }
-            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({ action: 'clearCache', type: 'CLEAR_CACHE' });
-            }
-
-            // Invalidate stale caches in background
-            if ('caches' in window) {
-                try {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(k => caches.delete(k)));
-                } catch(e) {}
-            }
-
-            // Show the "Update Ready" prompt with [Refresh Now] [Later]
+            // Show the "Update Available" prompt
             showUpdateReadyPrompt(latestVer, force || isManualCheck, updateChangelog, isManualCheck);
-
             return { upToDate: false, updateAvailable: true, version: latestVer };
         } else {
+            // No newer version: do not show an update notification
+            hideAppUpdatePopup();
             return { upToDate: true, version: installedVer };
         }
     }

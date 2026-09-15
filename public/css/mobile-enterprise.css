@@ -21,7 +21,7 @@
     }
 
     body {
-        padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 20px) + 16px) !important;
+        padding-bottom: 0 !important;
         -webkit-user-select: none;
         user-select: none;
         -webkit-touch-callout: none;
@@ -61,7 +61,7 @@
         padding-left: var(--mobile-pad) !important;
         padding-right: var(--mobile-pad) !important;
         padding-top: 0 !important;
-        padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 20px) + 32px) !important;
+        padding-bottom: 0 !important;
     }
 
     /* ═════════════════════════════════════════════
@@ -1590,7 +1590,7 @@
 
     /* Ensure content is not hidden behind the floating mobile nav */
     .main-content {
-        padding-bottom: calc(var(--mobile-nav-height) + 30px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 12px) + 12px) !important;
     }
 
     /* ═════════════════════════════════════════════

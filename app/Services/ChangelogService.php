@@ -181,8 +181,8 @@ class ChangelogService
             'version' => $cleanVer,
             'version_tag' => 'v' . $cleanVer,
             'version_display' => 'VERSION ' . $cleanVer,
-            'title' => 'Software Update Available',
-            'description' => 'A new version of Smart Attendance is ready with latest performance optimizations and system improvements.',
+            'title' => 'Update Available',
+            'description' => 'A new version (Version ' . $cleanVer . ') is available to install.',
             'features' => [
                 'System performance and stability enhancements',
                 'Service worker caching and real-time synchronization updates',

@@ -1,7 +1,7 @@
 <?php
 
 $versionFile = base_path('version.json');
-$rootVersion = '2.4.5';
+$rootVersion = '1';
 if (file_exists($versionFile)) {
     $raw = @file_get_contents($versionFile);
     if (!empty($raw)) {

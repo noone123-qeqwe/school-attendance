@@ -1011,32 +1011,52 @@
 
     /* Responsive adjustments */
     @media (max-width: 767.98px) {
+        /* Container and spacing flow */
+        .page-enter {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Hero banner compact */
         .student-hero-banner {
-            padding: 16px 14px !important;
-            border-radius: 18px !important;
-            margin-bottom: 16px !important;
+            padding: 13px 14px !important;
+            border-radius: 16px !important;
+            margin-bottom: 10px !important;
         }
         .student-hero-inner {
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 12px !important;
+            gap: 8px !important;
         }
         .student-hero-identity {
-            gap: 12px !important;
+            gap: 10px !important;
             flex: 1 1 100% !important;
         }
         .student-hero-avatar-wrap {
-            width: 50px !important;
-            height: 50px !important;
-            min-width: 50px !important;
-            border-radius: 14px !important;
-        }
-        .student-hero-avatar {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
             border-radius: 12px !important;
         }
+        .student-hero-avatar {
+            border-radius: 10px !important;
+        }
         .student-hero-name {
-            font-size: 1.25rem !important;
-            margin-bottom: 4px !important;
+            font-size: 1.15rem !important;
+            margin-bottom: 2px !important;
+        }
+        .student-greeting-pill {
+            font-size: 0.72rem !important;
+            margin-bottom: 2px !important;
+        }
+        .student-hero-chips {
+            gap: 4px !important;
+        }
+        .student-info-chip {
+            font-size: 0.72rem !important;
+            padding: 2px 7px !important;
+            border-radius: 6px !important;
         }
         .student-hero-widgets {
             flex-direction: row !important;
@@ -1046,40 +1066,147 @@
             gap: 8px !important;
         }
         .student-clock-card {
-            padding: 6px 12px !important;
+            padding: 4px 10px !important;
             min-width: 0 !important;
-            border-radius: 12px !important;
+            border-radius: 10px !important;
             align-items: flex-start !important;
         }
         .student-clock-time {
-            font-size: 1.05rem !important;
+            font-size: 0.95rem !important;
         }
         .student-clock-date {
-            font-size: 0.7rem !important;
+            font-size: 0.68rem !important;
         }
         .student-hero-badges-row {
             justify-content: flex-end !important;
+            gap: 6px !important;
         }
+        .student-rate-badge,
+        .student-streak-badge {
+            padding: 3px 8px !important;
+            font-size: 0.7rem !important;
+        }
+
+        /* Quick Stats KPI Grid */
+        #realStats, #skelStats {
+            gap: 8px !important;
+            margin-bottom: 10px !important;
+        }
+        #realStats .ent-kpi-card {
+            padding: 10px 12px !important;
+            border-radius: 12px !important;
+        }
+        #realStats .ent-kpi-icon {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 0.95rem !important;
+            margin-bottom: 6px !important;
+            border-radius: 8px !important;
+        }
+        #realStats .ent-kpi-label {
+            font-size: 0.66rem !important;
+            margin-bottom: 2px !important;
+        }
+        #realStats .ent-kpi-value {
+            font-size: 1.35rem !important;
+        }
+
+        /* Quick Navigation Bar */
         .student-quick-nav-wrap {
-            top: 60px;
-            margin-bottom: 18px;
+            position: relative !important;
+            top: 0 !important;
+            margin-bottom: 10px !important;
+        }
+        .student-quick-nav {
+            padding: 4px 6px !important;
+            gap: 6px !important;
+            border-radius: 14px !important;
         }
         .student-quick-nav-item {
             padding: 6px 12px !important;
             font-size: 0.78rem !important;
+            border-radius: 10px !important;
+            gap: 5px !important;
         }
+
+        /* Today's Schedule Card */
+        #todayScheduleSection {
+            margin-bottom: 8px !important;
+        }
+        #todayScheduleSection .adm-card,
+        #todayScheduleSection article {
+            border-radius: 16px !important;
+        }
+        #todayScheduleSection .adm-card-head {
+            padding: 12px 14px !important;
+        }
+        #todayScheduleSection .adm-card-title {
+            font-size: 0.95rem !important;
+            gap: 8px !important;
+        }
+        #todayScheduleSection .adm-card-icon {
+            width: 30px !important;
+            height: 30px !important;
+            border-radius: 8px !important;
+            font-size: 0.85rem !important;
+        }
+        #todayScheduleSection div[style*="padding: 22px 24px"],
+        #todayScheduleSection div[style*="padding: 28px 32px"] {
+            padding: 12px 14px !important;
+        }
+        #todayScheduleSection .schedule-items-grid {
+            gap: 8px !important;
+        }
+        #todayScheduleSection .schedule-modern-card {
+            padding: 12px 14px !important;
+            border-radius: 12px !important;
+            gap: 10px !important;
+        }
+        #todayScheduleSection .schedule-subject-title {
+            font-size: 0.95rem !important;
+            line-height: 1.25 !important;
+        }
+        #todayScheduleSection .schedule-meta-row {
+            font-size: 0.76rem !important;
+            gap: 6px !important;
+            margin-top: 4px !important;
+        }
+        #todayScheduleSection .schedule-time-badge {
+            font-size: 0.76rem !important;
+        }
+        #todayScheduleSection .schedule-code-badge {
+            font-size: 0.7rem !important;
+            padding: 1px 6px !important;
+        }
+        #todayScheduleSection .schedule-instructor-badge {
+            font-size: 0.74rem !important;
+        }
+        #todayScheduleSection .schedule-empty-state {
+            padding: 22px 14px !important;
+        }
+
+        /* Calendar (when loaded in modals or pages) */
         .scal-card {
-            padding: 18px 14px !important;
-            border-radius: 20px !important;
+            padding: 14px 12px !important;
+            border-radius: 16px !important;
         }
         .scal-legend-strip {
             flex-direction: column !important;
             align-items: flex-start !important;
-            gap: 10px !important;
-            padding: 12px 14px !important;
+            gap: 8px !important;
+            padding: 10px 12px !important;
         }
         .scal-legend-items {
-            gap: 10px 14px !important;
+            gap: 8px 12px !important;
+        }
+
+        /* Bootstrap utility overrides on mobile */
+        .row.g-4 {
+            --bs-gutter-y: 0.75rem !important;
+            --bs-gutter-x: 0.75rem !important;
+        }
+        .mb-4 {
+            margin-bottom: 0.75rem !important;
         }
     }
 </style>
