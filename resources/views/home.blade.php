@@ -491,17 +491,21 @@
     }
 
     /* ══════════════════════════════════════════════════════════════
-       STUDENT HERO DASHBOARD BANNER (Redesigned & Premium)
+       STUDENT HERO DASHBOARD & QUICK NAV (Modern & Minimalist)
        ══════════════════════════════════════════════════════════════ */
+    html {
+        scroll-behavior: smooth;
+    }
+
     .student-hero-banner {
-        background: linear-gradient(135deg, rgba(38, 14, 12, 0.96) 0%, rgba(20, 10, 8, 0.98) 50%, rgba(30, 16, 12, 0.94) 100%) !important;
-        border: 1px solid rgba(212, 175, 55, 0.24) !important;
-        border-radius: 24px !important;
-        padding: 24px 28px !important;
+        background: linear-gradient(135deg, rgba(32, 14, 11, 0.94) 0%, rgba(18, 10, 8, 0.98) 60%, rgba(26, 14, 10, 0.94) 100%) !important;
+        border: 1px solid rgba(207, 164, 111, 0.22) !important;
+        border-radius: 22px !important;
+        padding: 20px 24px !important;
         position: relative !important;
         overflow: hidden !important;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
-        margin-bottom: 24px !important;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        margin-bottom: 20px !important;
     }
 
     .student-hero-banner::before {
@@ -510,20 +514,8 @@
         top: 0;
         left: 0;
         right: 0;
-        height: 2.5px;
-        background: linear-gradient(90deg, transparent 0%, rgba(255, 209, 102, 0.8) 25%, rgba(207, 164, 111, 1) 50%, rgba(255, 209, 102, 0.8) 75%, transparent 100%);
-        box-shadow: 0 0 16px rgba(212, 175, 55, 0.55);
-    }
-
-    .student-hero-banner::after {
-        content: '';
-        position: absolute;
-        top: -40px;
-        right: -40px;
-        width: 240px;
-        height: 240px;
-        background: radial-gradient(circle, rgba(212, 175, 55, 0.1) 0%, transparent 70%);
-        pointer-events: none;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 209, 102, 0.7) 25%, rgba(207, 164, 111, 1) 50%, rgba(255, 209, 102, 0.7) 75%, transparent 100%);
     }
 
     .student-hero-inner {
@@ -531,7 +523,7 @@
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 20px;
+        gap: 16px;
         position: relative;
         z-index: 2;
     }
@@ -539,27 +531,27 @@
     .student-hero-identity {
         display: flex;
         align-items: center;
-        gap: 20px;
-        flex: 1 1 340px;
+        gap: 16px;
+        flex: 1 1 320px;
         min-width: 0;
     }
 
     .student-hero-avatar-wrap {
         position: relative;
-        width: 66px;
-        height: 66px;
-        min-width: 66px;
-        border-radius: 20px;
+        width: 58px;
+        height: 58px;
+        min-width: 58px;
+        border-radius: 18px;
         padding: 2px;
-        background: linear-gradient(135deg, rgba(212, 175, 55, 0.7) 0%, rgba(139, 90, 43, 0.35) 100%);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 16px rgba(212, 175, 55, 0.15);
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.65) 0%, rgba(139, 90, 43, 0.35) 100%);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
         flex-shrink: 0;
     }
 
     .student-hero-avatar {
         width: 100%;
         height: 100%;
-        border-radius: 18px;
+        border-radius: 16px;
         object-fit: cover;
         background: #1a0f0a;
         display: block;
@@ -567,14 +559,14 @@
 
     .student-avatar-pulse {
         position: absolute;
-        bottom: 1px;
-        right: 1px;
-        width: 13px;
-        height: 13px;
+        bottom: 0px;
+        right: 0px;
+        width: 12px;
+        height: 12px;
         border-radius: 50%;
         background: #10b981;
         border: 2px solid #1a0f0a;
-        box-shadow: 0 0 8px rgba(16, 185, 129, 0.85);
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.85);
     }
 
     .student-hero-info {
@@ -586,62 +578,54 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 3px 10px;
+        padding: 2px 9px;
         border-radius: 99px;
-        background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(180, 130, 40, 0.06) 100%);
-        border: 1px solid rgba(212, 175, 55, 0.3);
+        background: rgba(207, 164, 111, 0.12);
+        border: 1px solid rgba(207, 164, 111, 0.25);
         color: #f3d18e;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 700;
-        letter-spacing: 1.2px;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
 
     .student-hero-name {
         color: #ffffff;
         font-weight: 800;
-        margin: 0 0 8px 0;
-        font-size: clamp(1.35rem, 3.8vw, 2.15rem);
-        line-height: 1.15;
-        letter-spacing: -0.025em;
+        margin: 0 0 6px 0;
+        font-size: clamp(1.25rem, 2.5vw, 1.85rem);
+        line-height: 1.2;
+        letter-spacing: -0.02em;
         overflow-wrap: break-word;
         word-break: normal;
-        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     .student-hero-chips {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
         flex-wrap: wrap;
     }
 
     .student-info-chip {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 4px 11px;
-        border-radius: 10px;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 8px;
         background: rgba(0, 0, 0, 0.35);
         border: 1px solid rgba(255, 255, 255, 0.08);
         color: #e5d7c4;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 600;
         line-height: 1.3;
-        transition: all 0.2s ease;
-    }
-
-    .student-info-chip:hover {
-        background: rgba(212, 175, 55, 0.1);
-        border-color: rgba(212, 175, 55, 0.25);
-        color: #fff;
     }
 
     .student-info-chip.chip-gold {
-        background: rgba(212, 175, 55, 0.12);
-        border-color: rgba(212, 175, 55, 0.28);
-        color: #f3d18e;
+        background: rgba(207, 164, 111, 0.12);
+        border-color: rgba(207, 164, 111, 0.28);
+        color: #ffd166;
     }
 
     .student-info-chip.chip-status {
@@ -656,10 +640,9 @@
         border-radius: 50%;
         background: #10b981;
         display: inline-block;
-        box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
     }
 
-    /* Right side clock & live widgets */
+    /* Right side widgets */
     .student-hero-widgets {
         display: flex;
         flex-direction: column;
@@ -669,19 +652,19 @@
 
     .student-clock-card {
         background: rgba(0, 0, 0, 0.45);
-        border: 1px solid rgba(212, 175, 55, 0.22);
-        border-radius: 16px;
-        padding: 10px 18px;
+        border: 1px solid rgba(207, 164, 111, 0.22);
+        border-radius: 14px;
+        padding: 8px 16px;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-        min-width: 190px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        min-width: 170px;
     }
 
     .student-clock-time {
         color: #ffd166;
-        font-size: 1.35rem;
+        font-size: 1.25rem;
         font-weight: 800;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.02em;
@@ -693,9 +676,9 @@
 
     .student-clock-date {
         color: #b39b82;
-        font-size: 0.78rem;
+        font-size: 0.75rem;
         font-weight: 500;
-        margin-top: 3px;
+        margin-top: 2px;
     }
 
     .student-hero-badges-row {
@@ -709,34 +692,29 @@
     .student-rate-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
+        gap: 5px;
+        padding: 4px 11px;
         border-radius: 99px;
-        font-size: 0.76rem;
+        font-size: 0.75rem;
         font-weight: 700;
-        letter-spacing: 0.01em;
-        transition: all 0.2s ease;
     }
 
     .student-rate-badge.rate-good {
         background: rgba(16, 185, 129, 0.14);
         border: 1px solid rgba(16, 185, 129, 0.35);
         color: #34d399;
-        box-shadow: 0 0 12px rgba(16, 185, 129, 0.15);
     }
 
     .student-rate-badge.rate-warning {
         background: rgba(245, 158, 11, 0.14);
         border: 1px solid rgba(245, 158, 11, 0.35);
         color: #fbbf24;
-        box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
     }
 
     .student-rate-badge.rate-danger {
         background: rgba(239, 68, 68, 0.14);
         border: 1px solid rgba(239, 68, 68, 0.35);
         color: #f87171;
-        box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
     }
 
     .student-streak-badge {
@@ -748,94 +726,360 @@
         background: rgba(245, 158, 11, 0.12);
         border: 1px solid rgba(245, 158, 11, 0.25);
         color: #fbbf24;
-        font-size: 0.75rem;
+        font-size: 0.74rem;
         font-weight: 700;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       QUICK NAVIGATION BAR (Easy to Navigate Anchor Strip)
+       ══════════════════════════════════════════════════════════════ */
+    .student-quick-nav-wrap {
+        position: sticky;
+        top: 68px;
+        z-index: 100;
+        margin-bottom: 24px;
+    }
+    .student-quick-nav {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 6px 8px;
+        background: rgba(15, 10, 8, 0.9);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(207, 164, 111, 0.2);
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    .student-quick-nav::-webkit-scrollbar {
+        display: none;
+    }
+    .student-quick-nav-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 16px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: #b39b82;
+        font-size: 0.82rem;
+        font-weight: 700;
+        white-space: nowrap;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .student-quick-nav-item:hover,
+    .student-quick-nav-item:focus {
+        background: rgba(207, 164, 111, 0.15);
+        border-color: rgba(207, 164, 111, 0.35);
+        color: #ffd166;
+        transform: translateY(-1px);
+    }
+    .student-quick-nav-item i {
+        font-size: 0.92rem;
+        color: #cfa46f;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       TODAY'S SCHEDULE (Modern Minimalist Timeline Cards)
+       ══════════════════════════════════════════════════════════════ */
+    .schedule-items-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .schedule-modern-card {
+        background: rgba(0, 0, 0, 0.28);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 14px;
+        padding: 14px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        transition: all 0.2s ease;
+    }
+    .schedule-modern-card:hover {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: rgba(207, 164, 111, 0.2);
+        transform: translateX(2px);
+    }
+    .schedule-main-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .schedule-subject-title {
+        font-weight: 800;
+        color: #f3ede4;
+        font-size: 1.05rem;
+        line-height: 1.3;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+    .schedule-meta-row {
+        color: #b39b82;
+        font-size: 0.82rem;
+        margin-top: 5px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .schedule-time-badge {
+        color: #f3ede4;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+    }
+    .schedule-code-badge {
+        background: rgba(207, 164, 111, 0.1);
+        border: 1px solid rgba(207, 164, 111, 0.2);
+        color: #ffd166;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-size: 0.74rem;
+        font-weight: 700;
+    }
+    .schedule-instructor-badge {
+        color: #8f826f;
+        font-size: 0.78rem;
+    }
+    .schedule-status-col {
+        flex-shrink: 0;
+    }
+    .schedule-empty-state {
+        text-align: center;
+        padding: 36px 16px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       SUBJECT BREAKDOWN (Minimalist 2-Column Modern Grid)
+       ══════════════════════════════════════════════════════════════ */
+    .subject-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 14px;
+    }
+    .subject-minimal-card {
+        background: rgba(17, 9, 6, 0.65);
+        border: 1px solid rgba(207, 164, 111, 0.16);
+        border-radius: 16px;
+        padding: 16px 18px;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+    .subject-minimal-card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(207, 164, 111, 0.38);
+        background: rgba(22, 12, 8, 0.85);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    }
+    .subject-minimal-title {
+        font-weight: 800;
+        color: #f3ede4;
+        font-size: 1.02rem;
+        line-height: 1.25;
+        overflow-wrap: break-word;
+        word-break: normal;
+    }
+    .subject-minimal-meta {
+        font-size: 0.78rem;
+        color: #b39b82;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .subject-minimal-code {
+        background: rgba(207, 164, 111, 0.12);
+        border: 1px solid rgba(207, 164, 111, 0.25);
+        color: #ffd166;
+        padding: 2px 7px;
+        border-radius: 6px;
+        font-weight: 700;
+    }
+    .subject-minimal-rate {
+        font-size: 1.5rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+    .subject-at-risk-tag {
+        font-size: 0.68rem;
+        color: #f87171;
+        font-weight: 700;
+        margin-top: 4px;
+        display: inline-flex;
+        align-items: center;
+        background: rgba(248, 113, 113, 0.14);
+        border: 1px solid rgba(248, 113, 113, 0.3);
+        padding: 2px 8px;
+        border-radius: 99px;
+    }
+    .subject-minimal-progress-track {
+        height: 5px;
+        background: rgba(255, 255, 255, 0.06);
+        border-radius: 99px;
+        overflow: hidden;
+        margin: 12px 0;
+    }
+    .subject-minimal-progress-fill {
+        height: 100%;
+        border-radius: 99px;
+        transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .subject-minimal-pills {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .sub-pill {
+        font-size: 0.72rem;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 99px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .sub-pill.pill-present {
+        color: #4ade80;
+        background: rgba(74, 222, 128, 0.1);
+        border: 1px solid rgba(74, 222, 128, 0.22);
+    }
+    .sub-pill.pill-late {
+        color: #fbbf24;
+        background: rgba(251, 191, 36, 0.1);
+        border: 1px solid rgba(251, 191, 36, 0.22);
+    }
+    .sub-pill.pill-absent {
+        color: #f87171;
+        background: rgba(248, 113, 113, 0.1);
+        border: 1px solid rgba(248, 113, 113, 0.22);
+    }
+    .sub-pill.pill-excused {
+        color: #60a5fa;
+        background: rgba(96, 165, 250, 0.1);
+        border: 1px solid rgba(96, 165, 250, 0.22);
+    }
+
+    /* ══════════════════════════════════════════════════════════════
+       CALENDAR MINIMALIST LEGEND STRIP
+       ══════════════════════════════════════════════════════════════ */
+    .scal-legend-strip {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        padding: 14px 18px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+    }
+    .scal-legend-items {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .scal-legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #f3ede4;
+    }
+    .scal-legend-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .scal-legend-tip {
+        font-size: 0.78rem;
+        color: #b39b82;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
     /* Responsive adjustments */
     @media (max-width: 767.98px) {
         .student-hero-banner {
-            padding: 18px 16px !important;
+            padding: 16px 14px !important;
             border-radius: 18px !important;
             margin-bottom: 16px !important;
         }
         .student-hero-inner {
             flex-direction: column !important;
             align-items: stretch !important;
-            gap: 14px !important;
+            gap: 12px !important;
         }
         .student-hero-identity {
-            gap: 14px !important;
+            gap: 12px !important;
             flex: 1 1 100% !important;
         }
         .student-hero-avatar-wrap {
-            width: 56px !important;
-            height: 56px !important;
-            min-width: 56px !important;
-            border-radius: 16px !important;
+            width: 50px !important;
+            height: 50px !important;
+            min-width: 50px !important;
+            border-radius: 14px !important;
         }
         .student-hero-avatar {
-            border-radius: 14px !important;
+            border-radius: 12px !important;
         }
         .student-hero-name {
             font-size: 1.25rem !important;
-            margin-bottom: 6px !important;
-        }
-        .student-greeting-pill {
-            font-size: 0.68rem !important;
-            padding: 2px 8px !important;
             margin-bottom: 4px !important;
         }
-        .student-info-chip {
-            font-size: 0.75rem !important;
-            padding: 3px 9px !important;
-            border-radius: 8px !important;
-        }
         .student-hero-widgets {
-            align-items: stretch !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
             width: 100% !important;
             gap: 8px !important;
         }
         .student-clock-card {
-            flex-direction: row !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            padding: 9px 14px !important;
+            padding: 6px 12px !important;
             min-width: 0 !important;
-            width: 100% !important;
             border-radius: 12px !important;
+            align-items: flex-start !important;
         }
         .student-clock-time {
-            font-size: 1.1rem !important;
+            font-size: 1.05rem !important;
         }
         .student-clock-date {
-            font-size: 0.72rem !important;
-            margin-top: 0 !important;
+            font-size: 0.7rem !important;
         }
         .student-hero-badges-row {
-            justify-content: flex-start !important;
+            justify-content: flex-end !important;
         }
-        #realStats {
+        .student-quick-nav-wrap {
+            top: 60px;
+            margin-bottom: 18px;
+        }
+        .student-quick-nav-item {
+            padding: 6px 12px !important;
+            font-size: 0.78rem !important;
+        }
+        .scal-card {
+            padding: 18px 14px !important;
+            border-radius: 20px !important;
+        }
+        .scal-legend-strip {
+            flex-direction: column !important;
+            align-items: flex-start !important;
             gap: 10px !important;
-            margin-bottom: 18px !important;
+            padding: 12px 14px !important;
         }
-    }
-
-    @media (max-width: 360px) {
-        .student-hero-banner {
-            padding: 14px 12px !important;
-        }
-        .student-hero-avatar-wrap {
-            width: 46px !important;
-            height: 46px !important;
-            min-width: 46px !important;
-        }
-        .student-hero-name {
-            font-size: 1.1rem !important;
-        }
-        .student-info-chip {
-            font-size: 0.7rem !important;
-            padding: 2px 7px !important;
+        .scal-legend-items {
+            gap: 10px 14px !important;
         }
     }
 </style>
@@ -930,122 +1174,67 @@
 </div>
 
 <!-- Quick Stats -->
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:20px; margin-bottom:24px;">
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:16px; margin-bottom:20px;">
     <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
     <x-card type="kpi" accent="warning" label="Late" value="{{ $totalLate ?? 0 }}" icon="bi bi-clock-fill" />
     <x-card type="kpi" accent="danger" label="Absent" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
     <x-card type="kpi" accent="gold" label="Subjects" value="{{ isset($subjects) ? count($subjects) : 0 }}" icon="bi bi-book-fill" />
 </div>
 
-<!-- Subject Attendance Breakdown -->
-@if(isset($subjectStats) && $subjectStats->count() > 0)
-<div class="mb-4">
-    <x-card title="Subject Breakdown" icon="bi bi-bar-chart-fill">
-        <x-slot name="headerActions">
-            <span style="font-size: 0.75rem; color: #b39b82; font-weight: 600;">{{ $subjectStats->count() }} subjects</span>
-        </x-slot>
-
-        <style>
-            .subject-stat-card:hover {
-                transform: translateY(-2px);
-                border-color: rgba(207,164,111,0.4) !important;
-                box-shadow: 0 8px 25px rgba(0,0,0,0.4) !important;
-            }
-        </style>
-        <div class="d-flex flex-column gap-3">
-            @foreach($subjectStats as $stat)
-                @php
-                    $isNew = $stat->total == 0;
-                    $rateColor = $isNew ? '#9ca3af' : ($stat->rate >= 90 ? '#4ade80' : ($stat->rate >= 75 ? '#fbbf24' : '#f87171'));
-                    $rateBg = $isNew ? 'rgba(156,163,175,0.15)' : ($stat->rate >= 90 ? 'rgba(74,222,128,0.15)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.15)' : 'rgba(248,113,113,0.15)'));
-                    $rateBorder = $isNew ? 'rgba(156,163,175,0.3)' : ($stat->rate >= 90 ? 'rgba(74,222,128,0.3)' : ($stat->rate >= 75 ? 'rgba(251,191,36,0.3)' : 'rgba(248,113,113,0.3)'));
-                @endphp
-                <div class="subject-stat-card" style="background: rgba(17, 9, 6, 0.7); border: 1px solid rgba(207,164,111,0.15); border-radius: 16px; padding: 20px; position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                    <!-- Background Glow -->
-                    <div class="bg-glow" style="position: absolute; top: -40px; right: -40px; width: 120px; height: 120px; background: {{ $rateColor }}; border-radius: 50%; filter: blur(50px); opacity: 0.15; pointer-events: none;"></div>
-
-                    <div class="d-flex justify-content-between align-items-start mb-3" style="position: relative; z-index: 2; gap: 12px;">
-                        <div style="flex: 1; min-width: 0;">
-                            <div style="font-weight: 800; color: #f3e7cd; font-size: 1.1rem; letter-spacing: -0.3px; overflow-wrap: break-word; word-break: normal;">{{ $stat->name }}</div>
-                            <div style="font-size: 0.8rem; color: #b39b82; margin-top: 6px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                                <span style="background: rgba(207,164,111,0.1); padding: 3px 8px; border-radius: 6px; font-weight: 700;">{{ $stat->code }}</span>
-                                <span>•</span>
-                                <span>{{ $stat->total }} Classes</span>
-                            </div>
-                        </div>
-                        <div style="text-align: right; flex-shrink: 0;">
-                            <div class="rate-text" style="font-size: 1.7rem; font-weight: 900; color: {{ $rateColor }}; line-height: 1; text-shadow: 0 0 20px {{ $rateBg }};">{{ $stat->rate }}<span style="font-size: 1.1rem; opacity: 0.8;">%</span></div>
-                            @if(!$isNew && $stat->rate < 75)
-                                <div style="font-size: 0.7rem; color: #f87171; font-weight: 700; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; background: rgba(248,113,113,0.15); padding: 3px 10px; border-radius: 99px;">
-                                    <i class="bi bi-exclamation-triangle-fill"></i> At Risk
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- Progress Bar -->
-                    <div style="position: relative; z-index: 2; height: 6px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; margin-bottom: 16px;">
-                        <div style="height: 100%; width: 0%; background: {{ $rateColor }}; border-radius: 99px; transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);" class="animated-progress" data-width="{{ $stat->rate }}%"></div>
-                    </div>
-
-                    <!-- Status Pills -->
-                    <div class="d-flex gap-2 flex-wrap" style="position: relative; z-index: 2;">
-                        <span style="font-size: 0.75rem; font-weight: 600; color: #4ade80; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-check-circle-fill" style="font-size: 0.7rem;"></i> {{ $stat->present }} Present
-                        </span>
-                        @if($stat->late > 0)
-                        <span style="font-size: 0.75rem; font-weight: 600; color: #fbbf24; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-clock-fill" style="font-size: 0.7rem;"></i> {{ $stat->late }} Late
-                        </span>
-                        @endif
-                        @if($stat->absent > 0)
-                        <span style="font-size: 0.75rem; font-weight: 600; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-x-circle-fill" style="font-size: 0.7rem;"></i> {{ $stat->absent }} Absent
-                        </span>
-                        @endif
-                        @if($stat->excused > 0)
-                        <span style="font-size: 0.75rem; font-weight: 600; color: #60a5fa; background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25); padding: 4px 12px; border-radius: 99px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-file-earmark-check-fill" style="font-size: 0.7rem;"></i> {{ $stat->excused }} Excused
-                        </span>
-                        @endif
-                    </div>
-                </div>
-            @endforeach
-        </div>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(function() {
-                    document.querySelectorAll('.animated-progress').forEach(function(el) {
-                        el.style.width = el.getAttribute('data-width');
-                    });
-                }, 150);
-            });
-        </script>
-    </x-card>
+<!-- Quick Navigation Bar -->
+<div class="student-quick-nav-wrap mb-4">
+    <div class="student-quick-nav">
+        <a href="#todayScheduleSection" class="student-quick-nav-item">
+            <i class="bi bi-clock-history"></i>
+            <span>Today's Classes</span>
+        </a>
+        <a href="#calendarSection" class="student-quick-nav-item">
+            <i class="bi bi-calendar-check-fill"></i>
+            <span>Attendance Calendar</span>
+        </a>
+        <a href="#breakdownSection" class="student-quick-nav-item">
+            <i class="bi bi-bar-chart-fill"></i>
+            <span>Subject Breakdown</span>
+        </a>
+        <button type="button" class="student-quick-nav-item" onclick="openAttendanceRecordsModal()" title="View Complete Attendance Records">
+            <i class="bi bi-journal-text"></i>
+            <span>View Records</span>
+        </button>
+    </div>
 </div>
-@endif
 
-<div class="row g-4 mb-4">
-    <!-- Today's Schedule -->
+<!-- Today's Schedule -->
+<div class="row g-4 mb-4" id="todayScheduleSection">
     <div class="col-12">
         <x-card title="Today's Schedule" icon="bi bi-clock-history">
             <x-slot name="headerActions">
-                <a href="{{ route('student.schedule') }}" class="btn btn-outline btn-sm">Full Schedule</a>
+                <a href="{{ route('student.schedule') }}" class="btn btn-outline btn-sm" style="border-radius:10px; font-size:0.78rem; font-weight:700; color:#ffd166; border-color:rgba(255,209,102,0.35);">
+                    <i class="bi bi-calendar3 me-1"></i> Full Schedule
+                </a>
             </x-slot>
             @if(isset($todaySchedule) && $todaySchedule->count() > 0)
-                <div class="d-flex flex-column gap-3">
+                <div class="schedule-items-grid">
                 @foreach($todaySchedule as $item)
-                    <div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                        <div class="d-flex align-items-center gap-3" style="flex: 1; min-width: 0;">
-                            <div style="width: 4px; height: 40px; background: {{ $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : 'var(--gold)')) }}; border-radius: 4px; flex-shrink: 0;"></div>
-                            <div style="flex: 1; min-width: 0;">
-                                <div style="font-weight: 700; color: #f3e7cd; font-size: 1.1rem; overflow-wrap: break-word; word-break: normal;">{{ $item->subject->name }}</div>
-                                <div style="color: #b39b82; font-size: 0.85rem; margin-top: 4px; overflow-wrap: break-word; word-break: normal;">
-                                    {{ $item->start_time->format('g:i A') }} – {{ $item->end_time->format('g:i A') }} &nbsp;·&nbsp; {{ $item->subject->code }}
-                                </div>
+                    @php
+                        $statusColor = $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : 'var(--gold)'));
+                    @endphp
+                    <div class="schedule-modern-card" style="border-left: 3.5px solid {{ $statusColor }};">
+                        <div class="schedule-main-info">
+                            <div class="schedule-subject-title">{{ $item->subject->name }}</div>
+                            <div class="schedule-meta-row">
+                                <span class="schedule-time-badge">
+                                    <i class="bi bi-clock-fill me-1" style="color: #cfa46f; font-size: 0.75rem;"></i>
+                                    {{ $item->start_time->format('g:i A') }} – {{ $item->end_time->format('g:i A') }}
+                                </span>
+                                <span class="schedule-code-badge">{{ $item->subject->code }}</span>
+                                @if(!empty($item->subject->instructorUser?->name ?? $item->subject->instructor))
+                                    <span class="schedule-instructor-badge">
+                                        <i class="bi bi-person-fill text-gold-muted me-1"></i>{{ $item->subject->instructorUser?->name ?? $item->subject->instructor }}
+                                    </span>
+                                @endif
                             </div>
                         </div>
-                        <div style="flex-shrink: 0;">
+                        <div class="schedule-status-col">
                             @if($item->status === 'completed') <x-badge type="present">Done</x-badge>
                             @elseif($item->status === 'ongoing') <x-badge type="late">Now</x-badge>
                             @elseif($item->status === 'missed') <x-badge type="absent">Missed</x-badge>
@@ -1056,9 +1245,9 @@
                 @endforeach
                 </div>
             @else
-                <div class="empty-state text-center" style="padding: 40px 20px;">
-                    <i class="bi bi-calendar-x" style="font-size: 3rem; color: #b39b82; opacity: 0.5;"></i>
-                    <p style="color: #b39b82; font-size: 1rem; margin-top: 16px; font-weight: 600;">No classes scheduled today</p>
+                <div class="schedule-empty-state">
+                    <i class="bi bi-calendar-x" style="font-size: 2.4rem; color: #b39b82; opacity: 0.45;"></i>
+                    <p style="color: #b39b82; font-size: 0.95rem; margin-top: 12px; font-weight: 600;">No classes scheduled today</p>
                 </div>
             @endif
         </x-card>
@@ -1693,9 +1882,19 @@
             display: block !important;
         }
     }
+
+    .subject-minimal-card {
+        border-color: rgba(255, 255, 255, 0.06);
+    }
+    .subject-minimal-card:hover {
+        background: rgba(255, 255, 255, 0.035) !important;
+        border-color: rgba(207, 164, 111, 0.3) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+    }
 </style>
 
-<div class="row g-4 mb-4">
+<div class="row g-4 mb-4" id="calendarSection">
     <div class="col-12">
         <div class="scal-card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -1801,46 +2000,136 @@
                 @endfor
             </div>
 
-            {{-- Legend and Tips --}}
-            <div class="row g-3 mt-3">
-                <div class="col-md-6 col-12">
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 16px 20px;">
-                        <div style="font-size: 0.72rem; font-weight: 800; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;">Legend</div>
-                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
-                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#10b981; display:inline-block;"></span> Present
-                            </div>
-                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#f59e0b; display:inline-block;"></span> Late
-                            </div>
-                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#ef4444; display:inline-block;"></span> Absent
-                            </div>
-                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#ec4899; display:inline-block;"></span> Exam
-                            </div>
-                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#8b5cf6; display:inline-block;"></span> Event
-                            </div>
-                            <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:600; color:#f3ede4;">
-                                <span style="width:8px; height:8px; border-radius:50%; background:#4ade80; display:inline-block;"></span> Holiday
-                            </div>
-                        </div>
+            {{-- Minimalist Streamlined Legend & Tip --}}
+            <div class="scal-legend-strip mt-3" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:12px 18px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;">
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:14px;">
+                    <span style="font-size:0.7rem; font-weight:800; color:#cfa46f; text-transform:uppercase; letter-spacing:0.08em; margin-right:2px;">Legend:</span>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#f3ede4;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#10b981; display:inline-block;"></span> Present
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#f3ede4;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#f59e0b; display:inline-block;"></span> Late
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#f3ede4;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#ef4444; display:inline-block;"></span> Absent
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#f3ede4;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#ec4899; display:inline-block;"></span> Exam
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#f3ede4;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#8b5cf6; display:inline-block;"></span> Event
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; font-size:0.78rem; font-weight:600; color:#f3ede4;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block;"></span> Holiday
                     </div>
                 </div>
-                <div class="col-md-6 col-12">
-                    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 18px; padding: 16px 20px;">
-                        <div style="font-size: 0.72rem; font-weight: 800; color: #cfa46f; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
-                            <i class="bi bi-lightbulb-fill"></i> Calendar Tips
-                        </div>
-                        <ul style="margin: 0; padding-left: 18px; font-size: 0.78rem; color: #b39b82; line-height: 1.6;">
-                            <li>Tap any <strong>day tile</strong> to inspect your subjects and attendance for that date.</li>
-                            <li>Days with multiple subjects show distinct status dots for each class.</li>
-                            <li>The <strong>golden border</strong> highlights your selected or current day.</li>
-                        </ul>
-                    </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:#b39b82;">
+                    <i class="bi bi-info-circle" style="color:#cfa46f;"></i>
+                    <span>Tap any day tile to inspect details</span>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+{{-- ── Subject Attendance Breakdown ─────────────────────────────────── --}}
+<div class="row g-4 mb-4" id="breakdownSection">
+    <div class="col-12">
+        <div class="scal-card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:38px; height:38px; border-radius:12px; background:rgba(207,164,111,0.15); display:flex; align-items:center; justify-content:center; color:#cfa46f; font-size:1.15rem; flex-shrink:0;">
+                        <i class="bi bi-pie-chart-fill"></i>
+                    </div>
+                    <div>
+                        <span style="font-size:1.15rem; font-weight:800; color:#f3e7cd; display:block; line-height:1.2;">Subject Breakdown</span>
+                        <span style="font-size:0.78rem; color:#b39b82; font-weight:500;">Attendance rate & records per enrolled subject</span>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="badge" style="background:rgba(207,164,111,0.12); color:#ffd166; border:1px solid rgba(207,164,111,0.25); font-size:0.78rem; font-weight:700; padding:6px 12px; border-radius:10px;">
+                        {{ count($subjectStats ?? []) }} Subjects Enrolled
+                    </span>
+                    <a href="{{ route('student.classes') }}" class="btn btn-sm" style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#ffd166; font-weight:700; font-size:0.78rem; border-radius:10px; padding:6px 12px;">
+                        My Classes <i class="bi bi-chevron-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+
+            @if(empty($subjectStats) || count($subjectStats) === 0)
+                <div style="text-align:center; padding:36px 20px; background:rgba(255,255,255,0.02); border-radius:18px; border:1px dashed rgba(255,255,255,0.08);">
+                    <div style="width:48px; height:48px; border-radius:14px; background:rgba(207,164,111,0.1); border:1px solid rgba(207,164,111,0.2); display:flex; align-items:center; justify-content:center; margin:0 auto 12px; color:#ffd166; font-size:1.3rem;">
+                        <i class="bi bi-journal-x"></i>
+                    </div>
+                    <p style="color:#b39b82; font-size:0.9rem; font-weight:600; margin:0;">No enrolled subject records found</p>
+                </div>
+            @else
+                <div class="row g-3">
+                    @foreach($subjectStats as $sub)
+                        @php
+                            $rateColor = '#10b981';
+                            $rateBg = 'rgba(16,185,129,0.12)';
+                            $rateBorder = 'rgba(16,185,129,0.3)';
+                            if ($sub->rate < 75) {
+                                $rateColor = '#ef4444';
+                                $rateBg = 'rgba(239,68,68,0.12)';
+                                $rateBorder = 'rgba(239,68,68,0.3)';
+                            } elseif ($sub->rate < 90) {
+                                $rateColor = '#f59e0b';
+                                $rateBg = 'rgba(245,158,11,0.12)';
+                                $rateBorder = 'rgba(245,158,11,0.3)';
+                            }
+                        @endphp
+                        <div class="col-12 col-md-6">
+                            <div class="subject-minimal-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:18px; padding:18px 20px; height:100%; display:flex; flex-direction:column; justify-content:space-between; transition:all 0.25s cubic-bezier(0.16,1,0.3,1);">
+                                <div>
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;">
+                                        <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                                            <span style="background:rgba(207,164,111,0.15); color:#ffd166; border:1px solid rgba(207,164,111,0.25); font-size:0.75rem; font-weight:800; padding:3px 8px; border-radius:7px; flex-shrink:0;">
+                                                {{ $sub->code }}
+                                            </span>
+                                            <span style="font-size:0.92rem; font-weight:700; color:#f3ede4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="{{ $sub->name }}">
+                                                {{ $sub->name }}
+                                            </span>
+                                        </div>
+                                        <span class="badge" style="background:{{ $rateBg }}; color:{{ $rateColor }}; border:1px solid {{ $rateBorder }}; font-size:0.82rem; font-weight:800; padding:4px 10px; border-radius:8px; flex-shrink:0;">
+                                            {{ $sub->rate }}%
+                                        </span>
+                                    </div>
+
+                                    {{-- Slim Modern Progress Bar --}}
+                                    <div style="height:6px; background:rgba(255,255,255,0.06); border-radius:99px; overflow:hidden; margin-bottom:14px;">
+                                        <div style="width:{{ min(100, $sub->rate) }}%; height:100%; background:{{ $rateColor }}; border-radius:99px; transition:width 0.6s cubic-bezier(0.16,1,0.3,1);"></div>
+                                    </div>
+                                </div>
+
+                                {{-- Micro Attendance Metrics --}}
+                                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.04);">
+                                    <div style="display:flex; align-items:center; gap:10px;">
+                                        <span style="font-size:0.76rem; color:#b39b82;">
+                                            <strong style="color:#10b981;">{{ $sub->present }}</strong> Present
+                                        </span>
+                                        <span style="font-size:0.76rem; color:#b39b82;">
+                                            <strong style="color:#f59e0b;">{{ $sub->late }}</strong> Late
+                                        </span>
+                                        <span style="font-size:0.76rem; color:#b39b82;">
+                                            <strong style="color:#ef4444;">{{ $sub->absent }}</strong> Absent
+                                        </span>
+                                        @if($sub->excused > 0)
+                                            <span style="font-size:0.76rem; color:#b39b82;">
+                                                <strong style="color:#8b5cf6;">{{ $sub->excused }}</strong> Excused
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <span style="font-size:0.72rem; color:#8f826f; font-weight:600;">
+                                        {{ $sub->total }} Sessions
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 </div>
