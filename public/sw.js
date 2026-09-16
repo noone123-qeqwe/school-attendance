@@ -38,9 +38,14 @@ async function trimCache(cacheName, maxItems) {
     }
 }
 
-// Install: precache essential offline assets and skip waiting immediately
+// Install: precache essential offline assets
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
+    // If there is no existing active worker, activate immediately on first install.
+    // If an existing worker is active, allow the user to confirm the update before activating.
+    if (!self.registration || !self.registration.active) {
+        self.skipWaiting();
+    }
+
     event.waitUntil(
         caches.open(STATIC_CACHE_NAME).then((cache) => {
             return cache.addAll(PRECACHE_ASSETS).catch((err) => {
