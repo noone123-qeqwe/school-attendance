@@ -62,7 +62,10 @@
             color: #F3E7CD;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            overflow-y: auto;
+            height: 100vh;
+            overflow: hidden; /* Prevent scrolling */
+            position: fixed; /* Lock position */
+            width: 100%;
         }
 
         /* ── FULL-SCREEN BACKGROUND ── */
@@ -124,44 +127,54 @@
 
         /* ── CENTERED LAYOUT ── */
         .auth-scene {
-            position: relative; z-index: 10;
-            min-height: 100vh;
-            min-height: 100dvh;
-            display: flex; align-items: center; justify-content: center;
+            position: fixed; /* Changed from relative to fixed */
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+            height: 100vh;
+            height: 100dvh;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
             padding: 52px 20px 48px;
             box-sizing: border-box;
+            overflow: hidden; /* Prevent any scrolling */
         }
 
         /* ── GLASS CARD ── */
         .glass-card {
             width: 100%; 
-            max-width: 480px;
-            min-width: 320px; /* Minimum width for mobile */
-            min-height: 520px; /* Increased minimum height */
+            max-width: 520px; /* Increased from 480px */
+            min-width: 320px;
+            min-height: 620px; /* Increased from 520px */
+            max-height: calc(100vh - 100px); /* Ensure it fits on screen */
             background: rgba(30, 21, 21, 0.78);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             border-radius: 22px;
             border: 1px solid rgba(212, 175, 55, 0.25);
             box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212, 175, 55, 0.12);
-            padding: 26px 28px 22px; /* Increased padding */
+            padding: 32px 30px 26px; /* Increased padding */
             color: white;
             position: relative;
             z-index: 20;
-            margin: 0 auto; /* Center the card */
-            transition: all 0.3s ease; /* Smooth transitions */
+            margin: 0 auto;
+            transition: none; /* Remove transitions for fixed positioning */
+            overflow-y: auto; /* Allow internal scrolling if needed */
         }
 
-        /* Logo  -  slightly larger */
+        /* Logo  -  larger */
         .glass-logo {
-            width: 56px; height: 56px;
+            width: 64px; height: 64px; /* Increased from 56px */
             border-radius: 50%;
             background: white;
             border: 2.5px solid rgba(255,220,100,0.6);
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            margin: 0 auto 10px; /* Increased bottom margin */
+            margin: 0 auto 14px; /* Increased margin */
             transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
             animation: floatLogo 4s ease-in-out infinite, glowPulse 2s infinite;
         }
@@ -180,13 +193,13 @@
             margin-bottom: 4px;
         }
         .glass-title {
-            font-size: 1.48rem; font-weight: 800;
+            font-size: 1.58rem; font-weight: 800; /* Increased from 1.48rem */
             color: white; letter-spacing: -0.5px;
-            margin-bottom: 4px; /* Increased spacing */
+            margin-bottom: 6px; /* Increased spacing */
         }
         .glass-sub {
-            font-size: 0.82rem; color: rgba(255,255,255,0.65);
-            margin-bottom: 16px; /* Increased spacing */
+            font-size: 0.88rem; color: rgba(255,255,255,0.65); /* Increased from 0.82rem */
+            margin-bottom: 20px; /* Increased spacing */
         }
 
         /* Role toggle */
@@ -194,14 +207,14 @@
             display: flex;
             background: rgba(0,0,0,0.25);
             border-radius: 12px;
-            padding: 4px; gap: 4px;
-            margin-bottom: 14px;
+            padding: 5px; gap: 5px; /* Increased padding */
+            margin-bottom: 18px; /* Increased margin */
             border: 1px solid rgba(255,255,255,0.12);
         }
         .role-btn {
-            flex: 1; padding: 8px 10px;
+            flex: 1; padding: 10px 12px; /* Increased padding */
             border: none; border-radius: 9px;
-            font-size: 0.82rem; font-weight: 600;
+            font-size: 0.88rem; font-weight: 600; /* Increased font size */
             cursor: pointer;
             transition: all 0.25s ease;
             background: transparent;
@@ -216,7 +229,7 @@
         .role-btn:hover:not(.active) { color: white; background: rgba(255,255,255,0.1); }
 
         /* Inputs */
-        #loginForm .glass-input-wrap { position: relative; margin-bottom: 10px; } /* Increased spacing */
+        #loginForm .glass-input-wrap { position: relative; margin-bottom: 14px; } /* Increased spacing */
         #loginForm .glass-input-wrap .g-icon {
             position: absolute; left: 16px !important; top: 50%;
             transform: translateY(-50%);
@@ -225,12 +238,12 @@
         }
         #loginForm .glass-input {
             width: 100%;
-            padding: 12px 14px 12px 48px; /* Increased padding for larger touch target */
+            padding: 14px 16px 14px 50px; /* Increased padding significantly */
             border-radius: 11px;
             border: 1.5px solid rgba(212, 175, 55, 0.25);
             background: rgba(0,0,0,0.3);
             color: white;
-            font-size: 0.88rem; /* Slightly larger text */
+            font-size: 0.92rem; /* Increased font size */
             font-family: 'Inter', sans-serif;
             outline: none;
             transition: all 0.2s;
@@ -275,13 +288,13 @@
         /* Fingerprint/Biometric row */
         .fp-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 8px 12px;
+            padding: 10px 14px; /* Increased padding */
             border-radius: 10px;
             border: 1.5px solid rgba(255,255,255,0.18);
             background: rgba(255,255,255,0.08);
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 6px;
+            margin-bottom: 8px; /* Increased margin */
             width: 100%;
             font-family: inherit;
             color: inherit;
@@ -301,7 +314,7 @@
         /* Divider */
         .glass-divider {
             display: flex; align-items: center; gap: 10px;
-            margin: 7px 0; color: rgba(255,255,255,0.35); font-size: 0.7rem;
+            margin: 10px 0; color: rgba(255,255,255,0.35); font-size: 0.72rem; /* Increased margin */
         }
         .glass-divider::before, .glass-divider::after {
             content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.18);
@@ -309,15 +322,15 @@
 
         /* Submit button */
         .glass-btn {
-            width: 100%; padding: 13px; /* Increased padding */
+            width: 100%; padding: 15px; /* Increased padding */
             background: rgba(255,255,255,0.95);
             color: #800000;
-            font-weight: 800; font-size: 0.9rem; /* Slightly larger */
+            font-weight: 800; font-size: 0.95rem; /* Increased font size */
             letter-spacing: 0.5px;
             border: none; border-radius: 11px;
             cursor: pointer; transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            margin-top: 4px; /* Increased spacing */
+            margin-top: 6px; /* Increased spacing */
         }
         .glass-btn-primary {
             background: rgba(255,255,255,0.95);
@@ -580,10 +593,10 @@
                 padding: 48px 20px 44px;
             }
             .glass-card {
-                /* Moved up and increased height for better visibility */
-                transform: translateY(-60px);
-                min-height: 560px;
-                max-width: 500px;
+                /* Centered and increased height - no transform needed with fixed positioning */
+                transform: none;
+                min-height: 660px; /* Significantly increased */
+                max-width: 540px;
             }
         }
 
