@@ -855,10 +855,6 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
                         <span class="more-sheet-item-label">Excuses</span>
                     </a>
-                    <a href="{{ route('admin.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
-                        <span class="more-sheet-item-label">Notifications</span>
-                    </a>
                 @elseif(Auth::user()->isTeacher())
                     <a href="{{ route('teacher.subjects') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
@@ -886,10 +882,6 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-graph-up-arrow"></i></div>
                         <span class="more-sheet-item-label">Reports</span>
                     </a>
-                    <a href="{{ route('teacher.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
-                        <span class="more-sheet-item-label">Notifications</span>
-                    </a>
                     <a href="{{ route('teacher.students') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-people-fill"></i></div>
                         <span class="more-sheet-item-label">Students</span>
@@ -915,10 +907,6 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
                         <span class="more-sheet-item-label">Calendar</span>
                     </a>
-                    <a href="{{ route('parent.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
-                        <span class="more-sheet-item-label">Notifications</span>
-                    </a>
                 @else
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
@@ -935,10 +923,6 @@
                     <a href="javascript:void(0)" onclick="closeMoreSheet(); if(typeof openSubjectBreakdownModal==='function'){openSubjectBreakdownModal();}else{window.location.href='{{ route('home') }}?open_breakdown=1';}" class="more-sheet-item" data-color="purple">
                         <div class="more-sheet-item-icon"><i class="bi bi-pie-chart-fill"></i></div>
                         <span class="more-sheet-item-label">Breakdown</span>
-                    </a>
-                    <a href="{{ route('notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
-                        <span class="more-sheet-item-label">Notifications</span>
                     </a>
                 @endif
             </div>

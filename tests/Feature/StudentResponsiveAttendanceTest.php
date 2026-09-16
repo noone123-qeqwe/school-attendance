@@ -58,9 +58,10 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertOk();
         $html = $response->getContent();
 
-        // Ensure moreSheetContent does not contain Settings or Biometrics link
+        // Ensure moreSheetContent does not contain Settings, Biometrics, or Notifications link
         $this->assertDoesNotMatchRegularExpression('/id="moreSheetContent"[\s\S]*?<span class="more-sheet-item-label">Settings<\/span>/', $html);
         $this->assertDoesNotMatchRegularExpression('/id="moreSheetContent"[\s\S]*?<span class="more-sheet-item-label">Biometrics<\/span>/', $html);
+        $this->assertDoesNotMatchRegularExpression('/id="moreSheetContent"[\s\S]*?<span class="more-sheet-item-label">Notifications<\/span>/', $html);
     }
 
     public function test_home_dashboard_has_clean_student_hero_banner_without_redundant_action_buttons(): void
