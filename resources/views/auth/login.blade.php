@@ -136,9 +136,9 @@
             height: 100vh;
             height: 100dvh;
             display: flex; 
-            align-items: center; 
+            align-items: flex-start; /* Changed from center to flex-start */
             justify-content: center;
-            padding: 52px 20px 48px;
+            padding: 80px 20px 48px; /* Reduced top padding to move form up */
             box-sizing: border-box;
             overflow: hidden; /* Prevent any scrolling */
         }
@@ -590,7 +590,7 @@
         /* Desktop elevation for optical vertical centering */
         @media (min-width: 769px) {
             .auth-scene {
-                padding: 48px 20px 44px;
+                padding: 60px 20px 44px; /* Reduced top padding for higher positioning */
             }
             .glass-card {
                 /* Centered and increased height - no transform needed with fixed positioning */
@@ -602,6 +602,9 @@
 
         /* Mobile and Responsive */
         @media (max-width: 768px) {
+            .auth-scene {
+                padding: 70px 20px 44px; /* Adjusted for mobile */
+            }
             .glass-card { 
                 max-width: 90vw; /* Use viewport width on tablets */
                 padding: 24px 24px 20px; 
@@ -613,6 +616,9 @@
         }
 
         @media (max-width: 480px) {
+            .auth-scene {
+                padding: 60px 16px 16px; /* Adjusted for small phones */
+            }
             .glass-card { 
                 max-width: 95vw; /* Use more viewport width on phones */
                 min-width: 280px; /* Smaller minimum for very small screens */
