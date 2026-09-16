@@ -56,19 +56,22 @@ class AuthController extends Controller
 
         $ip = $request->ip() ?: 'unknown';
 
-        // 1. Check account / IP lockout FIRST before any database or hashing operations
-        if ($this->lockoutService->isLocked($identifier, $ip)) {
+        // 1. Check account lockout FIRST (account-specific brute force protection)
+        if ($this->lockoutService->isAccountLocked($identifier)) {
             $remaining = $this->lockoutService->getRemainingSeconds($identifier, $ip);
             $minutes = max(1, ceil($remaining / 60));
 
             return response()->json([
                 'status' => 'error',
                 'success' => false,
-                'message' => "Account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes.",
+                'message' => "This account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes.",
                 'locked' => true,
                 'retry_after' => $remaining,
             ], 429);
         }
+
+        // If IP is locked, defer blocking until after password check so valid credentials still work
+        $isIpLocked = $this->lockoutService->isLocked($identifier, $ip);
 
         // 2. Validate presence of credentials
         if ($identifier === '' || $password === '') {
@@ -157,13 +160,14 @@ class AuthController extends Controller
         // 4. Record failed attempt & check if newly locked
         $result = $this->lockoutService->recordFailedAttempt($identifier, $ip);
 
-        if ($result['locked']) {
+        if ($isIpLocked || $result['locked']) {
+            $lockSeconds = $result['lockout_seconds'] ?? ($isIpLocked ? $this->lockoutService->getRemainingSeconds($identifier, $ip) : 900);
             return response()->json([
                 'status' => 'error',
                 'success' => false,
                 'message' => 'Account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.',
                 'locked' => true,
-                'retry_after' => $result['lockout_seconds'],
+                'retry_after' => $lockSeconds,
             ], 429);
         }
 

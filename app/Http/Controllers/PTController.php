@@ -115,11 +115,11 @@ class PTController extends Controller
 
         Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
 
-        // 1. Check account / IP lockout
-        if ($lockoutService->isLocked($identifier, $request->ip())) {
+        // 1. Check account lockout (account-specific brute force protection)
+        if ($lockoutService->isAccountLocked($identifier)) {
             $remaining = $lockoutService->getRemainingSeconds($identifier, $request->ip());
             $minutes = max(1, ceil($remaining / 60));
-            $errorMessage = "Account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes.";
+            $errorMessage = "This account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes.";
 
             if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
                 return response()->json([
@@ -134,6 +134,10 @@ class PTController extends Controller
             return back()->withInput($request->only('identifier'))
                 ->withErrors(['identifier' => $errorMessage]);
         }
+
+        // If IP is locked from previous failed attempts on a shared campus network,
+        // we defer blocking so that legitimate users with correct passwords can still log in.
+        $isIpLocked = $lockoutService->isLocked($identifier, $request->ip());
 
         // Look up user by student_number, email, employee_id, id, or normalized format
         $user = User::findByIdentifier($identifier);
@@ -280,9 +284,10 @@ class PTController extends Controller
         // Record failed attempt
         $lockoutResult = $lockoutService->recordFailedAttempt($identifier, $request->ip());
 
-        if ($lockoutResult['locked']) {
-            $remaining = $lockoutResult['lockout_seconds'] ?? 900;
-            $errorMessage = 'Account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.';
+        if ($isIpLocked || $lockoutResult['locked']) {
+            $remaining = $lockoutResult['lockout_seconds'] ?? ($isIpLocked ? $lockoutService->getRemainingSeconds($identifier, $request->ip()) : 900);
+            $minutes = max(1, ceil($remaining / 60));
+            $errorMessage = "Account is temporarily locked due to repeated failed login attempts. Please try again in {$minutes} minutes.";
 
             if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
                 return response()->json([

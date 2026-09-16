@@ -72,20 +72,6 @@ class WebauthnService
 
         $normalizedCredentialId = $this->normalizeCredentialId($credentialId);
 
-        // Security check: verify this credential is not already registered to a DIFFERENT user
-        $existingOtherUser = WebauthnCredential::where('user_id', '!=', $user->id)
-            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                $query->where('credential_id', $credentialId);
-                if ($normalizedCredentialId !== $credentialId) {
-                    $query->orWhere('credential_id', $normalizedCredentialId);
-                }
-            })
-            ->first();
-
-        if ($existingOtherUser) {
-            throw new RuntimeException('This biometric device is already registered to another account.');
-        }
-
         // Check if already registered by the same user -> update it
         $existing = WebauthnCredential::where('user_id', $user->id)
             ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
@@ -98,6 +84,7 @@ class WebauthnService
 
         if ($existing) {
             $existing->forceFill([
+                'credential_id' => $credentialId,
                 'public_key' => $publicKey,
                 'sign_count' => $parsed['sign_count'],
                 'last_used_at' => now(),
@@ -125,12 +112,14 @@ class WebauthnService
         $allowCredentials = [];
         if ($user) {
             $allowCredentials = $user->webauthnCredentials()
-                ->where(function ($q) {
-                    $q->whereNull('biometric_type')
-                      ->orWhere('biometric_type', '!=', 'face')
-                      ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
-                })
                 ->get()
+                ->filter(function ($credential) {
+                    // Exclude only credentials that are purely camera-based mock descriptors
+                    if ($credential->biometric_type === 'face' && !str_contains($credential->public_key, 'BEGIN PUBLIC KEY') && str_starts_with((string) $credential->credential_id, 'face_')) {
+                        return false;
+                    }
+                    return true;
+                })
                 ->map(fn ($credential) => [
                     'type' => 'public-key',
                     'id' => $credential->credential_id,

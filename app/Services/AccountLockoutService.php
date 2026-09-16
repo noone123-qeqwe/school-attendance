@@ -9,7 +9,24 @@ class AccountLockoutService
 {
     public const MAX_ATTEMPTS = 5;
     public const LOCKOUT_SECONDS = 900; // 15 minutes
-    public const IP_MAX_ATTEMPTS = 10;
+    public const IP_MAX_ATTEMPTS = 50; // Higher threshold for shared networks/Wi-Fi
+
+    /**
+     * Check if an IP address is a private, local, or loopback network address.
+     */
+    public function isPrivateOrLoopbackIp(?string $ip): bool
+    {
+        if (!$ip) return false;
+        $clean = trim($ip);
+        if (in_array($clean, ['127.0.0.1', '::1', 'localhost'])) {
+            return true;
+        }
+        return filter_var(
+            $clean,
+            FILTER_VALIDATE_IP,
+            FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
+        ) === false;
+    }
 
     /**
      * Normalize the account identifier (email, student_number, employee_id).
@@ -20,17 +37,29 @@ class AccountLockoutService
     }
 
     /**
+     * Check if the specific account identifier is locked out.
+     */
+    public function isAccountLocked(?string $identifier): bool
+    {
+        $accKey = $this->accountKey($identifier);
+        return $accKey && (int) Cache::get($accKey . ':attempts', 0) >= self::MAX_ATTEMPTS;
+    }
+
+    /**
      * Check if the account or IP is currently locked out.
      */
     public function isLocked(?string $identifier, ?string $ip): bool
     {
-        $accKey = $this->accountKey($identifier);
-        $ipKey  = $this->ipKey($ip);
-
-        if ($accKey && (int) Cache::get($accKey . ':attempts', 0) >= self::MAX_ATTEMPTS) {
+        if ($this->isAccountLocked($identifier)) {
             return true;
         }
 
+        // Loopback and private campus subnets are immune to blanket IP lockouts
+        if ($this->isPrivateOrLoopbackIp($ip)) {
+            return false;
+        }
+
+        $ipKey = $this->ipKey($ip);
         if ($ipKey && (int) Cache::get($ipKey . ':attempts', 0) >= self::IP_MAX_ATTEMPTS) {
             return true;
         }

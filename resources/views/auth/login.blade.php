@@ -938,6 +938,17 @@ if (document.readyState === 'loading') {
                 <input type="hidden" name="qr_token" value="{{ $qrToken }}">
             @endif
 
+            <!-- Account Switcher Banner (shown when a saved account is remembered) -->
+            <div id="savedAccountBanner" style="display:none; align-items:center; justify-content:space-between; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.3); border-radius:12px; padding:8px 14px; margin-bottom:12px; font-size:0.82rem; color:#f3e7cd;" class="anim-fade-up anim-d4">
+                <div style="display:flex; align-items:center; gap:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    <i class="bi bi-person-check-fill" style="color:#d4af37; font-size:1rem;"></i>
+                    <span style="overflow:hidden; text-overflow:ellipsis;">Signing in as <strong id="savedAccountName" style="color:#fff;"></strong></span>
+                </div>
+                <button type="button" id="switchAccountBtn" title="Sign in with a different account" style="background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.35); color:#d4af37; font-size:0.75rem; font-weight:700; cursor:pointer; padding:3px 10px; border-radius:6px; white-space:nowrap; transition:all 0.2s;">
+                    Switch Account
+                </button>
+            </div>
+
             <!-- ID or Email  -  system detects role automatically -->
             <div class="glass-input-wrap anim-fade-up anim-d4" style="position: relative;">
                 <i class="bi bi-person-fill g-icon"></i>
@@ -1251,6 +1262,26 @@ try {
 var idInput = document.getElementById('idInput');
 var rememberCheckbox = document.getElementById('rememberMe');
 var clearIdBtn = document.getElementById('clearIdBtn');
+var savedAccountBanner = document.getElementById('savedAccountBanner');
+var savedAccountName = document.getElementById('savedAccountName');
+var switchAccountBtn = document.getElementById('switchAccountBtn');
+
+function updateAccountBanner() {
+    var savedId = '';
+    try {
+        savedId = (localStorage.getItem('attendance_saved_identifier') || '').trim();
+    } catch(e) {}
+    
+    if (savedAccountBanner && savedAccountName) {
+        if (savedId && idInput && idInput.value && idInput.value.trim().toLowerCase() === savedId.toLowerCase()) {
+            savedAccountName.textContent = savedId;
+            savedAccountBanner.style.display = 'flex';
+        } else {
+            savedAccountBanner.style.display = 'none';
+        }
+    }
+    updateClearBtnVisibility();
+}
 
 function updateClearBtnVisibility() {
     if (!clearIdBtn || !idInput) return;
@@ -1261,6 +1292,25 @@ function updateClearBtnVisibility() {
     }
 }
 
+function clearSavedAccount() {
+    if (idInput) {
+        idInput.value = '';
+        idInput.focus();
+    }
+    var pass = document.getElementById('loginPassword');
+    if (pass) {
+        pass.value = '';
+    }
+    try {
+        localStorage.removeItem('attendance_saved_identifier');
+    } catch (e) {}
+    updateAccountBanner();
+    hideFpMessage();
+    if (typeof updateForgotHref === 'function') {
+        updateForgotHref();
+    }
+}
+
 try {
     var savedId = localStorage.getItem('attendance_saved_identifier');
     if (savedId && idInput && !idInput.value) {
@@ -1268,23 +1318,19 @@ try {
         if (rememberCheckbox) rememberCheckbox.checked = true;
     }
 } catch (e) {}
-updateClearBtnVisibility();
+updateAccountBanner();
+
+if (switchAccountBtn) {
+    switchAccountBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearSavedAccount();
+    });
+}
 
 if (clearIdBtn) {
     clearIdBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        if (idInput) {
-            idInput.value = '';
-            idInput.focus();
-        }
-        try {
-            localStorage.removeItem('attendance_saved_identifier');
-        } catch (e) {}
-        updateClearBtnVisibility();
-        hideFpMessage();
-        if (typeof updateForgotHref === 'function') {
-            updateForgotHref();
-        }
+        clearSavedAccount();
     });
 }
 
@@ -1294,12 +1340,15 @@ function clearErrorStates() {
     if (idInput) idInput.classList.remove('is-invalid');
     var pass = document.getElementById('loginPassword');
     if (pass) pass.classList.remove('is-invalid');
-    updateClearBtnVisibility();
+    updateAccountBanner();
 }
 
 if (idInput) {
-    idInput.addEventListener('input', clearErrorStates);
-    idInput.addEventListener('change', updateClearBtnVisibility);
+    idInput.addEventListener('input', function() {
+        clearErrorStates();
+        updateAccountBanner();
+    });
+    idInput.addEventListener('change', updateAccountBanner);
 }
 var passInput = document.getElementById('loginPassword');
 if (passInput) {
@@ -1870,6 +1919,27 @@ async function performBiometricLogin(studentNumber) {
         var opts = await optRes.json();
         console.log('WebAuthn options response:', opts);
 
+        if (opts.requires_device_enrollment) {
+            resetBiometricButton();
+            showFpMessage('info', '<i class="bi bi-shield-check me-2"></i>' + (opts.message || 'Face biometrics enrolled. Enter password to activate device login.'));
+            openBiometricModal({
+                title: 'ACTIVATE DEVICE BIOMETRICS',
+                identifier: studentNumber,
+                message: (opts.message || 'Face Recognition is enrolled for this account.') + '<br><br>Please verify your password to activate seamless 1-touch biometric sign-in on this device.',
+                badgeType: 'info',
+                showPassword: true,
+                primaryBtnText: '<i class="bi bi-check-circle-fill me-2"></i>ACTIVATE BIOMETRICS',
+                secondaryBtnText: 'USE PASSWORD',
+                onPrimaryClick: handleSetupBiometricsClick,
+                onSecondaryClick: closeBiometricModalAndFocusPassword
+            });
+            setTimeout(function() {
+                var pInput = document.getElementById('bioModalPasswordInput');
+                if (pInput) pInput.focus();
+            }, 100);
+            return;
+        }
+
         if (!optRes.ok || !opts.success) {
             resetBiometricButton();
             // Account has not registered biometrics
@@ -2020,7 +2090,7 @@ async function performBiometricLogin(studentNumber) {
                     localStorage.setItem('attendance_saved_identifier', result.user.identifier);
                     if (idInput) {
                         idInput.value = result.user.identifier;
-                        if (typeof updateClearBtnVisibility === 'function') updateClearBtnVisibility();
+                        if (typeof updateAccountBanner === 'function') updateAccountBanner();
                     }
                 } catch(e) {}
             }
@@ -2028,6 +2098,78 @@ async function performBiometricLogin(studentNumber) {
             window.location.href = result.redirect || '{{ route("home") }}';
         } else {
             resetBiometricButton();
+
+            // 1-Tap Account Switch when scanned biometric belongs to another user on this device
+            if (result.can_switch_user && result.detected_user) {
+                var detUser = result.detected_user;
+                var detName = detUser.name || detUser.identifier;
+                
+                openBiometricModal({
+                    title: 'BIOMETRIC RECOGNIZED',
+                    identifier: detUser.identifier,
+                    message: 'This biometric matches <strong>' + detName + '</strong> (' + detUser.identifier + ').<br><br>Would you like to sign in as <strong>' + detName + '</strong>?',
+                    badgeType: 'success',
+                    primaryBtnText: '<i class="bi bi-box-arrow-in-right me-2"></i>SIGN IN AS ' + detName.toUpperCase(),
+                    secondaryBtnText: 'CANCEL',
+                    onPrimaryClick: async function() {
+                        openBiometricModal({
+                            title: 'SIGNING IN...',
+                            identifier: detUser.identifier,
+                            message: 'Authenticating as <strong>' + detName + '</strong>...',
+                            badgeType: 'info',
+                            primaryBtnText: '<i class="bi bi-hourglass-split me-2"></i>Signing in...',
+                            primaryDisabled: true,
+                            secondaryBtnText: false
+                        });
+                        
+                        try {
+                            var swRes = await fetch('{{ route("webauthn.login") }}', {
+                                method: 'POST',
+                                credentials: 'same-origin',
+                                headers: { 
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}', 
+                                    'Content-Type': 'application/json', 
+                                    'Accept': 'application/json' 
+                                },
+                                body: JSON.stringify({ 
+                                    credential_id: credentialId, 
+                                    assertion: assertionData,
+                                    student_number: detUser.identifier,
+                                    identifier: detUser.identifier,
+                                    switch_user: true
+                                })
+                            });
+                            var swData = await swRes.json();
+                            if (swData.success) {
+                                try {
+                                    localStorage.setItem('attendance_saved_identifier', detUser.identifier);
+                                    if (idInput) {
+                                        idInput.value = detUser.identifier;
+                                        if (typeof updateAccountBanner === 'function') updateAccountBanner();
+                                    }
+                                } catch(e) {}
+                                window.location.href = swData.redirect || '{{ route("home") }}';
+                            } else {
+                                throw new Error(swData.message || 'Login failed.');
+                            }
+                        } catch(swErr) {
+                            openBiometricModal({
+                                title: 'SIGN IN FAILED',
+                                identifier: detUser.identifier,
+                                message: swErr.message || 'Failed to switch user.',
+                                badgeType: 'danger',
+                                primaryBtnText: 'TRY AGAIN',
+                                secondaryBtnText: 'USE PASSWORD',
+                                onPrimaryClick: function() { performBiometricLogin(detUser.identifier); },
+                                onSecondaryClick: closeBiometricModalAndFocusPassword
+                            });
+                        }
+                    },
+                    onSecondaryClick: closeBiometricModal
+                });
+                return;
+            }
+
             var failMsg = result.message || 'Biometric authentication was not recognized.';
             showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + failMsg);
             
@@ -2178,6 +2320,7 @@ window.closeBiometricModalAndFocusIdentifier = closeBiometricModalAndFocusIdenti
 @if(old('identifier'))
     if (idInput) {
         idInput.value = '{{ old('identifier') }}';
+        if (typeof updateAccountBanner === 'function') updateAccountBanner();
     }
 @endif
 

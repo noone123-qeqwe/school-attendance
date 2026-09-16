@@ -7,6 +7,7 @@ use App\Services\WebauthnService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class WebAuthnController extends Controller
@@ -74,37 +75,6 @@ class WebAuthnController extends Controller
 
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
 
-        // Check if this credential is already registered to another user
-        $existsOther = DB::table("webauthn_credentials")
-            ->where("user_id", "!=", $user->id)
-            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                $query->where('credential_id', $credentialId)
-                      ->orWhere('credential_id', $normalizedCredentialId);
-            })
-            ->exists();
-
-        if ($existsOther) {
-            return response()->json([
-                "success" => false, 
-                "message" => "This {$typeLabel} credential is already registered to another account."
-            ], 409);
-        }
-
-        $exists = DB::table("webauthn_credentials")
-            ->where("user_id", $user->id)
-            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                $query->where('credential_id', $credentialId)
-                      ->orWhere('credential_id', $normalizedCredentialId);
-            })
-            ->exists();
-
-        if ($exists) {
-            return response()->json([
-                "success" => false, 
-                "message" => "This {$typeLabel} credential is already registered on your account."
-            ], 409);
-        }
-
         // Direct camera-based face recognition registration (independent from WebAuthn device verification)
         $isDirectFace = $biometricType === 'face' && (
             empty($credential['response']['attestationObject']) || 
@@ -119,15 +89,19 @@ class WebAuthnController extends Controller
                     ?? $request->input('public_key') 
                     ?? hash('sha256', $credentialId . $user->id . config('app.key'));
 
-                \App\Models\WebauthnCredential::create([
-                    'user_id' => $user->id,
-                    'credential_id' => $credentialId,
-                    'public_key' => (string) $faceData,
-                    'sign_count' => 0,
-                    'device_name' => $deviceName,
-                    'biometric_type' => 'face',
-                    'last_used_at' => now(),
-                ]);
+                \App\Models\WebauthnCredential::updateOrCreate(
+                    [
+                        'user_id' => $user->id,
+                        'credential_id' => $credentialId,
+                    ],
+                    [
+                        'public_key' => (string) $faceData,
+                        'sign_count' => 0,
+                        'device_name' => $deviceName,
+                        'biometric_type' => 'face',
+                        'last_used_at' => now(),
+                    ]
+                );
 
                 // Check if user already has recovery codes
                 $hasRecoveryCodes = \App\Models\RecoveryCode::where('user_id', $user->id)->exists();
@@ -214,17 +188,10 @@ class WebAuthnController extends Controller
             if (!$user->isActive()) {
                 return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
             }
-            
-            // Only consider valid WebAuthn credentials (or valid face credentials with public key)
-            $credentials = $user->webauthnCredentials()
-                ->where(function ($q) {
-                    $q->whereNull('biometric_type')
-                      ->orWhere('biometric_type', '!=', 'face')
-                      ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
-                })
-                ->exists();
+                     // Check if user has any biometric credentials registered
+            $hasAnyCredentials = $user->webauthnCredentials()->exists();
 
-            if (!$credentials) {
+            if (!$hasAnyCredentials) {
                 return response()->json([
                     "success" => false,
                     "code" => "NOT_REGISTERED",
@@ -234,6 +201,28 @@ class WebAuthnController extends Controller
                     "user_name" => $user->name,
                     "message" => "You haven't enabled biometric sign-in for this account yet."
                 ], 404);
+            }
+
+            // Check if user has hardware WebAuthn credentials
+            $hasWebauthn = $user->webauthnCredentials()
+                ->where(function ($q) {
+                    $q->whereNull('biometric_type')
+                      ->orWhere('biometric_type', '!=', 'face')
+                      ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
+                })
+                ->exists();
+
+            if (!$hasWebauthn) {
+                // User has registered camera face biometrics, but hardware WebAuthn is not yet enrolled on this browser
+                return response()->json([
+                    "success" => true,
+                    "requires_device_enrollment" => true,
+                    "biometric_type" => "face",
+                    "user_id" => $user->id,
+                    "identifier" => $user->student_number ?? $user->email ?? $identifier,
+                    "user_name" => $user->name,
+                    "message" => "Face Recognition is registered for your account! Please verify your password to activate seamless device biometric sign-in on this device.",
+                ]);
             }
             
             session(["webauthn_login_user_id" => $user->id]);
@@ -277,7 +266,11 @@ class WebAuthnController extends Controller
             return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Your account has been deactivated."], 403);
         }
 
-        if (!$password || !\Illuminate\Support\Facades\Hash::check($password, $user->password)) {
+        $trimmedPassword = is_string($password) ? trim($password) : '';
+        $passwordMatches = Hash::check((string) $password, $user->password)
+            || ($password !== $trimmedPassword && Hash::check($trimmedPassword, $user->password));
+
+        if (!$password || !$passwordMatches) {
             return response()->json(["success" => false, "code" => "INVALID_PASSWORD", "message" => "Invalid password. Please enter the correct password to verify your account."], 401);
         }
 
@@ -297,8 +290,12 @@ class WebAuthnController extends Controller
 
         if (!$userId && $request->has('identifier') && $request->has('password')) {
             $user = $this->findUserByIdentifier(trim($request->input('identifier')));
-            if ($user && \Illuminate\Support\Facades\Hash::check($request->input('password'), $user->password)) {
-                $userId = $user->id;
+            if ($user) {
+                $p = (string) $request->input('password');
+                $pTrim = trim($p);
+                if (Hash::check($p, $user->password) || ($p !== $pTrim && Hash::check($pTrim, $user->password))) {
+                    $userId = $user->id;
+                }
             }
         }
 
@@ -333,22 +330,6 @@ class WebAuthnController extends Controller
         }
 
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
-
-        // Check if this credential ID is registered to another user
-        $existsOther = DB::table("webauthn_credentials")
-            ->where("user_id", "!=", $user->id)
-            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                $query->where('credential_id', $credentialId)
-                      ->orWhere('credential_id', $normalizedCredentialId);
-            })
-            ->exists();
-
-        if ($existsOther) {
-            return response()->json([
-                "success" => false,
-                "message" => "This biometric credential is already registered to another account."
-            ], 409);
-        }
 
         try {
             $stored = $webauthn->storeCredential($user, $credential);
@@ -411,15 +392,7 @@ class WebAuthnController extends Controller
         $credentialId = $request->input('credential_id') ?? $request->input('assertion.id');
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
 
-        // 1. Identify credential and its owning user from database
-        $dbCredential = \App\Models\WebauthnCredential::with('user')
-            ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
-                $query->where('credential_id', $credentialId)
-                      ->orWhere('credential_id', $normalizedCredentialId);
-            })
-            ->first();
-
-        // 2. Check if an account was targeted via session or request input
+        // 1. Check if an account was targeted via session or request input
         $sessionUserId = session("webauthn_login_user_id");
         $rawIdentifier = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
         $expectedUser = null;
@@ -430,33 +403,71 @@ class WebAuthnController extends Controller
             $expectedUser = $this->findUserByIdentifier(trim($rawIdentifier));
         }
 
+        // 2. Locate matching credential (prefer expected user's credential if targeted)
         $user = null;
+        $dbCredential = null;
 
-        if ($dbCredential && $dbCredential->user) {
-            $user = $dbCredential->user;
-
-            // Security check: If a specific user was expected, verify the credential belongs to them
-            if ($expectedUser && $expectedUser->id !== $user->id) {
-                \Illuminate\Support\Facades\Log::warning('WebAuthn account mismatch attempt', [
-                    'expected_user_id' => $expectedUser->id,
-                    'credential_user_id' => $user->id,
-                    'credential_id' => $credentialId,
-                ]);
-                return response()->json([
-                    "success" => false,
-                    "code" => "CREDENTIAL_MISMATCH",
-                    "message" => "This biometric credential belongs to a different account ({$user->name}). Please select the correct account or sign in with password.",
-                ], 403);
-            }
-        } elseif ($expectedUser) {
-            // Fallback check against expected user's credentials
-            $user = $expectedUser;
-            $dbCredential = $user->webauthnCredentials()
+        if ($expectedUser) {
+            $dbCredential = $expectedUser->webauthnCredentials()
                 ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
                     $query->where('credential_id', $credentialId)
                           ->orWhere('credential_id', $normalizedCredentialId);
                 })
                 ->first();
+
+            if ($dbCredential) {
+                $user = $expectedUser;
+            }
+        }
+
+        if (!$dbCredential) {
+            $dbCredential = \App\Models\WebauthnCredential::with('user')
+                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                    $query->where('credential_id', $credentialId)
+                          ->orWhere('credential_id', $normalizedCredentialId);
+                })
+                ->first();
+
+            if ($dbCredential && $dbCredential->user) {
+                $user = $dbCredential->user;
+            }
+        }
+
+        // 3. Handle account mismatch / account switching
+        $allowSwitch = $request->boolean('switch_user') || $request->boolean('allow_detected_user');
+
+        if ($expectedUser && $user && $expectedUser->id !== $user->id) {
+            if ($allowSwitch) {
+                \Illuminate\Support\Facades\Log::info('WebAuthn user switched account to detected biometric owner', [
+                    'from_user_id' => $expectedUser->id,
+                    'to_user_id' => $user->id,
+                ]);
+            } else {
+                \Illuminate\Support\Facades\Log::warning('WebAuthn account mismatch attempt', [
+                    'expected_user_id' => $expectedUser->id,
+                    'credential_user_id' => $user->id,
+                    'credential_id' => $credentialId,
+                ]);
+                $userIdentifier = $user->student_number ?? $user->email;
+                $expectedIdentifier = $expectedUser->student_number ?? $expectedUser->email;
+                return response()->json([
+                    "success" => false,
+                    "code" => "CREDENTIAL_MISMATCH",
+                    "can_switch_user" => true,
+                    "message" => "This biometric credential belongs to {$user->name} ({$userIdentifier}).",
+                    "detected_user" => [
+                        "id" => $user->id,
+                        "name" => $user->name,
+                        "identifier" => $userIdentifier,
+                        "role" => $user->role,
+                    ],
+                    "expected_user" => [
+                        "id" => $expectedUser->id,
+                        "name" => $expectedUser->name,
+                        "identifier" => $expectedIdentifier,
+                    ]
+                ], 403);
+            }
         }
 
         \Illuminate\Support\Facades\Log::info('WebAuthn login attempt', [

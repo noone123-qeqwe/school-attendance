@@ -207,8 +207,9 @@ class MultiUserAuthAndBiometricTest extends TestCase
         $this->assertNotNull($bobCred);
         $this->assertEquals($userB->id, $bobCred->user_id);
 
-        // Bob tries to steal / overwrite Credential A -> 409 Conflict
-        $resSteal = $this->postJson(route('webauthn.setup.register'), [
+        // Multi-user shared device support: Bob registering on the same device / platform authenticator
+        // succeeds and creates an isolated credential for Bob without overwriting Alice's credential
+        $resShared = $this->postJson(route('webauthn.setup.register'), [
             'identifier' => 'STU-B',
             'password' => 'passwordB123!',
             'credential_id' => $credA_id,
@@ -216,17 +217,23 @@ class MultiUserAuthAndBiometricTest extends TestCase
                 'id' => $credA_id,
                 'type' => 'public-key',
                 'response' => [
-                    'attestationObject' => 'dummy_steal',
-                    'clientDataJSON' => 'dummy_steal_client',
+                    'attestationObject' => 'dummy_shared',
+                    'clientDataJSON' => 'dummy_shared_client',
                 ],
             ],
-            'device_name' => 'Bob Hacker Device',
+            'device_name' => 'Bob Shared Device',
         ]);
-        $resSteal->assertStatus(409);
+        $resShared->assertStatus(200)->assertJson(['success' => true]);
 
-        // Verify Credential A still belongs solely to Alice
-        $checkA = WebauthnCredential::where('credential_id', $credA_id)->first();
+        // Verify Alice still owns her credential record
+        $checkA = WebauthnCredential::where('credential_id', $credA_id)->where('user_id', $userA->id)->first();
+        $this->assertNotNull($checkA);
         $this->assertEquals($userA->id, $checkA->user_id);
+
+        // Verify Bob also owns his credential record for the shared device
+        $checkB = WebauthnCredential::where('credential_id', $credA_id)->where('user_id', $userB->id)->first();
+        $this->assertNotNull($checkB);
+        $this->assertEquals($userB->id, $checkB->user_id);
     }
 
     public function test_targeted_and_discoverable_webauthn_login_options()
