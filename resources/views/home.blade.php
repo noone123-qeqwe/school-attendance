@@ -498,13 +498,13 @@
     }
 
     .student-hero-banner {
-        background: linear-gradient(135deg, rgba(32, 14, 11, 0.94) 0%, rgba(18, 10, 8, 0.98) 60%, rgba(26, 14, 10, 0.94) 100%) !important;
-        border: 1px solid rgba(207, 164, 111, 0.22) !important;
-        border-radius: 22px !important;
+        background: radial-gradient(120% 120% at 0% 0%, rgba(42, 20, 14, 0.95) 0%, rgba(18, 10, 8, 0.98) 55%, rgba(12, 7, 5, 0.98) 100%) !important;
+        border: 1px solid rgba(207, 164, 111, 0.24) !important;
+        border-radius: 20px !important;
         padding: 20px 24px !important;
         position: relative !important;
         overflow: hidden !important;
-        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
         margin-bottom: 20px !important;
     }
 
@@ -515,123 +515,68 @@
         left: 0;
         right: 0;
         height: 2px;
-        background: linear-gradient(90deg, transparent 0%, rgba(255, 209, 102, 0.7) 25%, rgba(207, 164, 111, 1) 50%, rgba(255, 209, 102, 0.7) 75%, transparent 100%);
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 209, 102, 0.6) 20%, rgba(207, 164, 111, 1) 50%, rgba(255, 209, 102, 0.6) 80%, transparent 100%);
+    }
+
+    .student-hero-banner::after {
+        content: '';
+        position: absolute;
+        top: -40px;
+        left: -40px;
+        width: 180px;
+        height: 180px;
+        background: radial-gradient(circle, rgba(207, 164, 111, 0.15) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 1;
     }
 
     .student-hero-inner {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    /* ── Top Bar: Greeting & Status ── */
+    .student-hero-topbar {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        position: relative;
-        z-index: 2;
+        gap: 10px;
     }
 
-    .student-hero-identity {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        flex: 1 1 320px;
-        min-width: 0;
-    }
-
-    .student-hero-avatar-wrap {
-        position: relative;
-        width: 58px;
-        height: 58px;
-        min-width: 58px;
-        border-radius: 18px;
-        padding: 2px;
-        background: linear-gradient(135deg, rgba(212, 175, 55, 0.65) 0%, rgba(139, 90, 43, 0.35) 100%);
-        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
-        flex-shrink: 0;
-    }
-
-    .student-hero-avatar {
-        width: 100%;
-        height: 100%;
-        border-radius: 16px;
-        object-fit: cover;
-        background: #1a0f0a;
-        display: block;
-    }
-
-    .student-avatar-pulse {
-        position: absolute;
-        bottom: 0px;
-        right: 0px;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: #10b981;
-        border: 2px solid #1a0f0a;
-        box-shadow: 0 0 6px rgba(16, 185, 129, 0.85);
-    }
-
-    .student-hero-info {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .student-greeting-pill {
+    .student-greeting-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 2px 9px;
+        gap: 7px;
+        padding: 3px 11px;
         border-radius: 99px;
-        background: rgba(207, 164, 111, 0.12);
-        border: 1px solid rgba(207, 164, 111, 0.25);
+        background: rgba(207, 164, 111, 0.1);
+        border: 1px solid rgba(207, 164, 111, 0.24);
         color: #f3d18e;
-        font-size: 0.7rem;
+        font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        margin-bottom: 4px;
     }
 
-    .student-hero-name {
-        color: #ffffff;
-        font-weight: 800;
-        margin: 0 0 6px 0;
-        font-size: clamp(1.25rem, 2.5vw, 1.85rem);
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-        overflow-wrap: break-word;
-        word-break: normal;
+    .student-greeting-badge i {
+        font-size: 0.82rem;
     }
 
-    .student-hero-chips {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-    }
-
-    .student-info-chip {
+    .student-status-badge {
         display: inline-flex;
         align-items: center;
-        gap: 5px;
-        padding: 3px 9px;
-        border-radius: 8px;
-        background: rgba(0, 0, 0, 0.35);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #e5d7c4;
-        font-size: 0.78rem;
-        font-weight: 600;
-        line-height: 1.3;
-    }
-
-    .student-info-chip.chip-gold {
-        background: rgba(207, 164, 111, 0.12);
-        border-color: rgba(207, 164, 111, 0.28);
-        color: #ffd166;
-    }
-
-    .student-info-chip.chip-status {
-        background: rgba(16, 185, 129, 0.12);
-        border-color: rgba(16, 185, 129, 0.28);
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 99px;
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.26);
         color: #6ee7b7;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
     }
 
     .student-status-dot {
@@ -639,96 +584,193 @@
         height: 6px;
         border-radius: 50%;
         background: #10b981;
+        box-shadow: 0 0 8px rgba(16, 185, 129, 0.85);
         display: inline-block;
     }
 
-    /* Right side widgets */
-    .student-hero-widgets {
+    /* ── Middle: Student Profile (Avatar + Name & Meta) ── */
+    .student-hero-profile {
         display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 8px;
+        align-items: center;
+        gap: 16px;
     }
 
-    .student-clock-card {
-        background: rgba(0, 0, 0, 0.45);
-        border: 1px solid rgba(207, 164, 111, 0.22);
-        border-radius: 14px;
-        padding: 8px 16px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        min-width: 170px;
+    .student-avatar-box {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        min-width: 58px;
+        border-radius: 17px;
+        padding: 2px;
+        background: linear-gradient(135deg, rgba(212, 175, 55, 0.65) 0%, rgba(139, 90, 43, 0.35) 100%);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+        flex-shrink: 0;
     }
 
-    .student-clock-time {
-        color: #ffd166;
-        font-size: 1.25rem;
+    .student-avatar-img {
+        width: 100%;
+        height: 100%;
+        border-radius: 15px;
+        object-fit: cover;
+        background: #1a0f0a;
+        display: block;
+    }
+
+    .student-profile-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .student-hero-name {
+        color: #ffffff;
         font-weight: 800;
-        font-variant-numeric: tabular-nums;
+        margin: 0 0 6px 0;
+        font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+        line-height: 1.15;
         letter-spacing: -0.02em;
+        overflow-wrap: break-word;
+    }
+
+    .student-meta-strip {
         display: flex;
         align-items: center;
         gap: 6px;
-        line-height: 1.2;
-    }
-
-    .student-clock-date {
-        color: #b39b82;
-        font-size: 0.75rem;
-        font-weight: 500;
-        margin-top: 2px;
-    }
-
-    .student-hero-badges-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
         flex-wrap: wrap;
-        justify-content: flex-end;
     }
 
-    .student-rate-badge {
+    .student-meta-chip {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        padding: 4px 11px;
-        border-radius: 99px;
+        padding: 3px 8px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #d6c7b2;
         font-size: 0.75rem;
-        font-weight: 700;
+        font-weight: 600;
+        line-height: 1.3;
     }
 
-    .student-rate-badge.rate-good {
-        background: rgba(16, 185, 129, 0.14);
-        border: 1px solid rgba(16, 185, 129, 0.35);
-        color: #34d399;
+    .student-meta-chip.chip-gold {
+        background: rgba(207, 164, 111, 0.12);
+        border-color: rgba(207, 164, 111, 0.28);
+        color: #ffd166;
     }
 
-    .student-rate-badge.rate-warning {
-        background: rgba(245, 158, 11, 0.14);
-        border: 1px solid rgba(245, 158, 11, 0.35);
+    .student-meta-chip i {
+        font-size: 0.8rem;
+        opacity: 0.9;
+    }
+
+    /* ── Bottom: Symmetrical Metrics Deck ── */
+    .student-hero-deck {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding-top: 14px;
+        border-top: 1px solid rgba(207, 164, 111, 0.12);
+    }
+
+    .hero-deck-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 12px;
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(207, 164, 111, 0.14);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        min-width: 0;
+    }
+
+    .hero-deck-card:hover {
+        background: rgba(0, 0, 0, 0.48);
+        border-color: rgba(207, 164, 111, 0.28);
+        transform: translateY(-1px);
+    }
+
+    .hero-deck-icon {
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+
+    .hero-deck-icon.icon-time {
+        background: rgba(207, 164, 111, 0.12);
+        border: 1px solid rgba(207, 164, 111, 0.22);
+        color: #ffd166;
+    }
+
+    .hero-deck-icon.icon-rate-good {
+        background: rgba(16, 185, 129, 0.12);
+        border: 1px solid rgba(16, 185, 129, 0.28);
+        color: #4ade80;
+    }
+
+    .hero-deck-icon.icon-rate-warning {
+        background: rgba(245, 158, 11, 0.12);
+        border: 1px solid rgba(245, 158, 11, 0.28);
         color: #fbbf24;
     }
 
-    .student-rate-badge.rate-danger {
-        background: rgba(239, 68, 68, 0.14);
-        border: 1px solid rgba(239, 68, 68, 0.35);
+    .hero-deck-icon.icon-rate-danger {
+        background: rgba(239, 68, 68, 0.12);
+        border: 1px solid rgba(239, 68, 68, 0.28);
         color: #f87171;
     }
 
-    .student-streak-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        border-radius: 99px;
-        background: rgba(245, 158, 11, 0.12);
-        border: 1px solid rgba(245, 158, 11, 0.25);
-        color: #fbbf24;
-        font-size: 0.74rem;
-        font-weight: 700;
+    .hero-deck-icon.icon-streak {
+        background: rgba(249, 115, 22, 0.12);
+        border: 1px solid rgba(249, 115, 22, 0.28);
+        font-size: 1rem;
     }
+
+    .hero-deck-icon.icon-classes {
+        background: rgba(96, 165, 250, 0.12);
+        border: 1px solid rgba(96, 165, 250, 0.25);
+        color: #60a5fa;
+    }
+
+    .hero-deck-body {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .hero-deck-value {
+        color: #ffffff;
+        font-size: 0.98rem;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .hero-deck-value.val-rate-good { color: #4ade80; }
+    .hero-deck-value.val-rate-warning { color: #fbbf24; }
+    .hero-deck-value.val-rate-danger { color: #f87171; }
+
+    .hero-deck-label {
+        color: #9c8b78;
+        font-size: 0.68rem;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
 
 
     /* ══════════════════════════════════════════════════════════════
@@ -965,73 +1007,73 @@
             gap: 10px;
         }
 
-        /* Hero banner compact */
+        /* Hero banner compact & clean */
         .student-hero-banner {
-            padding: 13px 14px !important;
+            padding: 14px 14px !important;
             border-radius: 16px !important;
-            margin-bottom: 10px !important;
+            margin-bottom: 12px !important;
         }
         .student-hero-inner {
-            flex-direction: column !important;
-            align-items: stretch !important;
-            gap: 8px !important;
+            gap: 11px !important;
         }
-        .student-hero-identity {
-            gap: 10px !important;
-            flex: 1 1 100% !important;
+        .student-greeting-badge {
+            font-size: 0.68rem !important;
+            padding: 2px 8px !important;
         }
-        .student-hero-avatar-wrap {
-            width: 44px !important;
-            height: 44px !important;
-            min-width: 44px !important;
+        .student-status-badge {
+            font-size: 0.68rem !important;
+            padding: 2px 8px !important;
+        }
+        .student-hero-profile {
+            gap: 12px !important;
+        }
+        .student-avatar-box {
+            width: 48px !important;
+            height: 48px !important;
+            min-width: 48px !important;
+            border-radius: 14px !important;
+        }
+        .student-avatar-img {
             border-radius: 12px !important;
         }
-        .student-hero-avatar {
-            border-radius: 10px !important;
-        }
         .student-hero-name {
-            font-size: 1.15rem !important;
-            margin-bottom: 2px !important;
+            font-size: 1.2rem !important;
+            margin-bottom: 3px !important;
         }
-        .student-greeting-pill {
-            font-size: 0.72rem !important;
-            margin-bottom: 2px !important;
-        }
-        .student-hero-chips {
+        .student-meta-strip {
             gap: 4px !important;
         }
-        .student-info-chip {
-            font-size: 0.72rem !important;
-            padding: 2px 7px !important;
+        .student-meta-chip {
+            font-size: 0.7rem !important;
+            padding: 2px 6px !important;
             border-radius: 6px !important;
         }
-        .student-hero-widgets {
-            flex-direction: row !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            width: 100% !important;
-            gap: 8px !important;
-        }
-        .student-clock-card {
-            padding: 4px 10px !important;
-            min-width: 0 !important;
-            border-radius: 10px !important;
-            align-items: flex-start !important;
-        }
-        .student-clock-time {
-            font-size: 0.95rem !important;
-        }
-        .student-clock-date {
-            font-size: 0.68rem !important;
-        }
-        .student-hero-badges-row {
-            justify-content: flex-end !important;
+        .student-hero-deck {
+            grid-template-columns: repeat(3, 1fr) !important;
             gap: 6px !important;
+            padding-top: 10px !important;
+            margin-top: 2px !important;
         }
-        .student-rate-badge,
-        .student-streak-badge {
-            padding: 3px 8px !important;
-            font-size: 0.7rem !important;
+        .hero-deck-card {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            padding: 8px 4px !important;
+            gap: 4px !important;
+            border-radius: 10px !important;
+        }
+        .hero-deck-icon {
+            width: 28px !important;
+            height: 28px !important;
+            min-width: 28px !important;
+            font-size: 0.82rem !important;
+            border-radius: 8px !important;
+        }
+        .hero-deck-value {
+            font-size: 0.85rem !important;
+        }
+        .hero-deck-label {
+            font-size: 0.62rem !important;
         }
 
         /* Quick Stats KPI Grid */
@@ -1144,80 +1186,107 @@
 <!-- Hero Banner -->
 <div class="student-hero-banner premium-hero-card mb-4">
     <div class="student-hero-inner">
-        <!-- Identity: Avatar + Details -->
-        <div class="student-hero-identity">
-            <div class="student-hero-avatar-wrap">
-                <img src="{{ Auth::user()->profile_photo_url_with_version }}" alt="{{ Auth::user()->name }}" class="student-hero-avatar">
-                <div class="student-avatar-pulse" title="Active Student"></div>
+        <!-- Top Bar: Greeting & Status -->
+        <div class="student-hero-topbar">
+            <div class="student-greeting-badge">
+                @if(now()->hour < 12)
+                    <i class="bi bi-brightness-alt-high-fill text-warning"></i>
+                @elseif(now()->hour < 17)
+                    <i class="bi bi-sun-fill text-warning"></i>
+                @else
+                    <i class="bi bi-moon-stars-fill text-warning"></i>
+                @endif
+                <span>{{ $greeting }}</span>
             </div>
-            <div class="student-hero-info">
-                <div class="student-greeting-pill">
-                    @if(now()->hour < 12)
-                        <i class="bi bi-brightness-alt-high-fill text-warning"></i>
-                    @elseif(now()->hour < 17)
-                        <i class="bi bi-sun-fill" style="color: #fbbf24;"></i>
-                    @else
-                        <i class="bi bi-moon-stars-fill" style="color: #fbbf24;"></i>
-                    @endif
-                    <span>{{ $greeting }}</span>
-                </div>
+            <div class="student-status-badge" title="Enrollment Status: Active">
+                <span class="student-status-dot"></span>
+                <span>Active Student</span>
+            </div>
+        </div>
+
+        <!-- Middle Profile: Avatar & Details -->
+        <div class="student-hero-profile">
+            <div class="student-avatar-box">
+                <img src="{{ Auth::user()->profile_photo_url_with_version }}" alt="{{ Auth::user()->name }}" class="student-avatar-img">
+            </div>
+            <div class="student-profile-info">
                 <h1 class="student-hero-name">{{ Auth::user()->name }}</h1>
-                <div class="student-hero-chips">
+                <div class="student-meta-strip">
                     @if(!empty(Auth::user()->student_number))
-                        <span class="student-info-chip chip-gold" title="Student Identification Number">
-                            <i class="bi bi-person-badge-fill text-gold"></i>
+                        <span class="student-meta-chip chip-gold" title="Student Identification Number">
+                            <i class="bi bi-person-badge"></i>
                             <span>{{ Auth::user()->student_number }}</span>
                         </span>
                     @endif
-                    <span class="student-info-chip" title="Enrolled Degree Program">
-                        <i class="bi bi-mortarboard-fill" style="color: #60a5fa;"></i>
+                    <span class="student-meta-chip" title="Enrolled Degree Program">
+                        <i class="bi bi-mortarboard" style="color: #60a5fa;"></i>
                         <span>{{ Auth::user()->course ?? 'BSCS' }}</span>
                     </span>
-                    <span class="student-info-chip" title="Academic Standing">
-                        <i class="bi bi-layers-fill" style="color: #a78bfa;"></i>
+                    <span class="student-meta-chip" title="Academic Standing">
+                        <i class="bi bi-layers" style="color: #a78bfa;"></i>
                         <span>Year {{ Auth::user()->year_level ?? '1' }} • Sem {{ Auth::user()->semester ?? '1' }}</span>
                     </span>
                     @if(!empty(Auth::user()->section))
-                        <span class="student-info-chip" title="Class Section">
-                            <i class="bi bi-people-fill" style="color: #34d399;"></i>
+                        <span class="student-meta-chip" title="Class Section">
+                            <i class="bi bi-people" style="color: #34d399;"></i>
                             <span>Sec {{ Auth::user()->section }}</span>
                         </span>
                     @endif
-                    <span class="student-info-chip chip-status" title="Enrollment Status">
-                        <span class="student-status-dot"></span>
-                        <span>Active Student</span>
-                    </span>
                 </div>
             </div>
         </div>
 
-        <!-- Right Side: Live Clock & Campus Overview -->
-        <div class="student-hero-widgets">
-            <div class="student-clock-card hero-clock-pill">
-                <div class="student-clock-time hero-clock-time">
-                    <i class="bi bi-clock"></i>
-                    <span id="studentClock">{{ now()->format('h:i A') }}</span>
+        <!-- Bottom: Symmetrical Metrics Deck -->
+        @php
+            $rateVal = isset($attendanceRate) ? (float) $attendanceRate : 0;
+            $rateTone = $rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger');
+            $rateIcon = $rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill');
+        @endphp
+        <div class="student-hero-deck">
+            <!-- Metric 1: Campus Time -->
+            <div class="hero-deck-card" title="Campus Local Time">
+                <div class="hero-deck-icon icon-time">
+                    <i class="bi bi-clock-fill"></i>
                 </div>
-                <div class="student-clock-date hero-clock-date">{{ now()->format('l, F j, Y') }}</div>
+                <div class="hero-deck-body">
+                    <div class="hero-deck-value" id="studentClock">{{ now()->format('h:i A') }}</div>
+                    <div class="hero-deck-label">{{ now()->format('D, M j, Y') }}</div>
+                </div>
             </div>
-            <div class="student-hero-badges-row">
-                @if(isset($attendanceRate))
-                    @php
-                        $rateVal = (float) $attendanceRate;
-                        $rateClass = $rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger');
-                        $rateIcon = $rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill');
-                    @endphp
-                    <span class="student-rate-badge {{ $rateClass }}" title="Overall Attendance Rate: {{ $attendanceRate }}%">
-                        <i class="bi {{ $rateIcon }}"></i>
-                        <span>{{ $attendanceRate }}% Attendance</span>
-                    </span>
-                @endif
-                @if(isset($streakCount) && $streakCount > 0)
-                    <span class="student-streak-badge" title="Consecutive Attendance Streak">
-                        <span>🔥 {{ $streakCount }} Day{{ $streakCount > 1 ? 's' : '' }} Streak</span>
-                    </span>
-                @endif
+
+            <!-- Metric 2: Attendance Rate -->
+            <div class="hero-deck-card" title="Overall Attendance Rate: {{ $attendanceRate ?? 0 }}%">
+                <div class="hero-deck-icon icon-{{ $rateTone }}">
+                    <i class="bi {{ $rateIcon }}"></i>
+                </div>
+                <div class="hero-deck-body">
+                    <div class="hero-deck-value val-{{ $rateTone }}">{{ $attendanceRate ?? 0 }}%</div>
+                    <div class="hero-deck-label">Attendance</div>
+                </div>
             </div>
+
+            <!-- Metric 3: Streak or Today's Classes -->
+            @if(isset($streakCount) && $streakCount > 0)
+                <div class="hero-deck-card" title="Consecutive Attendance Streak">
+                    <div class="hero-deck-icon icon-streak">
+                        <span>🔥</span>
+                    </div>
+                    <div class="hero-deck-body">
+                        <div class="hero-deck-value">{{ $streakCount }} {{ $streakCount == 1 ? 'Day' : 'Days' }}</div>
+                        <div class="hero-deck-label">Streak</div>
+                    </div>
+                </div>
+            @else
+                <div class="hero-deck-card" title="Today's Scheduled Classes">
+                    <div class="hero-deck-icon icon-classes">
+                        <i class="bi bi-calendar3"></i>
+                    </div>
+                    <div class="hero-deck-body">
+                        <div class="hero-deck-value">{{ isset($todaySchedule) ? $todaySchedule->count() : 0 }} Classes</div>
+                        <div class="hero-deck-label">Today's Load</div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </div>
