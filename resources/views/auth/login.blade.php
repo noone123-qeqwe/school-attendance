@@ -126,22 +126,24 @@
         .auth-scene {
             position: relative; z-index: 10;
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex; align-items: center; justify-content: center;
-            padding: 56px 20px 48px;
+            padding: 52px 20px 48px;
+            box-sizing: border-box;
         }
 
         /* ── GLASS CARD ── */
         .glass-card {
             width: 100%; 
-            max-width: 500px;
+            max-width: 480px;
             min-width: 320px; /* Minimum width for mobile */
-            background: rgba(30, 21, 21, 0.75);
+            background: rgba(30, 21, 21, 0.78);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border-radius: 24px;
+            border-radius: 22px;
             border: 1px solid rgba(212, 175, 55, 0.25);
-            box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212, 175, 55, 0.1);
-            padding: 28px 28px 24px;
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212, 175, 55, 0.12);
+            padding: 22px 26px 18px;
             color: white;
             position: relative;
             z-index: 20;
@@ -151,14 +153,14 @@
 
         /* Logo  -  smaller */
         .glass-logo {
-            width: 58px; height: 58px;
+            width: 50px; height: 50px;
             border-radius: 50%;
             background: white;
-            border: 3px solid rgba(255,220,100,0.6);
+            border: 2.5px solid rgba(255,220,100,0.6);
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            margin: 0 auto 10px;
+            margin: 0 auto 6px;
             transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
             animation: floatLogo 4s ease-in-out infinite, glowPulse 2s infinite;
         }
@@ -173,17 +175,17 @@
             color: white;
             font-size: 0.62rem; font-weight: 800;
             letter-spacing: 2px; text-transform: uppercase;
-            padding: 3px 12px; border-radius: 99px;
-            margin-bottom: 6px;
+            padding: 2.5px 12px; border-radius: 99px;
+            margin-bottom: 4px;
         }
         .glass-title {
-            font-size: 1.5rem; font-weight: 800;
+            font-size: 1.38rem; font-weight: 800;
             color: white; letter-spacing: -0.5px;
             margin-bottom: 2px;
         }
         .glass-sub {
-            font-size: 0.8rem; color: rgba(255,255,255,0.65);
-            margin-bottom: 16px;
+            font-size: 0.78rem; color: rgba(255,255,255,0.65);
+            margin-bottom: 12px;
         }
 
         /* Role toggle */
@@ -213,21 +215,21 @@
         .role-btn:hover:not(.active) { color: white; background: rgba(255,255,255,0.1); }
 
         /* Inputs */
-        #loginForm .glass-input-wrap { position: relative; margin-bottom: 8px; }
+        #loginForm .glass-input-wrap { position: relative; margin-bottom: 7px; }
         #loginForm .glass-input-wrap .g-icon {
-            position: absolute; left: 18px !important; top: 50%;
+            position: absolute; left: 16px !important; top: 50%;
             transform: translateY(-50%);
-            color: rgba(255,255,255,0.5); font-size: 1.1rem !important;
+            color: rgba(255,255,255,0.5); font-size: 1.05rem !important;
             pointer-events: none; transition: color 0.2s;
         }
         #loginForm .glass-input {
             width: 100%;
-            padding: 11px 13px 11px 50px;
+            padding: 10px 13px 10px 46px;
             border-radius: 11px;
             border: 1.5px solid rgba(212, 175, 55, 0.25);
             background: rgba(0,0,0,0.3);
             color: white;
-            font-size: 0.875rem;
+            font-size: 0.86rem;
             font-family: 'Inter', sans-serif;
             outline: none;
             transition: all 0.2s;
@@ -272,13 +274,13 @@
         /* Fingerprint/Biometric row */
         .fp-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 13px;
-            border-radius: 11px;
+            padding: 8px 12px;
+            border-radius: 10px;
             border: 1.5px solid rgba(255,255,255,0.18);
             background: rgba(255,255,255,0.08);
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             width: 100%;
             font-family: inherit;
             color: inherit;
@@ -290,15 +292,15 @@
         .fp-row:active { transform: scale(0.98); }
         .fp-row:focus-visible { outline: 2px solid rgba(212, 175, 55, 0.6); outline-offset: 2px; }
         .fp-row-left { display: flex; align-items: center; gap: 10px; text-align: left; }
-        .fp-row-left i { font-size: 1.2rem; color: rgba(255,255,255,0.85); transition: all 0.3s; }
-        .fp-row-label { font-size: 0.85rem; font-weight: 600; color: white; transition: all 0.2s; }
-        .fp-row-hint { font-size: 0.7rem; color: rgba(255,255,255,0.5); margin-top: 1px; transition: all 0.2s; }
-        .fp-row-arrow { color: rgba(255,255,255,0.4); font-size: 0.82rem; transition: all 0.2s; }
+        .fp-row-left i { font-size: 1.15rem; color: rgba(255,255,255,0.85); transition: all 0.3s; }
+        .fp-row-label { font-size: 0.82rem; font-weight: 600; color: white; transition: all 0.2s; }
+        .fp-row-hint { font-size: 0.68rem; color: rgba(255,255,255,0.5); margin-top: 1px; transition: all 0.2s; }
+        .fp-row-arrow { color: rgba(255,255,255,0.4); font-size: 0.8rem; transition: all 0.2s; }
 
         /* Divider */
         .glass-divider {
             display: flex; align-items: center; gap: 10px;
-            margin: 10px 0; color: rgba(255,255,255,0.35); font-size: 0.72rem;
+            margin: 7px 0; color: rgba(255,255,255,0.35); font-size: 0.7rem;
         }
         .glass-divider::before, .glass-divider::after {
             content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.18);
@@ -306,15 +308,15 @@
 
         /* Submit button */
         .glass-btn {
-            width: 100%; padding: 12px;
+            width: 100%; padding: 11px;
             background: rgba(255,255,255,0.95);
             color: #800000;
-            font-weight: 800; font-size: 0.875rem;
+            font-weight: 800; font-size: 0.86rem;
             letter-spacing: 0.5px;
             border: none; border-radius: 11px;
             cursor: pointer; transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            margin-top: 4px;
+            margin-top: 2px;
         }
         .glass-btn-primary {
             background: rgba(255,255,255,0.95);
@@ -332,9 +334,9 @@
 
         .glass-note-link {
             display: inline-flex; align-items: center; justify-content: center;
-            font-size: 0.78rem; color: rgba(255,255,255,0.65);
+            font-size: 0.76rem; color: rgba(255,255,255,0.65);
             text-decoration: none; transition: all 0.2s ease;
-            padding: 10px 0;
+            padding: 4px 0;
         }
         .glass-note-link:hover {
             color: rgba(255,255,255,0.95);
@@ -342,7 +344,7 @@
         }
 
         /* Links */
-        .glass-link-row { text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 12px; }
+        .glass-link-row { text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 8px; }
         .glass-link-row a { color: rgba(255,255,255,0.85); font-weight: 700; text-decoration: none; transition: color 0.2s; }
         .glass-link-row a:hover { color: white; text-decoration: underline; }
 
@@ -573,8 +575,12 @@
 
         /* Desktop elevation for optical vertical centering */
         @media (min-width: 769px) {
+            .auth-scene {
+                padding: 48px 20px 44px;
+            }
             .glass-card {
-                transform: translateY(-24px);
+                /* Balanced elevation leaving comfortable breathing room above and below */
+                transform: translateY(-16px);
             }
         }
 
@@ -993,7 +999,7 @@ if (document.readyState === 'loading') {
             </div>
 
             <!-- Password -->
-            <div class="glass-input-wrap mb-3 anim-fade-up anim-d5">
+            <div class="glass-input-wrap anim-fade-up anim-d5" style="margin-bottom: 7px;">
                 <i class="bi bi-lock-fill g-icon"></i>
                 <input type="password" name="password" id="loginPassword"
                        class="glass-input has-eye @error('password') is-invalid @enderror"
@@ -1006,7 +1012,7 @@ if (document.readyState === 'loading') {
                 <div class="invalid-feedback-custom anim-fade-up anim-d5" style="margin-top:-10px;margin-bottom:12px;">{{ $message }}</div>
             @enderror
             <!-- Remember Me & Forgot Password Row -->
-            <div class="d-flex align-items-center justify-content-between mb-3 anim-fade-up anim-d5" style="font-size: 0.82rem; padding: 0 2px;">
+            <div class="d-flex align-items-center justify-content-between anim-fade-up anim-d5" style="font-size: 0.82rem; padding: 0 2px; margin-bottom: 9px;">
                 <label style="display: inline-flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; margin: 0; color: rgba(255,255,255,0.85); font-weight: 500;">
                     <input type="checkbox" name="remember" id="rememberMe" value="1" checked style="width: 16px; height: 16px; accent-color: #d4af37; cursor: pointer; border-radius: 4px;">
                     <span>Remember me</span>
@@ -1039,7 +1045,7 @@ if (document.readyState === 'loading') {
             </button>
         </form>
 
-        <div style="text-align:center;margin-top:14px;" class="anim-fade-up anim-d7">
+        <div style="text-align:center;margin-top:8px;" class="anim-fade-up anim-d7">
             <a href="#" id="useRecoveryCodeLink" class="glass-note-link">
                 <i class="bi bi-key me-1"></i>Use Recovery Code
             </a>
