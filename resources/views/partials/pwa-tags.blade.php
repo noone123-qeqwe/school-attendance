@@ -711,6 +711,8 @@
             opacity: 1;
             transform: translate(-50%, -50%) scale(1);
         }
+    }
+
     /* ── Floating Fallback Pill for Snoozed / Dismissed Updates ── */
     .pwa-update-pill {
         position: fixed !important;
