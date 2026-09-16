@@ -1161,89 +1161,94 @@
         position: absolute;
         top: 0;
         right: 0;
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        color: rgba(255, 255, 255, 0.65);
-        font-size: 1.25rem;
-        cursor: pointer;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        padding: 0;
-        transition: all 0.2s ease;
-        z-index: 2;
+        background: rgba(255, 255, 255, 0.08) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        color: rgba(255, 255, 255, 0.75) !important;
+        font-size: 1.25rem !important;
+        cursor: pointer !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        padding: 0 !important;
+        transition: all 0.2s ease !important;
+        z-index: 2 !important;
+        outline: none !important;
     }
 
     .pwa-update-close-btn:hover {
-        background: rgba(255, 255, 255, 0.14);
-        color: #FFFFFF;
-        border-color: rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.18) !important;
+        color: #FFFFFF !important;
+        border-color: rgba(255, 255, 255, 0.35) !important;
     }
 
     /* Actions */
     .pwa-update-banner-actions {
         position: relative;
         z-index: 1;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: 100% !important;
         flex-shrink: 0 !important;
-        margin-top: 2px;
+        margin-top: 4px !important;
     }
 
     .pwa-btn-update-later {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.7);
-        font-weight: 600;
-        font-size: 0.86rem;
-        border-radius: 12px;
-        padding: 11px 18px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        touch-action: manipulation;
-        white-space: nowrap;
+        background: rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: rgba(255, 255, 255, 0.8) !important;
+        font-weight: 600 !important;
+        font-size: 0.86rem !important;
+        font-family: inherit !important;
+        border-radius: 12px !important;
+        padding: 11px 18px !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+        touch-action: manipulation !important;
+        white-space: nowrap !important;
+        outline: none !important;
     }
 
     .pwa-btn-update-later:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: #FFFFFF;
-        border-color: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.14) !important;
+        color: #FFFFFF !important;
+        border-color: rgba(255, 255, 255, 0.3) !important;
     }
 
     .pwa-btn-update-apply {
-        flex: 1;
-        background: linear-gradient(135deg, #e8c064 0%, #cfa46f 100%);
-        color: #0a0305;
-        font-weight: 700;
-        font-size: 0.88rem;
-        border: none;
-        border-radius: 12px;
-        padding: 11px 20px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        box-shadow: 0 4px 18px rgba(232, 192, 100, 0.35);
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        touch-action: manipulation;
-        white-space: nowrap;
+        flex: 1 !important;
+        background: linear-gradient(135deg, #e8c064 0%, #cfa46f 100%) !important;
+        color: #0a0305 !important;
+        font-weight: 700 !important;
+        font-size: 0.88rem !important;
+        font-family: inherit !important;
+        border: none !important;
+        border-radius: 12px !important;
+        padding: 11px 20px !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        box-shadow: 0 4px 18px rgba(232, 192, 100, 0.35) !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        touch-action: manipulation !important;
+        white-space: nowrap !important;
+        outline: none !important;
     }
 
     .pwa-btn-update-apply:hover {
-        filter: brightness(1.08);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(232, 192, 100, 0.45);
+        filter: brightness(1.08) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 24px rgba(232, 192, 100, 0.45) !important;
     }
 
     .pwa-btn-update-apply:active {
-        transform: scale(0.97);
+        transform: scale(0.97) !important;
     }
 
     .pwa-btn-arrow-icon {
