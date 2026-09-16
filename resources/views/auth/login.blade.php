@@ -571,12 +571,20 @@
             color: #ffffff;
         }
 
+        /* Desktop elevation for optical vertical centering */
+        @media (min-width: 769px) {
+            .glass-card {
+                transform: translateY(-24px);
+            }
+        }
+
         /* Mobile and Responsive */
         @media (max-width: 768px) {
             .glass-card { 
                 max-width: 90vw; /* Use viewport width on tablets */
                 padding: 24px 24px 20px; 
                 border-radius: 20px; 
+                transform: none;
             }
             .top-bar { padding: 12px 20px; }
             .bottom-bar { padding: 10px 20px; }
