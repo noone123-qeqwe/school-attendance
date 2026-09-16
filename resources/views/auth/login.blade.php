@@ -137,13 +137,14 @@
             width: 100%; 
             max-width: 480px;
             min-width: 320px; /* Minimum width for mobile */
+            min-height: 520px; /* Increased minimum height */
             background: rgba(30, 21, 21, 0.78);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             border-radius: 22px;
             border: 1px solid rgba(212, 175, 55, 0.25);
             box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212, 175, 55, 0.12);
-            padding: 22px 26px 18px;
+            padding: 26px 28px 22px; /* Increased padding */
             color: white;
             position: relative;
             z-index: 20;
@@ -151,16 +152,16 @@
             transition: all 0.3s ease; /* Smooth transitions */
         }
 
-        /* Logo  -  smaller */
+        /* Logo  -  slightly larger */
         .glass-logo {
-            width: 50px; height: 50px;
+            width: 56px; height: 56px;
             border-radius: 50%;
             background: white;
             border: 2.5px solid rgba(255,220,100,0.6);
             box-shadow: 0 4px 20px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            margin: 0 auto 6px;
+            margin: 0 auto 10px; /* Increased bottom margin */
             transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
             animation: floatLogo 4s ease-in-out infinite, glowPulse 2s infinite;
         }
@@ -179,13 +180,13 @@
             margin-bottom: 4px;
         }
         .glass-title {
-            font-size: 1.38rem; font-weight: 800;
+            font-size: 1.48rem; font-weight: 800;
             color: white; letter-spacing: -0.5px;
-            margin-bottom: 2px;
+            margin-bottom: 4px; /* Increased spacing */
         }
         .glass-sub {
-            font-size: 0.78rem; color: rgba(255,255,255,0.65);
-            margin-bottom: 12px;
+            font-size: 0.82rem; color: rgba(255,255,255,0.65);
+            margin-bottom: 16px; /* Increased spacing */
         }
 
         /* Role toggle */
@@ -215,7 +216,7 @@
         .role-btn:hover:not(.active) { color: white; background: rgba(255,255,255,0.1); }
 
         /* Inputs */
-        #loginForm .glass-input-wrap { position: relative; margin-bottom: 7px; }
+        #loginForm .glass-input-wrap { position: relative; margin-bottom: 10px; } /* Increased spacing */
         #loginForm .glass-input-wrap .g-icon {
             position: absolute; left: 16px !important; top: 50%;
             transform: translateY(-50%);
@@ -224,12 +225,12 @@
         }
         #loginForm .glass-input {
             width: 100%;
-            padding: 10px 13px 10px 46px;
+            padding: 12px 14px 12px 48px; /* Increased padding for larger touch target */
             border-radius: 11px;
             border: 1.5px solid rgba(212, 175, 55, 0.25);
             background: rgba(0,0,0,0.3);
             color: white;
-            font-size: 0.86rem;
+            font-size: 0.88rem; /* Slightly larger text */
             font-family: 'Inter', sans-serif;
             outline: none;
             transition: all 0.2s;
@@ -308,15 +309,15 @@
 
         /* Submit button */
         .glass-btn {
-            width: 100%; padding: 11px;
+            width: 100%; padding: 13px; /* Increased padding */
             background: rgba(255,255,255,0.95);
             color: #800000;
-            font-weight: 800; font-size: 0.86rem;
+            font-weight: 800; font-size: 0.9rem; /* Slightly larger */
             letter-spacing: 0.5px;
             border: none; border-radius: 11px;
             cursor: pointer; transition: all 0.25s ease;
             box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            margin-top: 2px;
+            margin-top: 4px; /* Increased spacing */
         }
         .glass-btn-primary {
             background: rgba(255,255,255,0.95);
@@ -579,8 +580,10 @@
                 padding: 48px 20px 44px;
             }
             .glass-card {
-                /* Balanced elevation leaving comfortable breathing room above and below */
-                transform: translateY(-16px);
+                /* Moved up and increased height for better visibility */
+                transform: translateY(-60px);
+                min-height: 560px;
+                max-width: 500px;
             }
         }
 
