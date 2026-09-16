@@ -121,12 +121,12 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
         ];
     };
 
-    $versionData = app()->environment('testing')
-        ? $resolver()
-        : \Illuminate\Support\Facades\Cache::remember($cacheKey, 10, $resolver);
+    $versionData = $resolver();
 
     return response()->json($versionData, 200, [
         'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma'        => 'no-cache',
+        'Expires'       => '0',
     ]);
 })->name('pwa.version');
 

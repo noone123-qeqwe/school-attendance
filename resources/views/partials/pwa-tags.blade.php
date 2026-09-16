@@ -639,31 +639,55 @@
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
+    /* ── Fullscreen Backdrop for System Update Modal (Universal Desktop + Mobile) ── */
+    .pwa-update-backdrop {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        background: rgba(0, 0, 0, 0.72) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        z-index: 100000 !important;
+        opacity: 0;
+        transition: opacity 0.25s ease-out;
+        pointer-events: auto;
+        display: none;
+    }
+    .pwa-update-backdrop.show {
+        display: block !important;
+        opacity: 1 !important;
+    }
+
     /* ── Big Tech / Enterprise System Update Card (Apple / Linear / Slack Style) ── */
     .pwa-update-banner {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        left: auto;
-        width: 410px;
-        max-width: calc(100vw - 32px);
-        background: rgba(14, 6, 9, 0.94);
-        border: 1px solid rgba(232, 192, 100, 0.28);
-        border-radius: 22px;
-        padding: 18px 20px;
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85), 
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: translate(-50%, -50%) !important;
+        width: calc(100vw - 32px) !important;
+        max-width: 410px !important;
+        margin: 0 auto !important;
+        background: rgba(14, 6, 9, 0.96) !important;
+        border: 1.5px solid rgba(232, 192, 100, 0.32) !important;
+        border-radius: 22px !important;
+        padding: 20px 22px !important;
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 
                     0 4px 20px rgba(0, 0, 0, 0.5), 
                     inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                    0 0 35px rgba(232, 192, 100, 0.08);
-        backdrop-filter: blur(28px) saturate(180%);
-        -webkit-backdrop-filter: blur(28px) saturate(180%);
+                    0 0 40px rgba(232, 192, 100, 0.12) !important;
+        backdrop-filter: blur(28px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
         z-index: 100005 !important;
         display: none;
-        flex-direction: column;
-        gap: 13px;
-        animation: pwaSlideUpEnterprise 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-        overflow: hidden;
-        box-sizing: border-box;
+        flex-direction: column !important;
+        gap: 14px !important;
+        animation: pwaSlideUpEnterprise 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-sizing: border-box !important;
+        max-height: min(540px, calc(100dvh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))) !important;
+        overflow: hidden !important;
     }
 
     /* Ambient Subtle Shimmer Glow */
@@ -681,11 +705,11 @@
     @keyframes pwaSlideUpEnterprise {
         0% {
             opacity: 0;
-            transform: translateY(30px) scale(0.96);
+            transform: translate(-50%, calc(-50% + 20px)) scale(0.96);
         }
         100% {
             opacity: 1;
-            transform: translateY(0) scale(1);
+            transform: translate(-50%, -50%) scale(1);
         }
     }
 
@@ -844,14 +868,16 @@
             padding: 20px 18px !important;
             border-radius: 22px !important;
             max-height: min(520px, calc(100dvh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))) !important;
-            overflow-y: auto !important;
-            -webkit-overflow-scrolling: touch !important;
+            overflow: hidden !important;
             box-sizing: border-box !important;
             z-index: 100005 !important;
             background: rgba(18, 10, 8, 0.98) !important;
             border: 1.5px solid rgba(207, 164, 111, 0.35) !important;
             box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 40px rgba(207, 164, 111, 0.15) !important;
             animation: pwaSlideUpMobileCenter 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: none;
+            flex-direction: column !important;
+            gap: 13px !important;
         }
 
         @keyframes pwaSlideUpMobileCenter {
@@ -868,6 +894,8 @@
         .pwa-update-banner-actions {
             flex-direction: row !important;
             gap: 10px !important;
+            flex-shrink: 0 !important;
+            width: 100% !important;
         }
 
         .pwa-btn-update-later,
@@ -883,8 +911,8 @@
             min-height: 32px !important;
             font-size: 1.35rem !important;
             touch-action: manipulation !important;
-            top: 2px !important;
-            right: 2px !important;
+            top: 0 !important;
+            right: 0 !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1024,7 +1052,7 @@
     .pwa-update-text-area {
         flex: 1;
         min-width: 0;
-        padding-right: 18px;
+        padding-right: 32px;
     }
 
     .pwa-update-meta {
@@ -1064,22 +1092,25 @@
     }
 
     .pwa-update-subtitle {
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.68);
-        line-height: 1.4;
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.42;
+        max-height: 140px;
+        overflow-y: auto;
+        word-break: break-word;
     }
 
     .pwa-update-close-btn {
         position: absolute;
-        top: -6px;
-        right: -6px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: rgba(255, 255, 255, 0.55);
+        top: 0;
+        right: 0;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: rgba(255, 255, 255, 0.65);
         font-size: 1.25rem;
         cursor: pointer;
-        width: 26px;
-        height: 26px;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -1087,12 +1118,13 @@
         line-height: 1;
         padding: 0;
         transition: all 0.2s ease;
+        z-index: 2;
     }
 
     .pwa-update-close-btn:hover {
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.14);
         color: #FFFFFF;
-        border-color: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.3);
     }
 
     /* Actions */
@@ -1103,6 +1135,8 @@
         align-items: center;
         gap: 10px;
         width: 100%;
+        flex-shrink: 0 !important;
+        margin-top: 2px;
     }
 
     .pwa-btn-update-later {
@@ -1596,11 +1630,14 @@
         const tsDismissed = sessionStorage.getItem('pwa_update_dismissed_ts');
         const localDismissedTag = localStorage.getItem('pwa_update_dismissed_tag');
         const localDismissedAt = parseInt(localStorage.getItem('pwa_update_dismissed_at') || '0', 10);
-        const DISMISS_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes cooldown
+        const DISMISS_COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes cooldown (shortened from 30 mins)
         
-        const isSessionDismissed = (sessionDismissedTag && sessionDismissedTag === currentUpdateKey) ||
-            (!sessionDismissedTag && sessionDismissed === targetVersion && latestServerTimestamp && tsDismissed === String(latestServerTimestamp));
-        const isLocalCooldownActive = (localDismissedTag === currentUpdateKey && (Date.now() - localDismissedAt < DISMISS_COOLDOWN_MS));
+        // If target version is strictly newer than the dismissed version, never suppress
+        const isNewerThanDismissed = sessionDismissed && compareSemver(targetVersion, sessionDismissed) > 0;
+
+        const isSessionDismissed = !isNewerThanDismissed && ((sessionDismissedTag && sessionDismissedTag === currentUpdateKey) ||
+            (!sessionDismissedTag && sessionDismissed === targetVersion && latestServerTimestamp && tsDismissed === String(latestServerTimestamp)));
+        const isLocalCooldownActive = !isNewerThanDismissed && (localDismissedTag === currentUpdateKey && (Date.now() - localDismissedAt < DISMISS_COOLDOWN_MS));
 
         if (!isManualCheck && !force && (isSessionDismissed || isLocalCooldownActive)) {
             return;
@@ -1817,8 +1854,14 @@
             showUpdateReadyPrompt(latestVer, force || isManualCheck, updateChangelog, isManualCheck);
             return { upToDate: false, updateAvailable: true, version: latestVer };
         } else {
-            // No newer version: do not show an update notification
-            hideAppUpdatePopup();
+            // Up to date: close modal elements if currently showing, without writing false dismissal cooldown to storage
+            const popup = document.getElementById('pwaSystemUpdatePopup');
+            if (popup) popup.style.display = 'none';
+            const backdrop = document.getElementById('pwaUpdateBackdrop');
+            if (backdrop) {
+                backdrop.classList.remove('show');
+                backdrop.style.display = 'none';
+            }
             return { upToDate: true, version: installedVer };
         }
     }
@@ -1853,7 +1896,7 @@
     setInterval(() => {
         if (swRegistration) try { swRegistration.update(); } catch(e) {}
         checkServerVersion(false);
-    }, 45000);
+    }, 10000);
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
