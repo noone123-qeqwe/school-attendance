@@ -730,59 +730,6 @@
         font-weight: 700;
     }
 
-    /* ══════════════════════════════════════════════════════════════
-       QUICK NAVIGATION BAR (Easy to Navigate Anchor Strip)
-       ══════════════════════════════════════════════════════════════ */
-    .student-quick-nav-wrap {
-        position: sticky;
-        top: 68px;
-        z-index: 100;
-        margin-bottom: 24px;
-    }
-    .student-quick-nav {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        padding: 6px 8px;
-        background: rgba(15, 10, 8, 0.9);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(207, 164, 111, 0.2);
-        border-radius: 18px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    }
-    .student-quick-nav::-webkit-scrollbar {
-        display: none;
-    }
-    .student-quick-nav-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 8px 16px;
-        border-radius: 12px;
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 255, 255, 0.06);
-        color: #b39b82;
-        font-size: 0.82rem;
-        font-weight: 700;
-        white-space: nowrap;
-        text-decoration: none;
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .student-quick-nav-item:hover,
-    .student-quick-nav-item:focus {
-        background: rgba(207, 164, 111, 0.15);
-        border-color: rgba(207, 164, 111, 0.35);
-        color: #ffd166;
-        transform: translateY(-1px);
-    }
-    .student-quick-nav-item i {
-        font-size: 0.92rem;
-        color: #cfa46f;
-    }
 
     /* ══════════════════════════════════════════════════════════════
        TODAY'S SCHEDULE (Modern Minimalist Timeline Cards)
@@ -1111,23 +1058,6 @@
             font-size: 1.35rem !important;
         }
 
-        /* Quick Navigation Bar */
-        .student-quick-nav-wrap {
-            position: relative !important;
-            top: 0 !important;
-            margin-bottom: 10px !important;
-        }
-        .student-quick-nav {
-            padding: 4px 6px !important;
-            gap: 6px !important;
-            border-radius: 14px !important;
-        }
-        .student-quick-nav-item {
-            padding: 6px 12px !important;
-            font-size: 0.78rem !important;
-            border-radius: 10px !important;
-            gap: 5px !important;
-        }
 
         /* Today's Schedule Card */
         #todayScheduleSection {
@@ -1308,27 +1238,6 @@
     <x-card type="kpi" accent="gold" label="Subjects" value="{{ isset($subjects) ? count($subjects) : 0 }}" icon="bi bi-book-fill" />
 </div>
 
-<!-- Quick Navigation Bar -->
-<div class="student-quick-nav-wrap mb-4">
-    <div class="student-quick-nav">
-        <a href="#todayScheduleSection" class="student-quick-nav-item">
-            <i class="bi bi-clock-history"></i>
-            <span>Today's Classes</span>
-        </a>
-        <a href="{{ route('student.attendance.calendar') }}" class="student-quick-nav-item">
-            <i class="bi bi-calendar-check-fill"></i>
-            <span>Attendance Calendar</span>
-        </a>
-        <button type="button" class="student-quick-nav-item" onclick="openSubjectBreakdownModal()" title="View Subject Attendance Breakdown">
-            <i class="bi bi-bar-chart-fill"></i>
-            <span>Subject Breakdown</span>
-        </button>
-        <button type="button" class="student-quick-nav-item" onclick="openAttendanceRecordsModal()" title="View Complete Attendance Records">
-            <i class="bi bi-journal-text"></i>
-            <span>View Records</span>
-        </button>
-    </div>
-</div>
 
 <!-- Today's Schedule -->
 <div class="row g-4 mb-4" id="todayScheduleSection">
