@@ -806,8 +806,8 @@
         @endif
 
         <!-- More Bottom Sheet -->
-        <div class="more-sheet-overlay" id="moreSheetOverlay" onclick="closeMoreSheet()"></div>
-        <div class="more-sheet" id="moreSheet">
+        <div class="more-sheet-overlay d-md-none" id="moreSheetOverlay" onclick="closeMoreSheet()"></div>
+        <div class="more-sheet d-md-none" id="moreSheet">
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
                 <span class="more-sheet-title">More</span>
@@ -1042,6 +1042,24 @@
                     sheet.style.transform = '';
                 }
             });
+
+            // Ensure body scrolling is never stuck
+            const anyOpenModal = document.querySelector('.modal.show, .premium-drawer.open, .more-sheet.open, .sidebar.open');
+            if (!anyOpenModal) {
+                document.body.style.overflow = '';
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                if (typeof window.closeMoreSheet === 'function') {
+                    window.closeMoreSheet();
+                }
+                const anyModal = document.querySelector('.modal.show, .premium-drawer.open');
+                if (!anyModal) {
+                    document.body.style.overflow = '';
+                }
+            }
         });
         </script>
         @if(!Auth::user()->isAdmin() && !Auth::user()->isTeacher() && !Auth::user()->isParent())

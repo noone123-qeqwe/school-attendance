@@ -1,8 +1,21 @@
 @extends('layouts.app')
 @section('portal-title', 'Manage Class - ' . $subject->name)
+@section('page-title', 'Manage Class - ' . $subject->name)
 
 @push('styles')
 <style>
+    .classroom-show-wrapper {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding-bottom: 90px;
+    }
+    @media (max-width: 768px) {
+        .classroom-show-wrapper {
+            padding-bottom: 120px;
+        }
+    }
+
     .classroom-header {
         background: linear-gradient(145deg, rgba(32,20,15,0.8) 0%, rgba(20,10,5,0.9) 100%);
         border: 1px solid rgba(207,164,111,0.2);
@@ -143,19 +156,43 @@
         background: linear-gradient(145deg, rgba(32,20,15,0.8) 0%, rgba(20,10,5,0.9) 100%);
         border: 1px solid rgba(207,164,111,0.2);
         border-radius: 16px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: min(600px, 70vh);
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: auto;
+        position: relative;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(207,164,111,0.4) rgba(255,255,255,0.03);
+    }
+    
+    .students-table::-webkit-scrollbar {
+        width: 7px;
+        height: 7px;
+    }
+    .students-table::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.03);
+    }
+    .students-table::-webkit-scrollbar-thumb {
+        background: rgba(207,164,111,0.35);
+        border-radius: 8px;
+    }
+    .students-table::-webkit-scrollbar-thumb:hover {
+        background: rgba(207,164,111,0.6);
     }
     
     .students-table table {
         width: 100%;
-        border-collapse: collapse;
+        min-width: 860px;
+        border-collapse: separate;
+        border-spacing: 0;
     }
     
-    .students-table thead {
-        background: rgba(207,164,111,0.1);
-    }
-    
-    .students-table th {
+    .students-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #1c110e !important;
         padding: 16px;
         text-align: left;
         color: #d6b67b;
@@ -163,16 +200,19 @@
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-bottom: 1px solid rgba(207,164,111,0.15);
+        border-bottom: 2px solid rgba(207,164,111,0.25);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        white-space: nowrap;
     }
     
     .students-table td {
         padding: 16px;
         color: #f3e7cd;
         border-bottom: 1px solid rgba(255,255,255,0.03);
+        white-space: nowrap;
     }
     
-    .students-table tbody tr:hover {
+    .students-table tbody tr:hover td {
         background: rgba(207,164,111,0.05);
     }
     
@@ -230,6 +270,7 @@
 @endpush
 
 @section('content')
+<div class="classroom-show-wrapper">
 <div class="classroom-header">
     <div class="d-flex justify-content-between align-items-start">
         <div>
@@ -437,6 +478,7 @@
             </table>
         </div>
     @endif
+</div>
 </div>
 @endsection
 

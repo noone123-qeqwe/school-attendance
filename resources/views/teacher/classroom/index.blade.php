@@ -1,13 +1,22 @@
 @extends('layouts.app')
 @section('portal-title', 'My Classes')
+@section('page-title', 'My Classes')
 
 @push('styles')
 <style>
+    .teacher-classes-wrapper {
+        width: 100%;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding-bottom: 90px;
+    }
+    
     .class-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 24px;
         margin-top: 20px;
+        margin-bottom: 40px;
     }
     
     .class-card {
@@ -131,6 +140,7 @@
 @endpush
 
 @section('content')
+<div class="teacher-classes-wrapper">
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 style="color: #f3e7cd; font-weight: 800; font-size: 1.8rem; margin: 0;">My Classes</h2>
@@ -212,4 +222,5 @@
         @endforeach
     </div>
 @endif
+</div>
 @endsection

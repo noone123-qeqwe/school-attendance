@@ -1,12 +1,26 @@
 @extends('layouts.app')
+@section('portal-title', 'My Classes')
+@section('page-title', 'My Classes')
 
 @section('content')
 <style>
+    /* Page Container */
+    .classes-page-container {
+        width: 100%;
+        max-width: 1240px;
+        margin: 0 auto;
+        padding-bottom: 80px;
+    }
+
     /* ── MOBILE RESPONSIVENESS ── */
     @media (max-width: 768px) {
         .container-fluid { 
-            padding-left: 15px !important; 
-            padding-right: 15px !important; 
+            padding-left: 14px !important; 
+            padding-right: 14px !important; 
+            padding-bottom: 100px !important;
+        }
+        .classes-page-container {
+            padding-bottom: 100px !important;
         }
     }   
     /* Info pills */
@@ -29,11 +43,13 @@
         border: 1px solid rgba(255,255,255,0.08);
         box-shadow: 0 16px 44px rgba(0,0,0,0.22);
         overflow: hidden;
+        position: relative;
     }
     .table-card-header {
         padding: 18px 24px;
         border-bottom: 1px solid rgba(255,255,255,0.08);
-        display: flex; align-items: center; gap: 10px;
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        background: rgba(255, 255, 255, 0.02);
     }   
     .table-card-title {
         font-size: 0.95rem; font-weight: 700; color: #f8e7d3;
@@ -45,20 +61,61 @@
         background: rgba(255,255,255,0.08); color: #d8b35c;
     }
     .subject-count {
-        margin-left: auto;
         font-size: 0.75rem; font-weight: 700; color: #f5e7d3;
         background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08);
         padding: 4px 12px; border-radius: 99px;
     }
+    .scroll-hint-pill {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #d8b35c;
+        background: rgba(207, 164, 111, 0.12);
+        border: 1px solid rgba(207, 164, 111, 0.25);
+        padding: 3px 10px;
+        border-radius: 99px;
+    }
+
+    /* Scrollable Table Container */
+    .table-scroll-container {
+        width: 100%;
+        max-width: 100%;
+        max-height: min(620px, 72vh);
+        overflow-x: auto;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: auto;
+        position: relative;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(207, 164, 111, 0.45) rgba(255, 255, 255, 0.04);
+    }
+    .table-scroll-container::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    .table-scroll-container::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.03);
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb {
+        background: rgba(207, 164, 111, 0.4);
+        border-radius: 99px;
+    }
+    .table-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: rgba(207, 164, 111, 0.7);
+    }
 
     /* Table */
-    .cls-table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: auto; }
+    .cls-table { width: 100%; min-width: 960px; border-collapse: separate; border-spacing: 0; table-layout: auto; }
     .cls-table thead th {
-        font-size: 0.7rem; font-weight: 700; color: rgba(248,231,211,0.8);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        font-size: 0.72rem; font-weight: 700; color: #f8e7d3;
         text-transform: uppercase; letter-spacing: 0.5px;
-        padding: 12px 20px; background: rgba(255,255,255,0.06);
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding: 14px 20px;
+        background: #1c110e !important;
+        border-bottom: 2px solid rgba(207, 164, 111, 0.25);
         white-space: nowrap;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     .cls-table tbody tr { transition: background 0.15s; }
     .cls-table tbody tr:hover td { background: rgba(255,255,255,0.08); }
@@ -69,6 +126,23 @@
         vertical-align: middle;
     }
     .cls-table tbody tr:last-child td { border-bottom: none; }
+
+    /* Mobile Cards Container */
+    .mobile-cards-container {
+        max-height: min(650px, 72vh);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(207, 164, 111, 0.35) transparent;
+    }
+    .mobile-cards-container::-webkit-scrollbar {
+        width: 5px;
+    }
+    .mobile-cards-container::-webkit-scrollbar-thumb {
+        background: rgba(207, 164, 111, 0.35);
+        border-radius: 99px;
+    }
 
     /* Subject name */
     .subject-name-cell { font-weight: 600; color: #f8e7d3; }
@@ -145,11 +219,6 @@
 
     /* ── MOBILE RESPONSIVENESS ── */
     @media (max-width: 768px) {
-        .container-fluid { 
-            padding-left: 15px !important; 
-            padding-right: 15px !important; 
-        }
-
         .page-header-title { font-size: 1.2rem; }
         .page-header-sub { font-size: 0.8rem; }
 
@@ -174,7 +243,7 @@
     }
 </style>
 
-<div class="container-fluid p-4" style="max-width: 1200px;">
+<div class="container-fluid p-4 classes-page-container">
 
     <div style="margin-bottom:20px;">
         <div style="font-size:1.4rem;font-weight:800;color:#f8e7d3;letter-spacing:-.3px;">My Class Schedule</div>
@@ -321,10 +390,15 @@
                 </div>
                 My Schedule & Classes
             </div>
-            <span class="subject-count" id="itemCount">{{ count($groupedSchedules) }} items</span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="scroll-hint-pill d-none d-md-inline-flex align-items-center gap-1">
+                    <i class="bi bi-arrows"></i> Scrollable
+                </span>
+                <span class="subject-count" id="itemCount">{{ count($groupedSchedules) }} items</span>
+            </div>
         </div>
 
-        <div style="overflow-x:auto;" class="d-none d-md-block">
+        <div class="table-scroll-container d-none d-md-block">
             <table class="cls-table" id="scheduleTable">
                 <thead>
                     <tr>
@@ -381,7 +455,7 @@
         </div>
         
         <!-- Mobile Cards -->
-        <div class="d-block d-md-none p-3">
+        <div class="d-block d-md-none p-3 mobile-cards-container">
             @forelse($groupedSchedules as $sched)
             <div class="schedule-card" data-days="{{ $sched->days }}" style="border-left: 3px solid var(--gold); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 0 12px 12px; margin-bottom: 8px;">
                 <div class="d-flex justify-content-between align-items-start mb-2">
