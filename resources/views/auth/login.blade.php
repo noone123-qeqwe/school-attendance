@@ -2538,56 +2538,51 @@ if (forgotLinkElem) {
     forgotLinkElem.addEventListener('touchstart', updateForgotHref);
 }
 
-// ── Dynamic Viewport & Safe-Area Synchronization ──
+// ── Viewport Height Lock – prevents status bar / notification shade from shifting layout ──
 (function() {
-    let stableBaseHeight = window.innerHeight;
-    let lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+    var docEl = document.documentElement;
+    // Capture the true full-screen height once (before any browser chrome adjusts it)
+    var lockedHeight = window.screen.height || window.innerHeight;
+    var lockedWidth  = window.innerWidth;
+    var lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
 
-    function syncViewportMetrics(force = false) {
-        const vv = window.visualViewport;
-        const currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+    function applyLock() {
+        docEl.style.setProperty('--app-height', lockedHeight + 'px');
+        docEl.style.setProperty('--app-width',  lockedWidth  + 'px');
+    }
 
-        if (currentOrientation !== lastOrientation || force) {
-            lastOrientation = currentOrientation;
-            stableBaseHeight = window.innerHeight;
-        }
+    // Re-lock only on real orientation changes
+    function onOrientationChange() {
+        setTimeout(function() {
+            var newOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+            if (newOrientation !== lastOrientation) {
+                lastOrientation  = newOrientation;
+                lockedHeight = window.innerHeight;
+                lockedWidth  = window.innerWidth;
+            }
+            applyLock();
+        }, 200);
+    }
 
-        const rawHeight = vv ? vv.height : window.innerHeight;
-        const rawWidth = vv ? vv.width : window.innerWidth;
-        const isKeyboard = rawHeight < (stableBaseHeight - 140);
-
-        // Keep viewport height stable during transient status-bar gestures (< 100px change)
-        let effectiveHeight = stableBaseHeight;
-        if (isKeyboard) {
-            effectiveHeight = rawHeight;
-        } else if (!vv || Math.abs(rawHeight - stableBaseHeight) > 120) {
-            stableBaseHeight = window.innerHeight;
-            effectiveHeight = stableBaseHeight;
-        }
-
-        const docEl = document.documentElement;
-        docEl.style.setProperty('--app-height', ${effectiveHeight}px);
-        docEl.style.setProperty('--app-width', ${rawWidth}px);
-
+    // Keyboard detection only – never update layout height from resize
+    function onResize() {
+        var vv = window.visualViewport;
+        var rawHeight = vv ? vv.height : window.innerHeight;
+        var isKeyboard = rawHeight < (lockedHeight - 150);
         document.body.classList.toggle('keyboard-open', isKeyboard);
-
-        if (window.scrollY !== 0 || window.scrollX !== 0) {
-            window.scrollTo(0, 0);
-        }
+        // Scroll reset
+        if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
     }
 
+    window.addEventListener('orientationchange', onOrientationChange, { passive: true });
     if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => syncViewportMetrics(false), { passive: true });
+        window.visualViewport.addEventListener('resize', onResize, { passive: true });
     }
-    window.addEventListener('resize', () => syncViewportMetrics(false), { passive: true });
-    window.addEventListener('orientationchange', function() {
-        setTimeout(() => syncViewportMetrics(true), 150);
-        setTimeout(() => syncViewportMetrics(true), 350);
-    }, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
 
-    syncViewportMetrics(true);
+    applyLock();
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => syncViewportMetrics(true));
+        document.addEventListener('DOMContentLoaded', applyLock);
     }
 })();
 

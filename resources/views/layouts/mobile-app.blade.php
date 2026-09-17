@@ -292,45 +292,44 @@
             let stableBaseHeight = window.innerHeight;
             let lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
 
-            function syncViewportMetrics(force = false) {
-                const vv = window.visualViewport;
-                const currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+            // ── Viewport Height Lock – prevents status bar / notification shade from shifting layout ──
+            (function() {
+                var docEl = document.documentElement;
+                var lockedHeight = window.screen.height || window.innerHeight;
+                var lockedWidth  = window.innerWidth;
+                var lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
 
-                if (currentOrientation !== lastOrientation || force) {
-                    lastOrientation = currentOrientation;
-                    stableBaseHeight = window.innerHeight;
+                function applyLock() {
+                    docEl.style.setProperty('--app-height', lockedHeight + 'px');
+                    docEl.style.setProperty('--app-width',  lockedWidth  + 'px');
                 }
 
-                const rawHeight = vv ? vv.height : window.innerHeight;
-                const rawWidth = vv ? vv.width : window.innerWidth;
-                const isKeyboard = rawHeight < (stableBaseHeight - 140);
-
-                let effectiveHeight = stableBaseHeight;
-                if (isKeyboard) {
-                    effectiveHeight = rawHeight;
-                } else if (!vv || Math.abs(rawHeight - stableBaseHeight) > 120) {
-                    stableBaseHeight = window.innerHeight;
-                    effectiveHeight = stableBaseHeight;
+                function onOrientationChange() {
+                    setTimeout(function() {
+                        var newOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+                        if (newOrientation !== lastOrientation) {
+                            lastOrientation = newOrientation;
+                            lockedHeight = window.innerHeight;
+                            lockedWidth  = window.innerWidth;
+                        }
+                        applyLock();
+                    }, 200);
                 }
 
-                const docEl = document.documentElement;
-                docEl.style.setProperty('--app-height', `${effectiveHeight}px`);
-                docEl.style.setProperty('--app-width', `${rawWidth}px`);
+                function onResize() {
+                    var vv = window.visualViewport;
+                    var rawHeight = vv ? vv.height : window.innerHeight;
+                    var isKeyboard = rawHeight < (lockedHeight - 150);
+                    document.body.classList.toggle('keyboard-open', isKeyboard);
+                }
 
-                document.body.classList.toggle('keyboard-open', isKeyboard);
-            }
-
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', () => syncViewportMetrics(false), { passive: true });
-            }
-            window.addEventListener('resize', () => syncViewportMetrics(false), { passive: true });
-            window.addEventListener('orientationchange', function() {
-                setTimeout(() => syncViewportMetrics(true), 150);
-                setTimeout(() => syncViewportMetrics(true), 350);
-            }, { passive: true });
-
-            syncViewportMetrics(true);
-        })();
+                window.addEventListener('orientationchange', onOrientationChange, { passive: true });
+                if (window.visualViewport) {
+                    window.visualViewport.addEventListener('resize', onResize, { passive: true });
+                }
+                window.addEventListener('resize', onResize, { passive: true });
+                applyLock();
+            })();
     </script>
 
     <script @cspNonce src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
