@@ -353,7 +353,9 @@
         .fp-row-arrow { color: rgba(255,255,255,0.4); font-size: 0.8rem; transition: all 0.2s; }
 
         /* Divider */
-        .glass-divider {
+                #reEnrollBioLink, [id*='reEnrollBio'] { display: none !important; pointer-events: none !important; opacity: 0 !important; visibility: hidden !important; }
+
+.glass-divider {
             display: flex; align-items: center; gap: 10px;
             margin: 10px 0; color: rgba(255,255,255,0.35); font-size: 0.72rem; /* Increased margin */
         }
