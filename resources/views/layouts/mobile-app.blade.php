@@ -289,34 +289,47 @@
 
         // ── Dynamic Viewport & Safe-Area Synchronization ──
         (function() {
-            function syncViewportMetrics() {
+            let stableBaseHeight = window.innerHeight;
+            let lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+
+            function syncViewportMetrics(force = false) {
                 const vv = window.visualViewport;
-                const h = vv ? vv.height : window.innerHeight;
-                const w = vv ? vv.width : window.innerWidth;
-                const offsetTop = vv ? vv.offsetTop : 0;
-                const offsetLeft = vv ? vv.offsetLeft : 0;
+                const currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+
+                if (currentOrientation !== lastOrientation || force) {
+                    lastOrientation = currentOrientation;
+                    stableBaseHeight = window.innerHeight;
+                }
+
+                const rawHeight = vv ? vv.height : window.innerHeight;
+                const rawWidth = vv ? vv.width : window.innerWidth;
+                const isKeyboard = rawHeight < (stableBaseHeight - 140);
+
+                let effectiveHeight = stableBaseHeight;
+                if (isKeyboard) {
+                    effectiveHeight = rawHeight;
+                } else if (!vv || Math.abs(rawHeight - stableBaseHeight) > 120) {
+                    stableBaseHeight = window.innerHeight;
+                    effectiveHeight = stableBaseHeight;
+                }
 
                 const docEl = document.documentElement;
-                docEl.style.setProperty('--app-height', `${h}px`);
-                docEl.style.setProperty('--app-width', `${w}px`);
-                docEl.style.setProperty('--v-offset-top', `${offsetTop}px`);
-                docEl.style.setProperty('--v-offset-left', `${offsetLeft}px`);
+                docEl.style.setProperty('--app-height', `${effectiveHeight}px`);
+                docEl.style.setProperty('--app-width', `${rawWidth}px`);
 
-                const isKeyboard = vv ? vv.height < (window.innerHeight - 120) : false;
                 document.body.classList.toggle('keyboard-open', isKeyboard);
             }
 
             if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', syncViewportMetrics, { passive: true });
-                window.visualViewport.addEventListener('scroll', syncViewportMetrics, { passive: true });
+                window.visualViewport.addEventListener('resize', () => syncViewportMetrics(false), { passive: true });
             }
-            window.addEventListener('resize', syncViewportMetrics, { passive: true });
+            window.addEventListener('resize', () => syncViewportMetrics(false), { passive: true });
             window.addEventListener('orientationchange', function() {
-                setTimeout(syncViewportMetrics, 100);
-                setTimeout(syncViewportMetrics, 300);
+                setTimeout(() => syncViewportMetrics(true), 150);
+                setTimeout(() => syncViewportMetrics(true), 350);
             }, { passive: true });
 
-            syncViewportMetrics();
+            syncViewportMetrics(true);
         })();
     </script>
 
