@@ -1081,12 +1081,6 @@ if (document.readyState === 'loading') {
                     </div>
                     <i class="bi bi-chevron-right fp-row-arrow" id="fpArrow"></i>
                 </button>
-                <div class="text-center mt-2 mb-1 anim-fade-up anim-d5" style="font-size: 0.78rem;">
-                    <a href="javascript:void(0)" id="reEnrollBioLink" style="color: rgba(212,175,55,0.88); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;">
-                        <i class="bi bi-arrow-repeat"></i>
-                        <span>Re-register or enroll biometrics on this device</span>
-                    </a>
-                </div>
                 <div class="glass-divider anim-fade-up anim-d5">or use password</div>
             </div>
 
@@ -2429,14 +2423,6 @@ function setupBiometricListeners() {
         fpRowBtn.addEventListener('click', function(e) {
             e.preventDefault();
             handleBiometricLogin();
-        });
-    }
-
-    var reEnrollLink = document.getElementById('reEnrollBioLink');
-    if (reEnrollLink) {
-        reEnrollLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            handleDirectReEnrollClick(e);
         });
     }
 
