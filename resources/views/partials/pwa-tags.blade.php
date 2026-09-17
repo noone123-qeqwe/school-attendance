@@ -1,4 +1,4 @@
-@php
+﻿@php
     $versionService = app(\App\Services\VersionService::class);
     $installedVersion = $appInstalledVersion ?? $versionService->getInstalledVersion();
     $latestVersion = $appVersion ?? $versionService->getVersion();
@@ -642,18 +642,19 @@
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    /* ── Fullscreen Backdrop for System Update Modal (Universal Desktop + Mobile) ── */
+    /* ═══════════════════════════════════════════════════
+       PWA UPDATE POPUP — Premium Redesign
+    ═══════════════════════════════════════════════════ */
+
     .pwa-update-backdrop {
         position: fixed !important;
         inset: 0 !important;
-        width: 100vw !important;
-        height: 100dvh !important;
-        background: rgba(0, 0, 0, 0.72) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
+        background: rgba(0, 0, 0, 0.75) !important;
+        backdrop-filter: blur(12px) saturate(160%) !important;
+        -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
         z-index: 100000 !important;
         opacity: 0;
-        transition: opacity 0.25s ease-out;
+        transition: opacity 0.3s ease !important;
         pointer-events: auto;
         display: none;
     }
@@ -661,611 +662,211 @@
         display: block !important;
         opacity: 1 !important;
     }
-
-    /* ── Big Tech / Enterprise System Update Card (Apple / Linear / Slack Style) ── */
+    @keyframes pwaSlideUpEnterprise {
+        0%  { opacity: 0; transform: translate(-50%, calc(-50% + 24px)) scale(0.95); }
+        100%{ opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes pwaShimmer {
+        0%   { background-position: -200% center; }
+        100% { background-position:  200% center; }
+    }
+    @keyframes pwaPulseDot {
+        0%,100% { transform: scale(1);   opacity: 1;   box-shadow: 0 0 8px  #22C55E; }
+        50%     { transform: scale(1.3); opacity: 0.7; box-shadow: 0 0 18px #22C55E; }
+    }
+    @keyframes pwaIconFloat {
+        0%,100% { transform: translateY(0); }
+        50%     { transform: translateY(-4px); }
+    }
+    @keyframes pwaGlowRotate {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+    }
+    @keyframes ptr-spin { to { transform: rotate(360deg); } }
     .pwa-update-banner {
         position: fixed !important;
         top: 50% !important;
         left: 50% !important;
-        right: auto !important;
-        bottom: auto !important;
         transform: translate(-50%, -50%) !important;
         width: calc(100vw - 32px) !important;
-        max-width: 410px !important;
-        margin: 0 auto !important;
-        background: rgba(14, 6, 9, 0.96) !important;
-        border: 1.5px solid rgba(232, 192, 100, 0.32) !important;
-        border-radius: 22px !important;
-        padding: 20px 22px !important;
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 
-                    0 4px 20px rgba(0, 0, 0, 0.5), 
-                    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                    0 0 40px rgba(232, 192, 100, 0.12) !important;
-        backdrop-filter: blur(28px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+        max-width: 420px !important;
+        background: linear-gradient(160deg, rgba(22,10,14,0.98) 0%, rgba(12,6,9,0.99) 100%) !important;
+        border-radius: 24px !important;
+        padding: 0 !important;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.07), 0 0 60px rgba(232,192,100,0.08) !important;
         z-index: 100005 !important;
         display: none;
         flex-direction: column !important;
-        gap: 14px !important;
-        animation: pwaSlideUpEnterprise 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        box-sizing: border-box !important;
-        max-height: min(540px, calc(100dvh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))) !important;
+        animation: pwaSlideUpEnterprise 0.38s cubic-bezier(0.16,1,0.3,1) !important;
         overflow: hidden !important;
+        max-height: calc(100dvh - 48px) !important;
+        box-sizing: border-box !important;
     }
-
-    /* Ambient Subtle Shimmer Glow */
+    .pwa-update-accent-bar {
+        height: 3px; width: 100%;
+        background: linear-gradient(90deg, transparent 0%, rgba(232,192,100,0.4) 20%, #e8c064 40%, #fff8e1 50%, #e8c064 60%, rgba(232,192,100,0.4) 80%, transparent 100%);
+        background-size: 200% auto;
+        animation: pwaShimmer 2.5s linear infinite;
+        flex-shrink: 0;
+    }
+    .pwa-update-inner {
+        padding: 22px 22px 20px;
+        display: flex; flex-direction: column; gap: 18px;
+    }
     .pwa-update-glow {
-        position: absolute;
-        top: -60px;
-        right: -60px;
-        width: 140px;
-        height: 140px;
-        background: radial-gradient(circle, rgba(232, 192, 100, 0.18) 0%, transparent 70%);
-        pointer-events: none;
-        z-index: 0;
+        position: absolute; top: -80px; right: -80px;
+        width: 200px; height: 200px;
+        background: radial-gradient(circle, rgba(232,192,100,0.14) 0%, transparent 70%);
+        pointer-events: none; z-index: 0; border-radius: 50%;
     }
-
-    @keyframes pwaSlideUpEnterprise {
-        0% {
-            opacity: 0;
-            transform: translate(-50%, calc(-50% + 20px)) scale(0.96);
-        }
-        100% {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-    }
-
-    /* ── Floating Fallback Pill for Snoozed / Dismissed Updates ── */
-    .pwa-update-pill {
-        position: fixed !important;
-        top: max(16px, env(safe-area-inset-top, 16px)) !important;
-        left: 50% !important;
-        transform: translateX(-50%) translateY(-70px) !important;
-        background: rgba(18, 10, 12, 0.96) !important;
-        border: 1px solid rgba(232, 192, 100, 0.45) !important;
-        border-radius: 99px !important;
-        padding: 8px 16px !important;
-        display: none;
-        align-items: center !important;
-        gap: 10px !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(232, 192, 100, 0.25) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        z-index: 99999 !important;
-        color: #F3E7CD !important;
-        font-size: 0.82rem !important;
-        font-weight: 700 !important;
-        cursor: pointer !important;
-        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
-        opacity: 0;
-        pointer-events: none;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-        white-space: nowrap;
-    }
-    .pwa-update-pill.show {
-        display: flex !important;
-        transform: translateX(-50%) translateY(0) !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-    }
-    .pwa-pill-dot {
-        width: 9px;
-        height: 9px;
-        background: #22C55E;
-        border-radius: 50%;
-        box-shadow: 0 0 10px #22C55E;
-        animation: pwaPulseDot 2s infinite ease-in-out;
-        flex-shrink: 0;
-    }
-    .pwa-pill-text strong {
-        color: #E8C064;
-    }
-    .pwa-pill-btn {
-        background: linear-gradient(135deg, #E8C064 0%, #CFA46F 100%);
-        color: #110A0A;
-        font-size: 0.74rem;
-        font-weight: 800;
-        padding: 4px 10px;
-        border-radius: 99px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* ── Subtle, Non-blocking "System Updated ✓" Toast ── */
-    .pwa-toast-system-updated {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        left: auto;
-        z-index: 100060 !important;
-        display: none;
-        align-items: center;
-        gap: 12px;
-        background: rgba(18, 10, 12, 0.96);
-        border: 1px solid rgba(34, 197, 94, 0.35);
-        border-radius: 16px;
-        padding: 12px 18px;
-        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 25px rgba(34, 197, 94, 0.12);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        color: #f3f4f6;
-        animation: pwaToastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        box-sizing: border-box;
-        max-width: calc(100vw - 32px);
-        pointer-events: auto;
-    }
-
-    .pwa-toast-system-updated.pwa-toast-hide {
-        animation: pwaToastFadeOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .pwa-toast-system-updated .pwa-toast-icon-wrap {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: rgba(34, 197, 94, 0.15);
-        border: 1px solid rgba(34, 197, 94, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        color: #22c55e;
-    }
-
-    .pwa-toast-system-updated .pwa-toast-title {
-        font-size: 0.88rem;
-        font-weight: 700;
-        color: #FFFFFF;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        line-height: 1.25;
-    }
-
-    .pwa-toast-system-updated .pwa-toast-title .pwa-toast-check {
-        color: #22c55e;
-        font-weight: 800;
-    }
-
-    .pwa-toast-system-updated .pwa-toast-desc {
-        font-size: 0.76rem;
-        color: rgba(255, 255, 255, 0.7);
-        margin-top: 2px;
-        line-height: 1.3;
-    }
-
-    .pwa-toast-system-updated .pwa-toast-close {
-        background: transparent;
-        border: none;
-        color: rgba(255, 255, 255, 0.5);
-        font-size: 1.25rem;
-        cursor: pointer;
-        padding: 0 0 0 8px;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        transition: color 0.15s ease;
-    }
-
-    .pwa-toast-system-updated .pwa-toast-close:hover {
-        color: #FFFFFF;
-    }
-
-    @keyframes pwaToastSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(16px) scale(0.96);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-    }
-
-    @keyframes pwaToastFadeOut {
-        from {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-        to {
-            opacity: 0;
-            transform: translateY(16px) scale(0.96);
-        }
-    }
-
-    /* Mobile Backdrop Overlay for Update Modal */
-    .pwa-update-backdrop {
-        display: none;
-    }
-
-    /* On mobile / tablets: Perfectly centered modal popup within viewport, completely clear of bottom navigation */
-    @media (max-width: 991.98px) {
-        .pwa-toast-system-updated {
-            bottom: calc(var(--bottom-nav-height, 74px) + env(safe-area-inset-bottom, 16px) + 14px);
-            left: 50% !important;
-            right: auto !important;
-            transform: translateX(-50%);
-            width: calc(100vw - 32px);
-            max-width: 380px;
-            padding: 12px 16px;
-            border-radius: 16px;
-            animation: pwaToastSlideInMobile 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .pwa-toast-system-updated.pwa-toast-hide {
-            animation: pwaToastFadeOutMobile 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-
-        .pwa-update-backdrop {
-            position: fixed !important;
-            inset: 0 !important;
-            width: 100vw !important;
-            height: 100dvh !important;
-            background: rgba(0, 0, 0, 0.7) !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-            z-index: 100000 !important;
-            opacity: 0;
-            transition: opacity 0.25s ease-out;
-            pointer-events: auto;
-        }
-        .pwa-update-backdrop.show {
-            display: block !important;
-            opacity: 1 !important;
-        }
-
-        .pwa-update-banner {
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            right: auto !important;
-            bottom: auto !important;
-            transform: translate(-50%, -50%) !important;
-            width: calc(100vw - 32px) !important;
-            max-width: 395px !important;
-            margin: 0 auto !important;
-            padding: 20px 18px !important;
-            border-radius: 22px !important;
-            max-height: min(520px, calc(100dvh - 36px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))) !important;
-            overflow: hidden !important;
-            box-sizing: border-box !important;
-            z-index: 100005 !important;
-            background: rgba(18, 10, 8, 0.98) !important;
-            border: 1.5px solid rgba(207, 164, 111, 0.35) !important;
-            box-shadow: 0 24px 70px rgba(0, 0, 0, 0.9), 0 0 40px rgba(207, 164, 111, 0.15) !important;
-            animation: pwaSlideUpMobileCenter 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
-            display: none;
-            flex-direction: column !important;
-            gap: 13px !important;
-        }
-
-        @keyframes pwaSlideUpMobileCenter {
-            0% {
-                opacity: 0;
-                transform: translate(-50%, calc(-50% + 24px)) scale(0.95);
-            }
-            100% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
-            }
-        }
-
-        .pwa-update-banner-actions {
-            flex-direction: row !important;
-            gap: 10px !important;
-            flex-shrink: 0 !important;
-            width: 100% !important;
-        }
-
-        .pwa-btn-update-later,
-        .pwa-btn-update-apply {
-            min-height: 46px !important;
-            touch-action: manipulation !important;
-        }
-
-        .pwa-update-close-btn {
-            width: 32px !important;
-            height: 32px !important;
-            min-width: 32px !important;
-            min-height: 32px !important;
-            font-size: 1.35rem !important;
-            touch-action: manipulation !important;
-            top: 0 !important;
-            right: 0 !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            z-index: 2 !important;
-        }
-    }
-
-    @keyframes pwaToastSlideInMobile {
-        from {
-            opacity: 0;
-            transform: translate(-50%, 16px) scale(0.96);
-        }
-        to {
-            opacity: 1;
-            transform: translate(-50%, 0) scale(1);
-        }
-    }
-
-    @keyframes pwaToastFadeOutMobile {
-        from {
-            opacity: 1;
-            transform: translate(-50%, 0) scale(1);
-        }
-        to {
-            opacity: 0;
-            transform: translate(-50%, 16px) scale(0.96);
-        }
-    }
-
-    /* Small screens (narrow phones <= 360px) */
-    @media (max-width: 360px) {
-        .pwa-update-banner {
-            width: calc(100vw - 20px) !important;
-            padding: 16px 14px !important;
-            border-radius: 18px !important;
-        }
-
-        .pwa-update-banner-actions {
-            flex-direction: column !important;
-            gap: 8px !important;
-        }
-
-        .pwa-btn-update-later,
-        .pwa-btn-update-apply {
-            width: 100% !important;
-            justify-content: center !important;
-            min-height: 46px !important;
-        }
-    }
-
-    /* Small screens / landscape mobile phones: keep content accessible and centered within viewport */
-    @media (max-width: 991.98px) and (max-height: 540px), (max-height: 500px) and (orientation: landscape) {
-        .pwa-update-banner {
-            top: 50% !important;
-            left: 50% !important;
-            right: auto !important;
-            bottom: auto !important;
-            transform: translate(-50%, -50%) !important;
-            max-height: calc(100dvh - 20px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)) !important;
-            padding: 14px 18px !important;
-            max-width: min(480px, calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))) !important;
-            z-index: 100005 !important;
-        }
-
-        .pwa-update-banner-header {
-            gap: 10px !important;
-        }
-
-        .pwa-update-app-icon {
-            width: 38px !important;
-            height: 38px !important;
-        }
-
-        .pwa-update-title {
-            font-size: 0.95rem !important;
-        }
-
-        .pwa-update-subtitle {
-            font-size: 0.76rem !important;
-            max-height: 48px !important;
-            overflow-y: auto !important;
-        }
-
-        .pwa-update-banner-actions {
-            gap: 8px !important;
-        }
-
-        .pwa-btn-update-later,
-        .pwa-btn-update-apply {
-            min-height: 42px !important;
-            padding: 8px 14px !important;
-        }
-    }
-
     .pwa-update-banner-header {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        align-items: flex-start;
-        gap: 13px;
+        position: relative; z-index: 1;
+        display: flex; align-items: center; gap: 14px;
     }
-
     .pwa-update-icon-container {
-        position: relative;
-        flex-shrink: 0;
+        position: relative; flex-shrink: 0; width: 58px; height: 58px;
     }
-
+    .pwa-update-icon-glow-ring {
+        position: absolute; inset: -5px; border-radius: 18px;
+        background: conic-gradient(rgba(232,192,100,0.6) 0deg, rgba(232,192,100,0) 120deg, rgba(207,164,111,0.5) 240deg, rgba(232,192,100,0.6) 360deg);
+        animation: pwaGlowRotate 3s linear infinite; opacity: 0.6; z-index: 0;
+    }
+    .pwa-update-icon-glow-ring::before {
+        content: ''; position: absolute; inset: 2px;
+        background: rgba(14,6,9,0.99); border-radius: 15px;
+    }
     .pwa-update-app-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-        border: 1px solid rgba(232, 192, 100, 0.35);
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
-        background: #18080c;
-        display: block;
-        object-fit: cover;
+        position: relative; z-index: 1;
+        width: 58px; height: 58px; border-radius: 14px;
+        border: 1.5px solid rgba(232,192,100,0.4);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+        background: #18080c; display: block; object-fit: cover;
+        animation: pwaIconFloat 3.5s ease-in-out infinite;
     }
-
     .pwa-update-pulse-indicator {
-        position: absolute;
-        top: -3px;
-        right: -3px;
-        width: 11px;
-        height: 11px;
-        background: #22C55E;
-        border: 2px solid #0e0609;
-        border-radius: 50%;
+        position: absolute; top: -2px; right: -2px;
+        width: 13px; height: 13px; background: #22C55E;
+        border: 2.5px solid #0e0609; border-radius: 50%;
         box-shadow: 0 0 10px #22C55E;
-        animation: pwaPulseDot 2s infinite ease-in-out;
+        animation: pwaPulseDot 2s infinite ease-in-out; z-index: 2;
     }
-
-    @keyframes pwaPulseDot {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(1.2); opacity: 0.75; }
-    }
-
-    .pwa-update-text-area {
-        flex: 1;
-        min-width: 0;
-        padding-right: 32px;
-    }
-
-    .pwa-update-meta {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 3px;
-    }
-
+    .pwa-update-text-area { flex: 1; min-width: 0; padding-right: 36px; }
+    .pwa-update-meta { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
     .pwa-update-tag {
-        font-size: 0.65rem;
-        font-weight: 800;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        color: #e8c064;
-        background: rgba(232, 192, 100, 0.12);
-        border: 1px solid rgba(232, 192, 100, 0.25);
-        padding: 2px 7px;
-        border-radius: 6px;
+        font-size: 0.6rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase;
+        color: #22C55E; background: rgba(34,197,94,0.12);
+        border: 1px solid rgba(34,197,94,0.3); padding: 2px 8px; border-radius: 6px;
     }
-
     .pwa-update-version-badge {
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.6);
-        font-variant-numeric: tabular-nums;
+        font-size: 0.7rem; font-weight: 700; color: rgba(232,192,100,0.85);
+        background: rgba(232,192,100,0.1); border: 1px solid rgba(232,192,100,0.22);
+        padding: 1px 7px; border-radius: 5px; font-variant-numeric: tabular-nums;
     }
-
     .pwa-update-title {
-        font-family: 'Outfit', sans-serif;
-        font-size: 1.02rem;
-        font-weight: 700;
-        color: #FFFFFF;
-        line-height: 1.25;
-        letter-spacing: -0.2px;
-        margin-bottom: 3px;
+        font-family: 'Outfit','Inter',sans-serif;
+        font-size: 1.08rem; font-weight: 800; color: #fff;
+        line-height: 1.2; letter-spacing: -0.3px; margin-bottom: 3px;
     }
-
-    .pwa-update-subtitle {
-        font-size: 0.82rem;
-        color: rgba(255, 255, 255, 0.7);
-        line-height: 1.42;
-        max-height: 140px;
-        overflow-y: auto;
-        word-break: break-word;
-    }
-
+    .pwa-update-subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
     .pwa-update-close-btn {
-        position: absolute;
-        top: 0;
-        right: 0;
-        background: rgba(255, 255, 255, 0.08) !important;
-        border: 1px solid rgba(255, 255, 255, 0.16) !important;
-        color: rgba(255, 255, 255, 0.75) !important;
-        font-size: 1.25rem !important;
-        cursor: pointer !important;
-        width: 30px !important;
-        height: 30px !important;
-        border-radius: 50% !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        line-height: 1 !important;
-        padding: 0 !important;
-        transition: all 0.2s ease !important;
-        z-index: 2 !important;
-        outline: none !important;
+        position: absolute; top: 0; right: 0;
+        background: rgba(255,255,255,0.07) !important;
+        border: 1px solid rgba(255,255,255,0.13) !important;
+        color: rgba(255,255,255,0.6) !important; font-size: 1.1rem !important;
+        cursor: pointer !important; width: 30px !important; height: 30px !important;
+        border-radius: 50% !important; display: flex !important;
+        align-items: center !important; justify-content: center !important;
+        line-height: 1 !important; padding: 0 !important;
+        transition: all 0.2s ease !important; z-index: 2 !important; outline: none !important;
     }
-
     .pwa-update-close-btn:hover {
-        background: rgba(255, 255, 255, 0.18) !important;
-        color: #FFFFFF !important;
-        border-color: rgba(255, 255, 255, 0.35) !important;
+        background: rgba(255,255,255,0.18) !important; color: #fff !important;
+        transform: rotate(90deg) !important;
     }
-
-    /* Actions */
+    .pwa-update-whats-new {
+        position: relative; z-index: 1;
+        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px; padding: 11px 14px;
+        display: flex; align-items: flex-start; gap: 10px;
+    }
+    .pwa-update-whats-new-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; opacity: 0.85; }
+    .pwa-update-whats-new-text { flex: 1; min-width: 0; }
+    .pwa-update-whats-new-label {
+        font-size: 0.65rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
+        color: rgba(232,192,100,0.9); margin-bottom: 4px;
+    }
+    .pwa-update-whats-new-body {
+        font-size: 0.8rem; color: rgba(255,255,255,0.65); line-height: 1.5;
+        overflow: hidden; display: -webkit-box;
+        -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    }
     .pwa-update-banner-actions {
-        position: relative;
-        z-index: 1;
-        display: flex !important;
-        align-items: center !important;
-        gap: 10px !important;
-        width: 100% !important;
-        flex-shrink: 0 !important;
-        margin-top: 4px !important;
+        position: relative; z-index: 1;
+        display: flex !important; align-items: center !important;
+        gap: 10px !important; width: 100% !important;
     }
-
     .pwa-btn-update-later {
-        background: rgba(255, 255, 255, 0.06) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        color: rgba(255, 255, 255, 0.8) !important;
-        font-weight: 600 !important;
-        font-size: 0.86rem !important;
-        font-family: inherit !important;
-        border-radius: 12px !important;
-        padding: 11px 18px !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-        touch-action: manipulation !important;
-        white-space: nowrap !important;
-        outline: none !important;
+        background: rgba(255,255,255,0.06) !important; border: 1px solid rgba(255,255,255,0.13) !important;
+        color: rgba(255,255,255,0.7) !important; font-weight: 600 !important;
+        font-size: 0.85rem !important; font-family: inherit !important;
+        border-radius: 12px !important; padding: 12px 16px !important;
+        cursor: pointer !important; transition: all 0.2s ease !important;
+        touch-action: manipulation !important; white-space: nowrap !important;
+        outline: none !important; flex-shrink: 0 !important;
     }
-
     .pwa-btn-update-later:hover {
-        background: rgba(255, 255, 255, 0.14) !important;
-        color: #FFFFFF !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
+        background: rgba(255,255,255,0.13) !important; color: #fff !important;
+        border-color: rgba(255,255,255,0.28) !important;
     }
-
     .pwa-btn-update-apply {
         flex: 1 !important;
-        background: linear-gradient(135deg, #e8c064 0%, #cfa46f 100%) !important;
-        color: #0a0305 !important;
-        font-weight: 700 !important;
-        font-size: 0.88rem !important;
-        font-family: inherit !important;
-        border: none !important;
-        border-radius: 12px !important;
-        padding: 11px 20px !important;
-        cursor: pointer !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 8px !important;
-        box-shadow: 0 4px 18px rgba(232, 192, 100, 0.35) !important;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
-        touch-action: manipulation !important;
-        white-space: nowrap !important;
-        outline: none !important;
+        background: linear-gradient(135deg, #f0cc6e 0%, #d4a84b 100%) !important;
+        color: #1a0a0a !important; font-weight: 800 !important;
+        font-size: 0.9rem !important; font-family: inherit !important;
+        border: none !important; border-radius: 12px !important;
+        padding: 13px 20px !important; cursor: pointer !important;
+        display: flex !important; align-items: center !important;
+        justify-content: center !important; gap: 8px !important;
+        box-shadow: 0 4px 20px rgba(232,192,100,0.4), inset 0 1px 0 rgba(255,255,255,0.3) !important;
+        transition: all 0.25s cubic-bezier(0.16,1,0.3,1) !important;
+        touch-action: manipulation !important; outline: none !important;
+        letter-spacing: 0.2px !important;
     }
-
     .pwa-btn-update-apply:hover {
-        filter: brightness(1.08) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 24px rgba(232, 192, 100, 0.45) !important;
+        filter: brightness(1.1) !important; transform: translateY(-2px) !important;
+        box-shadow: 0 8px 28px rgba(232,192,100,0.55) !important;
     }
-
-    .pwa-btn-update-apply:active {
-        transform: scale(0.97) !important;
+    .pwa-btn-update-apply:active { transform: scale(0.97) !important; }
+    .pwa-btn-arrow-icon { transition: transform 0.2s ease; }
+    .pwa-btn-update-apply:hover .pwa-btn-arrow-icon { transform: translateX(3px); }
+    .pwa-update-pill {
+        position: fixed !important; top: max(16px, env(safe-area-inset-top, 16px)) !important;
+        left: 50% !important; transform: translateX(-50%) translateY(-70px) !important;
+        background: rgba(18,10,12,0.97) !important; border: 1px solid rgba(232,192,100,0.45) !important;
+        border-radius: 99px !important; padding: 8px 16px !important; display: none;
+        align-items: center !important; gap: 10px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 20px rgba(232,192,100,0.25) !important;
+        backdrop-filter: blur(20px) !important; -webkit-backdrop-filter: blur(20px) !important;
+        z-index: 99999 !important; color: #F3E7CD !important;
+        font-size: 0.82rem !important; font-weight: 700 !important; cursor: pointer !important;
+        transition: transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.25s ease !important;
+        opacity: 0; pointer-events: none; user-select: none; white-space: nowrap;
     }
-
-    .pwa-btn-arrow-icon {
-        transition: transform 0.2s ease;
+    .pwa-update-pill.show {
+        display: flex !important; transform: translateX(-50%) translateY(0) !important;
+        opacity: 1 !important; pointer-events: auto !important;
     }
-
-    .pwa-btn-update-apply:hover .pwa-btn-arrow-icon {
-        transform: translateX(3px);
+    .pwa-pill-dot {
+        width: 8px; height: 8px; background: #22C55E; border-radius: 50%;
+        box-shadow: 0 0 10px #22C55E; animation: pwaPulseDot 2s infinite ease-in-out; flex-shrink: 0;
     }
-
-    @keyframes pwaFadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+    .pwa-pill-text strong { color: #E8C064; }
+    .pwa-pill-btn {
+        background: linear-gradient(135deg, #E8C064 0%, #CFA46F 100%); color: #110A0A;
+        font-size: 0.72rem; font-weight: 800; padding: 3px 10px;
+        border-radius: 99px; text-transform: uppercase; letter-spacing: 0.5px;
     }
+    @keyframes pwaFadeIn { from { opacity: 0; } to { opacity: 1; } }
 </style>
 
 <!-- Floating PWA Install Banner -->
@@ -1421,38 +1022,44 @@
     <button type="button" class="pwa-toast-close" id="pwaDismissUpdatedToastBtn" aria-label="Dismiss">&times;</button>
 </div>
 
-<!-- Enterprise-Grade System Update Notification (Update Ready / Refresh Prompt) -->
+<!-- System Update Notification -->
 <div class="pwa-update-backdrop" id="pwaUpdateBackdrop" style="display: none;"></div>
 <div class="pwa-update-banner" id="pwaSystemUpdatePopup" style="display: none;">
+    <div class="pwa-update-accent-bar"></div>
     <div class="pwa-update-glow"></div>
-    <div class="pwa-update-banner-header">
-        <div class="pwa-update-icon-container">
-            <img src="/images/icons/icon-72x72.png" class="pwa-update-app-icon" alt="Smart Attendance">
-            <span class="pwa-update-pulse-indicator" title="New build ready"></span>
-        </div>
-        <div class="pwa-update-text-area">
-            <div class="pwa-update-meta">
-                <span class="pwa-update-tag">UPDATE AVAILABLE</span>
-                <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">{{ $initialChangelog['version_display'] ?? ('Version ' . $latestVersion) }}</span>
+    <div class="pwa-update-inner">
+        <div class="pwa-update-banner-header">
+            <div class="pwa-update-icon-container">
+                <div class="pwa-update-icon-glow-ring"></div>
+                <img src="/images/icons/icon-72x72.png" class="pwa-update-app-icon" alt="Smart Attendance">
+                <span class="pwa-update-pulse-indicator" title="New build ready"></span>
             </div>
-            <div class="pwa-update-title" id="pwaUpdateTitle">Update Available</div>
-            <div class="pwa-update-subtitle" id="pwaUpdateSubtitle">A new version is available. Update now to use the latest version.</div>
-            <span style="display:none;" aria-hidden="true">Update Ready Refresh Now</span>
+            <div class="pwa-update-text-area">
+                <div class="pwa-update-meta">
+                    <span class="pwa-update-tag">&#10003; Update Ready</span>
+                    <span class="pwa-update-version-badge" id="pwaUpdateVersionBadge">{{ $initialChangelog['version_display'] ?? ('v' . $latestVersion) }}</span>
+                </div>
+                <div class="pwa-update-title" id="pwaUpdateTitle">New Version Available</div>
+                <div class="pwa-update-subtitle" id="pwaUpdateSubtitle">Improvements and fixes are ready to install.</div>
+                <span style="display:none;" aria-hidden="true">Update Ready Refresh Now</span>
+            </div>
+            <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
         </div>
-        <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
-    </div>
-
-    <div class="pwa-update-banner-actions">
-        <button type="button" class="pwa-btn-update-later" id="pwaLaterUpdateBtn">
-            Later
-        </button>
-        <button type="button" class="pwa-btn-update-apply" id="pwaApplyUpdateBtn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pwa-update-spin-icon" style="display:none; animation: ptr-spin 0.8s linear infinite;">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-            </svg>
-            <span id="pwaApplyUpdateBtnText">Update Now</span>
-            <svg class="pwa-btn-arrow-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-        </button>
+        <div class="pwa-update-whats-new" id="pwaUpdateWhatsNew">
+            <span class="pwa-update-whats-new-icon">&#10024;</span>
+            <div class="pwa-update-whats-new-text">
+                <div class="pwa-update-whats-new-label">What&#8217;s New</div>
+                <div class="pwa-update-whats-new-body" id="pwaUpdateWhatsNewBody">UI improvements, performance enhancements, and stability fixes for a smoother experience.</div>
+            </div>
+        </div>
+        <div class="pwa-update-banner-actions">
+            <button type="button" class="pwa-btn-update-later" id="pwaLaterUpdateBtn">Later</button>
+            <button type="button" class="pwa-btn-update-apply" id="pwaApplyUpdateBtn">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="pwa-update-spin-icon" style="display:none; animation: ptr-spin 0.8s linear infinite;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                <span id="pwaApplyUpdateBtnText">Update Now</span>
+                <svg class="pwa-btn-arrow-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+        </div>
     </div>
 </div>
 
