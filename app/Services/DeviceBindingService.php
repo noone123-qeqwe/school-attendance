@@ -222,16 +222,22 @@ class DeviceBindingService
     {
         $message = "📱 Device change: {$student->name} ({$student->student_number}) switched from \"{$oldDevice}\" to \"{$newDevice}\". IP: {$request->ip()}";
 
-        $admins = User::where('role', 'admin')->get();
-
-        foreach ($admins as $admin) {
-            Notification::create([
-                'user_id'      => $admin->id,
-                'sent_by'      => $admin->id,
-                'type'         => 'device_binding',
-                'subject_code' => null,
-                'message'      => $message,
-            ]);
+        $adminIds = User::where('role', 'admin')->pluck('id');
+        if ($adminIds->isEmpty()) {
+            return;
         }
+
+        $now = now();
+        $records = $adminIds->map(fn ($adminId) => [
+            'user_id'      => $adminId,
+            'sent_by'      => $adminId,
+            'type'         => 'device_binding',
+            'subject_code' => null,
+            'message'      => $message,
+            'created_at'   => $now,
+            'updated_at'   => $now,
+        ])->all();
+
+        Notification::insert($records);
     }
 }

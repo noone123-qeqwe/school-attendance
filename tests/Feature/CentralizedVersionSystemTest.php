@@ -201,6 +201,33 @@ class CentralizedVersionSystemTest extends TestCase
         $newResponse->assertSee('data-app-version-tag', false);
     }
 
+    public function test_pwa_update_endpoint_updates_login_interface_version(): void
+    {
+        // 1. Initial state at 9.0.0
+        Setting::set('installed_version', '9.0.0');
+        Setting::set('latest_version', '9.0.0');
+        Setting::set('system_version', '9.0.0');
+        Setting::flushCache();
+
+        $initial = $this->get(route('login'));
+        $initial->assertStatus(200);
+        $initial->assertSee('v9.0.0');
+
+        // 2. Client applies update to 9.1.0 via /pwa/update
+        $response = $this->postJson('/pwa/update', ['version' => '9.1.0']);
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'installed_version' => '9.1.0',
+            'version_tag' => 'v9.1.0',
+        ]);
+
+        // 3. Verify login page renders v9.1.0 immediately
+        $loginRes = $this->get(route('login'));
+        $loginRes->assertStatus(200);
+        $loginRes->assertSee('v9.1.0');
+    }
+
     public function test_artisan_app_version_command(): void
     {
         $this->artisan('app:version')

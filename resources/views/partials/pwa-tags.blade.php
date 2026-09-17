@@ -24,6 +24,9 @@
 <meta name="app-commit-hash" content="{{ $commitHash }}">
 <meta name="sw-build-version" content="{{ $swCacheVer }}">
 <meta name="sw-build-mtime" content="{{ $swFileMtime }}">
+@if(!str_contains(request()->route()?->getName() ?? '', 'api.'))
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endif
 
 <!-- PWA Manifest & Icons -->
 <link rel="manifest" href="/manifest.json">
@@ -1910,6 +1913,12 @@
             });
         } catch (e) {}
 
+        // Synchronize all visible version badges immediately on click
+        const liveVerTag = 'v' + String(targetVer).replace(/^v/i, '');
+        document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(el => {
+            el.textContent = liveVerTag;
+        });
+
         // Hide modal and pill
         hideModalElementsIfUpToDate();
 
@@ -1924,12 +1933,13 @@
             navigator.serviceWorker.controller.postMessage({ action: 'clearCache', type: 'CLEAR_CACHE' });
         }
 
-        // Clear browser caches and reload with fail-safe timer
+        // Clear browser caches and reload with cache busting query
         let reloaded = false;
         const doReload = () => {
             if (!reloaded) {
                 reloaded = true;
-                window.location.reload(true);
+                const cleanUrl = window.location.pathname + '?_v=' + encodeURIComponent(targetVer) + '&_t=' + Date.now();
+                window.location.replace(cleanUrl);
             }
         };
 

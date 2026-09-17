@@ -65,28 +65,26 @@
             --app-height: 100dvh;
         }
 
-        html {
+        html, body {
             height: 100%;
-            height: -webkit-fill-available;
-        }
-
-        body {
+            height: 100dvh;
+            height: var(--app-height, 100dvh);
+            max-height: var(--app-height, 100dvh);
+            width: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+            -webkit-overscroll-behavior: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            margin: 0;
+            padding: 0;
+            touch-action: pan-y;
             background-color: #110A0A;
             color: #F3E7CD;
             font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-            min-height: 100dvh;
-            min-height: var(--app-height, 100dvh);
-            width: 100%;
-            overflow-x: hidden;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior-y: contain;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            margin: 0;
-            padding: 0;
         }
 
         /* ── FULL-SCREEN BACKGROUND ── */
@@ -164,14 +162,15 @@
             display: none !important;
         }
 
-        /* ── CENTERED & RESPONSIVE LAYOUT ── */
+        /* ── CENTERED & IMMOVABLE RESPONSIVE LAYOUT ── */
         .auth-scene {
-            position: relative;
+            position: absolute;
+            inset: 0;
             z-index: 10;
-            min-height: 100vh;
-            min-height: 100dvh;
-            min-height: var(--app-height, 100dvh);
             width: 100%;
+            height: 100%;
+            height: var(--app-height, 100%);
+            max-height: var(--app-height, 100%);
             display: flex; 
             align-items: center;
             justify-content: center;
@@ -180,6 +179,10 @@
             padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
             padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
             box-sizing: border-box;
+            overflow-x: hidden;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            -webkit-overflow-scrolling: touch;
             transition: padding 0.2s ease;
         }
 
@@ -2272,7 +2275,7 @@ async function performBiometricLogin(studentNumber) {
                 } catch(e) {}
             }
             
-            window.location.href = result.redirect || '{{ route("home") }}';
+            window.location.replace(result.redirect || '{{ route("home") }}');
         } else {
             resetBiometricButton();
 
@@ -2547,6 +2550,11 @@ if (forgotLinkElem) {
 
         const isKeyboard = vv ? vv.height < (window.innerHeight - 120) : false;
         document.body.classList.toggle('keyboard-open', isKeyboard);
+
+        // Keep page locked at (0, 0) to prevent rubber-banding/dragging when system bars move
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+            window.scrollTo(0, 0);
+        }
     }
 
     if (window.visualViewport) {
@@ -2554,6 +2562,11 @@ if (forgotLinkElem) {
         window.visualViewport.addEventListener('scroll', syncViewportMetrics, { passive: true });
     }
     window.addEventListener('resize', syncViewportMetrics, { passive: true });
+    window.addEventListener('scroll', function() {
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+            window.scrollTo(0, 0);
+        }
+    }, { passive: true });
     window.addEventListener('orientationchange', function() {
         setTimeout(syncViewportMetrics, 100);
         setTimeout(syncViewportMetrics, 300);
@@ -2569,11 +2582,14 @@ if (forgotLinkElem) {
         fetch('/pwa/version?_t=' + Date.now(), { cache: 'no-store' })
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data && data.latest_version) {
-                    const tag = 'v' + String(data.latest_version).replace(/^v/i, '');
-                    document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(function(el) {
-                        el.textContent = tag;
-                    });
+                if (data) {
+                    const ver = data.latest_version || data.installed_version || data.current_version;
+                    if (ver) {
+                        const tag = 'v' + String(ver).replace(/^v/i, '');
+                        document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(function(el) {
+                            el.textContent = tag;
+                        });
+                    }
                 }
             })
             .catch(function() {});

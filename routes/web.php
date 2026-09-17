@@ -133,13 +133,24 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
 // Client Update Endpoint: installs the target/latest version
 Route::match(['GET', 'POST'], '/pwa/update', function (\Illuminate\Http\Request $request, \App\Services\VersionService $versionService) {
     $targetVer = $request->input('version') ?: $versionService->getLatestVersion();
-    $installed = $versionService->installUpdate($targetVer);
+    $clean = ltrim(trim((string)$targetVer), 'vV ');
+
+    $installed = $versionService->installUpdate($clean);
+    \App\Models\Setting::set('installed_version', $installed);
+    \App\Models\Setting::set('latest_version', $installed);
+    \App\Models\Setting::set('system_version', $installed);
+    \App\Models\Setting::flushCache();
+
+    try {
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+    } catch (\Throwable $e) {}
 
     return response()->json([
         'success'           => true,
         'installed_version' => $installed,
         'current_version'   => $installed,
         'latest_version'    => $versionService->getLatestVersion(),
+        'version_tag'       => 'v' . $installed,
         'is_up_to_date'     => $versionService->isUpToDate(),
         'message'           => "Successfully updated to Version {$installed}."
     ], 200, ['Cache-Control' => 'no-cache, no-store, must-revalidate']);

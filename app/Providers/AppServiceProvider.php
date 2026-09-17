@@ -38,22 +38,32 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer('*', function ($view) {
+            static $cachedVersionData = null;
+            static $cachedVersionKey = null;
+
             $versionService = app(VersionService::class);
-            $latestVer = $versionService->getLatestVersion();
-            $installedVer = $versionService->getInstalledVersion();
-            $view->with([
-                'appVersion'             => $latestVer,
-                'appVersionTag'          => $versionService->getVersionTag(),
-                'appCurrentVersion'      => $installedVer,
-                'appLatestVersion'       => $latestVer,
-                'appBuild'               => $versionService->getBuild(),
-                'appCommit'              => $versionService->getCommit(),
-                'appReleaseDate'         => $versionService->getFormattedReleaseDate(),
-                'appInstalledVersion'    => $installedVer,
-                'appInstalledVersionTag' => 'v' . $installedVer,
-                'appIsUpToDate'          => $versionService->isUpToDate(),
-                'appMetadata'            => $versionService->getFullMetadata(),
-            ]);
+            $currentVerKey = $versionService->getLatestVersion() . ':' . $versionService->getInstalledVersion();
+
+            if ($cachedVersionData === null || $cachedVersionKey !== $currentVerKey) {
+                $latestVer = $versionService->getLatestVersion();
+                $installedVer = $versionService->getInstalledVersion();
+                $cachedVersionData = [
+                    'appVersion'             => $latestVer,
+                    'appVersionTag'          => $versionService->getVersionTag(),
+                    'appCurrentVersion'      => $installedVer,
+                    'appLatestVersion'       => $latestVer,
+                    'appBuild'               => $versionService->getBuild(),
+                    'appCommit'              => $versionService->getCommit(),
+                    'appReleaseDate'         => $versionService->getFormattedReleaseDate(),
+                    'appInstalledVersion'    => $installedVer,
+                    'appInstalledVersionTag' => 'v' . $installedVer,
+                    'appIsUpToDate'          => $versionService->isUpToDate(),
+                    'appMetadata'            => $versionService->getFullMetadata(),
+                ];
+                $cachedVersionKey = $currentVerKey;
+            }
+
+            $view->with($cachedVersionData);
         });
 
         // ── CSP nonce Blade directive ─────────────────────────────────────────

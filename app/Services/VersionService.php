@@ -336,13 +336,19 @@ class VersionService
         return version_compare($installed, $latest, '>=');
     }
 
+    protected ?int $migrationsCountCache = null;
+
     /**
      * Get total count of applied database migrations.
      */
     public function getMigrationsCount(): int
     {
+        if ($this->migrationsCountCache !== null) {
+            return $this->migrationsCountCache;
+        }
+
         try {
-            return DB::table('migrations')->count();
+            return $this->migrationsCountCache = DB::table('migrations')->count();
         } catch (\Throwable $e) {
             return 0;
         }

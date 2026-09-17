@@ -24,6 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
         //   TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12 (specific CIDR ranges)
         $middleware->trustProxies(at: '*');
 
+        $middleware->validateCsrfTokens(except: [
+            'pwa/update',
+            'pwa/update/*',
+        ]);
+
         $middleware->alias([
             'admin'         => \App\Http\Middleware\AdminMiddleware::class,
             'admin.2fa'     => \App\Http\Middleware\AdminTwoFactor::class,
