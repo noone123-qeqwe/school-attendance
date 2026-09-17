@@ -2358,10 +2358,16 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
         } catch(e) {}
     }
 
+    const devKey = (typeof window.getOrCreateDeviceKey === 'function')
+        ? window.getOrCreateDeviceKey()
+        : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+
     const payload = {
         token: parsedData.token || (resolvedMethod === 'code' ? parsedData.code : ''),
         code: parsedData.code || parsedData.token || '',
         method: resolvedMethod,
+        device_key: devKey,
+        device_fingerprint: devKey,
         latitude: studentGeoCoords ? studentGeoCoords.lat : null,
         longitude: studentGeoCoords ? studentGeoCoords.lng : null,
         accuracy: studentGeoCoords ? studentGeoCoords.acc : null
@@ -2370,10 +2376,13 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     try {
         const response = await fetch('{{ route("qr.scan.process") }}', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-Device-Key': devKey,
+                'X-Device-Fingerprint': devKey
             },
             body: JSON.stringify(payload)
         });
@@ -2521,6 +2530,10 @@ function renderScanError(data) {
 
     if (errType === 'schedule_mismatch') {
         title.textContent = 'Schedule Mismatch';
+    } else if (errType === 'device_mismatch') {
+        title.textContent = 'Device Not Recognized';
+    } else if (errType === 'proxy_device_detected') {
+        title.textContent = 'Proxy Attendance Detected';
     } else if (errDetail === 'session_expired' || errType === 'session_expired') {
         title.textContent = 'Attendance Session Expired';
     } else if (errDetail === 'session_inactive' || errType === 'session_inactive' || errType === 'session_closed') {

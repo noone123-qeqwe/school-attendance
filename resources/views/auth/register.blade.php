@@ -552,6 +552,8 @@
 
                 <form id="regForm" method="POST" action="{{ route('register.submit') }}" novalidate>
                     @csrf
+                    <input type="hidden" name="device_key" id="regDeviceKey">
+                    <input type="hidden" name="device_fingerprint" id="regDeviceFingerprint">
                     
                     <!-- STEP 1: Basic Info -->
                     <div id="step-1" class="form-step active">
@@ -1634,6 +1636,15 @@
                         updateFullName();
                         const form = document.getElementById('regForm');
                         if (form) {
+                            try {
+                                var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+                                    ? window.getOrCreateDeviceKey()
+                                    : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+                                var rKey = document.getElementById('regDeviceKey');
+                                var rFp = document.getElementById('regDeviceFingerprint');
+                                if (rKey && devKey) rKey.value = devKey;
+                                if (rFp && devKey) rFp.value = devKey;
+                            } catch(e) {}
                             form.dataset.submitting = 'true';
                             form.submit();
                         }

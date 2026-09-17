@@ -1,4 +1,4 @@
-﻿@php
+@php
     $versionService = app(\App\Services\VersionService::class);
     $installedVersion = $appInstalledVersion ?? $versionService->getInstalledVersion();
     $latestVersion = $appVersion ?? $versionService->getVersion();
@@ -1075,6 +1075,92 @@
 
 <script @cspNonce src="{{ asset('js/password-toggle.js') }}?v={{ file_exists(public_path('js/password-toggle.js')) ? filemtime(public_path('js/password-toggle.js')) : time() }}"></script>
 <script @cspNonce>
+    // ── Universal Persistent Device Key Synchronization ──
+    window.getOrCreateDeviceKey = function() {
+        try {
+            var key = localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid');
+            if (!key) {
+                var m = document.cookie.match(/(?:^|;\s*)student_device_key=([^;]+)/);
+                if (m && m[1]) key = decodeURIComponent(m[1]);
+            }
+            if (!key) {
+                key = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : ('dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 14));
+            }
+            localStorage.setItem('student_device_key', key);
+            localStorage.setItem('attendance_device_uuid', key);
+            var sec = location.protocol === 'https:' ? '; Secure' : '';
+            document.cookie = 'student_device_key=' + encodeURIComponent(key) + '; path=/; max-age=31536000; SameSite=Lax' + sec;
+            return key;
+        } catch(e) {
+            return '';
+        }
+    };
+    try { window.getOrCreateDeviceKey(); } catch(e) {}
+
+    // Global fetch interceptor to attach device key to app requests
+    (function() {
+        if (typeof window.fetch === 'function' && !window.__deviceFetchIntercepted) {
+            window.__deviceFetchIntercepted = true;
+            var _origFetch = window.fetch;
+            window.fetch = function(input, init) {
+                try {
+                    init = init || {};
+                    var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                    if (devKey) {
+                        if (!init.headers) {
+                            init.headers = {};
+                        }
+                        if (init.headers instanceof Headers) {
+                            if (!init.headers.has('X-Device-Key')) init.headers.set('X-Device-Key', devKey);
+                            if (!init.headers.has('X-Device-Fingerprint')) init.headers.set('X-Device-Fingerprint', devKey);
+                        } else if (Array.isArray(init.headers)) {
+                            init.headers.push(['X-Device-Key', devKey]);
+                            init.headers.push(['X-Device-Fingerprint', devKey]);
+                        } else {
+                            if (!init.headers['X-Device-Key']) init.headers['X-Device-Key'] = devKey;
+                            if (!init.headers['X-Device-Fingerprint']) init.headers['X-Device-Fingerprint'] = devKey;
+                        }
+                    }
+                    if (!init.credentials) {
+                        init.credentials = 'same-origin';
+                    }
+                } catch(err) {}
+                return _origFetch.call(this, input, init);
+            };
+        }
+
+        // Global XMLHttpRequest interceptor to attach device key to same-origin AJAX calls
+        if (typeof window.XMLHttpRequest !== 'undefined' && !window.__deviceXHRIntercepted) {
+            window.__deviceXHRIntercepted = true;
+            var _origOpen = XMLHttpRequest.prototype.open;
+            var _origSend = XMLHttpRequest.prototype.send;
+            XMLHttpRequest.prototype.open = function() {
+                var url = arguments[1] || '';
+                this.__isSameOrigin = (
+                    typeof url === 'string' && (
+                        url.startsWith('/') ||
+                        url.startsWith(window.location.origin) ||
+                        !url.startsWith('http')
+                    )
+                );
+                return _origOpen.apply(this, arguments);
+            };
+            XMLHttpRequest.prototype.send = function() {
+                try {
+                    if (this.__isSameOrigin) {
+                        var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                        if (devKey) {
+                            this.setRequestHeader('X-Device-Key', devKey);
+                            this.setRequestHeader('X-Device-Fingerprint', devKey);
+                        }
+                    }
+                } catch(e) {}
+                return _origSend.apply(this, arguments);
+            };
+        }
+    })();
 
     // ── 1. Register Service Worker & Handle Real-Time Update Notifications ──
     let swRegistration = null;
@@ -1351,13 +1437,13 @@
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const installedVer = getInstalledVersion();
 
-        // If not forced and already up to date, check if service worker or build requires update
+        // If not forced and already up to date, do NOT show update modal for already installed version
         if (!force && !isManualCheck && compareSemver(targetVersion, installedVer) <= 0) {
-            const hasSwUpdate = latestDetectedSwVersion && getInstalledSwVersion() && parseSwNum(latestDetectedSwVersion) > parseSwNum(getInstalledSwVersion());
-            const hasWaiting = swRegistration && swRegistration.waiting;
-            if (!hasSwUpdate && !hasWaiting) {
-                return;
+            if (swRegistration && swRegistration.waiting) {
+                try { swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' }); } catch(e) {}
             }
+            hideModalElementsIfUpToDate();
+            return;
         }
 
         // Prevent duplicate popup if already visible on screen

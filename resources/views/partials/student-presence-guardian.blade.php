@@ -226,18 +226,26 @@
             if (!this.activeSession) return;
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             const errCode = (error && error.code === 1) ? 'permission_denied' : 'position_unavailable';
+            const devKey = (typeof window.getOrCreateDeviceKey === 'function')
+                ? window.getOrCreateDeviceKey()
+                : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
             try {
                 const res = await fetch('{{ route("student.presence.verify") }}', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': token
+                        'X-CSRF-TOKEN': token,
+                        'X-Device-Key': devKey,
+                        'X-Device-Fingerprint': devKey
                     },
                     body: JSON.stringify({
                         session_id: this.activeSession.session_id,
                         error_code: errCode,
-                        error_message: error ? error.message : 'Location access failed'
+                        error_message: error ? error.message : 'Location access failed',
+                        device_key: devKey,
+                        device_fingerprint: devKey
                     })
                 });
 
@@ -252,19 +260,27 @@
 
         async sendVerificationPayload(coords) {
             const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            const devKey = (typeof window.getOrCreateDeviceKey === 'function')
+                ? window.getOrCreateDeviceKey()
+                : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
             try {
                 const res = await fetch('{{ route("student.presence.verify") }}', {
                     method: 'POST',
+                    credentials: 'same-origin',
                     headers: {
                         'Content-Type': 'application/json',
                         'Accept': 'application/json',
-                        'X-CSRF-TOKEN': token
+                        'X-CSRF-TOKEN': token,
+                        'X-Device-Key': devKey,
+                        'X-Device-Fingerprint': devKey
                     },
                     body: JSON.stringify({
                         session_id: this.activeSession.session_id,
                         latitude: coords.latitude,
                         longitude: coords.longitude,
-                        accuracy: coords.accuracy
+                        accuracy: coords.accuracy,
+                        device_key: devKey,
+                        device_fingerprint: devKey
                     })
                 });
 

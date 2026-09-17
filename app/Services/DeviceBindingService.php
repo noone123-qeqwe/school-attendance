@@ -13,15 +13,15 @@ use Jenssegers\Agent\Agent;
 
 class DeviceBindingService
 {
-    private const COOKIE_NAME = 'student_device_key';
+    public const COOKIE_NAME = 'student_device_key';
     private const COOKIE_MINUTES = 60 * 24 * 365; // 1 year
 
     /**
      * Bind the current device to the user on successful login.
      *
-     * A successful password login is proof of identity, so we ALWAYS
+     * A successful password or biometric login is proof of identity, so we ALWAYS
      * update the binding to the current device. If the device actually
-     * changed (different user agent), we alert admins.
+     * changed (different platform/hardware), we alert admins.
      */
     public function bind(User $user, Request $request): void
     {
@@ -29,18 +29,30 @@ class DeviceBindingService
             return;
         }
 
+        $cleanKey = function ($val): ?string {
+            if (!$val || !is_string($val)) return null;
+            $trimmed = trim($val);
+            if ($trimmed === '' || strtolower($trimmed) === 'undefined' || strtolower($trimmed) === 'null') {
+                return null;
+            }
+            return $trimmed;
+        };
+
         $oldBinding = $user->deviceBinding;
 
         // Build a stable device key: prefer cookie (persists across browser updates),
-        // fall back to fingerprint, or generate a new random key.
-        $cookieKey = $request->cookie(self::COOKIE_NAME);
-        $fpKey = $request->input('device_fingerprint');
+        // fall back to headers, request payload, or generate a new random key.
+        $cookieKey = $cleanKey($request->cookie(self::COOKIE_NAME));
+        $fpKey = $cleanKey($request->input('device_fingerprint'))
+            ?? $cleanKey($request->input('device_key'))
+            ?? $cleanKey($request->header('X-Device-Key'))
+            ?? $cleanKey($request->header('X-Device-Fingerprint'));
         $deviceKey = $cookieKey ?: $fpKey ?: Str::random(64);
-        $deviceHash = $this->hashDeviceKey($deviceKey);
+        $deviceHash = $this->hashDeviceKey((string) $deviceKey);
 
         // Detect device info for logging
         $agent = new Agent();
-        $agent->setUserAgent($request->userAgent());
+        $agent->setUserAgent((string) $request->userAgent());
         $deviceNameStr = $agent->device() ?: $agent->platform();
         $browserStr = $agent->browser();
         $friendlyDeviceName = trim("$deviceNameStr - $browserStr", ' -');
@@ -57,12 +69,10 @@ class DeviceBindingService
             // If the hash doesn't match AND the user agent is significantly different,
             // treat it as a real device change
             if (!hash_equals($oldBinding->device_hash, $deviceHash)) {
-                // Compare the core of the user agent (platform + device) rather than the full string
-                // to avoid false positives from minor browser version bumps
                 $oldCore = $this->extractUACore($oldUA);
                 $newCore = $this->extractUACore($newUA);
 
-                if ($oldCore !== $newCore) {
+                if ($oldCore !== $newCore && !empty($oldCore) && !empty($newCore)) {
                     $isDeviceChange = true;
                     Log::info('Device binding changed for student', [
                         'user_id' => $user->id,
@@ -80,10 +90,10 @@ class DeviceBindingService
             }
         }
 
-        $sessionId = $request->session()->getId();
+        $sessionId = $request->hasSession() ? $request->session()->getId() : null;
 
         // Always update the binding to the current device
-        DeviceBinding::updateOrCreate(
+        $newBinding = DeviceBinding::updateOrCreate(
             ['user_id' => $user->id],
             [
                 'device_hash'  => $deviceHash,
@@ -94,11 +104,15 @@ class DeviceBindingService
                 'last_seen_at' => now(),
             ]
         );
+        $user->setRelation('deviceBinding', $newBinding);
 
-        // Store the session ID so middleware can verify it
-        $request->session()->put('device_bound_session', true);
+        // Store session verification flags so middleware & requests can verify it
+        if ($request->hasSession()) {
+            $request->session()->put('device_bound_session', true);
+            $request->session()->put('bound_device_hash', $deviceHash);
+        }
 
-        // Set/refresh the device cookie
+        // Set/refresh the device cookie (httpOnly=false so JS can synchronize with localStorage)
         Cookie::queue(cookie(
             self::COOKIE_NAME,
             $deviceKey,
@@ -106,7 +120,7 @@ class DeviceBindingService
             null,
             null,
             $request->isSecure(),
-            true,   // httpOnly
+            false,  // httpOnly: false so client JS can read and sync
             false,  // raw
             'Lax'   // sameSite
         ));
@@ -120,10 +134,11 @@ class DeviceBindingService
     /**
      * Check if the current request is coming from the bound device.
      *
-     * Uses a 3-tier verification strategy:
-     * 1. Cookie match (most reliable, persists across browser updates)
-     * 2. Fingerprint match (fallback, can drift)
-     * 3. Session flag (set during login — proves user just authenticated)
+     * Uses a multi-tier verification strategy:
+     * 1. Client-provided device keys (cookie, headers, or body inputs)
+     * 2. Direct session ID match
+     * 3. Session flag with matching bound device hash
+     * 4. Authenticated student with matching platform / UA core
      */
     public function isCurrentDevice(User $user, Request $request): bool
     {
@@ -131,7 +146,10 @@ class DeviceBindingService
             return true;
         }
 
-        $binding = $user->deviceBinding;
+        $binding = $user->deviceBinding ?: DeviceBinding::where('user_id', $user->id)->first();
+        if ($binding) {
+            $user->setRelation('deviceBinding', $binding);
+        }
 
         // No binding exists yet — first-time user, allow through and bind on action
         if (!$binding) {
@@ -139,38 +157,85 @@ class DeviceBindingService
             return true;
         }
 
-        // Tier 1: Cookie check (most stable)
-        $cookieKey = $request->cookie(self::COOKIE_NAME);
-        if ($cookieKey && hash_equals($binding->device_hash, $this->hashDeviceKey($cookieKey))) {
-            $this->touchBinding($binding, $request);
-            return true;
+        $cleanKey = function ($val): ?string {
+            if (!$val || !is_string($val)) return null;
+            $trimmed = trim($val);
+            if ($trimmed === '' || strtolower($trimmed) === 'undefined' || strtolower($trimmed) === 'null') {
+                return null;
+            }
+            return $trimmed;
+        };
+
+        // Tier 1: Client-provided device keys (cookie, headers, or body inputs)
+        $incomingKeys = array_unique(array_filter([
+            $cleanKey($request->cookie(self::COOKIE_NAME)),
+            $cleanKey($request->header('X-Device-Key')),
+            $cleanKey($request->header('X-Device-Fingerprint')),
+            $cleanKey($request->input('device_key')),
+            $cleanKey($request->input('device_fingerprint')),
+        ]));
+
+        $hasIncomingKeys = !empty($incomingKeys);
+        $keyMatched = false;
+
+        foreach ($incomingKeys as $clientKey) {
+            if ($clientKey && hash_equals($binding->device_hash, $this->hashDeviceKey((string) $clientKey))) {
+                $keyMatched = true;
+                if (!$request->cookie(self::COOKIE_NAME)) {
+                    Cookie::queue(cookie(
+                        self::COOKIE_NAME,
+                        (string) $clientKey,
+                        self::COOKIE_MINUTES,
+                        null,
+                        null,
+                        $request->isSecure(),
+                        false,
+                        false,
+                        'Lax'
+                    ));
+                }
+                $this->touchBinding($binding, $request);
+                return true;
+            }
         }
 
-        // Tier 2: Fingerprint check (from POST body, query, or headers)
-        $fpKey = $request->input('device_fingerprint') ?? $request->header('X-Device-Fingerprint');
-        if ($fpKey && hash_equals($binding->device_hash, $this->hashDeviceKey($fpKey))) {
-            $this->touchBinding($binding, $request);
-            return true;
+        // If client explicitly presented a device key that did NOT match, reject immediately
+        if ($hasIncomingKeys && !$keyMatched) {
+            return false;
         }
 
-        // Tier 3: Session flag — set during the login `bind()` call
-        if ($request->hasSession() && $request->session()->has('device_bound_session') && $request->session()->get('device_bound_session')) {
-            $this->touchBinding($binding, $request);
-            return true;
-        }
-
-        // Tier 4: Session ID direct match
+        // Tier 2: Direct session ID match (same session as login)
         if ($binding->session_id && $request->hasSession() && $binding->session_id === $request->session()->getId()) {
             $this->touchBinding($binding, $request);
             return true;
         }
 
-        // Tier 5: Strict fallback — same User-Agent core (same OS/device) AND same IP subnet
+        // Tier 3: Session flag with matching bound device hash
+        if ($request->hasSession()) {
+            $session = $request->session();
+            if ($session->get('bound_device_hash') === $binding->device_hash) {
+                $this->touchBinding($binding, $request);
+                return true;
+            }
+
+            if ($session->get('device_bound_session') && $binding->session_id && $binding->session_id === $session->getId()) {
+                $this->touchBinding($binding, $request);
+                return true;
+            }
+        }
+
+        // Tier 4: Authenticated student on the same physical platform / User-Agent core
+        // Eliminates false device mismatch errors when cellular roaming changes the client's IP
         $newUA = substr((string) $request->userAgent(), 0, 500);
+        $bindingCore = $this->extractUACore($binding->user_agent ?? '');
+        $newCore = $this->extractUACore($newUA);
         if (
             $binding->user_agent &&
-            $this->extractUACore($binding->user_agent) === $this->extractUACore($newUA) &&
-            ($binding->ip_address === $request->ip() || substr((string)$binding->ip_address, 0, 8) === substr((string)$request->ip(), 0, 8))
+            auth()->check() &&
+            auth()->id() === $user->id &&
+            !empty($bindingCore) &&
+            !empty($newCore) &&
+            $bindingCore === $newCore
         ) {
             $this->touchBinding($binding, $request);
             return true;
@@ -185,7 +250,7 @@ class DeviceBindingService
     private function touchBinding(DeviceBinding $binding, Request $request): void
     {
         $binding->forceFill([
-            'session_id'   => $request->session()->getId(),
+            'session_id'   => $request->hasSession() ? $request->session()->getId() : $binding->session_id,
             'last_seen_at' => now(),
             'ip_address'   => $request->ip(),
         ])->save();

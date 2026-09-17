@@ -364,6 +364,7 @@ class WebAuthnController extends Controller
 
             if ($user->isStudent()) {
                 app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+                $request->session()->save();
             }
 
             $redirectUrl = route('home');
@@ -534,6 +535,7 @@ class WebAuthnController extends Controller
         // Bind device on WebAuthn login too (same as password login)
         if ($user->isStudent()) {
             app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+            $request->session()->save();
         }
 
         $redirectUrl = route('home');

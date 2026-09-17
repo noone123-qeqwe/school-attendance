@@ -1046,6 +1046,7 @@ if (document.readyState === 'loading') {
         <form method="POST" action="{{ route('login.submit') }}" id="loginForm">
             @csrf
             <input type="hidden" name="device_fingerprint" id="deviceFingerprint">
+            <input type="hidden" name="device_key" id="deviceKey">
             @php
                 $qrToken = old('qr_token', session('qr_token') ?? request('qr_token'));
             @endphp
@@ -1120,6 +1121,8 @@ if (document.readyState === 'loading') {
 
         <form method="POST" action="{{ route('recovery.login') }}" id="recoveryForm" style="display:none;">
             @csrf
+            <input type="hidden" name="device_fingerprint" id="recoveryDeviceFingerprint">
+            <input type="hidden" name="device_key" id="recoveryDeviceKey">
             <div class="glass-input-wrap anim-fade-up anim-d4">
                 <i class="bi bi-person-fill g-icon"></i>
                 <input type="text" name="identifier" class="glass-input" placeholder="Student ID or Email" required autocomplete="username">
@@ -1343,25 +1346,48 @@ if (document.readyState === 'loading') {
 })();
 </script>
 
-<script @cspNonce>
-// FingerprintJS initialization (safely wrapped)
-try {
-    const fpPromise = import('https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/+esm')
-        .then(FingerprintJS => FingerprintJS.load())
-        .catch(() => null);
+// Reliable Device Fingerprint & Key initialization
+(function() {
+    function initDeviceTokens() {
+        var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+            ? window.getOrCreateDeviceKey()
+            : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+        var fpInput = document.getElementById('deviceFingerprint');
+        var keyInput = document.getElementById('deviceKey');
+        var rfpInput = document.getElementById('recoveryDeviceFingerprint');
+        var rkeyInput = document.getElementById('recoveryDeviceKey');
 
-    if (fpPromise) {
-        fpPromise.then(fp => {
-            if (!fp) return;
-            return fp.get();
-        }).then(result => {
-            if (!result) return;
-            const visitorId = result.visitorId;
-            var hiddenInput = document.getElementById('deviceFingerprint');
-            if (hiddenInput) hiddenInput.value = visitorId;
-        }).catch(() => {});
+        if (fpInput && !fpInput.value && devKey) fpInput.value = devKey;
+        if (keyInput && !keyInput.value && devKey) keyInput.value = devKey;
+        if (rfpInput && !rfpInput.value && devKey) rfpInput.value = devKey;
+        if (rkeyInput && !rkeyInput.value && devKey) rkeyInput.value = devKey;
     }
-} catch (e) {}
+    initDeviceTokens();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDeviceTokens);
+    }
+    window.addEventListener('load', initDeviceTokens);
+
+    // Optional FingerprintJS refinement if available
+    try {
+        const fpPromise = import('https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/+esm')
+            .then(FingerprintJS => FingerprintJS.load())
+            .catch(() => null);
+
+        if (fpPromise) {
+            fpPromise.then(fp => {
+                if (!fp) return;
+                return fp.get();
+            }).then(result => {
+                if (!result || !result.visitorId) return;
+                var fpInput = document.getElementById('deviceFingerprint');
+                if (fpInput && !fpInput.value) {
+                    fpInput.value = result.visitorId;
+                }
+            }).catch(() => {});
+        }
+    } catch (e) {}
+})();
 
 // Remember identifier in localStorage & Account Switcher
 var idInput = document.getElementById('idInput');
@@ -1448,6 +1474,16 @@ if (loginForm) {
         }
 
         try {
+            var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+                ? window.getOrCreateDeviceKey()
+                : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+            var fpInput = document.getElementById('deviceFingerprint');
+            var keyInput = document.getElementById('deviceKey');
+            if (fpInput && devKey) fpInput.value = devKey;
+            if (keyInput && devKey) keyInput.value = devKey;
+        } catch (e) {}
+
+        try {
             if (rememberCheckbox && rememberCheckbox.checked && idInput && idInput.value) {
                 localStorage.setItem('attendance_saved_identifier', idInput.value.trim());
             } else if (rememberCheckbox && !rememberCheckbox.checked) {
@@ -1474,6 +1510,29 @@ if (useRecoveryCodeLink) {
         var rf = document.getElementById('recoveryForm');
         if (lf) lf.style.display = 'none';
         if (rf) rf.style.display = 'block';
+    });
+}
+
+var recoveryForm = document.getElementById('recoveryForm');
+if (recoveryForm) {
+    recoveryForm.addEventListener('submit', function() {
+        try {
+            var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+                ? window.getOrCreateDeviceKey()
+                : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+            var rfpInput = document.getElementById('recoveryDeviceFingerprint');
+            var rkeyInput = document.getElementById('recoveryDeviceKey');
+            if (rfpInput && devKey) rfpInput.value = devKey;
+            if (rkeyInput && devKey) rkeyInput.value = devKey;
+        } catch (e) {}
+
+        var rbtn = document.getElementById('recoverySubmitBtn');
+        if (rbtn) {
+            setTimeout(function() {
+                rbtn.disabled = true;
+                rbtn.innerHTML = '<span class="btn-spinner"></span>SIGNING IN...';
+            }, 10);
+        }
     });
 }
 
@@ -2242,19 +2301,27 @@ async function performBiometricLogin(studentNumber) {
             response: assertionResponse
         };
 
+        var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+            ? window.getOrCreateDeviceKey()
+            : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+
         var loginRes = await fetch('{{ route("webauthn.login") }}', {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 
                 'X-CSRF-TOKEN': '{{ csrf_token() }}', 
                 'Content-Type': 'application/json', 
-                'Accept': 'application/json' 
+                'Accept': 'application/json',
+                'X-Device-Key': devKey,
+                'X-Device-Fingerprint': devKey
             },
             body: JSON.stringify({ 
                 credential_id: credentialId, 
                 assertion: assertionData,
                 student_number: studentNumber,
-                identifier: studentNumber
+                identifier: studentNumber,
+                device_key: devKey,
+                device_fingerprint: devKey
             })
         });
         
@@ -2311,14 +2378,18 @@ async function performBiometricLogin(studentNumber) {
                                 headers: { 
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}', 
                                     'Content-Type': 'application/json', 
-                                    'Accept': 'application/json' 
+                                    'Accept': 'application/json',
+                                    'X-Device-Key': devKey,
+                                    'X-Device-Fingerprint': devKey
                                 },
                                 body: JSON.stringify({ 
                                     credential_id: credentialId, 
                                     assertion: assertionData,
                                     student_number: detUser.identifier,
                                     identifier: detUser.identifier,
-                                    switch_user: true
+                                    switch_user: true,
+                                    device_key: devKey,
+                                    device_fingerprint: devKey
                                 })
                             });
                             var swData = await swRes.json();

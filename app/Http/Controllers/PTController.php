@@ -75,8 +75,9 @@ class PTController extends Controller
         Auth::login($user, true);
         $request->session()->regenerate();
         
-        if ($request->role === 'student') {
+        if ($user->isStudent()) {
             app(DeviceBindingService::class)->bind($user, $request);
+            $request->session()->save();
             return redirect()->route('home');
         } elseif ($request->role === 'parent') {
             return redirect()->route('parent.dashboard');
@@ -219,9 +220,9 @@ class PTController extends Controller
             if ($user->isStudent()) {
                 $request->session()->put('user_role', 'student');
                 $request->session()->put('login_timestamp', now());
-                $request->session()->save();
 
                 app(DeviceBindingService::class)->bind($user, $request);
+                $request->session()->save();
 
                 if ($request->filled('qr_token')) {
                     $targetUrl = route('qr.scan', ['token' => $request->qr_token]);

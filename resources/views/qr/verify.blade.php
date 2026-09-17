@@ -230,6 +230,8 @@
             <input type="hidden" name="longitude" id="lngInput">
             <input type="hidden" name="accuracy" id="accuracyInput">
             <input type="hidden" name="credential" id="credentialInput">
+            <input type="hidden" name="device_key" id="deviceKeyInput">
+            <input type="hidden" name="device_fingerprint" id="deviceFingerprintInput">
         </form>
     </div>
 </div>
@@ -590,12 +592,25 @@ function submitAttendance(credentialData) {
         return;
     }
 
+    var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+        ? window.getOrCreateDeviceKey()
+        : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+
+    var dKeyEl = document.getElementById('deviceKeyInput');
+    var dFpEl = document.getElementById('deviceFingerprintInput');
+    if (dKeyEl && devKey) dKeyEl.value = devKey;
+    if (dFpEl && devKey) dFpEl.value = devKey;
+
     var xhr2 = new XMLHttpRequest();
     xhr2.open('POST', '{{ route("qr.verify.complete") }}', true);
     xhr2.withCredentials = true;
     xhr2.setRequestHeader('X-CSRF-TOKEN', CSRF);
     xhr2.setRequestHeader('Content-Type', 'application/json');
     xhr2.setRequestHeader('Accept', 'application/json');
+    if (devKey) {
+        xhr2.setRequestHeader('X-Device-Key', devKey);
+        xhr2.setRequestHeader('X-Device-Fingerprint', devKey);
+    }
     xhr2.onload = function() {
         var response;
         try {
@@ -627,7 +642,9 @@ function submitAttendance(credentialData) {
         latitude: latitude,
         longitude: longitude,
         accuracy: accuracy,
-        credential: credentialData
+        credential: credentialData,
+        device_key: devKey,
+        device_fingerprint: devKey
     }));
 }
 
@@ -651,12 +668,20 @@ function doFingerprint() {
         return;
     }
 
+    var devKey = (typeof window.getOrCreateDeviceKey === 'function')
+        ? window.getOrCreateDeviceKey()
+        : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '{{ route("qr.verify.options") }}', true);
     xhr.setRequestHeader('X-CSRF-TOKEN', CSRF);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.withCredentials = true;
     xhr.setRequestHeader('Accept', 'application/json');
+    if (devKey) {
+        xhr.setRequestHeader('X-Device-Key', devKey);
+        xhr.setRequestHeader('X-Device-Fingerprint', devKey);
+    }
     xhr.onload = function() {
         if (xhr.status !== 200) {
             fingerprintInProgress = false;
@@ -747,7 +772,11 @@ function doFingerprint() {
         fingerprintInProgress = false;
         showFpError('Network error. Please try again.'); 
     };
-    xhr.send(JSON.stringify({ token: QR_TOKEN }));
+    xhr.send(JSON.stringify({
+        token: QR_TOKEN,
+        device_key: devKey,
+        device_fingerprint: devKey
+    }));
 }
 
 function submitForm(msg) {

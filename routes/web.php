@@ -132,13 +132,16 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
 
 // Client Update Endpoint: installs the target/latest version
 Route::match(['GET', 'POST'], '/pwa/update', function (\Illuminate\Http\Request $request, \App\Services\VersionService $versionService) {
-    $targetVer = $request->input('version') ?: $versionService->getLatestVersion();
+    $currentLatest = $versionService->getLatestVersion();
+    $targetVer = $request->input('version') ?: $currentLatest;
     $clean = ltrim(trim((string)$targetVer), 'vV ');
 
     $installed = $versionService->installUpdate($clean);
     \App\Models\Setting::set('installed_version', $installed);
-    \App\Models\Setting::set('latest_version', $installed);
-    \App\Models\Setting::set('system_version', $installed);
+    if (version_compare($installed, $currentLatest, '>=')) {
+        \App\Models\Setting::set('latest_version', $installed);
+        \App\Models\Setting::set('system_version', $installed);
+    }
     \App\Models\Setting::flushCache();
 
     try {

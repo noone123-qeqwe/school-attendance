@@ -77,6 +77,7 @@ class RecoveryCodeController extends Controller
         // Bind device on recovery login (same as password login)
         if ($user->isStudent()) {
             app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+            $request->session()->save();
         }
 
         // Redirect based on role

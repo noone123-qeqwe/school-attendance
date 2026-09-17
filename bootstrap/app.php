@@ -24,6 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         //   TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12 (specific CIDR ranges)
         $middleware->trustProxies(at: '*');
 
+        $middleware->encryptCookies(except: [
+            'student_device_key',
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'pwa/update',
             'pwa/update/*',
