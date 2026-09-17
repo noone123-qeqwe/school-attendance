@@ -693,16 +693,24 @@ function doFingerprint() {
             return; 
         }
 
-        var rpId = opts.rpId || window.location.hostname;
+        var hostname = window.location.hostname;
+        var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
+        var sRp = (opts.rpId || '').toLowerCase().trim();
+        var h = hostname.toLowerCase().trim();
+        var effectiveRpId = isIp ? undefined : ((sRp && (h === sRp || h.endsWith('.' + sRp))) ? sRp : hostname);
+
+        var pubKey = {
+            challenge: challenge,
+            allowCredentials: allowCredentials,
+            userVerification: 'required',
+            timeout: 60000
+        };
+        if (effectiveRpId) {
+            pubKey.rpId = effectiveRpId;
+        }
 
         navigator.credentials.get({
-            publicKey: {
-                challenge: challenge,
-                rpId: rpId,
-                allowCredentials: allowCredentials,
-                userVerification: 'required',
-                timeout: 60000
-            }
+            publicKey: pubKey
         }).then(function(assertion) {
             setStep(4);
             setIcon('#f0fdf4', 'bi bi-fingerprint', '#16a34a');

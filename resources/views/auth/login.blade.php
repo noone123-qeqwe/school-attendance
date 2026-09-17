@@ -974,16 +974,6 @@ if (document.readyState === 'loading') {
                 <input type="hidden" name="qr_token" value="{{ $qrToken }}">
             @endif
 
-            <!-- Account Switcher Banner (shown when a saved account is remembered) -->
-            <div id="savedAccountBanner" style="display:none; align-items:center; justify-content:space-between; background:rgba(212,175,55,0.12); border:1px solid rgba(212,175,55,0.3); border-radius:12px; padding:8px 14px; margin-bottom:12px; font-size:0.82rem; color:#f3e7cd;" class="anim-fade-up anim-d4">
-                <div style="display:flex; align-items:center; gap:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                    <i class="bi bi-person-check-fill" style="color:#d4af37; font-size:1rem;"></i>
-                    <span style="overflow:hidden; text-overflow:ellipsis;">Signing in as <strong id="savedAccountName" style="color:#fff;"></strong></span>
-                </div>
-                <button type="button" id="switchAccountBtn" title="Sign in with a different account" style="background:rgba(212,175,55,0.18); border:1px solid rgba(212,175,55,0.35); color:#d4af37; font-size:0.75rem; font-weight:700; cursor:pointer; padding:3px 10px; border-radius:6px; white-space:nowrap; transition:all 0.2s;">
-                    Switch Account
-                </button>
-            </div>
 
             <!-- ID or Email  -  system detects role automatically -->
             <div class="glass-input-wrap anim-fade-up anim-d4" style="position: relative;">
@@ -1017,6 +1007,12 @@ if (document.readyState === 'loading') {
                     </div>
                     <i class="bi bi-chevron-right fp-row-arrow" id="fpArrow"></i>
                 </button>
+                <div class="text-center mt-2 mb-1 anim-fade-up anim-d5" style="font-size: 0.78rem;">
+                    <a href="javascript:void(0)" id="reEnrollBioLink" style="color: rgba(212,175,55,0.88); text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="bi bi-arrow-repeat"></i>
+                        <span>Re-register or enroll biometrics on this device</span>
+                    </a>
+                </div>
                 <div class="glass-divider anim-fade-up anim-d5">or use password</div>
             </div>
 
@@ -1298,24 +1294,8 @@ try {
 var idInput = document.getElementById('idInput');
 var rememberCheckbox = document.getElementById('rememberMe');
 var clearIdBtn = document.getElementById('clearIdBtn');
-var savedAccountBanner = document.getElementById('savedAccountBanner');
-var savedAccountName = document.getElementById('savedAccountName');
-var switchAccountBtn = document.getElementById('switchAccountBtn');
 
 function updateAccountBanner() {
-    var savedId = '';
-    try {
-        savedId = (localStorage.getItem('attendance_saved_identifier') || '').trim();
-    } catch(e) {}
-    
-    if (savedAccountBanner && savedAccountName) {
-        if (savedId && idInput && idInput.value && idInput.value.trim().toLowerCase() === savedId.toLowerCase()) {
-            savedAccountName.textContent = savedId;
-            savedAccountBanner.style.display = 'flex';
-        } else {
-            savedAccountBanner.style.display = 'none';
-        }
-    }
     updateClearBtnVisibility();
 }
 
@@ -1355,13 +1335,6 @@ try {
     }
 } catch (e) {}
 updateAccountBanner();
-
-if (switchAccountBtn) {
-    switchAccountBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        clearSavedAccount();
-    });
-}
 
 if (clearIdBtn) {
     clearIdBtn.addEventListener('click', function(e) {
@@ -1450,6 +1423,26 @@ var fpHint = document.getElementById('fpHint');
 var fpIcon = document.getElementById('fpIcon');
 var fpArrow = document.getElementById('fpArrow');
 
+var bioAbortController = null;
+var isBioPending = false;
+
+function getEffectiveRpId(serverRpId) {
+    var hostname = window.location.hostname;
+    if (!hostname) return undefined;
+    var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
+    if (isIp) {
+        return undefined; // IP cannot be rpId in WebAuthn
+    }
+    if (serverRpId && typeof serverRpId === 'string') {
+        var s = serverRpId.toLowerCase().trim();
+        var h = hostname.toLowerCase().trim();
+        if (h === s || h.endsWith('.' + s)) {
+            return s;
+        }
+    }
+    return hostname;
+}
+
 function normalizeBase64(base64) {
     base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
     var padding = base64.length % 4;
@@ -1477,10 +1470,13 @@ function bufferToBase64Url(buffer) {
 }
 
 function resetBiometricButton() {
+    isBioPending = false;
+    bioAbortController = null;
     if (!fpRowBtn) return;
     fpRowBtn.disabled = false;
     fpRowBtn.style.opacity = '1';
     fpRowBtn.style.cursor = 'pointer';
+    fpRowBtn.removeAttribute('title');
     if (fpLabel) fpLabel.textContent = 'Sign in with Biometrics';
     if (fpHint) fpHint.textContent = 'Fingerprint, Face ID, or device security';
     if (fpIcon) fpIcon.className = 'bi bi-fingerprint';
@@ -1775,11 +1771,10 @@ async function startBiometricRegistration(identifier, password) {
 
         var challenge = base64ToUint8Array(opts.challenge);
         var userId = base64ToUint8Array(opts.user.id);
-        var hostname = window.location.hostname;
-        var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
+        var effectiveRpId = getEffectiveRpId(opts.rp?.id);
         var rp = { name: opts.rp?.name || 'School Attendance' };
-        if (opts.rp?.id && !isIp) {
-            rp.id = opts.rp.id;
+        if (effectiveRpId) {
+            rp.id = effectiveRpId;
         }
 
         var excludeCredentials = (opts.excludeCredentials || []).map(function(c) {
@@ -1798,6 +1793,7 @@ async function startBiometricRegistration(identifier, password) {
                 authenticatorSelection: opts.authenticatorSelection || {
                     authenticatorAttachment: 'platform',
                     userVerification: 'preferred',
+                    residentKey: 'preferred',
                     requireResidentKey: false
                 },
                 timeout: opts.timeout || 60000,
@@ -1898,9 +1894,45 @@ async function startBiometricRegistration(identifier, password) {
     }
 }
 
+// Direct action to re-enroll or register biometrics on this device
+function handleDirectReEnrollClick(e) {
+    if (e) e.preventDefault();
+    hideFpMessage();
+    var idVal = idInput ? idInput.value.trim() : '';
+    if (!idVal) {
+        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
+        openBiometricModal({
+            title: 'ENTER STUDENT ID OR EMAIL',
+            message: 'Please enter your <strong>Student ID or Email</strong> first so we can re-enroll your biometric sign-in on this device.',
+            badgeType: 'warning',
+            primaryBtnText: '<i class="bi bi-person-fill me-2"></i>ENTER STUDENT ID / EMAIL',
+            secondaryBtnText: 'CANCEL',
+            onPrimaryClick: closeBiometricModalAndFocusIdentifier,
+            onSecondaryClick: closeBiometricModal
+        });
+        if (idInput) {
+            idInput.focus();
+            idInput.style.borderColor = '#d4af37';
+            setTimeout(function() { if (idInput) idInput.style.borderColor = ''; }, 2500);
+        }
+        return;
+    }
+    openBiometricSetupModal(idVal);
+}
+
 // Handle biometric login button click
 async function handleBiometricLogin() {
     hideFpMessage();
+
+    // If an active biometric scan is already in progress, tapping acts as a clean cancel!
+    if (isBioPending) {
+        if (bioAbortController) {
+            try { bioAbortController.abort(); } catch(e) {}
+        }
+        resetBiometricButton();
+        showFpMessage('info', '<i class="bi bi-info-circle me-2"></i>Biometric scan cancelled. Tap anytime to try again.');
+        return;
+    }
     
     var identifier = idInput ? idInput.value.trim() : '';
     
@@ -1931,9 +1963,19 @@ async function handleBiometricLogin() {
 
 async function performBiometricLogin(studentNumber) {
     studentNumber = (studentNumber || '').trim();
+
+    // Abort previous prompt if any
+    if (bioAbortController) {
+        try { bioAbortController.abort(); } catch(e) {}
+    }
+    bioAbortController = new AbortController();
+    isBioPending = true;
+
     if (fpRowBtn) {
-        fpRowBtn.disabled = true;
-        fpRowBtn.style.opacity = '0.7';
+        fpRowBtn.disabled = false; // keep clickable so user can tap anytime to cancel
+        fpRowBtn.style.opacity = '0.9';
+        fpRowBtn.style.cursor = 'pointer';
+        fpRowBtn.setAttribute('title', 'Tap here to cancel biometric scan');
     }
     if (fpLabel) fpLabel.textContent = 'Connecting to server...';
     if (fpHint) fpHint.textContent = studentNumber ? ('Looking up credentials for ' + studentNumber + '...') : 'Finding passkey on device...';
@@ -1949,7 +1991,8 @@ async function performBiometricLogin(studentNumber) {
                 'Content-Type': 'application/json', 
                 'Accept': 'application/json' 
             },
-            body: JSON.stringify({ student_number: studentNumber, identifier: studentNumber })
+            body: JSON.stringify({ student_number: studentNumber, identifier: studentNumber }),
+            signal: bioAbortController.signal
         });
         
         var opts = await optRes.json();
@@ -1984,7 +2027,7 @@ async function performBiometricLogin(studentNumber) {
                 openBiometricModal({
                     title: 'BIOMETRIC NOT REGISTERED',
                     identifier: studentNumber,
-                    message: 'Biometric login is not registered for this account.<br><br>Please use your password or register your biometrics first.',
+                    message: 'Biometric login is not registered for this account.<br><br>Please verify your password to enable seamless biometric sign-in on this device.',
                     badgeType: 'warning',
                     primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>SET UP BIOMETRICS',
                     secondaryBtnText: 'USE PASSWORD',
@@ -2036,7 +2079,13 @@ async function performBiometricLogin(studentNumber) {
         }
 
         var allowCredentials = (opts.allowCredentials || []).map(function(c) {
-            return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
+            var cred = { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
+            if (c.transports && Array.isArray(c.transports) && c.transports.length > 0) {
+                cred.transports = c.transports;
+            } else {
+                cred.transports = ['internal', 'hybrid'];
+            }
+            return cred;
         });
 
         if (studentNumber && allowCredentials.length === 0) {
@@ -2047,39 +2096,63 @@ async function performBiometricLogin(studentNumber) {
 
         // Trigger WebAuthn credential retrieval
         var challenge = base64ToUint8Array(opts.challenge);
-        var rpId = opts.rpId || window.location.hostname;
-        var hostname = window.location.hostname;
-        var isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
+        var effectiveRpId = getEffectiveRpId(opts.rpId);
         
         var getPublicKey = {
             challenge: challenge,
             userVerification: 'preferred',
-            timeout: 60000
+            timeout: 35000
         };
         
         if (allowCredentials.length > 0) {
             getPublicKey.allowCredentials = allowCredentials;
         }
         
-        if (rpId && !isIp) {
-            getPublicKey.rpId = rpId;
+        if (effectiveRpId) {
+            getPublicKey.rpId = effectiveRpId;
         }
 
         if (fpLabel) fpLabel.textContent = 'Touch sensor or scan Face ID...';
-        if (fpHint) fpHint.textContent = 'Scan your fingerprint, Face ID, or device lock';
+        if (fpHint) fpHint.textContent = 'Tap here to cancel (or touch sensor)';
         if (fpIcon) fpIcon.className = 'bi bi-hand-index';
+        if (fpArrow) fpArrow.className = 'bi bi-x-circle fp-row-arrow';
 
-        var assertion = await navigator.credentials.get({
-            publicKey: getPublicKey
-        });
+        var assertion = null;
+        try {
+            assertion = await navigator.credentials.get({
+                publicKey: getPublicKey,
+                signal: bioAbortController ? bioAbortController.signal : undefined
+            });
+        } catch (firstErr) {
+            if (firstErr.name === 'AbortError') throw firstErr;
+
+            // If allowCredentials failed on this device, attempt discoverable passkey before giving up
+            if (getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
+                console.warn('Biometric query with allowCredentials failed, trying discoverable passkey fallback...', firstErr);
+                var fallbackPublicKey = Object.assign({}, getPublicKey);
+                delete fallbackPublicKey.allowCredentials;
+                try {
+                    assertion = await navigator.credentials.get({
+                        publicKey: fallbackPublicKey,
+                        signal: bioAbortController ? bioAbortController.signal : undefined
+                    });
+                } catch (fallbackErr) {
+                    if (fallbackErr.name === 'AbortError') throw fallbackErr;
+                    throw firstErr;
+                }
+            } else {
+                throw firstErr;
+            }
+        }
 
         if (!assertion) {
             throw new Error('Authentication was cancelled or failed.');
         }
 
-        if (fpLabel) fpLabel.textContent = 'Verifying fingerprint...';
+        if (fpLabel) fpLabel.textContent = 'Verifying biometric...';
         if (fpHint) fpHint.textContent = 'Please wait a moment...';
         if (fpIcon) fpIcon.className = 'bi bi-shield-check';
+        if (fpArrow) fpArrow.className = 'bi bi-hourglass-split fp-row-arrow';
 
         var credentialId = bufferToBase64Url(assertion.rawId);
         var assertionResponse = {
@@ -2194,9 +2267,9 @@ async function performBiometricLogin(studentNumber) {
                                 identifier: detUser.identifier,
                                 message: swErr.message || 'Failed to switch user.',
                                 badgeType: 'danger',
-                                primaryBtnText: 'TRY AGAIN',
+                                primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>RE-ENROLL ON THIS DEVICE',
                                 secondaryBtnText: 'USE PASSWORD',
-                                onPrimaryClick: function() { performBiometricLogin(detUser.identifier); },
+                                onPrimaryClick: function() { openBiometricSetupModal(detUser.identifier); },
                                 onSecondaryClick: closeBiometricModalAndFocusPassword
                             });
                         }
@@ -2209,18 +2282,17 @@ async function performBiometricLogin(studentNumber) {
             var failMsg = result.message || 'Biometric authentication was not recognized.';
             showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + failMsg);
             
-            var modalTitle = result.code === 'CREDENTIAL_MISMATCH' ? 'ACCOUNT MISMATCH' : 'BIOMETRIC AUTHENTICATION FAILED';
+            var modalTitle = result.code === 'CREDENTIAL_MISMATCH' ? 'ACCOUNT MISMATCH' : 'BIOMETRIC NOT RECOGNIZED';
             
             openBiometricModal({
                 title: modalTitle,
                 identifier: studentNumber,
-                message: failMsg + '<br><br>Please try again or use your password to sign in.',
+                message: failMsg + '<br><br>You can easily re-enroll your biometrics on this device or sign in using your password.',
                 badgeType: 'danger',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
+                primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>RE-ENROLL ON THIS DEVICE',
                 secondaryBtnText: 'USE PASSWORD',
                 onPrimaryClick: function() {
-                    closeBiometricModal();
-                    performBiometricLogin(studentNumber);
+                    openBiometricSetupModal(studentNumber);
                 },
                 onSecondaryClick: closeBiometricModalAndFocusPassword
             });
@@ -2228,48 +2300,49 @@ async function performBiometricLogin(studentNumber) {
     } catch (err) {
         console.error('Biometric authentication error:', err);
         resetBiometricButton();
+
+        if (err.name === 'AbortError') {
+            showFpMessage('info', '<i class="bi bi-info-circle me-2"></i>Biometric scan cancelled. Tap anytime to try again.');
+            return;
+        }
+
         if (err.name === 'NotAllowedError') {
             showFpMessage('warning', '<i class="bi bi-x-circle me-2"></i>Biometric authentication was cancelled or timed out. Please try again or use your password.');
             openBiometricModal({
                 title: 'AUTHENTICATION CANCELLED',
                 identifier: studentNumber,
-                message: 'Biometric authentication was cancelled or timed out.<br><br>You can try again, or sign in using your password.',
+                message: 'Biometric authentication was cancelled or timed out.<br><br>If you registered on another phone, browser, or domain, you can easily <strong>re-enroll your fingerprint or Face ID on this device</strong> right now, or use your password.',
                 badgeType: 'warning',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
-                secondaryBtnText: 'USE PASSWORD',
-                onPrimaryClick: function() {
-                    closeBiometricModal();
-                    performBiometricLogin(studentNumber);
-                },
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
-            return;
-        } else if (err.name === 'InvalidStateError') {
-            showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Your biometric sign-in needs to be set up again for this device.');
-            openBiometricModal({
-                title: 'DEVICE NOT ENROLLED',
-                identifier: studentNumber,
-                message: 'Your biometric sign-in is not recognized on this device.<br><br>Please set it up again or use your password.',
-                badgeType: 'warning',
-                primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>SET UP AGAIN',
+                primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>RE-ENROLL ON THIS DEVICE',
                 secondaryBtnText: 'USE PASSWORD',
                 onPrimaryClick: function() { openBiometricSetupModal(studentNumber); },
                 onSecondaryClick: closeBiometricModalAndFocusPassword
             });
+            return;
+        } else if (err.name === 'InvalidStateError') {
+            showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Your biometric sign-in needs to be set up on this device.');
+            openBiometricModal({
+                title: 'DEVICE NOT ENROLLED',
+                identifier: studentNumber,
+                message: 'Your biometric credential needs to be enrolled on this device.<br><br>Please verify your password to re-enroll or sign in using your password.',
+                badgeType: 'warning',
+                primaryBtnText: '<i class="bi bi-shield-lock-fill me-2"></i>RE-ENROLL ON THIS DEVICE',
+                secondaryBtnText: 'USE PASSWORD',
+                onPrimaryClick: function() { openBiometricSetupModal(studentNumber); },
+                onSecondaryClick: closeBiometricModalAndFocusPassword
+            });
+            return;
         } else {
             var errMsg = err.message || 'Your biometric authentication could not be completed.';
             showFpMessage('error', '<i class="bi bi-exclamation-triangle-fill me-2"></i>' + errMsg);
             openBiometricModal({
-                title: 'BIOMETRIC AUTHENTICATION FAILED',
+                title: 'BIOMETRIC SIGN-IN',
                 identifier: studentNumber,
-                message: errMsg + '<br><br>Please try again or use your password to sign in.',
+                message: errMsg + '<br><br>Would you like to re-enroll your biometrics on this device or sign in with your password?',
                 badgeType: 'danger',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
+                primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>RE-ENROLL ON THIS DEVICE',
                 secondaryBtnText: 'USE PASSWORD',
-                onPrimaryClick: function() {
-                    closeBiometricModal();
-                    performBiometricLogin(studentNumber);
-                },
+                onPrimaryClick: function() { openBiometricSetupModal(studentNumber); },
                 onSecondaryClick: closeBiometricModalAndFocusPassword
             });
         }
@@ -2282,6 +2355,14 @@ function setupBiometricListeners() {
         fpRowBtn.addEventListener('click', function(e) {
             e.preventDefault();
             handleBiometricLogin();
+        });
+    }
+
+    var reEnrollLink = document.getElementById('reEnrollBioLink');
+    if (reEnrollLink) {
+        reEnrollLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            handleDirectReEnrollClick(e);
         });
     }
 
@@ -2348,6 +2429,7 @@ window.performBiometricLogin = performBiometricLogin;
 window.openBiometricModal = openBiometricModal;
 window.closeBiometricModal = closeBiometricModal;
 window.openBiometricSetupModal = openBiometricSetupModal;
+window.handleDirectReEnrollClick = handleDirectReEnrollClick;
 window.handleSetupBiometricsClick = handleSetupBiometricsClick;
 window.closeBiometricModalAndFocusPassword = closeBiometricModalAndFocusPassword;
 window.closeBiometricModalAndFocusIdentifier = closeBiometricModalAndFocusIdentifier;

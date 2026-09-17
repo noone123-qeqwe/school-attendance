@@ -204,4 +204,86 @@ class WebAuthnSetupAndLoginTest extends TestCase
         ]);
         $resAfter->assertStatus(404)->assertJson(['code' => 'NOT_REGISTERED']);
     }
+
+    public function test_setup_options_clears_exclude_credentials_allowing_re_registration()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU_RE_ENROLL',
+            'password' => Hash::make('password123'),
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'existing_cred_123',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Old Device',
+        ]);
+
+        $response = $this->postJson(route('webauthn.setup.options'), [
+            'identifier' => 'STU_RE_ENROLL',
+            'password' => 'password123',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'user_id' => $user->id,
+                'excludeCredentials' => [],
+            ]);
+    }
+
+    public function test_register_options_clears_exclude_credentials_for_authenticated_users()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU_AUTH_REGISTER',
+            'password' => Hash::make('password123'),
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'existing_auth_cred',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Existing Device',
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->getJson(route('webauthn.register.options'));
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'excludeCredentials' => [],
+            ]);
+    }
+
+    public function test_login_options_includes_transports_for_platform_sensor_priority()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU_TRANSPORTS',
+            'password' => Hash::make('password123'),
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'transports_cred_id',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Transport Device',
+        ]);
+
+        $response = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => 'STU_TRANSPORTS',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+            ]);
+
+        $data = $response->json();
+        $this->assertNotEmpty($data['allowCredentials']);
+        $this->assertEquals(['internal', 'hybrid'], $data['allowCredentials'][0]['transports']);
+    }
 }

@@ -44,6 +44,7 @@ class WebAuthnController extends Controller
     {
         $user = Auth::user();
         $options = $webauthn->registrationOptions($user);
+        $options['publicKey']['excludeCredentials'] = [];
 
         return response()->json($options['publicKey']);
     }
@@ -74,6 +75,19 @@ class WebAuthnController extends Controller
         }
 
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
+
+        // Check for duplicate credential
+        $existingCred = \App\Models\WebauthnCredential::where(function ($query) use ($credentialId, $normalizedCredentialId) {
+            $query->where('credential_id', $credentialId)
+                  ->orWhere('credential_id', $normalizedCredentialId);
+        })->first();
+
+        if ($existingCred) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This biometric credential is already registered.'
+            ], 409);
+        }
 
         // Direct camera-based face recognition registration (independent from WebAuthn device verification)
         $isDirectFace = $biometricType === 'face' && (
@@ -157,7 +171,8 @@ class WebAuthnController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            return response()->json(["success" => false, "message" => "Failed to store {$typeLabel}: " . $e->getMessage()], 422);
+            $isConflict = str_contains($e->getMessage(), 'already registered') || str_contains($e->getMessage(), 'another account');
+            return response()->json(["success" => false, "message" => "Failed to store {$typeLabel}: " . $e->getMessage()], $isConflict ? 409 : 422);
         }
 
         $successMsg = $biometricType === 'face' 
@@ -276,6 +291,8 @@ class WebAuthnController extends Controller
 
         session(['webauthn.setup_user_id' => $user->id]);
         $options = $webauthn->registrationOptions($user);
+        // Clear excludeCredentials so users can re-enroll or update their biometric passkey on this device
+        $options['publicKey']['excludeCredentials'] = [];
 
         return response()->json(array_merge($options['publicKey'], [
             "success" => true,

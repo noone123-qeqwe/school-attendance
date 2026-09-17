@@ -3842,8 +3842,10 @@ async function beginFingerprintRegistration() {
         const hostname = window.location.hostname;
         const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
         const rp = { name: opts.rp?.name || 'School Attendance' };
-        if (opts.rp?.id && !isIp) {
-            rp.id = opts.rp.id;
+        if (!isIp) {
+            const sRp = (opts.rp?.id || '').toLowerCase().trim();
+            const h = hostname.toLowerCase().trim();
+            rp.id = (sRp && (h === sRp || h.endsWith('.' + sRp))) ? sRp : hostname;
         }
 
         const excludeCredentials = (opts.excludeCredentials || []).map(function(c) {

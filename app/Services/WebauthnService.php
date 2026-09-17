@@ -123,6 +123,7 @@ class WebauthnService
                 ->map(fn ($credential) => [
                     'type' => 'public-key',
                     'id' => $credential->credential_id,
+                    'transports' => ['internal', 'hybrid'],
                 ])
                 ->values()
                 ->toArray();
