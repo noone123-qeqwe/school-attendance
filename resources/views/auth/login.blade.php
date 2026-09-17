@@ -752,7 +752,7 @@
         <a href="{{ route('privacy') }}">Privacy Policy</a>
         <a href="{{ route('terms') }}">Terms & Conditions</a>
         <a href="javascript:void(0)" data-footer-modal="contact">Contact Us</a>
-        <span style="color: rgba(207,164,111,0.6); font-weight: 600; margin-left: 12px; pointer-events: all;">
+        <span style="color: rgba(207,164,111,0.6); font-weight: 600; margin-left: 12px; pointer-events: all;" id="loginAppVersionDesktop" data-app-version-tag>
             {{ $appVersionTag }}
         </span>
     </div>
@@ -1148,7 +1148,7 @@ if (document.readyState === 'loading') {
         
         {{-- Version Badge - Visible on Mobile (when bottom bar is hidden) --}}
         <div class="d-block d-md-none text-center anim-fade-up anim-d7" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
-            <span style="font-size: 0.7rem; color: rgba(207,164,111,0.5); font-weight: 600; letter-spacing: 0.5px;">
+            <span style="font-size: 0.7rem; color: rgba(207,164,111,0.5); font-weight: 600; letter-spacing: 0.5px;" id="loginAppVersionMobile" data-app-version-tag>
                 {{ $appVersionTag }}
             </span>
         </div>
@@ -2576,6 +2576,26 @@ if (forgotLinkElem) {
     syncViewportMetrics();
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', syncViewportMetrics);
+    }
+
+    // ── Real-time Login Version Badge Synchronization ──
+    function syncLoginVersionBadge() {
+        fetch('/pwa/version?_t=' + Date.now(), { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.latest_version) {
+                    const tag = 'v' + String(data.latest_version).replace(/^v/i, '');
+                    document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(function(el) {
+                        el.textContent = tag;
+                    });
+                }
+            })
+            .catch(function() {});
+    }
+
+    syncLoginVersionBadge();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', syncLoginVersionBadge);
     }
 })();
 </script>

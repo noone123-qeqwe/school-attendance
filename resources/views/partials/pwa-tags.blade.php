@@ -2007,6 +2007,14 @@
                                 updateChangelogUI(updateChangelog);
                             }
 
+                            // Keep all visible app version tags synchronized in real time
+                            if (latestVer) {
+                                const liveVerTag = 'v' + String(latestVer).replace(/^v/i, '');
+                                document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(el => {
+                                    el.textContent = liveVerTag;
+                                });
+                            }
+
                             // Check 1: Semantic version comparison (Latest > Installed)
                             if (compareSemver(latestVer, installedVer) > 0) {
                                 isUpdateAvailable = true;

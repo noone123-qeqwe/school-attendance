@@ -171,8 +171,34 @@ class CentralizedVersionSystemTest extends TestCase
         $this->assertArrayHasKey('appCommit', $data);
         $this->assertArrayHasKey('appReleaseDate', $data);
         $this->assertArrayHasKey('appInstalledVersion', $data);
+        $this->assertArrayHasKey('appInstalledVersionTag', $data);
         $this->assertArrayHasKey('appIsUpToDate', $data);
         $this->assertArrayHasKey('appMetadata', $data);
+        $this->assertEquals($data['appVersionTag'], app(VersionService::class)->getVersionTag());
+    }
+
+    public function test_login_interface_displays_version_and_updates_dynamically(): void
+    {
+        /** @var VersionService $versionService */
+        $versionService = app(VersionService::class);
+        $canonicalTag = $versionService->getVersionTag();
+
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $response->assertSee('id="loginAppVersionDesktop"', false);
+        $response->assertSee('id="loginAppVersionMobile"', false);
+        $response->assertSee($canonicalTag);
+
+        // Verify that updating latest_version updates the version on the login interface
+        Setting::set('latest_version', '9.9.9');
+        Setting::set('system_version', '9.9.9');
+        $newTag = app(VersionService::class)->getVersionTag();
+        $this->assertEquals('v9.9.9', $newTag);
+
+        $newResponse = $this->get(route('login'));
+        $newResponse->assertStatus(200);
+        $newResponse->assertSee($newTag);
+        $newResponse->assertSee('data-app-version-tag', false);
     }
 
     public function test_artisan_app_version_command(): void

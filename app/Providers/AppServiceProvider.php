@@ -42,16 +42,17 @@ class AppServiceProvider extends ServiceProvider
             $latestVer = $versionService->getLatestVersion();
             $installedVer = $versionService->getInstalledVersion();
             $view->with([
-                'appVersion'          => $latestVer,
-                'appVersionTag'       => 'v' . $installedVer,
-                'appCurrentVersion'   => $installedVer,
-                'appLatestVersion'    => $latestVer,
-                'appBuild'            => $versionService->getBuild(),
-                'appCommit'           => $versionService->getCommit(),
-                'appReleaseDate'      => $versionService->getFormattedReleaseDate(),
-                'appInstalledVersion' => $installedVer,
-                'appIsUpToDate'       => $versionService->isUpToDate(),
-                'appMetadata'         => $versionService->getFullMetadata(),
+                'appVersion'             => $latestVer,
+                'appVersionTag'          => $versionService->getVersionTag(),
+                'appCurrentVersion'      => $installedVer,
+                'appLatestVersion'       => $latestVer,
+                'appBuild'               => $versionService->getBuild(),
+                'appCommit'              => $versionService->getCommit(),
+                'appReleaseDate'         => $versionService->getFormattedReleaseDate(),
+                'appInstalledVersion'    => $installedVer,
+                'appInstalledVersionTag' => 'v' . $installedVer,
+                'appIsUpToDate'          => $versionService->isUpToDate(),
+                'appMetadata'            => $versionService->getFullMetadata(),
             ]);
         });
 
