@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name') }} | @yield('portal-title', 'Student Portal')</title>
     
@@ -1388,15 +1388,35 @@
                 }
             });
 
-            // ── Mobile Virtual Keyboard Handling ──
-            if (window.visualViewport) {
-                const handleViewportResize = () => {
-                    const isKeyboard = window.visualViewport.height < (window.innerHeight - 120);
-                    document.body.classList.toggle('keyboard-open', isKeyboard);
-                };
-                window.visualViewport.addEventListener('resize', handleViewportResize);
-                window.visualViewport.addEventListener('scroll', handleViewportResize);
+            // ── Dynamic Viewport & Safe-Area Synchronization ──
+            function syncViewportMetrics() {
+                const vv = window.visualViewport;
+                const h = vv ? vv.height : window.innerHeight;
+                const w = vv ? vv.width : window.innerWidth;
+                const offsetTop = vv ? vv.offsetTop : 0;
+                const offsetLeft = vv ? vv.offsetLeft : 0;
+
+                const docEl = document.documentElement;
+                docEl.style.setProperty('--app-height', `${h}px`);
+                docEl.style.setProperty('--app-width', `${w}px`);
+                docEl.style.setProperty('--v-offset-top', `${offsetTop}px`);
+                docEl.style.setProperty('--v-offset-left', `${offsetLeft}px`);
+
+                const isKeyboard = vv ? vv.height < (window.innerHeight - 120) : false;
+                document.body.classList.toggle('keyboard-open', isKeyboard);
             }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', syncViewportMetrics, { passive: true });
+                window.visualViewport.addEventListener('scroll', syncViewportMetrics, { passive: true });
+            }
+            window.addEventListener('resize', syncViewportMetrics, { passive: true });
+            window.addEventListener('orientationchange', function() {
+                setTimeout(syncViewportMetrics, 100);
+                setTimeout(syncViewportMetrics, 300);
+            }, { passive: true });
+
+            syncViewportMetrics();
 
             // Global Native Touch Haptic Helper
             window.triggerHaptic = function(type = 'light') {

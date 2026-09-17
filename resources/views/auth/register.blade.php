@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Create Account — {{ config('app.name') }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -19,21 +19,37 @@
             --glass-border: rgba(255, 255, 255, 0.1);
             --text-main: #fcfcfc;
             --text-muted: #a39b9d;
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+            --app-height: 100dvh;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        html {
+            height: 100%;
+            height: -webkit-fill-available;
+        }
         body { 
             font-family: 'Inter', sans-serif; 
             min-height: 100vh; 
+            min-height: 100dvh;
+            min-height: var(--app-height, 100dvh);
             background-color: var(--bg-dark); 
             color: var(--text-main);
             overflow-x: hidden;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
-            padding: 84px 20px calc(48px + env(safe-area-inset-bottom, 16px));
+            padding-top: calc(env(safe-area-inset-top, 0px) + 72px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 32px);
+            padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
+            padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
         }
 
         /* Dynamic Background */
@@ -67,12 +83,15 @@
         .top-bar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 100;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 40px;
-            background: rgba(10, 3, 5, 0.7);
+            padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+            padding-bottom: 12px;
+            padding-left: calc(env(safe-area-inset-left, 0px) + 24px);
+            padding-right: calc(env(safe-area-inset-right, 0px) + 24px);
+            background: rgba(10, 3, 5, 0.88);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: padding 0.2s ease, background 0.2s ease;
         }
         .brand-logo {
             font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 700; color: white;
@@ -413,7 +432,10 @@
         /* Responsive */
         @media (max-width: 576px) {
             body { 
-                padding: 68px 12px 28px; 
+                padding-top: calc(env(safe-area-inset-top, 0px) + 58px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 12px) + 24px);
+                padding-left: calc(env(safe-area-inset-left, 0px) + 10px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 10px);
             }
             .card-header-premium { 
                 padding: 32px 20px 20px; 
@@ -431,9 +453,12 @@
                 padding: 20px 16px; 
             }
             .top-bar { 
-                padding: 11px 16px; 
+                padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+                padding-bottom: 10px;
+                padding-left: calc(env(safe-area-inset-left, 0px) + 14px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 14px);
                 justify-content: center;
-                background: rgba(10, 3, 5, 0.9);
+                background: rgba(10, 3, 5, 0.92);
                 backdrop-filter: blur(20px);
                 -webkit-backdrop-filter: blur(20px);
                 border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -460,8 +485,18 @@
         }
 
         @media (max-width: 380px) {
-            body { padding: 62px 8px 24px; }
-            .top-bar { padding: 9px 12px; }
+            body { 
+                padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 10px) + 20px);
+                padding-left: calc(env(safe-area-inset-left, 0px) + 8px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 8px);
+            }
+            .top-bar { 
+                padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+                padding-bottom: 8px;
+                padding-left: calc(env(safe-area-inset-left, 0px) + 12px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 12px);
+            }
             .brand-logo { font-size: 0.71rem; gap: 6px; }
             .brand-logo i { font-size: 0.95rem; }
             .card-header-premium h2 { font-size: 1.4rem; }
@@ -1831,6 +1866,41 @@
         } else {
             initRegisterPage();
         }
+
+        // ── Dynamic Viewport & Safe-Area Synchronization ──
+        (function() {
+            function syncViewportMetrics() {
+                const vv = window.visualViewport;
+                const h = vv ? vv.height : window.innerHeight;
+                const w = vv ? vv.width : window.innerWidth;
+                const offsetTop = vv ? vv.offsetTop : 0;
+                const offsetLeft = vv ? vv.offsetLeft : 0;
+
+                const docEl = document.documentElement;
+                docEl.style.setProperty('--app-height', `${h}px`);
+                docEl.style.setProperty('--app-width', `${w}px`);
+                docEl.style.setProperty('--v-offset-top', `${offsetTop}px`);
+                docEl.style.setProperty('--v-offset-left', `${offsetLeft}px`);
+
+                const isKeyboard = vv ? vv.height < (window.innerHeight - 120) : false;
+                document.body.classList.toggle('keyboard-open', isKeyboard);
+            }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', syncViewportMetrics, { passive: true });
+                window.visualViewport.addEventListener('scroll', syncViewportMetrics, { passive: true });
+            }
+            window.addEventListener('resize', syncViewportMetrics, { passive: true });
+            window.addEventListener('orientationchange', function() {
+                setTimeout(syncViewportMetrics, 100);
+                setTimeout(syncViewportMetrics, 300);
+            }, { passive: true });
+
+            syncViewportMetrics();
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', syncViewportMetrics);
+            }
+        })();
     </script>
 </body>
 </html>

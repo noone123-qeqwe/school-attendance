@@ -2,7 +2,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no, maximum-scale=1, minimum-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     
     <!-- PWA Meta Tags -->
@@ -58,10 +58,11 @@
             --space-12: 48px;
 
             /* Safe Areas */
-            --safe-top: env(safe-area-inset-top);
-            --safe-bottom: env(safe-area-inset-bottom);
-            --safe-left: env(safe-area-inset-left);
-            --safe-right: env(safe-area-inset-right);
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            --app-height: 100dvh;
 
             /* Sizes */
             --header-height: 56px;
@@ -75,13 +76,24 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        html {
+            height: 100%;
+            height: -webkit-fill-available;
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Figtree', sans-serif;
             background-color: var(--bg-dark);
             color: var(--text-primary);
+            min-height: 100vh;
+            min-height: 100dvh;
+            min-height: var(--app-height, 100dvh);
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            overscroll-behavior-y: contain;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* Hide body overflow when in browser (not standalone PWA) */
@@ -107,6 +119,9 @@
         /* Mobile App Container */
         .mobile-app {
             min-height: 100vh;
+            min-height: 100dvh;
+            min-height: var(--app-height, 100dvh);
+            box-sizing: border-box;
             padding-top: calc(var(--header-height) + var(--safe-top));
             padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 16px);
             padding-left: max(16px, var(--safe-left));
@@ -271,6 +286,38 @@
                 setTimeout(() => openStudentScanner('code'), 200);
             }
         });
+
+        // ── Dynamic Viewport & Safe-Area Synchronization ──
+        (function() {
+            function syncViewportMetrics() {
+                const vv = window.visualViewport;
+                const h = vv ? vv.height : window.innerHeight;
+                const w = vv ? vv.width : window.innerWidth;
+                const offsetTop = vv ? vv.offsetTop : 0;
+                const offsetLeft = vv ? vv.offsetLeft : 0;
+
+                const docEl = document.documentElement;
+                docEl.style.setProperty('--app-height', `${h}px`);
+                docEl.style.setProperty('--app-width', `${w}px`);
+                docEl.style.setProperty('--v-offset-top', `${offsetTop}px`);
+                docEl.style.setProperty('--v-offset-left', `${offsetLeft}px`);
+
+                const isKeyboard = vv ? vv.height < (window.innerHeight - 120) : false;
+                document.body.classList.toggle('keyboard-open', isKeyboard);
+            }
+
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', syncViewportMetrics, { passive: true });
+                window.visualViewport.addEventListener('scroll', syncViewportMetrics, { passive: true });
+            }
+            window.addEventListener('resize', syncViewportMetrics, { passive: true });
+            window.addEventListener('orientationchange', function() {
+                setTimeout(syncViewportMetrics, 100);
+                setTimeout(syncViewportMetrics, 300);
+            }, { passive: true });
+
+            syncViewportMetrics();
+        })();
     </script>
 
     <script @cspNonce src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

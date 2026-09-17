@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <title>Sign In - {{ config('app.name') }}</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -57,15 +57,36 @@
         .glass-alert { animation: shakeError 0.5s ease; }
         .btn-spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(128,0,0,0.2); border-top-color: #800000; border-radius: 50%; animation: spinLoader 0.6s linear infinite; margin-right: 8px; vertical-align: middle; }
 
-        html, body {
+        :root {
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
+            --app-height: 100dvh;
+        }
+
+        html {
+            height: 100%;
+            height: -webkit-fill-available;
+        }
+
+        body {
             background-color: #110A0A;
             color: #F3E7CD;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            height: 100vh;
-            overflow: hidden; /* Prevent scrolling */
-            position: fixed; /* Lock position */
+            min-height: 100dvh;
+            min-height: var(--app-height, 100dvh);
             width: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            margin: 0;
+            padding: 0;
         }
 
         /* ── FULL-SCREEN BACKGROUND ── */
@@ -74,6 +95,7 @@
             background: url('/images/background.jpg') center center / cover no-repeat;
             background-color: #1a0a0a;
             z-index: 0;
+            pointer-events: none;
         }
         @media (max-width: 768px) {
             .bg-scene {
@@ -98,7 +120,15 @@
             position: fixed; top: 0; left: 0; right: 0;
             z-index: 100;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 28px;
+            padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+            padding-bottom: 10px;
+            padding-left: calc(env(safe-area-inset-left, 0px) + 24px);
+            padding-right: calc(env(safe-area-inset-right, 0px) + 24px);
+            background: linear-gradient(180deg, rgba(17, 10, 10, 0.88) 0%, rgba(17, 10, 10, 0.35) 75%, transparent 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            pointer-events: auto;
+            transition: padding 0.2s ease;
         }
         .top-bar-brand {
             font-size: 0.78rem; font-weight: 800;
@@ -113,9 +143,14 @@
             position: fixed; bottom: 0; left: 0; right: 0;
             z-index: 5;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 28px;
+            padding-top: 10px;
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+            padding-left: calc(env(safe-area-inset-left, 0px) + 24px);
+            padding-right: calc(env(safe-area-inset-right, 0px) + 24px);
             font-size: 0.72rem; color: rgba(255,255,255,0.45);
             pointer-events: none;
+            background: linear-gradient(0deg, rgba(17, 10, 10, 0.85) 0%, transparent 100%);
+            transition: padding 0.2s ease, opacity 0.2s ease;
         }
         .bottom-bar a {
             color: rgba(255,255,255,0.45); text-decoration: none;
@@ -125,44 +160,47 @@
         .bottom-bar span { pointer-events: none; }
         .bottom-links { display: flex; gap: 20px; }
 
-        /* ── CENTERED LAYOUT ── */
+        body.keyboard-open .bottom-bar {
+            display: none !important;
+        }
+
+        /* ── CENTERED & RESPONSIVE LAYOUT ── */
         .auth-scene {
-            position: fixed; /* Changed from relative to fixed */
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            position: relative;
             z-index: 10;
-            height: 100vh;
-            height: 100dvh;
+            min-height: 100vh;
+            min-height: 100dvh;
+            min-height: var(--app-height, 100dvh);
+            width: 100%;
             display: flex; 
-            align-items: flex-start; /* Changed from center to flex-start */
+            align-items: center;
             justify-content: center;
-            padding: 80px 20px 48px; /* Reduced top padding to move form up */
+            padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
+            padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
+            padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
             box-sizing: border-box;
-            overflow: hidden; /* Prevent any scrolling */
+            transition: padding 0.2s ease;
         }
 
         /* ── GLASS CARD ── */
         .glass-card {
             width: 100%; 
-            max-width: 520px; /* Increased from 480px */
-            min-width: 320px;
-            min-height: 620px; /* Increased from 520px */
-            max-height: calc(100vh - 100px); /* Ensure it fits on screen */
-            background: rgba(30, 21, 21, 0.78);
+            max-width: 500px;
+            min-width: 280px;
+            background: rgba(30, 21, 21, 0.82);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
             border-radius: 22px;
             border: 1px solid rgba(212, 175, 55, 0.25);
             box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212, 175, 55, 0.12);
-            padding: 32px 30px 26px; /* Increased padding */
+            padding: 30px 28px 24px;
             color: white;
             position: relative;
             z-index: 20;
-            margin: 0 auto;
-            transition: none; /* Remove transitions for fixed positioning */
-            overflow-y: auto; /* Allow internal scrolling if needed */
+            margin: auto 0;
+            transition: transform 0.2s ease, padding 0.2s ease;
+            overflow-y: visible;
         }
 
         /* Logo  -  larger */
@@ -389,13 +427,22 @@
         .bio-modal-overlay {
             position: fixed;
             inset: 0;
+            min-height: 100vh;
+            min-height: 100dvh;
+            min-height: var(--app-height, 100dvh);
+            height: 100%;
             z-index: 99999;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+            padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
+            padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
             opacity: 0;
             visibility: hidden;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.28s;
         }
         .bio-modal-overlay.active {
@@ -429,6 +476,9 @@
             color: #f3e7cd;
             text-align: center;
             position: relative;
+            max-height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
         .bio-modal-close {
             position: absolute;
@@ -590,70 +640,94 @@
         /* Desktop elevation for optical vertical centering */
         @media (min-width: 769px) {
             .auth-scene {
-                padding: 60px 20px 44px; /* Reduced top padding for higher positioning */
+                padding-top: calc(env(safe-area-inset-top, 0px) + 68px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
             }
             .glass-card {
-                /* Centered and increased height - no transform needed with fixed positioning */
-                transform: none;
-                min-height: 660px; /* Significantly increased */
-                max-width: 540px;
+                max-width: 520px;
+                padding: 32px 30px 26px;
             }
         }
 
         /* Mobile and Responsive */
         @media (max-width: 768px) {
             .auth-scene {
-                padding: 70px 20px 44px; /* Adjusted for mobile */
+                padding-top: calc(env(safe-area-inset-top, 0px) + 56px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
+                padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
             }
             .glass-card { 
-                max-width: 90vw; /* Use viewport width on tablets */
-                padding: 24px 24px 20px; 
+                max-width: 100%;
+                padding: 24px 22px 20px; 
                 border-radius: 20px; 
                 transform: none;
             }
-            .top-bar { padding: 12px 20px; }
-            .bottom-bar { padding: 10px 20px; }
+            .top-bar {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+                padding-bottom: 10px;
+                padding-left: calc(env(safe-area-inset-left, 0px) + 18px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 18px);
+            }
+            .bottom-bar {
+                padding-top: 8px;
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+                padding-left: calc(env(safe-area-inset-left, 0px) + 18px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 18px);
+            }
         }
 
         @media (max-width: 480px) {
             .auth-scene {
-                padding: 60px 16px 16px; /* Adjusted for small phones */
+                padding-top: calc(env(safe-area-inset-top, 0px) + 50px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+                padding-left: calc(env(safe-area-inset-left, 0px) + 12px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 12px);
             }
             .glass-card { 
-                max-width: 95vw; /* Use more viewport width on phones */
-                min-width: 280px; /* Smaller minimum for very small screens */
-                padding: 22px 20px 20px; 
+                max-width: 100%;
+                min-width: 260px;
+                padding: 22px 18px 18px; 
                 border-radius: 18px; 
-                margin: 0 10px; /* Small side margins */
+                margin: auto 0;
             }
-            .glass-title { font-size: 1.3rem; }
+            .glass-title { font-size: 1.35rem; }
+            .glass-sub { font-size: 0.82rem; margin-bottom: 16px; }
             .bottom-bar { display: none; }
-            .auth-scene { padding: 52px 16px 16px; }
-            .top-bar { padding: 10px 16px; }
-            .top-bar-brand { font-size: 0.7rem; }
+            .top-bar {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+                padding-bottom: 8px;
+                padding-left: calc(env(safe-area-inset-left, 0px) + 14px);
+                padding-right: calc(env(safe-area-inset-right, 0px) + 14px);
+            }
+            .top-bar-brand { font-size: 0.72rem; }
         }
 
         @media (max-width: 360px) {
             .glass-card { 
-                max-width: 98vw; /* Almost full width on very small screens */
-                min-width: 260px;
-                padding: 20px 18px 18px; 
+                padding: 18px 14px 16px; 
                 border-radius: 16px;
-                margin: 0 5px;
             }
             .glass-title { font-size: 1.2rem; }
             .glass-sub { font-size: 0.75rem; }
-            .glass-input { font-size: 0.8rem; padding: 10px 12px 10px 36px; }
-            .glass-btn { font-size: 0.8rem; padding: 11px; }
+            .glass-input { font-size: 0.82rem; padding: 11px 12px 11px 40px; }
+            .glass-btn { font-size: 0.85rem; padding: 12px; }
         }
 
-        /* Landscape orientation adjustments */
-        @media (max-height: 600px) and (orientation: landscape) {
-            .auth-scene { padding: 20px 16px; }
-            .glass-card { padding: 20px 24px 18px; }
-            .glass-logo { width: 48px; height: 48px; margin-bottom: 8px; }
-            .glass-title { font-size: 1.3rem; }
-            .top-bar, .bottom-bar { display: none; }
+        /* Landscape orientation adjustments & short screen heights */
+        @media (max-height: 620px) {
+            .auth-scene {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+            }
+            .glass-card { padding: 18px 20px 16px; }
+            .glass-logo { width: 46px; height: 46px; margin-bottom: 8px; }
+            .glass-title { font-size: 1.25rem; margin-bottom: 3px; }
+            .glass-sub { font-size: 0.76rem; margin-bottom: 12px; }
+            .role-toggle { margin-bottom: 12px; padding: 3px; }
+            .role-btn { padding: 7px 10px; font-size: 0.8rem; }
+            .top-bar { display: none; }
+            .bottom-bar { display: none; }
         }
 
     </style>
@@ -2469,6 +2543,41 @@ if (forgotLinkElem) {
     forgotLinkElem.addEventListener('focus', updateForgotHref);
     forgotLinkElem.addEventListener('touchstart', updateForgotHref);
 }
+
+// ── Dynamic Viewport & Safe-Area Synchronization ──
+(function() {
+    function syncViewportMetrics() {
+        const vv = window.visualViewport;
+        const h = vv ? vv.height : window.innerHeight;
+        const w = vv ? vv.width : window.innerWidth;
+        const offsetTop = vv ? vv.offsetTop : 0;
+        const offsetLeft = vv ? vv.offsetLeft : 0;
+
+        const docEl = document.documentElement;
+        docEl.style.setProperty('--app-height', `${h}px`);
+        docEl.style.setProperty('--app-width', `${w}px`);
+        docEl.style.setProperty('--v-offset-top', `${offsetTop}px`);
+        docEl.style.setProperty('--v-offset-left', `${offsetLeft}px`);
+
+        const isKeyboard = vv ? vv.height < (window.innerHeight - 120) : false;
+        document.body.classList.toggle('keyboard-open', isKeyboard);
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', syncViewportMetrics, { passive: true });
+        window.visualViewport.addEventListener('scroll', syncViewportMetrics, { passive: true });
+    }
+    window.addEventListener('resize', syncViewportMetrics, { passive: true });
+    window.addEventListener('orientationchange', function() {
+        setTimeout(syncViewportMetrics, 100);
+        setTimeout(syncViewportMetrics, 300);
+    }, { passive: true });
+
+    syncViewportMetrics();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', syncViewportMetrics);
+    }
+})();
 </script>
 </body>
 </html>
