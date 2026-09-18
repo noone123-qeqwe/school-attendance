@@ -36,9 +36,22 @@
     </div>
 @else
     <div class="row g-4">
+        @php
+            $currentDayName = now()->format('l');
+        @endphp
         @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
-            <div class="col-lg-12">
-                <x-card title="{{ $day }}" icon="bi bi-calendar-event">
+            @php
+                $isToday = strtolower($day) === strtolower($currentDayName);
+            @endphp
+            <div class="col-lg-12" id="day-card-{{ strtolower($day) }}">
+                <x-card title="{{ $day }}" icon="bi bi-calendar-event" style="{{ $isToday ? 'border-color: rgba(207,164,111,0.45) !important; box-shadow: 0 8px 24px rgba(207,164,111,0.12);' : '' }}">
+                    @if($isToday)
+                        <x-slot name="headerActions">
+                            <span class="badge" style="background: linear-gradient(135deg, #cfa46f 0%, #a67f4c 100%); color: #140d07; font-size: 0.74rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.5px;">
+                                <i class="bi bi-sun-fill me-1"></i>TODAY
+                            </span>
+                        </x-slot>
+                    @endif
                     @if(isset($weeklySchedule[$day]) && $weeklySchedule[$day]->count() > 0)
                         <!-- Desktop Table -->
                         <div class="ent-scroll-x d-none d-md-block" style="margin: -20px;">

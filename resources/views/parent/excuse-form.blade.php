@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'Submit Excuse â€” ' . $child->name)
+@section('page-title', 'Submit Excuse — ' . $child->name)
 
 @section('content')
 <div class="p-4">

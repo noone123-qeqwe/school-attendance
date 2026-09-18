@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', $child->name . ' â€” Attendance Detail')
+@section('page-title', $child->name . ' — Attendance Detail')
 
 @section('content')
 <style>
@@ -77,7 +77,7 @@
              style="width: 64px; height: 64px; object-fit: cover; border: 2px solid rgba(207,164,111,0.4);">
         <div>
             <h3 style="color: #f3e7cd; font-weight: 800; margin: 0;">{{ $child->name }}</h3>
-            <small style="color: #b39b82;">{{ $child->student_number }} &bull; {{ $child->course }} â€” Year {{ $child->year_level }}, Semester {{ $child->semester }}</small>
+            <small style="color: #b39b82;">{{ $child->student_number }} &bull; {{ $child->course }} &mdash; Year {{ $child->year_level }}, Semester {{ $child->semester }}</small>
         </div>
     </div>
 
@@ -181,7 +181,7 @@
                                     <i class="bi bi-pencil-square"></i> Excuse
                                 </a>
                             @else
-                                <span class="ent-text-muted">â€”</span>
+                                <span class="ent-text-muted">&mdash;</span>
                             @endif
                         </td>
                     </tr>
