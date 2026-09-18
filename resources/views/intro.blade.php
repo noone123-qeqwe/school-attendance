@@ -204,6 +204,7 @@
 
     <!-- Video (Mobile & Desktop native sources) -->
     <video id="introVideo" autoplay muted playsinline preload="auto">
+        <source src="/videos/AQOaaE6jZacgyWrkhWS3WYsjNUWccQA8sMeUEspCIZZLMV-APH1gnBGzhBXWSlj9GssKpgCThK1RAhxre96EbUetLSNEhvPmfGiigjXKmQ.mp4" type="video/mp4" media="(max-width: 768px)">
         <source src="/videos/intro_mobile.mp4" type="video/mp4" media="(max-width: 768px)">
         <source src="/videos/intro.mp4" type="video/mp4">
     </video>
@@ -240,7 +241,8 @@
         const destUrl     = @json($destUrl);
         const progressBar = document.getElementById('progressBar');
         const fadeOut     = document.getElementById('fadeOut');
-        const INTRO_START_TIME = 2.0; // Starts directly on the 2nd scene (OC MOBO)
+        const isMobileScreen = window.innerWidth <= 768;
+        const INTRO_START_TIME = isMobileScreen ? 0.0 : 2.0; // Mobile plays full video; desktop starts on scene 2
         let hasTransitioned = false;
         let hasInitialized = false;
 
