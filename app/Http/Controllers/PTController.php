@@ -41,8 +41,8 @@ class PTController extends Controller
         ];
 
         if ($request->role === 'student') {
-            // Student ID is completely system-generated. In testing environment, preserve explicit mock ID if provided for backward compatibility with legacy tests.
-            $userData['student_number'] = (app()->environment('testing') && $request->filled('student_number'))
+            $hasCustomStudentNumber = $request->filled('student_number') && trim($request->student_number) !== '';
+            $userData['student_number'] = $hasCustomStudentNumber
                 ? trim($request->student_number)
                 : User::generateStudentNumber();
             $userData['course'] = $request->course ?: 'BSCS';
@@ -56,7 +56,7 @@ class PTController extends Controller
         $user = null;
         for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
             try {
-                if ($request->role === 'student' && $attempt > 1 && !(app()->environment('testing') && $request->filled('student_number'))) {
+                if ($request->role === 'student' && $attempt > 1 && empty($hasCustomStudentNumber)) {
                     $userData['student_number'] = User::generateStudentNumber();
                 }
                 $user = DB::transaction(function () use ($userData) {
@@ -64,7 +64,7 @@ class PTController extends Controller
                 });
                 break;
             } catch (\Illuminate\Database\QueryException $e) {
-                if ($attempt < $maxAttempts && str_contains($e->getMessage(), 'student_number')) {
+                if ($attempt < $maxAttempts && str_contains($e->getMessage(), 'student_number') && empty($hasCustomStudentNumber)) {
                     continue;
                 }
                 throw $e;

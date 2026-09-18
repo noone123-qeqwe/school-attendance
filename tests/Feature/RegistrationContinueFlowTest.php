@@ -22,8 +22,8 @@ class RegistrationContinueFlowTest extends TestCase
         $response->assertSee('id="surname"', false);
         $response->assertSee('id="role_student"', false);
         $response->assertSee('id="role_parent"', false);
-        $response->assertDontSee('id="student_number"', false);
-        $response->assertDontSee('Student ID (Optional', false);
+        $response->assertSee('id="student_number"', false);
+        $response->assertSee('Student ID / Number', false);
         $response->assertSee('id="course"', false);
         $response->assertSee('id="year_level"', false);
         $response->assertSee('id="semester"', false);
@@ -55,7 +55,7 @@ class RegistrationContinueFlowTest extends TestCase
         $response->assertSee('id="feedback-middle_name"', false);
         $response->assertSee('id="feedback-surname"', false);
         $response->assertSee('id="feedback-role"', false);
-        $response->assertDontSee('id="feedback-student_number"', false);
+        $response->assertSee('id="feedback-student_number"', false);
         $response->assertSee('id="feedback-course"', false);
         $response->assertSee('id="feedback-year_level"', false);
         $response->assertSee('id="feedback-semester"', false);
@@ -227,5 +227,68 @@ class RegistrationContinueFlowTest extends TestCase
             'email' => 'parent.test@example.com',
             'role' => 'parent',
         ]);
+    }
+
+    public function test_register_interface_renders_student_id_input_field(): void
+    {
+        $response = $this->get('/register');
+        $response->assertOk();
+        $response->assertSee('name="student_number"', false);
+        $response->assertSee('Student ID / Number', false);
+    }
+
+    public function test_student_registration_with_custom_student_id_preserves_id(): void
+    {
+        session(['reg_email_verified' => 'custom.student@example.com']);
+
+        $payload = [
+            'first_name' => 'Custom',
+            'surname' => 'Student',
+            'student_number' => '2319999',
+            'role' => 'student',
+            'course' => 'BSCS',
+            'year_level' => 3,
+            'semester' => '2',
+            'email' => 'custom.student@example.com',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
+            'terms' => '1',
+        ];
+
+        $response = $this->post('/register', $payload);
+        $response->assertRedirect('/home');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'custom.student@example.com',
+            'student_number' => '2319999',
+            'role' => 'student',
+        ]);
+    }
+
+    public function test_student_registration_with_duplicate_student_id_fails_validation(): void
+    {
+        User::factory()->create([
+            'student_number' => '2318888',
+            'role' => 'student',
+        ]);
+
+        session(['reg_email_verified' => 'dup.student@example.com']);
+
+        $payload = [
+            'first_name' => 'Duplicate',
+            'surname' => 'Student',
+            'student_number' => '2318888',
+            'role' => 'student',
+            'course' => 'BSCS',
+            'year_level' => 3,
+            'semester' => '2',
+            'email' => 'dup.student@example.com',
+            'password' => 'SecurePass123!',
+            'password_confirmation' => 'SecurePass123!',
+            'terms' => '1',
+        ];
+
+        $response = $this->post('/register', $payload);
+        $response->assertSessionHasErrors(['student_number']);
     }
 }

@@ -607,6 +607,15 @@
                                 <input type="hidden" name="course" id="course" value="BSCS">
                                 <div class="field-feedback" id="feedback-course" style="display:none;"></div>
 
+                                <div class="form-floating-custom mb-1" id="wrap-student_number">
+                                    <input type="text" name="student_number" id="student_number" placeholder=" " value="{{ old('student_number') }}" autocomplete="off" maxlength="30">
+                                    <label for="student_number">Student ID / Number (e.g. 2311969)</label>
+                                </div>
+                                <div class="field-feedback" id="feedback-student_number"></div>
+                                <div class="form-text px-1 mb-3" style="font-size: 0.76rem; color: var(--text-muted); opacity: 0.85;">
+                                    <i class="bi bi-info-circle me-1"></i>Enter your school Student ID, or leave blank to auto-generate one.
+                                </div>
+
                                 <div class="row g-2 mb-1">
                                     <div class="col-6">
                                         <div class="form-floating-custom mb-0" id="wrap-year_level">
@@ -937,6 +946,7 @@
                     sem.required = false;
                     clearFieldFeedback('semester');
                 }
+                clearFieldFeedback('student_number');
             }
         }
 
@@ -997,6 +1007,25 @@
 
 
             if (fieldId === 'course') {
+                return true;
+            }
+
+            if (fieldId === 'student_number') {
+                const val = el.value.trim();
+                if (val) {
+                    if (val.length < 3) {
+                        setFieldFeedback('student_number', false, 'Student ID must be at least 3 characters.');
+                        return false;
+                    }
+                    if (!/^[a-zA-Z0-9\-_]+$/.test(val)) {
+                        setFieldFeedback('student_number', false, 'Student ID can only contain letters, numbers, and hyphens.');
+                        return false;
+                    }
+                    if (showValidState) setFieldFeedback('student_number', true, 'Valid Student ID format');
+                    else clearFieldFeedback('student_number');
+                } else {
+                    clearFieldFeedback('student_number');
+                }
                 return true;
             }
 
@@ -1103,6 +1132,25 @@
                         if (!firstErrorMsg) firstErrorMsg = 'Please select your semester.';
                     } else {
                         if (showInlineErrors) setFieldFeedback('semester', true, 'Valid');
+                    }
+
+                    // Student ID (Optional format check)
+                    const snField = document.getElementById('student_number');
+                    if (snField && snField.value.trim()) {
+                        const snVal = snField.value.trim();
+                        if (snVal.length < 3) {
+                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID must be at least 3 characters.');
+                            isValid = false;
+                            if (!firstErrorMsg) firstErrorMsg = 'Student ID must be at least 3 characters.';
+                        } else if (!/^[a-zA-Z0-9\-_]+$/.test(snVal)) {
+                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID can only contain letters, numbers, and hyphens.');
+                            isValid = false;
+                            if (!firstErrorMsg) firstErrorMsg = 'Student ID can only contain letters, numbers, and hyphens.';
+                        } else {
+                            if (showInlineErrors) setFieldFeedback('student_number', true, 'Valid Student ID format');
+                        }
+                    } else {
+                        clearFieldFeedback('student_number');
                     }
                 }
             }
@@ -1738,6 +1786,18 @@
             const crsSelect = document.getElementById('course');
             if (crsSelect && crsSelect.tagName === 'SELECT') {
                 crsSelect.addEventListener('change', () => validateSingleField('course', true));
+            }
+
+            const snInputField = document.getElementById('student_number');
+            if (snInputField) {
+                snInputField.addEventListener('input', () => {
+                    if (document.getElementById('wrap-student_number')?.classList.contains('is-invalid')) {
+                        validateSingleField('student_number', true);
+                    }
+                });
+                snInputField.addEventListener('blur', () => {
+                    if (snInputField.value.trim()) validateSingleField('student_number', true);
+                });
             }
 
             const yLvlSelect = document.getElementById('year_level');
