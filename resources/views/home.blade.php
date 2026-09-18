@@ -1215,7 +1215,7 @@
                     @if(!empty(Auth::user()->student_number))
                         <span class="student-meta-chip chip-gold" title="Student Identification Number">
                             <i class="bi bi-person-badge"></i>
-                            <span>{{ Auth::user()->student_number }}</span>
+                            <span>ID: {{ Auth::user()->student_number }}</span>
                         </span>
                     @endif
                     <span class="student-meta-chip" title="Enrolled Degree Program">

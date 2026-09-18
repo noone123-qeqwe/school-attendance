@@ -201,14 +201,14 @@
         <div class="profile-meta">
             <div>
                 <div class="profile-name">{{ Auth::user()->name }}</div>
-                <div class="profile-id">
+                <div class="profile-id" title="Student Identification Number">
                     <i class="bi bi-person-badge"></i>
-                    {{ Auth::user()->student_number }}
+                    <span>Student ID: <strong style="color: #f3e7cd; letter-spacing: 0.5px;">{{ Auth::user()->student_number ?: 'Not Assigned' }}</strong></span>
                 </div>
             </div>
             <div class="d-flex gap-2 align-items-center pb-1">
-                <span class="course-badge">{{ Auth::user()->course }}</span>
-                <span class="year-badge">Year {{ Auth::user()->year_level }}</span>
+                <span class="course-badge">{{ Auth::user()->course ?? 'BSCS' }}</span>
+                <span class="year-badge">Year {{ Auth::user()->year_level ?? '1' }}</span>
             </div>
         </div>
     </div>
@@ -237,9 +237,18 @@
 
                     <div class="info-row">
                         <div class="info-row-icon"><i class="bi bi-card-text"></i></div>
-                        <div>
-                            <div class="info-row-label">Student ID</div>
-                            <div class="info-row-value">{{ Auth::user()->student_number }}</div>
+                        <div class="flex-grow-1">
+                            <div class="info-row-label">Student ID Number</div>
+                            <div class="info-row-value d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <span style="font-family: monospace; font-size: 1.05rem; letter-spacing: 0.5px; color: var(--gold, #CFA46F); font-weight: 700;">
+                                    {{ Auth::user()->student_number ?: 'Not Assigned' }}
+                                </span>
+                                @if(Auth::user()->student_number)
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 copy-student-id-btn" onclick="navigator.clipboard.writeText('{{ Auth::user()->student_number }}'); this.innerText='Copied!'; setTimeout(() => this.innerText='Copy', 1500);" style="font-size:0.75rem; border-color:rgba(255,255,255,0.15); color:#d6c7b2;">
+                                        <i class="bi bi-clipboard me-1"></i>Copy
+                                    </button>
+                                @endif
+                            </div>
                         </div>
                     </div>
 

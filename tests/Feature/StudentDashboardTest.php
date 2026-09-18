@@ -400,5 +400,22 @@ class StudentDashboardTest extends TestCase
         $this->assertStringContainsString('att-cal-dot holiday', $content);
         $this->assertStringContainsString('No records or events for this date.', $content);
     }
+
+    public function test_student_profile_displays_student_id(): void
+    {
+        $response = $this->actingAs($this->student)->get(route('profile'));
+        $response->assertStatus(200);
+        $response->assertSee('Student ID:');
+        $response->assertSee('Student ID Number');
+        $response->assertSee('2000001');
+    }
+
+    public function test_mobile_profile_displays_student_id(): void
+    {
+        $response = $this->actingAs($this->student)->get(route('mobile.profile'));
+        $response->assertStatus(200);
+        $response->assertSee('Student ID:');
+        $response->assertSee('2000001');
+    }
 }
 

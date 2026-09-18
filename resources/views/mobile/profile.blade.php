@@ -12,7 +12,14 @@
 
         <h2 class="mobile-user-name fw-bold mb-1">{{ $user->name }}</h2>
         <div class="mobile-user-sub text-muted small mb-2">
-            {{ $user->student_number ?? $user->email }}
+            @if($user->isStudent())
+                <span class="d-inline-flex align-items-center gap-1">
+                    <i class="bi bi-person-badge text-warning"></i>
+                    <span>Student ID: <strong class="text-light">{{ $user->student_number ?? 'Not Assigned' }}</strong></span>
+                </span>
+            @else
+                {{ $user->employee_id ?? $user->email }}
+            @endif
         </div>
 
         <div class="d-flex justify-content-center gap-2 mb-2">
@@ -58,12 +65,12 @@
                 </div>
             </div>
 
-            @if($user->student_number)
+            @if($user->isStudent() || $user->student_number)
             <div class="mobile-info-row">
                 <div class="mobile-info-icon"><i class="bi bi-card-text"></i></div>
                 <div class="flex-grow-1">
                     <div class="mobile-info-label">Student ID</div>
-                    <div class="mobile-info-val">{{ $user->student_number }}</div>
+                    <div class="mobile-info-val text-warning fw-bold font-monospace">{{ $user->student_number ?? 'Not Assigned' }}</div>
                 </div>
             </div>
             @endif
