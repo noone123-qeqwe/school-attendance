@@ -44,18 +44,25 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: center center;
             z-index: 1;
-            transform: translateZ(0);
-            will-change: transform;
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: high-quality;
+            filter: contrast(1.05) brightness(1.02) saturate(1.06);
+        }
+
+        @media (max-width: 768px) {
+            #introVideo {
+                object-fit: cover;
+                object-position: center center;
+            }
         }
 
         /* ── VIGNETTE OVERLAY ── */
         .vignette {
             position: fixed;
             inset: 0;
-            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.8) 100%);
+            background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.45) 100%);
             z-index: 2;
             pointer-events: none;
         }
@@ -107,7 +114,7 @@
         .overlay {
             position: fixed;
             inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+            background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 45%);
             z-index: 3;
             pointer-events: none;
         }
@@ -242,7 +249,7 @@
         const progressBar = document.getElementById('progressBar');
         const fadeOut     = document.getElementById('fadeOut');
         const isMobileScreen = window.innerWidth <= 768;
-        const INTRO_START_TIME = isMobileScreen ? 0.0 : 2.0; // Mobile plays full video; desktop starts on scene 2
+        const INTRO_START_TIME = 0.0; // Play high-definition animation fully from the beginning
         let hasTransitioned = false;
         let hasInitialized = false;
 
@@ -293,9 +300,9 @@
                     } catch (err) {}
                 }
 
-                // Cinematic playback speed (comfortable to read and view)
+                // Native smooth 60fps playback without frame drops or jitter
                 try {
-                    video.playbackRate = 0.85;
+                    video.playbackRate = 1.0;
                 } catch (e) {}
 
                 const playPromise = video.play();
@@ -313,12 +320,10 @@
                 video.addEventListener('canplay', startSmoothPlayback, { once: true });
             }
 
-            // Real-time progress bar calibrated from 2nd scene to end
+            // Real-time progress bar calibrated across full duration
             video.addEventListener('timeupdate', () => {
-                if (video.duration && !isNaN(video.duration) && video.duration > INTRO_START_TIME) {
-                    const effectiveDuration = video.duration - INTRO_START_TIME;
-                    const elapsed = Math.max(0, video.currentTime - INTRO_START_TIME);
-                    const pct = Math.min(100, Math.max(0, (elapsed / effectiveDuration) * 100));
+                if (video.duration && !isNaN(video.duration) && video.duration > 0) {
+                    const pct = Math.min(100, Math.max(0, (video.currentTime / video.duration) * 100));
                     if (progressBar) progressBar.style.width = pct + '%';
                 }
             });
@@ -326,7 +331,7 @@
             // Smooth finish: allow the final frame to linger gracefully before navigating
             video.addEventListener('ended', () => {
                 if (progressBar) progressBar.style.width = '100%';
-                setTimeout(() => goToNext(), 750);
+                setTimeout(() => goToNext(), 600);
             });
 
             video.addEventListener('error', () => goToNext());
@@ -337,7 +342,7 @@
             if (!hasTransitioned) {
                 goToNext();
             }
-        }, 10000);
+        }, 12000);
     </script>
 </body>
 </html>
