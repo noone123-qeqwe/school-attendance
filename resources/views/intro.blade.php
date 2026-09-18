@@ -51,10 +51,16 @@
             filter: contrast(1.05) brightness(1.02) saturate(1.06);
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 768px), (orientation: portrait) {
             #introVideo {
-                object-fit: cover;
+                object-fit: contain;
                 object-position: center center;
+            }
+            .vignette {
+                background: radial-gradient(circle at center, transparent 60%, rgba(0,0,0,0.5) 100%);
+            }
+            .overlay {
+                background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 28%, transparent 72%, rgba(0,0,0,0.4) 100%);
             }
         }
 
@@ -99,11 +105,12 @@
         
         @media (max-width: 768px) {
             .branding {
-                bottom: 80px;
-                left: 24px;
+                bottom: 75px;
+                left: 20px;
+                right: 20px;
             }
-            .branding h1 { font-size: 2rem; }
-            .branding p { font-size: 0.85rem; }
+            .branding h1 { font-size: 1.8rem; }
+            .branding p { font-size: 0.8rem; }
         }
 
         @keyframes slideUpFade {
@@ -162,10 +169,10 @@
         }
         @media (max-width: 768px) {
             .skip-btn {
-                bottom: 30px;
+                bottom: 24px;
                 right: 20px;
-                padding: 10px 20px;
-                font-size: 0.85rem;
+                padding: 8px 18px;
+                font-size: 0.82rem;
             }
         }
         @keyframes fadeIn {
