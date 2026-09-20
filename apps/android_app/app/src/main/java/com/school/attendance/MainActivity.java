@@ -29,6 +29,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.webkit.WebSettingsCompat;
+import androidx.webkit.WebViewFeature;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,6 +105,15 @@ public class MainActivity extends AppCompatActivity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setSupportMultipleWindows(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);
+
+        // WebView disables WebAuthn by default. Enable its Credential Manager
+        // integration so the login page can show Android's biometric/passkey UI.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_AUTHENTICATION)) {
+            WebSettingsCompat.setWebAuthenticationSupport(
+                    settings,
+                    WebSettingsCompat.WEB_AUTHENTICATION_SUPPORT_FOR_APP
+            );
+        }
 
         // Customize User Agent so server knows it's the official Android app wrapper
         String defaultUa = settings.getUserAgentString();
