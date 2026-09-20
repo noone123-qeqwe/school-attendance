@@ -73,6 +73,8 @@
             width: 100%;
             overflow: hidden;
             overscroll-behavior: none;
+            overscroll-behavior-y: none;
+            overscroll-behavior-x: none;
             -webkit-overscroll-behavior: none;
             position: fixed;
             top: 0;
@@ -181,7 +183,8 @@
             box-sizing: border-box;
             overflow-x: hidden;
             overflow-y: auto;
-            overscroll-behavior: contain;
+            overscroll-behavior: none !important;
+            overscroll-behavior-y: none !important;
             -webkit-overflow-scrolling: touch;
             /* locked against status bar jitter */
         }

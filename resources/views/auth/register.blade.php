@@ -30,6 +30,9 @@
         html {
             height: 100%;
             height: -webkit-fill-available;
+            overscroll-behavior: none;
+            overscroll-behavior-y: none;
+            overscroll-behavior-x: none;
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -43,6 +46,7 @@
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: none;
             overscroll-behavior-y: none;
+            overscroll-behavior-x: none;
             display: flex;
             flex-direction: column;
             align-items: center;

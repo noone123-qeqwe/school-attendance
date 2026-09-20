@@ -371,7 +371,7 @@
    while preserving natural, smooth scrolling in both directions
    ══════════════════════════════════════════════════════════════ */
 html, body {
-    overscroll-behavior: none;
-    overscroll-behavior-y: none;
-    overscroll-behavior-x: none;
+    overscroll-behavior: none !important;
+    overscroll-behavior-y: none !important;
+    overscroll-behavior-x: none !important;
 }

@@ -54,6 +54,9 @@
 html {
     zoom: 1.15;
     background-color: #110a0a;
+    overscroll-behavior: none !important;
+    overscroll-behavior-y: none !important;
+    overscroll-behavior-x: none !important;
 }
 @media (max-width: 768px) {
     html { zoom: 1; }
@@ -68,6 +71,9 @@ body {
     margin: 0;
     min-height: 100vh;
     letter-spacing: -0.2px;
+    overscroll-behavior: none !important;
+    overscroll-behavior-y: none !important;
+    overscroll-behavior-x: none !important;
 }
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }

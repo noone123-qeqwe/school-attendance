@@ -28,7 +28,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
@@ -43,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
     private static final int FILE_CHOOSER_REQUEST_CODE = 1003;
 
     private WebView webView;
-    private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private ValueCallback<Uri[]> fileUploadCallback;
     private PermissionRequest pendingPermissionRequest;
@@ -55,12 +53,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         webView = findViewById(R.id.webView);
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         progressBar = findViewById(R.id.progressBar);
-
-        // Completely disable SwipeRefreshLayout pull-to-refresh so user scrolling up/down
-        // never triggers a page reload, refresh, state reset, or jumps back to top.
-        swipeRefreshLayout.setEnabled(false);
 
         setupWebView();
         checkAndRequestPermissions();
@@ -89,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
     private void setupWebView() {
         // Prevent system overscroll effects from triggering reload or interfering with smooth scrolling
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        webView.setVerticalScrollBarEnabled(true);
+        webView.setHorizontalScrollBarEnabled(false);
+        webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
 
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
@@ -131,7 +127,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
-                swipeRefreshLayout.setRefreshing(false);
                 super.onPageFinished(view, url);
 
                 // Auto-detect Render cold-start / waking-up screen and automatically retry until live
@@ -150,7 +145,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 if (request.isForMainFrame()) {
-                    swipeRefreshLayout.setRefreshing(false);
                     progressBar.setVisibility(View.GONE);
                 }
                 super.onReceivedError(view, request, error);
@@ -174,7 +168,6 @@ public class MainActivity extends AppCompatActivity {
                 progressBar.setProgress(newProgress);
                 if (newProgress == 100) {
                     progressBar.setVisibility(View.GONE);
-                    swipeRefreshLayout.setRefreshing(false);
                 } else {
                     progressBar.setVisibility(View.VISIBLE);
                 }

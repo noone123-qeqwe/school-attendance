@@ -101,6 +101,8 @@ class PolicyService
                 'terms_updated_at'
             ])->delete();
         }
+
+        Setting::flushCache();
     }
 
     /**

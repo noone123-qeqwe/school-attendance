@@ -80,6 +80,9 @@
             height: 100%;
             height: -webkit-fill-available;
             scroll-behavior: smooth;
+            overscroll-behavior: none !important;
+            overscroll-behavior-y: none !important;
+            overscroll-behavior-x: none !important;
         }
 
         body {
@@ -310,10 +313,15 @@
                     }, 200);
                 }
 
+                function isTextEntryFocused() {
+                    var el = document.activeElement;
+                    return !!(el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable));
+                }
+
                 function onResize() {
                     var vv = window.visualViewport;
                     var rawHeight = vv ? vv.height : window.innerHeight;
-                    var isKeyboard = rawHeight < (lockedHeight - 150);
+                    var isKeyboard = isTextEntryFocused() && rawHeight < (lockedHeight - 150);
                     document.body.classList.toggle('keyboard-open', isKeyboard);
                 }
 

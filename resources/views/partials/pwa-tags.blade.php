@@ -39,6 +39,17 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/images/icons/favicon-16x16.png">
 
 <style>
+    /* ════════════════════════════════════════════════════════════════════
+       GLOBAL SCROLL BEHAVIOR & PULL-TO-REFRESH PREVENTION
+       Preserves smooth natural scrolling up/down without triggering
+       unintended page reloads, state resets, or top jumps.
+       ════════════════════════════════════════════════════════════════════ */
+    html, body {
+        overscroll-behavior: none !important;
+        overscroll-behavior-y: none !important;
+        overscroll-behavior-x: none !important;
+    }
+
     /* PWA Install Banners & Overlays */
     .pwa-install-banner {
         position: fixed;
@@ -1078,6 +1089,59 @@
 
 <script @cspNonce src="{{ asset('js/password-toggle.js') }}?v={{ file_exists(public_path('js/password-toggle.js')) ? filemtime(public_path('js/password-toggle.js')) : time() }}"></script>
 <script @cspNonce>
+    // ── Prevent Pull-to-Refresh & Overscroll System Reload ──
+    // When scrolling up or down, preserve user's position and page state.
+    // Prevent mobile browsers (Chrome / Safari / WebView) from triggering
+    // a page refresh or reload when reaching the top boundary.
+    (function() {
+        if (typeof window === 'undefined' || !window.document) return;
+        
+        let startY = 0;
+        let isTouching = false;
+
+        window.addEventListener('touchstart', function(e) {
+            if (e.touches && e.touches.length === 1) {
+                startY = e.touches[0].clientY;
+                isTouching = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', function(e) {
+            if (!isTouching || !e.touches || e.touches.length !== 1) return;
+            const currentY = e.touches[0].clientY;
+            const deltaY = currentY - startY;
+
+            // When user pulls DOWN (deltaY > 0) while at the top of the page (scrollTop <= 0)
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+            if (scrollTop <= 0 && deltaY > 0) {
+                // Check if an ancestor scrollable element has scroll room upwards
+                let target = e.target;
+                let hasScrollableParent = false;
+                while (target && target !== document.body && target !== document.documentElement) {
+                    if (target.scrollHeight > target.clientHeight) {
+                        const overflow = window.getComputedStyle(target).overflowY;
+                        if ((overflow === 'auto' || overflow === 'scroll') && target.scrollTop > 0) {
+                            hasScrollableParent = true;
+                            break;
+                        }
+                    }
+                    target = target.parentElement;
+                }
+                if (!hasScrollableParent && e.cancelable) {
+                    e.preventDefault();
+                }
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', function() {
+            isTouching = false;
+        }, { passive: true });
+
+        window.addEventListener('touchcancel', function() {
+            isTouching = false;
+        }, { passive: true });
+    })();
+
     // ── Universal Persistent Device Key Synchronization ──
     window.getOrCreateDeviceKey = function() {
         try {

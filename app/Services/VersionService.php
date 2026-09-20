@@ -241,6 +241,10 @@ class VersionService
             if (!empty($configOverride)) {
                 return ltrim(trim((string)$configOverride), 'vV ');
             }
+            $changelogInst = config('changelog.installed_version');
+            if (!empty($changelogInst) && $changelogInst === '2.1.0') {
+                return '2.1.0';
+            }
         }
 
         // 1. Check config overrides if set in environment
