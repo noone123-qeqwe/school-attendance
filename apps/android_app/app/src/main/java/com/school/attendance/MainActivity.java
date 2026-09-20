@@ -28,6 +28,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
@@ -54,6 +56,12 @@ public class MainActivity extends AppCompatActivity {
 
         webView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progressBar);
+
+        // Ensure system overlays (status bar, notification shade, system navigation)
+        // do not inject unexpected layout paddings into the WebView container.
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (view, insets) -> {
+            return insets;
+        });
 
         setupWebView();
         checkAndRequestPermissions();
@@ -304,8 +312,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        // Keep webView state active without reloads when status bar or notification shade is opened
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Seamless return without visual jumps or reload
+    }
+
+    @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
-        webView.saveState(outState);
+        if (webView != null) {
+            webView.saveState(outState);
+        }
     }
 }

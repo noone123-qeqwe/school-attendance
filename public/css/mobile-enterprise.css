@@ -7,7 +7,7 @@
 @media (max-width: 768px) {
     /* ── BASE & NATIVE APP SHELL ── */
     :root {
-        --mobile-header-height: calc(52px + env(safe-area-inset-top, 0px));
+        --mobile-header-height: calc(52px + var(--sat, env(safe-area-inset-top, 0px)));
         --mobile-nav-height: 80px;
         --mobile-pad: 16px;
         --sat: env(safe-area-inset-top, 0px);
@@ -71,9 +71,9 @@
 
     .main-content, .saas-content {
         padding-top: calc(var(--mobile-header-height) + 8px) !important;
-        padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom, 0px) + 16px) !important;
-        padding-left: env(safe-area-inset-left, 0px) !important;
-        padding-right: env(safe-area-inset-right, 0px) !important;
+        padding-bottom: calc(var(--mobile-nav-height) + var(--sab, env(safe-area-inset-bottom, 0px)) + 16px) !important;
+        padding-left: var(--sal, env(safe-area-inset-left, 0px)) !important;
+        padding-right: var(--sar, env(safe-area-inset-right, 0px)) !important;
         min-height: var(--app-height, 100dvh) !important;
         box-sizing: border-box !important;
     }
@@ -90,10 +90,10 @@
        ═════════════════════════════════════════════ */
     .top-header, .saas-topbar {
         height: var(--mobile-header-height) !important;
-        padding-top: env(safe-area-inset-top, 0px) !important;
+        padding-top: var(--sat, env(safe-area-inset-top, 0px)) !important;
         padding-bottom: 0 !important;
-        padding-left: calc(env(safe-area-inset-left, 0px) + 12px) !important;
-        padding-right: calc(env(safe-area-inset-right, 0px) + 12px) !important;
+        padding-left: calc(var(--sal, env(safe-area-inset-left, 0px)) + 12px) !important;
+        padding-right: calc(var(--sar, env(safe-area-inset-right, 0px)) + 12px) !important;
         left: 0 !important;
         right: 0 !important;
         width: 100% !important;
@@ -109,7 +109,7 @@
         justify-content: space-between !important;
         z-index: 9980 !important;
         gap: 8px !important;
-        transition: height 0.2s ease, padding 0.2s ease;
+        transition: background 0.2s ease, box-shadow 0.2s ease !important;
     }
 
     .header-left {
@@ -316,9 +316,9 @@
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
-        bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
-        left: calc(12px + env(safe-area-inset-left, 0px)) !important;
-        right: calc(12px + env(safe-area-inset-right, 0px)) !important;
+        bottom: calc(12px + var(--sab, env(safe-area-inset-bottom, 0px))) !important;
+        left: calc(12px + var(--sal, env(safe-area-inset-left, 0px))) !important;
+        right: calc(12px + var(--sar, env(safe-area-inset-right, 0px))) !important;
         height: 62px !important;
         border-radius: 26px !important;
         background: rgba(18, 12, 10, 0.9) !important;
@@ -334,7 +334,7 @@
             inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
         justify-content: space-around !important;
         padding: 0 4px !important;
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, bottom 0.2s ease;
+        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
     }
 
     .mobile-bottom-nav .mbn-item {

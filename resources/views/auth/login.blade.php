@@ -144,13 +144,13 @@
             z-index: 5;
             display: flex; align-items: center; justify-content: space-between;
             padding-top: 10px;
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-            padding-left: calc(env(safe-area-inset-left, 0px) + 24px);
-            padding-right: calc(env(safe-area-inset-right, 0px) + 24px);
+            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 10px);
+            padding-left: calc(var(--sal, env(safe-area-inset-left, 0px)) + 24px);
+            padding-right: calc(var(--sar, env(safe-area-inset-right, 0px)) + 24px);
             font-size: 0.72rem; color: rgba(255,255,255,0.45);
             pointer-events: none;
             background: linear-gradient(0deg, rgba(17, 10, 10, 0.85) 0%, transparent 100%);
-            transition: padding 0.2s ease, opacity 0.2s ease;
+            transition: opacity 0.2s ease;
         }
         .bottom-bar a {
             color: rgba(255,255,255,0.45); text-decoration: none;
@@ -176,10 +176,10 @@
             display: flex; 
             align-items: center;
             justify-content: center;
-            padding-top: calc(env(safe-area-inset-top, 0px) + 64px);
-            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
-            padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
-            padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
+            padding-top: calc(var(--sat, env(safe-area-inset-top, 0px)) + 64px);
+            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 48px);
+            padding-left: calc(var(--sal, env(safe-area-inset-left, 0px)) + 16px);
+            padding-right: calc(var(--sar, env(safe-area-inset-right, 0px)) + 16px);
             box-sizing: border-box;
             overflow-x: hidden;
             overflow-y: auto;
@@ -2693,27 +2693,49 @@ if (forgotLinkElem) {
 // ── Viewport Height Lock – prevents status bar / notification shade from shifting layout ──
 (function() {
     var docEl = document.documentElement;
-    // Capture the true full-screen height once (before any browser chrome adjusts it)
-    var lockedHeight = window.screen.height || window.innerHeight;
-    var lockedWidth  = window.innerWidth;
-    var lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+    var lockedHeight = window.innerHeight || docEl.clientHeight;
+    var lockedWidth  = window.innerWidth  || docEl.clientWidth;
+    var lastOrientation = (window.screen && window.screen.orientation && window.screen.orientation.type) ?
+        (window.screen.orientation.type.includes('landscape') ? 'landscape' : 'portrait') :
+        (window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
+
+    function lockSafeAreas() {
+        try {
+            var probe = document.createElement('div');
+            probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);visibility:hidden;pointer-events:none;z-index:-1;';
+            docEl.appendChild(probe);
+            var cs = window.getComputedStyle(probe);
+            var top = parseFloat(cs.height) || 0;
+            var bottom = parseFloat(cs.paddingBottom) || 0;
+            var left = parseFloat(cs.paddingLeft) || 0;
+            var right = parseFloat(cs.paddingRight) || 0;
+            docEl.removeChild(probe);
+            if (top > 0) docEl.style.setProperty('--sat', top + 'px');
+            if (bottom > 0) docEl.style.setProperty('--sab', bottom + 'px');
+            if (left > 0) docEl.style.setProperty('--sal', left + 'px');
+            if (right > 0) docEl.style.setProperty('--sar', right + 'px');
+        } catch (e) {}
+    }
 
     function applyLock() {
         docEl.style.setProperty('--app-height', lockedHeight + 'px');
         docEl.style.setProperty('--app-width',  lockedWidth  + 'px');
+        lockSafeAreas();
     }
 
-    // Re-lock only on real orientation changes
+    // Re-lock only on real physical orientation changes
     function onOrientationChange() {
         setTimeout(function() {
-            var newOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+            var newOrientation = (window.screen && window.screen.orientation && window.screen.orientation.type) ?
+                (window.screen.orientation.type.includes('landscape') ? 'landscape' : 'portrait') :
+                (window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
             if (newOrientation !== lastOrientation) {
                 lastOrientation  = newOrientation;
-                lockedHeight = window.innerHeight;
-                lockedWidth  = window.innerWidth;
+                lockedHeight = window.innerHeight || docEl.clientHeight;
+                lockedWidth  = window.innerWidth  || docEl.clientWidth;
+                applyLock();
             }
-            applyLock();
-        }, 200);
+        }, 250);
     }
 
     // A system overlay can shrink the visual viewport just like a keyboard.
@@ -2733,13 +2755,37 @@ if (forgotLinkElem) {
         document.body.classList.toggle('keyboard-open', isKeyboard);
     }
 
+    // Preserve scroll position when notification panel / overlays are opened or dismissed
+    var authScene = document.querySelector('.auth-scene');
+    var savedScrollTop = 0;
+    function trackScroll() {
+        if (authScene) savedScrollTop = authScene.scrollTop;
+    }
+    if (authScene) {
+        authScene.addEventListener('scroll', trackScroll, { passive: true });
+    }
+
     window.addEventListener('orientationchange', onOrientationChange, { passive: true });
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', onResize, { passive: true });
     }
     window.addEventListener('resize', onResize, { passive: true });
+
     document.addEventListener('visibilitychange', function() {
-        if (!document.hidden) onResize();
+        if (!document.hidden) {
+            if (authScene && savedScrollTop > 0 && Math.abs(authScene.scrollTop - savedScrollTop) > 2) {
+                authScene.scrollTop = savedScrollTop;
+            }
+            onResize();
+        } else {
+            trackScroll();
+        }
+    }, { passive: true });
+
+    window.addEventListener('focus', function() {
+        if (authScene && savedScrollTop > 0 && Math.abs(authScene.scrollTop - savedScrollTop) > 2) {
+            authScene.scrollTop = savedScrollTop;
+        }
     }, { passive: true });
 
     applyLock();

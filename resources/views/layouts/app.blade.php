@@ -1394,25 +1394,48 @@
             // ── Viewport Height Lock – prevents status bar / notification shade from shifting layout ──
             (function() {
                 var docEl = document.documentElement;
-                var lockedHeight = window.screen.height || window.innerHeight;
-                var lockedWidth  = window.innerWidth;
-                var lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+                var lockedHeight = window.innerHeight || docEl.clientHeight;
+                var lockedWidth  = window.innerWidth  || docEl.clientWidth;
+                var lastOrientation = (window.screen && window.screen.orientation && window.screen.orientation.type) ?
+                    (window.screen.orientation.type.includes('landscape') ? 'landscape' : 'portrait') :
+                    (window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
+
+                function lockSafeAreas() {
+                    try {
+                        var probe = document.createElement('div');
+                        probe.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);visibility:hidden;pointer-events:none;z-index:-1;';
+                        docEl.appendChild(probe);
+                        var cs = window.getComputedStyle(probe);
+                        var top = parseFloat(cs.height) || 0;
+                        var bottom = parseFloat(cs.paddingBottom) || 0;
+                        var left = parseFloat(cs.paddingLeft) || 0;
+                        var right = parseFloat(cs.paddingRight) || 0;
+                        docEl.removeChild(probe);
+                        if (top > 0) docEl.style.setProperty('--sat', top + 'px');
+                        if (bottom > 0) docEl.style.setProperty('--sab', bottom + 'px');
+                        if (left > 0) docEl.style.setProperty('--sal', left + 'px');
+                        if (right > 0) docEl.style.setProperty('--sar', right + 'px');
+                    } catch (e) {}
+                }
 
                 function applyLock() {
                     docEl.style.setProperty('--app-height', lockedHeight + 'px');
                     docEl.style.setProperty('--app-width',  lockedWidth  + 'px');
+                    lockSafeAreas();
                 }
 
                 function onOrientationChange() {
                     setTimeout(function() {
-                        var newOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+                        var newOrientation = (window.screen && window.screen.orientation && window.screen.orientation.type) ?
+                            (window.screen.orientation.type.includes('landscape') ? 'landscape' : 'portrait') :
+                            (window.innerWidth > window.innerHeight ? 'landscape' : 'portrait');
                         if (newOrientation !== lastOrientation) {
                             lastOrientation = newOrientation;
-                            lockedHeight = window.innerHeight;
-                            lockedWidth  = window.innerWidth;
+                            lockedHeight = window.innerHeight || docEl.clientHeight;
+                            lockedWidth  = window.innerWidth  || docEl.clientWidth;
+                            applyLock();
                         }
-                        applyLock();
-                    }, 200);
+                    }, 250);
                 }
 
                 function isTextEntryFocused() {
@@ -1428,15 +1451,39 @@
                     document.body.classList.toggle('keyboard-open', isKeyboard);
                 }
 
+                var savedScrollY = 0;
+                function trackScroll() {
+                    savedScrollY = window.scrollY || docEl.scrollTop || 0;
+                }
+                window.addEventListener('scroll', trackScroll, { passive: true });
+
                 window.addEventListener('orientationchange', onOrientationChange, { passive: true });
                 if (window.visualViewport) {
                     window.visualViewport.addEventListener('resize', onResize, { passive: true });
                 }
                 window.addEventListener('resize', onResize, { passive: true });
+
                 document.addEventListener('visibilitychange', function() {
-                    if (!document.hidden) onResize();
+                    if (!document.hidden) {
+                        if (savedScrollY > 0 && Math.abs((window.scrollY || docEl.scrollTop || 0) - savedScrollY) > 2) {
+                            window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+                        }
+                        onResize();
+                    } else {
+                        trackScroll();
+                    }
                 }, { passive: true });
+
+                window.addEventListener('focus', function() {
+                    if (savedScrollY > 0 && Math.abs((window.scrollY || docEl.scrollTop || 0) - savedScrollY) > 2) {
+                        window.scrollTo({ top: savedScrollY, behavior: 'instant' });
+                    }
+                }, { passive: true });
+
                 applyLock();
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', applyLock);
+                }
             })();
 
             // Global Native Touch Haptic Helper
