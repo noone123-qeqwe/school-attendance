@@ -3954,6 +3954,7 @@ function showFaceError(title, message) {
     stopBioCamera();
     clearInterval(bioScanProgressTimer);
     bioScanProgressTimer = null;
+    isBioRegistrationRunning = false;
 
     const scanningView = document.getElementById('bioScanningView');
     const idleView = document.getElementById('bioIdleView');
@@ -3987,9 +3988,10 @@ if ('FaceDetector' in window) {
 
 /**
  * Performs computer vision analysis on the video feed to detect and verify human faces.
+ * Supports native FaceDetector API and adaptive multi-spectral computer vision cascade.
  * Returns:
  * {
- *   status: 'VALID_FACE' | 'NO_FACE' | 'MULTIPLE_FACES' | 'BLURRY' | 'UNUSABLE' | 'ALIGNING',
+ *   status: 'VALID_FACE' | 'NO_FACE' | 'MULTIPLE_FACES' | 'TOO_FAR' | 'TOO_CLOSE' | 'OFF_CENTER' | 'PARTIAL_FACE' | 'BLURRY' | 'UNUSABLE' | 'ALIGNING',
  *   passed: boolean,
  *   facesCount: number,
  *   score: number, // 0 to 100 matching confidence
@@ -4028,12 +4030,18 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    // Render frame to canvas
-    ctx.drawImage(video, 0, 0, vw, vh);
+    // Undistorted center-crop: crop square region from center of video to preserve true facial aspect ratio
+    const srcW = video.videoWidth;
+    const srcH = video.videoHeight;
+    const minDim = Math.min(srcW, srcH);
+    const sx = Math.max(0, (srcW - minDim) / 2);
+    const sy = Math.max(0, (srcH - minDim) / 2);
+
+    ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, vw, vh);
     const imgData = ctx.getImageData(0, 0, vw, vh);
     const pixels = imgData.data;
 
-    // 2. Global Frame Quality Checks (Empty, Dark, Covered, Blurry, Glare)
+    // 2. Global Frame Quality Checks (Illumination, Glare, Blurriness)
     let totalLuma = 0;
     let minLuma = 255;
     let maxLuma = 0;
@@ -4059,7 +4067,7 @@ async function detectAndAnalyzeFaceFrame(video) {
             sampledCount++;
 
             // Sample edge gradients in central facial zone
-            if (x >= 30 && x <= 130 && y >= 30 && y <= 130 && x + 2 < vw && y + 2 < vh) {
+            if (x >= 24 && x <= 136 && y >= 24 && y <= 136 && x + 2 < vw && y + 2 < vh) {
                 const rightIdx = (y * vw + (x + 2)) * 4;
                 const downIdx = ((y + 2) * vw + x) * 4;
                 const rightLuma = 0.299 * pixels[rightIdx] + 0.587 * pixels[rightIdx + 1] + 0.114 * pixels[rightIdx + 2];
@@ -4077,29 +4085,29 @@ async function detectAndAnalyzeFaceFrame(video) {
     const avgEdgeGradient = edgeSamples > 0 ? (totalEdgeEnergy / edgeSamples) : 0;
 
     // Reject dark / covered frame
-    if (avgLuma < 24 || lumaContrast < 20 || lumaStdDev < 7.5) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
-    // Reject extreme glare / washed out frame
-    if (avgLuma > 246) {
+    if (avgLuma < 30 || lumaContrast < 18 || lumaStdDev < 6.8) {
         return {
             status: 'UNUSABLE',
             passed: false,
             facesCount: 0,
             score: 0,
-            message: 'Too much glare. Please adjust lighting and face the camera.'
+            message: 'Lighting is too dark. Please improve lighting.'
+        };
+    }
+
+    // Reject extreme glare / washed out frame
+    if (avgLuma > 242) {
+        return {
+            status: 'UNUSABLE',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'Too much glare. Please improve lighting and face the camera.'
         };
     }
 
     // Reject blurry / unfocused frame
-    if (avgEdgeGradient < 3.8) {
+    if (avgEdgeGradient < 3.2) {
         return {
             status: 'BLURRY',
             passed: false,
@@ -4111,51 +4119,34 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 3. Multi-Method Face Detection
     // Step A: Check Native Shape Detection API if available
+    let nativeFace = null;
     if (_nativeFaceDetector) {
         try {
             const detected = await _nativeFaceDetector.detect(_faceCanvas);
             if (Array.isArray(detected)) {
-                if (detected.length === 0) {
-                    return {
-                        status: 'NO_FACE',
-                        passed: false,
-                        facesCount: 0,
-                        score: 0,
-                        message: 'No face detected. Please position your face in front of the camera.'
-                    };
-                }
                 if (detected.length > 1) {
                     return {
                         status: 'MULTIPLE_FACES',
                         passed: false,
                         facesCount: detected.length,
                         score: 0,
-                        message: 'Multiple faces detected. Please ensure only the intended person is visible.'
+                        message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
                     };
                 }
-                // Exactly 1 face natively detected! Validate its bounding box size
-                const bb = detected[0].boundingBox;
-                if (bb && (bb.width < 25 || bb.height < 30)) {
-                    return {
-                        status: 'NO_FACE',
-                        passed: false,
-                        facesCount: 0,
-                        score: 0,
-                        message: 'No face detected. Please position your face closer to the camera.'
-                    };
+                if (detected.length === 1 && detected[0].boundingBox) {
+                    nativeFace = detected[0].boundingBox;
                 }
             }
         } catch(err) {
-            // Fallback to computer vision pipeline below
+            // Fall through to computer vision cascade
         }
     }
 
-    // Step B: Computer Vision Facial Region & Landmark Verification Pipeline
-    // 1. Skin-tone pigment segmentation in YCbCr & RGB color space
-    const gridCols = 8;
-    const gridRows = 8;
-    const cellW = vw / gridCols; // 20px
-    const cellH = vh / gridRows; // 20px
+    // Step B: Computer Vision Adaptive Multi-Spectral Segmentation Pipeline
+    const gridCols = 10;
+    const gridRows = 10;
+    const cellW = vw / gridCols; // 16px
+    const cellH = vh / gridRows; // 16px
     const cellSkinCounts = new Array(gridCols * gridRows).fill(0);
     const cellTotalCounts = new Array(gridCols * gridRows).fill(0);
 
@@ -4170,47 +4161,64 @@ async function detectAndAnalyzeFaceFrame(video) {
             const r = pixels[idx];
             const g = pixels[idx + 1];
             const b = pixels[idx + 2];
+            const sumRgb = r + g + b || 1;
 
-            // YCbCr skin chrominance cluster
+            // Normalized RGB space (illumination-invariant chrominance)
+            const normR = r / sumRgb;
+            const normG = g / sumRgb;
+
+            // YCbCr color space
             const yVal  = 0.299 * r + 0.587 * g + 0.114 * b;
             const cbVal = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
             const crVal = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
 
-            const isSkin = (yVal >= 32 && yVal <= 238) &&
-                           (cbVal >= 75 && cbVal <= 135) &&
-                           (crVal >= 130 && crVal <= 180) &&
-                           (r > g && r > b) &&
-                           ((r - b) >= 10);
+            // HSV Hue estimation
+            const maxC = Math.max(r, g, b);
+            const minC = Math.min(r, g, b);
+            const delta = maxC - minC;
+            let hue = 0;
+            if (delta > 0) {
+                if (maxC === r) hue = ((g - b) / delta) % 6;
+                else if (maxC === g) hue = (b - r) / delta + 2;
+                else hue = (r - g) / delta + 4;
+                hue = Math.round(hue * 60);
+                if (hue < 0) hue += 360;
+            }
+            const sat = maxC > 0 ? (delta / maxC) : 0;
+            const val = maxC / 255;
 
-            if (isSkin) {
+            // Adaptive skin tone classifier (handles light, tan, olive, dark brown, and deep tones)
+            const isYcbcrSkin = (yVal >= 28 && yVal <= 242) &&
+                                (cbVal >= 70 && cbVal <= 140) &&
+                                (crVal >= 126 && crVal <= 184) &&
+                                (r > b || Math.abs(r - b) < 6);
+
+            const isNormRgbSkin = (normR >= 0.32 && normR <= 0.60) &&
+                                  (normG >= 0.23 && normG <= 0.39) &&
+                                  (normR > normG);
+
+            const isHsvSkin = ((hue >= 0 && hue <= 52) || (hue >= 335 && hue <= 360)) &&
+                              (sat >= 0.10 && sat <= 0.76) &&
+                              (val >= 0.15);
+
+            if ((isYcbcrSkin && isNormRgbSkin) || (isHsvSkin && isNormRgbSkin)) {
                 cellSkinCounts[cellIdx]++;
             }
         }
     }
 
-    // 2. Spatial Grid Clustering & Connected Components
+    // Spatial Grid Clustering & Connected Components
     const activeGrid = new Array(gridCols * gridRows).fill(false);
     let totalActiveCells = 0;
     for (let i = 0; i < gridCols * gridRows; i++) {
         const density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-        if (density >= 0.22) {
+        if (density >= 0.20) {
             activeGrid[i] = true;
             totalActiveCells++;
         }
     }
 
-    // If active skin area is insufficient, no face is present
-    if (totalActiveCells < 3) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
-    // Find connected components in the 8x8 grid
+    // Find connected components in the grid
     const visited = new Array(gridCols * gridRows).fill(false);
     const clusters = [];
 
@@ -4218,7 +4226,6 @@ async function detectAndAnalyzeFaceFrame(video) {
         for (let c = 0; c < gridCols; c++) {
             const idx = r * gridCols + c;
             if (activeGrid[idx] && !visited[idx]) {
-                // BFS to group connected active cells
                 const queue = [[r, c]];
                 visited[idx] = true;
                 const clusterCells = [];
@@ -4229,7 +4236,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
                     const neighbors = [
                         [currR - 1, currC], [currR + 1, currC],
-                        [currR, currC - 1], [currR + 1, currC]
+                        [currR, currC - 1], [currR, currC + 1]
                     ];
                     for (const [nr, nc] of neighbors) {
                         if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols) {
@@ -4264,113 +4271,147 @@ async function detectAndAnalyzeFaceFrame(video) {
         }
     }
 
-    // Check cluster count
-    if (clusters.length === 0) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
     // Check for distinct multiple faces separated horizontally
     if (clusters.length > 1) {
-        // Sort clusters by size descending
         clusters.sort((a, b) => b.cells - a.cells);
         const primary = clusters[0];
         const secondary = clusters[1];
-        // If secondary cluster is significant (>= 35% size of primary) and separated
-        if (secondary.cells >= 3 && secondary.cells >= primary.cells * 0.35 && Math.abs(primary.centerC - secondary.centerC) >= 2.0) {
+        if (secondary.cells >= 3 && secondary.cells >= primary.cells * 0.30 && Math.abs(primary.centerC - secondary.centerC) >= 2.2) {
             return {
                 status: 'MULTIPLE_FACES',
                 passed: false,
                 facesCount: clusters.length,
                 score: 0,
-                message: 'Multiple faces detected. Please ensure only the intended person is visible.'
+                message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
             };
         }
     }
 
-    const primaryCluster = clusters[0];
-    const faceW = primaryCluster.wPx;
-    const faceH = primaryCluster.hPx;
+    // If nativeFace exists, integrate its bounding box; otherwise use primary CV cluster
+    let faceX = 0, faceY = 0, faceW = 0, faceH = 0;
+    if (nativeFace && nativeFace.width >= 24 && nativeFace.height >= 28) {
+        faceX = Math.max(0, Math.floor(nativeFace.x));
+        faceY = Math.max(0, Math.floor(nativeFace.y));
+        faceW = Math.min(vw - faceX, Math.floor(nativeFace.width));
+        faceH = Math.min(vh - faceY, Math.floor(nativeFace.height));
+    } else if (clusters.length > 0) {
+        const primaryCluster = clusters[0];
+        faceX = Math.max(0, Math.floor(primaryCluster.minC * cellW));
+        faceY = Math.max(0, Math.floor(primaryCluster.minR * cellH));
+        faceW = Math.min(vw - faceX, Math.floor(primaryCluster.wPx));
+        faceH = Math.min(vh - faceY, Math.floor(primaryCluster.hPx));
+    } else {
+        return {
+            status: 'NO_FACE',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'No face detected. Please position your face in front of the camera.'
+        };
+    }
+
+    // 4. Distance / Proximity Validation (Real-Time Guidance)
+    const wRatio = faceW / vw;
+    if (wRatio < 0.22 || faceW < 35 || faceH < 40) {
+        return {
+            status: 'TOO_FAR',
+            passed: false,
+            facesCount: 1,
+            score: 25,
+            message: 'Move closer to the camera.'
+        };
+    }
+    if (wRatio > 0.82 || faceW > 132 || faceH > 138) {
+        return {
+            status: 'TOO_CLOSE',
+            passed: false,
+            facesCount: 1,
+            score: 30,
+            message: 'Move farther away from the camera.'
+        };
+    }
+
+    // 5. Centering & Partial Face Cut-Off Validation
+    const centerX = faceX + faceW / 2;
+    const centerY = faceY + faceH / 2;
+    const offX = Math.abs(centerX - (vw / 2)) / vw;
+    const offY = Math.abs(centerY - (vh / 2)) / vh;
+
+    if (offX > 0.22 || offY > 0.25) {
+        return {
+            status: 'OFF_CENTER',
+            passed: false,
+            facesCount: 1,
+            score: 40,
+            message: 'Center your face inside the target frame.'
+        };
+    }
+
+    if ((faceX <= 2 || faceY <= 2 || (faceX + faceW) >= 158 || (faceY + faceH) >= 158) && (faceW > 65 || faceH > 70)) {
+        return {
+            status: 'PARTIAL_FACE',
+            passed: false,
+            facesCount: 1,
+            score: 42,
+            message: 'Center your face. Face is partially outside the frame.'
+        };
+    }
+
+    // 6. Facial Aspect Ratio Validation
     const aspect = faceH / Math.max(1, faceW);
-
-    // Reject candidate if aspect ratio deviates significantly from human facial bounds
-    if (aspect < 0.82 || aspect > 2.25) {
+    if (aspect < 0.85 || aspect > 2.2) {
         return {
             status: 'NO_FACE',
             passed: false,
             facesCount: 0,
-            score: 0,
+            score: 20,
             message: 'No face detected. Please position your face in front of the camera.'
         };
     }
 
-    // 3. Detailed Facial Landmark & Topological Intensity Profile
-    const x0 = Math.max(0, Math.floor(primaryCluster.minC * cellW));
-    const y0 = Math.max(0, Math.floor(primaryCluster.minR * cellH));
-    const w = Math.min(vw - x0, Math.floor(faceW));
-    const h = Math.min(vh - y0, Math.floor(faceH));
-
-    if (w < 35 || h < 40) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
-    // Sample vertical anatomical feature zones:
-    // Zone 1: Eyes / Brow socket zone (y: 30% to 50% of face height)
+    // 7. Topological Feature Analysis & Bilateral Symmetry Profile
     let leftEyeLumaSum = 0, leftEyeCount = 0;
     let rightEyeLumaSum = 0, rightEyeCount = 0;
     let noseBridgeLumaSum = 0, noseBridgeCount = 0;
-    // Zone 2: Cheeks / Mid-face zone (y: 50% to 70% of face height)
     let cheekLumaSum = 0, cheekCount = 0;
-    // Zone 3: Mouth / Lip zone (y: 72% to 88% of face height)
     let mouthLumaSum = 0, mouthCount = 0;
 
-    for (let dy = 0; dy < h; dy += 2) {
-        const curY = y0 + dy;
-        const normY = dy / h;
+    for (let dy = 0; dy < faceH; dy += 2) {
+        const curY = faceY + dy;
+        const normY = dy / faceH;
 
-        for (let dx = 0; dx < w; dx += 2) {
-            const curX = x0 + dx;
-            const normX = dx / w;
+        for (let dx = 0; dx < faceW; dx += 2) {
+            const curX = faceX + dx;
+            const normX = dx / faceW;
 
             const pIdx = (curY * vw + curX) * 4;
             const pLuma = 0.299 * pixels[pIdx] + 0.587 * pixels[pIdx + 1] + 0.114 * pixels[pIdx + 2];
 
-            // Eyes & Nose Bridge
+            // Zone 1: Eyes & Nose Bridge (y: 28% to 50%)
             if (normY >= 0.28 && normY <= 0.50) {
-                if (normX >= 0.15 && normX <= 0.45) {
+                if (normX >= 0.15 && normX <= 0.44) {
                     leftEyeLumaSum += pLuma;
                     leftEyeCount++;
-                } else if (normX >= 0.55 && normX <= 0.85) {
+                } else if (normX >= 0.56 && normX <= 0.85) {
                     rightEyeLumaSum += pLuma;
                     rightEyeCount++;
-                } else if (normX > 0.45 && normX < 0.55) {
+                } else if (normX > 0.44 && normX < 0.56) {
                     noseBridgeLumaSum += pLuma;
                     noseBridgeCount++;
                 }
             }
 
-            // Cheeks / Central face
+            // Zone 2: Cheeks / Mid-face (y: 50% to 70%)
             if (normY >= 0.50 && normY <= 0.70) {
-                if ((normX >= 0.15 && normX <= 0.40) || (normX >= 0.60 && normX <= 0.85)) {
+                if ((normX >= 0.14 && normX <= 0.42) || (normX >= 0.58 && normX <= 0.86)) {
                     cheekLumaSum += pLuma;
                     cheekCount++;
                 }
             }
 
-            // Mouth
+            // Zone 3: Mouth / Lower face (y: 72% to 88%)
             if (normY >= 0.72 && normY <= 0.88) {
-                if (normX >= 0.30 && normX <= 0.70) {
+                if (normX >= 0.28 && normX <= 0.72) {
                     mouthLumaSum += pLuma;
                     mouthCount++;
                 }
@@ -4378,69 +4419,77 @@ async function detectAndAnalyzeFaceFrame(video) {
         }
     }
 
-    const avgLeftEye   = leftEyeCount > 0 ? (leftEyeLumaSum / leftEyeCount) : 128;
-    const avgRightEye  = rightEyeCount > 0 ? (rightEyeLumaSum / rightEyeCount) : 128;
+    const avgLeftEye    = leftEyeCount > 0 ? (leftEyeLumaSum / leftEyeCount) : 128;
+    const avgRightEye   = rightEyeCount > 0 ? (rightEyeLumaSum / rightEyeCount) : 128;
     const avgNoseBridge = noseBridgeCount > 0 ? (noseBridgeLumaSum / noseBridgeCount) : 128;
-    const avgCheek     = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
-    const avgMouth     = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
+    const avgCheek      = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
+    const avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
 
-    // 4. Compute Facial Verification & Confidence Score (0 - 100)
+    // 8. Compute Facial Confidence & Verification Score (0 - 100)
     let score = 0;
 
-    // A. Aspect ratio score (0 - 20 pts)
-    if (aspect >= 1.05 && aspect <= 1.75) {
+    // A. Aspect ratio fit (0 - 20 pts)
+    if (aspect >= 1.10 && aspect <= 1.70) {
         score += 20;
-    } else if (aspect >= 0.95 && aspect <= 1.95) {
-        score += 12;
+    } else if (aspect >= 0.95 && aspect <= 1.90) {
+        score += 14;
     } else {
-        score += 5;
+        score += 6;
     }
 
-    // B. Facial cluster density (0 - 20 pts)
-    const activeDensity = primaryCluster.cells / (gridCols * gridRows);
-    if (activeDensity >= 0.08 && activeDensity <= 0.65) {
-        score += 20;
-    } else {
+    // B. Centering and scale optimality (0 - 15 pts)
+    if (offX <= 0.12 && offY <= 0.14 && wRatio >= 0.35 && wRatio <= 0.70) {
+        score += 15;
+    } else if (offX <= 0.18 && offY <= 0.20) {
         score += 10;
+    } else {
+        score += 4;
     }
 
-    // C. Eye socket luminance depression & bilateral symmetry (0 - 30 pts)
+    // C. Eye socket bilateral depression & symmetry (0 - 25 pts)
     const eyeCheekRatioL = avgCheek > 0 ? (avgLeftEye / avgCheek) : 1;
     const eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
     const eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
 
-    if (eyeCheekRatioL <= 0.98 && eyeCheekRatioR <= 0.98) {
+    if (eyeCheekRatioL <= 1.02 && eyeCheekRatioR <= 1.02) {
         score += 15;
-    } else if (eyeCheekRatioL <= 1.05 && eyeCheekRatioR <= 1.05) {
-        score += 8;
-    }
-    if (eyeSymmetryDiff < 0.22) {
-        score += 15;
-    } else if (eyeSymmetryDiff < 0.35) {
+    } else if (eyeCheekRatioL <= 1.08 && eyeCheekRatioR <= 1.08) {
         score += 8;
     }
 
-    // D. Nose bridge vs eye contrast & mouth cavity contrast (0 - 20 pts)
-    const noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
-    if (noseEyeDiff > -2) {
+    if (eyeSymmetryDiff < 0.20) {
         score += 10;
-    }
-    const mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
-    if (mouthCheekRatio < 1.05) {
-        score += 10;
-    }
-
-    // E. Edge definition / Sharpness bonus (0 - 10 pts)
-    if (avgEdgeGradient >= 5.5) {
-        score += 10;
-    } else if (avgEdgeGradient >= 4.0) {
+    } else if (eyeSymmetryDiff < 0.32) {
         score += 5;
     }
 
-    // 5. Apply Recognition / Matching Threshold
-    const MATCHING_THRESHOLD = 70;
+    // D. Nose bridge highlight vs eye contrast (0 - 15 pts)
+    const noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
+    if (noseEyeDiff > -3) {
+        score += 15;
+    } else if (noseEyeDiff > -10) {
+        score += 8;
+    }
 
-    if (score < 55) {
+    // E. Mouth cavity depression / contrast (0 - 15 pts)
+    const mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
+    if (mouthCheekRatio < 1.06) {
+        score += 15;
+    } else {
+        score += 7;
+    }
+
+    // F. Edge definition & sharpness bonus (0 - 10 pts)
+    if (avgEdgeGradient >= 4.8) {
+        score += 10;
+    } else if (avgEdgeGradient >= 3.6) {
+        score += 6;
+    }
+
+    // 9. Enforce Recognition & Matching Threshold
+    const MATCHING_THRESHOLD = 72;
+
+    if (score < 52) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -4450,17 +4499,17 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (score >= 55 && score < MATCHING_THRESHOLD) {
+    if (score >= 52 && score < MATCHING_THRESHOLD) {
         return {
             status: 'ALIGNING',
             passed: false,
             facesCount: 1,
             score: score,
-            message: 'Face detected. Please align your face inside the target frame.'
+            message: 'Face detected. Please hold still and center your face in the frame.'
         };
     }
 
-    // Single face detected and verified above threshold!
+    // Single genuine face verified above security threshold!
     const descriptor = 'face_desc_' + Math.round(score) + '_' + Math.round(avgLeftEye) + '_' + Math.round(avgRightEye) + '_' + Math.round(avgNoseBridge) + '_' + Math.round(avgMouth) + '_' + Date.now().toString(36);
     const publicKey = 'pub_face_' + btoa(descriptor).replace(/=/g, '');
 
@@ -4549,7 +4598,28 @@ async function executeFaceCaptureAndVerificationSequence(video) {
             currentProgress = 10;
             updateProgressiveFeedback(currentProgress, 'Multiple faces detected');
             if (scanningTitle) scanningTitle.textContent = 'Multiple Faces Detected';
-            if (statusSub) statusSub.textContent = 'Multiple faces detected. Please ensure only the intended person is visible.';
+            if (statusSub) statusSub.textContent = 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.';
+            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
+        } else if (analysis.status === 'TOO_FAR') {
+            consecutiveValidFrames = 0;
+            updateProgressiveFeedback(currentProgress, 'Move closer');
+            if (scanningTitle) scanningTitle.textContent = 'Move Closer';
+            if (statusSub) statusSub.textContent = 'Move closer to the camera.';
+            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.7)';
+            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #f59e0b 35%, #fbbf24 50%, #f59e0b 65%, transparent 100%)';
+        } else if (analysis.status === 'TOO_CLOSE') {
+            consecutiveValidFrames = 0;
+            updateProgressiveFeedback(currentProgress, 'Move farther away');
+            if (scanningTitle) scanningTitle.textContent = 'Move Farther Away';
+            if (statusSub) statusSub.textContent = 'Move farther away from the camera.';
+            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.7)';
+            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #f59e0b 35%, #fbbf24 50%, #f59e0b 65%, transparent 100%)';
+        } else if (analysis.status === 'OFF_CENTER' || analysis.status === 'PARTIAL_FACE') {
+            consecutiveValidFrames = 0;
+            updateProgressiveFeedback(currentProgress, 'Center your face');
+            if (scanningTitle) scanningTitle.textContent = 'Center Your Face';
+            if (statusSub) statusSub.textContent = analysis.message || 'Center your face inside the target frame.';
             if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.7)';
             if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #f59e0b 35%, #fbbf24 50%, #f59e0b 65%, transparent 100%)';
         } else if (analysis.status === 'BLURRY') {
@@ -4560,14 +4630,15 @@ async function executeFaceCaptureAndVerificationSequence(video) {
             if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.6)';
         } else if (analysis.status === 'UNUSABLE') {
             consecutiveValidFrames = 0;
-            updateProgressiveFeedback(currentProgress, analysis.message || 'Adjust lighting for face detection');
-            if (scanningTitle) scanningTitle.textContent = 'Adjust Lighting';
-            if (statusSub) statusSub.textContent = analysis.message || 'Please position your face in good light.';
+            updateProgressiveFeedback(currentProgress, 'Improve lighting');
+            if (scanningTitle) scanningTitle.textContent = 'Improve Lighting';
+            if (statusSub) statusSub.textContent = analysis.message || 'Lighting is too dark. Please improve lighting.';
+            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.6)';
         } else if (analysis.status === 'ALIGNING') {
             consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
             updateProgressiveFeedback(Math.max(15, currentProgress), 'Face detected. Aligning with reticle...');
             if (scanningTitle) scanningTitle.textContent = 'Align Your Face';
-            if (statusSub) statusSub.textContent = analysis.message || 'Face detected. Please align your face inside the target frame.';
+            if (statusSub) statusSub.textContent = analysis.message || 'Face detected. Please hold still and center your face in the frame.';
             if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(6, 182, 212, 0.6)';
             if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%)';
         } else if (analysis.status === 'VALID_FACE' && analysis.passed) {
@@ -4606,7 +4677,7 @@ async function executeFaceCaptureAndVerificationSequence(video) {
             }
         }
 
-        await sleep(120);
+        await sleep(100);
     }
 
     if (bioAbortController?.signal?.aborted) {
@@ -4724,23 +4795,43 @@ async function beginFaceRegistration() {
             video: {
                 facingMode: 'user',
                 width: { ideal: 640 },
-                height: { ideal: 640 }
+                height: { ideal: 480 }
             },
             audio: false
         });
         bioCameraStream = stream;
-    } catch (err) {
-        console.error('Face camera access error:', err);
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+    } catch (err1) {
+        if (err1.name === 'NotAllowedError' || err1.name === 'PermissionDeniedError') {
             showFaceError('Camera Permission Denied', 'Camera permission is required to register your face.');
-        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-            showFaceError('Camera Not Found', 'No camera detected on this device. Please connect a camera and try again.');
-        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-            showFaceError('Camera In Use', 'Camera is already in use by another application. Please close other camera apps and try again.');
-        } else {
-            showFaceError('Camera Error', 'Camera permission is required to register your face.');
+            return;
         }
-        return;
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            });
+            bioCameraStream = stream;
+        } catch (err2) {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: false
+                });
+                bioCameraStream = stream;
+            } catch (err) {
+                console.error('Face camera access error:', err);
+                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                    showFaceError('Camera Permission Denied', 'Camera permission is required to register your face.');
+                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                    showFaceError('Camera Not Found', 'No camera detected on this device. Please connect a camera and try again.');
+                } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                    showFaceError('Camera In Use', 'Camera is already in use by another application. Please close other camera apps and try again.');
+                } else {
+                    showFaceError('Camera Error', 'Camera permission is required to register your face.');
+                }
+                return;
+            }
+        }
     }
 
     const video = document.getElementById('faceCameraVideo');

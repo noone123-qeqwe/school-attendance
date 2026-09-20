@@ -101,11 +101,32 @@ class WebAuthnController extends Controller
                 ?? $request->input('face_data') 
                 ?? $request->input('public_key');
 
-            if (empty($faceData) || !is_string($faceData) || trim($faceData) === '' || strlen(trim($faceData)) < 8 || str_contains($faceData, 'no_face') || str_contains($faceData, 'unusable') || str_contains($faceData, 'fallback')) {
+            if (empty($faceData) || !is_string($faceData) || trim($faceData) === '' || strlen(trim($faceData)) < 8) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No face detected. Please position your face in front of the camera.'
                 ], 422);
+            }
+
+            $invalidTokens = ['no_face', 'unusable', 'fallback', 'blurry', 'multiple_faces', 'too_far', 'too_close', 'off_center', 'partial_face'];
+            foreach ($invalidTokens as $token) {
+                if (str_contains(strtolower($faceData), $token)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No face detected. Please position your face in front of the camera.'
+                    ], 422);
+                }
+            }
+
+            // Security threshold: require face descriptor to meet confidence/matching threshold (minimum 70%)
+            if (preg_match('/^face_desc_(\d+)_/', $faceData, $scoreMatches)) {
+                $confidence = (int) $scoreMatches[1];
+                if ($confidence < 70) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Face recognition confidence does not meet the required security threshold. Please position your face clearly in good lighting and try again.'
+                    ], 422);
+                }
             }
 
             try {
