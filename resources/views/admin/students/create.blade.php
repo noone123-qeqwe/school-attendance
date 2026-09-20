@@ -270,7 +270,7 @@
     sendOtpBtn.addEventListener('click', async () => {
         const email = emailInput.value.trim();
         if (!email || !isValidEmail(email)) {
-            setStatus('Please enter a valid email address.', '#dc2626');
+            setStatus('Please enter a valid Gmail address (e.g., username@gmail.com).', '#dc2626');
             return;
         }
 
@@ -372,7 +372,17 @@
 
     // Utility functions
     function isValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!email || typeof email !== 'string') return false;
+        const clean = email.trim().toLowerCase();
+        const parts = clean.split('@');
+        if (parts.length !== 2) return false;
+        const username = parts[0];
+        const domain = parts[1];
+        if (domain !== 'gmail.com' && domain !== 'googlemail.com') return false;
+        const unmasked = username.replace(/\./g, '');
+        if (unmasked.length < 6 || unmasked.length > 30) return false;
+        if (username.startsWith('.') || username.endsWith('.') || username.includes('..')) return false;
+        return /^[a-z0-9.]+$/.test(username);
     }
 
     // Initialize form validation

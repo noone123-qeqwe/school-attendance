@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\OtpService;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterUserRequest extends FormRequest
@@ -57,7 +58,17 @@ class RegisterUserRequest extends FormRequest
             'middle_name'    => 'nullable|string|max:100',
             'no_middle_name' => 'nullable|boolean',
             'surname'        => 'sometimes|string|max:100',
-            'email'          => 'required|email|unique:users',
+            'email'          => [
+                'required',
+                'string',
+                'email',
+                'unique:users,email',
+                function ($attribute, $value, $fail) {
+                    if (!OtpService::isValidGmailFormat((string) $value)) {
+                        $fail('The email must be a valid Gmail address (e.g., username@gmail.com).');
+                    }
+                },
+            ],
             'password'       => 'required|min:8|confirmed',
         ];
 
@@ -92,13 +103,44 @@ class RegisterUserRequest extends FormRequest
         return $rules;
     }
 
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $email = strtolower(trim((string) $this->input('email', '')));
+            if ($email === '') {
+                return;
+            }
+
+            if ($this->routeIs('register.submit')) {
+                $verifiedEmail = strtolower(trim((string) session('reg_email_verified', '')));
+                if (!$verifiedEmail || $verifiedEmail !== $email) {
+                    $validator->errors()->add(
+                        'email',
+                        'This email address is unverified. Please verify your email with the verification code before completing registration.'
+                    );
+                }
+            } elseif ($this->routeIs('admin.student.store')) {
+                $verifiedEmail = strtolower(trim((string) session('admin_reg_email_verified', '')));
+                if (!$verifiedEmail || $verifiedEmail !== $email) {
+                    $validator->errors()->add(
+                        'email',
+                        'This email address is unverified. Please verify the student\'s email with the verification code before adding the student.'
+                    );
+                }
+            }
+        });
+    }
+
     public function messages(): array
     {
         return [
-            'terms.accepted' => 'You must read and agree to the Privacy Notice and Terms & Conditions to create an account.',
+            'terms.accepted'        => 'You must read and agree to the Privacy Notice and Terms & Conditions to create an account.',
             'student_number.unique' => 'This Student ID is already registered to an account.',
-            'student_number.max' => 'The Student ID may not be greater than 7 characters.',
-            'student_number.min' => 'The Student ID must be at least 3 characters.',
+            'student_number.max'    => 'The Student ID may not be greater than 7 characters.',
+            'student_number.min'    => 'The Student ID must be at least 3 characters.',
+            'email.required'        => 'Please enter your Gmail address.',
+            'email.email'           => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+            'email.unique'          => 'This Gmail address is already registered. Please sign in or use another email.',
         ];
     }
 }

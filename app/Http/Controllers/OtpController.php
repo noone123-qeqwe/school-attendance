@@ -36,13 +36,45 @@ class OtpController extends Controller
     // ─────────────────────────────────────────
     public function sendRegisterOtp(Request $request)
     {
-        $request->validate(['email' => 'required|email|unique:users,email']);
-
-        $emailClean = strtolower(trim((string) $request->email));
+        $rawEmail = trim((string) $request->input('email', ''));
+        $emailClean = strtolower($rawEmail);
         $scope = $request->input('scope', 'register');
         $sessionPrefix = $scope === 'admin_student' ? 'admin_reg' : 'reg';
         $requestId = $request->header('X-Request-Id') ?: $request->input('request_id');
 
+        if ($emailClean === '') {
+            return response()->json([
+                'success'  => false,
+                'status'   => 'error',
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+                'message'  => 'Please enter your Gmail address.',
+            ], 422);
+        }
+
+        // 1. Check valid Gmail format (invalid category)
+        if (!OtpService::isValidGmailFormat($emailClean)) {
+            return response()->json([
+                'success'  => false,
+                'status'   => 'error',
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+                'message'  => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+            ], 422);
+        }
+
+        // 2. Check already-registered (already_registered category)
+        if (User::where('email', $emailClean)->exists()) {
+            return response()->json([
+                'success'  => false,
+                'status'   => 'error',
+                'category' => 'already_registered',
+                'error'    => 'EMAIL_ALREADY_REGISTERED',
+                'message'  => 'This Gmail address is already registered. Please sign in or use another email.',
+            ], 422);
+        }
+
+        // 3. Rate-limit & Send OTP (unavailable category if sending fails)
         try {
             $result = $this->otpService->sendOtp($emailClean, 'register', null, null, $requestId);
             session([
@@ -51,6 +83,8 @@ class OtpController extends Controller
 
             return response()->json([
                 'success'    => true,
+                'status'     => 'success',
+                'category'   => 'sent',
                 'message'    => 'Verification code sent to ' . $emailClean,
                 'cooldown'   => $result['cooldown'] ?? Otp::COOLDOWN_SECONDS,
                 'retryAfter' => $result['cooldown'] ?? Otp::COOLDOWN_SECONDS,
@@ -58,19 +92,25 @@ class OtpController extends Controller
                 'request_id' => $result['request_id'] ?? $requestId,
             ]);
         } catch (\Exception $e) {
-            $status = $e->getCode() === 429 ? 429 : 500;
+            $status = $e->getCode() === 429 ? 429 : 422;
             $cooldown = $status === 429 ? Otp::getCooldownRemaining($emailClean, 'register') : 0;
             if ($cooldown <= 0 && $status === 429) {
                 $cooldown = Otp::COOLDOWN_SECONDS;
             }
 
+            $isRateLimited = ($status === 429);
+            $category = $isRateLimited ? 'rate_limited' : 'unavailable';
+            $errorType = $isRateLimited ? 'OTP_RATE_LIMITED' : 'EMAIL_UNAVAILABLE';
+            $message = $isRateLimited
+                ? "Please wait {$cooldown} seconds before requesting another code."
+                : 'Unable to verify this email address. The verification code could not be delivered to this Gmail address. Please check that the mailbox exists and can receive email.';
+
             return response()->json([
                 'success'    => false,
                 'status'     => 'error',
-                'error'      => $status === 429 ? 'OTP_RATE_LIMITED' : 'OTP_SEND_FAILED',
-                'message'    => $status === 429
-                    ? "Please wait {$cooldown} seconds before requesting another code."
-                    : ($e->getMessage() ?: 'Unable to send verification code. Please try again.'),
+                'category'   => $category,
+                'error'      => $errorType,
+                'message'    => $message,
                 'cooldown'   => $cooldown,
                 'retryAfter' => $cooldown,
                 'retry_after'=> $cooldown,
@@ -80,10 +120,27 @@ class OtpController extends Controller
 
     public function verifyRegisterOtp(Request $request)
     {
-        $request->validate(['email' => 'required|email', 'otp' => 'required|digits:6']);
+        $rawEmail = trim((string) $request->input('email', ''));
+        $emailClean = strtolower($rawEmail);
+        $otpClean   = trim((string) $request->input('otp', ''));
 
-        $emailClean = strtolower(trim((string) $request->email));
-        $otpClean   = trim((string) $request->otp);
+        if ($emailClean === '' || !OtpService::isValidGmailFormat($emailClean)) {
+            return response()->json([
+                'success'  => false,
+                'status'   => 'error',
+                'category' => 'invalid',
+                'message'  => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+            ], 422);
+        }
+
+        if (strlen($otpClean) !== 6 || !ctype_digit($otpClean)) {
+            return response()->json([
+                'success'  => false,
+                'status'   => 'error',
+                'category' => 'unverified',
+                'message'  => 'The verification code must be exactly 6 digits.',
+            ], 422);
+        }
 
         $scope = $request->input('scope', 'register');
         $sessionPrefix = $scope === 'admin_student' ? 'admin_reg' : 'reg';
@@ -92,9 +149,10 @@ class OtpController extends Controller
 
         if (!$result['success']) {
             return response()->json([
-                'success' => false,
-                'status'  => $result['status'],
-                'message' => $result['message'],
+                'success'  => false,
+                'status'   => $result['status'],
+                'category' => 'unverified',
+                'message'  => $result['message'],
             ], 422);
         }
 
@@ -102,8 +160,10 @@ class OtpController extends Controller
         session(["{$sessionPrefix}_email_verified" => $emailClean]);
 
         return response()->json([
-            'success' => true,
-            'message' => 'Email verified successfully.',
+            'success'  => true,
+            'status'   => 'success',
+            'category' => 'verified',
+            'message'  => 'Email verified successfully.',
         ]);
     }
 
@@ -700,10 +760,26 @@ class OtpController extends Controller
         // Allow sending OTP directly to any new email address specified by the user, or current email
         $targetEmail = $user->email;
         if ($request->filled('new_email')) {
-            $request->validate([
-                'new_email' => 'required|email|unique:users,email,' . $user->id,
-            ]);
-            $targetEmail = strtolower(trim((string) $request->new_email));
+            $rawNew = strtolower(trim((string) $request->new_email));
+            if (!OtpService::isValidGmailFormat($rawNew)) {
+                return response()->json([
+                    'success'  => false,
+                    'status'   => 'error',
+                    'category' => 'invalid',
+                    'message'  => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+                ], 422);
+            }
+
+            if (User::where('email', $rawNew)->where('id', '!=', $user->id)->exists()) {
+                return response()->json([
+                    'success'  => false,
+                    'status'   => 'error',
+                    'category' => 'already_registered',
+                    'message'  => 'This Gmail address is already registered. Please sign in or use another email.',
+                ], 422);
+            }
+
+            $targetEmail = $rawNew;
             session(['pending_new_email' => $targetEmail]);
         }
 
@@ -711,16 +787,24 @@ class OtpController extends Controller
             $res = $this->otpService->sendOtp($targetEmail, 'change_email', $user->id, $user->name);
             return response()->json([
                 'success'      => true,
+                'status'       => 'success',
+                'category'     => 'sent',
                 'message'      => 'Verification code sent to ' . $targetEmail . '.',
                 'target_email' => $targetEmail,
                 'cooldown'     => $res['cooldown'],
             ]);
         } catch (\Exception $e) {
-            $status = $e->getCode() === 429 ? 429 : 500;
+            $status = $e->getCode() === 429 ? 429 : 422;
+            $cooldown = $status === 429 ? Otp::getCooldownRemaining($targetEmail, 'change_email') : 0;
+            $category = $status === 429 ? 'rate_limited' : 'unavailable';
             return response()->json([
                 'success'  => false,
-                'message'  => $e->getMessage() ?: 'Unable to send verification code. Please try again.',
-                'cooldown' => $status === 429 ? Otp::getCooldownRemaining($targetEmail, 'change_email') : 0,
+                'status'   => 'error',
+                'category' => $category,
+                'message'  => $status === 429
+                    ? "Please wait {$cooldown} seconds before requesting another code."
+                    : 'Unable to verify this email address. The verification code could not be delivered. Please check that the mailbox exists and can receive email.',
+                'cooldown' => $cooldown,
             ], $status);
         }
     }
@@ -730,14 +814,22 @@ class OtpController extends Controller
     // ─────────────────────────────────────────
     public function changeEmail(Request $request)
     {
-        $request->validate([
-            'otp'       => 'required|digits:6',
-            'new_email' => 'required|email|unique:users,email,' . Auth::id(),
-        ]);
+        $newEmail = strtolower(trim((string) $request->new_email));
+        $otpClean = trim((string) $request->otp);
+
+        if (!OtpService::isValidGmailFormat($newEmail)) {
+            return back()->withErrors(['new_email' => 'Please enter a valid Gmail address (e.g., username@gmail.com).'])->withInput();
+        }
+
+        if (User::where('email', $newEmail)->where('id', '!=', Auth::id())->exists()) {
+            return back()->withErrors(['new_email' => 'This Gmail address is already registered. Please sign in or use another email.'])->withInput();
+        }
+
+        if (strlen($otpClean) !== 6 || !ctype_digit($otpClean)) {
+            return back()->withErrors(['otp' => 'The verification code must be exactly 6 digits.'])->withInput();
+        }
 
         $user = Auth::user();
-        $otpClean = trim((string) $request->otp);
-        $newEmail = strtolower(trim((string) $request->new_email));
 
         // Check if OTP was verified against new_email or current user email
         $result = $this->otpService->verifyOtp($newEmail, $otpClean, 'change_email', $user->id);
@@ -746,7 +838,7 @@ class OtpController extends Controller
         }
 
         if (!$result['success']) {
-            return back()->withErrors(['otp' => $result['message']])->withInput();
+            return back()->withErrors(['otp' => 'This email address is unverified. ' . $result['message']])->withInput();
         }
 
         $user->update(['email' => $newEmail]);

@@ -983,10 +983,60 @@
             updateFullName();
         }
 
+        // Gmail format validator matching Google requirements
+        function isValidGmailFormat(email) {
+            if (!email || typeof email !== 'string') return false;
+            const clean = email.trim().toLowerCase();
+
+            const parts = clean.split('@');
+            if (parts.length !== 2) return false;
+
+            const username = parts[0];
+            const domain = parts[1];
+
+            if (domain !== 'gmail.com' && domain !== 'googlemail.com') {
+                return false;
+            }
+
+            // Google requires username length between 6 and 30 characters
+            const unmasked = username.replace(/\./g, '');
+            if (unmasked.length < 6 || unmasked.length > 30) {
+                return false;
+            }
+
+            // Cannot start or end with a dot
+            if (username.startsWith('.') || username.endsWith('.')) {
+                return false;
+            }
+
+            // Cannot have consecutive dots
+            if (username.includes('..')) {
+                return false;
+            }
+
+            // Only letters, numbers, and periods are permitted
+            return /^[a-z0-9.]+$/.test(username);
+        }
+
         // Live Single-Field Validation
         function validateSingleField(fieldId, showValidState = false) {
             const el = document.getElementById(fieldId);
             if (!el) return true;
+
+            if (fieldId === 'email') {
+                const val = el.value.trim();
+                if (!val) {
+                    setFieldFeedback('email', false, 'Please enter your Gmail address.');
+                    return false;
+                }
+                if (!isValidGmailFormat(val)) {
+                    setFieldFeedback('email', false, 'Please enter a valid Gmail address (e.g., username@gmail.com).');
+                    return false;
+                }
+                if (showValidState) setFieldFeedback('email', true, 'Valid Gmail address format');
+                else clearFieldFeedback('email');
+                return true;
+            }
 
             if (fieldId === 'first_name') {
                 const val = el.value.trim();
@@ -1469,13 +1519,13 @@
 
             let hasStep2Error = false;
             if (!email) {
-                setFieldFeedback('email', false, 'Please enter your email address.');
+                setFieldFeedback('email', false, 'Please enter your Gmail address.');
                 hasStep2Error = true;
-            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                setFieldFeedback('email', false, 'Please enter a valid email address.');
+            } else if (!isValidGmailFormat(email)) {
+                setFieldFeedback('email', false, 'Please enter a valid Gmail address (e.g., username@gmail.com).');
                 hasStep2Error = true;
             } else {
-                setFieldFeedback('email', true, 'Valid');
+                setFieldFeedback('email', true, 'Valid Gmail address format');
             }
 
             if (!pass) {
@@ -1534,14 +1584,15 @@
             }).then(async r => {
                 const isJson = r.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await r.json() : null;
-                if (!r.ok) {
+                if (!r.ok || (data && data.success === false)) {
                     const retrySecs = data ? (data.retryAfter || data.retry_after || data.cooldown) : null;
-                    let errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
+                    let errorMsg = data && data.message ? data.message : 'Unable to verify email address. Please try again.';
                     if (r.status === 429 && retrySecs) {
                         errorMsg = `Please wait ${retrySecs} seconds before requesting another code.`;
                     }
                     const err = new Error(errorMsg);
                     err.status = r.status;
+                    err.category = data?.category || (r.status === 429 ? 'rate_limited' : 'unavailable');
                     err.cooldown = retrySecs;
                     throw err;
                 }
@@ -1569,7 +1620,20 @@
                     btn.innerHTML = originalBtnHtml;
                 }
                 console.error('OTP send error:', err);
+
+                // Distinct field highlighting for invalid, already_registered, and unavailable
+                if (err.category === 'invalid' || err.category === 'already_registered' || err.category === 'unavailable') {
+                    setFieldFeedback('email', false, err.message);
+                    const emailInput = document.getElementById('email');
+                    if (emailInput) {
+                        emailInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        emailInput.focus();
+                    }
+                }
                 showAlert(err.message || "Unable to send verification code. Please try again.");
+                if (err.cooldown) {
+                    startResendCooldown(err.cooldown);
+                }
             });
         }
 
@@ -1581,7 +1645,10 @@
 
             hideAlert();
             const email = document.getElementById('email')?.value.trim();
-            if (!email) { showAlert("Email address is required."); return; }
+            if (!email || !isValidGmailFormat(email)) {
+                showAlert("Please enter a valid Gmail address (e.g., username@gmail.com).");
+                return;
+            }
 
             const requestId = (typeof crypto !== 'undefined' && crypto.randomUUID)
                 ? crypto.randomUUID()
@@ -1607,7 +1674,7 @@
             }).then(async r => {
                 const isJson = r.headers.get('content-type')?.includes('application/json');
                 const data = isJson ? await r.json() : null;
-                if (!r.ok) {
+                if (!r.ok || (data && data.success === false)) {
                     const retrySecs = data ? (data.retryAfter || data.retry_after || data.cooldown) : null;
                     let errorMsg = data && data.message ? data.message : 'Unable to send verification code. Please try again.';
                     if (r.status === 429 && retrySecs) {
@@ -1615,6 +1682,7 @@
                     }
                     const err = new Error(errorMsg);
                     err.status = r.status;
+                    err.category = data?.category || (r.status === 429 ? 'rate_limited' : 'unavailable');
                     err.cooldown = retrySecs;
                     throw err;
                 }
@@ -1636,6 +1704,9 @@
                 isSendingOtp = false;
                 if (resendBtn) resendBtn.innerHTML = originalHtml;
                 console.error('Resend OTP error:', err);
+                if (err.category === 'invalid' || err.category === 'already_registered' || err.category === 'unavailable') {
+                    setFieldFeedback('email', false, err.message);
+                }
                 showAlert(err.message || 'Unable to send verification code. Please try again.');
                 if (err.cooldown) {
                     startResendCooldown(err.cooldown);
@@ -1838,6 +1909,23 @@
                     }
                 });
             });
+
+            // Step 2: Email input live validation
+            const emailInput = document.getElementById('email');
+            if (emailInput) {
+                emailInput.addEventListener('input', () => {
+                    const hiddenOtp = document.getElementById('hidden_otp');
+                    if (hiddenOtp) hiddenOtp.value = '';
+                    if (document.getElementById('wrap-email')?.classList.contains('is-invalid')) {
+                        validateSingleField('email', true);
+                    }
+                });
+                emailInput.addEventListener('blur', () => {
+                    if (emailInput.value.trim()) {
+                        validateSingleField('email', true);
+                    }
+                });
+            }
 
             // Step 2 Buttons
             const btnBackStep2 = document.getElementById('btn-back-step2');

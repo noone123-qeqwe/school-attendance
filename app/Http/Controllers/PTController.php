@@ -21,12 +21,23 @@ class PTController extends Controller
     
     public function register(RegisterUserRequest $request)
     {
-        // Validation is now handled by RegisterUserRequest
+        // Validation is handled by RegisterUserRequest
 
-        // Verify OTP email
-        $verifiedEmail = session('reg_email_verified');
-        if (!$verifiedEmail || strtolower($verifiedEmail) !== strtolower($request->email)) {
-            return back()->withInput()->withErrors(['email' => 'Please verify your email address using the OTP sent to your email.']);
+        $cleanEmail = strtolower(trim((string) $request->email));
+
+        // 1. Double check Gmail format
+        if (!\App\Services\OtpService::isValidGmailFormat($cleanEmail)) {
+            return back()->withInput()->withErrors([
+                'email' => 'Please enter a valid Gmail address (e.g., username@gmail.com).'
+            ]);
+        }
+
+        // 2. Double check verified OTP email session
+        $verifiedEmail = strtolower(trim((string) session('reg_email_verified', '')));
+        if (!$verifiedEmail || $verifiedEmail !== $cleanEmail) {
+            return back()->withInput()->withErrors([
+                'email' => 'This email address is unverified. Please verify your email with the verification code before completing registration.'
+            ]);
         }
         
         // Clear the session so it cannot be reused

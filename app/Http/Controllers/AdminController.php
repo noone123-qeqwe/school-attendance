@@ -204,7 +204,7 @@ class AdminController extends Controller
          // Verify OTP email (scoped for admin_student registration)
          $verifiedEmail = session('admin_reg_email_verified');
          if (!$verifiedEmail || strtolower($verifiedEmail) !== strtolower($request->email)) {
-             return back()->withInput()->withErrors(['email' => 'Please verify the student\'s email address using the OTP sent to their email.']);
+             return back()->withInput()->withErrors(['email' => 'This email address is unverified. Please verify the student\'s email with the verification code before adding the student.']);
          }
          
          // Clear the session so it cannot be reused
