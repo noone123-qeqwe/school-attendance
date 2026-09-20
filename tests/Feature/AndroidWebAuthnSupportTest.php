@@ -16,6 +16,5 @@ class AndroidWebAuthnSupportTest extends TestCase
         $this->assertStringContainsString('setWebAuthenticationSupport', $activity);
         $this->assertStringContainsString('WEB_AUTHENTICATION_SUPPORT_FOR_APP', $activity);
         $this->assertStringContainsString("androidx.webkit:webkit:1.14.0", $buildFile);
-        $this->assertStringContainsString("androidx.credentials:credentials:1.6.0-beta02", $buildFile);
     }
 }

@@ -2096,7 +2096,8 @@ async function handleBiometricLogin() {
         } catch (e) {}
     }
 
-    if (!identifier) {
+    // Modal helper for when identifier is required during targeted setup
+    window.showStudentIdRequiredModal = function() {
         openBiometricModal({
             title: 'STUDENT ID OR EMAIL REQUIRED',
             message: 'Please enter your <strong>Student ID, Email, or Mobile Number</strong> first so the system can verify your registered biometric credentials.<br><br><span style="font-size:0.85rem;color:rgba(212,175,55,0.9);">If you have registered a passkey on this device, you can also proceed directly.</span>',
@@ -2115,9 +2116,11 @@ async function handleBiometricLogin() {
             idInput.style.borderColor = '#d4af37';
             setTimeout(function() { if (idInput) idInput.style.borderColor = ''; }, 2500);
         }
-        return;
-    }
+    };
 
+    // Immediately trigger biometric authentication!
+    // If identifier is provided, authenticates against user credentials;
+    // if identifier is empty, triggers discoverable passkey / biometric prompt on device.
     await performBiometricLogin(identifier);
 }
 
@@ -2593,6 +2596,16 @@ function setupBiometricListeners() {
         });
     }
 }
+
+// Delegated click handler on document ensures clicks on #fpRowBtn or its child elements
+// are captured reliably across all mobile browsers and dynamic DOM states
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('#fpRowBtn');
+    if (btn && !e.defaultPrevented) {
+        e.preventDefault();
+        handleBiometricLogin();
+    }
+});
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setupBiometricListeners);

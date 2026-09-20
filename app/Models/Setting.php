@@ -14,6 +14,17 @@ class Setting extends Model
     protected static array $runtimeCache = [];
     protected static bool $allLoaded = false;
 
+    protected static function booted(): void
+    {
+        static::saved(function ($setting) {
+            self::$runtimeCache[$setting->key] = $setting->value;
+        });
+
+        static::deleted(function ($setting) {
+            unset(self::$runtimeCache[$setting->key]);
+        });
+    }
+
     /**
      * Helper method to get a setting value with an optional default.
      */

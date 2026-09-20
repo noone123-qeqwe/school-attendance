@@ -28,9 +28,9 @@ class GpsController extends Controller
         $lng = $request->longitude;
         $radius = $request->radius;
         
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_lat'], ['value' => $lat]);
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_lng'], ['value' => $lng]);
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_radius'], ['value' => $radius]);
+        \App\Models\Setting::set('gps_lat', (string)$lat);
+        \App\Models\Setting::set('gps_lng', (string)$lng);
+        \App\Models\Setting::set('gps_radius', (int)$radius);
         
         return redirect()->back()->with('success', 'GPS coordinates updated successfully!');
     }
@@ -46,9 +46,9 @@ class GpsController extends Controller
         $lng = $request->longitude;
         $radius = 50; // Reset to normal radius
         
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_lat'], ['value' => $lat]);
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_lng'], ['value' => $lng]);
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_radius'], ['value' => $radius]);
+        \App\Models\Setting::set('gps_lat', (string)$lat);
+        \App\Models\Setting::set('gps_lng', (string)$lng);
+        \App\Models\Setting::set('gps_radius', (int)$radius);
         
         return response()->json(['success' => true, 'message' => 'Coordinates updated successfully!']);
     }

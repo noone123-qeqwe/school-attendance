@@ -75,6 +75,34 @@ Route::get('/download/apk', function () {
     ]);
 })->name('pwa.download.apk');
 
+// Digital Asset Links for Android Native App WebAuthn / Passkey Support
+Route::get('/.well-known/assetlinks.json', function () {
+    $path = public_path('.well-known/assetlinks.json');
+    if (file_exists($path)) {
+        $content = json_decode(file_get_contents($path), true);
+        return response()->json($content, 200, [
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ]);
+    }
+    return response()->json([
+        [
+            'relation' => [
+                'delegate_permission/common.handle_all_urls',
+                'delegate_permission/common.get_login_creds',
+            ],
+            'target' => [
+                'namespace' => 'android_app',
+                'package_name' => 'com.school.attendance',
+                'sha256_cert_fingerprints' => [
+                    'A9:76:4C:01:52:CE:31:10:E7:9D:E0:DE:A9:F6:AC:32:F1:97:81:F2:0E:09:E6:82:A9:D2:F0:C5:07:10:99:83',
+                ],
+            ],
+        ],
+    ], 200, [
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+    ]);
+});
+
 // Public Storage Fallback (Ensures uploaded media/profile images work seamlessly on PaaS/Render even if storage:link symlink is absent)
 Route::get('/storage/{path}', function (string $path) {
     $fullPath = storage_path('app/public/' . $path);

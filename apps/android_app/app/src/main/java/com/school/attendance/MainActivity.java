@@ -39,12 +39,14 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String APP_URL = "https://school-attendance-o0pm.onrender.com";
     private static final int PERMISSION_REQUEST_CODE = 1001;
-    private static final int FILE_CHOOSER_REQUEST_CODE = 1002;
+    private static final int CAMERA_PERMISSION_REQUEST_CODE = 1002;
+    private static final int FILE_CHOOSER_REQUEST_CODE = 1003;
 
     private WebView webView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private ValueCallback<Uri[]> fileUploadCallback;
+    private PermissionRequest pendingPermissionRequest;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -186,17 +188,21 @@ public class MainActivity extends AppCompatActivity {
                     String[] resources = request.getResources();
                     for (String r : resources) {
                         if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(r)) {
+                            // Check if Android camera permission is granted
                             if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA)
                                     == PackageManager.PERMISSION_GRANTED) {
+                                // Permission already granted, allow WebView to access camera
                                 request.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
                             } else {
+                                // Permission not granted, request it from user
+                                pendingPermissionRequest = request;
                                 ActivityCompat.requestPermissions(MainActivity.this,
-                                        new String[]{Manifest.permission.CAMERA}, PERMISSION_REQUEST_CODE);
-                                request.grant(resources);
+                                        new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST_CODE);
                             }
                             return;
                         }
                     }
+                    // For other resources (audio, protected media, etc.), grant directly
                     request.grant(resources);
                 });
             }
@@ -253,6 +259,30 @@ public class MainActivity extends AppCompatActivity {
 
         if (!permissions.isEmpty()) {
             ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), PERMISSION_REQUEST_CODE);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        
+        if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
+            // Handle camera permission result for WebView
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, now grant it to WebView
+                if (pendingPermissionRequest != null) {
+                    pendingPermissionRequest.grant(new String[]{PermissionRequest.RESOURCE_VIDEO_CAPTURE});
+                    pendingPermissionRequest = null;
+                    Toast.makeText(this, "Camera access granted", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                // Permission denied
+                if (pendingPermissionRequest != null) {
+                    pendingPermissionRequest.deny();
+                    pendingPermissionRequest = null;
+                    Toast.makeText(this, "Camera permission is required to scan QR codes", Toast.LENGTH_LONG).show();
+                }
+            }
         }
     }
 
