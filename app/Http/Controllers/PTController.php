@@ -27,6 +27,15 @@ class PTController extends Controller
 
         // 1. Double check Gmail format
         if (!\App\Services\OtpService::isValidGmailFormat($cleanEmail)) {
+            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+                    'errors'  => [
+                        'email' => ['Please enter a valid Gmail address (e.g., username@gmail.com).']
+                    ]
+                ], 422);
+            }
             return back()->withInput()->withErrors([
                 'email' => 'Please enter a valid Gmail address (e.g., username@gmail.com).'
             ]);
@@ -35,6 +44,15 @@ class PTController extends Controller
         // 2. Double check verified OTP email session
         $verifiedEmail = strtolower(trim((string) session('reg_email_verified', '')));
         if (!$verifiedEmail || $verifiedEmail !== $cleanEmail) {
+            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This email address is unverified. Please verify your email with the verification code before completing registration.',
+                    'errors'  => [
+                        'email' => ['This email address is unverified. Please verify your email with the verification code before completing registration.']
+                    ]
+                ], 422);
+            }
             return back()->withInput()->withErrors([
                 'email' => 'This email address is unverified. Please verify your email with the verification code before completing registration.'
             ]);
@@ -45,10 +63,11 @@ class PTController extends Controller
 
         // 3. Create user based on role
         $userData = [
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'email_verified_at' => now(),
+            'password'          => Hash::make($request->password),
+            'role'              => $request->role,
         ];
         if ($request->filled('phone')) {
             $userData['phone'] = trim($request->phone);

@@ -1315,7 +1315,16 @@ class AdminController extends Controller
         
         $request->validate([
             'name'        => 'required|string|max:255',
-            'email'       => 'required|email|unique:users,email',
+            'email'       => [
+                'required',
+                'email',
+                'unique:users,email',
+                function ($attribute, $value, $fail) {
+                    if (!\App\Services\OtpService::isValidGmailFormat((string) $value)) {
+                        $fail('The email must be a valid Gmail address (e.g., username@gmail.com).');
+                    }
+                },
+            ],
             'password'    => 'required|string|min:8|confirmed',
             'phone'       => 'nullable|string|max:20',
             'department'  => 'nullable|string|max:255',
@@ -1353,7 +1362,16 @@ class AdminController extends Controller
 
         $request->validate([
             'name'       => 'required|string|max:255',
-            'email'      => 'required|email|unique:users,email,' . $admin->id,
+            'email'      => [
+                'required',
+                'email',
+                'unique:users,email,' . $admin->id,
+                function ($attribute, $value, $fail) {
+                    if (!\App\Services\OtpService::isValidGmailFormat((string) $value)) {
+                        $fail('The email must be a valid Gmail address (e.g., username@gmail.com).');
+                    }
+                },
+            ],
             'phone'      => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
         ]);
@@ -1694,7 +1712,16 @@ class AdminController extends Controller
         $request->validate([
             'name'        => 'required|string|max:255',
             'employee_id' => 'required|string|max:50|unique:users,employee_id,' . $teacher->id,
-            'email'       => 'required|email|unique:users,email,' . $teacher->id,
+            'email'       => [
+                'required',
+                'email',
+                'unique:users,email,' . $teacher->id,
+                function ($attribute, $value, $fail) {
+                    if (!\App\Services\OtpService::isValidGmailFormat((string) $value)) {
+                        $fail('The email must be a valid Gmail address (e.g., username@gmail.com).');
+                    }
+                },
+            ],
             'department'  => 'nullable|string|max:100',
             'position'    => 'nullable|string|max:100',
         ]);

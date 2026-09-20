@@ -111,7 +111,7 @@ class RegisterUserRequest extends FormRequest
                 return;
             }
 
-            if ($this->routeIs('register.submit')) {
+            if ($this->routeIs('register.submit') || $this->is('register') || $this->routeIs('register') || ($this->isMethod('post') && trim($this->path(), '/') === 'register')) {
                 $verifiedEmail = strtolower(trim((string) session('reg_email_verified', '')));
                 if (!$verifiedEmail || $verifiedEmail !== $email) {
                     $validator->errors()->add(
@@ -119,7 +119,7 @@ class RegisterUserRequest extends FormRequest
                         'This email address is unverified. Please verify your email with the verification code before completing registration.'
                     );
                 }
-            } elseif ($this->routeIs('admin.student.store')) {
+            } elseif ($this->routeIs('admin.student.store') || $this->is('admin/student') || ($this->isMethod('post') && trim($this->path(), '/') === 'admin/student')) {
                 $verifiedEmail = strtolower(trim((string) session('admin_reg_email_verified', '')));
                 if (!$verifiedEmail || $verifiedEmail !== $email) {
                     $validator->errors()->add(

@@ -287,4 +287,187 @@ class GmailValidationAndVerificationTest extends TestCase
                 'category' => 'already_registered',
             ]);
     }
+
+    /**
+     * 9. Test forgot password rejects invalid Gmail format and shows clear error message.
+     */
+    public function test_forgot_password_rejects_invalid_gmail_format(): void
+    {
+        // GET /forgot-password with invalid Gmail in query string
+        $getRes = $this->get('/forgot-password?identifier=user@yahoo.com');
+        $getRes->assertStatus(200);
+        $getRes->assertSee('Please enter a valid Gmail address (e.g., username@gmail.com).');
+
+        // POST /forgot-password with invalid Gmail in single identifier
+        $postRes1 = $this->postJson(route('otp.forgot.send'), [
+            'identifier' => 'user..dots@gmail.com',
+        ]);
+        $postRes1->assertStatus(422)
+            ->assertJson([
+                'success'  => false,
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+            ]);
+        $this->assertStringContainsString('valid Gmail address', $postRes1->json('message'));
+
+        // POST /forgot-password in dual verification mode with invalid Gmail
+        $postRes2 = $this->postJson(route('otp.forgot.send'), [
+            'account_id' => '20260001',
+            'email'      => 'short@gmail.com',
+        ]);
+        $postRes2->assertStatus(422)
+            ->assertJson([
+                'success'  => false,
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+            ]);
+        $this->assertStringContainsString('valid Gmail address', $postRes2->json('message'));
+    }
+
+    /**
+     * 10. Test forgot password does not send OTP when email does not exist.
+     */
+    public function test_forgot_password_does_not_send_otp_when_email_does_not_exist(): void
+    {
+        $nonExistent = 'nonexistent.user.12345@gmail.com';
+
+        $res = $this->postJson(route('otp.forgot.send'), [
+            'identifier' => $nonExistent,
+        ]);
+
+        $res->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'error'   => 'ACCOUNT_NOT_FOUND',
+            ]);
+
+        // Assert NO OTP record was created in database
+        $this->assertDatabaseMissing('otps', [
+            'email'   => $nonExistent,
+            'purpose' => 'forgot_password',
+        ]);
+    }
+
+    /**
+     * 11. Test direct API POST to /register cannot bypass email verification.
+     */
+    public function test_direct_api_register_request_cannot_bypass_email_verification(): void
+    {
+        // Direct JSON POST to /register without prior email verification session
+        $res = $this->postJson(route('register.submit'), [
+            'name'                  => 'Hacker Bypasser',
+            'first_name'            => 'Hacker',
+            'surname'               => 'Bypasser',
+            'role'                  => 'student',
+            'course'                => 'BSCS',
+            'year_level'            => 1,
+            'semester'              => '1',
+            'email'                 => 'bypasser.target@gmail.com',
+            'password'              => 'Password123!',
+            'password_confirmation' => 'Password123!',
+            'terms'                 => 1,
+        ]);
+
+        $res->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        $errors = $res->json('errors.email');
+        $this->assertStringContainsString('This email address is unverified', $errors[0]);
+
+        $this->assertDatabaseMissing('users', [
+            'email' => 'bypasser.target@gmail.com',
+        ]);
+    }
+
+    /**
+     * 12. Test API OTP endpoints (/api/otp, /api/email/verify, /api/reset) validate Gmail and prevent bypass.
+     */
+    public function test_api_otp_endpoints_validate_gmail_format_and_prevent_bypass(): void
+    {
+        // 1. /api/otp with invalid Gmail format
+        $res1 = $this->postJson('/api/otp', [
+            'email'   => 'invalid..gmail@gmail.com',
+            'purpose' => 'register',
+        ]);
+        $res1->assertStatus(422)
+            ->assertJson([
+                'status'   => 'error',
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+            ]);
+
+        // 2. /api/otp with purpose register and already registered email
+        User::factory()->create(['email' => 'existing.api.user@gmail.com']);
+        $res2 = $this->postJson('/api/otp', [
+            'email'   => 'existing.api.user@gmail.com',
+            'purpose' => 'register',
+        ]);
+        $res2->assertStatus(422)
+            ->assertJson([
+                'status'   => 'error',
+                'category' => 'already_registered',
+                'error'    => 'EMAIL_ALREADY_REGISTERED',
+            ]);
+
+        // 3. /api/otp with purpose forgot_password and non-existent email -> does NOT send mail or create OTP
+        $res3 = $this->postJson('/api/otp', [
+            'email'   => 'unknown.account999@gmail.com',
+            'purpose' => 'forgot_password',
+        ]);
+        $res3->assertStatus(200)
+            ->assertJson([
+                'status'  => 'success',
+                'success' => true,
+            ]);
+        $this->assertDatabaseMissing('otps', [
+            'email'   => 'unknown.account999@gmail.com',
+            'purpose' => 'forgot_password',
+        ]);
+
+        // 4. /api/email/verify with invalid format
+        $res4 = $this->postJson('/api/email/verify', [
+            'email' => 'notgmail@hotmail.com',
+        ]);
+        $res4->assertStatus(422)
+            ->assertJson([
+                'status'   => 'error',
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+            ]);
+
+        // 5. /api/reset with invalid format in email
+        $res5 = $this->postJson('/api/reset', [
+            'email' => 'bad.format..dots@gmail.com',
+        ]);
+        $res5->assertStatus(422)
+            ->assertJson([
+                'status'   => 'error',
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+            ]);
+    }
+
+    /**
+     * 13. Test student update rejects non-Gmail addresses.
+     */
+    public function test_student_update_rejects_non_gmail_address(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'email' => 'admin.test.acc@gmail.com']);
+        $student = User::factory()->create(['role' => 'student', 'email' => 'student.original@gmail.com']);
+
+        $this->actingAs($admin);
+
+        $res = $this->put(route('admin.student.update', $student), [
+            'name'       => $student->name,
+            'email'      => 'invalid.student@yahoo.com',
+            'year_level' => 1,
+            'semester'   => 1,
+        ]);
+
+        $res->assertSessionHasErrors('email');
+        $this->assertDatabaseHas('users', [
+            'id'    => $student->id,
+            'email' => 'student.original@gmail.com',
+        ]);
+    }
 }

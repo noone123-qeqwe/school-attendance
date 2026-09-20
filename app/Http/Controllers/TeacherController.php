@@ -1631,7 +1631,16 @@ class TeacherController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $teacher->id,
+            'email' => [
+                'required',
+                'email',
+                'unique:users,email,' . $teacher->id,
+                function ($attribute, $value, $fail) {
+                    if (!\App\Services\OtpService::isValidGmailFormat((string) $value)) {
+                        $fail('The email must be a valid Gmail address (e.g., username@gmail.com).');
+                    }
+                },
+            ],
             'phone' => 'nullable|string|max:20',
             'department' => 'nullable|string|max:255',
             'position' => 'nullable|string|max:255',

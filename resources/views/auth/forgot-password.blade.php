@@ -250,9 +250,79 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    function isValidGmailFormat(email) {
+        if (!email || typeof email !== 'string') return false;
+        var clean = email.trim().toLowerCase();
+        var parts = clean.split('@');
+        if (parts.length !== 2) return false;
+        var username = parts[0];
+        var domain = parts[1];
+        if (domain !== 'gmail.com' && domain !== 'googlemail.com') {
+            return false;
+        }
+        var unmasked = username.replace(/\./g, '');
+        if (unmasked.length < 6 || unmasked.length > 30) {
+            return false;
+        }
+        if (username.startsWith('.') || username.endsWith('.')) {
+            return false;
+        }
+        if (username.includes('..')) {
+            return false;
+        }
+        return /^[a-z0-9.]+$/.test(username);
+    }
+
+    var identifierInput = document.getElementById('identifier');
+    var clientErrorMsg = document.getElementById('client-identifier-error');
+
+    function validateIdentifierEmail() {
+        if (!identifierInput) return true;
+        var val = identifierInput.value.trim();
+        if (val.indexOf('@') !== -1) {
+            if (!isValidGmailFormat(val)) {
+                if (!clientErrorMsg) {
+                    clientErrorMsg = document.createElement('p');
+                    clientErrorMsg.id = 'client-identifier-error';
+                    clientErrorMsg.style.color = '#f8c6c6';
+                    clientErrorMsg.style.fontSize = '.82rem';
+                    clientErrorMsg.style.marginTop = '6px';
+                    identifierInput.closest('.field-input-group').appendChild(clientErrorMsg);
+                }
+                clientErrorMsg.textContent = 'Please enter a valid Gmail address (e.g., username@gmail.com).';
+                clientErrorMsg.style.display = 'block';
+                identifierInput.style.borderColor = 'rgba(220,38,38,0.7)';
+                return false;
+            }
+        }
+        if (clientErrorMsg) {
+            clientErrorMsg.style.display = 'none';
+        }
+        identifierInput.style.borderColor = '';
+        return true;
+    }
+
+    if (identifierInput) {
+        identifierInput.addEventListener('input', function() {
+            if (clientErrorMsg && clientErrorMsg.style.display !== 'none') {
+                validateIdentifierEmail();
+            }
+        });
+        identifierInput.addEventListener('blur', function() {
+            validateIdentifierEmail();
+        });
+    }
+
     var forms = document.querySelectorAll('form');
     forms.forEach(function(f) {
-        f.addEventListener('submit', function() {
+        f.addEventListener('submit', function(e) {
+            if (identifierInput && f.contains(identifierInput)) {
+                if (!validateIdentifierEmail()) {
+                    e.preventDefault();
+                    identifierInput.focus();
+                    return false;
+                }
+            }
             var btn = f.querySelector('button[type="submit"]');
             if (btn && !btn.disabled) {
                 setTimeout(function() {

@@ -48,19 +48,76 @@ class OtpApiController extends Controller
             ], 422);
         }
 
-        // 3. Set cooldown timer immediately for this account/identifier
+        // 3. If identifier is an email, enforce Gmail format validation
+        if (str_contains($identifier, '@') && !\App\Services\OtpService::isValidGmailFormat($identifier)) {
+            return response()->json([
+                'status'   => 'error',
+                'success'  => false,
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+                'message'  => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+                'errors'   => ['email' => ['Please enter a valid Gmail address (e.g., username@gmail.com).']],
+            ], 422);
+        }
+
+        // 4. For registration purpose, prevent sending OTP to already-registered email
+        if ($purpose === 'register' && User::where('email', $identifier)->exists()) {
+            return response()->json([
+                'status'   => 'error',
+                'success'  => false,
+                'category' => 'already_registered',
+                'error'    => 'EMAIL_ALREADY_REGISTERED',
+                'message'  => 'This Gmail address is already registered. Please sign in or use another email.',
+                'errors'   => ['email' => ['This Gmail address is already registered. Please sign in or use another email.']],
+            ], 422);
+        }
+
+        // 5. Set cooldown timer immediately for this account/identifier
         Otp::setCooldown($identifier, $purpose);
 
-        // 4. Look up user if exists, or generate guest/registration OTP
+        // 6. Look up user if exists
         $user = User::findByIdentifier($identifier);
+
+        // 7. For forgot password / reset, only send when account exists; avoid disclosing existence
+        if (in_array($purpose, ['forgot_password', 'reset'], true) && !$user) {
+            Otp::setCooldown($ip, $purpose);
+            return response()->json([
+                'status'           => 'success',
+                'success'          => true,
+                'message'          => 'If the account is registered, an OTP has been sent.',
+                'cooldown_seconds' => Otp::COOLDOWN_SECONDS,
+            ]);
+        }
 
         if ($user) {
             $otp = Otp::generateForEmail($user->email, $purpose, $user->id);
 
             try {
-                app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, $purpose, $user->name);
+                $delivery = app(EmailDeliveryService::class)->sendOtp($user->email, $otp->code, $purpose, $user->name);
+                if (!$delivery->success) {
+                    $otp->update(['used' => true]);
+                    Log::error("API OTP Mail rejected for [{$user->email}]: " . $delivery->error);
+                    if (!in_array($purpose, ['forgot_password', 'reset'], true)) {
+                        return response()->json([
+                            'status'   => 'error',
+                            'success'  => false,
+                            'category' => 'unavailable',
+                            'error'    => 'EMAIL_UNAVAILABLE',
+                            'message'  => 'Unable to verify this email address. The verification code could not be delivered. Please check that the mailbox exists and can receive email.',
+                        ], 422);
+                    }
+                }
             } catch (\Exception $e) {
                 Log::error("API OTP Mail failed: " . $e->getMessage());
+                if (!in_array($purpose, ['forgot_password', 'reset'], true)) {
+                    return response()->json([
+                        'status'   => 'error',
+                        'success'  => false,
+                        'category' => 'unavailable',
+                        'error'    => 'EMAIL_UNAVAILABLE',
+                        'message'  => 'Unable to verify this email address. The verification code could not be delivered. Please check that the mailbox exists and can receive email.',
+                    ], 422);
+                }
             }
         } else {
             // Unregistered user / guest OTP
@@ -71,10 +128,28 @@ class OtpApiController extends Controller
 
             try {
                 if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-                    app(EmailDeliveryService::class)->sendOtp($identifier, $code, $purpose, 'User');
+                    $delivery = app(EmailDeliveryService::class)->sendOtp($identifier, $code, $purpose, 'User');
+                    if (!$delivery->success) {
+                        Cache::forget($cacheKey);
+                        return response()->json([
+                            'status'   => 'error',
+                            'success'  => false,
+                            'category' => 'unavailable',
+                            'error'    => 'EMAIL_UNAVAILABLE',
+                            'message'  => 'Unable to verify this email address. The verification code could not be delivered. Please check that the mailbox exists and can receive email.',
+                        ], 422);
+                    }
                 }
             } catch (\Exception $e) {
+                Cache::forget($cacheKey);
                 Log::error("API Guest OTP Mail failed: " . $e->getMessage());
+                return response()->json([
+                    'status'   => 'error',
+                    'success'  => false,
+                    'category' => 'unavailable',
+                    'error'    => 'EMAIL_UNAVAILABLE',
+                    'message'  => 'Unable to verify this email address. The verification code could not be delivered. Please check that the mailbox exists and can receive email.',
+                ], 422);
             }
         }
 
@@ -199,6 +274,17 @@ class OtpApiController extends Controller
         }
 
         $cleanEmail = strtolower($rawEmail);
+
+        if ($cleanEmail !== '' && str_contains($cleanEmail, '@') && !\App\Services\OtpService::isValidGmailFormat($cleanEmail)) {
+            return response()->json([
+                'status'   => 'error',
+                'success'  => false,
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+                'message'  => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+                'errors'   => ['email' => ['Please enter a valid Gmail address (e.g., username@gmail.com).']],
+            ], 422);
+        }
 
         // 2. Enforce cooldown per email/identifier/IP
         $cooldown = max(
@@ -408,6 +494,32 @@ class OtpApiController extends Controller
             ], 422);
         }
 
+        // Validate valid Gmail format
+        if (!\App\Services\OtpService::isValidGmailFormat($email)) {
+            return response()->json([
+                'status'   => 'error',
+                'success'  => false,
+                'category' => 'invalid',
+                'error'    => 'EMAIL_INVALID',
+                'message'  => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
+                'errors'   => ['email' => ['Please enter a valid Gmail address (e.g., username@gmail.com).']],
+            ], 422);
+        }
+
+        // Check if already registered by someone else
+        $authUser = $request->user();
+        $existing = User::where('email', $email)->first();
+        if ($existing && (!$authUser || $existing->id !== $authUser->id)) {
+            return response()->json([
+                'status'   => 'error',
+                'success'  => false,
+                'category' => 'already_registered',
+                'error'    => 'EMAIL_ALREADY_REGISTERED',
+                'message'  => 'This Gmail address is already registered. Please sign in or use another email.',
+                'errors'   => ['email' => ['This Gmail address is already registered. Please sign in or use another email.']],
+            ], 422);
+        }
+
         // Set cooldown timer for this email
         Otp::setCooldown($email, 'email_verify');
 
@@ -423,10 +535,31 @@ class OtpApiController extends Controller
         }
 
         try {
-            app(EmailDeliveryService::class)->sendOtp($email, $code, 'email_verify', $user ? $user->name : 'User');
+            $delivery = app(EmailDeliveryService::class)->sendOtp($email, $code, 'email_verify', $user ? $user->name : 'User');
+            if (!$delivery->success) {
+                if (!$user) {
+                    Cache::forget('guest_otp:' . sha1($email . ':email_verify'));
+                }
+                return response()->json([
+                    'status'   => 'error',
+                    'success'  => false,
+                    'category' => 'unavailable',
+                    'error'    => 'EMAIL_UNAVAILABLE',
+                    'message'  => 'Unable to verify this email address. The verification code could not be delivered. Please check that the mailbox exists and can receive email.',
+                ], 422);
+            }
         } catch (\Exception $e) {
             Log::error("Email verify mail failed: " . $e->getMessage());
-            // Do not reveal mail delivery failure to client
+            if (!$user) {
+                Cache::forget('guest_otp:' . sha1($email . ':email_verify'));
+            }
+            return response()->json([
+                'status'   => 'error',
+                'success'  => false,
+                'category' => 'unavailable',
+                'error'    => 'EMAIL_UNAVAILABLE',
+                'message'  => 'Unable to verify this email address. The verification code could not be delivered. Please check that the mailbox exists and can receive email.',
+            ], 422);
         }
 
         return response()->json([

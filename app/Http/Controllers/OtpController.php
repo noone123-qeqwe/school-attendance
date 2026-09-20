@@ -184,23 +184,27 @@ class OtpController extends Controller
         $rawIdentifier = trim((string) $request->input('identifier', $request->input('account_id', '')));
 
         if ($rawIdentifier !== '') {
-            $user = User::findByRecoveryIdentifier($rawIdentifier);
-            $registeredEmail = strtolower(trim((string) ($user ? $user->email : '')));
-            $hasValidEmail = ($registeredEmail !== '' && filter_var($registeredEmail, FILTER_VALIDATE_EMAIL));
-
-            if ($user && $user->isActive() && $hasValidEmail) {
-                $accountUser = $user;
-                $maskedEmail = OtpService::maskEmail($registeredEmail);
-                if (str_contains($rawIdentifier, '@')) {
-                    $accountIdentifierType = 'Email';
-                } elseif (!empty($user->employee_id) && ($rawIdentifier === $user->employee_id || $user->isTeacher() || $user->isAdmin() || empty($user->student_number))) {
-                    $accountIdentifierType = 'Employee ID';
-                } else {
-                    $accountIdentifierType = 'Student ID';
-                }
-                $accountIdentifierValue = $rawIdentifier;
+            if (str_contains($rawIdentifier, '@') && !OtpService::isValidGmailFormat(strtolower($rawIdentifier))) {
+                $errorMessage = 'Please enter a valid Gmail address (e.g., username@gmail.com).';
             } else {
-                $errorMessage = 'Unable to verify the account. Please check your Student ID or email address.';
+                $user = User::findByRecoveryIdentifier($rawIdentifier);
+                $registeredEmail = strtolower(trim((string) ($user ? $user->email : '')));
+                $hasValidEmail = ($registeredEmail !== '' && filter_var($registeredEmail, FILTER_VALIDATE_EMAIL));
+
+                if ($user && $user->isActive() && $hasValidEmail) {
+                    $accountUser = $user;
+                    $maskedEmail = OtpService::maskEmail($registeredEmail);
+                    if (str_contains($rawIdentifier, '@')) {
+                        $accountIdentifierType = 'Email';
+                    } elseif (!empty($user->employee_id) && ($rawIdentifier === $user->employee_id || $user->isTeacher() || $user->isAdmin() || empty($user->student_number))) {
+                        $accountIdentifierType = 'Employee ID';
+                    } else {
+                        $accountIdentifierType = 'Student ID';
+                    }
+                    $accountIdentifierValue = $rawIdentifier;
+                } else {
+                    $errorMessage = 'Unable to verify the account. Please check your Student ID or email address.';
+                }
             }
         }
 
@@ -285,6 +289,23 @@ class OtpController extends Controller
             // ─────────────────────────────────────────
             $cleanEnteredEmail = strtolower($rawEmail);
 
+            if (!OtpService::isValidGmailFormat($cleanEnteredEmail)) {
+                $formatError = 'Please enter a valid Gmail address (e.g., username@gmail.com).';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success'  => false,
+                        'status'   => 'error',
+                        'category' => 'invalid',
+                        'error'    => 'EMAIL_INVALID',
+                        'message'  => $formatError,
+                        'errors'   => ['email' => [$formatError]],
+                    ], 422);
+                }
+                return back()->withInput()->withErrors([
+                    'email' => $formatError,
+                ]);
+            }
+
             $cooldown = max(
                 Otp::getCooldownRemaining($cleanEnteredEmail, 'forgot_password'),
                 Otp::getCooldownRemaining($rawAccountId, 'forgot_password')
@@ -364,6 +385,23 @@ class OtpController extends Controller
                     'identifier' => 'required|string|max:255',
                 ], [
                     'identifier.required' => 'Please enter your Student ID or registered email address.',
+                ]);
+            }
+
+            if (str_contains($effectiveIdentifier, '@') && !OtpService::isValidGmailFormat(strtolower($effectiveIdentifier))) {
+                $formatError = 'Please enter a valid Gmail address (e.g., username@gmail.com).';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success'  => false,
+                        'status'   => 'error',
+                        'category' => 'invalid',
+                        'error'    => 'EMAIL_INVALID',
+                        'message'  => $formatError,
+                        'errors'   => ['identifier' => [$formatError]],
+                    ], 422);
+                }
+                return back()->withInput()->withErrors([
+                    'identifier' => $formatError,
                 ]);
             }
 
