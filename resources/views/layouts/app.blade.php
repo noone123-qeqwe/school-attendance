@@ -1073,7 +1073,6 @@
     @endauth
     @auth
         <x-command-palette />
-        <script src="{{ asset('js/pull-refresh.js') }}?v={{ filemtime(public_path('js/pull-refresh.js')) }}"></script>
         <script src="{{ asset('js/web-push.js') }}?v={{ filemtime(public_path('js/web-push.js')) }}"></script>
     @endauth
 
