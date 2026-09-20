@@ -15,6 +15,9 @@ class LoginRequest extends FormRequest
     {
         $candidates = [
             $this->input('identifier'),
+            $this->input('phone'),
+            $this->input('phone_number'),
+            $this->input('mobile'),
             $this->input('student_id'),
             $this->input('student_number'),
             $this->input('studentId'),

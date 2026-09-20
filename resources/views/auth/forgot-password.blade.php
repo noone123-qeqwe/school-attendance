@@ -210,16 +210,16 @@
         <form method="POST" action="{{ route('otp.forgot.send') }}" class="mt-4">
             @csrf
 
-            <!-- Student ID or Registered Email -->
+            <!-- Student ID, Email, or Mobile Number -->
             <div class="field-input-group">
-                <label class="field-label" for="identifier">Student ID or Registered Email</label>
+                <label class="field-label" for="identifier">Student ID, Email, or Mobile Number</label>
                 <div style="position:relative;">
                     <i class="bi bi-person-badge field-icon"></i>
                     <input type="text"
                            name="identifier"
                            id="identifier"
                            class="field-input"
-                           placeholder="e.g. 20260001 or student@gmail.com"
+                           placeholder="e.g. 20260001, user@gmail.com, or 09248901234"
                            value="{{ old('identifier', old('account_id', request('identifier', ''))) }}"
                            required
                            autocomplete="username"

@@ -111,9 +111,11 @@ class AuthController extends Controller
             $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password])
                 || Auth::attempt(['email' => $identifier, 'password' => $password])
                 || Auth::attempt(['employee_id' => $identifier, 'password' => $password])
+                || Auth::attempt(['phone' => $identifier, 'password' => $password])
                 || Auth::attempt(['student_number' => $identifier, 'password' => trim($password)])
                 || Auth::attempt(['email' => $identifier, 'password' => trim($password)])
-                || Auth::attempt(['employee_id' => $identifier, 'password' => trim($password)]);
+                || Auth::attempt(['employee_id' => $identifier, 'password' => trim($password)])
+                || Auth::attempt(['phone' => $identifier, 'password' => trim($password)]);
             if ($authenticated) {
                 $user = Auth::user();
             }
@@ -124,6 +126,7 @@ class AuthController extends Controller
             if ($user->email) $this->lockoutService->clear($user->email, $ip);
             if ($user->student_number) $this->lockoutService->clear($user->student_number, $ip);
             if ($user->employee_id) $this->lockoutService->clear($user->employee_id, $ip);
+            if ($user->phone) $this->lockoutService->clear($user->phone, $ip);
 
             if (!$user->isActive()) {
                 Auth::logout();

@@ -158,11 +158,11 @@
             <input type="hidden" name="qr_token" value="{{ $token }}">
             
             <div class="mb-3">
-                <label for="identifier" class="form-label">Student ID or Email</label>
+                <label for="identifier" class="form-label">Student ID, Email, or Mobile Number</label>
                 <div class="input-group-custom">
                     <span class="input-icon"><i class="bi bi-person-fill"></i></span>
                     <input type="text" class="custom-input" id="identifier" name="identifier" 
-                           required autocomplete="username" placeholder="e.g. 2310843" value="{{ old('identifier') }}">
+                           required autocomplete="username" placeholder="e.g. 2310843, user@osmena.edu, or 09248901234" value="{{ old('identifier') }}">
                 </div>
             </div>
 

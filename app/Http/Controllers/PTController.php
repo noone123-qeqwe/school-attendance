@@ -39,6 +39,9 @@ class PTController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
         ];
+        if ($request->filled('phone')) {
+            $userData['phone'] = trim($request->phone);
+        }
 
         if ($request->role === 'student') {
             $hasCustomStudentNumber = $request->filled('student_number') && trim($request->student_number) !== '';
@@ -92,6 +95,9 @@ class PTController extends Controller
         $identifier = trim((string)(
             $request->identifier
             ?: $request->input('identifier')
+            ?: $request->input('phone')
+            ?: $request->input('phone_number')
+            ?: $request->input('mobile')
             ?: $request->input('student_id')
             ?: $request->input('student_number')
             ?: $request->input('studentId')
@@ -140,7 +146,7 @@ class PTController extends Controller
         // we defer blocking so that legitimate users with correct passwords can still log in.
         $isIpLocked = $lockoutService->isLocked($identifier, $request->ip());
 
-        // Look up user by student_number, email, employee_id, id, or normalized format
+        // Look up user by student_number, email, employee_id, phone, id, or normalized format
         $user = User::findByIdentifier($identifier);
 
         $authenticated = false;
@@ -171,11 +177,46 @@ class PTController extends Controller
             }
         }
 
-        // Fallback standard attempts only if user was not resolved by findByIdentifier
+        // Fallback: If phone matches multiple accounts, or user was not resolved directly
+        if (!$authenticated) {
+            $phoneVariants = User::getPhoneVariants($identifier);
+            if (!empty($phoneVariants)) {
+                $candidateUsers = User::whereNull('deleted_at')
+                    ->whereIn('phone', $phoneVariants)
+                    ->when($user, fn($q) => $q->where('id', '!=', $user->id))
+                    ->get();
+
+                foreach ($candidateUsers as $cand) {
+                    $trimmedPassword = trim($password);
+                    if (Hash::check($password, $cand->password) || ($password !== $trimmedPassword && Hash::check($trimmedPassword, $cand->password))) {
+                        if (!$cand->isActive()) {
+                            $errorMessage = 'Your account has been deactivated. Please contact the school administrator.';
+                            if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
+                                return response()->json([
+                                    'status' => 'error',
+                                    'success' => false,
+                                    'message' => $errorMessage,
+                                    'account_disabled' => true,
+                                ], 403);
+                            }
+                            return back()->withInput($request->only('identifier'))
+                                ->withErrors(['identifier' => $errorMessage]);
+                        }
+                        $user = $cand;
+                        Auth::login($user, $remember);
+                        $authenticated = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Fallback standard attempts only if user was not resolved
         if (!$authenticated && !$user) {
             $authenticated = Auth::attempt(['student_number' => $identifier, 'password' => $password], $remember)
                 || Auth::attempt(['email' => $identifier, 'password' => $password], $remember)
-                || Auth::attempt(['employee_id' => $identifier, 'password' => $password], $remember);
+                || Auth::attempt(['employee_id' => $identifier, 'password' => $password], $remember)
+                || Auth::attempt(['phone' => $identifier, 'password' => $password], $remember);
 
             if ($authenticated) {
                 $user = Auth::user();
@@ -202,6 +243,7 @@ class PTController extends Controller
             if ($user->email) $lockoutService->clear($user->email, $request->ip());
             if ($user->student_number) $lockoutService->clear($user->student_number, $request->ip());
             if ($user->employee_id) $lockoutService->clear($user->employee_id, $request->ip());
+            if ($user->phone) $lockoutService->clear($user->phone, $request->ip());
 
             Log::info('Login successful', [
                 'user_id' => $user->id,

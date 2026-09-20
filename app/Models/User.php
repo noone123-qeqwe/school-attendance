@@ -139,10 +139,67 @@ class User extends Authenticatable
 ];
 
     /**
+     * Generate all valid formatting variants for a phone number.
+     * Supports Philippine formats (09xx, +639xx, 639xx, 9xx, and hyphenated/spaced variations).
+     *
+     * @return string[]
+     */
+    public static function getPhoneVariants(?string $identifier): array
+    {
+        $raw = trim((string) $identifier);
+        if ($raw === '') {
+            return [];
+        }
+
+        $digits = preg_replace('/\D/', '', $raw);
+        if ($digits === '') {
+            return [];
+        }
+
+        $variants = [$raw, $digits];
+
+        // Philippine mobile number formats:
+        // Case 1: 09xxxxxxxxx (11 digits)
+        if (strlen($digits) === 11 && str_starts_with($digits, '09')) {
+            $ten = substr($digits, 1); // 9xxxxxxxxx
+            $variants[] = $digits;
+            $variants[] = '63' . $ten;
+            $variants[] = '+63' . $ten;
+            $variants[] = $ten;
+            $variants[] = substr($digits, 0, 4) . '-' . substr($digits, 4, 3) . '-' . substr($digits, 7);
+            $variants[] = substr($digits, 0, 4) . ' ' . substr($digits, 4, 3) . ' ' . substr($digits, 7);
+        }
+        // Case 2: 639xxxxxxxxx (12 digits)
+        elseif (strlen($digits) === 12 && str_starts_with($digits, '639')) {
+            $ten = substr($digits, 2); // 9xxxxxxxxx
+            $local = '0' . $ten;
+            $variants[] = $local;
+            $variants[] = $digits;
+            $variants[] = '+' . $digits;
+            $variants[] = $ten;
+            $variants[] = substr($local, 0, 4) . '-' . substr($local, 4, 3) . '-' . substr($local, 7);
+            $variants[] = substr($local, 0, 4) . ' ' . substr($local, 4, 3) . ' ' . substr($local, 7);
+        }
+        // Case 3: 9xxxxxxxxx (10 digits)
+        elseif (strlen($digits) === 10 && str_starts_with($digits, '9')) {
+            $local = '0' . $digits;
+            $variants[] = $local;
+            $variants[] = '63' . $digits;
+            $variants[] = '+63' . $digits;
+            $variants[] = $digits;
+            $variants[] = substr($local, 0, 4) . '-' . substr($local, 4, 3) . '-' . substr($local, 7);
+            $variants[] = substr($local, 0, 4) . ' ' . substr($local, 4, 3) . ' ' . substr($local, 7);
+        }
+
+        return array_values(array_unique(array_filter($variants)));
+    }
+
+    /**
      * Find a user by any valid identifier:
      * - Student number (exact, case-insensitive, or padded with leading zero for institutional 7-digit IDs)
      * - Email (exact or case-insensitive)
      * - Employee ID (exact, case-insensitive, or stripped)
+     * - Phone number (local 09xx, international +639xx, 639xx, 10-digit 9xx, or formatted with dashes/spaces)
      * - Database primary key ID (if numeric)
      * - Normalized alphanumeric formats (stripping hyphens and spaces)
      */
@@ -153,14 +210,20 @@ class User extends Authenticatable
             return null;
         }
 
-        // 0. High-performance Fast Path: Direct indexed match on email, employee_id, or student_number
+        $phoneVariants = static::getPhoneVariants($raw);
+
+        // 0. High-performance Fast Path: Direct indexed match on email, employee_id, student_number, or phone
         // MySQL / TiDB indexed varchar lookups are already case-insensitive and execute via B-tree index (avoiding full table scans)
         $fastUser = static::query()
             ->whereNull('deleted_at')
-            ->where(function ($q) use ($raw) {
+            ->where(function ($q) use ($raw, $phoneVariants) {
                 $q->where('email', $raw)
                   ->orWhere('employee_id', $raw)
-                  ->orWhere('student_number', $raw);
+                  ->orWhere('student_number', $raw)
+                  ->orWhere('phone', $raw);
+                if (!empty($phoneVariants)) {
+                    $q->orWhereIn('phone', $phoneVariants);
+                }
             })
             ->first();
 
@@ -168,23 +231,29 @@ class User extends Authenticatable
             return $fastUser;
         }
 
-        $findInQuery = function ($baseQuery) use ($raw): ?self {
+        $findInQuery = function ($baseQuery) use ($raw, $phoneVariants): ?self {
             $lower = strtolower($raw);
 
             // 1. Direct match on standard fields (exact, trimmed, or lowercase)
-            $user = (clone $baseQuery)->where(function ($q) use ($raw, $lower) {
+            $user = (clone $baseQuery)->where(function ($q) use ($raw, $lower, $phoneVariants) {
                 $q->where('student_number', $raw)
                   ->orWhere('email', $raw)
                   ->orWhere('employee_id', $raw)
+                  ->orWhere('phone', $raw)
                   ->orWhereRaw('LOWER(email) = ?', [$lower])
                   ->orWhereRaw('LOWER(student_number) = ?', [$lower])
                   ->orWhereRaw('LOWER(employee_id) = ?', [$lower])
                   ->orWhereRaw('TRIM(email) = ?', [$raw])
                   ->orWhereRaw('TRIM(student_number) = ?', [$raw])
                   ->orWhereRaw('TRIM(employee_id) = ?', [$raw])
+                  ->orWhereRaw('TRIM(phone) = ?', [$raw])
                   ->orWhereRaw('LOWER(TRIM(email)) = ?', [$lower])
                   ->orWhereRaw('LOWER(TRIM(student_number)) = ?', [$lower])
                   ->orWhereRaw('LOWER(TRIM(employee_id)) = ?', [$lower]);
+
+                if (!empty($phoneVariants)) {
+                    $q->orWhereIn('phone', $phoneVariants);
+                }
             })->first();
 
             if ($user) {
@@ -250,6 +319,21 @@ class User extends Authenticatable
                 }
             }
 
+            // 4. Normalized phone lookup with stripped non-digits (handles DB with dashes/spaces/parentheses)
+            if (!empty($phoneVariants)) {
+                $digits = preg_replace('/\D/', '', $raw);
+                $user = (clone $baseQuery)->where(function ($q) use ($phoneVariants, $digits) {
+                    $q->whereIn('phone', $phoneVariants);
+                    if ($digits !== '') {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, '-', ''), ' ', ''), '(', ''), ')', '') = ?", [$digits]);
+                    }
+                })->first();
+
+                if ($user) {
+                    return $user;
+                }
+            }
+
             return null;
         };
 
@@ -268,7 +352,7 @@ class User extends Authenticatable
     }
 
     /**
-     * Find a user account by their Student ID, Employee ID, or Account ID (excluding direct email lookup).
+     * Find a user account by their Student ID, Employee ID, Phone Number, or Account ID (excluding direct email lookup).
      */
     public static function findByAccountId(?string $accountId): ?self
     {
@@ -278,14 +362,19 @@ class User extends Authenticatable
         }
 
         $lower = strtolower($raw);
+        $phoneVariants = static::getPhoneVariants($raw);
 
-        // 1. Direct match on student_number or employee_id
+        // 1. Direct match on student_number, employee_id, or phone
         $user = static::whereNull('deleted_at')
-            ->where(function ($q) use ($raw, $lower) {
+            ->where(function ($q) use ($raw, $lower, $phoneVariants) {
                 $q->where('student_number', $raw)
                   ->orWhere('employee_id', $raw)
+                  ->orWhere('phone', $raw)
                   ->orWhereRaw('LOWER(student_number) = ?', [$lower])
                   ->orWhereRaw('LOWER(employee_id) = ?', [$lower]);
+                if (!empty($phoneVariants)) {
+                    $q->orWhereIn('phone', $phoneVariants);
+                }
             })->first();
 
         if ($user) {
@@ -329,7 +418,23 @@ class User extends Authenticatable
             }
         }
 
-        // 4. Fallback for accounts without student_number or employee_id (e.g. admin or parent who entered email as account identifier)
+        // 4. Phone lookup with stripped non-digits
+        if (!empty($phoneVariants)) {
+            $digits = preg_replace('/\D/', '', $raw);
+            $user = static::whereNull('deleted_at')
+                ->where(function ($q) use ($phoneVariants, $digits) {
+                    $q->whereIn('phone', $phoneVariants);
+                    if ($digits !== '') {
+                        $q->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(phone, '-', ''), ' ', ''), '(', ''), ')', '') = ?", [$digits]);
+                    }
+                })->first();
+
+            if ($user) {
+                return $user;
+            }
+        }
+
+        // 5. Fallback for accounts without student_number or employee_id (e.g. admin or parent who entered email as account identifier)
         if (str_contains($raw, '@')) {
             $user = static::whereNull('deleted_at')
                 ->where('email', $lower)

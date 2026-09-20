@@ -1031,7 +1031,7 @@ if (document.readyState === 'loading') {
             </div>
             <div class="glass-badge anim-fade-up anim-d2">Attendance Checker</div>
             <div class="glass-title anim-fade-up anim-d2">Welcome back</div>
-            <div class="glass-sub anim-fade-up anim-d3">Sign in with your Student ID or Email</div>
+            <div class="glass-sub anim-fade-up anim-d3">Sign in with your Student ID, Email, or Mobile</div>
         </div>
 
         <!-- Errors -->
@@ -1055,12 +1055,12 @@ if (document.readyState === 'loading') {
             @endif
 
 
-            <!-- ID or Email  -  system detects role automatically -->
+            <!-- ID, Email, or Mobile  -  system detects role automatically -->
             <div class="glass-input-wrap anim-fade-up anim-d4" style="position: relative;">
                 <i class="bi bi-person-fill g-icon"></i>
                 <input type="text" name="identifier" id="idInput"
                        class="glass-input @error('identifier') is-invalid @enderror"
-                       placeholder="Student ID or Email"
+                       placeholder="Student ID, Email, or Mobile Number"
                        required autocomplete="username"
                        value="{{ old('identifier') }}"
                        style="padding-right: 42px;">
@@ -1125,7 +1125,7 @@ if (document.readyState === 'loading') {
             <input type="hidden" name="device_key" id="recoveryDeviceKey">
             <div class="glass-input-wrap anim-fade-up anim-d4">
                 <i class="bi bi-person-fill g-icon"></i>
-                <input type="text" name="identifier" class="glass-input" placeholder="Student ID or Email" required autocomplete="username">
+                <input type="text" name="identifier" class="glass-input" placeholder="Student ID, Email, or Mobile Number" required autocomplete="username">
             </div>
             <div class="glass-input-wrap mb-3 anim-fade-up anim-d5">
                 <i class="bi bi-key-fill g-icon"></i>
@@ -2032,12 +2032,12 @@ function handleDirectReEnrollClick(e) {
     hideFpMessage();
     var idVal = idInput ? idInput.value.trim() : '';
     if (!idVal) {
-        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
+        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID, Email, or Mobile Number first.');
         openBiometricModal({
-            title: 'ENTER STUDENT ID OR EMAIL',
-            message: 'Please enter your <strong>Student ID or Email</strong> first so we can re-enroll your biometric sign-in on this device.',
+            title: 'ENTER ACCOUNT IDENTIFIER',
+            message: 'Please enter your <strong>Student ID, Email, or Mobile Number</strong> first so we can re-enroll your biometric sign-in on this device.',
             badgeType: 'warning',
-            primaryBtnText: '<i class="bi bi-person-fill me-2"></i>ENTER STUDENT ID / EMAIL',
+            primaryBtnText: '<i class="bi bi-person-fill me-2"></i>ENTER IDENTIFIER',
             secondaryBtnText: 'CANCEL',
             onPrimaryClick: closeBiometricModalAndFocusIdentifier,
             onSecondaryClick: closeBiometricModal
@@ -2071,7 +2071,7 @@ async function handleBiometricLogin() {
     if (!identifier) {
         openBiometricModal({
             title: 'STUDENT ID OR EMAIL REQUIRED',
-            message: 'Please enter your <strong>Student ID or Email</strong> first so the system can verify your registered biometric credentials.<br><br><span style="font-size:0.85rem;color:rgba(212,175,55,0.9);">If you have registered a passkey on this device, you can also proceed directly.</span>',
+            message: 'Please enter your <strong>Student ID, Email, or Mobile Number</strong> first so the system can verify your registered biometric credentials.<br><br><span style="font-size:0.85rem;color:rgba(212,175,55,0.9);">If you have registered a passkey on this device, you can also proceed directly.</span>',
             badgeType: 'warning',
             primaryBtnText: '<i class="bi bi-person-fill me-2"></i>ENTER STUDENT ID / EMAIL',
             secondaryBtnText: '<i class="bi bi-passkey me-2"></i>USE DEVICE PASSKEY',
@@ -2081,7 +2081,7 @@ async function handleBiometricLogin() {
                 performBiometricLogin('');
             }
         });
-        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
+        showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID, Email, or Mobile Number first.');
         if (idInput) {
             idInput.focus();
             idInput.style.borderColor = '#d4af37';
@@ -2171,9 +2171,9 @@ async function performBiometricLogin(studentNumber) {
                 openBiometricModal({
                     title: 'ACCOUNT NOT FOUND',
                     identifier: studentNumber,
-                    message: 'No account was found matching "<strong>' + studentNumber + '</strong>". Please double check your Student ID or Email.',
+                    message: 'No account was found matching "<strong>' + studentNumber + '</strong>". Please double check your Student ID, Email, or Mobile Number.',
                     badgeType: 'danger',
-                    primaryBtnText: '<i class="bi bi-pencil-fill me-2"></i>CHECK STUDENT ID / EMAIL',
+                    primaryBtnText: '<i class="bi bi-pencil-fill me-2"></i>CHECK IDENTIFIER',
                     secondaryBtnText: 'USE PASSWORD',
                     onPrimaryClick: closeBiometricModalAndFocusIdentifier,
                     onSecondaryClick: closeBiometricModalAndFocusPassword
