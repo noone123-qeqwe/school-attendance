@@ -97,11 +97,18 @@ class WebAuthnController extends Controller
         );
 
         if ($isDirectFace) {
+            $faceData = $request->input('face_descriptor') 
+                ?? $request->input('face_data') 
+                ?? $request->input('public_key');
+
+            if (empty($faceData) || !is_string($faceData) || trim($faceData) === '' || strlen(trim($faceData)) < 8 || str_contains($faceData, 'no_face') || str_contains($faceData, 'unusable') || str_contains($faceData, 'fallback')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No face detected. Please position your face in front of the camera.'
+                ], 422);
+            }
+
             try {
-                $faceData = $request->input('face_descriptor') 
-                    ?? $request->input('face_data') 
-                    ?? $request->input('public_key') 
-                    ?? hash('sha256', $credentialId . $user->id . config('app.key'));
 
                 \App\Models\WebauthnCredential::updateOrCreate(
                     [

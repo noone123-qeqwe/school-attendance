@@ -58,6 +58,42 @@ class FaceRecognitionRegistrationTest extends TestCase
             ]);
     }
 
+    public function test_face_registration_fails_when_no_face_detected_or_empty_descriptor()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson(route('webauthn.register'), [
+            'credential_id' => 'face_no_detect_123',
+            'biometric_type' => 'face',
+            'device_name' => 'Device Face',
+            'face_descriptor' => '',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'No face detected. Please position your face in front of the camera.',
+            ]);
+    }
+
+    public function test_face_registration_fails_when_descriptor_contains_fallback_or_unusable()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->postJson(route('webauthn.register'), [
+            'credential_id' => 'face_fallback_456',
+            'biometric_type' => 'face',
+            'device_name' => 'Device Face',
+            'face_descriptor' => 'face_desc_fallback_xyz',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'No face detected. Please position your face in front of the camera.',
+            ]);
+    }
+
     public function test_face_registration_prevents_duplicate()
     {
         $user = User::factory()->create();
@@ -102,5 +138,19 @@ class FaceRecognitionRegistrationTest extends TestCase
                 'biometric_type' => 'face',
                 'device_name' => 'Phone (Face Recognition)',
             ]);
+    }
+
+    public function test_settings_page_renders_face_recognition_and_detection_prompts()
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get(route('settings'));
+
+        $response->assertOk();
+        $response->assertSee('id="faceCameraVideo"', false);
+        $response->assertSee('detectAndAnalyzeFaceFrame', false);
+        $response->assertSee('No face detected. Please position your face in front of the camera.', false);
+        $response->assertSee('Multiple faces detected. Please ensure only the intended person is visible.', false);
+        $response->assertSee('Camera image is blurry. Please hold steady in front of the camera.', false);
     }
 }
