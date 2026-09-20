@@ -51,6 +51,30 @@ class BiometricLoginViewTest extends TestCase
         $response->assertSee('STUDENT ID OR EMAIL REQUIRED', false);
     }
 
+    public function test_biometric_options_error_handler_is_valid_javascript()
+    {
+        $response = $this->get(route('login'));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        // Keep the error branches inside the failed-options condition. An extra
+        // closing brace before this `else if` makes the whole login script fail
+        // to parse, so the biometric button cannot respond to taps at all.
+        $this->assertStringContainsString(
+            "if (opts.code === 'NOT_REGISTERED' || (optRes.status === 404 && opts.user_exists)) {",
+            $content
+        );
+        $this->assertStringContainsString(
+            "} else if (opts.code === 'ACCOUNT_NOT_FOUND' || optRes.status === 404) {",
+            $content
+        );
+        $this->assertStringNotContainsString(
+            "            }\n            } else if (opts.code === 'ACCOUNT_NOT_FOUND'",
+            $content
+        );
+    }
+
     public function test_webauthn_login_options_returns_not_registered_for_user_without_biometrics()
     {
         $user = User::factory()->create([

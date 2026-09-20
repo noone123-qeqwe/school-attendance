@@ -2166,7 +2166,6 @@ async function performBiometricLogin(studentNumber) {
                     onSecondaryClick: closeBiometricModal
                 });
                 return;
-            }
             } else if (opts.code === 'ACCOUNT_NOT_FOUND' || optRes.status === 404) {
                 showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>No account found matching "' + studentNumber + '".');
                 openBiometricModal({
