@@ -138,6 +138,10 @@ class AuthController extends Controller
                 ], 403);
             }
 
+            if ($user->isStudent()) {
+                app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+            }
+
             $token = $user->createToken('mobile-app')->plainTextToken;
 
             // Determine dashboard URL
@@ -156,6 +160,8 @@ class AuthController extends Controller
                 'user' => $user,
                 'token' => $token,
                 'role' => $user->role,
+                'device_bound' => $user->isStudent() ? true : null,
+                'device_name' => $user->deviceBinding?->device_name,
                 'dashboard_url' => $dashboardUrl,
             ]);
         }

@@ -381,6 +381,7 @@ class PTController extends Controller
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
+        $user->load('deviceBinding');
         return view('student.profile', compact('user'));
     }
     public function updateImage(Request $request)

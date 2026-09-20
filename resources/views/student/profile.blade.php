@@ -342,6 +342,63 @@
                 </div>
             </div>
 
+            <!-- Bound Attendance Device & Security Card -->
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-header-icon" style="background:rgba(59,130,246,0.15);color:#60a5fa;">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <div class="info-card-title">Bound Attendance Device</div>
+                </div>
+                <div class="info-card-body">
+                    @php
+                        $binding = $user->deviceBinding;
+                    @endphp
+                    @if($binding)
+                    <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(207,164,111,0.2);border-radius:12px;padding:16px;margin-bottom:14px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:40px;height:40px;border-radius:10px;background:rgba(74,222,128,0.12);color:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">
+                                    <i class="bi {{ $binding->getDeviceIcon() }}"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:700;font-size:0.95rem;color:#f3e7cd;">{{ $binding->device_name ?: 'Registered Mobile Device' }}</div>
+                                    <div style="font-size:0.75rem;color:#b39b82;">Bound on {{ $binding->created_at?->format('M d, Y') ?? 'N/A' }}</div>
+                                </div>
+                            </div>
+                            <span class="badge" style="background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);font-size:0.72rem;padding:5px 9px;border-radius:8px;">
+                                <i class="bi bi-shield-check me-1"></i>Verified
+                            </span>
+                        </div>
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.78rem;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+                            <div>
+                                <span style="color:#b39b82;">Last Active:</span>
+                                <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->last_seen_at?->diffForHumans() ?? 'Just now' }}</span>
+                            </div>
+                            <div>
+                                <span style="color:#b39b82;">IP Address:</span>
+                                <span style="color:#f3e7cd;font-weight:600;margin-left:4px;">{{ $binding->ip_address ?: 'Protected' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;align-items:flex-start;gap:8px;background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.18);border-radius:10px;padding:10px 14px;font-size:0.78rem;color:#b39b82;line-height:1.4;">
+                        <i class="bi bi-info-circle-fill" style="color:var(--gold,#CFA46F);margin-top:2px;flex-shrink:0;"></i>
+                        <div>
+                            Anti-proxy protection active. Your student account is strictly bound to this personal device for attendance clock-ins.
+                        </div>
+                    </div>
+                    @else
+                    <div style="text-align:center;padding:18px 14px;background:rgba(255,255,255,0.02);border:1px dashed rgba(207,164,111,0.2);border-radius:12px;color:#b39b82;font-size:0.85rem;">
+                        <i class="bi bi-phone" style="font-size:2rem;opacity:0.4;display:block;margin-bottom:8px;color:var(--gold,#CFA46F);"></i>
+                        <div style="font-weight:600;color:#f3e7cd;margin-bottom:4px;">No Device Bound Yet</div>
+                        <div style="font-size:0.78rem;line-height:1.4;">Your personal device will be automatically and securely bound to your student account when you sign in or record attendance.</div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
             <!-- Fingerprint & Biometrics Card -->
             <div class="info-card">
                 <div class="info-card-header">

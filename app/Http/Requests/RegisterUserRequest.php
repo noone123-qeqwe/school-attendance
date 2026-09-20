@@ -69,7 +69,7 @@ class RegisterUserRequest extends FormRequest
         }
 
         if ($this->role === 'student') {
-            $rules['student_number'] = 'nullable|string|max:50|unique:users,student_number';
+            $rules['student_number'] = 'nullable|string|min:3|max:7|unique:users,student_number';
             $rules['course']         = 'nullable|string';
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';
@@ -97,6 +97,8 @@ class RegisterUserRequest extends FormRequest
         return [
             'terms.accepted' => 'You must read and agree to the Privacy Notice and Terms & Conditions to create an account.',
             'student_number.unique' => 'This Student ID is already registered to an account.',
+            'student_number.max' => 'The Student ID may not be greater than 7 characters.',
+            'student_number.min' => 'The Student ID must be at least 3 characters.',
         ];
     }
 }

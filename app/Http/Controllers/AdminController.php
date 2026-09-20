@@ -477,6 +477,7 @@ class AdminController extends Controller
     public function studentDetail(User $student)
     {
         abort_unless($student->role === 'student', 404);
+        $student->load('deviceBinding');
         $records = Attendance::with('subject')
             ->where('user_id', $student->id)
             ->orderBy('date', 'desc')->get();
@@ -1106,7 +1107,6 @@ class AdminController extends Controller
             }
         }
 
-        // Explicitly handle boolean toggles
         \App\Models\Setting::updateOrCreate(
             ['key' => 'require_biometric'],
             ['value' => $request->has('require_biometric') ? 1 : 0]
@@ -1114,6 +1114,14 @@ class AdminController extends Controller
         \App\Models\Setting::updateOrCreate(
             ['key' => 'auto_holiday'],
             ['value' => $request->has('auto_holiday') ? 1 : 0]
+        );
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'enforce_device_binding'],
+            ['value' => $request->has('enforce_device_binding') ? 1 : 0]
+        );
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'anti_proxy_device_check'],
+            ['value' => $request->has('anti_proxy_device_check') ? 1 : 0]
         );
 
         return back()->with('success', 'System settings updated successfully!');

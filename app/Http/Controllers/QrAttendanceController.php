@@ -1356,9 +1356,19 @@ class QrAttendanceController extends Controller
         }
 
         // Proxy Attendance Check (Prevent one physical device from clocking in multiple students for the same session)
-        $currentDeviceHash = $user->deviceBinding?->device_hash;
-        if ($currentDeviceHash) {
-            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where('device_hash', $currentDeviceHash)
+        $deviceService = app(\App\Services\DeviceBindingService::class);
+        $currentDeviceHash = $user->deviceBinding?->device_hash ?: $deviceService->getDeviceHashFromRequest($request);
+        $currentHwFp = $user->deviceBinding?->hardware_fingerprint ?: $deviceService->getHardwareFingerprintFromRequest($request);
+
+        if ($currentDeviceHash || $currentHwFp) {
+            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where(function ($q) use ($currentDeviceHash, $currentHwFp) {
+                    if ($currentDeviceHash) {
+                        $q->where('device_hash', $currentDeviceHash);
+                    }
+                    if ($currentHwFp) {
+                        $q->orWhere('hardware_fingerprint', $currentHwFp);
+                    }
+                })
                 ->where('user_id', '!=', $user->id)
                 ->pluck('user_id');
 
@@ -1972,9 +1982,19 @@ class QrAttendanceController extends Controller
         }
 
         // 2.5 Proxy Attendance Check (Prevent one physical device from clocking in multiple students for the same session)
-        $currentDeviceHash = $user->deviceBinding?->device_hash;
-        if ($currentDeviceHash) {
-            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where('device_hash', $currentDeviceHash)
+        $deviceService = app(\App\Services\DeviceBindingService::class);
+        $currentDeviceHash = $user->deviceBinding?->device_hash ?: $deviceService->getDeviceHashFromRequest($request);
+        $currentHwFp = $user->deviceBinding?->hardware_fingerprint ?: $deviceService->getHardwareFingerprintFromRequest($request);
+
+        if ($currentDeviceHash || $currentHwFp) {
+            $otherUserIdsOnSameDevice = \App\Models\DeviceBinding::where(function ($q) use ($currentDeviceHash, $currentHwFp) {
+                    if ($currentDeviceHash) {
+                        $q->where('device_hash', $currentDeviceHash);
+                    }
+                    if ($currentHwFp) {
+                        $q->orWhere('hardware_fingerprint', $currentHwFp);
+                    }
+                })
                 ->where('user_id', '!=', $user->id)
                 ->pluck('user_id');
 

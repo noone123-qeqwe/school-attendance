@@ -293,6 +293,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/image', [App\Http\Controllers\ProfilePhotoController::class, 'update'])->name('profile.image.update');
     Route::delete('/profile/image', [App\Http\Controllers\ProfilePhotoController::class, 'destroy'])->name('profile.image.delete');
     Route::post('/profile/image/remove', [App\Http\Controllers\ProfilePhotoController::class, 'destroy'])->name('profile.image.remove');
+
+    // Device Binding Management (Authenticated Users)
+    Route::get('/device/status', [App\Http\Controllers\DeviceBindingController::class, 'status'])->name('device.status');
+    Route::post('/device/bind', [App\Http\Controllers\DeviceBindingController::class, 'bind'])->name('device.bind');
+    Route::post('/device/unbind', [App\Http\Controllers\DeviceBindingController::class, 'unbind'])->name('device.unbind');
 });
 
 // Mobile App Routes (All authenticated users)

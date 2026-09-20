@@ -25,6 +25,11 @@ class EnsureStudentDeviceIsBound
             return $next($request);
         }
 
+        $enforce = (bool) \App\Models\Setting::get('enforce_device_binding', 1);
+        if (!$enforce) {
+            return $next($request);
+        }
+
         $service = app(DeviceBindingService::class);
 
         if (!$service->isCurrentDevice($user, $request)) {
@@ -35,19 +40,21 @@ class EnsureStudentDeviceIsBound
                 'route' => $request->route()?->getName(),
             ]);
 
+            $boundDeviceName = $user->deviceBinding?->device_name ?: 'your registered device';
+            $errorMsg = "Unrecognized device. Attendance is restricted to {$boundDeviceName}. Please sign in from your bound device or request a reset from your instructor.";
+
             // For AJAX/JSON requests (e.g., QR attendance confirmation)
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'This device is not recognized. Please log out and log back in to re-bind your device.',
+                    'message' => $errorMsg,
                     'error_type' => 'device_mismatch',
+                    'bound_device' => $user->deviceBinding?->device_name,
                 ], 403);
             }
 
             // For standard form submissions — redirect back with error, keep user logged in
-            return redirect()->back()->with('error',
-                'This device is not recognized. Please log out and log back in to re-bind your device.'
-            );
+            return redirect()->back()->with('error', $errorMsg);
         }
 
         return $next($request);

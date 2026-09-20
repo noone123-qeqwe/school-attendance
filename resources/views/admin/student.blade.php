@@ -68,6 +68,62 @@
     </div>
 </div>
 
+<!-- Device Binding & Anti-Proxy Security Panel -->
+<div class="adm-card" style="margin-bottom:24px;">
+    <div class="adm-card-head" style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="adm-card-title">
+            <div class="adm-card-icon" style="background:#eff6ff;color:#2563eb;"><i class="bi bi-shield-lock-fill"></i></div>
+            Bound Attendance Device
+        </div>
+        @if($student->deviceBinding)
+            <span class="badge" style="background:rgba(22,163,74,0.12);color:#16a34a;border:1px solid rgba(22,163,74,0.25);font-size:0.75rem;padding:5px 10px;border-radius:8px;">
+                <i class="bi bi-check-circle me-1"></i>Active & Bound
+            </span>
+        @else
+            <span class="badge" style="background:rgba(148,163,184,0.12);color:#64748b;border:1px solid rgba(148,163,184,0.25);font-size:0.75rem;padding:5px 10px;border-radius:8px;">
+                <i class="bi bi-phone me-1"></i>Not Bound
+            </span>
+        @endif
+    </div>
+    <div style="padding:16px 24px;">
+        @if($student->deviceBinding)
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;">
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:44px;height:44px;border-radius:10px;background:#f0fdf4;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">
+                    <i class="bi {{ $student->deviceBinding->getDeviceIcon() }}"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:0.95rem;color:#1e293b;">{{ $student->deviceBinding->device_name ?: 'Bound Mobile Device' }}</div>
+                    <div style="font-size:0.78rem;color:#64748b;">
+                        Bound: {{ $student->deviceBinding->created_at?->format('M d, Y g:i A') ?? 'N/A' }} •
+                        Last Active: <span style="font-weight:600;color:#0f172a;">{{ $student->deviceBinding->last_seen_at?->diffForHumans() ?? 'Never' }}</span>
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="text-align:right;font-size:0.78rem;color:#64748b;">
+                    <div>IP: <span style="font-family:monospace;color:#0f172a;">{{ $student->deviceBinding->ip_address ?: 'Unknown' }}</span></div>
+                    <div>Changes: <span style="font-weight:600;color:{{ $student->deviceBinding->change_count > 2 ? '#dc2626' : '#16a34a' }};">{{ $student->deviceBinding->change_count ?? 0 }}</span></div>
+                </div>
+                <form action="{{ route('admin.student.reset_device', $student->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to reset the device binding for {{ addslashes($student->name) }}? The student will be prompted to bind their current device upon next sign in.')" style="margin:0;">
+                    @csrf
+                    <button type="submit" class="adm-btn" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:0.8rem;padding:7px 12px;">
+                        <i class="bi bi-phone-flip me-1"></i>Reset Binding
+                    </button>
+                </form>
+            </div>
+        </div>
+        @else
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div style="display:flex;align-items:center;gap:10px;color:#64748b;font-size:0.85rem;">
+                <i class="bi bi-phone" style="font-size:1.3rem;"></i>
+                <span>This student has not yet bound a personal device for attendance clock-ins.</span>
+            </div>
+        </div>
+        @endif
+    </div>
+</div>
+
 <!-- Attendance Records -->
 <div class="adm-card">
     <div class="adm-card-head">

@@ -74,15 +74,27 @@ class StudentIdService
             }
 
             // Fallback if sequence table is not present: lock on users table
+            $yearPrefix = strlen($year) === 4 ? substr($year, -2) : $year;
             $existingNumbers = User::withTrashed()
-                ->where('student_number', 'LIKE', $year . '%')
+                ->where(function ($q) use ($year, $yearPrefix) {
+                    $q->where('student_number', 'LIKE', $year . '%')
+                      ->orWhere('student_number', 'LIKE', $yearPrefix . '%');
+                })
                 ->lockForUpdate()
                 ->pluck('student_number');
 
             $maxSeq = 0;
             foreach ($existingNumbers as $numStr) {
                 $numStr = (string) $numStr;
-                if (str_starts_with($numStr, $year)) {
+                if (str_starts_with($numStr, $yearPrefix)) {
+                    $suffix = substr($numStr, strlen($yearPrefix));
+                    if (ctype_digit($suffix)) {
+                        $val = (int) $suffix;
+                        if ($val > $maxSeq) {
+                            $maxSeq = $val;
+                        }
+                    }
+                } elseif (str_starts_with($numStr, $year)) {
                     $suffix = substr($numStr, strlen($year));
                     if (ctype_digit($suffix)) {
                         $val = (int) $suffix;
@@ -141,13 +153,13 @@ class StudentIdService
     }
 
     /**
-     * Format year and sequence number into standard school format.
-     * E.g. year=2026, seq=1 => 20260001
-     * For numbers exceeding 9999, it smoothly expands (e.g. 202610000).
+     * Format year and sequence number into standard 7-character school format.
+     * E.g. year=2026, seq=1 => 2600001 (exactly 7 characters)
      */
     public function formatStudentId(string $year, int $sequence): string
     {
-        return $year . sprintf('%04d', $sequence);
+        $prefix = strlen($year) === 4 ? substr($year, -2) : $year;
+        return $prefix . sprintf('%05d', $sequence);
     }
 
     /**
@@ -155,14 +167,27 @@ class StudentIdService
      */
     protected function resolveMaxSequenceFromUsers(string $year): int
     {
+        $yearPrefix = strlen($year) === 4 ? substr($year, -2) : $year;
+
         $existingNumbers = User::withTrashed()
-            ->where('student_number', 'LIKE', $year . '%')
+            ->where(function ($q) use ($year, $yearPrefix) {
+                $q->where('student_number', 'LIKE', $year . '%')
+                  ->orWhere('student_number', 'LIKE', $yearPrefix . '%');
+            })
             ->pluck('student_number');
 
         $maxSeq = 0;
         foreach ($existingNumbers as $numStr) {
             $numStr = (string) $numStr;
-            if (str_starts_with($numStr, $year)) {
+            if (str_starts_with($numStr, $yearPrefix)) {
+                $suffix = substr($numStr, strlen($yearPrefix));
+                if (ctype_digit($suffix)) {
+                    $val = (int) $suffix;
+                    if ($val > $maxSeq) {
+                        $maxSeq = $val;
+                    }
+                }
+            } elseif (str_starts_with($numStr, $year)) {
                 $suffix = substr($numStr, strlen($year));
                 if (ctype_digit($suffix)) {
                     $val = (int) $suffix;

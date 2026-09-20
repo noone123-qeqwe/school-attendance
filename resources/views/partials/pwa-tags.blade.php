@@ -1144,32 +1144,179 @@
         }, { passive: true });
     })();
 
-    // ── Universal Persistent Device Key Synchronization ──
-    window.getOrCreateDeviceKey = function() {
-        try {
-            var key = localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid');
-            if (!key) {
-                var m = document.cookie.match(/(?:^|;\s*)student_device_key=([^;]+)/);
-                if (m && m[1]) key = decodeURIComponent(m[1]);
-            }
-            if (!key) {
-                key = (typeof crypto !== 'undefined' && crypto.randomUUID)
-                    ? crypto.randomUUID()
-                    : ('dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 14));
-            }
-            localStorage.setItem('student_device_key', key);
-            localStorage.setItem('attendance_device_uuid', key);
-            var sec = location.protocol === 'https:' ? '; Secure' : '';
-            document.cookie = 'student_device_key=' + encodeURIComponent(key) + '; path=/; max-age=31536000; SameSite=Lax' + sec;
-            return key;
-        } catch(e) {
-            return '';
-        }
-    };
-    try { window.getOrCreateDeviceKey(); } catch(e) {}
-
-    // Global fetch interceptor to attach device key to app requests
+    // ── Universal Multi-Layer Persistent Device Key & Hardware Fingerprinting ──
     (function() {
+        // Fast deterministic FNV-1a 32-bit hashing
+        function fnv1a(str) {
+            var hash = 2166136261;
+            for (var i = 0; i < str.length; i++) {
+                hash ^= str.charCodeAt(i);
+                hash = Math.imul(hash, 16777619);
+            }
+            return (hash >>> 0).toString(16);
+        }
+
+        // Generate deterministic client hardware environment fingerprint
+        window.getDeviceFingerprint = function() {
+            try {
+                var components = [
+                    (window.screen ? window.screen.width + 'x' + window.screen.height + 'x' + window.screen.colorDepth : ''),
+                    (window.devicePixelRatio || 1),
+                    (navigator.hardwareConcurrency || 4),
+                    (navigator.maxTouchPoints || 0),
+                    (navigator.platform || ''),
+                    (Intl && Intl.DateTimeFormat ? Intl.DateTimeFormat().resolvedOptions().timeZone : '')
+                ];
+
+                // Add lightweight canvas fingerprinting
+                try {
+                    var canvas = document.createElement('canvas');
+                    canvas.width = 120;
+                    canvas.height = 30;
+                    var ctx = canvas.getContext('2d');
+                    if (ctx) {
+                        ctx.textBaseline = 'top';
+                        ctx.font = '14px Arial';
+                        ctx.fillStyle = '#f60';
+                        ctx.fillRect(10, 1, 62, 20);
+                        ctx.fillStyle = '#069';
+                        ctx.fillText('SmartAtt_Fp', 2, 15);
+                        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                        ctx.fillText('SmartAtt_Fp', 4, 17);
+                        components.push(canvas.toDataURL());
+                    }
+                } catch(ce) {}
+
+                var raw = components.join('###');
+                return fnv1a(raw) + fnv1a(raw.split('').reverse().join(''));
+            } catch(e) {
+                return 'fp_fallback';
+            }
+        };
+
+        // Determine user-friendly hardware device model
+        window.getDeviceModel = function() {
+            try {
+                if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getNativeDeviceModel === 'function') {
+                    return window.AndroidDeviceBridge.getNativeDeviceModel();
+                }
+                var ua = navigator.userAgent || '';
+                if (/iPhone/i.test(ua)) return 'Apple iPhone';
+                if (/iPad/i.test(ua)) return 'Apple iPad';
+                if (/Android/i.test(ua)) {
+                    var m = ua.match(/Android[^;]+; ([^)]+)\)/);
+                    if (m && m[1]) return m[1].replace(/Build\/.+/, '').trim();
+                    return 'Android Mobile';
+                }
+                if (/Macintosh/i.test(ua)) return 'Mac OS Computer';
+                if (/Windows/i.test(ua)) return 'Windows PC';
+                return 'Web Browser Device';
+            } catch(e) {
+                return 'Personal Device';
+            }
+        };
+
+        // IndexedDB resilient storage layer
+        function saveToIndexedDb(key) {
+            if (!window.indexedDB) return;
+            try {
+                var req = indexedDB.open('smart_attendance_device_db', 1);
+                req.onupgradeneeded = function(e) {
+                    var db = e.target.result;
+                    if (!db.objectStoreNames.contains('device_store')) {
+                        db.createObjectStore('device_store');
+                    }
+                };
+                req.onsuccess = function(e) {
+                    try {
+                        var db = e.target.result;
+                        var tx = db.transaction('device_store', 'readwrite');
+                        tx.objectStore('device_store').put(key, 'student_device_key');
+                    } catch(err) {}
+                };
+            } catch(e) {}
+        }
+
+        function restoreFromIndexedDb() {
+            if (!window.indexedDB) return;
+            try {
+                var req = indexedDB.open('smart_attendance_device_db', 1);
+                req.onsuccess = function(e) {
+                    try {
+                        var db = e.target.result;
+                        if (!db.objectStoreNames.contains('device_store')) return;
+                        var tx = db.transaction('device_store', 'readonly');
+                        var getReq = tx.objectStore('device_store').get('student_device_key');
+                        getReq.onsuccess = function() {
+                            var val = getReq.result;
+                            if (val && typeof val === 'string' && val.length > 8) {
+                                if (!localStorage.getItem('student_device_key')) {
+                                    localStorage.setItem('student_device_key', val);
+                                    localStorage.setItem('attendance_device_uuid', val);
+                                    var sec = location.protocol === 'https:' ? '; Secure' : '';
+                                    document.cookie = 'student_device_key=' + encodeURIComponent(val) + '; path=/; max-age=31536000; SameSite=Lax' + sec;
+                                }
+                            }
+                        };
+                    } catch(err) {}
+                };
+            } catch(e) {}
+        }
+        try { restoreFromIndexedDb(); } catch(e) {}
+
+        // Multi-tier device key accessor & healing engine
+        window.getOrCreateDeviceKey = function() {
+            try {
+                var key = null;
+
+                // Tier 1: Native Android app bridge (100% persistent across app installs)
+                if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getNativeDeviceId === 'function') {
+                    key = window.AndroidDeviceBridge.getNativeDeviceId();
+                }
+
+                // Tier 2: localStorage
+                if (!key) {
+                    key = localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid');
+                }
+
+                // Tier 3: Cookies
+                if (!key) {
+                    var m = document.cookie.match(/(?:^|;\s*)student_device_key=([^;]+)/);
+                    if (m && m[1]) key = decodeURIComponent(m[1]);
+                }
+
+                // Tier 4: sessionStorage
+                if (!key) {
+                    key = sessionStorage.getItem('student_device_key') || sessionStorage.getItem('attendance_device_uuid');
+                }
+
+                // Tier 5: Fresh generation if uninitialized
+                if (!key || key === 'undefined' || key === 'null' || key.trim() === '') {
+                    key = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                        ? crypto.randomUUID()
+                        : ('dev_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 14));
+                }
+
+                // Synchronize across all persistence layers
+                try {
+                    localStorage.setItem('student_device_key', key);
+                    localStorage.setItem('attendance_device_uuid', key);
+                    sessionStorage.setItem('student_device_key', key);
+                    sessionStorage.setItem('attendance_device_uuid', key);
+                    var sec = location.protocol === 'https:' ? '; Secure' : '';
+                    document.cookie = 'student_device_key=' + encodeURIComponent(key) + '; path=/; max-age=31536000; SameSite=Lax' + sec;
+                    saveToIndexedDb(key);
+                } catch(syncErr) {}
+
+                return key;
+            } catch(e) {
+                return '';
+            }
+        };
+
+        try { window.getOrCreateDeviceKey(); } catch(e) {}
+
+        // Attach device headers to fetch requests
         if (typeof window.fetch === 'function' && !window.__deviceFetchIntercepted) {
             window.__deviceFetchIntercepted = true;
             var _origFetch = window.fetch;
@@ -1177,19 +1324,23 @@
                 try {
                     init = init || {};
                     var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                    var devFp  = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
+                    var devMod = window.getDeviceModel ? window.getDeviceModel() : '';
+
                     if (devKey) {
-                        if (!init.headers) {
-                            init.headers = {};
-                        }
+                        if (!init.headers) init.headers = {};
                         if (init.headers instanceof Headers) {
                             if (!init.headers.has('X-Device-Key')) init.headers.set('X-Device-Key', devKey);
-                            if (!init.headers.has('X-Device-Fingerprint')) init.headers.set('X-Device-Fingerprint', devKey);
+                            if (!init.headers.has('X-Device-Fingerprint')) init.headers.set('X-Device-Fingerprint', devFp || devKey);
+                            if (!init.headers.has('X-Device-Model') && devMod) init.headers.set('X-Device-Model', devMod);
                         } else if (Array.isArray(init.headers)) {
                             init.headers.push(['X-Device-Key', devKey]);
-                            init.headers.push(['X-Device-Fingerprint', devKey]);
+                            init.headers.push(['X-Device-Fingerprint', devFp || devKey]);
+                            if (devMod) init.headers.push(['X-Device-Model', devMod]);
                         } else {
                             if (!init.headers['X-Device-Key']) init.headers['X-Device-Key'] = devKey;
-                            if (!init.headers['X-Device-Fingerprint']) init.headers['X-Device-Fingerprint'] = devKey;
+                            if (!init.headers['X-Device-Fingerprint']) init.headers['X-Device-Fingerprint'] = devFp || devKey;
+                            if (!init.headers['X-Device-Model'] && devMod) init.headers['X-Device-Model'] = devMod;
                         }
                     }
                     if (!init.credentials) {
@@ -1200,7 +1351,7 @@
             };
         }
 
-        // Global XMLHttpRequest interceptor to attach device key to same-origin AJAX calls
+        // Attach device headers to same-origin XMLHttpRequest
         if (typeof window.XMLHttpRequest !== 'undefined' && !window.__deviceXHRIntercepted) {
             window.__deviceXHRIntercepted = true;
             var _origOpen = XMLHttpRequest.prototype.open;
@@ -1220,15 +1371,52 @@
                 try {
                     if (this.__isSameOrigin) {
                         var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                        var devFp  = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
+                        var devMod = window.getDeviceModel ? window.getDeviceModel() : '';
                         if (devKey) {
                             this.setRequestHeader('X-Device-Key', devKey);
-                            this.setRequestHeader('X-Device-Fingerprint', devKey);
+                            this.setRequestHeader('X-Device-Fingerprint', devFp || devKey);
+                            if (devMod) this.setRequestHeader('X-Device-Model', devMod);
                         }
                     }
                 } catch(e) {}
                 return _origSend.apply(this, arguments);
             };
         }
+
+        // Automatically inject hidden device binding fields into HTML forms on submit
+        document.addEventListener('submit', function(e) {
+            var form = e.target;
+            if (form && form.tagName === 'FORM' && form.method && form.method.toUpperCase() === 'POST') {
+                try {
+                    var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                    var devFp  = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
+                    var devMod = window.getDeviceModel ? window.getDeviceModel() : '';
+
+                    if (devKey && !form.querySelector('input[name="device_key"]')) {
+                        var inp1 = document.createElement('input');
+                        inp1.type = 'hidden';
+                        inp1.name = 'device_key';
+                        inp1.value = devKey;
+                        form.appendChild(inp1);
+                    }
+                    if (devFp && !form.querySelector('input[name="device_fingerprint"]')) {
+                        var inp2 = document.createElement('input');
+                        inp2.type = 'hidden';
+                        inp2.name = 'device_fingerprint';
+                        inp2.value = devFp;
+                        form.appendChild(inp2);
+                    }
+                    if (devMod && !form.querySelector('input[name="device_model"]')) {
+                        var inp3 = document.createElement('input');
+                        inp3.type = 'hidden';
+                        inp3.name = 'device_model';
+                        inp3.value = devMod;
+                        form.appendChild(inp3);
+                    }
+                } catch(formErr) {}
+            }
+        }, true);
     })();
 
     // ── 1. Register Service Worker & Handle Real-Time Update Notifications ──

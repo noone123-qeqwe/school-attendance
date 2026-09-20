@@ -121,14 +121,28 @@
                     </label>
                     <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Automatically exempt attendance on official & declared holidays.</p>
                 </div>
+                <div class="saas-form-group">
+                    <label class="saas-label" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="enforce_device_binding" id="setting_enforce_device_binding" value="1" {{ \App\Models\Setting::get('enforce_device_binding', 1) ? 'checked' : '' }} style="accent-color:var(--saas-primary); width:16px; height:16px;">
+                        Enforce Device Binding
+                    </label>
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Require students to record attendance exclusively from their registered personal device.</p>
+                </div>
+                <div class="saas-form-group">
+                    <label class="saas-label" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="anti_proxy_device_check" id="setting_anti_proxy_device_check" value="1" {{ \App\Models\Setting::get('anti_proxy_device_check', 1) ? 'checked' : '' }} style="accent-color:var(--saas-primary); width:16px; height:16px;">
+                        Anti-Proxy Hardware Protection
+                    </label>
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Block multiple students from clocking in from the same physical device in the same session.</p>
+                </div>
             </div>
 
             <div style="background:rgba(207,164,111,0.05);border:1px solid rgba(207,164,111,0.15);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:flex-start;gap:12px;">
-                <i class="bi bi-fingerprint" style="color:var(--saas-gold,#cfa46f);font-size:1.3rem;margin-top:2px;"></i>
+                <i class="bi bi-shield-lock" style="color:var(--saas-gold,#cfa46f);font-size:1.3rem;margin-top:2px;"></i>
                 <div>
-                    <div style="font-weight:600;font-size:0.85rem;color:#f3e7cd;">Biometric Security (WebAuthn / Passkeys)</div>
+                    <div style="font-weight:600;font-size:0.85rem;color:#f3e7cd;">Hardware Security & Anti-Proxy Architecture</div>
                     <div class="saas-text-muted" style="font-size:0.75rem;line-height:1.4;">
-                        Students and faculty can register their device biometric sensors in their personal <strong>Settings</strong> page. When biometric verification is required, students must confirm their identity using their stored fingerprint to complete QR attendance.
+                        Device binding pairs each student account to their physical phone or browser. Anti-proxy hardware fingerprinting prevents students from passing their phones around to clock in for peers in the same classroom session.
                     </div>
                 </div>
             </div>
@@ -139,6 +153,8 @@
                     document.getElementById('setting_gps_radius').value = 50;
                     document.getElementById('setting_require_biometric').checked = true;
                     document.getElementById('setting_auto_holiday').checked = true;
+                    document.getElementById('setting_enforce_device_binding').checked = true;
+                    document.getElementById('setting_anti_proxy_device_check').checked = true;
                 }
             </script>
 

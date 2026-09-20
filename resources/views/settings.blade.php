@@ -6,6 +6,10 @@
 @section('content')
 @php
     $user = Auth::user();
+    if ($user) {
+        $user->loadMissing('deviceBinding');
+    }
+    $deviceBinding = $user?->deviceBinding;
     $allRecords   = $user->attendances ?? collect();
     $totalRecords = $allRecords->count();
     $totalPresent = $allRecords->where('status','Present')->count();
@@ -1954,7 +1958,8 @@
         <div class="stabs" id="stabsNav">
             <button class="stab active" data-tab="profile" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
             <button class="stab" data-tab="security" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
-            <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-shield-lock-fill me-1"></i> Biometrics</button>
+            <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Biometrics</button>
+            <button class="stab" data-tab="device" onclick="switchTab('device',this)"><i class="bi bi-phone-fill me-1"></i> Device Binding</button>
             <button class="stab" data-tab="attendance" onclick="switchTab('attendance',this)"><i class="bi bi-bar-chart-fill me-1"></i> Attendance</button>
             <button class="stab" data-tab="preferences" data-tab-id="preferences" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
         </div>
@@ -2259,6 +2264,54 @@
                 </div>
             </div>
 
+            <!-- ── Card 5: Attendance Device Binding ── -->
+            <div class="sec-card" style="--card-accent: #10b981;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">
+                        <i class="bi bi-phone-fill"></i>
+                    </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Attendance Device Binding</span>
+                            <span class="sec-badge {{ $deviceBinding ? 'sec-badge-emerald' : 'sec-badge-gold' }}" id="secCardDeviceBadge">
+                                <i class="bi {{ $deviceBinding ? 'bi-patch-check-fill' : 'bi-shield-exclamation' }}"></i>
+                                <span id="secCardDeviceBadgeText">{{ $deviceBinding ? 'Device Bound' : 'No Device Bound' }}</span>
+                            </span>
+                        </div>
+                        <div class="sec-card-subtitle">Lock this physical hardware to your account for verified attendance</div>
+                    </div>
+                </div>
+
+                <div class="sec-card-content">
+                    <div class="sec-input-display mb-2" id="secCardDeviceDisplayWrap">
+                        <i class="bi {{ $deviceBinding ? $deviceBinding->getDeviceIcon() : 'bi-phone' }} text-success me-2" id="secCardDeviceIcon"></i>
+                        <span class="sec-input-val" id="secCardDeviceName">
+                            {{ $deviceBinding ? $deviceBinding->device_name : 'No device currently registered' }}
+                        </span>
+                    </div>
+
+                    <p class="sec-card-hint" id="secCardDeviceHint">
+                        @if($deviceBinding)
+                            Bound device IP: <strong style="color:#f3e7cd;">{{ $deviceBinding->ip_address ?: 'Unknown' }}</strong> • Active {{ $deviceBinding->last_seen_at ? $deviceBinding->last_seen_at->diffForHumans() : 'Recently' }}.
+                        @else
+                            Bind your smartphone, tablet, or laptop to unlock anti-proxy verified QR attendance clock-ins.
+                        @endif
+                    </p>
+
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+                        <button type="button" onclick="handleBindCurrentDevice()" id="secQuickBindBtn" class="sec-action-btn sec-btn-emerald" style="flex:1;">
+                            <i class="bi bi-link-45deg me-1"></i><span id="secQuickBindBtnText">{{ $deviceBinding ? 'Switch / Re-bind to This Device' : 'Bind to This Device' }}</span>
+                        </button>
+                        <button type="button" onclick="handleUnbindDevice()" id="secQuickUnbindBtn" class="cancel-btn" style="{{ $deviceBinding ? 'display:inline-flex;' : 'display:none;' }}align-items:center;color:#f87171!important;border-color:rgba(239,68,68,0.3)!important;padding:9px 14px;font-size:0.82rem;">
+                            <i class="bi bi-trash3 me-1"></i>Unbind
+                        </button>
+                        <button type="button" onclick="switchTab('device')" class="cancel-btn" style="padding:9px 14px;font-size:0.82rem;">
+                            <i class="bi bi-gear me-1"></i>Manage
+                        </button>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -2551,6 +2604,179 @@
 
             </div>
         </div>
+    </div>
+
+    <!-- ── TAB: DEVICE BINDING ── -->
+    <div id="tab-device" class="spanel">
+
+        <!-- Hero Status Banner -->
+        <div class="sec-health-hero mb-4" style="background:linear-gradient(135deg, rgba(26,20,16,0.95) 0%, rgba(16,24,18,0.95) 100%);">
+            <div class="sec-health-left">
+                <div class="sec-health-icon" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">
+                    <i class="bi bi-phone-fill"></i>
+                </div>
+                <div>
+                    <div class="sec-health-title">Attendance Device Binding</div>
+                    <div class="sec-health-sub">Authorize and lock your physical hardware for anti-proxy classroom QR clock-ins</div>
+                </div>
+            </div>
+            <div class="sec-health-pill {{ $deviceBinding ? 'emerald' : '' }}" id="deviceHeroPill">
+                <span class="sec-pulse-dot" style="{{ $deviceBinding ? 'background:#34d399;' : 'background:#f59e0b;' }}"></span>
+                <span id="deviceHeroPillText">{{ $deviceBinding ? 'Device Bound' : 'Device Not Bound' }}</span>
+            </div>
+        </div>
+
+        <!-- 2-Column Responsive Device Grid -->
+        <div class="sec-cards-grid">
+
+            <!-- Card 1: This Physical Device (Current Browser) -->
+            <div class="sec-card" style="--card-accent: #3b82f6;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
+                        <i class="bi bi-laptop"></i>
+                    </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">This Device (Current Hardware)</span>
+                            <span class="sec-badge sec-badge-blue" id="currentDeviceMatchBadge" style="display:none;">
+                                <i class="bi bi-shield-check"></i> Current Device
+                            </span>
+                        </div>
+                        <div class="sec-card-subtitle">Active browser and hardware environment identity</div>
+                    </div>
+                </div>
+
+                <div class="sec-card-content">
+                    <div class="info-row" style="padding:10px 0;">
+                        <div class="info-icon"><i class="bi bi-cpu-fill"></i></div>
+                        <div style="flex:1;min-width:0;">
+                            <div class="info-lbl">Detected Hardware</div>
+                            <div class="info-val" id="thisDeviceModelText">{{ request()->header('User-Agent') ? Str::limit(request()->header('User-Agent'), 45) : 'Client Device' }}</div>
+                        </div>
+                    </div>
+                    <div class="info-row" style="padding:10px 0;">
+                        <div class="info-icon"><i class="bi bi-globe2"></i></div>
+                        <div style="flex:1;min-width:0;">
+                            <div class="info-lbl">Current IP Address</div>
+                            <div class="info-val" style="font-family:monospace;color:#60a5fa;">{{ request()->ip() }}</div>
+                        </div>
+                    </div>
+                    <div class="info-row" style="padding:10px 0;border-bottom:none;">
+                        <div class="info-icon"><i class="bi bi-fingerprint"></i></div>
+                        <div style="flex:1;min-width:0;">
+                            <div class="info-lbl">Hardware Environment Protection</div>
+                            <div class="info-val" style="color:#4ade80;font-size:0.82rem;"><i class="bi bi-check2-circle me-1"></i> Canvas & WebGL Hash Ready</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:16px;">
+                        <button type="button" onclick="handleBindCurrentDevice()" id="tabDeviceBindBtn" class="sec-action-btn sec-btn-emerald" style="width:100%;padding:12px;font-size:0.9rem;">
+                            <i class="bi bi-link-45deg me-2"></i><span id="tabDeviceBindBtnText">{{ $deviceBinding ? 'Switch & Bind to This Device' : 'Bind to This Device' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Authorized Account Device -->
+            <div class="sec-card" style="--card-accent: #10b981;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">
+                        <i class="bi {{ $deviceBinding ? $deviceBinding->getDeviceIcon() : 'bi-phone' }}" id="deviceTabBoundIcon"></i>
+                    </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Bound Attendance Device</span>
+                            <span class="sec-badge {{ $deviceBinding ? 'sec-badge-emerald' : 'sec-badge-gold' }}" id="deviceTabAuthorizedBadge">
+                                <i class="bi {{ $deviceBinding ? 'bi-patch-check-fill' : 'bi-shield-exclamation' }}"></i>
+                                <span id="deviceTabAuthorizedBadgeText">{{ $deviceBinding ? 'Authorized' : 'Unregistered' }}</span>
+                            </span>
+                        </div>
+                        <div class="sec-card-subtitle">Device registered to record student attendance</div>
+                    </div>
+                </div>
+
+                <div class="sec-card-content">
+                    <div id="deviceTabBoundTile" style="{{ $deviceBinding ? 'display:block;' : 'display:none;' }}">
+                        <div class="info-row" style="padding:10px 0;">
+                            <div class="info-icon"><i class="bi bi-phone"></i></div>
+                            <div style="flex:1;min-width:0;">
+                                <div class="info-lbl">Device Model / Name</div>
+                                <div class="info-val" id="deviceTabBoundName">{{ $deviceBinding ? $deviceBinding->device_name : 'No device bound' }}</div>
+                            </div>
+                        </div>
+                        <div class="info-row" style="padding:10px 0;">
+                            <div class="info-icon"><i class="bi bi-wifi"></i></div>
+                            <div style="flex:1;min-width:0;">
+                                <div class="info-lbl">Registration IP</div>
+                                <div class="info-val" id="deviceTabBoundIp" style="font-family:monospace;color:#4ade80;">{{ $deviceBinding ? ($deviceBinding->ip_address ?: 'Unknown') : '—' }}</div>
+                            </div>
+                        </div>
+                        <div class="info-row" style="padding:10px 0;border-bottom:none;">
+                            <div class="info-icon"><i class="bi bi-clock-history"></i></div>
+                            <div style="flex:1;min-width:0;">
+                                <div class="info-lbl">Last Active Sync</div>
+                                <div class="info-val" id="deviceTabBoundTime">{{ $deviceBinding && $deviceBinding->last_seen_at ? $deviceBinding->last_seen_at->diffForHumans() : 'Recently' }}</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:16px;">
+                            <button type="button" onclick="handleUnbindDevice()" id="tabDeviceUnbindBtn" class="sec-action-btn" style="width:100%;padding:11px;font-size:0.875rem;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3);">
+                                <i class="bi bi-trash3-fill me-2"></i>Unbind Device
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="deviceTabUnboundTile" style="{{ $deviceBinding ? 'display:none;' : 'display:block;' }};text-align:center;padding:24px 16px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);">
+                        <i class="bi bi-phone" style="font-size:2.2rem;color:rgba(207,164,111,0.4);display:block;margin-bottom:8px;"></i>
+                        <div style="font-weight:700;color:#f3e7cd;font-size:0.92rem;margin-bottom:4px;">No Device Bound Yet</div>
+                        <p style="font-size:0.8rem;color:#b39b82;margin-bottom:0;">
+                            Click "Bind to This Device" to authorize your device for classroom attendance scanning.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Full-Width Card: Anti-Proxy & Multi-Tier Verification Security Summary -->
+        <div class="sc mt-4" style="border-color:rgba(207,164,111,0.14);">
+            <div class="sc-head">
+                <div class="sc-icon" style="background:rgba(207,164,111,0.12);color:#cfa46f;"><i class="bi bi-shield-check"></i></div>
+                <div>
+                    <div class="sc-title">Device Security & Multi-Tier Anti-Proxy Engine</div>
+                    <div class="sc-sub">How our hardware binding protects attendance integrity</div>
+                </div>
+            </div>
+            <div class="sc-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
+                            <div style="font-size:1.05rem;font-weight:700;color:#4ade80;margin-bottom:6px;"><i class="bi bi-fingerprint"></i> Hardware Fingerprint</div>
+                            <div style="font-size:0.8rem;color:#b39b82;line-height:1.5;">
+                                Deep browser canvas, WebGL, and audio context hashing creates a persistent fingerprint linked directly to your attendance credentials.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
+                            <div style="font-size:1.05rem;font-weight:700;color:#60a5fa;margin-bottom:6px;"><i class="bi bi-broadcast-pin"></i> Cellular & Wi-Fi Roaming</div>
+                            <div style="font-size:0.8rem;color:#b39b82;line-height:1.5;">
+                                Multi-tier self-healing recognizes dynamic IP address shifts between school Wi-Fi and mobile data without false rejection.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
+                            <div style="font-size:1.05rem;font-weight:700;color:#f59e0b;margin-bottom:6px;"><i class="bi bi-person-x-fill"></i> Anti-Buddy Punching</div>
+                            <div style="font-size:0.8rem;color:#b39b82;line-height:1.5;">
+                                Strict 1-student-per-device rules prevent unauthorized proxy clock-ins from shared or non-registered hardware.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- ── TAB: ATTENDANCE ── -->
@@ -2980,12 +3206,252 @@ window.switchTab = function(id, btn) {
         if (typeof loadDevices === 'function') loadDevices();
         if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
     }
+    if (id === 'device') {
+        if (typeof checkDeviceBindingStatus === 'function') checkDeviceBindingStatus();
+    }
     if (window.triggerHaptic) window.triggerHaptic('light');
     if (window.history && window.history.replaceState) {
         window.history.replaceState(null, null, '#tab-' + id);
     }
     setTimeout(updateStabsScrollArrows, 300);
 };
+
+// ── Attendance Device Binding API Handlers ──
+window.handleBindCurrentDevice = async function() {
+    const bindBtns = document.querySelectorAll('#secQuickBindBtn, #tabDeviceBindBtn');
+    bindBtns.forEach(b => {
+        b.disabled = true;
+        b._origHtml = b.innerHTML;
+        b.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Binding...';
+    });
+
+    try {
+        let devKey = localStorage.getItem('saas_device_key') || '';
+        let devFp = localStorage.getItem('saas_device_fp') || '';
+        let devModel = '';
+
+        if (window.AndroidBridge && typeof window.AndroidBridge.getNativeDeviceId === 'function') {
+            devKey = window.AndroidBridge.getNativeDeviceId();
+        }
+        if (window.AndroidBridge && typeof window.AndroidBridge.getNativeDeviceModel === 'function') {
+            devModel = window.AndroidBridge.getNativeDeviceModel();
+        }
+        if (!devFp && typeof window.getDeviceFingerprint === 'function') {
+            devFp = window.getDeviceFingerprint();
+        }
+        if (!devModel && typeof window.getDeviceModel === 'function') {
+            devModel = window.getDeviceModel();
+        }
+
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+        const resp = await fetch('{{ route("device.bind") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token,
+                'X-Device-Key': devKey,
+                'X-Device-Fingerprint': devFp,
+                'X-Device-Model': devModel,
+            },
+            body: JSON.stringify({
+                device_key: devKey,
+                device_fingerprint: devFp,
+                device_model: devModel,
+                _token: token,
+            }),
+        });
+
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+            updateDeviceBindingUI(data);
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Device bound successfully!', 'success');
+            } else {
+                alert(data.message || 'Device bound successfully!');
+            }
+            if (window.triggerHaptic) window.triggerHaptic('success');
+        } else {
+            const err = data.message || 'Failed to bind device. Please try again.';
+            if (typeof showToast === 'function') showToast(err, 'error');
+            else alert(err);
+        }
+    } catch (err) {
+        console.error('Device bind error:', err);
+        if (typeof showToast === 'function') showToast('Network or server error while binding device.', 'error');
+        else alert('Network error while binding device.');
+    } finally {
+        bindBtns.forEach(b => {
+            b.disabled = false;
+            if (b._origHtml) b.innerHTML = b._origHtml;
+        });
+    }
+};
+
+window.handleUnbindDevice = async function() {
+    if (!confirm('Are you sure you want to unbind this device? You will need to re-bind a device to record classroom attendance.')) {
+        return;
+    }
+
+    const unbindBtns = document.querySelectorAll('#secQuickUnbindBtn, #tabDeviceUnbindBtn');
+    unbindBtns.forEach(b => {
+        b.disabled = true;
+        b._origHtml = b.innerHTML;
+        b.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Unbinding...';
+    });
+
+    try {
+        const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}';
+
+        const resp = await fetch('{{ route("device.unbind") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token,
+            },
+            body: JSON.stringify({
+                _token: token,
+            }),
+        });
+
+        const data = await resp.json();
+        if (resp.ok && data.success) {
+            updateDeviceBindingUI(data);
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Device unbound successfully.', 'success');
+            } else {
+                alert(data.message || 'Device unbound successfully.');
+            }
+            if (window.triggerHaptic) window.triggerHaptic('medium');
+        } else {
+            const err = data.message || 'Failed to unbind device. Please try again.';
+            if (typeof showToast === 'function') showToast(err, 'error');
+            else alert(err);
+        }
+    } catch (err) {
+        console.error('Device unbind error:', err);
+        if (typeof showToast === 'function') showToast('Network or server error while unbinding device.', 'error');
+        else alert('Network error while unbinding device.');
+    } finally {
+        unbindBtns.forEach(b => {
+            b.disabled = false;
+            if (b._origHtml) b.innerHTML = b._origHtml;
+        });
+    }
+};
+
+function updateDeviceBindingUI(data) {
+    const isBound = !!data.is_bound;
+    const isCurrent = !!data.is_current_device;
+    const binding = data.binding;
+
+    // 1. Update Security Tab Quick Card
+    const secBadge = document.getElementById('secCardDeviceBadge');
+    const secBadgeText = document.getElementById('secCardDeviceBadgeText');
+    const secName = document.getElementById('secCardDeviceName');
+    const secIcon = document.getElementById('secCardDeviceIcon');
+    const secHint = document.getElementById('secCardDeviceHint');
+    const secBindBtnText = document.getElementById('secQuickBindBtnText');
+    const secUnbindBtn = document.getElementById('secQuickUnbindBtn');
+
+    if (isBound && binding) {
+        if (secBadge) {
+            secBadge.className = 'sec-badge ' + (isCurrent ? 'sec-badge-emerald' : 'sec-badge-gold');
+        }
+        if (secBadgeText) secBadgeText.textContent = isCurrent ? 'Bound to This Device' : 'Bound to Other Device';
+        if (secName) secName.textContent = binding.device_name || 'Registered Device';
+        if (secIcon) secIcon.className = 'bi ' + (binding.device_icon || 'bi-phone') + ' text-success me-2';
+        if (secHint) {
+            secHint.innerHTML = `Bound device IP: <strong style="color:#f3e7cd;">${binding.ip_address || 'Unknown'}</strong> • Active ${binding.last_seen_human || 'Recently'}.`;
+        }
+        if (secBindBtnText) secBindBtnText.textContent = isCurrent ? 'Re-verify This Device' : 'Switch / Re-bind to This Device';
+        if (secUnbindBtn) secUnbindBtn.style.display = 'inline-flex';
+    } else {
+        if (secBadge) secBadge.className = 'sec-badge';
+        if (secBadgeText) secBadgeText.textContent = 'No Device Bound';
+        if (secName) secName.textContent = 'No device currently registered';
+        if (secIcon) secIcon.className = 'bi bi-phone text-muted me-2';
+        if (secHint) secHint.textContent = 'Bind your smartphone, tablet, or laptop to unlock anti-proxy verified QR attendance clock-ins.';
+        if (secBindBtnText) secBindBtnText.textContent = 'Bind to This Device';
+        if (secUnbindBtn) secUnbindBtn.style.display = 'none';
+    }
+
+    // 2. Update Device Tab Full Page
+    const heroPill = document.getElementById('deviceHeroPill');
+    const heroPillText = document.getElementById('deviceHeroPillText');
+    const boundStatusTile = document.getElementById('deviceTabBoundTile');
+    const unboundStatusTile = document.getElementById('deviceTabUnboundTile');
+    const boundDeviceName = document.getElementById('deviceTabBoundName');
+    const boundDeviceIp = document.getElementById('deviceTabBoundIp');
+    const boundDeviceTime = document.getElementById('deviceTabBoundTime');
+    const boundDeviceIcon = document.getElementById('deviceTabBoundIcon');
+    const tabBindBtnText = document.getElementById('tabDeviceBindBtnText');
+    const tabUnbindBtn = document.getElementById('tabDeviceUnbindBtn');
+    const currentDeviceMatchBadge = document.getElementById('currentDeviceMatchBadge');
+    const deviceTabAuthorizedBadge = document.getElementById('deviceTabAuthorizedBadge');
+    const deviceTabAuthorizedBadgeText = document.getElementById('deviceTabAuthorizedBadgeText');
+
+    if (isBound && binding) {
+        if (heroPill) heroPill.className = 'sec-health-pill ' + (isCurrent ? 'emerald' : 'gold');
+        if (heroPillText) heroPillText.textContent = isCurrent ? 'Bound to This Device' : 'Bound to Other Hardware';
+        if (boundStatusTile) boundStatusTile.style.display = 'block';
+        if (unboundStatusTile) unboundStatusTile.style.display = 'none';
+        if (boundDeviceName) boundDeviceName.textContent = binding.device_name || 'Registered Attendance Device';
+        if (boundDeviceIp) boundDeviceIp.textContent = binding.ip_address || 'Unknown IP';
+        if (boundDeviceTime) boundDeviceTime.textContent = binding.last_seen_human || 'Just now';
+        if (boundDeviceIcon) boundDeviceIcon.className = 'bi ' + (binding.device_icon || 'bi-phone');
+        if (deviceTabAuthorizedBadge) deviceTabAuthorizedBadge.className = 'sec-badge ' + (isCurrent ? 'sec-badge-emerald' : 'sec-badge-gold');
+        if (deviceTabAuthorizedBadgeText) deviceTabAuthorizedBadgeText.textContent = isCurrent ? 'Authorized (This Device)' : 'Authorized (Other Device)';
+        if (tabBindBtnText) tabBindBtnText.textContent = isCurrent ? 'Re-verify Current Device' : 'Switch & Bind This Device';
+        if (tabUnbindBtn) tabUnbindBtn.style.display = 'inline-flex';
+        if (currentDeviceMatchBadge) {
+            currentDeviceMatchBadge.style.display = 'inline-flex';
+            currentDeviceMatchBadge.className = 'sec-badge ' + (isCurrent ? 'sec-badge-emerald' : 'sec-badge-gold');
+            currentDeviceMatchBadge.innerHTML = isCurrent 
+                ? '<i class="bi bi-check-circle-fill me-1"></i> Authorized Device' 
+                : '<i class="bi bi-exclamation-triangle-fill me-1"></i> Unmatched Device';
+        }
+    } else {
+        if (heroPill) heroPill.className = 'sec-health-pill';
+        if (heroPillText) heroPillText.textContent = 'Device Not Bound';
+        if (boundStatusTile) boundStatusTile.style.display = 'none';
+        if (unboundStatusTile) unboundStatusTile.style.display = 'block';
+        if (deviceTabAuthorizedBadge) deviceTabAuthorizedBadge.className = 'sec-badge';
+        if (deviceTabAuthorizedBadgeText) deviceTabAuthorizedBadgeText.textContent = 'Unregistered';
+        if (tabBindBtnText) tabBindBtnText.textContent = 'Bind to This Device';
+        if (tabUnbindBtn) tabUnbindBtn.style.display = 'none';
+        if (currentDeviceMatchBadge) {
+            currentDeviceMatchBadge.style.display = 'none';
+        }
+    }
+}
+
+window.checkDeviceBindingStatus = async function() {
+    try {
+        if (typeof window.getDeviceModel === 'function') {
+            const dm = window.getDeviceModel();
+            const el = document.getElementById('thisDeviceModelText');
+            if (el && dm) el.textContent = dm;
+        }
+        const resp = await fetch('{{ route("device.status") }}', {
+            headers: { 'Accept': 'application/json' }
+        });
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.success) {
+                updateDeviceBindingUI(data);
+            }
+        }
+    } catch (e) {
+        console.warn('Device status check error:', e);
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(window.checkDeviceBindingStatus, 300);
+});
 
 async function toggleWebPush(input) {
     if (input.checked) {

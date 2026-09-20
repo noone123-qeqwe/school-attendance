@@ -121,6 +121,9 @@ public class MainActivity extends AppCompatActivity {
             );
         }
 
+        // Native Device Binding Bridge: exposes stable hardware/app installation UUID
+        webView.addJavascriptInterface(new AndroidDeviceBridge(this), "AndroidDeviceBridge");
+
         // Customize User Agent so server knows it's the official Android app wrapper
         String defaultUa = settings.getUserAgentString();
         settings.setUserAgentString(defaultUa + " SmartAttendanceApp/1.0 (Android Native)");
@@ -328,6 +331,43 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         if (webView != null) {
             webView.saveState(outState);
+        }
+    }
+
+    /**
+     * JavaScript Interface that exposes hardware/installation stable device binding metadata.
+     */
+    public class AndroidDeviceBridge {
+        private final android.content.Context mContext;
+
+        public AndroidDeviceBridge(android.content.Context context) {
+            this.mContext = context;
+        }
+
+        @android.webkit.JavascriptInterface
+        public String getNativeDeviceId() {
+            android.content.SharedPreferences prefs = mContext.getSharedPreferences("app_device_binding", android.content.Context.MODE_PRIVATE);
+            String id = prefs.getString("native_device_id", null);
+            if (id == null || id.trim().isEmpty()) {
+                id = "and_" + java.util.UUID.randomUUID().toString().replace("-", "");
+                prefs.edit().putString("native_device_id", id).apply();
+            }
+            return id;
+        }
+
+        @android.webkit.JavascriptInterface
+        public String getNativeDeviceModel() {
+            String manufacturer = Build.MANUFACTURER != null ? Build.MANUFACTURER : "";
+            String model = Build.MODEL != null ? Build.MODEL : "Android Device";
+            if (model.toLowerCase().startsWith(manufacturer.toLowerCase())) {
+                return model;
+            }
+            return (manufacturer + " " + model).trim();
+        }
+
+        @android.webkit.JavascriptInterface
+        public boolean isNativeApp() {
+            return true;
         }
     }
 }

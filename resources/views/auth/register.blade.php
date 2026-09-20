@@ -613,7 +613,7 @@
                                 <div class="field-feedback" id="feedback-course" style="display:none;"></div>
 
                                 <div class="form-floating-custom mb-1" id="wrap-student_number">
-                                    <input type="text" name="student_number" id="student_number" placeholder=" " value="{{ old('student_number') }}" autocomplete="off" maxlength="30">
+                                    <input type="text" name="student_number" id="student_number" placeholder=" " value="{{ old('student_number') }}" autocomplete="off" maxlength="7">
                                     <label for="student_number">Student ID / Number (e.g. 2311969)</label>
                                 </div>
                                 <div class="field-feedback" id="feedback-student_number"></div>
@@ -1022,6 +1022,10 @@
                         setFieldFeedback('student_number', false, 'Student ID must be at least 3 characters.');
                         return false;
                     }
+                    if (val.length > 7) {
+                        setFieldFeedback('student_number', false, 'Student ID cannot exceed 7 characters.');
+                        return false;
+                    }
                     if (!/^[a-zA-Z0-9\-_]+$/.test(val)) {
                         setFieldFeedback('student_number', false, 'Student ID can only contain letters, numbers, and hyphens.');
                         return false;
@@ -1147,6 +1151,10 @@
                             if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID must be at least 3 characters.');
                             isValid = false;
                             if (!firstErrorMsg) firstErrorMsg = 'Student ID must be at least 3 characters.';
+                        } else if (snVal.length > 7) {
+                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID cannot exceed 7 characters.');
+                            isValid = false;
+                            if (!firstErrorMsg) firstErrorMsg = 'Student ID cannot exceed 7 characters.';
                         } else if (!/^[a-zA-Z0-9\-_]+$/.test(snVal)) {
                             if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID can only contain letters, numbers, and hyphens.');
                             isValid = false;
