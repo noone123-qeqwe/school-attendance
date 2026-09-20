@@ -133,4 +133,63 @@ class ContinuousVersionProgressionTest extends TestCase
         $this->assertEquals('5', $freshService->getLatestVersion());
         $this->assertTrue($freshService->isUpToDate());
     }
+
+    /**
+     * Test version limit advancement from 2.5.1 to 2.5.2 and subsequent progression.
+     */
+    public function test_version_progresses_from_2_5_1_to_2_5_2_and_pwa_update_moves_to_next(): void
+    {
+        /** @var VersionService $service */
+        $service = app(VersionService::class);
+
+        // State 1: Client is on 2.5.1 (the previous limit)
+        Setting::set('installed_version', '2.5.1');
+        Setting::set('system_version', '2.5.2');
+        Setting::set('latest_version', '2.5.2');
+        $service->refresh();
+
+        $this->assertEquals('2.5.1', $service->getInstalledVersion());
+        $this->assertEquals('2.5.2', $service->getLatestVersion());
+        $this->assertFalse($service->isUpToDate());
+
+        // PWA Version check detects 2.5.2 is available
+        $res = $this->getJson('/pwa/version');
+        $res->assertStatus(200)
+            ->assertJson([
+                'installed_version' => '2.5.1',
+                'latest_version'    => '2.5.2',
+                'is_up_to_date'     => false,
+            ]);
+
+        // User updates to 2.5.2
+        $updateRes = $this->postJson('/pwa/update', ['version' => '2.5.2']);
+        $updateRes->assertStatus(200)
+            ->assertJson([
+                'success'           => true,
+                'installed_version' => '2.5.2',
+                'latest_version'    => '2.5.2',
+                'is_up_to_date'     => true,
+            ]);
+
+        $service->refresh();
+        $this->assertEquals('2.5.2', $service->getInstalledVersion());
+        $this->assertEquals('2.5.2', $service->getLatestVersion());
+        $this->assertTrue($service->isUpToDate());
+
+        // Next release advance (e.g. 2.5.3) continues seamlessly without stalling
+        $nextRelease = $service->publishRelease('2.5.3');
+        $this->assertEquals('2.5.3', $nextRelease['version']);
+        $this->assertEquals('2.5.2', $service->getInstalledVersion());
+        $this->assertEquals('2.5.3', $service->getLatestVersion());
+        $this->assertFalse($service->isUpToDate());
+
+        $nextCheck = $this->getJson('/pwa/version');
+        $nextCheck->assertStatus(200)
+            ->assertJson([
+                'installed_version' => '2.5.2',
+                'latest_version'    => '2.5.3',
+                'is_up_to_date'     => false,
+            ]);
+    }
 }
+

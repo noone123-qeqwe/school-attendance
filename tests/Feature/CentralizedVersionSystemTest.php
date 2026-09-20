@@ -113,31 +113,32 @@ class CentralizedVersionSystemTest extends TestCase
         $service = app(VersionService::class);
 
         $initialBuild = $service->getBuild();
+        $expectedVersion = $service->incrementSemver($service->getLatestVersion(), 'minor');
 
         $release = $service->createRelease('minor');
 
-        $this->assertEquals('2.5.0', $release['version']);
-        $this->assertEquals('v2.5.0', $release['version_tag']);
+        $this->assertEquals($expectedVersion, $release['version']);
+        $this->assertEquals('v' . $expectedVersion, $release['version_tag']);
         $this->assertNotEmpty($release['build']);
         $this->assertStringStartsWith(date('Ymd'), $release['build']);
         $this->assertNotEquals($initialBuild, $release['build']);
 
         // Check version.json was updated
         $versionJson = json_decode(File::get(base_path('version.json')), true);
-        $this->assertEquals('2.5.0', $versionJson['version']);
+        $this->assertEquals($expectedVersion, $versionJson['version']);
         $this->assertEquals($release['build'], $versionJson['build']);
 
         // Check package.json was updated
         $pkg = json_decode(File::get(base_path('package.json')), true);
-        $this->assertEquals('2.5.0', $pkg['version']);
+        $this->assertEquals($expectedVersion, $pkg['version']);
 
         // Check manifest.json was updated
         $manifest = json_decode(File::get(public_path('manifest.json')), true);
-        $this->assertEquals('2.5.0', $manifest['version']);
+        $this->assertEquals($expectedVersion, $manifest['version']);
 
         // Check database Setting was updated
-        $this->assertEquals('2.5.0', Setting::get('system_version'));
-        $this->assertEquals('2.5.0', Setting::get('installed_version'));
+        $this->assertEquals($expectedVersion, Setting::get('system_version'));
+        $this->assertEquals($expectedVersion, Setting::get('installed_version'));
 
         // Check sw.js was updated with new cache version
         $sw = File::get(public_path('sw.js'));

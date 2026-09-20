@@ -36,6 +36,74 @@ return [
     |
     */
     'releases' => [
+        '2.5.2' => [
+            'version' => '2.5.2',
+            'version_tag' => 'v2.5.2',
+            'title' => 'Biometric Login Touchscreen Optimizations & Continuous Version Progression',
+            'description' => 'Direct native biometric authentication prompt triggering, improved touch feedback with zero sticky hover state, clean cancellation without error popups, and bumped version limit for continuous progression.',
+            'features' => [
+                'Immediate hardware-native biometric / passkey prompt triggering on Android WebView and mobile browsers',
+                'Continuous application version progression limit advance to v2.5.2',
+                'Automated multi-source semantic version synchronization across disk, database, and client manifests',
+            ],
+            'improvements' => [
+                'Touchscreen press visual feedback with touchcancel suppression and zero sticky highlight',
+                'Clean biometric dismissal returning user to password form without alert noise',
+                'Automated service worker cache invalidation (v364) and client manifest alignment',
+            ],
+            'bugFixes' => [
+                'Fixed biometric sign-in button click handler not invoking native WebAuthn credentials prompt',
+                'Fixed login blade script parse error caused by misplaced anonymous function execution',
+                'Resolved version progression stall after client updates by advancing canonical release limit',
+            ],
+            'security' => [
+                'Strict WebAuthn credential assertion validation with domain origin verification',
+            ],
+            'released_at' => '2026-09-20',
+        ],
+        '2.5.1' => [
+            'version' => '2.5.1',
+            'version_tag' => 'v2.5.1',
+            'title' => 'Universal Device Binding Key Synchronization & Mobile Scanner Guardians',
+            'description' => 'Unified device binding across web and mobile views, robust passkey credential re-enrollment, and responsive update modal handling.',
+            'features' => [
+                'Universal persistent device key synchronization with automatic local storage and cookie failovers',
+                'Enhanced student scanner modal guardians and anti-proxy attendance verification',
+            ],
+            'improvements' => [
+                'Zero false-positive device mismatch rejections across network reconnects',
+                'Streamlined biometric re-enrollment clearing stale exclude credentials',
+            ],
+            'bugFixes' => [
+                'Fixed false device mismatch rejections during biometric authentication',
+                'Fixed version progression loop on consecutive client updates',
+            ],
+            'security' => [
+                'Tamper-resistant cryptographic device key generation with cross-origin fetch isolation',
+            ],
+            'released_at' => '2026-09-17',
+        ],
+        '2.5.0' => [
+            'version' => '2.5.0',
+            'version_tag' => 'v2.5.0',
+            'title' => 'PWA Update Console & Real-time Client Broadcast',
+            'description' => 'Full system update management console, real-time Web Push broadcast announcements, and automatic PWA service worker cache bust.',
+            'features' => [
+                'One-click full system update pipeline with automated database backup snapshotting',
+                'Real-time Web Push update notification broadcast to all active student and teacher sessions',
+            ],
+            'improvements' => [
+                'Service worker cache versioning with atomic byte-level asset modification stamps',
+                'Immediate compiled view and route table invalidation on application updates',
+            ],
+            'bugFixes' => [
+                'Resolved version freeze across multi-instance cloud deployments',
+            ],
+            'security' => [
+                'Pessimistic table locking during pre-update database snapshotting',
+            ],
+            'released_at' => '2026-09-17',
+        ],
         '2.4.6' => [
             'version' => '2.4.6',
             'version_tag' => 'v2.4.6',

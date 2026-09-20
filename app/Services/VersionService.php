@@ -111,7 +111,7 @@ class VersionService
         } catch (\Throwable $e) {}
 
         // Fallback baseline
-        $baseline = $diskVer ?: '2.4.6';
+        $baseline = $diskVer ?: '2.5.2';
         $sources[] = $baseline;
 
         // Select the maximum semantic version among all valid sources
