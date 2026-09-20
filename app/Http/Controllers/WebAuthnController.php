@@ -307,11 +307,37 @@ class WebAuthnController extends Controller
                 }
             }
             
+            $allCreds = $user->webauthnCredentials()->get();
+            $availableMethods = [];
+            $hasFaceCred = false;
+            $hasFingerprintCred = false;
+            $hasHardwareWebauthn = false;
+
+            foreach ($allCreds as $ac) {
+                $bType = $ac->biometric_type ?: 'fingerprint';
+                if ($bType === 'face') {
+                    $hasFaceCred = true;
+                } else {
+                    $hasFingerprintCred = true;
+                }
+                if ($bType !== 'face' || str_contains((string) $ac->public_key, 'BEGIN PUBLIC KEY')) {
+                    $hasHardwareWebauthn = true;
+                }
+            }
+
+            if ($hasFingerprintCred) $availableMethods[] = 'fingerprint';
+            if ($hasFaceCred) $availableMethods[] = 'face';
+            if ($hasHardwareWebauthn) $availableMethods[] = 'device_lock';
+            if (empty($availableMethods)) {
+                $availableMethods = ['fingerprint', 'device_lock'];
+            }
+
             return response()->json(array_merge($options['publicKey'], [
                 "success" => true,
                 "user_id" => $user->id,
                 "identifier" => $user->student_number ?? $user->email ?? $identifier,
                 "user_name" => $user->name,
+                "available_methods" => $availableMethods,
             ]));
         }
 
@@ -319,6 +345,7 @@ class WebAuthnController extends Controller
         session()->forget("webauthn_login_user_id");
         $options = $webauthn->authenticationOptions(null);
 
+        $discoverableMethods = [];
         // If saved_identifiers was passed in discoverable mode, populate allowCredentials with known device accounts
         if (!empty($savedIdentifiers)) {
             $allowCredentials = [];
@@ -335,6 +362,11 @@ class WebAuthnController extends Controller
                         })
                         ->get();
                     foreach ($creds as $c) {
+                        $t = $c->biometric_type ?: 'fingerprint';
+                        if ($t === 'face' && !in_array('face', $discoverableMethods)) $discoverableMethods[] = 'face';
+                        if ($t !== 'face' && !in_array('fingerprint', $discoverableMethods)) $discoverableMethods[] = 'fingerprint';
+                        if (!in_array('device_lock', $discoverableMethods)) $discoverableMethods[] = 'device_lock';
+
                         if (!in_array($c->credential_id, $existingIds)) {
                             $allowCredentials[] = [
                                 'type' => 'public-key',
@@ -350,11 +382,83 @@ class WebAuthnController extends Controller
                 $options['publicKey']['allowCredentials'] = $allowCredentials;
             }
         }
+        if (empty($discoverableMethods)) {
+            $discoverableMethods = ['fingerprint', 'face', 'device_lock'];
+        }
 
         return response()->json(array_merge($options['publicKey'], [
             "success" => true,
             "discoverable" => true,
+            "available_methods" => $discoverableMethods,
         ]));
+    }
+
+    /**
+     * Return available enrolled biometric methods for a given user or device
+     */
+    public function availableMethods(Request $request)
+    {
+        $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
+        $savedIdentifiers = $request->input('saved_identifiers', []);
+
+        if ($raw && is_string($raw) && trim($raw) !== '') {
+            $identifier = trim($raw);
+            $user = $this->findUserByIdentifier($identifier);
+            if (!$user) {
+                return response()->json(["success" => false, "code" => "ACCOUNT_NOT_FOUND", "message" => "Account not found for \"{$identifier}\"."], 404);
+            }
+            if (!$user->isActive()) {
+                return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Account deactivated."], 403);
+            }
+            $creds = $user->webauthnCredentials()->get();
+            if ($creds->isEmpty()) {
+                return response()->json(["success" => false, "code" => "NOT_REGISTERED", "message" => "No biometrics registered."], 404);
+            }
+            $methods = [];
+            $hasFp = false;
+            $hasFace = false;
+            $hasHw = false;
+            foreach ($creds as $c) {
+                $t = $c->biometric_type ?: 'fingerprint';
+                if ($t === 'face') $hasFace = true;
+                else $hasFp = true;
+                if ($t !== 'face' || str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY')) $hasHw = true;
+            }
+            if ($hasFp) $methods[] = 'fingerprint';
+            if ($hasFace) $methods[] = 'face';
+            if ($hasHw) $methods[] = 'device_lock';
+            return response()->json([
+                "success" => true,
+                "identifier" => $user->student_number ?? $user->email ?? $identifier,
+                "user_name" => $user->name,
+                "available_methods" => $methods,
+            ]);
+        }
+
+        $methods = [];
+        if (is_array($savedIdentifiers) && !empty($savedIdentifiers)) {
+            foreach ($savedIdentifiers as $savedId) {
+                if (!is_string($savedId) || trim($savedId) === '') continue;
+                $savedUser = $this->findUserByIdentifier(trim($savedId));
+                if ($savedUser && $savedUser->isActive()) {
+                    foreach ($savedUser->webauthnCredentials as $c) {
+                        $t = $c->biometric_type ?: 'fingerprint';
+                        if ($t === 'face' && !in_array('face', $methods)) $methods[] = 'face';
+                        if ($t !== 'face' && !in_array('fingerprint', $methods)) $methods[] = 'fingerprint';
+                        if (!in_array('device_lock', $methods)) $methods[] = 'device_lock';
+                    }
+                }
+            }
+        }
+        if (empty($methods)) {
+            $methods = ['fingerprint', 'face', 'device_lock'];
+        }
+
+        return response()->json([
+            "success" => true,
+            "discoverable" => true,
+            "available_methods" => $methods,
+        ]);
     }
 
     public function setupOptions(Request $request, WebauthnService $webauthn)

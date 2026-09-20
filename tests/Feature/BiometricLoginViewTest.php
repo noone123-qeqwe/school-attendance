@@ -214,5 +214,117 @@ class BiometricLoginViewTest extends TestCase
         $this->assertStringContainsString('touch-action: manipulation;', $content);
         $this->assertStringContainsString('@media (hover: hover) and (pointer: fine)', $content);
     }
+
+    public function test_login_page_renders_biometric_selection_prompt_elements()
+    {
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        // Biometric method selection modal DOM elements
+        $this->assertStringContainsString('id="bioModalMethodsWrap"', $content);
+        $this->assertStringContainsString('id="bioModalMethodsList"', $content);
+        $this->assertStringContainsString('id="bioModalChooseMethodBtn"', $content);
+        $this->assertStringContainsString('class="bio-method-list"', $content);
+
+        // Crucial CSP check: Choose method button must not use inline onclick
+        $this->assertStringNotContainsString('id="bioModalChooseMethodBtn" onclick=', $content);
+
+        // Core JS functions for dynamic biometric detection and prompt selection
+        $this->assertStringContainsString('function getDeviceBiometricCapabilities(', $content);
+        $this->assertStringContainsString('function filterAvailableBiometricMethods(', $content);
+        $this->assertStringContainsString('function openBiometricSelectionPrompt(', $content);
+        $this->assertStringContainsString('function handleSelectBiometricMethod(', $content);
+    }
+
+    public function test_webauthn_login_options_returns_available_methods_for_targeted_user()
+    {
+        $user = User::factory()->create([
+            'student_number' => '2024-77777',
+            'email' => 'student77777@test.com',
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'test_cred_id_77777',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Fingerprint Sensor',
+            'biometric_type' => 'fingerprint',
+            'last_used_at' => now(),
+        ]);
+
+        $response = $this->postJson(route('webauthn.login.options'), [
+            'student_number' => '2024-77777',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+        ]);
+        $this->assertIsArray($response->json('available_methods'));
+        $this->assertContains('fingerprint', $response->json('available_methods'));
+        $this->assertContains('device_lock', $response->json('available_methods'));
+    }
+
+    public function test_webauthn_login_options_returns_available_methods_in_discoverable_mode()
+    {
+        $response = $this->postJson(route('webauthn.login.options'), []);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'discoverable' => true,
+        ]);
+        $this->assertIsArray($response->json('available_methods'));
+        $this->assertNotEmpty($response->json('available_methods'));
+    }
+
+    public function test_webauthn_available_methods_endpoint_returns_enrolled_methods()
+    {
+        $user = User::factory()->create([
+            'student_number' => '2024-66666',
+            'email' => 'student66666@test.com',
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+
+        \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'test_cred_id_66666_fp',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Fingerprint Reader',
+            'biometric_type' => 'fingerprint',
+            'last_used_at' => now(),
+        ]);
+
+        \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'test_cred_id_66666_face',
+            'public_key' => 'face_desc_95_mockdata',
+            'sign_count' => 0,
+            'device_name' => 'Front Camera Face',
+            'biometric_type' => 'face',
+            'last_used_at' => now(),
+        ]);
+
+        // Query by student number
+        $response = $this->postJson(route('webauthn.available.methods'), [
+            'identifier' => '2024-66666',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'identifier' => '2024-66666',
+        ]);
+        $methods = $response->json('available_methods');
+        $this->assertContains('fingerprint', $methods);
+        $this->assertContains('face', $methods);
+        $this->assertContains('device_lock', $methods);
+    }
 }
 
