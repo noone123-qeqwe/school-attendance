@@ -442,9 +442,16 @@ function requestLocation(options) {
         // Check if student is within classroom geofence
         if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
             var dist = calculateDistance(lat, lng, CLASSROOM_LAT, CLASSROOM_LNG);
-            console.log('Classroom distance check:', dist + 'm, limit:', RADIUS_METERS + 'm');
+            var accuracyAllowance = accuracy > 0 ? Math.min(accuracy, Math.max(50, RADIUS_METERS)) : 0;
+            var effectiveDist = Math.max(0, dist - accuracyAllowance);
+            console.log('Classroom distance check: raw ' + Math.round(dist) + 'm, allowance ' + Math.round(accuracyAllowance) + 'm, effective ' + Math.round(effectiveDist) + 'm, limit: ' + RADIUS_METERS + 'm');
             
-            if (dist > RADIUS_METERS) {
+            if (accuracy > 150) {
+                showWeakGpsError(accuracy);
+                return;
+            }
+
+            if (effectiveDist > RADIUS_METERS) {
                 showOutsideClassroomError(dist, RADIUS_METERS);
                 return;
             }
@@ -626,6 +633,11 @@ function submitAttendance(credentialData) {
             return;
         }
 
+        if (response.error_type === 'unreliable_gps') {
+            showWeakGpsError(accuracy);
+            return;
+        }
+
         if (response.error_type === 'outside_classroom') {
             showOutsideClassroomError(response.distance || 0, response.radius || RADIUS_METERS);
             return;
@@ -784,6 +796,19 @@ function submitForm(msg) {
     document.getElementById('vTitle').textContent = 'Unable to Clock In';
     document.getElementById('vSub').textContent = msg;
     showMsg('err', '<i class="bi bi-exclamation-circle me-1"></i> ' + msg);
+}
+
+function showWeakGpsError(acc) {
+    fingerprintInProgress = false;
+    setIcon('#fef2f2', 'bi bi-geo', '#dc2626');
+    document.getElementById('vTitle').textContent = 'Weak GPS Signal';
+    var accMsg = (acc && acc > 0) ? ' (±' + Math.round(acc) + 'm)' : '';
+    document.getElementById('vSub').textContent = 'GPS accuracy is too low' + accMsg + ' to verify your location.';
+    showMsg('err', '<i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Weak Signal:</strong> Please move near a window, enable High Accuracy GPS, and try again.');
+    var btn = document.getElementById('retryFpBtn');
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
+    btn.onclick = function() { startGPS(); };
+    btn.style.display = 'flex';
 }
 
 function showOutsideClassroomError(dist, limit) {

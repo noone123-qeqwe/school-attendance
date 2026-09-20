@@ -1406,17 +1406,67 @@ let isScanInFlight = false;
 let currentFacingMode = "environment";
 let torchEnabled = false;
 let studentGeoCoords = null;
+let studentGeoTimestamp = 0;
+let studentGeoPromise = null;
 let currentScannerMode = 'scan'; // 'scan' | 'code'
 let autoCloseTimer = null;
 let autoCloseCountdownInterval = null;
 
-// Auto-capture GPS coords quietly for faster validation
+function refreshStudentLocation(force = false) {
+    if (!navigator.geolocation) return Promise.resolve(null);
+    const now = Date.now();
+    if (!force && studentGeoCoords && (now - studentGeoTimestamp < 15000)) {
+        return Promise.resolve(studentGeoCoords);
+    }
+    if (studentGeoPromise && !force) {
+        return studentGeoPromise;
+    }
+    studentGeoPromise = new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+            pos => {
+                studentGeoCoords = {
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude,
+                    acc: pos.coords.accuracy
+                };
+                studentGeoTimestamp = Date.now();
+                studentGeoPromise = null;
+                resolve(studentGeoCoords);
+            },
+            err => {
+                // If high accuracy timed out or had weak signal, fallback to standard accuracy
+                if (err && err.code === 3) {
+                    navigator.geolocation.getCurrentPosition(
+                        pos => {
+                            studentGeoCoords = {
+                                lat: pos.coords.latitude,
+                                lng: pos.coords.longitude,
+                                acc: pos.coords.accuracy
+                            };
+                            studentGeoTimestamp = Date.now();
+                            studentGeoPromise = null;
+                            resolve(studentGeoCoords);
+                        },
+                        () => {
+                            studentGeoPromise = null;
+                            resolve(studentGeoCoords);
+                        },
+                        { enableHighAccuracy: false, timeout: 3000, maximumAge: 10000 }
+                    );
+                } else {
+                    studentGeoPromise = null;
+                    resolve(studentGeoCoords);
+                }
+            },
+            { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+        );
+    });
+    return studentGeoPromise;
+}
+
+// Initial capture quietly for faster validation
 if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(
-        pos => { studentGeoCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }; },
-        () => {},
-        { enableHighAccuracy: true, timeout: 5000 }
-    );
+    refreshStudentLocation(true);
 }
 
 function isDesktopDevice() {
@@ -1685,6 +1735,9 @@ function openStudentScanner(initialMode = 'scan', autoPaste = false) {
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
     
+    // Refresh student location so fresh coordinates are ready by scan time
+    refreshStudentLocation(true);
+
     if (isDesktopDevice() && initialMode !== 'scan') {
         initialMode = 'code';
     }
@@ -2343,18 +2396,14 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     const parsedData = extractQrToken(decodedText);
     const resolvedMethod = (method === 'code' || currentScannerMode === 'code' || (parsedData.code && !parsedData.token)) ? 'code' : 'qr';
 
+    if (!studentGeoCoords || (Date.now() - studentGeoTimestamp > 15000)) {
+        try {
+            await refreshStudentLocation(false);
+        } catch(e) {}
+    }
     if (!studentGeoCoords && navigator.geolocation) {
         try {
-            await new Promise((resolve) => {
-                navigator.geolocation.getCurrentPosition(
-                    pos => {
-                        studentGeoCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy };
-                        resolve();
-                    },
-                    () => resolve(),
-                    { enableHighAccuracy: true, timeout: 3500 }
-                );
-            });
+            await refreshStudentLocation(true);
         } catch(e) {}
     }
 
@@ -2546,7 +2595,9 @@ function renderScanError(data) {
         title.textContent = currentScannerMode === 'code' ? 'Invalid Attendance Code' : 'Invalid QR Code';
     } else if (errType === 'location_required') {
         title.textContent = 'Location Required';
-    } else if (errType === 'outside_classroom' || (data.message && data.message.toLowerCase().includes('outside'))) {
+    } else if (errType === 'unreliable_gps') {
+        title.textContent = 'Weak GPS Signal';
+    } else if (errType === 'outside_classroom') {
         title.textContent = 'Outside Classroom Range';
         showOutsideRangePopup(data);
     } else {
@@ -2593,17 +2644,20 @@ function closeOutsideRangePopup() {
 
 function retryScanFromOutsidePopup() {
     closeOutsideRangePopup();
+    refreshStudentLocation(true);
     resetScannerView();
     switchScannerMode('scan');
 }
 
 function useCodeFromOutsidePopup() {
     closeOutsideRangePopup();
+    refreshStudentLocation(true);
     resetScannerView();
     switchScannerMode('code');
 }
 
 function retryCurrentScanMode() {
+    refreshStudentLocation(true);
     resetScannerView();
     if (currentScannerMode === 'code') {
         switchScannerMode('code');

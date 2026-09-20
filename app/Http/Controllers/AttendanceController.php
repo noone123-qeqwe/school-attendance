@@ -57,30 +57,44 @@ class AttendanceController extends Controller
         return redirect()->back()->with('error', 'You are not enrolled in this subject.');
     }
 
-    // SCHOOL LOCATION — Read dynamically from admin settings
-    $schoolLat    = (float) \App\Models\Setting::get('gps_lat', 14.538800);
-    $schoolLng    = (float) \App\Models\Setting::get('gps_lng', 121.022300);
-    $radiusMeters = (int) \App\Models\Setting::get('gps_radius', 50);
+    // SCHOOL LOCATION — Read dynamically from active session if present, else admin settings
+    $activeSession = \App\Models\AttendanceSession::where('subject_code', $subject->code)
+        ->where('active', true)
+        ->latest('id')
+        ->first();
+
+    $schoolLat    = (float) ($activeSession?->classroom_lat ?? \App\Models\Setting::get('gps_lat', 14.538800));
+    $schoolLng    = (float) ($activeSession?->classroom_lng ?? \App\Models\Setting::get('gps_lng', 121.022300));
+    $radiusMeters = (int) ($activeSession ? $activeSession->getAllowedRadius() : \App\Models\Setting::get('gps_radius', 50));
 
     // GPS VALIDATION — use is_null() so 0.0 is accepted
     if (is_null($request->latitude) || is_null($request->longitude)) {
         return redirect()->back()->with('error', 'GPS location is required for clock-in.');
     }
 
+    $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+
+    if ($accuracy !== null && $accuracy <= 0) {
+        return redirect()->back()->with('error', 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.');
+    }
+
+    if ($accuracy !== null && $accuracy > 150) {
+        return redirect()->back()->with('error', "GPS signal accuracy is too low (±" . round($accuracy) . "m) to verify your classroom location. Please move near a window, enable High Accuracy GPS, and try again.");
+    }
+
     // CALCULATE DISTANCE
     $distance = $this->distance(
-        $request->latitude,
-        $request->longitude,
+        (float) $request->latitude,
+        (float) $request->longitude,
         $schoolLat,
         $schoolLng
     );
 
-    if ($distance > $radiusMeters) {
-        return redirect()->back()->with('error', "You are {$distance}m away from the classroom. You must be within {$radiusMeters}m to clock in.");
-    }
+    $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, max(50.0, (float) $radiusMeters)) : 0.0;
+    $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
 
-    if ($request->filled('accuracy') && $request->accuracy > 100) {
-        return redirect()->back()->with('error', "GPS signal too weak (Accuracy: {$request->accuracy}m). Please ensure high-trust connection or try WebAuthn flow.");
+    if ($effectiveDistance > $radiusMeters) {
+        return redirect()->back()->with('error', "You are outside the classroom boundary (" . round($distance) . "m away, allowed within {$radiusMeters}m). Attendance can only be marked while inside the classroom.");
     }
 
     // 1. DAY VALIDATION
