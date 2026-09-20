@@ -799,23 +799,6 @@
         background: rgba(255,255,255,0.18) !important; color: #fff !important;
         transform: rotate(90deg) !important;
     }
-    .pwa-update-whats-new {
-        position: relative; z-index: 1;
-        background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 12px; padding: 11px 14px;
-        display: flex; align-items: flex-start; gap: 10px;
-    }
-    .pwa-update-whats-new-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; opacity: 0.85; }
-    .pwa-update-whats-new-text { flex: 1; min-width: 0; }
-    .pwa-update-whats-new-label {
-        font-size: 0.65rem; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase;
-        color: rgba(232,192,100,0.9); margin-bottom: 4px;
-    }
-    .pwa-update-whats-new-body {
-        font-size: 0.8rem; color: rgba(255,255,255,0.65); line-height: 1.5;
-        overflow: hidden; display: -webkit-box;
-        -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-    }
     .pwa-update-banner-actions {
         position: relative; z-index: 1;
         display: flex !important; align-items: center !important;
@@ -1060,13 +1043,6 @@
                 <span style="display:none;" aria-hidden="true">Update Ready Refresh Now</span>
             </div>
             <button type="button" class="pwa-update-close-btn" id="pwaDismissUpdatePopupBtn" aria-label="Dismiss">&times;</button>
-        </div>
-        <div class="pwa-update-whats-new" id="pwaUpdateWhatsNew">
-            <span class="pwa-update-whats-new-icon">&#10024;</span>
-            <div class="pwa-update-whats-new-text">
-                <div class="pwa-update-whats-new-label">What&#8217;s New</div>
-                <div class="pwa-update-whats-new-body" id="pwaUpdateWhatsNewBody">UI improvements, performance enhancements, and stability fixes for a smoother experience.</div>
-            </div>
         </div>
         <div class="pwa-update-banner-actions">
             <button type="button" class="pwa-btn-update-later" id="pwaLaterUpdateBtn">Later</button>
