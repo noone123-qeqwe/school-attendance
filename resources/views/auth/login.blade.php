@@ -2498,7 +2498,18 @@ async function performBiometricLogin(studentNumber) {
 
 // Bind DOM event listeners for biometric UI elements
 function setupBiometricListeners() {
-    if (fpRowBtn) {
+    // Re-query the controls here instead of relying only on the references
+    // captured when this script first ran. Login can be restored from the
+    // browser back/forward cache or replaced by a partial navigation.
+    fpSec = document.getElementById('fingerprintSection');
+    fpRowBtn = document.getElementById('fpRowBtn');
+    fpLabel = document.getElementById('fpLabel');
+    fpHint = document.getElementById('fpHint');
+    fpIcon = document.getElementById('fpIcon');
+    fpArrow = document.getElementById('fpArrow');
+
+    if (fpRowBtn && fpRowBtn.dataset.biometricBound !== 'true') {
+        fpRowBtn.dataset.biometricBound = 'true';
         fpRowBtn.addEventListener('click', function(e) {
             e.preventDefault();
             handleBiometricLogin();
@@ -2561,7 +2572,7 @@ if (document.readyState === 'loading') {
 } else {
     setupBiometricListeners();
 }
-
+window.addEventListener('pageshow', setupBiometricListeners);
 // Expose functions globally on window
 window.handleBiometricLogin = handleBiometricLogin;
 window.performBiometricLogin = performBiometricLogin;
