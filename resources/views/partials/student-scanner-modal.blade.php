@@ -1408,59 +1408,117 @@ let torchEnabled = false;
 let studentGeoCoords = null;
 let studentGeoTimestamp = 0;
 let studentGeoPromise = null;
+let studentLocationWatchId = null;
 let currentScannerMode = 'scan'; // 'scan' | 'code'
 let autoCloseTimer = null;
 let autoCloseCountdownInterval = null;
 
+function startContinuousLocationWatch() {
+    if (!navigator.geolocation || studentLocationWatchId !== null) return;
+    studentLocationWatchId = navigator.geolocation.watchPosition(
+        pos => {
+            if (pos && pos.coords) {
+                const acc = pos.coords.accuracy || 0;
+                // If more accurate, or existing fix is older than 5s, accept it
+                if (!studentGeoCoords || acc <= (studentGeoCoords.acc || Infinity) || (Date.now() - studentGeoTimestamp > 5000)) {
+                    studentGeoCoords = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        acc: acc
+                    };
+                    studentGeoTimestamp = Date.now();
+                }
+            }
+        },
+        err => {
+            console.warn('Continuous GPS watch warning:', err);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 3000 }
+    );
+}
+
+function stopContinuousLocationWatch() {
+    if (studentLocationWatchId !== null && navigator.geolocation) {
+        navigator.geolocation.clearWatch(studentLocationWatchId);
+        studentLocationWatchId = null;
+    }
+}
+
 function refreshStudentLocation(force = false) {
     if (!navigator.geolocation) return Promise.resolve(null);
     const now = Date.now();
-    if (!force && studentGeoCoords && (now - studentGeoTimestamp < 15000)) {
+    // Accept existing fix if fresh (< 10s) and high accuracy (<= 45m)
+    if (!force && studentGeoCoords && (now - studentGeoTimestamp < 10000) && (studentGeoCoords.acc <= 45)) {
         return Promise.resolve(studentGeoCoords);
     }
     if (studentGeoPromise && !force) {
         return studentGeoPromise;
     }
+
     studentGeoPromise = new Promise((resolve) => {
+        let hasResolved = false;
+        const finish = (coords) => {
+            if (hasResolved) return;
+            hasResolved = true;
+            studentGeoPromise = null;
+            resolve(coords);
+        };
+
+        // Safety timeout so user is not blocked
+        const safetyTimer = setTimeout(() => {
+            if (studentGeoCoords && (Date.now() - studentGeoTimestamp < 25000)) {
+                finish(studentGeoCoords);
+            } else {
+                finish(null);
+            }
+        }, 7000);
+
         navigator.geolocation.getCurrentPosition(
             pos => {
-                studentGeoCoords = {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude,
-                    acc: pos.coords.accuracy
-                };
-                studentGeoTimestamp = Date.now();
-                studentGeoPromise = null;
-                resolve(studentGeoCoords);
+                clearTimeout(safetyTimer);
+                if (pos && pos.coords) {
+                    studentGeoCoords = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        acc: pos.coords.accuracy || 0
+                    };
+                    studentGeoTimestamp = Date.now();
+                }
+                finish(studentGeoCoords);
             },
             err => {
-                // If high accuracy timed out or had weak signal, fallback to standard accuracy
-                if (err && err.code === 3) {
-                    navigator.geolocation.getCurrentPosition(
-                        pos => {
+                console.warn('High-accuracy GPS fix failed, trying fallback...', err);
+                navigator.geolocation.getCurrentPosition(
+                    pos => {
+                        clearTimeout(safetyTimer);
+                        if (pos && pos.coords) {
                             studentGeoCoords = {
                                 lat: pos.coords.latitude,
                                 lng: pos.coords.longitude,
-                                acc: pos.coords.accuracy
+                                acc: pos.coords.accuracy || 0
                             };
                             studentGeoTimestamp = Date.now();
-                            studentGeoPromise = null;
-                            resolve(studentGeoCoords);
-                        },
-                        () => {
-                            studentGeoPromise = null;
-                            resolve(studentGeoCoords);
-                        },
-                        { enableHighAccuracy: false, timeout: 3000, maximumAge: 10000 }
-                    );
-                } else {
-                    studentGeoPromise = null;
-                    resolve(studentGeoCoords);
-                }
+                        }
+                        finish(studentGeoCoords);
+                    },
+                    err2 => {
+                        clearTimeout(safetyTimer);
+                        console.warn('Fallback GPS fix failed:', err2);
+                        // Only use existing coords if less than 25s old to avoid stale location rejections
+                        if (studentGeoCoords && (Date.now() - studentGeoTimestamp < 25000)) {
+                            finish(studentGeoCoords);
+                        } else {
+                            studentGeoCoords = null;
+                            finish(null);
+                        }
+                    },
+                    { enableHighAccuracy: false, timeout: 4000, maximumAge: 5000 }
+                );
             },
-            { enableHighAccuracy: true, timeout: 4000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
         );
     });
+
     return studentGeoPromise;
 }
 
@@ -1735,7 +1793,8 @@ function openStudentScanner(initialMode = 'scan', autoPaste = false) {
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
     
-    // Refresh student location so fresh coordinates are ready by scan time
+    // Refresh student location and activate continuous watch so fresh coordinates are ready by scan time
+    startContinuousLocationWatch();
     refreshStudentLocation(true);
 
     if (isDesktopDevice() && initialMode !== 'scan') {
@@ -2224,6 +2283,7 @@ function toggleTorch() {
 
 function closeStudentScanner() {
     clearAutoCloseTimer();
+    stopContinuousLocationWatch();
     const modal = document.getElementById('studentScannerModal');
     if (modal) modal.style.display = 'none';
     safeClearScanner();
@@ -2396,12 +2456,9 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     const parsedData = extractQrToken(decodedText);
     const resolvedMethod = (method === 'code' || currentScannerMode === 'code' || (parsedData.code && !parsedData.token)) ? 'code' : 'qr';
 
-    if (!studentGeoCoords || (Date.now() - studentGeoTimestamp > 15000)) {
-        try {
-            await refreshStudentLocation(false);
-        } catch(e) {}
-    }
-    if (!studentGeoCoords && navigator.geolocation) {
+    // Ensure user's location is fresh and accurate before performing distance check
+    const isStale = !studentGeoCoords || (Date.now() - studentGeoTimestamp > 12000) || (studentGeoCoords.acc && studentGeoCoords.acc > 80);
+    if (isStale && navigator.geolocation) {
         try {
             await refreshStudentLocation(true);
         } catch(e) {}

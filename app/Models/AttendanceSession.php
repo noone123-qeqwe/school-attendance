@@ -28,7 +28,12 @@ class AttendanceSession extends Model
 
     public function getAllowedRadius(): int
     {
-        return (int) ($this->radius_meters ?: \App\Models\Setting::get('gps_radius', 50));
+        $systemRadius = (int) \App\Models\Setting::get('gps_radius', 50);
+        $sessionRadius = (int) ($this->radius_meters ?? 0);
+        if ($sessionRadius > 0 && $systemRadius > 0) {
+            return max($sessionRadius, $systemRadius);
+        }
+        return $sessionRadius > 0 ? $sessionRadius : ($systemRadius > 0 ? $systemRadius : 50);
     }
 
     public function getGracePeriodMinutes(): int

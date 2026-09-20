@@ -839,9 +839,13 @@ class QrAttendanceController extends Controller
         $schoolLng = (float) ($session->classroom_lng ?? $this->getSchoolLng());
         $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
 
+        // Account for GPS accuracy error margins instead of rejecting students due to small indoor inaccuracies
+        $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
+        $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
+
         $now = now();
 
-        if ($distance <= $radius) {
+        if ($effectiveDistance <= $radius) {
             // Check for impossible velocity / teleportation leap INTO classroom
             if ($attendance->last_latitude !== null && $attendance->last_longitude !== null && $attendance->last_location_check_at !== null) {
                 $prevLat = (float) $attendance->last_latitude;
@@ -1422,7 +1426,7 @@ class QrAttendanceController extends Controller
         );
 
         // Account for GPS accuracy margin instead of rejecting students due to indoor inaccuracy
-        $accuracyAllowance = ($studentAccuracy !== null && $studentAccuracy > 0) ? min($studentAccuracy, max(50.0, (float) $radiusMeters)) : 0.0;
+        $accuracyAllowance = ($studentAccuracy !== null && $studentAccuracy > 0) ? min($studentAccuracy, 150.0) : 15.0;
         $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
 
         Log::info('QR distance check', [
@@ -2084,7 +2088,7 @@ class QrAttendanceController extends Controller
             $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
 
             // Account for GPS accuracy margin instead of rejecting students due to indoor inaccuracy
-            $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, max(50.0, (float) $radiusMeters)) : 0.0;
+            $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
             $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
 
             if ($effectiveDistance > $radiusMeters) {

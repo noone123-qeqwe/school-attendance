@@ -291,4 +291,63 @@ class QrDistanceValidationTest extends TestCase
         $weakGpsResponse->assertStatus(422);
         $this->assertEquals('unreliable_gps', $weakGpsResponse->json('error_type'));
     }
+
+    public function test_system_configured_gps_radius_is_applied_when_larger_than_session_radius()
+    {
+        // System admin configures GPS radius to 85 meters
+        Setting::set('gps_radius', 85);
+        $this->assertEquals(85, $this->session->getAllowedRadius());
+
+        // Student is ~68m away (14.500612, 121.000000) with 5m accuracy
+        // Effective distance is ~63m (would fail if only 50m applied, but passes with configured 85m)
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 14.500612,
+            'longitude' => 121.000000,
+            'accuracy'  => 5,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+    }
+
+    public function test_indoor_gps_reading_with_larger_inaccuracy_allowance_is_accepted()
+    {
+        // Student is indoors, 85m away (14.500765, 121.000000)
+        // Phone reports indoor accuracy of 50m
+        // Effective distance is 85m - 50m = 35m <= 50m radius -> Accepted
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 14.500765,
+            'longitude' => 121.000000,
+            'accuracy'  => 50,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+    }
+
+    public function test_presence_verification_applies_accuracy_margin_and_respects_radius()
+    {
+        // First clock in
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy'  => 10.0,
+        ]);
+
+        // Student is ~65m away with 25m accuracy (effective 40m <= 50m)
+        $response = $this->actingAs($this->student)->postJson('/student/presence-verify', [
+            'session_id' => $this->session->id,
+            'latitude'   => 14.500580,
+            'longitude'  => 121.000000,
+            'accuracy'   => 25,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals('Present', $response->json('status'));
+        $this->assertEquals('active', $response->json('monitoring_status'));
+    }
 }

@@ -302,7 +302,7 @@ var QR_TOKEN = '{{ addslashes($token) }}';
 var CSRF = '{{ csrf_token() }}';
 var CLASSROOM_LAT = {{ isset($classroomLat) && $classroomLat !== null ? (float) $classroomLat : 'null' }};
 var CLASSROOM_LNG = {{ isset($classroomLng) && $classroomLng !== null ? (float) $classroomLng : 'null' }};
-var RADIUS_METERS = {{ isset($radiusMeters) && $radiusMeters !== null ? (int) $radiusMeters : 50 }};
+var RADIUS_METERS = {{ isset($radiusMeters) && $radiusMeters !== null ? (int) $radiusMeters : (int) \App\Models\Setting::get('gps_radius', 50) }};
 
 var fingerprintInProgress = false; // Add guard against multiple simultaneous calls
 
@@ -441,15 +441,16 @@ function requestLocation(options) {
 
         // Check if student is within classroom geofence
         if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
-            var dist = calculateDistance(lat, lng, CLASSROOM_LAT, CLASSROOM_LNG);
-            var accuracyAllowance = accuracy > 0 ? Math.min(accuracy, Math.max(50, RADIUS_METERS)) : 0;
-            var effectiveDist = Math.max(0, dist - accuracyAllowance);
-            console.log('Classroom distance check: raw ' + Math.round(dist) + 'm, allowance ' + Math.round(accuracyAllowance) + 'm, effective ' + Math.round(effectiveDist) + 'm, limit: ' + RADIUS_METERS + 'm');
-            
+            // Handle weak or inaccurate GPS signals gracefully instead of incorrectly reporting too far away
             if (accuracy > 150) {
                 showWeakGpsError(accuracy);
                 return;
             }
+
+            var dist = calculateDistance(lat, lng, CLASSROOM_LAT, CLASSROOM_LNG);
+            var accuracyAllowance = (accuracy > 0) ? Math.min(accuracy, 150) : 15;
+            var effectiveDist = Math.max(0, dist - accuracyAllowance);
+            console.log('Classroom distance check: raw ' + Math.round(dist) + 'm, allowance ' + Math.round(accuracyAllowance) + 'm, effective ' + Math.round(effectiveDist) + 'm, limit: ' + RADIUS_METERS + 'm');
 
             if (effectiveDist > RADIUS_METERS) {
                 showOutsideClassroomError(dist, RADIUS_METERS);
@@ -473,22 +474,36 @@ function requestLocation(options) {
             bestLocation = pos;
         }
 
-        if (pos.coords.accuracy <= GPS_QUICK_ACCEPT) {
+        var isWithinBounds = false;
+        if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
+            var rawDist = calculateDistance(pos.coords.latitude, pos.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
+            var allowance = (pos.coords.accuracy > 0) ? Math.min(pos.coords.accuracy, 150) : 15;
+            isWithinBounds = (Math.max(0, rawDist - allowance) <= RADIUS_METERS);
+        } else {
+            isWithinBounds = true;
+        }
+
+        if (pos.coords.accuracy <= GPS_QUICK_ACCEPT && isWithinBounds) {
+            acceptBestLocation(pos, 'Location confirmed');
+            return;
+        }
+
+        if (pos.coords.accuracy <= 20) {
             acceptBestLocation(pos, 'Location confirmed');
             return;
         }
 
         if (pos.coords.accuracy <= GPS_MAX_FAST_ACCEPT) {
-            showMsg('info', '<i class="bi bi-info-circle"></i> Good location detected. Finalizing shortly...');
+            showMsg('info', '<i class="bi bi-info-circle"></i> Good location detected. Refining coordinates...');
             return;
         }
 
         if (pos.coords.accuracy <= GPS_MAX_ACCEPTABLE_ACCURACY) {
-            showMsg('info', '<i class="bi bi-info-circle"></i> Weak location detected (' + Math.round(pos.coords.accuracy) + 'm). Finalizing after a short wait...');
+            showMsg('info', '<i class="bi bi-info-circle"></i> Acquiring satellite fix (±' + Math.round(pos.coords.accuracy) + 'm)...');
             return;
         }
 
-        showMsg('info', '<i class="bi bi-info-circle"></i> Very weak location (' + Math.round(pos.coords.accuracy) + 'm). We will still keep trying, but if this persists try moving near a window or enabling GPS.');
+        showMsg('info', '<i class="bi bi-info-circle"></i> Weak GPS signal (±' + Math.round(pos.coords.accuracy) + 'm). Refining location...');
     };
 
     var onError = function(err) {
@@ -536,8 +551,18 @@ function requestLocation(options) {
     locationWatcher = navigator.geolocation.watchPosition(onSuccess, onError, options);
     fastFallbackTimer = setTimeout(function() {
         if (bestLocation && bestAccuracy <= GPS_MAX_FAST_ACCEPT) {
-            console.log('Fast fallback: good enough accuracy after 3s, accepting');
-            acceptBestLocation(bestLocation, 'Using best available location');
+            if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
+                var earlyDist = calculateDistance(bestLocation.coords.latitude, bestLocation.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
+                var earlyAllowance = (bestAccuracy > 0) ? Math.min(bestAccuracy, 150) : 15;
+                if (Math.max(0, earlyDist - earlyAllowance) <= RADIUS_METERS) {
+                    console.log('Fast fallback: inside boundary with accuracy ' + bestAccuracy + 'm, accepting');
+                    acceptBestLocation(bestLocation, 'Location confirmed');
+                    return;
+                }
+                console.log('Fast fallback: location appears outside at 3s (' + Math.round(earlyDist) + 'm, ±' + Math.round(bestAccuracy) + 'm); continuing to watch for refined fix...');
+            } else {
+                acceptBestLocation(bestLocation, 'Using best available location');
+            }
         }
     }, GPS_FAST_FALLBACK_MS);
 
@@ -547,15 +572,14 @@ function requestLocation(options) {
             locationWatcher = null;
         }
 
-        if (bestLocation && bestAccuracy <= GPS_HARD_ACCURACY_LIMIT) {
-            console.log('GPS timeout: accepting best available location');
-            acceptBestLocation(bestLocation, 'Using best available location');
-            return;
-        }
-
         if (bestLocation) {
-            console.warn('GPS timeout: best available location still too weak', bestAccuracy);
-            onError({ code: 3 });
+            if (bestAccuracy > 150) {
+                console.warn('GPS timeout: best accuracy is too weak (±' + bestAccuracy + 'm)');
+                showWeakGpsError(bestAccuracy);
+                return;
+            }
+            console.log('GPS timeout: accepting best available location (±' + bestAccuracy + 'm)');
+            acceptBestLocation(bestLocation, 'Using best available location');
             return;
         }
 
@@ -634,7 +658,7 @@ function submitAttendance(credentialData) {
         }
 
         if (response.error_type === 'unreliable_gps') {
-            showWeakGpsError(accuracy);
+            showWeakGpsError(response.accuracy || accuracy);
             return;
         }
 

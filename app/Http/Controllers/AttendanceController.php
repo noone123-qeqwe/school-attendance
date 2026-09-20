@@ -64,7 +64,7 @@ class AttendanceController extends Controller
         ->first();
 
     $schoolLat    = (float) ($activeSession?->classroom_lat ?? \App\Models\Setting::get('gps_lat', 14.538800));
-    $schoolLng    = (float) ($activeSession?->classroom_lng ?? \App\Models\Setting::get('gps_lng', 121.022300));
+    $schoolLng    = (float) ($activeSession?->classroom_lng ?? \App\Models\Setting::get('gps_lng', 121.002200));
     $radiusMeters = (int) ($activeSession ? $activeSession->getAllowedRadius() : \App\Models\Setting::get('gps_radius', 50));
 
     // GPS VALIDATION — use is_null() so 0.0 is accepted
@@ -90,7 +90,7 @@ class AttendanceController extends Controller
         $schoolLng
     );
 
-    $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, max(50.0, (float) $radiusMeters)) : 0.0;
+    $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
     $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
 
     if ($effectiveDistance > $radiusMeters) {
