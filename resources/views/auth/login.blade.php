@@ -1344,7 +1344,6 @@ if (document.readyState === 'loading') {
     window.addEventListener('load', function() { updateInstallVisibility(); });
     window.addEventListener('focus', function() { updateInstallVisibility(); });
 })();
-</script>
 
 // Reliable Device Fingerprint & Key initialization
 (function() {
@@ -2065,9 +2064,38 @@ async function handleBiometricLogin() {
         showFpMessage('info', '<i class="bi bi-info-circle me-2"></i>Biometric scan cancelled. Tap anytime to try again.');
         return;
     }
-    
+
+    // Guard: ensure environment supports WebAuthn / secure context
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        resetBiometricButton();
+        showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Biometric authentication requires HTTPS or localhost. Please sign in with your password.');
+        focusPasswordField();
+        return;
+    }
+
+    if (!window.PublicKeyCredential || !navigator.credentials || typeof navigator.credentials.get !== 'function') {
+        resetBiometricButton();
+        showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Biometric authentication is not supported on this browser. Please sign in with your password.');
+        focusPasswordField();
+        return;
+    }
+
     var identifier = idInput ? idInput.value.trim() : '';
-    
+
+    // Check localStorage for saved account if input is empty
+    if (!identifier) {
+        try {
+            var savedId = localStorage.getItem('attendance_saved_identifier');
+            if (savedId && savedId.trim()) {
+                identifier = savedId.trim();
+                if (idInput) {
+                    idInput.value = identifier;
+                    if (typeof updateAccountBanner === 'function') updateAccountBanner();
+                }
+            }
+        } catch (e) {}
+    }
+
     if (!identifier) {
         openBiometricModal({
             title: 'STUDENT ID OR EMAIL REQUIRED',

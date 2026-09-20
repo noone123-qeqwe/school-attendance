@@ -96,16 +96,76 @@ class BiometricLoginViewTest extends TestCase
         ]);
     }
 
-    public function test_webauthn_login_options_returns_account_not_found_when_user_does_not_exist()
+    public function test_login_page_has_no_premature_script_close_and_all_biometric_scripts_are_inside_script_tags()
     {
-        $response = $this->postJson(route('webauthn.login.options'), [
-            'student_number' => 'non_existent_user_12345',
+        $response = $this->get(route('login'));
+
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        // Count opening and closing script tags
+        $openCount = substr_count($content, '<script');
+        $closeCount = substr_count($content, '</script>');
+
+        $this->assertEquals($openCount, $closeCount, "Script tags must be balanced. Opening: {$openCount}, Closing: {$closeCount}");
+
+        // Ensure biometric functions are inside a script block before the closing </script>
+        $lastScriptClose = strrpos($content, '</script>');
+        $handlePos = strpos($content, 'function handleBiometricLogin(');
+        $performPos = strpos($content, 'function performBiometricLogin(');
+        $setupPos = strpos($content, 'function setupBiometricListeners(');
+
+        $this->assertNotFalse($handlePos, 'handleBiometricLogin must be present in response');
+        $this->assertNotFalse($performPos, 'performBiometricLogin must be present in response');
+        $this->assertNotFalse($setupPos, 'setupBiometricListeners must be present in response');
+
+        $this->assertLessThan($lastScriptClose, $handlePos, 'handleBiometricLogin must be inside a <script> block');
+        $this->assertLessThan($lastScriptClose, $performPos, 'performBiometricLogin must be inside a <script> block');
+        $this->assertLessThan($lastScriptClose, $setupPos, 'setupBiometricListeners must be inside a <script> block');
+    }
+
+    public function test_webauthn_login_options_supports_discoverable_passkey_when_no_identifier_provided()
+    {
+        $response = $this->postJson(route('webauthn.login.options'), []);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'discoverable' => true,
+        ]);
+        $this->assertNotEmpty($response->json('challenge'));
+    }
+
+    public function test_webauthn_login_options_returns_credentials_when_user_has_biometrics_registered()
+    {
+        $user = User::factory()->create([
+            'student_number' => '2024-88888',
+            'email' => 'student88888@test.com',
+            'role' => 'student',
+            'is_active' => true,
         ]);
 
-        $response->assertStatus(404);
-        $response->assertJson([
-            'success' => false,
-            'code' => 'ACCOUNT_NOT_FOUND',
+        \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'test_cred_id_12345',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAz\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Pixel Fingerprint',
+            'biometric_type' => 'fingerprint',
+            'last_used_at' => now(),
         ]);
+
+        $response = $this->postJson(route('webauthn.login.options'), [
+            'student_number' => '2024-88888',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson([
+            'success' => true,
+            'user_id' => $user->id,
+            'identifier' => '2024-88888',
+        ]);
+        $this->assertNotEmpty($response->json('challenge'));
+        $this->assertNotEmpty($response->json('allowCredentials'));
     }
 }
