@@ -168,4 +168,51 @@ class BiometricLoginViewTest extends TestCase
         $this->assertNotEmpty($response->json('challenge'));
         $this->assertNotEmpty($response->json('allowCredentials'));
     }
+
+    public function test_login_page_scripts_have_valid_javascript_syntax()
+    {
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        preg_match_all('/<script[\s\S]*?<\/script>/i', $content, $matches);
+        $this->assertNotEmpty($matches[0], 'Login page must contain script tags.');
+
+        foreach ($matches[0] as $index => $scriptTag) {
+            $code = preg_replace('/^<script[^>]*>/i', '', $scriptTag);
+            $code = preg_replace('/<\/script>$/i', '', $code);
+
+            // Clean up any remaining blade expressions for parser check
+            $lines = explode("\n", $code);
+            foreach ($lines as $i => $line) {
+                if (str_starts_with(trim($line), '@')) {
+                    $lines[$i] = '// ' . $line;
+                }
+            }
+            $cleanCode = implode("\n", $lines);
+
+            // Check syntax with node -e if node is available
+            $tmpFile = tempnam(sys_get_temp_dir(), 'login_script_') . '.js';
+            file_put_contents($tmpFile, $cleanCode);
+
+            $command = 'node --check ' . escapeshellarg($tmpFile) . ' 2>&1';
+            exec($command, $output, $returnCode);
+            @unlink($tmpFile);
+
+            $this->assertSame(0, $returnCode, "Script index {$index} contains syntax error: " . implode("\n", $output));
+        }
+    }
+
+    public function test_biometric_row_has_responsive_styles_and_attributes()
+    {
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $content = $response->getContent();
+
+        $this->assertStringContainsString('aria-label="Sign in with Biometrics"', $content);
+        $this->assertStringContainsString('.fp-row * { pointer-events: none; }', $content);
+        $this->assertStringContainsString('touch-action: manipulation;', $content);
+        $this->assertStringContainsString('@media (hover: hover) and (pointer: fine)', $content);
+    }
 }
+

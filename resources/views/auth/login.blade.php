@@ -342,9 +342,19 @@
             outline: none;
             text-align: left;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            touch-action: manipulation;
         }
-        .fp-row:hover { background: rgba(212, 175, 55, 0.15); border-color: rgba(212, 175, 55, 0.4); }
-        .fp-row:active { transform: scale(0.98); }
+        .fp-row * { pointer-events: none; }
+        @media (hover: hover) and (pointer: fine) {
+            .fp-row:hover { background: rgba(212, 175, 55, 0.15); border-color: rgba(212, 175, 55, 0.4); }
+        }
+        .fp-row:active {
+            transform: scale(0.98);
+            background: rgba(212, 175, 55, 0.22);
+            border-color: rgba(212, 175, 55, 0.55);
+        }
+        .fp-row:focus { outline: none; }
         .fp-row:focus-visible { outline: 2px solid rgba(212, 175, 55, 0.6); outline-offset: 2px; }
         .fp-row-left { display: flex; align-items: center; gap: 10px; text-align: left; }
         .fp-row-left i { font-size: 1.15rem; color: rgba(255,255,255,0.85); transition: all 0.3s; }
@@ -1077,7 +1087,7 @@ if (document.readyState === 'loading') {
             <div id="fingerprintSection" style="display: block;">
                 <!-- Inline message area for biometric feedback -->
                 <div id="fpMessage" style="display:none; border-radius:10px; padding:10px 14px; font-size:0.8rem; margin-bottom:8px; line-height:1.4;"></div>
-                <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn">
+                <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn" aria-label="Sign in with Biometrics">
                     <div class="fp-row-left">
                         <i class="bi bi-fingerprint" id="fpIcon"></i>
                         <div>
@@ -1608,6 +1618,7 @@ function resetBiometricButton() {
     fpRowBtn.style.opacity = '1';
     fpRowBtn.style.cursor = 'pointer';
     fpRowBtn.removeAttribute('title');
+    if (typeof fpRowBtn.blur === 'function') fpRowBtn.blur();
     if (fpLabel) fpLabel.textContent = 'Sign in with Biometrics';
     if (fpHint) fpHint.textContent = 'Fingerprint, Face ID, or device security';
     if (fpIcon) fpIcon.className = 'bi bi-fingerprint';
@@ -2055,13 +2066,17 @@ function handleDirectReEnrollClick(e) {
 async function handleBiometricLogin() {
     hideFpMessage();
 
+    if (fpRowBtn && typeof fpRowBtn.blur === 'function') {
+        fpRowBtn.blur();
+    }
+
     // If an active biometric scan is already in progress, tapping acts as a clean cancel!
     if (isBioPending) {
         if (bioAbortController) {
             try { bioAbortController.abort(); } catch(e) {}
         }
         resetBiometricButton();
-        showFpMessage('info', '<i class="bi bi-info-circle me-2"></i>Biometric scan cancelled. Tap anytime to try again.');
+        closeBiometricModal();
         return;
     }
 
@@ -2286,7 +2301,9 @@ async function performBiometricLogin(studentNumber) {
                 signal: bioAbortController ? bioAbortController.signal : undefined
             });
         } catch (firstErr) {
-            if (firstErr.name === 'AbortError') throw firstErr;
+            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
+                throw firstErr;
+            }
 
             // If allowCredentials failed on this device, attempt discoverable passkey before giving up
             if (getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
@@ -2299,7 +2316,7 @@ async function performBiometricLogin(studentNumber) {
                         signal: bioAbortController ? bioAbortController.signal : undefined
                     });
                 } catch (fallbackErr) {
-                    if (fallbackErr.name === 'AbortError') throw fallbackErr;
+                    if (fallbackErr.name === 'AbortError' || fallbackErr.name === 'NotAllowedError') throw fallbackErr;
                     throw firstErr;
                 }
             } else {
@@ -2476,24 +2493,30 @@ async function performBiometricLogin(studentNumber) {
         resetBiometricButton();
 
         if (err.name === 'AbortError') {
-            showFpMessage('info', '<i class="bi bi-info-circle me-2"></i>Biometric scan cancelled. Tap anytime to try again.');
+            closeBiometricModal();
             return;
         }
 
         if (err.name === 'NotAllowedError') {
-            showFpMessage('warning', '<i class="bi bi-x-circle me-2"></i>Biometric authentication was cancelled or timed out. Please try again or use your password.');
-            openBiometricModal({
-                title: 'AUTHENTICATION CANCELLED',
-                message: 'Biometric authentication was cancelled or timed out.<br><br>Please try again or sign in with your password.',
-                badgeType: 'warning',
-                primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
-                secondaryBtnText: 'SIGN IN WITH PASSWORD',
-                onPrimaryClick: function() {
-                    closeBiometricModal();
-                    performBiometricLogin(studentNumber);
-                },
-                onSecondaryClick: closeBiometricModalAndFocusPassword
-            });
+            var isTimeout = err.message && /timed?\s*out/i.test(err.message);
+            if (isTimeout) {
+                showFpMessage('warning', '<i class="bi bi-x-circle me-2"></i>Biometric authentication was cancelled or timed out. Please try again or use your password.');
+                openBiometricModal({
+                    title: 'AUTHENTICATION CANCELLED',
+                    message: 'Biometric authentication was cancelled or timed out.<br><br>Please try again or sign in with your password.',
+                    badgeType: 'warning',
+                    primaryBtnText: '<i class="bi bi-arrow-repeat me-2"></i>TRY AGAIN',
+                    secondaryBtnText: 'SIGN IN WITH PASSWORD',
+                    onPrimaryClick: function() {
+                        closeBiometricModal();
+                        performBiometricLogin(studentNumber);
+                    },
+                    onSecondaryClick: closeBiometricModalAndFocusPassword
+                });
+            } else {
+                // Canceling authentication returns the user to the login screen without errors
+                closeBiometricModal();
+            }
             return;
         } else if (err.name === 'InvalidStateError') {
             showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Your biometric sign-in is not set up on this device.');
@@ -2542,6 +2565,8 @@ function setupBiometricListeners() {
         fpRowBtn.dataset.biometricBound = 'true';
         fpRowBtn.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
+            if (typeof fpRowBtn.blur === 'function') fpRowBtn.blur();
             handleBiometricLogin();
         });
     }
@@ -2603,6 +2628,8 @@ document.addEventListener('click', function(e) {
     var btn = e.target.closest('#fpRowBtn');
     if (btn && !e.defaultPrevented) {
         e.preventDefault();
+        e.stopPropagation();
+        if (typeof btn.blur === 'function') btn.blur();
         handleBiometricLogin();
     }
 });
@@ -2718,7 +2745,8 @@ if (forgotLinkElem) {
     }
 })();
 
-    // ── Real-time Login Version Badge Synchronization ──
+// ── Real-time Login Version Badge Synchronization ──
+(function() {
     function syncLoginVersionBadge() {
         fetch('/pwa/version?_t=' + Date.now(), { cache: 'no-store' })
             .then(function(r) { return r.json(); })
