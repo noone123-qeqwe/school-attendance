@@ -344,6 +344,7 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/corrections', [App\Http\Controllers\AttendanceCorrectionController::class, 'store'])->name('corrections.store');
 
     Route::get('/my-classes', [PTController::class, 'myClasses'])->name('student.classes');
+    Route::get('/my-classes/pdf', [PTController::class, 'myClassesPdf'])->name('student.classes.pdf');
     Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('student.schedule');
     Route::get('/student/attendance-calendar', [App\Http\Controllers\HomeController::class, 'attendanceCalendar'])->name('student.attendance.calendar');
     Route::get('/student/calendar', [App\Http\Controllers\HomeController::class, 'calendar'])->name('student.calendar');

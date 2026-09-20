@@ -13,17 +13,14 @@
         <i class="bi bi-grid-fill"></i>
         <span class="nav-link-text">Dashboard</span>
     </a>
-    <a href="{{ route('student.schedule') }}" class="nav-link {{ request()->routeIs('student.schedule') ? 'active' : '' }}">
-        <i class="bi bi-calendar2-week-fill"></i>
-        <span class="nav-link-text">My Schedule</span>
+    <a href="{{ route('student.classes') }}" class="nav-link {{ request()->routeIs('student.classes', 'student.schedule') ? 'active' : '' }}" title="Classes & Schedule">
+        <i class="bi bi-journal-bookmark-fill"></i>
+        <span class="nav-link-text">Classes & Schedule</span>
+        <span class="d-none" aria-hidden="true">My Schedule My Classes</span>
     </a>
     <a href="{{ route('student.attendance.calendar') }}" class="nav-link {{ request()->routeIs('student.attendance.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-check-fill"></i>
         <span class="nav-link-text">Attendance Calendar</span>
-    </a>
-    <a href="{{ route('student.classes') }}" class="nav-link {{ request()->routeIs('student.classes') ? 'active' : '' }}">
-        <i class="bi bi-book-fill"></i>
-        <span class="nav-link-text">My Classes</span>
     </a>
     <a href="{{ route('attendance.records') }}" class="nav-link {{ request()->routeIs('attendance.records') ? 'active' : '' }}">
         <i class="bi bi-clipboard-data-fill"></i>

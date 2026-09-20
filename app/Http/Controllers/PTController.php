@@ -405,24 +405,25 @@ class PTController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-    $subjects = $user->getAllSubjects();
-    $subjects->load('schedules');
+        $subjects = $user->getAllSubjects();
+        $subjects->load(['schedules', 'instructorUser']);
 
-    return view('student.classes', compact('subjects'));
-}
+        return view('student.classes', compact('subjects', 'user'));
+    }
 
     public function myClassesPdf()
     {
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-    $subjects = $user->getAllSubjects();
-    $subjects->load('schedules');
-    $subjects = $subjects->sortBy('code')->values();
+        $subjects = $user->getAllSubjects();
+        $subjects->load(['schedules', 'instructorUser']);
+        $subjects = $subjects->sortBy('code')->values();
 
-    $pdf = Pdf::loadView('student.classes-pdf', compact('user', 'subjects'))
-        ->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('student.classes-pdf', compact('user', 'subjects'))
+            ->setPaper('a4', 'landscape');
 
-    return $pdf->download('my-class-schedule.pdf');
-}
+        $filename = 'Certificate_of_Registration_' . ($user->student_number ?: $user->id) . '.pdf';
+        return $pdf->download($filename);
+    }
 }

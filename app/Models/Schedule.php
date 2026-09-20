@@ -11,6 +11,7 @@ class Schedule extends Model
         'day',
         'start_time',
         'end_time',
+        'room',
     ];
 
     public function subject()

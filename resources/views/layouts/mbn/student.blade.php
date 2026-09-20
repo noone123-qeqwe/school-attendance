@@ -3,8 +3,8 @@
         <i class="bi bi-grid-fill"></i>
         <span>Home</span>
     </a>
-    <a href="{{ route('student.classes') }}" class="mbn-item {{ request()->routeIs('student.classes') ? 'active' : '' }}">
-        <i class="bi bi-folder-fill"></i>
+    <a href="{{ route('student.classes') }}" class="mbn-item {{ request()->routeIs('student.classes', 'student.schedule') ? 'active' : '' }}">
+        <i class="bi bi-journal-bookmark-fill"></i>
         <span>Classes</span>
     </a>
     <button type="button" class="mbn-item mbn-item-featured" id="mbnStudentScanBtn" data-action="open-scanner" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('scan')}else{window.location.href='{{ route('home') }}?open_scanner=1'}" aria-label="Scan Attendance QR" style="background:transparent;border:none;outline:none;cursor:pointer;">
@@ -22,9 +22,9 @@
         </div>
         <span>Scan</span>
     </button>
-    <a href="{{ route('student.schedule') }}" class="mbn-item {{ request()->routeIs('student.schedule') ? 'active' : '' }}">
-        <i class="bi bi-calendar-range-fill"></i>
-        <span>Schedule</span>
+    <a href="{{ route('attendance.records') }}" class="mbn-item {{ request()->routeIs('attendance.records', 'attendance.history') ? 'active' : '' }}">
+        <i class="bi bi-clipboard-data-fill"></i>
+        <span>Records</span>
     </a>
     <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" style="background:transparent;border:none;outline:none;cursor:pointer;">
         <i class="bi bi-grid-3x3-gap-fill"></i>
