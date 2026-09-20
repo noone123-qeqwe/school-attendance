@@ -293,4 +293,37 @@ class ProfilePhotoUploadTest extends TestCase
         $response->assertSee('profile-card-inner', false);
         $response->assertSee('profile-details-col', false);
     }
+
+    public function test_crop_modal_and_positioning_controls_are_rendered(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'name' => 'Cropper Test Student',
+        ]);
+
+        $response = $this->actingAs($student)->get('/settings');
+        $response->assertOk();
+
+        // Crop modal and viewport elements
+        $response->assertSee('id="ppmPreviewModal"', false);
+        $response->assertSee('id="ppmCropContainer"', false);
+        $response->assertSee('id="ppmCropViewport"', false);
+        $response->assertSee('id="ppmPreviewImg"', false);
+        $response->assertSee('ppm-crop-guideline', false);
+
+        // Positioning & Zoom Controls
+        $response->assertSee('id="ppmZoomSlider"', false);
+        $response->assertSee('id="ppmZoomInBtn"', false);
+        $response->assertSee('id="ppmZoomOutBtn"', false);
+        $response->assertSee('id="ppmResetCropBtn"', false);
+        $response->assertSee('id="ppmConfirmSaveBtn"', false);
+        $response->assertSee('id="ppmCancelPreviewBtn"', false);
+
+        // Interactive Cropper Script Methods
+        $response->assertSee('initCropper', false);
+        $response->assertSee('cropperSetZoom', false);
+        $response->assertSee('clampAndApplyTransform', false);
+        $response->assertSee('attachCropperEventListeners', false);
+    }
 }
+

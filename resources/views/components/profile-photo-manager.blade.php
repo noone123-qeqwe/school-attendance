@@ -101,11 +101,39 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="ppmCancelPreview()" aria-label="Close"></button>
             </div>
             <div class="modal-body p-3 text-center">
-                <p class="small text-muted mb-3">Review your new profile picture before saving to your account.</p>
+                <p class="small text-muted mb-2">Adjust and position your profile picture before saving.</p>
                 
-                <!-- Circular preview ring matching avatar styling -->
-                <div class="ppm-preview-avatar-wrap mx-auto mb-3">
-                    <img id="ppmPreviewImg" src="" alt="Selected Photo Preview" class="ppm-preview-img">
+                <!-- Interactive Crop Viewport (Circular ring matching avatar styling) -->
+                <div class="ppm-crop-container mx-auto mb-2" id="ppmCropContainer">
+                    <div class="ppm-crop-viewport" id="ppmCropViewport" tabindex="0" title="Drag to position photo" role="region" aria-label="Profile picture crop area">
+                        <img id="ppmPreviewImg" src="" alt="Selected Photo Preview" class="ppm-crop-img" draggable="false">
+                        <div class="ppm-crop-overlay-ring"></div>
+                        <div class="ppm-crop-guideline ppm-crop-guide-h"></div>
+                        <div class="ppm-crop-guideline ppm-crop-guide-v"></div>
+                    </div>
+                </div>
+
+                <!-- Position & Zoom Controls Bar -->
+                <div class="ppm-crop-controls d-flex flex-column align-items-center mb-2">
+                    <div class="ppm-crop-hint mb-2 d-flex align-items-center justify-content-center gap-1">
+                        <i class="bi bi-arrows-move text-warning"></i>
+                        <span>Drag photo to position &bull; Pinch or scroll to zoom</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center justify-content-center gap-2 w-100" style="max-width: 280px;">
+                        <button type="button" class="ppm-zoom-btn" id="ppmZoomOutBtn" title="Zoom out" aria-label="Zoom out">
+                            <i class="bi bi-dash"></i>
+                        </button>
+                        <div class="flex-grow-1 d-flex align-items-center px-1">
+                            <input type="range" class="form-range ppm-zoom-range w-100" id="ppmZoomSlider" min="1" max="4" step="0.01" value="1" aria-label="Zoom level">
+                        </div>
+                        <button type="button" class="ppm-zoom-btn" id="ppmZoomInBtn" title="Zoom in" aria-label="Zoom in">
+                            <i class="bi bi-plus"></i>
+                        </button>
+                        <button type="button" class="ppm-zoom-btn ppm-reset-btn ms-1" id="ppmResetCropBtn" title="Reset position & zoom" aria-label="Reset crop">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- File details tag -->
@@ -395,22 +423,146 @@
     color: #f3e7cd;
 }
 
-.ppm-preview-avatar-wrap {
-    width: 140px;
-    height: 140px;
-    border-radius: 50%;
-    overflow: hidden;
+/* Interactive Profile Photo Crop & Positioning */
+.ppm-crop-container {
+    width: 220px;
+    height: 220px;
     position: relative;
-    border: 3.5px solid #cfa46f;
-    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 20px rgba(207, 164, 111, 0.3);
-    background: #110a0a;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
 }
 
-.ppm-preview-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.ppm-crop-viewport {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+    border: 3.5px solid #cfa46f;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65), 0 0 24px rgba(207, 164, 111, 0.25);
+    background: #0f0a0a;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+}
+
+.ppm-crop-viewport:focus-visible {
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.6), 0 10px 32px rgba(0, 0, 0, 0.65);
+}
+
+.ppm-crop-viewport:active,
+.ppm-crop-viewport.is-dragging {
+    cursor: grabbing;
+}
+
+.ppm-crop-img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: center center;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
     display: block;
+    max-width: none !important;
+    max-height: none !important;
+    will-change: transform, width, height;
+}
+
+.ppm-crop-overlay-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    pointer-events: none;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.45);
+}
+
+.ppm-crop-guideline {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.22;
+    transition: opacity 0.2s ease;
+}
+
+.ppm-crop-viewport:hover .ppm-crop-guideline,
+.ppm-crop-viewport.is-dragging .ppm-crop-guideline,
+.ppm-crop-viewport:focus .ppm-crop-guideline {
+    opacity: 0.45;
+}
+
+.ppm-crop-guide-h {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.4);
+    border-top: 1px dashed rgba(207, 164, 111, 0.65);
+}
+
+.ppm-crop-guide-v {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.4);
+    border-left: 1px dashed rgba(207, 164, 111, 0.65);
+}
+
+.ppm-crop-hint {
+    font-size: 0.76rem;
+    color: #a89a8c;
+    letter-spacing: 0.2px;
+}
+
+.ppm-zoom-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    color: #f3e7cd;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.ppm-zoom-btn:hover {
+    background: rgba(207, 164, 111, 0.2);
+    border-color: #cfa46f;
+    color: #ffffff;
+    transform: scale(1.05);
+}
+
+.ppm-zoom-btn:active {
+    transform: scale(0.95);
+}
+
+.ppm-zoom-range {
+    accent-color: #cfa46f;
+    cursor: pointer;
+    height: 6px;
+}
+
+.ppm-zoom-range::-webkit-slider-runnable-track {
+    background: rgba(255, 255, 255, 0.15);
+    height: 6px;
+    border-radius: 3px;
+}
+
+.ppm-zoom-range::-webkit-slider-thumb {
+    background: #cfa46f;
+    border: 2px solid #1a1010;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
 }
 
 .ppm-btn-confirm-save {
@@ -519,8 +671,107 @@
 
     const targetAvatarId = "{{ $avatarId }}";
 
+    // Cropper State & Geometry
+    const cropper = {
+        VIEWPORT_SIZE: 220,
+        naturalWidth: 0,
+        naturalHeight: 0,
+        baseScale: 1,
+        zoom: 1.0,
+        minZoom: 1.0,
+        maxZoom: 4.0,
+        posX: 0,
+        posY: 0,
+        activePointers: new Map(),
+        initialPinchDistance: null,
+        initialPinchZoom: 1.0,
+    };
+
     function getCsrfToken() {
         return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || routes.csrf;
+    }
+
+    function cropperSetZoom(newZoom) {
+        const clampedZoom = Math.max(cropper.minZoom, Math.min(cropper.maxZoom, newZoom));
+        cropper.zoom = clampedZoom;
+
+        const slider = document.getElementById('ppmZoomSlider');
+        if (slider && Math.abs(parseFloat(slider.value) - clampedZoom) > 0.005) {
+            slider.value = clampedZoom.toFixed(2);
+        }
+
+        clampAndApplyTransform();
+    }
+
+    function cropperReset() {
+        cropper.zoom = 1.0;
+        cropper.posX = 0;
+        cropper.posY = 0;
+
+        const slider = document.getElementById('ppmZoomSlider');
+        if (slider) slider.value = '1';
+
+        clampAndApplyTransform();
+    }
+
+    function clampAndApplyTransform() {
+        const previewImg = document.getElementById('ppmPreviewImg');
+        if (!previewImg || !cropper.naturalWidth || !cropper.naturalHeight) return;
+
+        const curW = cropper.naturalWidth * cropper.baseScale * cropper.zoom;
+        const curH = cropper.naturalHeight * cropper.baseScale * cropper.zoom;
+
+        // Ensure image fully covers the viewport without transparent edges:
+        // leftEdge <= 0 => (V - curW)/2 + posX <= 0 => posX <= (curW - V)/2
+        // rightEdge >= V => (V + curW)/2 + posX >= V => posX >= -(curW - V)/2
+        const maxOffsetX = Math.max(0, (curW - cropper.VIEWPORT_SIZE) / 2);
+        const maxOffsetY = Math.max(0, (curH - cropper.VIEWPORT_SIZE) / 2);
+
+        cropper.posX = Math.max(-maxOffsetX, Math.min(maxOffsetX, cropper.posX));
+        cropper.posY = Math.max(-maxOffsetY, Math.min(maxOffsetY, cropper.posY));
+
+        previewImg.style.width = Math.round(curW) + 'px';
+        previewImg.style.height = Math.round(curH) + 'px';
+        previewImg.style.transform = 'translate(-50%, -50%) translate(' + Math.round(cropper.posX) + 'px, ' + Math.round(cropper.posY) + 'px)';
+    }
+
+    function initCropper(dataUrl, callback) {
+        const img = new Image();
+        img.onload = function() {
+            cropper.naturalWidth = img.naturalWidth || img.width;
+            cropper.naturalHeight = img.naturalHeight || img.height;
+
+            if (cropper.naturalWidth < 20 || cropper.naturalHeight < 20) {
+                ppmShowToast('Selected image is too small.', 'error');
+                return;
+            }
+
+            cropper.baseScale = Math.max(
+                cropper.VIEWPORT_SIZE / cropper.naturalWidth,
+                cropper.VIEWPORT_SIZE / cropper.naturalHeight
+            );
+            cropper.zoom = 1.0;
+            cropper.posX = 0;
+            cropper.posY = 0;
+            cropper.activePointers.clear();
+            cropper.initialPinchDistance = null;
+
+            const slider = document.getElementById('ppmZoomSlider');
+            if (slider) slider.value = '1';
+
+            const previewImg = document.getElementById('ppmPreviewImg');
+            if (previewImg) {
+                previewImg.src = dataUrl;
+            }
+
+            clampAndApplyTransform();
+
+            if (typeof callback === 'function') callback();
+        };
+        img.onerror = function() {
+            ppmShowToast('Unable to load photo preview. Please choose another image.', 'error');
+        };
+        img.src = dataUrl;
     }
 
     // Teleport modals to <body> to avoid clipping or stacking context traps
@@ -614,34 +865,33 @@
 
         state.pendingFile = file;
 
-        // 3. Read image and show PREVIEW & CONFIRMATION MODAL
+        // 3. Read image, initialize cropper geometry, and show PREVIEW & CONFIRMATION MODAL
         const reader = new FileReader();
         reader.onload = function(e) {
             state.pendingDataUrl = e.target.result;
 
-            const previewImg = document.getElementById('ppmPreviewImg');
-            if (previewImg) previewImg.src = state.pendingDataUrl;
+            initCropper(state.pendingDataUrl, function() {
+                const detailsEl = document.getElementById('ppmPreviewDetails');
+                if (detailsEl) {
+                    detailsEl.textContent = (file.name || 'Photo') + ' • ' + formatBytes(file.size);
+                }
 
-            const detailsEl = document.getElementById('ppmPreviewDetails');
-            if (detailsEl) {
-                detailsEl.textContent = (file.name || 'Photo') + ' • ' + formatBytes(file.size);
-            }
+                const errEl = document.getElementById('ppmPreviewError');
+                if (errEl) errEl.classList.add('d-none');
 
-            const errEl = document.getElementById('ppmPreviewError');
-            if (errEl) errEl.classList.add('d-none');
+                // Reset confirm button state
+                const saveBtn = document.getElementById('ppmConfirmSaveBtn');
+                const cancelBtn = document.getElementById('ppmCancelPreviewBtn');
+                if (saveBtn) {
+                    saveBtn.removeAttribute('disabled');
+                    saveBtn.querySelector('.ppm-save-btn-content')?.classList.remove('d-none');
+                    saveBtn.querySelector('.ppm-save-spinner')?.classList.add('d-none');
+                }
+                if (cancelBtn) cancelBtn.removeAttribute('disabled');
 
-            // Reset confirm button state
-            const saveBtn = document.getElementById('ppmConfirmSaveBtn');
-            const cancelBtn = document.getElementById('ppmCancelPreviewBtn');
-            if (saveBtn) {
-                saveBtn.removeAttribute('disabled');
-                saveBtn.querySelector('.ppm-save-btn-content')?.classList.remove('d-none');
-                saveBtn.querySelector('.ppm-save-spinner')?.classList.add('d-none');
-            }
-            if (cancelBtn) cancelBtn.removeAttribute('disabled');
-
-            // Display preview modal
-            showModal('ppmPreviewModal');
+                // Display preview modal
+                showModal('ppmPreviewModal');
+            });
         };
         reader.onerror = function() {
             ppmShowToast('Unable to read the selected photo. Please try another.', 'error');
@@ -654,6 +904,8 @@
         hideModal('ppmPreviewModal');
         state.pendingFile = null;
         state.pendingDataUrl = null;
+        cropper.activePointers.clear();
+        cropper.initialPinchDistance = null;
         const fi = document.getElementById('ppmFileInput');
         if (fi) fi.value = '';
     };
@@ -673,37 +925,54 @@
 
         setLoadingState(true, 'Saving photo...');
 
-        // Optimize into 1:1 square JPEG canvas (max 800x800)
+        // Optimize into 1:1 square JPEG canvas matching user's selected position & zoom
         prepareSquareBlob(state.pendingDataUrl, state.pendingFile, function(uploadBlob) {
             executeUpload(uploadBlob);
         });
     };
 
-    // Auto center-crop to 1:1 square canvas (max 800x800, min 100x100) for crisp, lightweight transfer
+    // Precise canvas extraction matching the user's interactive position and zoom
     function prepareSquareBlob(dataUrl, originalFile, callback) {
         const img = new Image();
         img.onload = function() {
             try {
-                const srcW = img.naturalWidth || img.width;
-                const srcH = img.naturalHeight || img.height;
+                const natW = img.naturalWidth || img.width;
+                const natH = img.naturalHeight || img.height;
 
-                if (srcW < 20 || srcH < 20) {
+                if (natW < 20 || natH < 20) {
                     throw new Error('Image dimensions too small.');
                 }
 
-                const minSide = Math.min(srcW, srcH);
-                const cropX = (srcW - minSide) / 2;
-                const cropY = (srcH - minSide) / 2;
+                const baseScale = Math.max(cropper.VIEWPORT_SIZE / natW, cropper.VIEWPORT_SIZE / natH);
+                const curW = natW * baseScale * cropper.zoom;
+                const curH = natH * baseScale * cropper.zoom;
+
+                const dispImgLeft = (cropper.VIEWPORT_SIZE - curW) / 2 + cropper.posX;
+                const dispImgTop = (cropper.VIEWPORT_SIZE - curH) / 2 + cropper.posY;
+
+                const scaleOnScreen = curW / natW;
+
+                let srcCropX = (0 - dispImgLeft) / scaleOnScreen;
+                let srcCropY = (0 - dispImgTop) / scaleOnScreen;
+                let srcCropW = cropper.VIEWPORT_SIZE / scaleOnScreen;
+                let srcCropH = cropper.VIEWPORT_SIZE / scaleOnScreen;
+
+                // Clamp to natural image bounds
+                srcCropX = Math.max(0, Math.min(natW - srcCropW, srcCropX));
+                srcCropY = Math.max(0, Math.min(natH - srcCropH, srcCropY));
+                srcCropW = Math.min(natW, srcCropW);
+                srcCropH = Math.min(natH, srcCropH);
 
                 const maxDim = 800;
-                const targetDim = Math.max(100, Math.min(minSide, maxDim));
+                const targetDim = Math.max(100, Math.min(Math.round(srcCropW), maxDim));
 
                 const canvas = document.createElement('canvas');
                 canvas.width = targetDim;
                 canvas.height = targetDim;
                 const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'high';
-                ctx.drawImage(img, cropX, cropY, minSide, minSide, 0, 0, targetDim, targetDim);
+                ctx.drawImage(img, srcCropX, srcCropY, srcCropW, srcCropH, 0, 0, targetDim, targetDim);
 
                 canvas.toBlob(function(blob) {
                     if (blob && blob.size > 0) {
@@ -1081,6 +1350,146 @@
         }
     }
 
+    // Attach all interactive cropper handlers (drag, pinch, wheel, keyboard, buttons, slider)
+    function attachCropperEventListeners() {
+        const viewport = document.getElementById('ppmCropViewport');
+        if (!viewport) return;
+
+        function onPointerDown(e) {
+            e.preventDefault();
+            try {
+                viewport.setPointerCapture(e.pointerId);
+            } catch (err) {}
+
+            cropper.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            viewport.classList.add('is-dragging');
+
+            if (cropper.activePointers.size === 2) {
+                const pts = Array.from(cropper.activePointers.values());
+                cropper.initialPinchDistance = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+                cropper.initialPinchZoom = cropper.zoom;
+            }
+        }
+
+        function onPointerMove(e) {
+            if (!cropper.activePointers.has(e.pointerId)) return;
+            e.preventDefault();
+
+            if (cropper.activePointers.size === 1) {
+                const prev = cropper.activePointers.get(e.pointerId);
+                const dx = e.clientX - prev.x;
+                const dy = e.clientY - prev.y;
+                cropper.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+                cropper.posX += dx;
+                cropper.posY += dy;
+                clampAndApplyTransform();
+            } else if (cropper.activePointers.size === 2) {
+                cropper.activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                const pts = Array.from(cropper.activePointers.values());
+                const curDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+
+                if (cropper.initialPinchDistance && cropper.initialPinchDistance > 0) {
+                    const ratio = curDist / cropper.initialPinchDistance;
+                    cropperSetZoom(cropper.initialPinchZoom * ratio);
+                }
+            }
+        }
+
+        function onPointerUp(e) {
+            try {
+                if (viewport.hasPointerCapture(e.pointerId)) {
+                    viewport.releasePointerCapture(e.pointerId);
+                }
+            } catch (err) {}
+
+            cropper.activePointers.delete(e.pointerId);
+
+            if (cropper.activePointers.size < 2) {
+                cropper.initialPinchDistance = null;
+            }
+            if (cropper.activePointers.size === 0) {
+                viewport.classList.remove('is-dragging');
+            }
+        }
+
+        viewport.addEventListener('pointerdown', onPointerDown);
+        viewport.addEventListener('pointermove', onPointerMove);
+        viewport.addEventListener('pointerup', onPointerUp);
+        viewport.addEventListener('pointercancel', onPointerUp);
+
+        // Native touch event cancellation to prevent page scrolling/gestures
+        viewport.addEventListener('touchstart', function(e) { e.preventDefault(); }, { passive: false });
+        viewport.addEventListener('touchmove', function(e) { e.preventDefault(); }, { passive: false });
+
+        // Wheel zoom (mouse wheel and touchpad pinch/scroll)
+        viewport.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = -Math.sign(e.deltaY) * 0.15;
+            cropperSetZoom(cropper.zoom + delta);
+        }, { passive: false });
+
+        // Keyboard arrow nudging and +/- zooming for accessibility
+        viewport.addEventListener('keydown', function(e) {
+            let handled = true;
+            const step = 10;
+            if (e.key === 'ArrowLeft') {
+                cropper.posX += step;
+            } else if (e.key === 'ArrowRight') {
+                cropper.posX -= step;
+            } else if (e.key === 'ArrowUp') {
+                cropper.posY += step;
+            } else if (e.key === 'ArrowDown') {
+                cropper.posY -= step;
+            } else if (e.key === '+' || e.key === '=') {
+                cropperSetZoom(cropper.zoom + 0.15);
+            } else if (e.key === '-' || e.key === '_') {
+                cropperSetZoom(cropper.zoom - 0.15);
+            } else {
+                handled = false;
+            }
+            if (handled) {
+                e.preventDefault();
+                clampAndApplyTransform();
+            }
+        });
+
+        // Zoom range slider
+        const slider = document.getElementById('ppmZoomSlider');
+        if (slider) {
+            slider.addEventListener('input', function() {
+                cropperSetZoom(parseFloat(this.value));
+            });
+        }
+
+        // Zoom Out Button
+        const zoomOutBtn = document.getElementById('ppmZoomOutBtn');
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                cropperSetZoom(cropper.zoom - 0.25);
+            });
+        }
+
+        // Zoom In Button
+        const zoomInBtn = document.getElementById('ppmZoomInBtn');
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                cropperSetZoom(cropper.zoom + 0.25);
+            });
+        }
+
+        // Reset Crop Button
+        const resetBtn = document.getElementById('ppmResetCropBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                cropperReset();
+            });
+        }
+    }
+
     function initDragAndDrop() {
         const dropzone = document.getElementById('ppmDropzone');
         if (!dropzone) return;
@@ -1113,6 +1522,7 @@
     function init() {
         teleportModals();
         bindEventListeners();
+        attachCropperEventListeners();
         initDragAndDrop();
     }
 
