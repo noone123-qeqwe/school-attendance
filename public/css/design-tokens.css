@@ -365,3 +365,13 @@
 :focus:not(:focus-visible) {
     outline: none;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLL BEHAVIOR: Disable pull-to-refresh & overscroll reloads
+   while preserving natural, smooth scrolling in both directions
+   ══════════════════════════════════════════════════════════════ */
+html, body {
+    overscroll-behavior: none;
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
+}

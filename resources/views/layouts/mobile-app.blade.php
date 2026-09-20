@@ -92,7 +92,9 @@
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            overscroll-behavior-y: contain;
+            overscroll-behavior: none !important;
+            overscroll-behavior-y: none !important;
+            overscroll-behavior-x: none !important;
             -webkit-overflow-scrolling: touch;
         }
 
@@ -209,14 +211,6 @@
         } else {
             document.documentElement.classList.add('browser-mode');
         }
-
-        // Prevent pull-to-refresh on iOS
-        document.body.addEventListener('touchmove', function(e) {
-            if (e.target.closest('.scrollable')) return;
-            if (window.scrollY === 0) {
-                e.preventDefault();
-            }
-        }, { passive: false });
 
         // Simple haptic feedback
         function haptic(type = 'light') {

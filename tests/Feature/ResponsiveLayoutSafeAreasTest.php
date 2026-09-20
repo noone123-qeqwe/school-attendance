@@ -29,7 +29,13 @@ class ResponsiveLayoutSafeAreasTest extends TestCase
         // 3. Dynamic visualViewport synchronization engine
         $this->assertStringContainsString('window.visualViewport', $content);
         $this->assertStringContainsString('--app-height', $content);
-        $this->assertStringContainsString('--v-offset-top', $content);
+        $this->assertStringContainsString('applyLock', $content);
+        $this->assertStringContainsString('isTextEntryFocused', $content);
+        $this->assertStringContainsString("document.addEventListener('visibilitychange'", $content);
+        $this->assertStringNotContainsString('if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);', $content);
+
+        // 4. Overscroll behavior disabled to prevent pull-to-refresh
+        $this->assertStringContainsString('overscroll-behavior: none;', $content);
     }
 
     public function test_register_interface_has_dynamic_viewport_and_safe_area_insets(): void
@@ -47,10 +53,14 @@ class ResponsiveLayoutSafeAreasTest extends TestCase
         $this->assertStringContainsString('--sat: env(safe-area-inset-top', $content);
         $this->assertStringContainsString('--sab: env(safe-area-inset-bottom', $content);
         $this->assertStringContainsString('--app-height', $content);
+        $this->assertStringContainsString('isTextEntryFocused', $content);
 
         // 3. Dynamic visualViewport synchronization
         $this->assertStringContainsString('window.visualViewport', $content);
         $this->assertStringContainsString('--app-height', $content);
+
+        // 4. Overscroll behavior disabled to prevent pull-to-refresh
+        $this->assertStringContainsString('overscroll-behavior: none;', $content);
     }
 
     public function test_dashboard_layout_has_dynamic_viewport_and_safe_area_synchronization(): void
@@ -78,8 +88,9 @@ class ResponsiveLayoutSafeAreasTest extends TestCase
         $this->assertStringContainsString('mobile-enterprise.css', $content);
 
         // 3. Dynamic visualViewport synchronization script
-        $this->assertStringContainsString('syncViewportMetrics', $content);
+        $this->assertStringContainsString('applyLock', $content);
         $this->assertStringContainsString('--app-height', $content);
-        $this->assertStringContainsString('--v-offset-top', $content);
+        $this->assertStringContainsString('isTextEntryFocused', $content);
+        $this->assertStringContainsString("document.addEventListener('visibilitychange'", $content);
     }
 }

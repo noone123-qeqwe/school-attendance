@@ -2645,14 +2645,21 @@ if (forgotLinkElem) {
         }, 200);
     }
 
+    // A system overlay can shrink the visual viewport just like a keyboard.
+    // Only enter keyboard mode when an editable control owns focus so opening
+    // the status bar, notification shade, or system controls leaves the UI intact.
+    function isTextEntryFocused() {
+        var active = document.activeElement;
+        if (!active) return false;
+        return active.matches('textarea, select, [contenteditable="true"], input:not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="reset"])');
+    }
+
     // Keyboard detection only – never update layout height from resize
     function onResize() {
         var vv = window.visualViewport;
         var rawHeight = vv ? vv.height : window.innerHeight;
-        var isKeyboard = rawHeight < (lockedHeight - 150);
+        var isKeyboard = isTextEntryFocused() && rawHeight < (lockedHeight - 150);
         document.body.classList.toggle('keyboard-open', isKeyboard);
-        // Scroll reset
-        if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
     }
 
     window.addEventListener('orientationchange', onOrientationChange, { passive: true });
@@ -2660,6 +2667,9 @@ if (forgotLinkElem) {
         window.visualViewport.addEventListener('resize', onResize, { passive: true });
     }
     window.addEventListener('resize', onResize, { passive: true });
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) onResize();
+    }, { passive: true });
 
     applyLock();
     if (document.readyState === 'loading') {

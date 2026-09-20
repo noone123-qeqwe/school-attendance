@@ -23,7 +23,9 @@
     }
 
     html, body {
-        overscroll-behavior-y: contain !important;
+        overscroll-behavior: none !important;
+        overscroll-behavior-y: none !important;
+        overscroll-behavior-x: none !important;
         -webkit-overflow-scrolling: touch !important;
         -webkit-tap-highlight-color: transparent !important;
     }

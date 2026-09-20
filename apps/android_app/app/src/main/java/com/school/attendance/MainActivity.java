@@ -54,8 +54,9 @@ public class MainActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         progressBar = findViewById(R.id.progressBar);
 
-        swipeRefreshLayout.setColorSchemeResources(R.color.accent);
-        swipeRefreshLayout.setOnRefreshListener(() -> webView.reload());
+        // Completely disable SwipeRefreshLayout pull-to-refresh so user scrolling up/down
+        // never triggers a page reload, refresh, state reset, or jumps back to top.
+        swipeRefreshLayout.setEnabled(false);
 
         setupWebView();
         checkAndRequestPermissions();
@@ -82,6 +83,9 @@ public class MainActivity extends AppCompatActivity {
 
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
+        // Prevent system overscroll effects from triggering reload or interfering with smooth scrolling
+        webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
@@ -93,7 +97,9 @@ public class MainActivity extends AppCompatActivity {
         settings.setSupportZoom(true);
         settings.setBuiltInZoomControls(false);
         settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
+        // Keep the responsive page at its declared scale. Overview mode recalculates
+        // the WebView scale whenever Android reports a transient system-bar inset.
+        settings.setLoadWithOverviewMode(false);
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setSupportMultipleWindows(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(true);

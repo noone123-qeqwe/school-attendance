@@ -41,7 +41,8 @@
             overflow-x: hidden;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            overscroll-behavior-y: contain;
+            overscroll-behavior: none;
+            overscroll-behavior-y: none;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1962,10 +1963,16 @@
                 }, 200);
             }
 
+            function isTextEntryFocused() {
+                var active = document.activeElement;
+                if (!active) return false;
+                return active.matches('textarea, select, [contenteditable="true"], input:not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="reset"])');
+            }
+
             function onResize() {
                 var vv = window.visualViewport;
                 var rawHeight = vv ? vv.height : window.innerHeight;
-                var isKeyboard = rawHeight < (lockedHeight - 150);
+                var isKeyboard = isTextEntryFocused() && rawHeight < (lockedHeight - 150);
                 document.body.classList.toggle('keyboard-open', isKeyboard);
             }
 
@@ -1974,6 +1981,9 @@
                 window.visualViewport.addEventListener('resize', onResize, { passive: true });
             }
             window.addEventListener('resize', onResize, { passive: true });
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) onResize();
+            }, { passive: true });
             applyLock();
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', applyLock);

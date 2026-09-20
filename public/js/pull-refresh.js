@@ -1,107 +1,12 @@
 /**
- * Native App Touch Interactions & Pull-to-Refresh
- * - Rubber-band physics with tactile micro-haptics
+ * Native App Touch Interactions & Bottom Sheet Dismissal
+ * - Pull-to-refresh is intentionally disabled to preserve user scroll position and page state
  * - Native swipe-down bottom sheet dismissal
  */
 (function () {
     'use strict';
 
     if (window.innerWidth > 768) return;
-
-    // ── Pull to Refresh Indicator ──
-    var indicator = document.createElement('div');
-    indicator.className = 'pull-refresh-indicator';
-    indicator.innerHTML = '<i class="bi bi-arrow-down pull-refresh-arrow"></i><span class="ptr-text">Pull to refresh</span>';
-    document.body.appendChild(indicator);
-
-    var startY = 0;
-    var currentY = 0;
-    var pulling = false;
-    var threshold = 75;
-    var maxPull = 120;
-    var hapticTriggered = false;
-
-    function getScrollTop() {
-        return window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-    }
-
-    document.addEventListener('touchstart', function (e) {
-        if (getScrollTop() <= 3 && !document.querySelector('.modal.show')) {
-            startY = e.touches[0].pageY;
-            pulling = true;
-            hapticTriggered = false;
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchmove', function (e) {
-        if (!pulling) return;
-
-        currentY = e.touches[0].pageY;
-        var rawDelta = currentY - startY;
-
-        if (rawDelta < 0) {
-            pulling = false;
-            indicator.classList.remove('visible', 'ready');
-            return;
-        }
-
-        if (rawDelta > 10 && getScrollTop() <= 3) {
-            // Apple-style non-linear rubber-band resistance curve
-            var delta = rawDelta < threshold 
-                ? rawDelta * 0.75 
-                : threshold * 0.75 + Math.pow(rawDelta - threshold, 0.72) * 1.5;
-            delta = Math.min(delta, maxPull);
-
-            var progress = Math.min(delta / threshold, 1.2);
-
-            indicator.classList.add('visible');
-            indicator.style.transform = 'translateX(-50%) translateY(' + (delta * 0.6) + 'px)';
-            indicator.style.opacity = Math.min(progress, 1);
-
-            var textEl = indicator.querySelector('.ptr-text');
-            if (rawDelta >= threshold) {
-                indicator.classList.add('ready');
-                if (textEl) textEl.textContent = 'Release to refresh';
-                if (!hapticTriggered) {
-                    if (window.triggerHaptic) window.triggerHaptic('medium');
-                    hapticTriggered = true;
-                }
-            } else {
-                indicator.classList.remove('ready');
-                if (textEl) textEl.textContent = 'Pull to refresh';
-                hapticTriggered = false;
-            }
-        }
-    }, { passive: true });
-
-    document.addEventListener('touchend', function () {
-        if (!pulling) return;
-
-        var rawDelta = currentY - startY;
-
-        if (rawDelta >= threshold) {
-            indicator.classList.add('loading');
-            indicator.classList.remove('ready');
-            indicator.innerHTML = '<div class="pull-refresh-spinner"></div><span>Refreshing...</span>';
-            indicator.style.transform = 'translateX(-50%) translateY(16px)';
-            indicator.style.opacity = '1';
-
-            if (window.triggerHaptic) window.triggerHaptic('success');
-
-            setTimeout(function () {
-                window.location.reload();
-            }, 300);
-        } else {
-            indicator.classList.remove('visible', 'ready');
-            indicator.style.transform = '';
-            indicator.style.opacity = '';
-        }
-
-        pulling = false;
-        startY = 0;
-        currentY = 0;
-        hapticTriggered = false;
-    }, { passive: true });
 
     // ── Swipe Down to Dismiss Bottom Sheets ──
     var sheetStartY = 0;

@@ -1415,10 +1415,16 @@
                     }, 200);
                 }
 
+                function isTextEntryFocused() {
+                    var active = document.activeElement;
+                    if (!active) return false;
+                    return active.matches('textarea, select, [contenteditable="true"], input:not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="reset"])');
+                }
+
                 function onResize() {
                     var vv = window.visualViewport;
                     var rawHeight = vv ? vv.height : window.innerHeight;
-                    var isKeyboard = rawHeight < (lockedHeight - 150);
+                    var isKeyboard = isTextEntryFocused() && rawHeight < (lockedHeight - 150);
                     document.body.classList.toggle('keyboard-open', isKeyboard);
                 }
 
@@ -1427,6 +1433,9 @@
                     window.visualViewport.addEventListener('resize', onResize, { passive: true });
                 }
                 window.addEventListener('resize', onResize, { passive: true });
+                document.addEventListener('visibilitychange', function() {
+                    if (!document.hidden) onResize();
+                }, { passive: true });
                 applyLock();
             })();
 
