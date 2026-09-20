@@ -18,29 +18,42 @@ class VersionService
     public function refresh(): void
     {
         $this->fileData = null;
+        Setting::flushCache();
+
+        $file = $this->getFileData();
+        if (!empty($file['version'])) {
+            config([
+                'version.version'           => (string)$file['version'],
+                'changelog.default_version' => (string)$file['version'],
+            ]);
+        }
+        if (!empty($file['installed_version'])) {
+            config([
+                'version.installed_version'   => (string)$file['installed_version'],
+                'changelog.installed_version' => (string)$file['installed_version'],
+            ]);
+        }
     }
 
     /**
      * Get the root version.json file contents if available.
+     * Always reads fresh from disk without static caching so that build/release
+     * updates are immediately detected.
      */
     protected function getFileData(): array
     {
-        if ($this->fileData !== null) {
-            return $this->fileData;
-        }
-
         $versionFile = base_path('version.json');
         if (File::exists($versionFile)) {
             $raw = @file_get_contents($versionFile);
             if (!empty($raw)) {
                 $json = @json_decode($raw, true);
                 if (is_array($json)) {
-                    return $this->fileData = $json;
+                    return $json;
                 }
             }
         }
 
-        return $this->fileData = [];
+        return [];
     }
 
     /**
@@ -57,21 +70,9 @@ class VersionService
                 return ltrim(trim((string)$configVer), 'vV ');
             }
 
-            $changelogDef = config('changelog.default_version');
-            if (!empty($changelogDef) && $changelogDef === '2.3.0') {
-                return '2.3.0';
+            if (!empty(config('changelog.installed_version')) && !empty(config('changelog.default_version'))) {
+                return ltrim(trim((string)config('changelog.default_version')), 'vV ');
             }
-
-            try {
-                $dbTestSys = Setting::get('system_version');
-                if (!empty($dbTestSys) && $dbTestSys === '2.4.0') {
-                    return '2.4.0';
-                }
-                $dbTestLatest = Setting::get('latest_version');
-                if (!empty($dbTestLatest) && $dbTestLatest === '1') {
-                    return '1';
-                }
-            } catch (\Throwable $e) {}
         }
 
         // 1. Explicit environment overrides
@@ -83,28 +84,23 @@ class VersionService
             }
         }
 
-        // 2. Discover versions across persistent stores & disk files
-        $sources = [];
-
-        // Centralized version.json on disk (shipped with deployments / git releases)
+        // 2. Discover build version from disk files (version.json)
         $diskVer = null;
         $file = $this->getFileData();
         if (!empty($file['version'])) {
             $cleanFile = ltrim(trim((string)$file['version']), 'vV ');
             if (preg_match('/^\d+(\.\d+)*$/', $cleanFile)) {
                 $diskVer = $cleanFile;
-                $sources[] = $cleanFile;
             }
         }
 
         // Application configuration metadata fallback if version.json is absent
-        if ($diskVer === null && !app()->runningUnitTests()) {
+        if ($diskVer === null) {
             $configVer = config('version.version');
             if (!empty($configVer)) {
                 $cleanConfig = ltrim(trim((string)$configVer), 'vV ');
                 if (preg_match('/^\d+(\.\d+)*$/', $cleanConfig)) {
                     $diskVer = $cleanConfig;
-                    $sources[] = $cleanConfig;
                 }
             }
         }
@@ -117,32 +113,30 @@ class VersionService
                 $cleanDb = ltrim(trim((string)$dbSetting), 'vV ');
                 if (preg_match('/^\d+(\.\d+)*$/', $cleanDb)) {
                     $dbVersion = $cleanDb;
-                    $sources[] = $cleanDb;
                 }
             }
         } catch (\Throwable $e) {}
 
-        // Fallback baseline from build metadata
-        $baseline = $diskVer ?: '2.5.2';
-        $sources[] = $baseline;
 
-        // Select the maximum semantic version among all valid sources
-        $highest = $baseline;
-        foreach ($sources as $ver) {
-            if (version_compare($ver, $highest, '>')) {
-                $highest = $ver;
+        // In production/local: If diskVer is defined, it is the authoritative build version!
+        if ($diskVer !== null) {
+            if ($dbVersion === null || version_compare($diskVer, $dbVersion, '>=')) {
+                if ($dbVersion !== $diskVer) {
+                    try {
+                        Setting::set('latest_version', $diskVer);
+                        Setting::set('system_version', $diskVer);
+                    } catch (\Throwable $e) {}
+                }
+                return $diskVer;
             }
+            return $dbVersion;
         }
 
-        // Self-heal: If database setting is behind the deployed version, sync it!
-        if ($dbVersion === null || version_compare($highest, $dbVersion, '>')) {
-            try {
-                Setting::set('latest_version', $highest);
-                Setting::set('system_version', $highest);
-            } catch (\Throwable $e) {}
+        if ($dbVersion !== null) {
+            return $dbVersion;
         }
 
-        return $highest;
+        return config('version.version', '1.0.0');
     }
 
     /**
@@ -244,18 +238,16 @@ class VersionService
 
     /**
      * Primary source of truth for CURRENT INSTALLED application version.
+     * Always retrieves the current installed app version directly from the
+     * app's build/configuration metadata without static caching.
      */
     public function getInstalledVersion(): string
     {
         // 0. Check explicit test overrides if specifically configured
         if (app()->runningUnitTests()) {
-            $configOverride = config('version.installed_version_override');
+            $configOverride = config('version.installed_version_override') ?: config('changelog.installed_version');
             if (!empty($configOverride)) {
                 return ltrim(trim((string)$configOverride), 'vV ');
-            }
-            $changelogInst = config('changelog.installed_version');
-            if (!empty($changelogInst) && $changelogInst === '2.1.0') {
-                return '2.1.0';
             }
         }
 
@@ -265,17 +257,25 @@ class VersionService
             return ltrim(trim((string)$configInstalled), 'vV ');
         }
 
-        // 2. Discover build version from disk files / application configuration metadata
+        // 2. Discover build version from disk files (version.json) - fresh read, no static cache
         $file = $this->getFileData();
         $diskVer = null;
-        if (!empty($file['version'])) {
+        if (!empty($file['installed_version'])) {
+            $cleanFile = ltrim(trim((string)$file['installed_version']), 'vV ');
+            if (preg_match('/^\d+(\.\d+)*$/', $cleanFile)) {
+                $diskVer = $cleanFile;
+            }
+        }
+        if ($diskVer === null && !empty($file['version'])) {
             $cleanFile = ltrim(trim((string)$file['version']), 'vV ');
             if (preg_match('/^\d+(\.\d+)*$/', $cleanFile)) {
                 $diskVer = $cleanFile;
             }
         }
-        if ($diskVer === null && !app()->runningUnitTests()) {
-            $configVer = config('version.version');
+
+        // 3. Fallback to application configuration metadata if version.json is absent or has no version
+        if ($diskVer === null) {
+            $configVer = config('version.installed_version') ?: config('version.version');
             if (!empty($configVer)) {
                 $cleanConfig = ltrim(trim((string)$configVer), 'vV ');
                 if (preg_match('/^\d+(\.\d+)*$/', $cleanConfig)) {
@@ -284,49 +284,38 @@ class VersionService
             }
         }
 
-        // 3. Check database setting for installed version (canonical runtime source of truth)
-        $dbInstalled = null;
+        // When build metadata defines the version, it is the authoritative installed version!
+        // Cached or persisted DB/localStorage data must NOT override the actual installed version from the build.
+        if ($diskVer !== null) {
+            // Keep DB in sync with current installed build metadata if different
+            try {
+                $dbInstalled = Setting::get('installed_version');
+                if ($dbInstalled !== $diskVer) {
+                    Setting::set('installed_version', $diskVer);
+                    Setting::flushCache();
+                }
+            } catch (\Throwable $e) {}
+
+            return $diskVer;
+        }
+
+        // 4. Fallback to database setting ONLY if no build metadata exists on disk or config
         try {
             $installed = Setting::get('installed_version');
             if (!empty($installed)) {
                 $clean = ltrim(trim((string)$installed), 'vV ');
                 if (preg_match('/^\d+(\.\d+)*$/', $clean)) {
-                    $dbInstalled = $clean;
+                    return $clean;
                 }
             }
         } catch (\Throwable $e) {}
-
-        // In running application mode, when a new build/version is installed on disk
-        // whose build metadata is newer than the old DB setting, automatically elevate installed_version
-        // so the app never remains stuck on an outdated version from previous installations!
-        if (!app()->runningUnitTests() && $diskVer !== null) {
-            if ($dbInstalled === null || version_compare($diskVer, $dbInstalled, '>')) {
-                $dbInstalled = $diskVer;
-                try {
-                    Setting::set('installed_version', $diskVer);
-                    Setting::flushCache();
-                } catch (\Throwable $e) {}
-            }
-        }
-
-        if ($dbInstalled !== null) {
-            return $dbInstalled;
-        }
-
-        // 4. Check unit test changelog config fallback
-        if (app()->runningUnitTests()) {
-            $configInstalled = config('changelog.installed_version') ?: config('version.installed_version');
-            if (!empty($configInstalled)) {
-                return ltrim(trim((string)$configInstalled), 'vV ');
-            }
-        }
 
         // Fallback: If not explicitly set, default to the latest available version
         return $this->getLatestVersion();
     }
 
     /**
-     * Get the current installed version formatted with a 'v' prefix (e.g. 'v2.5.2').
+     * Get the current installed version formatted with a 'v' prefix.
      */
     public function getInstalledVersionTag(): string
     {
@@ -334,7 +323,7 @@ class VersionService
     }
 
     /**
-     * Explicitly set the current installed version in the database.
+     * Explicitly set the current installed version in the database and build metadata.
      */
     public function setInstalledVersion(string $version): string
     {
@@ -351,9 +340,26 @@ class VersionService
         ]);
 
         try {
+            $versionFile = base_path('version.json');
+            if (File::exists($versionFile)) {
+                $raw = @file_get_contents($versionFile);
+                $data = !empty($raw) ? @json_decode($raw, true) : [];
+                if (!is_array($data)) {
+                    $data = [];
+                }
+                $data['installed_version'] = $clean;
+                if (empty($data['version']) || version_compare($clean, (string)$data['version'], '>=')) {
+                    $data['version'] = $clean;
+                }
+                File::put($versionFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            }
+        } catch (\Throwable $e) {}
+
+        try {
             \Illuminate\Support\Facades\Artisan::call('view:clear');
         } catch (\Throwable $e) {}
 
+        $this->refresh();
         return $clean;
     }
 
@@ -552,16 +558,19 @@ class VersionService
             Log::warning('VersionService: Database version setting update warning: ' . $e->getMessage());
         }
 
-        // 2. Prepare payload & cache in-memory
+        $currentInstalled = $this->getInstalledVersion();
+        $targetInstalled = $installImmediately ? $targetVer : $currentInstalled;
+
+        // 2. Prepare payload
         $versionPayload = [
-            'version'      => $targetVer,
-            'build'        => $targetBuild,
-            'commit'       => $commit,
-            'release_date' => $targetDate,
-            'channel'      => 'stable',
-            'name'         => config('version.name', 'Smart Classroom Attendance System'),
+            'version'           => $targetVer,
+            'installed_version' => $targetInstalled,
+            'build'             => $targetBuild,
+            'commit'            => $commit,
+            'release_date'      => $targetDate,
+            'channel'           => 'stable',
+            'name'              => config('version.name', 'Smart Classroom Attendance System'),
         ];
-        $this->fileData = $versionPayload;
 
         if (!app()->runningUnitTests()) {
             config([
@@ -592,6 +601,8 @@ class VersionService
             \Illuminate\Support\Facades\Artisan::call('view:clear');
             try { \Illuminate\Support\Facades\Artisan::call('config:clear'); } catch (\Throwable $ex) {}
         } catch (\Throwable $e) {}
+
+        $this->refresh();
 
         return [
             'previous_version'  => $currentLatest,

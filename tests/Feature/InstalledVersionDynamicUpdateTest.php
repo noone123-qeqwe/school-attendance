@@ -14,6 +14,7 @@ class InstalledVersionDynamicUpdateTest extends TestCase
     use RefreshDatabase;
 
     private string $originalVersionJson = '';
+    private string $originalAndroidGradle = '';
 
     protected function setUp(): void
     {
@@ -22,12 +23,20 @@ class InstalledVersionDynamicUpdateTest extends TestCase
         if (File::exists(base_path('version.json'))) {
             $this->originalVersionJson = File::get(base_path('version.json'));
         }
+        $gradlePath = base_path('apps/android_app/app/build.gradle');
+        if (File::exists($gradlePath)) {
+            $this->originalAndroidGradle = File::get($gradlePath);
+        }
     }
 
     protected function tearDown(): void
     {
         if (!empty($this->originalVersionJson) && File::exists(base_path('version.json'))) {
             File::put(base_path('version.json'), $this->originalVersionJson);
+        }
+        $gradlePath = base_path('apps/android_app/app/build.gradle');
+        if (!empty($this->originalAndroidGradle) && File::exists($gradlePath)) {
+            File::put($gradlePath, $this->originalAndroidGradle);
         }
 
         parent::tearDown();
@@ -129,5 +138,99 @@ class InstalledVersionDynamicUpdateTest extends TestCase
         $this->assertStringContainsString('pageshow', $content);
         $this->assertStringContainsString('BroadcastChannel', $content);
         $this->assertStringContainsString('controllerchange', $content);
+    }
+
+    /**
+     * Test multiple consecutive version updates (1.0.1 -> 1.0.2 -> 1.0.3)
+     * Verifies that:
+     * - The version updates correctly with every new build or release.
+     * - It does not remain stuck on the first updated version (1.0.1).
+     * - The displayed version always matches the version defined in the current app build.
+     * - Both desktop & mobile badges, meta tags, and API endpoints reflect every change.
+     */
+    public function test_consecutive_version_updates_update_correctly_every_time(): void
+    {
+        /** @var VersionService $versionService */
+        $versionService = app(VersionService::class);
+        $versionFile = base_path('version.json');
+
+        $versions = ['1.0.1', '1.0.2', '1.0.3'];
+
+        foreach ($versions as $targetVersion) {
+            // Simulate deploying a new build/release with updated build metadata
+            File::put($versionFile, json_encode([
+                'version'           => $targetVersion,
+                'installed_version' => $targetVersion,
+                'build'             => '20260921.' . str_replace('.', '', $targetVersion),
+                'commit'            => 'bld' . str_replace('.', '', $targetVersion),
+                'release_date'      => '2026-09-21',
+                'channel'           => 'stable',
+                'name'              => 'Smart Classroom Attendance System',
+            ], JSON_PRETTY_PRINT));
+
+            $versionService->refresh();
+
+            // 1. VersionService getters reflect current build version
+            $this->assertEquals($targetVersion, $versionService->getInstalledVersion());
+            $this->assertEquals('v' . $targetVersion, $versionService->getInstalledVersionTag());
+            $this->assertEquals($targetVersion, $versionService->getLatestVersion());
+            $this->assertTrue($versionService->isUpToDate());
+
+            // 2. Blade directives render current build version
+            $renderedVer = Blade::render('@appInstalledVersion');
+            $renderedTag = Blade::render('@appInstalledVersionTag');
+            $this->assertEquals($targetVersion, trim($renderedVer));
+            $this->assertEquals('v' . $targetVersion, trim($renderedTag));
+
+            // 3. /pwa/version endpoint returns current build version
+            $pwaResponse = $this->getJson('/pwa/version');
+            $pwaResponse->assertStatus(200)
+                ->assertJson([
+                    'success'               => true,
+                    'installed_version'     => $targetVersion,
+                    'current_version'       => $targetVersion,
+                    'installed_version_tag' => 'v' . $targetVersion,
+                    'is_up_to_date'         => true,
+                ]);
+
+            // 4. Login page HTML renders current build version badges and meta tags
+            $loginResponse = $this->get(route('login'));
+            $loginResponse->assertStatus(200);
+            $loginResponse->assertSee('v' . $targetVersion);
+            $loginResponse->assertSee('name="app-installed-version" content="' . $targetVersion . '"', false);
+            $loginResponse->assertSee('name="app-installed-version-tag" content="v' . $targetVersion . '"', false);
+        }
+    }
+
+    /**
+     * Test that cached or persisted database setting does NOT override the installed build version.
+     */
+    public function test_persisted_version_data_does_not_override_installed_build_version(): void
+    {
+        /** @var VersionService $versionService */
+        $versionService = app(VersionService::class);
+        $versionFile = base_path('version.json');
+
+        // 1. Build metadata defines version 1.0.2
+        File::put($versionFile, json_encode([
+            'version'           => '1.0.2',
+            'installed_version' => '1.0.2',
+            'build'             => '20260921.102',
+            'release_date'      => '2026-09-21',
+        ], JSON_PRETTY_PRINT));
+
+        // 2. Persisted DB setting has an outdated or higher version from a previous installation
+        Setting::set('installed_version', '1.0.1', false);
+        $versionService->refresh();
+
+        // Installed version must match the build metadata (1.0.2), NOT the stale database record (1.0.1)
+        $this->assertEquals('1.0.2', $versionService->getInstalledVersion());
+        $this->assertEquals('v1.0.2', $versionService->getInstalledVersionTag());
+
+        // Login page renders 1.0.2, not 1.0.1
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $response->assertSee('v1.0.2');
+        $response->assertSee('name="app-installed-version" content="1.0.2"', false);
     }
 }

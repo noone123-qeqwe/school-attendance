@@ -4,5 +4,6 @@
     "commit": "f8c42a6",
     "release_date": "2026-09-20",
     "channel": "stable",
-    "name": "Smart Classroom Attendance System"
+    "name": "Smart Classroom Attendance System",
+    "installed_version": "2.5.2"
 }

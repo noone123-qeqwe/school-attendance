@@ -1,7 +1,7 @@
 <?php
 
 $versionFile = base_path('version.json');
-$rootVersion = '1';
+$rootVersion = '1.0.0';
 if (file_exists($versionFile)) {
     $raw = @file_get_contents($versionFile);
     if (!empty($raw)) {
@@ -13,12 +13,13 @@ if (file_exists($versionFile)) {
 }
 
 return [
+    'boot_version' => $rootVersion,
     /*
     |--------------------------------------------------------------------------
     | Installed & Latest Application Versions
     |--------------------------------------------------------------------------
     */
-    'installed_version' => env('APP_INSTALLED_VERSION', $rootVersion),
+    'installed_version' => env('APP_INSTALLED_VERSION', null),
     'default_version' => env('APP_LATEST_VERSION', $rootVersion),
 
     /*

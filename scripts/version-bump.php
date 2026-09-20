@@ -44,7 +44,7 @@ $isDryRun = isset($options['dry-run']);
 
 // 1. Read current version from version.json (Single Source of Truth)
 $versionData = [];
-$currentVersion = '2.5.2'; // Default baseline
+$currentVersion = '1.0.0'; // Default baseline
 if (file_exists($versionJsonPath)) {
     $raw = @file_get_contents($versionJsonPath);
     if (!empty($raw)) {

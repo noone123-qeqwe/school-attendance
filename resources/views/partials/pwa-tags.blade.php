@@ -1522,28 +1522,21 @@
 
     function getInstalledVersion() {
         const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || DOC_INSTALLED_VER;
-        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version') || localStorage.getItem('pwa_app_version');
-
-        // Dynamically reconcile against document build metadata delivered with the app
         if (metaInstalled) {
-            // If no valid stored version or if the deployed build metadata is newer or equal,
-            // immediately update cache to the current installed build metadata
-            if (!stored || compareSemver(metaInstalled, stored) >= 0) {
-                try {
-                    localStorage.setItem('app_installed_version', metaInstalled);
-                    localStorage.setItem('pwa_installed_version', metaInstalled);
-                    localStorage.setItem('pwa_app_version', metaInstalled);
-                } catch(e) {}
-                return metaInstalled;
-            }
-            return stored;
+            try {
+                localStorage.setItem('app_installed_version', metaInstalled);
+                localStorage.setItem('pwa_installed_version', metaInstalled);
+                localStorage.setItem('pwa_app_version', metaInstalled);
+            } catch(e) {}
+            return metaInstalled;
         }
 
+        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version') || localStorage.getItem('pwa_app_version');
         if (stored && !stored.includes('_') && /^\d/.test(stored)) {
             return stored;
         }
 
-        return '1';
+        return '1.0.0';
     }
 
     function getInstalledSwVersion() {
