@@ -197,6 +197,10 @@ class WebAuthnController extends Controller
     public function loginOptions(Request $request, WebauthnService $webauthn)
     {
         $raw = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
+        $savedIdentifiers = $request->input('saved_identifiers');
+        if (!is_array($savedIdentifiers)) {
+            $savedIdentifiers = [];
+        }
         
         // Targeted account lookup if identifier provided
         if ($raw && is_string($raw) && trim($raw) !== '') {
@@ -210,7 +214,8 @@ class WebAuthnController extends Controller
             if (!$user->isActive()) {
                 return response()->json(["success" => false, "code" => "ACCOUNT_DEACTIVATED", "message" => "Your account has been deactivated. Please contact the school administrator."], 403);
             }
-                     // Check if user has any biometric credentials registered
+
+            // Check if user has any biometric credentials registered
             $hasAnyCredentials = $user->webauthnCredentials()->exists();
 
             if (!$hasAnyCredentials) {
@@ -250,6 +255,37 @@ class WebAuthnController extends Controller
             session(["webauthn_login_user_id" => $user->id]);
             $options = $webauthn->authenticationOptions($user);
             
+            // If the client sent other saved accounts on this device, also include their credentials
+            // so any registered user on this device can authenticate smoothly
+            if (!empty($savedIdentifiers)) {
+                $existingIds = collect($options['publicKey']['allowCredentials'])->pluck('id')->all();
+                foreach ($savedIdentifiers as $savedId) {
+                    if (!is_string($savedId) || trim($savedId) === '' || strcasecmp(trim($savedId), $identifier) === 0) {
+                        continue;
+                    }
+                    $otherUser = $this->findUserByIdentifier(trim($savedId));
+                    if ($otherUser && $otherUser->isActive()) {
+                        $otherCreds = $otherUser->webauthnCredentials()
+                            ->where(function ($q) {
+                                $q->whereNull('biometric_type')
+                                  ->orWhere('biometric_type', '!=', 'face')
+                                  ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
+                            })
+                            ->get();
+                        foreach ($otherCreds as $oc) {
+                            if (!in_array($oc->credential_id, $existingIds)) {
+                                $options['publicKey']['allowCredentials'][] = [
+                                    'type' => 'public-key',
+                                    'id' => $oc->credential_id,
+                                    'transports' => ['internal', 'hybrid'],
+                                ];
+                                $existingIds[] = $oc->credential_id;
+                            }
+                        }
+                    }
+                }
+            }
+            
             return response()->json(array_merge($options['publicKey'], [
                 "success" => true,
                 "user_id" => $user->id,
@@ -261,6 +297,38 @@ class WebAuthnController extends Controller
         // Discoverable / Passkey mode: No identifier passed
         session()->forget("webauthn_login_user_id");
         $options = $webauthn->authenticationOptions(null);
+
+        // If saved_identifiers was passed in discoverable mode, populate allowCredentials with known device accounts
+        if (!empty($savedIdentifiers)) {
+            $allowCredentials = [];
+            $existingIds = [];
+            foreach ($savedIdentifiers as $savedId) {
+                if (!is_string($savedId) || trim($savedId) === '') continue;
+                $savedUser = $this->findUserByIdentifier(trim($savedId));
+                if ($savedUser && $savedUser->isActive()) {
+                    $creds = $savedUser->webauthnCredentials()
+                        ->where(function ($q) {
+                            $q->whereNull('biometric_type')
+                              ->orWhere('biometric_type', '!=', 'face')
+                              ->orWhere('public_key', 'LIKE', '%BEGIN PUBLIC KEY%');
+                        })
+                        ->get();
+                    foreach ($creds as $c) {
+                        if (!in_array($c->credential_id, $existingIds)) {
+                            $allowCredentials[] = [
+                                'type' => 'public-key',
+                                'id' => $c->credential_id,
+                                'transports' => ['internal', 'hybrid'],
+                            ];
+                            $existingIds[] = $c->credential_id;
+                        }
+                    }
+                }
+            }
+            if (!empty($allowCredentials)) {
+                $options['publicKey']['allowCredentials'] = $allowCredentials;
+            }
+        }
 
         return response()->json(array_merge($options['publicKey'], [
             "success" => true,
@@ -418,19 +486,29 @@ class WebAuthnController extends Controller
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');
 
         // 1. Check if an account was targeted via session or request input
-        $sessionUserId = session("webauthn_login_user_id");
+        $isSwitchUser = $request->boolean('switch_user') || $request->boolean('allow_detected_user');
         $rawIdentifier = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
-        $expectedUser = null;
+        $hasExplicitIdentifier = is_string($rawIdentifier) && trim($rawIdentifier) !== '';
 
+        // If switching user, or if discoverable mode (no explicit identifier passed), ignore stale session user ID!
+        if ($isSwitchUser || !$hasExplicitIdentifier) {
+            session()->forget("webauthn_login_user_id");
+            $sessionUserId = null;
+        } else {
+            $sessionUserId = session("webauthn_login_user_id");
+        }
+
+        $expectedUser = null;
         if ($sessionUserId) {
             $expectedUser = User::find($sessionUserId);
-        } elseif ($rawIdentifier && is_string($rawIdentifier) && trim($rawIdentifier) !== '') {
+        } elseif ($hasExplicitIdentifier) {
             $expectedUser = $this->findUserByIdentifier(trim($rawIdentifier));
         }
 
         // 2. Locate matching credential (prefer expected user's credential if targeted)
         $user = null;
         $dbCredential = null;
+        $userHandle = $request->input('assertion.response.userHandle');
 
         if ($expectedUser) {
             $dbCredential = $expectedUser->webauthnCredentials()
@@ -442,6 +520,28 @@ class WebAuthnController extends Controller
 
             if ($dbCredential) {
                 $user = $expectedUser;
+            }
+        }
+
+        // If userHandle is provided (from WebAuthn assertion response), use it to identify user
+        if (!$dbCredential && $userHandle) {
+            $candidateCredentials = \App\Models\WebauthnCredential::with('user')
+                ->where(function ($query) use ($credentialId, $normalizedCredentialId) {
+                    $query->where('credential_id', $credentialId)
+                          ->orWhere('credential_id', $normalizedCredentialId);
+                })
+                ->get();
+
+            foreach ($candidateCredentials as $cand) {
+                if ($cand->user) {
+                    $expectedHandle = rtrim(strtr(base64_encode(hash('sha256', (string) $cand->user->id, true)), '+/', '-_'), '=');
+                    $rawHandle = rtrim(strtr($userHandle, '+/', '-_'), '=');
+                    if ($expectedHandle === $rawHandle || (string)$cand->user->id === (string)$userHandle) {
+                        $dbCredential = $cand;
+                        $user = $cand->user;
+                        break;
+                    }
+                }
             }
         }
 
@@ -459,7 +559,7 @@ class WebAuthnController extends Controller
         }
 
         // 3. Handle account mismatch / account switching
-        $allowSwitch = $request->boolean('switch_user') || $request->boolean('allow_detected_user');
+        $allowSwitch = $isSwitchUser;
 
         if ($expectedUser && $user && $expectedUser->id !== $user->id) {
             if ($allowSwitch) {

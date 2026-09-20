@@ -378,4 +378,233 @@ class MultiUserAuthAndBiometricTest extends TestCase
         $this->assertEquals($userB->id, Auth::id());
         Auth::logout();
     }
+
+    public function test_multi_account_saved_identifiers_included_in_login_options()
+    {
+        $userA = User::factory()->create([
+            'student_number' => 'STU-SAVED-A',
+            'is_active' => true,
+        ]);
+        $userB = User::factory()->create([
+            'student_number' => 'STU-SAVED-B',
+            'is_active' => true,
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $userA->id,
+            'credential_id' => 'cred_saved_a',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Phone A',
+        ]);
+        WebauthnCredential::create([
+            'user_id' => $userB->id,
+            'credential_id' => 'cred_saved_b',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+            'device_name' => 'Phone B',
+        ]);
+
+        // When user A is targeted, but device has saved both accounts:
+        $response = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => 'STU-SAVED-A',
+            'saved_identifiers' => ['STU-SAVED-A', 'STU-SAVED-B'],
+        ]);
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $allowed = $response->json('allowCredentials');
+        $this->assertCount(2, $allowed);
+        $credIds = array_column($allowed, 'id');
+        $this->assertContains('cred_saved_a', $credIds);
+        $this->assertContains('cred_saved_b', $credIds);
+    }
+
+    public function test_discoverable_biometric_login_clears_stale_session_and_authenticates_any_user()
+    {
+        $userA = User::factory()->create([
+            'student_number' => 'STU-STALE-A',
+            'is_active' => true,
+        ]);
+        $userB = User::factory()->create([
+            'student_number' => 'STU-STALE-B',
+            'is_active' => true,
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $userA->id,
+            'credential_id' => 'cred_stale_a',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+        ]);
+        WebauthnCredential::create([
+            'user_id' => $userB->id,
+            'credential_id' => 'cred_stale_b',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+        ]);
+
+        // User A was looked up earlier in this session
+        session(['webauthn_login_user_id' => $userA->id]);
+
+        $this->mock(WebauthnService::class, function ($mock) {
+            $mock->shouldReceive('verifyAssertion')
+                ->andReturnUsing(function ($user, $assertion, $credential) {
+                    return $credential;
+                });
+        });
+
+        // Bob clicks "Sign in with Biometrics" with empty identifier (discoverable mode)
+        $response = $this->postJson(route('webauthn.login'), [
+            'identifier' => '',
+            'credential_id' => 'cred_stale_b',
+            'assertion' => [
+                'id' => 'cred_stale_b',
+                'type' => 'public-key',
+                'response' => ['signature' => 'sig_b'],
+            ],
+        ]);
+
+        $response->assertStatus(200)->assertJson(['success' => true]);
+        $this->assertTrue(Auth::check());
+        $this->assertEquals($userB->id, Auth::id());
+        $this->assertNull(session('webauthn_login_user_id'));
+    }
+
+    public function test_1_tap_account_switching_when_other_user_biometric_scanned()
+    {
+        $userA = User::factory()->create([
+            'name' => 'Alice Switch',
+            'student_number' => 'STU-SW-A',
+            'is_active' => true,
+        ]);
+        $userB = User::factory()->create([
+            'name' => 'Bob Switch',
+            'student_number' => 'STU-SW-B',
+            'is_active' => true,
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $userA->id,
+            'credential_id' => 'cred_sw_a',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+        ]);
+        WebauthnCredential::create([
+            'user_id' => $userB->id,
+            'credential_id' => 'cred_sw_b',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+        ]);
+
+        $this->mock(WebauthnService::class, function ($mock) {
+            $mock->shouldReceive('verifyAssertion')
+                ->andReturnUsing(function ($user, $assertion, $credential) {
+                    return $credential;
+                });
+        });
+
+        // 1. First attempt: Alice's identifier was entered, but Bob's biometric was presented
+        $resMismatch = $this->postJson(route('webauthn.login'), [
+            'identifier' => 'STU-SW-A',
+            'credential_id' => 'cred_sw_b',
+            'assertion' => [
+                'id' => 'cred_sw_b',
+                'type' => 'public-key',
+                'response' => ['signature' => 'sig_b'],
+            ],
+        ]);
+
+        $resMismatch->assertStatus(403)
+            ->assertJson([
+                'success' => false,
+                'code' => 'CREDENTIAL_MISMATCH',
+                'can_switch_user' => true,
+            ]);
+
+        // 2. User confirms 1-tap switch to detected Bob
+        $resSwitch = $this->postJson(route('webauthn.login'), [
+            'identifier' => 'STU-SW-B',
+            'credential_id' => 'cred_sw_b',
+            'switch_user' => true,
+            'assertion' => [
+                'id' => 'cred_sw_b',
+                'type' => 'public-key',
+                'response' => ['signature' => 'sig_b'],
+            ],
+        ]);
+
+        $resSwitch->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'user' => [
+                    'id' => $userB->id,
+                    'identifier' => 'STU-SW-B',
+                ],
+            ]);
+        $this->assertTrue(Auth::check());
+        $this->assertEquals($userB->id, Auth::id());
+    }
+
+    public function test_multi_user_shared_device_disambiguation_via_user_handle()
+    {
+        $userA = User::factory()->create([
+            'name' => 'Alice Shared',
+            'student_number' => 'STU-SH-A',
+            'is_active' => true,
+        ]);
+        $userB = User::factory()->create([
+            'name' => 'Bob Shared',
+            'student_number' => 'STU-SH-B',
+            'is_active' => true,
+        ]);
+
+        $sharedCredId = 'cred_shared_platform_authenticator';
+
+        // Both users have a credential with the same credential_id on the shared device
+        WebauthnCredential::create([
+            'user_id' => $userA->id,
+            'credential_id' => $sharedCredId,
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+        ]);
+        WebauthnCredential::create([
+            'user_id' => $userB->id,
+            'credential_id' => $sharedCredId,
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx\n-----END PUBLIC KEY-----',
+            'sign_count' => 0,
+        ]);
+
+        $this->mock(WebauthnService::class, function ($mock) {
+            $mock->shouldReceive('verifyAssertion')
+                ->andReturnUsing(function ($user, $assertion, $credential) {
+                    return $credential;
+                });
+        });
+
+        // Bob logs in in discoverable mode, sending his hashed userHandle
+        $bobUserHandle = rtrim(strtr(base64_encode(hash('sha256', (string) $userB->id, true)), '+/', '-_'), '=');
+
+        $res = $this->postJson(route('webauthn.login'), [
+            'credential_id' => $sharedCredId,
+            'assertion' => [
+                'id' => $sharedCredId,
+                'type' => 'public-key',
+                'response' => [
+                    'signature' => 'sig_b',
+                    'userHandle' => $bobUserHandle,
+                ],
+            ],
+        ]);
+
+        $res->assertStatus(200)
+            ->assertJson([
+                'success' => true,
+                'user' => [
+                    'id' => $userB->id,
+                    'identifier' => 'STU-SH-B',
+                ],
+            ]);
+        $this->assertTrue(Auth::check());
+        $this->assertEquals($userB->id, Auth::id());
+    }
 }

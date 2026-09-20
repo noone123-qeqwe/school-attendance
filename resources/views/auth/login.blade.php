@@ -655,6 +655,59 @@
             color: #ffffff;
         }
 
+        /* Saved Accounts Chips & Multi-Account Switcher */
+        .saved-account-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(212, 175, 55, 0.28);
+            border-radius: 99px;
+            padding: 4px 11px;
+            font-size: 0.74rem;
+            color: rgba(255, 255, 255, 0.85);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .saved-account-chip:hover {
+            background: rgba(212, 175, 55, 0.16);
+            border-color: rgba(212, 175, 55, 0.55);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+        .saved-account-chip.active {
+            background: rgba(212, 175, 55, 0.24);
+            border-color: rgba(212, 175, 55, 0.75);
+            color: #d4af37;
+            font-weight: 600;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+        .saved-account-chip .chip-name {
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .saved-account-chip .chip-del {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 0.72rem;
+            margin-left: 2px;
+            transition: all 0.15s;
+        }
+        .saved-account-chip .chip-del:hover {
+            color: #ff6b6b;
+            background: rgba(255, 255, 255, 0.12);
+        }
+
         /* Desktop elevation for optical vertical centering */
         @media (min-width: 769px) {
             .auth-scene {
@@ -1086,6 +1139,15 @@ if (document.readyState === 'loading') {
                 <div class="invalid-feedback-custom anim-fade-up anim-d4">{{ $message }}</div>
             @enderror
 
+            <!-- Multi-Account Quick Switcher on Device -->
+            <div id="savedAccountsSection" style="display:none; margin-top:-6px; margin-bottom:12px;" class="anim-fade-up anim-d4">
+                <div style="font-size:0.73rem; color:rgba(212,175,55,0.88); font-weight:600; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; padding: 0 2px;">
+                    <span><i class="bi bi-people-fill me-1"></i>Accounts on this device</span>
+                    <button type="button" id="clearAllAccountsBtn" style="background:none; border:none; color:rgba(255,255,255,0.45); font-size:0.7rem; cursor:pointer; padding:0; text-decoration:underline;" title="Clear all saved accounts from this device">Clear list</button>
+                </div>
+                <div id="savedAccountsChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+            </div>
+
             <!-- Biometric Authentication (WebAuthn supported) -->
             <div id="fingerprintSection" style="display: block;">
                 <!-- Inline message area for biometric feedback -->
@@ -1401,13 +1463,192 @@ if (document.readyState === 'loading') {
     } catch (e) {}
 })();
 
-// Remember identifier in localStorage & Account Switcher
+// Multi-Account Storage & Account Switcher on Device
 var idInput = document.getElementById('idInput');
 var rememberCheckbox = document.getElementById('rememberMe');
 var clearIdBtn = document.getElementById('clearIdBtn');
 
+function getSavedAccounts() {
+    var accounts = [];
+    try {
+        var raw = localStorage.getItem('attendance_saved_accounts');
+        if (raw) {
+            var parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+                accounts = parsed.filter(function(a) { 
+                    return a && a.identifier && typeof a.identifier === 'string' && a.identifier.trim(); 
+                });
+            }
+        }
+    } catch (e) {}
+
+    // Legacy migration: If single saved identifier exists and not yet in accounts list
+    try {
+        var legacyId = localStorage.getItem('attendance_saved_identifier');
+        if (legacyId && legacyId.trim()) {
+            var trimmed = legacyId.trim();
+            var exists = accounts.some(function(a) { return a.identifier.toLowerCase() === trimmed.toLowerCase(); });
+            if (!exists) {
+                accounts.unshift({
+                    identifier: trimmed,
+                    name: trimmed,
+                    role: '',
+                    lastLogin: Date.now()
+                });
+                localStorage.setItem('attendance_saved_accounts', JSON.stringify(accounts));
+            }
+        }
+    } catch (e) {}
+
+    return accounts;
+}
+window.getSavedAccounts = getSavedAccounts;
+
+function saveAccount(acc) {
+    if (!acc || !acc.identifier || typeof acc.identifier !== 'string') return;
+    var id = acc.identifier.trim();
+    if (!id) return;
+
+    try {
+        var accounts = getSavedAccounts();
+        // Remove existing entry for this identifier (case-insensitive)
+        accounts = accounts.filter(function(a) {
+            return a.identifier.toLowerCase() !== id.toLowerCase();
+        });
+        accounts.unshift({
+            identifier: id,
+            name: (acc.name && acc.name.trim()) ? acc.name.trim() : id,
+            role: acc.role || '',
+            lastLogin: Date.now()
+        });
+        if (accounts.length > 8) {
+            accounts = accounts.slice(0, 8);
+        }
+        localStorage.setItem('attendance_saved_accounts', JSON.stringify(accounts));
+        localStorage.setItem('attendance_saved_identifier', id);
+    } catch (e) {}
+    updateAccountBanner();
+}
+window.saveAccount = saveAccount;
+
+function removeSavedAccount(identifier) {
+    if (!identifier) return;
+    var id = identifier.trim().toLowerCase();
+    try {
+        var accounts = getSavedAccounts().filter(function(a) {
+            return a.identifier.toLowerCase() !== id;
+        });
+        localStorage.setItem('attendance_saved_accounts', JSON.stringify(accounts));
+        var activeId = (localStorage.getItem('attendance_saved_identifier') || '').toLowerCase();
+        if (activeId === id) {
+            if (accounts.length > 0) {
+                localStorage.setItem('attendance_saved_identifier', accounts[0].identifier);
+                if (idInput && idInput.value.toLowerCase() === id) {
+                    idInput.value = accounts[0].identifier;
+                }
+            } else {
+                localStorage.removeItem('attendance_saved_identifier');
+                if (idInput && idInput.value.toLowerCase() === id) {
+                    idInput.value = '';
+                }
+            }
+        }
+    } catch (e) {}
+    updateAccountBanner();
+}
+window.removeSavedAccount = removeSavedAccount;
+
+function clearAllSavedAccounts() {
+    try {
+        localStorage.removeItem('attendance_saved_accounts');
+        localStorage.removeItem('attendance_saved_identifier');
+    } catch (e) {}
+    if (idInput) idInput.value = '';
+    var pass = document.getElementById('loginPassword');
+    if (pass) pass.value = '';
+    updateAccountBanner();
+    hideFpMessage();
+}
+window.clearAllSavedAccounts = clearAllSavedAccounts;
+
+function renderSavedAccounts() {
+    var container = document.getElementById('savedAccountsSection');
+    var chipsContainer = document.getElementById('savedAccountsChips');
+    if (!container || !chipsContainer) return;
+
+    var accounts = getSavedAccounts();
+    if (accounts.length === 0) {
+        container.style.display = 'none';
+        chipsContainer.innerHTML = '';
+        return;
+    }
+
+    container.style.display = 'block';
+    chipsContainer.innerHTML = '';
+
+    var currentId = (idInput && idInput.value ? idInput.value.trim() : '').toLowerCase();
+
+    accounts.forEach(function(acc) {
+        var chip = document.createElement('button');
+        chip.type = 'button';
+        var isActive = (currentId && acc.identifier.toLowerCase() === currentId);
+        chip.className = 'saved-account-chip' + (isActive ? ' active' : '');
+        chip.setAttribute('title', 'Select ' + (acc.name || acc.identifier) + ' (' + acc.identifier + ')');
+
+        var icon = document.createElement('i');
+        icon.className = 'bi bi-person-badge';
+        chip.appendChild(icon);
+
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'chip-name';
+        nameSpan.textContent = acc.name || acc.identifier;
+        chip.appendChild(nameSpan);
+
+        var delBtn = document.createElement('span');
+        delBtn.className = 'chip-del';
+        delBtn.innerHTML = '&times;';
+        delBtn.setAttribute('title', 'Remove ' + (acc.name || acc.identifier) + ' from this device');
+        delBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            removeSavedAccount(acc.identifier);
+        });
+        chip.appendChild(delBtn);
+
+        chip.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (idInput) {
+                idInput.value = acc.identifier;
+                localStorage.setItem('attendance_saved_identifier', acc.identifier);
+                updateAccountBanner();
+                clearErrorStates();
+                var pw = document.getElementById('loginPassword');
+                if (pw) pw.focus();
+            }
+        });
+
+        chipsContainer.appendChild(chip);
+    });
+}
+
+function updateBiometricHint() {
+    if (typeof isBioPending !== 'undefined' && isBioPending) return;
+    var curVal = idInput ? idInput.value.trim() : '';
+    if (typeof fpHint !== 'undefined' && fpHint) {
+        if (curVal) {
+            var accounts = getSavedAccounts();
+            var match = accounts.find(function(a) { return a.identifier.toLowerCase() === curVal.toLowerCase(); });
+            var displayName = match ? (match.name || match.identifier) : curVal;
+            fpHint.textContent = 'Touch sensor for ' + displayName;
+        } else {
+            fpHint.textContent = 'Fingerprint, Face ID, or device security (Any user)';
+        }
+    }
+}
+
 function updateAccountBanner() {
     updateClearBtnVisibility();
+    renderSavedAccounts();
+    updateBiometricHint();
 }
 
 function updateClearBtnVisibility() {
@@ -1428,9 +1669,6 @@ function clearSavedAccount() {
     if (pass) {
         pass.value = '';
     }
-    try {
-        localStorage.removeItem('attendance_saved_identifier');
-    } catch (e) {}
     updateAccountBanner();
     hideFpMessage();
     if (typeof updateForgotHref === 'function') {
@@ -1439,7 +1677,11 @@ function clearSavedAccount() {
 }
 
 try {
+    var savedAccounts = getSavedAccounts();
     var savedId = localStorage.getItem('attendance_saved_identifier');
+    if ((!savedId || !savedId.trim()) && savedAccounts.length > 0) {
+        savedId = savedAccounts[0].identifier;
+    }
     if (savedId && idInput && !idInput.value) {
         idInput.value = savedId;
         if (rememberCheckbox) rememberCheckbox.checked = true;
@@ -1451,6 +1693,14 @@ if (clearIdBtn) {
     clearIdBtn.addEventListener('click', function(e) {
         e.preventDefault();
         clearSavedAccount();
+    });
+}
+
+var clearAllAccountsBtn = document.getElementById('clearAllAccountsBtn');
+if (clearAllAccountsBtn) {
+    clearAllAccountsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        clearAllSavedAccounts();
     });
 }
 
@@ -1497,9 +1747,9 @@ if (loginForm) {
 
         try {
             if (rememberCheckbox && rememberCheckbox.checked && idInput && idInput.value) {
-                localStorage.setItem('attendance_saved_identifier', idInput.value.trim());
-            } else if (rememberCheckbox && !rememberCheckbox.checked) {
-                localStorage.removeItem('attendance_saved_identifier');
+                saveAccount({ identifier: idInput.value.trim(), name: idInput.value.trim() });
+            } else if (rememberCheckbox && !rememberCheckbox.checked && idInput && idInput.value) {
+                removeSavedAccount(idInput.value.trim());
             }
         } catch (e) {}
 
@@ -1982,10 +2232,10 @@ async function startBiometricRegistration(identifier, password) {
 
         if (regResult.success) {
             try {
-                localStorage.setItem('attendance_saved_identifier', identifier);
+                saveAccount({ identifier: identifier, name: identifier });
                 if (idInput) {
                     idInput.value = identifier;
-                    if (typeof updateClearBtnVisibility === 'function') updateClearBtnVisibility();
+                    if (typeof updateAccountBanner === 'function') updateAccountBanner();
                 }
             } catch (e) {}
 
@@ -2100,20 +2350,6 @@ async function handleBiometricLogin() {
 
     var identifier = idInput ? idInput.value.trim() : '';
 
-    // Check localStorage for saved account if input is empty
-    if (!identifier) {
-        try {
-            var savedId = localStorage.getItem('attendance_saved_identifier');
-            if (savedId && savedId.trim()) {
-                identifier = savedId.trim();
-                if (idInput) {
-                    idInput.value = identifier;
-                    if (typeof updateAccountBanner === 'function') updateAccountBanner();
-                }
-            }
-        } catch (e) {}
-    }
-
     // Modal helper for when identifier is required during targeted setup
     window.showStudentIdRequiredModal = function() {
         openBiometricModal({
@@ -2137,8 +2373,8 @@ async function handleBiometricLogin() {
     };
 
     // Immediately trigger biometric authentication!
-    // If identifier is provided, authenticates against user credentials;
-    // if identifier is empty, triggers discoverable passkey / biometric prompt on device.
+    // If identifier is provided, authenticates against user credentials and any device accounts;
+    // if identifier is empty, triggers discoverable passkey / biometric prompt for any registered user on this device.
     await performBiometricLogin(identifier);
 }
 
@@ -2163,6 +2399,9 @@ async function performBiometricLogin(studentNumber) {
     if (fpIcon) fpIcon.className = 'bi bi-hourglass-split';
     if (fpArrow) fpArrow.className = 'bi bi-hourglass-split fp-row-arrow';
 
+    var savedAccounts = (typeof getSavedAccounts === 'function') ? getSavedAccounts() : [];
+    var savedIds = savedAccounts.map(function(a) { return a.identifier; }).filter(Boolean);
+
     try {
         var optRes = await fetch('{{ route("webauthn.login.options") }}', {
             method: 'POST',
@@ -2172,7 +2411,11 @@ async function performBiometricLogin(studentNumber) {
                 'Content-Type': 'application/json', 
                 'Accept': 'application/json' 
             },
-            body: JSON.stringify({ student_number: studentNumber, identifier: studentNumber }),
+            body: JSON.stringify({ 
+                student_number: studentNumber, 
+                identifier: studentNumber,
+                saved_identifiers: savedIds
+            }),
             signal: bioAbortController.signal
         });
         
@@ -2304,11 +2547,12 @@ async function performBiometricLogin(studentNumber) {
                 signal: bioAbortController ? bioAbortController.signal : undefined
             });
         } catch (firstErr) {
-            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
+            if (firstErr.name === 'AbortError') {
                 throw firstErr;
             }
 
-            // If allowCredentials failed on this device, attempt discoverable passkey before giving up
+            // If allowCredentials failed on this device (e.g. user presented another enrolled fingerprint),
+            // attempt discoverable passkey before giving up
             if (getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
                 console.warn('Biometric query with allowCredentials failed, trying discoverable passkey fallback...', firstErr);
                 var fallbackPublicKey = Object.assign({}, getPublicKey);
@@ -2319,7 +2563,7 @@ async function performBiometricLogin(studentNumber) {
                         signal: bioAbortController ? bioAbortController.signal : undefined
                     });
                 } catch (fallbackErr) {
-                    if (fallbackErr.name === 'AbortError' || fallbackErr.name === 'NotAllowedError') throw fallbackErr;
+                    if (fallbackErr.name === 'AbortError') throw fallbackErr;
                     throw firstErr;
                 }
             } else {
@@ -2386,7 +2630,11 @@ async function performBiometricLogin(studentNumber) {
 
             if (result.user && result.user.identifier) {
                 try {
-                    localStorage.setItem('attendance_saved_identifier', result.user.identifier);
+                    saveAccount({
+                        identifier: result.user.identifier,
+                        name: result.user.name,
+                        role: result.user.role
+                    });
                     if (idInput) {
                         idInput.value = result.user.identifier;
                         if (typeof updateAccountBanner === 'function') updateAccountBanner();
@@ -2445,7 +2693,11 @@ async function performBiometricLogin(studentNumber) {
                             var swData = await swRes.json();
                             if (swData.success) {
                                 try {
-                                    localStorage.setItem('attendance_saved_identifier', detUser.identifier);
+                                    saveAccount({
+                                        identifier: detUser.identifier,
+                                        name: detUser.name,
+                                        role: detUser.role
+                                    });
                                     if (idInput) {
                                         idInput.value = detUser.identifier;
                                         if (typeof updateAccountBanner === 'function') updateAccountBanner();
