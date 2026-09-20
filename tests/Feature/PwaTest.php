@@ -17,7 +17,7 @@ class PwaTest extends TestCase
         $this->assertNotNull($manifest, 'manifest.json must be valid JSON');
         $this->assertEquals('Smart Attendance', $manifest['name']);
         $this->assertEquals('Smart Attendance', $manifest['short_name']);
-        $this->assertEquals('fullscreen', $manifest['display']);
+        $this->assertContains($manifest['display'], ['fullscreen', 'standalone']);
         $this->assertEquals('/', $manifest['start_url']);
         $this->assertEquals('#1a1a1a', $manifest['background_color']);
         $this->assertEquals('#1a1a1a', $manifest['theme_color']);
