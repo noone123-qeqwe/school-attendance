@@ -134,18 +134,21 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
         $changelog = $changelogService->getRelease($targetVer);
 
         return [
-            'version'           => $versionTag,
-            'version_display'   => 'Version ' . $latestVersion,
-            'sw_version'        => (string)$ver,
-            'latest_version'    => $latestVersion,
-            'installed_version' => $installedVersion,
-            'current_version'   => $installedVersion,
-            'build'             => $versionService->getBuild(),
-            'commit'            => $versionService->getCommit(),
-            'release_date'      => $versionService->getReleaseDate(),
-            'is_up_to_date'     => $versionService->isUpToDate(),
-            'timestamp'         => $swMtime,
-            'changelog'         => $changelog,
+            'success'               => true,
+            'version'               => $versionTag,
+            'version_tag'           => $versionTag,
+            'installed_version_tag' => 'v' . ltrim($installedVersion, 'vV '),
+            'version_display'       => 'Version ' . $latestVersion,
+            'sw_version'            => (string)$ver,
+            'latest_version'        => $latestVersion,
+            'installed_version'     => $installedVersion,
+            'current_version'       => $installedVersion,
+            'build'                 => $versionService->getBuild(),
+            'commit'                => $versionService->getCommit(),
+            'release_date'          => $versionService->getReleaseDate(),
+            'is_up_to_date'         => $versionService->isUpToDate(),
+            'timestamp'             => $swMtime,
+            'changelog'             => $changelog,
         ];
     };
 

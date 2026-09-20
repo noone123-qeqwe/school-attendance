@@ -771,7 +771,7 @@
         <a href="{{ route('terms') }}">Terms & Conditions</a>
         <a href="javascript:void(0)" data-footer-modal="contact">Contact Us</a>
         <span style="color: rgba(207,164,111,0.6); font-weight: 600; margin-left: 12px; pointer-events: all;" id="loginAppVersionDesktop" data-app-version-tag>
-            {{ $appVersionTag }}
+            {{ $appInstalledVersionTag ?? $appVersionTag }}
         </span>
     </div>
 </div>
@@ -1164,7 +1164,7 @@ if (document.readyState === 'loading') {
         {{-- Version Badge - Visible on Mobile (when bottom bar is hidden) --}}
         <div class="d-block d-md-none text-center anim-fade-up anim-d7" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08);">
             <span style="font-size: 0.7rem; color: rgba(207,164,111,0.5); font-weight: 600; letter-spacing: 0.5px;" id="loginAppVersionMobile" data-app-version-tag>
-                {{ $appVersionTag }}
+                {{ $appInstalledVersionTag ?? $appVersionTag }}
             </span>
         </div>
 
@@ -2797,16 +2797,25 @@ if (forgotLinkElem) {
 // ── Real-time Login Version Badge Synchronization ──
 (function() {
     function syncLoginVersionBadge() {
-        fetch('/pwa/version?_t=' + Date.now(), { cache: 'no-store' })
+        fetch('/pwa/version?_t=' + Date.now(), { 
+            cache: 'no-store',
+            headers: { 'Accept': 'application/json' }
+        })
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data) {
-                    const ver = data.latest_version || data.installed_version || data.current_version;
+                    const ver = data.installed_version || data.current_version || data.version || data.latest_version;
                     if (ver) {
                         const tag = 'v' + String(ver).replace(/^v/i, '');
                         document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(function(el) {
                             el.textContent = tag;
                         });
+                        try {
+                            const clean = String(ver).replace(/^v/i, '');
+                            localStorage.setItem('app_installed_version', clean);
+                            localStorage.setItem('pwa_installed_version', clean);
+                            localStorage.setItem('pwa_app_version', clean);
+                        } catch(e) {}
                     }
                 }
             })
@@ -2816,6 +2825,26 @@ if (forgotLinkElem) {
     syncLoginVersionBadge();
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', syncLoginVersionBadge);
+    }
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) syncLoginVersionBadge();
+    });
+    window.addEventListener('focus', syncLoginVersionBadge);
+    window.addEventListener('pageshow', syncLoginVersionBadge);
+
+    // BroadcastChannel sync across tabs
+    if ('BroadcastChannel' in window) {
+        try {
+            const ch = new BroadcastChannel('smart_attendance_pwa');
+            ch.addEventListener('message', function(e) {
+                if (e.data && (e.data.type === 'APP_UPDATED' || e.data.type === 'VERSION_CHANGED')) {
+                    syncLoginVersionBadge();
+                }
+            });
+        } catch(e) {}
+    }
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.addEventListener('controllerchange', syncLoginVersionBadge);
     }
 })();
 </script>

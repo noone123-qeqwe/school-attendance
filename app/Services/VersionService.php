@@ -97,6 +97,18 @@ class VersionService
             }
         }
 
+        // Application configuration metadata fallback if version.json is absent
+        if ($diskVer === null && !app()->runningUnitTests()) {
+            $configVer = config('version.version');
+            if (!empty($configVer)) {
+                $cleanConfig = ltrim(trim((string)$configVer), 'vV ');
+                if (preg_match('/^\d+(\.\d+)*$/', $cleanConfig)) {
+                    $diskVer = $cleanConfig;
+                    $sources[] = $cleanConfig;
+                }
+            }
+        }
+
         // Database settings (updated at runtime via 1-click system updates or release commands)
         $dbVersion = null;
         try {
@@ -110,7 +122,7 @@ class VersionService
             }
         } catch (\Throwable $e) {}
 
-        // Fallback baseline
+        // Fallback baseline from build metadata
         $baseline = $diskVer ?: '2.5.2';
         $sources[] = $baseline;
 
@@ -253,15 +265,55 @@ class VersionService
             return ltrim(trim((string)$configInstalled), 'vV ');
         }
 
-        // 2. Check database setting for installed version (canonical runtime source of truth)
+        // 2. Discover build version from disk files / application configuration metadata
+        $file = $this->getFileData();
+        $diskVer = null;
+        if (!empty($file['version'])) {
+            $cleanFile = ltrim(trim((string)$file['version']), 'vV ');
+            if (preg_match('/^\d+(\.\d+)*$/', $cleanFile)) {
+                $diskVer = $cleanFile;
+            }
+        }
+        if ($diskVer === null && !app()->runningUnitTests()) {
+            $configVer = config('version.version');
+            if (!empty($configVer)) {
+                $cleanConfig = ltrim(trim((string)$configVer), 'vV ');
+                if (preg_match('/^\d+(\.\d+)*$/', $cleanConfig)) {
+                    $diskVer = $cleanConfig;
+                }
+            }
+        }
+
+        // 3. Check database setting for installed version (canonical runtime source of truth)
+        $dbInstalled = null;
         try {
             $installed = Setting::get('installed_version');
             if (!empty($installed)) {
-                return ltrim(trim((string)$installed), 'vV ');
+                $clean = ltrim(trim((string)$installed), 'vV ');
+                if (preg_match('/^\d+(\.\d+)*$/', $clean)) {
+                    $dbInstalled = $clean;
+                }
             }
         } catch (\Throwable $e) {}
 
-        // 3. Check unit test changelog config fallback
+        // In running application mode, when a new build/version is installed on disk
+        // whose build metadata is newer than the old DB setting, automatically elevate installed_version
+        // so the app never remains stuck on an outdated version from previous installations!
+        if (!app()->runningUnitTests() && $diskVer !== null) {
+            if ($dbInstalled === null || version_compare($diskVer, $dbInstalled, '>')) {
+                $dbInstalled = $diskVer;
+                try {
+                    Setting::set('installed_version', $diskVer);
+                    Setting::flushCache();
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        if ($dbInstalled !== null) {
+            return $dbInstalled;
+        }
+
+        // 4. Check unit test changelog config fallback
         if (app()->runningUnitTests()) {
             $configInstalled = config('changelog.installed_version') ?: config('version.installed_version');
             if (!empty($configInstalled)) {
@@ -271,6 +323,14 @@ class VersionService
 
         // Fallback: If not explicitly set, default to the latest available version
         return $this->getLatestVersion();
+    }
+
+    /**
+     * Get the current installed version formatted with a 'v' prefix (e.g. 'v2.5.2').
+     */
+    public function getInstalledVersionTag(): string
+    {
+        return 'v' . ltrim($this->getInstalledVersion(), 'vV ');
     }
 
     /**
@@ -593,6 +653,24 @@ class VersionService
             }
         } catch (\Throwable $e) {
             Log::warning('VersionService: manifest.json write notice: ' . $e->getMessage());
+        }
+
+        // 4. Android build.gradle (keep in sync with build metadata)
+        $cleanDigits = (int)preg_replace('/[^\d]/', '', $version);
+        $vCode = $cleanDigits ? (20000 + $cleanDigits) : 20502;
+        $androidGradlePaths = [
+            base_path('apps/android_app/app/build.gradle'),
+            base_path('../android_app/app/build.gradle'),
+        ];
+        foreach ($androidGradlePaths as $agPath) {
+            try {
+                if (File::exists($agPath)) {
+                    $content = File::get($agPath);
+                    $content = preg_replace('/versionName\s+"[^"]+"/', "versionName \"{$version}\"", $content);
+                    $content = preg_replace('/versionCode\s+\d+/', "versionCode {$vCode}", $content);
+                    File::put($agPath, $content);
+                }
+            } catch (\Throwable $e) {}
         }
     }
 

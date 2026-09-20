@@ -19,7 +19,9 @@
 <meta name="msapplication-TileColor" content="#110A0A">
 <meta name="msapplication-TileImage" content="/images/icons/icon-144x144.png">
 <meta name="app-installed-version" content="{{ $installedVersion }}">
+<meta name="app-installed-version-tag" content="v{{ ltrim($installedVersion, 'vV ') }}">
 <meta name="app-latest-version" content="{{ $latestVersion }}">
+<meta name="app-latest-version-tag" content="v{{ ltrim($latestVersion, 'vV ') }}">
 <meta name="app-build-id" content="{{ $buildId }}">
 <meta name="app-commit-hash" content="{{ $commitHash }}">
 <meta name="sw-build-version" content="{{ $swCacheVer }}">
@@ -1331,23 +1333,26 @@
     }
 
     function getInstalledVersion() {
-        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version');
-        if (stored) {
+        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || DOC_INSTALLED_VER;
+        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version') || localStorage.getItem('pwa_app_version');
+
+        // Dynamically reconcile against document build metadata delivered with the app
+        if (metaInstalled) {
+            // If no valid stored version or if the deployed build metadata is newer or equal,
+            // immediately update cache to the current installed build metadata
+            if (!stored || compareSemver(metaInstalled, stored) >= 0) {
+                try {
+                    localStorage.setItem('app_installed_version', metaInstalled);
+                    localStorage.setItem('pwa_installed_version', metaInstalled);
+                    localStorage.setItem('pwa_app_version', metaInstalled);
+                } catch(e) {}
+                return metaInstalled;
+            }
             return stored;
         }
 
-        const legacyVer = localStorage.getItem('app_version') || localStorage.getItem('pwa_app_version');
-        if (legacyVer && !legacyVer.includes('_') && /^\d/.test(legacyVer)) {
-            localStorage.setItem('app_installed_version', legacyVer);
-            localStorage.setItem('pwa_installed_version', legacyVer);
-            return legacyVer;
-        }
-
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || DOC_INSTALLED_VER;
-        if (metaInstalled) {
-            localStorage.setItem('app_installed_version', metaInstalled);
-            localStorage.setItem('pwa_installed_version', metaInstalled);
-            return metaInstalled;
+        if (stored && !stored.includes('_') && /^\d/.test(stored)) {
+            return stored;
         }
 
         return '1';
@@ -1696,8 +1701,8 @@
 
         localStorage.setItem('app_installed_version', targetVer);
         localStorage.setItem('pwa_installed_version', targetVer);
-        localStorage.setItem('app_version', targetVer);
         localStorage.setItem('pwa_app_version', targetVer);
+        localStorage.setItem('app_version', targetVer);
         if (targetSwVer) {
             localStorage.setItem('pwa_installed_sw_version', targetSwVer);
         }
@@ -1709,7 +1714,10 @@
 
         // Cross-tab broadcast
         if (pwaBroadcastChannel) {
-            try { pwaBroadcastChannel.postMessage({ type: 'APP_UPDATED', version: targetVer }); } catch(e) {}
+            try { 
+                pwaBroadcastChannel.postMessage({ type: 'APP_UPDATED', version: targetVer }); 
+                pwaBroadcastChannel.postMessage({ type: 'VERSION_CHANGED', version: targetVer });
+            } catch(e) {}
         }
         try { localStorage.setItem('pwa_tab_updated_at', String(Date.now())); } catch(e) {}
 
@@ -1733,7 +1741,7 @@
 
         // Synchronize all visible version badges immediately on click
         const liveVerTag = 'v' + String(targetVer).replace(/^v/i, '');
-        document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(el => {
+        document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile, #currentAppReleaseBadge, #pwaCurrentVersionBadge').forEach(el => {
             el.textContent = liveVerTag;
         });
 
@@ -1840,12 +1848,19 @@
                                 updateChangelogUI(updateChangelog);
                             }
 
-                            // Keep all visible app version tags synchronized in real time
-                            if (latestVer) {
-                                const liveVerTag = 'v' + String(latestVer).replace(/^v/i, '');
-                                document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(el => {
+                            // Keep all visible app version tags synchronized in real time with actual installed app version
+                            const currentActiveVer = serverData.installed_version || serverData.current_version || installedVer || latestVer;
+                            if (currentActiveVer) {
+                                const liveVerTag = 'v' + String(currentActiveVer).replace(/^v/i, '');
+                                document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile, #currentAppReleaseBadge, #pwaCurrentVersionBadge').forEach(el => {
                                     el.textContent = liveVerTag;
                                 });
+                                try {
+                                    const cleanActive = String(currentActiveVer).replace(/^v/i, '');
+                                    localStorage.setItem('app_installed_version', cleanActive);
+                                    localStorage.setItem('pwa_installed_version', cleanActive);
+                                    localStorage.setItem('pwa_app_version', cleanActive);
+                                } catch(e) {}
                             }
 
                             // Check 1: Semantic version comparison (Latest > Installed)

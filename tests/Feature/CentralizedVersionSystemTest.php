@@ -248,6 +248,20 @@ class CentralizedVersionSystemTest extends TestCase
             ->assertExitCode(0);
     }
 
+    public function test_installed_version_blade_directives_and_meta_tags(): void
+    {
+        $renderedInstalledVersion = Blade::render('@appInstalledVersion');
+        $this->assertNotEmpty($renderedInstalledVersion);
+
+        $renderedInstalledTag = Blade::render('@appInstalledVersionTag');
+        $this->assertStringStartsWith('v', $renderedInstalledTag);
+
+        $response = $this->get(route('login'));
+        $response->assertStatus(200);
+        $response->assertSee('name="app-installed-version"', false);
+        $response->assertSee('name="app-installed-version-tag"', false);
+    }
+
     public function test_update_detection_evaluates_up_to_date_accurately(): void
     {
         /** @var VersionService $service */
