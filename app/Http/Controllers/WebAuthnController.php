@@ -260,6 +260,22 @@ class WebAuthnController extends Controller
                 })
                 ->exists();
 
+            $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
+
+            if (!$hasWebauthn && $hasFaceCred) {
+                // User has registered camera face biometrics; allow face recognition directly
+                $faceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->latest()->first();
+                return response()->json([
+                    "success" => true,
+                    "biometric_type" => "face",
+                    "user_id" => $user->id,
+                    "identifier" => $user->student_number ?? $user->email ?? $identifier,
+                    "user_name" => $user->name,
+                    "face_credential_id" => $faceCred?->credential_id,
+                    "available_methods" => ['face'],
+                ]);
+            }
+
             if (!$hasWebauthn) {
                 // User has registered camera face biometrics, but hardware WebAuthn is not yet enrolled on this browser
                 return response()->json([
@@ -337,6 +353,7 @@ class WebAuthnController extends Controller
                 "user_id" => $user->id,
                 "identifier" => $user->student_number ?? $user->email ?? $identifier,
                 "user_name" => $user->name,
+                "face_credential_id" => $user->webauthnCredentials()->where('biometric_type', 'face')->latest()->value('credential_id'),
                 "available_methods" => $availableMethods,
             ]));
         }
@@ -606,6 +623,152 @@ class WebAuthnController extends Controller
 
     public function login(Request $request, WebauthnService $webauthn)
     {
+        $isFaceLogin = $request->input('biometric_method') === 'face' 
+            || $request->has('face_descriptor') 
+            || (str_starts_with((string)$request->input('credential_id'), 'face_') && !$request->has('assertion'));
+
+        if ($isFaceLogin) {
+            $request->validate(["credential_id" => "required|string"]);
+            $credentialId = (string) $request->input('credential_id');
+            $faceData = (string) ($request->input('face_descriptor') ?? $request->input('face_data') ?? '');
+
+            if (empty($faceData) || strlen(trim($faceData)) < 8) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No face detected. Please position your face in front of the camera.'
+                ], 422);
+            }
+
+            $invalidTokens = ['no_face', 'unusable', 'fallback', 'blurry', 'multiple_faces', 'too_far', 'too_close', 'off_center', 'partial_face'];
+            foreach ($invalidTokens as $token) {
+                if (str_contains(strtolower($faceData), $token)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No face detected. Please position your face in front of the camera.'
+                    ], 422);
+                }
+            }
+
+            if (preg_match('/^face_desc_(\d+)_/', $faceData, $scoreMatches)) {
+                $confidence = (int) $scoreMatches[1];
+                if ($confidence < 70) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Face recognition confidence does not meet the required security threshold. Please position your face clearly in good lighting and try again.'
+                    ], 422);
+                }
+            }
+
+            $rawIdentifier = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
+            $user = null;
+            if ($rawIdentifier && is_string($rawIdentifier) && trim($rawIdentifier) !== '') {
+                $user = $this->findUserByIdentifier(trim($rawIdentifier));
+            }
+
+            if (!$user) {
+                $sessionUserId = session("webauthn_login_user_id");
+                if ($sessionUserId) {
+                    $user = User::find($sessionUserId);
+                }
+            }
+
+            if (!$user) {
+                $cred = \App\Models\WebauthnCredential::where('biometric_type', 'face')
+                    ->where('credential_id', $credentialId)
+                    ->with('user')
+                    ->first();
+                if ($cred && $cred->user) {
+                    $user = $cred->user;
+                }
+            }
+
+            if (!$user) {
+                $savedIdentifiers = $request->input('saved_identifiers', []);
+                if (is_array($savedIdentifiers)) {
+                    foreach ($savedIdentifiers as $savedId) {
+                        if (!is_string($savedId) || trim($savedId) === '') continue;
+                        $candidate = $this->findUserByIdentifier(trim($savedId));
+                        if ($candidate && $candidate->isActive() && $candidate->webauthnCredentials()->where('biometric_type', 'face')->exists()) {
+                            $user = $candidate;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!$user) {
+                // If single user with face on system
+                $faceCreds = \App\Models\WebauthnCredential::where('biometric_type', 'face')->with('user')->get();
+                if ($faceCreds->count() === 1 && $faceCreds->first()->user && $faceCreds->first()->user->isActive()) {
+                    $user = $faceCreds->first()->user;
+                }
+            }
+
+            if (!$user) {
+                return response()->json([
+                    "success" => false,
+                    "code" => "ACCOUNT_NOT_FOUND",
+                    "message" => "No account found matching this face profile. Please enter your Student ID or Email."
+                ], 404);
+            }
+
+            if (!$user->isActive()) {
+                return response()->json([
+                    "success" => false,
+                    "code" => "ACCOUNT_DEACTIVATED",
+                    "message" => "Your account has been deactivated. Please contact the school administrator."
+                ], 403);
+            }
+
+            $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
+            if (!$hasFaceCred) {
+                return response()->json([
+                    "success" => false,
+                    "code" => "NOT_REGISTERED",
+                    "message" => "Face Recognition is not registered for this account. Please use your password or register your face first."
+                ], 404);
+            }
+
+            $user->webauthnCredentials()
+                ->where('biometric_type', 'face')
+                ->latest()
+                ->first()?->update(['last_used_at' => now()]);
+
+            Auth::login($user, true);
+            $request->session()->regenerate();
+            session()->forget(["webauthn_login_user_id"]);
+            $request->session()->put('user_role', $user->role);
+            $request->session()->put('login_timestamp', now()->toString());
+
+            if ($user->isStudent()) {
+                app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+                $request->session()->save();
+            }
+
+            $redirectUrl = route('home');
+            if ($user->isAdmin()) {
+                $redirectUrl = route('admin.dashboard');
+            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+                $redirectUrl = route('teacher.dashboard');
+            } elseif ($user->isParent()) {
+                $redirectUrl = route('parent.dashboard');
+            }
+
+            return response()->json([
+                "success" => true,
+                "message" => "Face recognized successfully! Redirecting...",
+                "user" => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'role' => $user->role,
+                    'identifier' => $user->student_number ?? $user->email,
+                ],
+                "role" => $user->role,
+                "redirect" => $redirectUrl,
+                "dashboard_url" => $redirectUrl,
+            ]);
+        }
+
         $request->validate(["credential_id" => "required|string", "assertion" => "required|array"]);
         $credentialId = $request->input('credential_id') ?? $request->input('assertion.id');
         $normalizedCredentialId = rtrim(strtr($credentialId, '+/', '-_'), '=');

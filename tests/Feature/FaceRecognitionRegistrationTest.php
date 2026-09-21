@@ -232,5 +232,138 @@ class FaceRecognitionRegistrationTest extends TestCase
                 ]);
         }
     }
+
+    public function test_login_page_renders_face_scanner_and_camera_hud()
+    {
+        $response = $this->get(route('login'));
+
+        $response->assertOk();
+        $response->assertSee('id="bioModalFaceScannerWrap"', false);
+        $response->assertSee('id="bioLoginFaceVideo"', false);
+        $response->assertSee('id="bioLoginLaserBar"', false);
+        $response->assertSee('startFaceRecognitionLogin', false);
+    }
+
+    public function test_login_options_returns_face_method_and_credential_id_for_registered_face_user()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU9901',
+            'is_active' => true,
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'face_registered_9901',
+            'public_key' => 'pub_sample_face',
+            'device_name' => 'Device Face',
+            'biometric_type' => 'face',
+        ]);
+
+        $response = $this->postJson(route('webauthn.login.options'), [
+            'identifier' => 'STU9901',
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'biometric_type' => 'face',
+                'face_credential_id' => 'face_registered_9901',
+                'available_methods' => ['face'],
+            ]);
+    }
+
+    public function test_user_can_authenticate_via_camera_face_recognition()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU9902',
+            'is_active' => true,
+            'role' => 'student',
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'face_registered_9902',
+            'public_key' => 'pub_sample_face',
+            'device_name' => 'Webcam Face',
+            'biometric_type' => 'face',
+        ]);
+
+        $response = $this->postJson(route('webauthn.login'), [
+            'biometric_method' => 'face',
+            'credential_id' => 'face_registered_9902',
+            'face_descriptor' => 'face_desc_88_115_112_130_105_' . time(),
+            'identifier' => 'STU9902',
+        ]);
+
+        $response->assertOk()
+            ->assertJson([
+                'success' => true,
+                'message' => 'Face recognized successfully! Redirecting...',
+            ]);
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_face_recognition_login_rejects_sub_threshold_confidence()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU9903',
+            'is_active' => true,
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'face_registered_9903',
+            'public_key' => 'pub_sample_face',
+            'device_name' => 'Webcam Face',
+            'biometric_type' => 'face',
+        ]);
+
+        $response = $this->postJson(route('webauthn.login'), [
+            'biometric_method' => 'face',
+            'credential_id' => 'face_registered_9903',
+            'face_descriptor' => 'face_desc_55_115_112_130_105_' . time(),
+            'identifier' => 'STU9903',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Face recognition confidence does not meet the required security threshold. Please position your face clearly in good lighting and try again.',
+            ]);
+
+        $this->assertGuest();
+    }
+
+    public function test_face_recognition_login_rejects_invalid_tokens()
+    {
+        $user = User::factory()->create([
+            'student_number' => 'STU9904',
+            'is_active' => true,
+        ]);
+
+        WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'face_registered_9904',
+            'public_key' => 'pub_sample_face',
+            'device_name' => 'Webcam Face',
+            'biometric_type' => 'face',
+        ]);
+
+        $response = $this->postJson(route('webauthn.login'), [
+            'biometric_method' => 'face',
+            'credential_id' => 'face_registered_9904',
+            'face_descriptor' => 'face_desc_blurry_frame_test',
+            'identifier' => 'STU9904',
+        ]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'No face detected. Please position your face in front of the camera.',
+            ]);
+
+        $this->assertGuest();
+    }
 }
 

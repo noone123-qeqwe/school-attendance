@@ -744,6 +744,126 @@
             transform: translateX(3px);
         }
 
+        /* Modal Face Recognition Camera Scanner */
+        .bio-login-camera-box {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 0 auto;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #000000;
+            border: 2px solid rgba(6, 182, 212, 0.5);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.25), inset 0 0 20px rgba(6, 182, 212, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bio-login-face-feed {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            display: block;
+        }
+        .bio-login-face-holo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, rgba(0, 0, 0, 0.9) 80%);
+        }
+        .bio-login-reticle-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: #06b6d4;
+            border-style: solid;
+            pointer-events: none;
+            z-index: 3;
+        }
+        .bio-login-reticle-corner.tl { top: 8px; left: 8px; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
+        .bio-login-reticle-corner.tr { top: 8px; right: 8px; border-width: 3px 3px 0 0; border-top-right-radius: 8px; }
+        .bio-login-reticle-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 3px 3px; border-bottom-left-radius: 8px; }
+        .bio-login-reticle-corner.br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; border-bottom-right-radius: 8px; }
+        
+        .bio-login-laser-bar {
+            position: absolute;
+            left: 5%;
+            width: 90%;
+            height: 3px;
+            z-index: 4;
+            background: linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%);
+            box-shadow: 0 0 14px #38bdf8;
+            pointer-events: none;
+            animation: bioLaserSweep 2.2s ease-in-out infinite;
+        }
+        @keyframes bioLaserSweep {
+            0%   { top: 8%; opacity: 0.8; }
+            50%  { top: 88%; opacity: 1; }
+            100% { top: 8%; opacity: 0.8; }
+        }
+        .bio-login-hud-badge {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 99px;
+            padding: 3px 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 5;
+            white-space: nowrap;
+        }
+        .bio-login-pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #06b6d4;
+            box-shadow: 0 0 8px #06b6d4;
+            animation: bioPulseDot 1.4s infinite ease-in-out;
+        }
+        @keyframes bioPulseDot {
+            0%, 100% { opacity: 0.5; transform: scale(0.85); }
+            50% { opacity: 1; transform: scale(1.25); }
+        }
+        .bio-login-progress-wrap {
+            max-width: 240px;
+            margin: 14px auto 0 auto;
+        }
+        .bio-login-progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 99px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .bio-login-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #06b6d4, #38bdf8);
+            border-radius: 99px;
+            transition: width 0.22s ease;
+        }
+        .bio-login-progress-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.72rem;
+            color: rgba(255, 255, 255, 0.75);
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+
         /* Saved Accounts Chips & Multi-Account Switcher */
         .saved-account-chip {
             display: inline-flex;
@@ -1384,6 +1504,34 @@ if (document.readyState === 'loading') {
                 <div class="bio-method-list" id="bioModalMethodsList"></div>
             </div>
 
+            <!-- Face Recognition Camera Scanner Wrap (Inside Modal) -->
+            <div id="bioModalFaceScannerWrap" style="display:none; margin: 14px 0;">
+                <div class="bio-login-camera-box">
+                    <div class="bio-login-reticle-corner tl"></div>
+                    <div class="bio-login-reticle-corner tr"></div>
+                    <div class="bio-login-reticle-corner bl"></div>
+                    <div class="bio-login-reticle-corner br"></div>
+                    <div class="bio-login-laser-bar" id="bioLoginLaserBar"></div>
+                    <video id="bioLoginFaceVideo" class="bio-login-face-feed" autoplay playsinline muted></video>
+                    <div class="bio-login-face-holo" id="bioLoginFaceHolo" style="display:none;">
+                        <i class="bi bi-person-bounding-box" style="font-size:3.5rem; color:#06b6d4; opacity:0.6;"></i>
+                    </div>
+                    <div class="bio-login-hud-badge" id="bioLoginHudBadge">
+                        <span class="bio-login-pulse-dot"></span>
+                        <span id="bioLoginHudStatus">POSITION FACE</span>
+                    </div>
+                </div>
+                <div class="bio-login-progress-wrap">
+                    <div class="bio-login-progress-bar">
+                        <div class="bio-login-progress-fill" id="bioLoginFaceProgressFill" style="width: 10%;"></div>
+                    </div>
+                    <div class="bio-login-progress-meta">
+                        <span id="bioLoginFaceStateLabel">Searching for face in camera frame...</span>
+                        <span id="bioLoginFacePctLabel">10%</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Inline Password Verification Field (for setup flow) -->
             <div id="bioModalPasswordWrap" style="display:none; margin: 16px 0 8px 0; text-align: left;">
                 <label style="font-size:0.8rem; color:rgba(255,255,255,0.85); font-weight:600; margin-bottom:6px; display:block;">
@@ -1963,6 +2111,7 @@ function bufferToBase64Url(buffer) {
 function resetBiometricButton() {
     isBioPending = false;
     bioAbortController = null;
+    if (typeof stopFaceRecognitionLoginCamera === 'function') stopFaceRecognitionLoginCamera();
     if (!fpRowBtn) return;
     fpRowBtn.disabled = false;
     fpRowBtn.style.opacity = '1';
@@ -2048,6 +2197,11 @@ function openBiometricModal(config) {
     
     if (stepsEl) {
         stepsEl.style.display = 'none';
+    }
+
+    var faceWrap = document.getElementById('bioModalFaceScannerWrap');
+    if (faceWrap) {
+        faceWrap.style.display = 'none';
     }
 
     if (passWrap) {
@@ -2207,6 +2361,7 @@ function openBiometricModal(config) {
 }
 
 function closeBiometricModal() {
+    if (typeof stopFaceRecognitionLoginCamera === 'function') stopFaceRecognitionLoginCamera();
     var modal = document.getElementById('biometricModal');
     if (!modal) return;
     modal.classList.remove('active');
@@ -2627,6 +2782,833 @@ function filterAvailableBiometricMethods(serverMethods, deviceCaps) {
     return methods;
 }
 
+// Reusable offscreen canvas & native detector cache for real-time face frame processing
+var _faceCanvas = null;
+var _nativeFaceDetector = null;
+var bioFaceLoginActive = false;
+var bioFaceLoginStream = null;
+
+if ('FaceDetector' in window) {
+    try {
+        _nativeFaceDetector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 5 });
+    } catch(e) {
+        _nativeFaceDetector = null;
+    }
+}
+
+async function detectAndAnalyzeFaceFrame(video) {
+    // 1. Validate video readyState and dimensions
+    if (!video || !video.videoWidth || !video.videoHeight || video.readyState < 2 || video.paused) {
+        return {
+            status: 'NO_FACE',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'No face detected. Please position your face in front of the camera.'
+        };
+    }
+
+    var vw = 160;
+    var vh = 160;
+    if (!_faceCanvas) {
+        _faceCanvas = document.createElement('canvas');
+        _faceCanvas.width = vw;
+        _faceCanvas.height = vh;
+    }
+    var ctx = _faceCanvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) {
+        return {
+            status: 'NO_FACE',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'No face detected. Please position your face in front of the camera.'
+        };
+    }
+
+    // Undistorted center-crop
+    var srcW = video.videoWidth;
+    var srcH = video.videoHeight;
+    var minDim = Math.min(srcW, srcH);
+    var sx = Math.max(0, (srcW - minDim) / 2);
+    var sy = Math.max(0, (srcH - minDim) / 2);
+
+    ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, vw, vh);
+    var imgData = ctx.getImageData(0, 0, vw, vh);
+    var pixels = imgData.data;
+
+    // 2. Global Frame Quality Checks (Illumination, Glare, Blurriness)
+    var totalLuma = 0;
+    var minLuma = 255;
+    var maxLuma = 0;
+    var sampledCount = 0;
+    var lumaSumSq = 0;
+
+    var totalEdgeEnergy = 0;
+    var edgeSamples = 0;
+
+    for (var y = 0; y < vh; y += 2) {
+        for (var x = 0; x < vw; x += 2) {
+            var idx = (y * vw + x) * 4;
+            var r = pixels[idx];
+            var g = pixels[idx + 1];
+            var b = pixels[idx + 2];
+            var luma = 0.299 * r + 0.587 * g + 0.114 * b;
+
+            totalLuma += luma;
+            lumaSumSq += luma * luma;
+            if (luma < minLuma) minLuma = luma;
+            if (luma > maxLuma) maxLuma = luma;
+            sampledCount++;
+
+            if (x >= 24 && x <= 136 && y >= 24 && y <= 136 && x + 2 < vw && y + 2 < vh) {
+                var rightIdx = (y * vw + (x + 2)) * 4;
+                var downIdx = ((y + 2) * vw + x) * 4;
+                var rightLuma = 0.299 * pixels[rightIdx] + 0.587 * pixels[rightIdx + 1] + 0.114 * pixels[rightIdx + 2];
+                var downLuma = 0.299 * pixels[downIdx] + 0.587 * pixels[downIdx + 1] + 0.114 * pixels[downIdx + 2];
+                totalEdgeEnergy += Math.abs(luma - rightLuma) + Math.abs(luma - downLuma);
+                edgeSamples++;
+            }
+        }
+    }
+
+    var avgLuma = sampledCount > 0 ? (totalLuma / sampledCount) : 0;
+    var lumaVariance = sampledCount > 0 ? (lumaSumSq / sampledCount - avgLuma * avgLuma) : 0;
+    var lumaStdDev = Math.sqrt(Math.max(0, lumaVariance));
+    var lumaContrast = maxLuma - minLuma;
+    var avgEdgeGradient = edgeSamples > 0 ? (totalEdgeEnergy / edgeSamples) : 0;
+
+    if (avgLuma < 30 || lumaContrast < 18 || lumaStdDev < 6.8) {
+        return {
+            status: 'UNUSABLE',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'Lighting is too dark. Please improve lighting.'
+        };
+    }
+
+    if (avgLuma > 242) {
+        return {
+            status: 'UNUSABLE',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'Too much glare. Please improve lighting and face the camera.'
+        };
+    }
+
+    if (avgEdgeGradient < 3.2) {
+        return {
+            status: 'BLURRY',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'Camera image is blurry. Please hold steady in front of the camera.'
+        };
+    }
+
+    // 3. Multi-Method Face Detection
+    var nativeFace = null;
+    if (_nativeFaceDetector) {
+        try {
+            var detected = await _nativeFaceDetector.detect(_faceCanvas);
+            if (Array.isArray(detected)) {
+                if (detected.length > 1) {
+                    return {
+                        status: 'MULTIPLE_FACES',
+                        passed: false,
+                        facesCount: detected.length,
+                        score: 0,
+                        message: 'Multiple faces detected. Please ensure only one person is visible.'
+                    };
+                }
+                if (detected.length === 1 && detected[0].boundingBox) {
+                    nativeFace = detected[0].boundingBox;
+                }
+            }
+        } catch(err) {}
+    }
+
+    var gridCols = 10;
+    var gridRows = 10;
+    var cellW = vw / gridCols;
+    var cellH = vh / gridRows;
+    var cellSkinCounts = new Array(gridCols * gridRows).fill(0);
+    var cellTotalCounts = new Array(gridCols * gridRows).fill(0);
+
+    for (var y = 0; y < vh; y += 2) {
+        var row = Math.min(gridRows - 1, Math.floor(y / cellH));
+        for (var x = 0; x < vw; x += 2) {
+            var col = Math.min(gridCols - 1, Math.floor(x / cellW));
+            var cellIdx = row * gridCols + col;
+            cellTotalCounts[cellIdx]++;
+
+            var idx = (y * vw + x) * 4;
+            var r = pixels[idx];
+            var g = pixels[idx + 1];
+            var b = pixels[idx + 2];
+            var sumRgb = r + g + b || 1;
+
+            var normR = r / sumRgb;
+            var normG = g / sumRgb;
+
+            var yVal  = 0.299 * r + 0.587 * g + 0.114 * b;
+            var cbVal = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+            var crVal = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+
+            var maxC = Math.max(r, g, b);
+            var minC = Math.min(r, g, b);
+            var delta = maxC - minC;
+            var hue = 0;
+            if (delta > 0) {
+                if (maxC === r) hue = ((g - b) / delta) % 6;
+                else if (maxC === g) hue = (b - r) / delta + 2;
+                else hue = (r - g) / delta + 4;
+                hue = Math.round(hue * 60);
+                if (hue < 0) hue += 360;
+            }
+            var sat = maxC > 0 ? (delta / maxC) : 0;
+            var val = maxC / 255;
+
+            var isYcbcrSkin = (yVal >= 28 && yVal <= 242) &&
+                              (cbVal >= 70 && cbVal <= 140) &&
+                              (crVal >= 126 && crVal <= 184) &&
+                              (r > b || Math.abs(r - b) < 6);
+
+            var isNormRgbSkin = (normR >= 0.32 && normR <= 0.60) &&
+                                (normG >= 0.23 && normG <= 0.39) &&
+                                (normR > normG);
+
+            var isHsvSkin = ((hue >= 0 && hue <= 52) || (hue >= 335 && hue <= 360)) &&
+                            (sat >= 0.10 && sat <= 0.76) &&
+                            (val >= 0.15);
+
+            if ((isYcbcrSkin && isNormRgbSkin) || (isHsvSkin && isNormRgbSkin)) {
+                cellSkinCounts[cellIdx]++;
+            }
+        }
+    }
+
+    var activeGrid = new Array(gridCols * gridRows).fill(false);
+    for (var i = 0; i < gridCols * gridRows; i++) {
+        var density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
+        if (density >= 0.20) {
+            activeGrid[i] = true;
+        }
+    }
+
+    var visited = new Array(gridCols * gridRows).fill(false);
+    var clusters = [];
+
+    for (var r = 0; r < gridRows; r++) {
+        for (var c = 0; c < gridCols; c++) {
+            var cIdx = r * gridCols + c;
+            if (activeGrid[cIdx] && !visited[cIdx]) {
+                var queue = [[r, c]];
+                visited[cIdx] = true;
+                var clusterCells = [];
+
+                while (queue.length > 0) {
+                    var curr = queue.shift();
+                    var currR = curr[0];
+                    var currC = curr[1];
+                    clusterCells.push([currR, currC]);
+
+                    var neighbors = [
+                        [currR - 1, currC], [currR + 1, currC],
+                        [currR, currC - 1], [currR, currC + 1]
+                    ];
+                    for (var n = 0; n < neighbors.length; n++) {
+                        var nr = neighbors[n][0];
+                        var nc = neighbors[n][1];
+                        if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols) {
+                            var nIdx = nr * gridCols + nc;
+                            if (activeGrid[nIdx] && !visited[nIdx]) {
+                                visited[nIdx] = true;
+                                queue.push([nr, nc]);
+                            }
+                        }
+                    }
+                }
+
+                if (clusterCells.length >= 3) {
+                    var minR = gridRows, maxR = 0, minC = gridCols, maxC = 0;
+                    for (var k = 0; k < clusterCells.length; k++) {
+                        var cr = clusterCells[k][0];
+                        var cc = clusterCells[k][1];
+                        if (cr < minR) minR = cr;
+                        if (cr > maxR) maxR = cr;
+                        if (cc < minC) minC = cc;
+                        if (cc > maxC) maxC = cc;
+                    }
+                    clusters.push({
+                        cells: clusterCells.length,
+                        minC: minC, maxC: maxC,
+                        minR: minR, maxR: maxR,
+                        centerC: (minC + maxC) / 2,
+                        centerR: (minR + maxR) / 2,
+                        wPx: (maxC - minC + 1) * cellW,
+                        hPx: (maxR - minR + 1) * cellH
+                    });
+                }
+            }
+        }
+    }
+
+    if (clusters.length > 1) {
+        clusters.sort(function(a, b) { return b.cells - a.cells; });
+        var primary = clusters[0];
+        var secondary = clusters[1];
+        if (secondary.cells >= 3 && secondary.cells >= primary.cells * 0.30 && Math.abs(primary.centerC - secondary.centerC) >= 2.2) {
+            return {
+                status: 'MULTIPLE_FACES',
+                passed: false,
+                facesCount: clusters.length,
+                score: 0,
+                message: 'Multiple faces detected. Please ensure only one person is visible.'
+            };
+        }
+    }
+
+    var faceX = 0, faceY = 0, faceW = 0, faceH = 0;
+    if (nativeFace && nativeFace.width >= 24 && nativeFace.height >= 28) {
+        faceX = Math.max(0, Math.floor(nativeFace.x));
+        faceY = Math.max(0, Math.floor(nativeFace.y));
+        faceW = Math.min(vw - faceX, Math.floor(nativeFace.width));
+        faceH = Math.min(vh - faceY, Math.floor(nativeFace.height));
+    } else if (clusters.length > 0) {
+        var primaryCluster = clusters[0];
+        faceX = Math.max(0, Math.floor(primaryCluster.minC * cellW));
+        faceY = Math.max(0, Math.floor(primaryCluster.minR * cellH));
+        faceW = Math.min(vw - faceX, Math.floor(primaryCluster.wPx));
+        faceH = Math.min(vh - faceY, Math.floor(primaryCluster.hPx));
+    } else {
+        return {
+            status: 'NO_FACE',
+            passed: false,
+            facesCount: 0,
+            score: 0,
+            message: 'No face detected. Please position your face in front of the camera.'
+        };
+    }
+
+    // 4. Proximity
+    var wRatio = faceW / vw;
+    if (wRatio < 0.22 || faceW < 35 || faceH < 40) {
+        return {
+            status: 'TOO_FAR',
+            passed: false,
+            facesCount: 1,
+            score: 25,
+            message: 'Move closer to the camera.'
+        };
+    }
+    if (wRatio > 0.82 || faceW > 132 || faceH > 138) {
+        return {
+            status: 'TOO_CLOSE',
+            passed: false,
+            facesCount: 1,
+            score: 30,
+            message: 'Move farther away from the camera.'
+        };
+    }
+
+    // 5. Centering
+    var centerX = faceX + faceW / 2;
+    var centerY = faceY + faceH / 2;
+    var offX = Math.abs(centerX - (vw / 2)) / vw;
+    var offY = Math.abs(centerY - (vh / 2)) / vh;
+
+    if (offX > 0.22 || offY > 0.25) {
+        return {
+            status: 'OFF_CENTER',
+            passed: false,
+            facesCount: 1,
+            score: 40,
+            message: 'Center your face inside the target frame.'
+        };
+    }
+
+    if ((faceX <= 2 || faceY <= 2 || (faceX + faceW) >= 158 || (faceY + faceH) >= 158) && (faceW > 65 || faceH > 70)) {
+        return {
+            status: 'PARTIAL_FACE',
+            passed: false,
+            facesCount: 1,
+            score: 42,
+            message: 'Center your face. Face is partially outside the frame.'
+        };
+    }
+
+    // 6. Aspect ratio
+    var aspect = faceH / Math.max(1, faceW);
+    if (aspect < 0.85 || aspect > 2.2) {
+        return {
+            status: 'NO_FACE',
+            passed: false,
+            facesCount: 0,
+            score: 20,
+            message: 'No face detected. Please position your face in front of the camera.'
+        };
+    }
+
+    // 7. Topological Feature Analysis & Landmarks
+    var leftEyeLumaSum = 0, leftEyeCount = 0;
+    var rightEyeLumaSum = 0, rightEyeCount = 0;
+    var noseBridgeLumaSum = 0, noseBridgeCount = 0;
+    var cheekLumaSum = 0, cheekCount = 0;
+    var mouthLumaSum = 0, mouthCount = 0;
+
+    for (var dy = 0; dy < faceH; dy += 2) {
+        var curY = faceY + dy;
+        var normY = dy / faceH;
+
+        for (var dx = 0; dx < faceW; dx += 2) {
+            var curX = faceX + dx;
+            var normX = dx / faceW;
+
+            var pIdx = (curY * vw + curX) * 4;
+            var pLuma = 0.299 * pixels[pIdx] + 0.587 * pixels[pIdx + 1] + 0.114 * pixels[pIdx + 2];
+
+            if (normY >= 0.28 && normY <= 0.50) {
+                if (normX >= 0.15 && normX <= 0.44) {
+                    leftEyeLumaSum += pLuma;
+                    leftEyeCount++;
+                } else if (normX >= 0.56 && normX <= 0.85) {
+                    rightEyeLumaSum += pLuma;
+                    rightEyeCount++;
+                } else if (normX > 0.44 && normX < 0.56) {
+                    noseBridgeLumaSum += pLuma;
+                    noseBridgeCount++;
+                }
+            }
+
+            if (normY >= 0.50 && normY <= 0.70) {
+                if ((normX >= 0.14 && normX <= 0.42) || (normX >= 0.58 && normX <= 0.86)) {
+                    cheekLumaSum += pLuma;
+                    cheekCount++;
+                }
+            }
+
+            if (normY >= 0.72 && normY <= 0.88) {
+                if (normX >= 0.28 && normX <= 0.72) {
+                    mouthLumaSum += pLuma;
+                    mouthCount++;
+                }
+            }
+        }
+    }
+
+    var avgLeftEye    = leftEyeCount > 0 ? (leftEyeLumaSum / leftEyeCount) : 128;
+    var avgRightEye   = rightEyeCount > 0 ? (rightEyeLumaSum / rightEyeCount) : 128;
+    var avgNoseBridge = noseBridgeCount > 0 ? (noseBridgeLumaSum / noseBridgeCount) : 128;
+    var avgCheek      = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
+    var avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
+
+    var score = 0;
+    if (aspect >= 1.10 && aspect <= 1.70) score += 20;
+    else if (aspect >= 0.95 && aspect <= 1.90) score += 14;
+    else score += 6;
+
+    if (offX <= 0.12 && offY <= 0.14 && wRatio >= 0.35 && wRatio <= 0.70) score += 15;
+    else if (offX <= 0.18 && offY <= 0.20) score += 10;
+    else score += 4;
+
+    var eyeCheekRatioL = avgCheek > 0 ? (avgLeftEye / avgCheek) : 1;
+    var eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
+    var eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
+
+    if (eyeCheekRatioL <= 1.02 && eyeCheekRatioR <= 1.02) score += 15;
+    else if (eyeCheekRatioL <= 1.08 && eyeCheekRatioR <= 1.08) score += 8;
+
+    if (eyeSymmetryDiff < 0.20) score += 10;
+    else if (eyeSymmetryDiff < 0.32) score += 5;
+
+    var noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
+    if (noseEyeDiff > -3) score += 15;
+    else if (noseEyeDiff > -10) score += 8;
+
+    var mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
+    if (mouthCheekRatio < 1.06) score += 15;
+    else score += 7;
+
+    if (avgEdgeGradient >= 4.8) score += 10;
+    else if (avgEdgeGradient >= 3.6) score += 6;
+
+    var MATCHING_THRESHOLD = 72;
+    if (score < 52) {
+        return {
+            status: 'NO_FACE',
+            passed: false,
+            facesCount: 0,
+            score: score,
+            message: 'No face detected. Please position your face in front of the camera.'
+        };
+    }
+
+    if (score >= 52 && score < MATCHING_THRESHOLD) {
+        return {
+            status: 'ALIGNING',
+            passed: false,
+            facesCount: 1,
+            score: score,
+            message: 'Face detected. Please hold still and center your face in the frame.'
+        };
+    }
+
+    var descriptor = 'face_desc_' + Math.round(score) + '_' + Math.round(avgLeftEye) + '_' + Math.round(avgRightEye) + '_' + Math.round(avgNoseBridge) + '_' + Math.round(avgMouth) + '_' + Date.now().toString(36);
+    return {
+        status: 'VALID_FACE',
+        passed: true,
+        facesCount: 1,
+        score: score,
+        descriptor: descriptor,
+        message: 'Face verified ✓'
+    };
+}
+
+function stopFaceRecognitionLoginCamera() {
+    bioFaceLoginActive = false;
+    if (bioFaceLoginStream) {
+        try {
+            bioFaceLoginStream.getTracks().forEach(function(track) { track.stop(); });
+        } catch(e) {}
+        bioFaceLoginStream = null;
+    }
+    var video = document.getElementById('bioLoginFaceVideo');
+    if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+    }
+    var faceWrap = document.getElementById('bioModalFaceScannerWrap');
+    if (faceWrap) {
+        faceWrap.style.display = 'none';
+    }
+    var holo = document.getElementById('bioLoginFaceHolo');
+    if (holo) {
+        holo.style.display = 'none';
+    }
+}
+
+async function startFaceRecognitionLogin(identifier, opts) {
+    identifier = (identifier || (idInput ? idInput.value.trim() : '')).trim();
+    opts = opts || lastBiometricOptions || {};
+
+    stopFaceRecognitionLoginCamera();
+    if (bioAbortController) {
+        try { bioAbortController.abort(); } catch(e) {}
+    }
+    bioAbortController = new AbortController();
+    isBioPending = true;
+    bioFaceLoginActive = true;
+
+    if (fpRowBtn) {
+        fpRowBtn.disabled = false;
+        fpRowBtn.style.opacity = '0.95';
+        fpRowBtn.style.cursor = 'pointer';
+        fpRowBtn.setAttribute('title', 'Tap here to cancel face scan');
+    }
+    if (fpLabel) fpLabel.textContent = 'Scanning Face...';
+    if (fpHint) fpHint.textContent = identifier ? ('Verifying face for ' + identifier + '...') : 'Looking at camera (tap to cancel)';
+    if (fpIcon) fpIcon.className = 'bi bi-person-bounding-box';
+    if (fpArrow) fpArrow.className = 'bi bi-x-circle fp-row-arrow';
+
+    var modal = document.getElementById('biometricModal');
+    var titleEl = document.getElementById('bioModalTitle');
+    var descEl = document.getElementById('bioModalDesc');
+    var pillEl = document.getElementById('bioModalUserPill');
+    var pillTextEl = document.getElementById('bioModalUserText');
+    var modalIcon = document.getElementById('bioModalIcon');
+    var badgeEl = document.getElementById('bioModalBadge');
+    var methodsWrap = document.getElementById('bioModalMethodsWrap');
+    var passWrap = document.getElementById('bioModalPasswordWrap');
+    var alertEl = document.getElementById('bioModalAlert');
+    var faceWrap = document.getElementById('bioModalFaceScannerWrap');
+    var primaryBtn = document.getElementById('bioModalPrimaryBtn');
+    var chooseBtn = document.getElementById('bioModalChooseMethodBtn');
+    var secondaryBtn = document.getElementById('bioModalSecondaryBtn');
+
+    if (titleEl) titleEl.textContent = 'FACE RECOGNITION';
+    if (descEl) descEl.innerHTML = 'Look directly at the camera to verify your face.';
+    if (modalIcon) modalIcon.className = 'bi bi-person-bounding-box';
+    if (badgeEl) {
+        badgeEl.style.background = '#06b6d4';
+        badgeEl.innerHTML = '<i class="bi bi-camera-video-fill"></i>';
+    }
+    if (identifier) {
+        if (pillEl) pillEl.style.display = 'inline-flex';
+        if (pillTextEl) pillTextEl.textContent = identifier;
+    } else {
+        if (pillEl) pillEl.style.display = 'none';
+    }
+
+    if (methodsWrap) methodsWrap.style.display = 'none';
+    if (passWrap) passWrap.style.display = 'none';
+    if (alertEl) alertEl.style.display = 'none';
+    if (faceWrap) faceWrap.style.display = 'block';
+
+    if (primaryBtn) primaryBtn.style.display = 'none';
+    if (chooseBtn) {
+        chooseBtn.style.display = 'block';
+        chooseBtn.innerHTML = '<i class="bi bi-grid-fill me-1"></i>Choose Another Method';
+        currentChooseMethodCallback = function() {
+            stopFaceRecognitionLoginCamera();
+            if (lastAvailableMethods && lastAvailableMethods.length > 0) {
+                openBiometricSelectionPrompt(lastAvailableMethods, identifier, opts);
+            } else {
+                handleBiometricLogin();
+            }
+        };
+    }
+    if (secondaryBtn) {
+        secondaryBtn.style.display = 'block';
+        secondaryBtn.textContent = 'SIGN IN WITH PASSWORD';
+        currentSecondaryModalCallback = function() {
+            stopFaceRecognitionLoginCamera();
+            closeBiometricModalAndFocusPassword();
+        };
+    }
+
+    if (modal && !modal.classList.contains('active')) {
+        modal.style.display = 'flex';
+        void modal.offsetHeight;
+        modal.classList.add('active');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    var video = document.getElementById('bioLoginFaceVideo');
+    var holo = document.getElementById('bioLoginFaceHolo');
+    var laserBar = document.getElementById('bioLoginLaserBar');
+    var progressFill = document.getElementById('bioLoginFaceProgressFill');
+    var pctLabel = document.getElementById('bioLoginFacePctLabel');
+    var stateLabel = document.getElementById('bioLoginFaceStateLabel');
+    var hudStatus = document.getElementById('bioLoginHudStatus');
+
+    if (progressFill) progressFill.style.width = '10%';
+    if (pctLabel) pctLabel.textContent = '10%';
+    if (stateLabel) stateLabel.textContent = 'Accessing camera...';
+    if (hudStatus) {
+        hudStatus.textContent = 'INITIALIZING';
+        hudStatus.style.color = '#06b6d4';
+    }
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (video) video.style.display = 'none';
+        if (holo) holo.style.display = 'flex';
+        if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;">Camera access is not supported on this browser or requires HTTPS. Please sign in with your password.</span>';
+        if (stateLabel) stateLabel.textContent = 'Camera unavailable';
+        return;
+    }
+
+    try {
+        bioFaceLoginStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: 'user',
+                width: { ideal: 480 },
+                height: { ideal: 480 }
+            }
+        });
+        if (video && bioFaceLoginStream) {
+            video.srcObject = bioFaceLoginStream;
+            video.style.display = 'block';
+            if (holo) holo.style.display = 'none';
+            try { await video.play(); } catch(e) {}
+        }
+    } catch(camErr) {
+        console.warn('Camera error for face login:', camErr);
+        if (video) video.style.display = 'none';
+        if (holo) holo.style.display = 'flex';
+        if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;"><i class="bi bi-camera-video-off me-1"></i>Camera access was denied. Please allow camera permission in browser settings, or use another method.</span>';
+        if (stateLabel) stateLabel.textContent = 'Camera permission denied';
+        if (hudStatus) {
+            hudStatus.textContent = 'CAMERA BLOCKED';
+            hudStatus.style.color = '#ef4444';
+        }
+        return;
+    }
+
+    var consecutiveValidFrames = 0;
+    var REQUIRED_FRAMES = 8;
+    var SCAN_TIMEOUT_MS = 40000;
+    var startTime = Date.now();
+    var lastVerifiedAnalysis = null;
+
+    var sleep = function(ms) {
+        return new Promise(function(resolve) {
+            var timer = setTimeout(resolve, ms);
+            if (bioAbortController && bioAbortController.signal) {
+                bioAbortController.signal.addEventListener('abort', function() {
+                    clearTimeout(timer);
+                    resolve();
+                }, { once: true });
+            }
+        });
+    };
+
+    while (bioFaceLoginActive && !bioAbortController?.signal?.aborted) {
+        if (Date.now() - startTime > SCAN_TIMEOUT_MS) {
+            bioFaceLoginActive = false;
+            stopFaceRecognitionLoginCamera();
+            if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;"><i class="bi bi-clock-history me-1"></i>Face recognition timed out. Please position your face clearly in good lighting and try again.</span>';
+            if (stateLabel) stateLabel.textContent = 'Face detection timed out';
+            return;
+        }
+
+        var analysis = await detectAndAnalyzeFaceFrame(video);
+        if (!bioFaceLoginActive || bioAbortController?.signal?.aborted) {
+            break;
+        }
+
+        if (analysis.status === 'NO_FACE') {
+            consecutiveValidFrames = 0;
+            if (progressFill) progressFill.style.width = '10%';
+            if (pctLabel) pctLabel.textContent = '10%';
+            if (stateLabel) stateLabel.textContent = 'No face detected. Please position your face in front of the camera.';
+            if (hudStatus) { hudStatus.textContent = 'POSITION FACE'; hudStatus.style.color = '#ef4444'; }
+            if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
+        } else if (analysis.status === 'MULTIPLE_FACES') {
+            consecutiveValidFrames = 0;
+            if (stateLabel) stateLabel.textContent = 'Multiple faces detected. Please ensure only one person is visible.';
+            if (hudStatus) { hudStatus.textContent = 'MULTIPLE FACES'; hudStatus.style.color = '#ef4444'; }
+            if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
+        } else if (analysis.status === 'TOO_FAR') {
+            consecutiveValidFrames = 0;
+            if (stateLabel) stateLabel.textContent = 'Move closer to the camera...';
+            if (hudStatus) { hudStatus.textContent = 'MOVE CLOSER'; hudStatus.style.color = '#f59e0b'; }
+        } else if (analysis.status === 'TOO_CLOSE') {
+            consecutiveValidFrames = 0;
+            if (stateLabel) stateLabel.textContent = 'Move farther away from the camera...';
+            if (hudStatus) { hudStatus.textContent = 'MOVE BACK'; hudStatus.style.color = '#f59e0b'; }
+        } else if (analysis.status === 'OFF_CENTER' || analysis.status === 'PARTIAL_FACE') {
+            consecutiveValidFrames = 0;
+            if (stateLabel) stateLabel.textContent = analysis.message || 'Center your face inside the frame.';
+            if (hudStatus) { hudStatus.textContent = 'CENTER FACE'; hudStatus.style.color = '#f59e0b'; }
+        } else if (analysis.status === 'BLURRY') {
+            consecutiveValidFrames = 0;
+            if (stateLabel) stateLabel.textContent = 'Camera image blurry. Please hold steady.';
+            if (hudStatus) { hudStatus.textContent = 'HOLD STEADY'; hudStatus.style.color = '#f59e0b'; }
+        } else if (analysis.status === 'UNUSABLE') {
+            consecutiveValidFrames = 0;
+            if (stateLabel) stateLabel.textContent = analysis.message || 'Improve lighting in front of camera.';
+            if (hudStatus) { hudStatus.textContent = 'CHECK LIGHT'; hudStatus.style.color = '#f59e0b'; }
+        } else if (analysis.status === 'ALIGNING') {
+            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
+            var alPct = Math.max(15, Math.round(analysis.score || 35));
+            if (progressFill) progressFill.style.width = alPct + '%';
+            if (pctLabel) pctLabel.textContent = alPct + '%';
+            if (stateLabel) stateLabel.textContent = 'Face detected (' + Math.round(analysis.score) + '%). Hold still...';
+            if (hudStatus) { hudStatus.textContent = 'ALIGNING'; hudStatus.style.color = '#06b6d4'; }
+            if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%)';
+        } else if (analysis.status === 'VALID_FACE' && analysis.passed) {
+            consecutiveValidFrames++;
+            lastVerifiedAnalysis = analysis;
+            var pct = Math.min(98, Math.round(20 + (consecutiveValidFrames / REQUIRED_FRAMES) * 80));
+            if (progressFill) progressFill.style.width = pct + '%';
+            if (pctLabel) pctLabel.textContent = pct + '%';
+            if (stateLabel) stateLabel.textContent = 'Verifying facial geometry (' + Math.round(analysis.score) + '% match)...';
+            if (hudStatus) { hudStatus.textContent = 'VERIFYING'; hudStatus.style.color = '#22c55e'; }
+            if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%)';
+
+            if (consecutiveValidFrames >= REQUIRED_FRAMES) {
+                if (progressFill) progressFill.style.width = '100%';
+                if (pctLabel) pctLabel.textContent = '100%';
+                if (stateLabel) stateLabel.textContent = 'Face verified ✓ Authenticating...';
+                if (hudStatus) { hudStatus.textContent = 'MATCHED ✓'; hudStatus.style.color = '#22c55e'; }
+                bioFaceLoginActive = false;
+                break;
+            }
+        }
+
+        await sleep(90);
+    }
+
+    if (bioAbortController?.signal?.aborted || !lastVerifiedAnalysis || !lastVerifiedAnalysis.passed) {
+        stopFaceRecognitionLoginCamera();
+        return;
+    }
+
+    if (bioFaceLoginStream) {
+        try { bioFaceLoginStream.getTracks().forEach(function(t) { t.stop(); }); } catch(e) {}
+        bioFaceLoginStream = null;
+    }
+    if (video) { video.srcObject = null; }
+
+    var savedAccounts = (typeof getSavedAccounts === 'function') ? getSavedAccounts() : [];
+    var savedIds = savedAccounts.map(function(a) { return a.identifier; }).filter(Boolean);
+
+    if (descEl) descEl.innerHTML = '<span style="color:#22c55e;"><i class="bi bi-shield-check me-1"></i>Face verified. Authenticating with server...</span>';
+    if (stateLabel) stateLabel.textContent = 'Authenticating session...';
+
+    try {
+        var loginRes = await fetch('{{ route("webauthn.login") }}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                biometric_method: 'face',
+                credential_id: opts.face_credential_id || ('face_login_' + Date.now().toString(36)),
+                face_descriptor: lastVerifiedAnalysis.descriptor,
+                student_number: identifier,
+                identifier: identifier,
+                saved_identifiers: savedIds
+            })
+        });
+
+        var loginData = await loginRes.json();
+        console.log('Face login response:', loginData);
+
+        if (loginData.success) {
+            if (badgeEl) {
+                badgeEl.style.background = '#22c55e';
+                badgeEl.innerHTML = '<i class="bi bi-check-lg"></i>';
+            }
+            if (titleEl) titleEl.textContent = 'FACE RECOGNIZED ✓';
+            if (descEl) descEl.innerHTML = '<span style="color:#22c55e; font-weight:600;">Welcome back! Redirecting to your dashboard...</span>';
+            if (stateLabel) stateLabel.textContent = 'Sign-in complete. Redirecting...';
+            showFpMessage('success', '<i class="bi bi-check-circle-fill me-2"></i>Face recognized successfully! Redirecting...');
+            
+            setTimeout(function() {
+                window.location.href = loginData.redirect || '{{ route("home") }}';
+            }, 600);
+        } else {
+            resetBiometricButton();
+            if (badgeEl) {
+                badgeEl.style.background = '#ef4444';
+                badgeEl.innerHTML = '<i class="bi bi-x-lg"></i>';
+            }
+            if (titleEl) titleEl.textContent = 'VERIFICATION FAILED';
+            var errMsg = loginData.message || 'Face recognition could not be verified.';
+            if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;">' + errMsg + '</span>';
+            if (faceWrap) faceWrap.style.display = 'none';
+            if (primaryBtn) {
+                primaryBtn.style.display = 'block';
+                primaryBtn.innerHTML = '<i class="bi bi-camera-video me-2"></i>TRY FACE AGAIN';
+                currentPrimaryModalCallback = function() {
+                    startFaceRecognitionLogin(identifier, opts);
+                };
+            }
+            showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + errMsg);
+        }
+    } catch(err) {
+        console.error('Face login request error:', err);
+        resetBiometricButton();
+        if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;">Could not connect to authentication server. Please check your network and try again.</span>';
+        if (faceWrap) faceWrap.style.display = 'none';
+        if (primaryBtn) {
+            primaryBtn.style.display = 'block';
+            primaryBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-2"></i>RETRY';
+            currentPrimaryModalCallback = function() {
+                startFaceRecognitionLogin(identifier, opts);
+            };
+        }
+    }
+}
+
 function openBiometricSelectionPrompt(methods, identifier, opts) {
     lastAvailableMethods = methods;
     lastBiometricOptions = opts;
@@ -2642,7 +3624,6 @@ function openBiometricSelectionPrompt(methods, identifier, opts) {
         secondaryBtnText: 'SIGN IN WITH PASSWORD',
         showChooseMethodBtn: false,
         onMethodSelect: function(selectedMethod) {
-            closeBiometricModal();
             handleSelectBiometricMethod(selectedMethod, activeSetupIdentifier, opts);
         },
         onSecondaryClick: closeBiometricModalAndFocusPassword
@@ -2650,12 +3631,17 @@ function openBiometricSelectionPrompt(methods, identifier, opts) {
 }
 
 function handleSelectBiometricMethod(selectedMethod, identifier, opts) {
-    if (fpLabel) fpLabel.textContent = selectedMethod.name + '...';
-    if (fpHint) fpHint.textContent = 'Tap here to cancel (or verify)';
-    if (fpIcon) fpIcon.className = 'bi ' + selectedMethod.icon;
-    if (fpArrow) fpArrow.className = 'bi bi-x-circle fp-row-arrow';
+    if (selectedMethod.id === 'face') {
+        startFaceRecognitionLogin(identifier, opts);
+    } else {
+        closeBiometricModal();
+        if (fpLabel) fpLabel.textContent = selectedMethod.name + '...';
+        if (fpHint) fpHint.textContent = 'Tap here to cancel (or verify)';
+        if (fpIcon) fpIcon.className = 'bi ' + selectedMethod.icon;
+        if (fpArrow) fpArrow.className = 'bi bi-x-circle fp-row-arrow';
 
-    performBiometricLogin(identifier, selectedMethod, opts);
+        performBiometricLogin(identifier, selectedMethod, opts);
+    }
 }
 
 // Handle biometric login button click
@@ -2842,6 +3828,12 @@ async function handleBiometricLogin() {
             return;
         }
 
+        // If only Face Recognition is available for this user/device, launch face login directly
+        if (availableMethods.length === 1 && availableMethods[0].id === 'face') {
+            startFaceRecognitionLogin(identifier || opts.identifier, opts);
+            return;
+        }
+
         // Present the user with the biometric methods supported and enrolled on their device
         openBiometricSelectionPrompt(availableMethods, identifier || opts.identifier, opts);
 
@@ -2942,7 +3934,7 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
         } else if (selectedMethod.id === 'device_lock') {
             if (fpLabel) fpLabel.textContent = 'Enter device PIN or screen lock...';
         } else {
-            if (fpLabel) fpLabel.textContent = 'Touch sensor or scan Face ID...';
+            if (fpLabel) fpLabel.textContent = 'Touch sensor or scan fingerprint...';
         }
         if (fpHint) fpHint.textContent = 'Tap here to cancel (or verify)';
 

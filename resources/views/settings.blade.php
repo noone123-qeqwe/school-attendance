@@ -891,7 +891,8 @@
 .bio-method-card:focus-visible {
     box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.3);
 }
-.bio-method-card.selected#methodCardFingerprint {
+.bio-method-card.selected#methodCardFingerprint,
+.bio-method-card.selected#methodCardFp {
     border-color: #22c55e;
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.09) 0%, rgba(20, 14, 14, 0.7) 100%);
     box-shadow: 0 0 28px rgba(34, 197, 94, 0.22), inset 0 0 15px rgba(34, 197, 94, 0.06);
@@ -928,11 +929,13 @@
     transform: scale(0.5);
     transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.bio-method-card.selected#methodCardFingerprint .bio-card-radio {
+.bio-method-card.selected#methodCardFingerprint .bio-card-radio,
+.bio-method-card.selected#methodCardFp .bio-card-radio {
     border-color: #22c55e;
     background: rgba(34, 197, 94, 0.2);
 }
-.bio-method-card.selected#methodCardFingerprint .bio-radio-inner {
+.bio-method-card.selected#methodCardFingerprint .bio-radio-inner,
+.bio-method-card.selected#methodCardFp .bio-radio-inner {
     background: #22c55e;
     opacity: 1;
     transform: scale(1);
@@ -971,7 +974,8 @@
 .bio-method-card.selected .bio-method-icon-wrap {
     transform: scale(1.08);
 }
-.bio-method-card.selected#methodCardFingerprint .bio-fp-icon {
+.bio-method-card.selected#methodCardFingerprint .bio-fp-icon,
+.bio-method-card.selected#methodCardFp .bio-fp-icon {
     box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
 }
 .bio-method-card.selected#methodCardFace .bio-face-icon {
@@ -2356,7 +2360,7 @@
 
                     <div class="bio-method-grid">
                         <!-- Option 1: Fingerprint -->
-                        <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" tabindex="0" role="button" aria-pressed="true" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
+                        <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" tabindex="0" role="button" aria-pressed="true" onclick="selectBiometricMethod('fingerprint')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
                             <div class="bio-card-radio">
                                 <div class="bio-radio-inner">
                                     <i class="bi bi-check-lg"></i>
@@ -2381,7 +2385,7 @@
                         </div>
 
                         <!-- Option 2: Face Recognition -->
-                        <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
+                        <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
                             <div class="bio-card-radio">
                                 <div class="bio-radio-inner">
                                     <i class="bi bi-check-lg"></i>
@@ -5321,7 +5325,7 @@ function downloadRecoveryCodes() {
 
 
 
-document.addEventListener('DOMContentLoaded', () => {
+function initSettingsPage() {
     if (typeof loadDevices === 'function') loadDevices();
     if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
     if (typeof updateStabsScrollArrows === 'function') updateStabsScrollArrows();
@@ -5375,7 +5379,13 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('active_settings_tab');
         window.switchTab(targetTab);
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSettingsPage);
+} else {
+    initSettingsPage();
+}
 
 // Explicit window bindings for external callers and inline fallbacks
 window.selectBiometricMethod = selectBiometricMethod;
