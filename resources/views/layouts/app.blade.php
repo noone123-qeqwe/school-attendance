@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
     @auth
         @if(Auth::user()->isAdmin())
+            <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}?v={{ filemtime(public_path('css/admin-saas.css')) }}">
             <link rel="stylesheet" href="{{ asset('css/admin-theme.css') }}?v={{ filemtime(public_path('css/admin-theme.css')) }}">
         @endif
     @endauth

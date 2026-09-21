@@ -9,10 +9,38 @@ use Illuminate\Support\Facades\Auth;
 
 class AnnouncementController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $announcements = Announcement::with('author')->latest()->paginate(10);
-        return view('admin.announcements.index', compact('announcements'));
+        $query = Announcement::with('author')->latest();
+
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('content', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('audience') && $request->audience !== 'all') {
+            $audience = match(strtolower($request->audience)) {
+                'student' => 'Student',
+                'teacher' => 'Teacher',
+                'parent' => 'Parent',
+                default => $request->audience,
+            };
+            $query->where('target_audience', $audience);
+        }
+
+        $announcements = $query->paginate(10)->withQueryString();
+
+        $stats = [
+            'total' => Announcement::count(),
+            'all' => Announcement::where('target_audience', 'All')->count(),
+            'student' => Announcement::where('target_audience', 'Student')->count(),
+            'teacher' => Announcement::where('target_audience', 'Teacher')->count(),
+        ];
+
+        return view('admin.announcements.index', compact('announcements', 'stats'));
     }
 
     public function store(Request $request)
