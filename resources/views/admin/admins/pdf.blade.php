@@ -27,14 +27,14 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($Admins as $i => $Admin)
+            @foreach(($admins ?? $Admins ?? []) as $i => $admin)
             <tr>
                 <td>{{ $i + 1 }}</td>
-                <td>{{ $Admin->name }}</td>
-                <td>{{ $Admin->employee_id ?? '—' }}</td>
-                <td>{{ $Admin->email }}</td>
-                <td>{{ $Admin->department ?? '—' }}</td>
-                <td>{{ $Admin->position ?? '—' }}</td>
+                <td>{{ $admin->name }}</td>
+                <td>{{ $admin->employee_id ?? '—' }}</td>
+                <td>{{ $admin->email }}</td>
+                <td>{{ $admin->department ?? '—' }}</td>
+                <td>{{ $admin->position ?? '—' }}</td>
             </tr>
             @endforeach
         </tbody>

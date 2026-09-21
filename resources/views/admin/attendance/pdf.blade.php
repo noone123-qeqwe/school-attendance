@@ -5,7 +5,7 @@
 @section('footer-title', 'Attendance Logs Report')
 
 @section('footer-details')
-This document contains {{ $logs->count() }} attendance record@if($logs->count() !== 1)s@endif
+This document contains {{ $logs->count() }} attendance {{ Str::plural('record', $logs->count()) }}
 @endsection
 
 @section('content')

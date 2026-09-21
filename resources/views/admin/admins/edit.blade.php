@@ -20,28 +20,28 @@
         </div>
         @endif
 
-        <form method="POST" action="{{ route('admin.admin.update', $Admin) }}">
+        <form method="POST" action="{{ route('admin.admin.update', $admin) }}">
             @csrf @method('PUT')
             <div class="row g-3">
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Full Name</label>
-                    <input type="text" name="name" class="adm-input" value="{{ old('name', $Admin->name) }}" required style="width:100%;">
+                    <input type="text" name="name" class="adm-input" value="{{ old('name', $admin->name) }}" required style="width:100%;">
                 </div>
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Employee ID</label>
-                    <input type="text" name="employee_id" class="adm-input" value="{{ old('employee_id', $Admin->employee_id) }}" required style="width:100%;">
+                    <input type="text" name="employee_id" class="adm-input" value="{{ old('employee_id', $admin->employee_id) }}" required style="width:100%;">
                 </div>
                 <div class="col-md-12">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Email</label>
-                    <input type="email" name="email" class="adm-input" value="{{ old('email', $Admin->email) }}" required style="width:100%;">
+                    <input type="email" name="email" class="adm-input" value="{{ old('email', $admin->email) }}" required style="width:100%;">
                 </div>
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Department</label>
-                    <input type="text" name="department" class="adm-input" value="{{ old('department', $Admin->department) }}" style="width:100%;">
+                    <input type="text" name="department" class="adm-input" value="{{ old('department', $admin->department) }}" style="width:100%;">
                 </div>
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Position</label>
-                    <input type="text" name="position" class="adm-input" value="{{ old('position', $Admin->position) }}" style="width:100%;">
+                    <input type="text" name="position" class="adm-input" value="{{ old('position', $admin->position) }}" style="width:100%;">
                 </div>
                 <div class="col-12" style="margin-top:16px;">
                     <button type="submit" class="adm-btn adm-btn-primary"><i class="bi bi-save me-2"></i>Save Changes</button>
