@@ -60,28 +60,6 @@
         <span class="nav-link-text">Schedules</span>
     </a>
 
-    {{-- ── ATTENDANCE ── --}}
-    <div class="nav-section-label">Attendance</div>
-    <a href="{{ route('admin.attendance') }}" class="nav-link {{ request()->routeIs('admin.attendance*') ? 'active' : '' }}" data-title="Attendance Logs">
-        <i class="bi bi-clipboard2-check-fill"></i>
-        <span class="nav-link-text">Attendance Logs</span>
-    </a>
-    <a href="{{ route('admin.reports') }}" class="nav-link {{ request()->routeIs('admin.reports*') ? 'active' : '' }}" data-title="Reports">
-        <i class="bi bi-bar-chart-fill"></i>
-        <span class="nav-link-text">Reports &amp; Analytics</span>
-    </a>
-    <a href="{{ route('admin.early-warnings') }}" class="nav-link {{ request()->routeIs('admin.early-warnings*') ? 'active' : '' }}" data-title="Early Warnings">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-        <span class="nav-link-text">Early Warnings</span>
-    </a>
-    <a href="{{ route('admin.excuses') }}" class="nav-link {{ request()->routeIs('admin.excuses*') ? 'active' : '' }}" data-title="Excuse Reviews">
-        <i class="bi bi-file-earmark-check-fill"></i>
-        <span class="nav-link-text">Excuse Reviews</span>
-    </a>
-    <a href="{{ route('admin.corrections') }}" class="nav-link {{ request()->routeIs('admin.corrections*') ? 'active' : '' }}" data-title="Correction Requests">
-        <i class="bi bi-pencil-square"></i>
-        <span class="nav-link-text">Correction Requests</span>
-    </a>
 
     {{-- ── COMMUNICATION ── --}}
     <div class="nav-section-label">Communication</div>
