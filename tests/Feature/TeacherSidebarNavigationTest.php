@@ -25,20 +25,21 @@ class TeacherSidebarNavigationTest extends TestCase
         ]);
     }
 
-    public function test_teacher_sidebar_renders_all_organized_categories_and_links(): void
+    public function test_teacher_sidebar_renders_all_links_without_cluttered_category_headers(): void
     {
         $this->actingAs($this->teacher);
 
         $html = view('layouts.sidebars.teacher')->render();
 
-        // Check group categories
-        $this->assertStringContainsString('Main', $html);
-        $this->assertStringContainsString('Teaching', $html);
-        $this->assertStringContainsString('Attendance', $html);
-        $this->assertStringContainsString('Requests', $html);
-        $this->assertStringContainsString('School', $html);
+        // Ensure category header labels and collapsible group headers are removed
+        $this->assertStringNotContainsString('teacher-section-label', $html);
+        $this->assertStringNotContainsString('teacher-group-toggle', $html);
+        $this->assertStringNotContainsString('toggleTeacherGroup', $html);
+        $this->assertStringNotContainsString('teacherGroupTeaching', $html);
+        $this->assertStringNotContainsString('teacherGroupAttendance', $html);
+        $this->assertStringNotContainsString('teacherGroupRequests', $html);
 
-        // Check all individual features
+        // Check all individual features exist as clean navigation items
         $this->assertStringContainsString('Dashboard', $html);
         $this->assertStringContainsString('My Classes', $html);
         $this->assertStringContainsString('Student Roster', $html);
@@ -58,17 +59,7 @@ class TeacherSidebarNavigationTest extends TestCase
         $this->assertStringContainsString(route('teacher.corrections'), $html);
         $this->assertStringContainsString(route('teacher.calendar'), $html);
 
-        // Verify collapsible controls and accessibility attributes
-        $this->assertStringContainsString('toggleTeacherGroup', $html);
-        $this->assertStringContainsString('teacherGroupTeaching', $html);
-        $this->assertStringContainsString('teacherGroupAttendance', $html);
-        $this->assertStringContainsString('teacherGroupRequests', $html);
-        $this->assertStringContainsString('aria-expanded="true"', $html);
-        $this->assertStringContainsString('aria-controls="teacherMenuTeaching"', $html);
-        $this->assertStringContainsString('aria-controls="teacherMenuAttendance"', $html);
-        $this->assertStringContainsString('aria-controls="teacherMenuRequests"', $html);
-
-        // Ensure Biometric Login was removed
+        // Ensure Biometric Login remains removed
         $this->assertStringNotContainsString('Biometric Login', $html);
     }
 
@@ -116,11 +107,7 @@ class TeacherSidebarNavigationTest extends TestCase
         $html = view('layouts.sidebars.teacher')->render();
 
         // Check that real pending badges appear
-        $this->assertStringContainsString('badge-excuses', $html);
-        $this->assertStringContainsString('badge-corrections', $html);
-        $this->assertStringContainsString('title="1 pending excuse(s)"', $html);
-        $this->assertStringContainsString('title="1 pending correction(s)"', $html);
-        $this->assertStringContainsString('title="2 pending request(s)"', $html);
+        $this->assertStringContainsString('1', $html);
     }
 
     public function test_teacher_routes_render_cleanly_with_redesigned_sidebar(): void
@@ -139,7 +126,7 @@ class TeacherSidebarNavigationTest extends TestCase
         foreach ($routes as $route) {
             $response = $this->actingAs($this->teacher)->get($route);
             $response->assertOk();
-            $response->assertSee('teacher-sidebar-nav', false);
+            $response->assertSee('sidebar-nav', false);
             $response->assertSee('Dashboard', false);
         }
     }

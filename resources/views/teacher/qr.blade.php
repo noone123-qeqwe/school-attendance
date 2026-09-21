@@ -1095,54 +1095,104 @@ function startIntervals() {
 
 // Refresh QR
 refreshBtn.addEventListener('click', async () => {
-    if (!currentSession) return;
+    const sessionId = currentSession?.session_id || currentSession?.id;
+    if (!sessionId && !currentSession) {
+        showTeacherToast('No active attendance session to refresh', 'warning');
+        return;
+    }
     
+    const originalHtml = refreshBtn.innerHTML;
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Refreshing...';
+
     try {
         const response = await fetch('{{ route("teacher.qr.refresh") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
-                session_id: currentSession.session_id
+                session_id: sessionId,
+                subject_code: '{{ $subject->code }}'
             })
         });
 
-        const data = await response.json();
-        if (data.success) {
+        const data = await response.json().catch(() => ({}));
+
+        if (response.ok && data.success) {
             currentSession.token = data.token;
             currentSession.scan_url = data.scan_url;
             currentSession.ttl = data.ttl || currentSession.ttl || 300;
+            if (data.session_code) {
+                currentSession.session_code = data.session_code;
+                currentSession.formatted_code = data.formatted_code;
+                const codeBox = document.getElementById('displaySessionCode');
+                if (codeBox) codeBox.textContent = data.formatted_code || data.session_code;
+                const pCode = document.getElementById('projectorSessionCode');
+                if (pCode) pCode.textContent = data.formatted_code || data.session_code;
+            }
             showQRCode(data.scan_url);
             resetRefreshTimers();
-            showTeacherToast('Attendance QR refreshed', 'info');
+            showTeacherToast('Attendance QR refreshed successfully', 'success');
+        } else {
+            const errorMsg = data.message || 'Unable to refresh QR code.';
+            showTeacherToast(errorMsg, 'warning');
+            if (data.session_expired || response.status === 404) {
+                enterGracePeriod();
+            }
         }
     } catch (error) {
         console.error('Error refreshing:', error);
+        showTeacherToast('Network error while refreshing QR code', 'error');
+    } finally {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalHtml;
     }
 });
 
 // Stop session
 stopBtn.addEventListener('click', async () => {
-    if (!currentSession) return;
-    
+    const sessionId = currentSession?.session_id || currentSession?.id;
+    if (!sessionId && !currentSession) {
+        enterGracePeriod();
+        return;
+    }
+
+    const originalStopHtml = stopBtn.innerHTML;
+    stopBtn.disabled = true;
+    refreshBtn.disabled = true;
+    stopBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Stopping...';
+
     try {
-        await fetch('{{ route("teacher.qr.stop") }}', {
+        const response = await fetch('{{ route("teacher.qr.stop") }}', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
             },
             body: JSON.stringify({
-                session_id: currentSession.session_id
+                session_id: sessionId,
+                subject_code: '{{ $subject->code }}'
             })
         });
-        
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+            showTeacherToast('Attendance session ended successfully', 'info');
+        } else {
+            showTeacherToast(data.message || 'Session closed with notices', 'info');
+        }
         enterGracePeriod();
     } catch (error) {
-        console.error('Error stopping:', error);
+        console.error('Error stopping session:', error);
+        showTeacherToast('Session stopped. Attendance review active.', 'info');
         enterGracePeriod();
+    } finally {
+        stopBtn.disabled = false;
+        stopBtn.innerHTML = originalStopHtml;
     }
 });
 
@@ -1152,6 +1202,10 @@ function enterGracePeriod() {
     if (timerInterval) clearInterval(timerInterval);
     if (refreshCountdownInterval) clearInterval(refreshCountdownInterval);
 
+    if (currentSession) {
+        currentSession.active = false;
+    }
+
     startBtn.style.display = 'none';
     refreshBtn.style.display = 'none';
     stopBtn.style.display = 'none';
@@ -1159,6 +1213,8 @@ function enterGracePeriod() {
     document.getElementById('qrRefreshCountdown').style.display = 'none';
     document.getElementById('projectorBtn').style.display = 'none';
     document.getElementById('copyLinkBtn').style.display = 'none';
+    const codeSection = document.getElementById('attendanceCodeSection');
+    if (codeSection) codeSection.style.display = 'none';
     closeProjectorMode();
     
     qrContainer.classList.remove('active');
@@ -1167,7 +1223,10 @@ function enterGracePeriod() {
             <i class="bi bi-clock-history" style="font-size: 4.5rem; opacity: 0.4; margin-bottom: 1rem; color: #cfa46f; display: block;"></i>
             <h5 style="color: #f3e7cd; font-weight: 800; font-size: 1.35rem;">Session Closed — Review Active</h5>
             <p style="color: #b39b82; font-size: 0.95rem; max-width: 440px; margin: 0 auto 20px;">Student scanning has ended. You can review the final attendance roster on the right or make manual adjustments.</p>
-            <a href="{{ route('teacher.subjects') }}" class="btn modern-btn">Finish & Back to Subjects</a>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <a href="{{ route('teacher.subjects') }}" class="btn modern-btn">Finish & Back to Subjects</a>
+                <a href="{{ route('teacher.qr', $subject->code) }}" class="btn modern-btn secondary"><i class="bi bi-arrow-repeat me-1"></i> New Session</a>
+            </div>
         </div>
     `;
     

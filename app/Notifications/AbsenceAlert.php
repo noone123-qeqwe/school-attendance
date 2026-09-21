@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class AbsenceAlert extends Notification
+class AbsenceAlert extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -39,11 +39,15 @@ class AbsenceAlert extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
+        $studentName = $this->attendance->user?->name ?? 'Student';
+        $status = $this->attendance->status ?? 'Absent';
+        $formattedDate = $this->attendance->date ? \Illuminate\Support\Carbon::parse($this->attendance->date)->format('M d, Y') : 'Session';
+
         $mail = (new MailMessage)
-            ->subject('Absence Alert: ' . $this->attendance->user->name)
-            ->greeting('Hello ' . $notifiable->name . ',')
+            ->subject('Absence Alert: ' . $studentName)
+            ->greeting('Hello ' . ($notifiable->name ?? 'Parent/Guardian') . ',')
             ->line('This is an automated notification from the School Attendance System.')
-            ->line('Your child, **' . $this->attendance->user->name . '**, was marked **' . $this->attendance->status . '** in **' . $this->attendance->subject_code . '** on ' . $this->attendance->date->format('M d, Y') . '.');
+            ->line('Your child, **' . $studentName . '**, was marked **' . $status . '** in **' . $this->attendance->subject_code . '** on ' . $formattedDate . '.');
             
         if ($this->signedUrl) {
             $mail->action('Submit Excuse Letter', $this->signedUrl);
@@ -59,8 +63,11 @@ class AbsenceAlert extends Notification
      */
     public function toSemaphore(object $notifiable): string
     {
+        $studentName = $this->attendance->user?->name ?? 'Student';
+        $status = $this->attendance->status ?? 'Absent';
+        $formattedDate = $this->attendance->date ? \Illuminate\Support\Carbon::parse($this->attendance->date)->format('M d, Y') : 'Session';
         $link = $this->signedUrl ? " Submit excuse: {$this->signedUrl}" : "";
-        return "School Alert: {$this->attendance->user->name} was marked {$this->attendance->status} in {$this->attendance->subject_code} on {$this->attendance->date->format('M d, Y')}.{$link}";
+        return "School Alert: {$studentName} was marked {$status} in {$this->attendance->subject_code} on {$formattedDate}.{$link}";
     }
 
     /**
@@ -70,13 +77,14 @@ class AbsenceAlert extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $studentName = $this->attendance->user?->name ?? 'Student';
         return [
             'type' => 'absence_alert',
             'attendance_id' => $this->attendance->id,
-            'student_name' => $this->attendance->user->name,
+            'student_name' => $studentName,
             'subject_code' => $this->attendance->subject_code,
             'date' => $this->attendance->date,
-            'message' => "Your child, {$this->attendance->user->name}, was marked Absent in {$this->attendance->subject_code} on {$this->attendance->date}.",
+            'message' => "Your child, {$studentName}, was marked Absent in {$this->attendance->subject_code} on {$this->attendance->date}.",
         ];
     }
 }

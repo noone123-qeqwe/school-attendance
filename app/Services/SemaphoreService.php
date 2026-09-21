@@ -21,6 +21,13 @@ class SemaphoreService
      */
     public function send(string $number, string $message): bool
     {
+        // If API key is empty or placeholder, skip network request
+        $cleanedKey = trim((string)$this->apiKey);
+        if (empty($cleanedKey) || in_array($cleanedKey, ['your_semaphore_api_key_here', 'your_api_key_here'])) {
+            Log::info('Semaphore SMS skipped: placeholder or empty API key configured');
+            return false;
+        }
+
         // Normalize PH number: 09xxxxxxxxx → 639xxxxxxxxx
         $number = preg_replace('/\D/', '', $number);
         if (str_starts_with($number, '0')) {
@@ -28,7 +35,7 @@ class SemaphoreService
         }
 
         try {
-            $response = Http::post('https://api.semaphore.co/api/v4/messages', [
+            $response = Http::timeout(5)->post('https://api.semaphore.co/api/v4/messages', [
                 'apikey'      => $this->apiKey,
                 'number'      => $number,
                 'message'     => $message,

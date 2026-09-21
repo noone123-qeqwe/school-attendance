@@ -288,17 +288,34 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     // Teacher: Refresh QR token
     // ─────────────────────────────────────────
+    // Teacher: Refresh QR token
+    // ─────────────────────────────────────────
     public function refreshTeacherToken(Request $request)
     {
-        $request->validate(['session_id' => 'required|integer']);
-        $session = AttendanceSession::find($request->session_id);
+        $request->validate([
+            'session_id'   => 'nullable|integer',
+            'subject_code' => 'nullable|string'
+        ]);
 
-        if (!$session) {
-            return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
+        $session = null;
+        if ($request->filled('session_id')) {
+            $session = AttendanceSession::with('subject')->find($request->session_id);
+        } elseif ($request->filled('subject_code')) {
+            $session = AttendanceSession::with('subject')
+                ->where('subject_code', $request->subject_code)
+                ->where('active', true)
+                ->latest('id')
+                ->first();
         }
 
+        if (!$session) {
+            return response()->json(['success' => false, 'message' => 'Session not found or already closed.'], 404);
+        }
+
+        $user = Auth::user();
         $isAuthorized = ($session->created_by === Auth::id())
-            || (in_array(Auth::user()->role, ['admin', 'department_head']));
+            || (in_array($user->role, ['admin', 'department_head']))
+            || ($session->subject && ($session->subject->instructor_id === Auth::id() || (!empty($session->subject->instructor) && strcasecmp(trim($session->subject->instructor), trim($user->name)) === 0)));
         if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
@@ -316,7 +333,11 @@ class QrAttendanceController extends Controller
                 'ttl'            => self::QR_TTL_SECONDS,
             ]);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
+            return response()->json([
+                'success'         => false,
+                'session_expired' => !$session->isSessionActive(),
+                'message'         => $e->getMessage()
+            ], 422);
         }
     }
 
@@ -325,53 +346,80 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     public function stopTeacherSession(Request $request)
     {
-        $request->validate(['session_id' => 'required|integer']);
-        $session = AttendanceSession::with('subject')->find($request->session_id);
+        $request->validate([
+            'session_id'   => 'nullable|integer',
+            'subject_code' => 'nullable|string'
+        ]);
+
+        $session = null;
+        if ($request->filled('session_id')) {
+            $session = AttendanceSession::with('subject')->find($request->session_id);
+        } elseif ($request->filled('subject_code')) {
+            $session = AttendanceSession::with('subject')
+                ->where('subject_code', $request->subject_code)
+                ->where('active', true)
+                ->latest('id')
+                ->first();
+        }
 
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
         }
 
+        $user = Auth::user();
         $isAuthorized = ($session->created_by === Auth::id())
-            || (in_array(Auth::user()->role, ['admin', 'department_head']));
+            || (in_array($user->role, ['admin', 'department_head']))
+            || ($session->subject && ($session->subject->instructor_id === Auth::id() || (!empty($session->subject->instructor) && strcasecmp(trim($session->subject->instructor), trim($user->name)) === 0)));
         if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
         $session->update(['active' => false]);
 
-        // Dispatch notifications for absent/late students
+        // Dispatch notifications for absent/late students safely
         $subject = $session->subject;
         $today = now()->toDateString();
         
         if ($subject) {
-            $students = $subject->getAllStudents();
-            
-            foreach ($students as $student) {
-                // Ensure record exists; if not, mark absent
-                $attendance = \App\Models\Attendance::updateOrCreateRecord(
-                    [
-                        'user_id' => $student->id,
-                        'subject_code' => $session->subject_code,
-                        'date' => $today
-                    ],
-                    [
-                        'status' => 'Absent',
-                        'time_in' => null,
-                        'latitude' => null,
-                        'longitude' => null,
-                        'excused' => false
-                    ]
-                );
+            try {
+                $students = $subject->getAllStudents();
+                
+                foreach ($students as $student) {
+                    try {
+                        // Ensure record exists; if not, mark absent
+                        $attendance = \App\Models\Attendance::updateOrCreateRecord(
+                            [
+                                'user_id' => $student->id,
+                                'subject_code' => $session->subject_code,
+                                'date' => $today
+                            ],
+                            [
+                                'status' => 'Absent',
+                                'time_in' => null,
+                                'latitude' => null,
+                                'longitude' => null,
+                                'excused' => false
+                            ]
+                        );
 
-                if (in_array($attendance->status, ['Absent', 'Late']) && !$attendance->excused) {
-                    $signedUrl = \Illuminate\Support\Facades\URL::signedRoute('guest.excuse', ['attendance' => $attendance->id]);
-                    $student->notify(new \App\Notifications\AbsenceAlert($attendance, $signedUrl));
+                        if (in_array($attendance->status, ['Absent', 'Late']) && !$attendance->excused) {
+                            $signedUrl = \Illuminate\Support\Facades\URL::signedRoute('guest.excuse', ['attendance' => $attendance->id]);
+                            try {
+                                $student->notify(new \App\Notifications\AbsenceAlert($attendance, $signedUrl));
+                            } catch (\Throwable $notifEx) {
+                                Log::warning("Student AbsenceAlert notification failed for user {$student->id}: " . $notifEx->getMessage());
+                            }
+                        }
+                    } catch (\Throwable $studentEx) {
+                        Log::warning("Error recording attendance for user {$student->id}: " . $studentEx->getMessage());
+                    }
                 }
+            } catch (\Throwable $groupEx) {
+                Log::warning("Error preparing absence alerts for subject {$session->subject_code}: " . $groupEx->getMessage());
             }
         }
 
-        return response()->json(['success' => true]);
+        return response()->json(['success' => true, 'message' => 'Attendance session stopped successfully.']);
     }
 
     // ─────────────────────────────────────────
