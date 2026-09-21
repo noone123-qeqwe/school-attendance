@@ -1406,7 +1406,27 @@
     let checkVersionPromise = null;
     let lastVersionCheckTime = 0;
     const VERSION_CHECK_COOLDOWN_MS = 1000;
-    const DISMISS_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes snooze cooldown
+    const DISMISS_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes snooze cooldown
+
+    // ── Handle URL Version Query Sync & Parameter Cleanup ──
+    try {
+        const _url = new URL(window.location.href);
+        const _vParam = _url.searchParams.get('_v');
+        if (_vParam) {
+            const _cleanV = String(_vParam).trim().replace(/^v/i, '');
+            if (/^\d+(\.\d+)*$/.test(_cleanV)) {
+                localStorage.setItem('app_installed_version', _cleanV);
+                localStorage.setItem('pwa_installed_version', _cleanV);
+                localStorage.setItem('pwa_app_version', _cleanV);
+                localStorage.setItem('app_version', _cleanV);
+                sessionStorage.setItem('pwa_updated_ver', _cleanV);
+                sessionStorage.setItem('pwa_just_updated_at', String(Date.now()));
+            }
+            _url.searchParams.delete('_v');
+            _url.searchParams.delete('_t');
+            window.history.replaceState({}, document.title, _url.toString());
+        }
+    } catch(e) {}
 
     // Immutable constants capturing the document version as rendered by the server
     const DOC_INSTALLED_VER = document.querySelector('meta[name="app-installed-version"]')?.content || '{{ $installedVersion }}';
@@ -1498,16 +1518,20 @@
 
     function getInstalledVersion() {
         const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || DOC_INSTALLED_VER;
+        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version') || localStorage.getItem('pwa_app_version');
+
         if (metaInstalled) {
-            try {
-                localStorage.setItem('app_installed_version', metaInstalled);
-                localStorage.setItem('pwa_installed_version', metaInstalled);
-                localStorage.setItem('pwa_app_version', metaInstalled);
-            } catch(e) {}
-            return metaInstalled;
+            if (!stored || compareSemver(metaInstalled, stored) >= 0) {
+                try {
+                    localStorage.setItem('app_installed_version', metaInstalled);
+                    localStorage.setItem('pwa_installed_version', metaInstalled);
+                    localStorage.setItem('pwa_app_version', metaInstalled);
+                } catch(e) {}
+                return metaInstalled;
+            }
+            return stored;
         }
 
-        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version') || localStorage.getItem('pwa_app_version');
         if (stored && !stored.includes('_') && /^\d/.test(stored)) {
             return stored;
         }
@@ -1610,6 +1634,11 @@
         const installedVer = getInstalledVersion();
         const latestVer = getLatestVersion();
 
+        // If installed version is already equal to or greater than latest, no update needed
+        if (compareSemver(installedVer, latestVer) >= 0) {
+            return false;
+        }
+
         // 1. Semantic Version update (e.g. 2.4.1 > 2.4.0)
         if (compareSemver(latestVer, installedVer) > 0) {
             return true;
@@ -1627,13 +1656,19 @@
 
     // ── Fallback Pill Helpers (Shows subtle pill when modal is dismissed or snoozed) ──
     function showUpdateFallbackPill(version = null) {
+        // Do not show pill if already up to date
+        const installedVer = getInstalledVersion();
+        const targetVer = version || latestDetectedVersion || getLatestVersion();
+        if (compareSemver(targetVer, installedVer) <= 0) {
+            hideUpdateFallbackPill();
+            return;
+        }
         ensurePwaModalsInBody();
         const pill = document.getElementById('pwaUpdatePill');
         if (!pill) return;
         const badge = document.getElementById('pwaPillVersionBadge');
         if (badge) {
-            const v = version || latestDetectedVersion || getLatestVersion();
-            const clean = String(v).trim();
+            const clean = String(targetVer).trim();
             badge.textContent = clean.startsWith('v') ? clean : 'v' + clean;
         }
         pill.style.display = 'flex';
@@ -1645,11 +1680,7 @@
         const pill = document.getElementById('pwaUpdatePill');
         if (!pill) return;
         pill.classList.remove('show');
-        setTimeout(() => {
-            if (!pill.classList.contains('show')) {
-                pill.style.display = 'none';
-            }
-        }, 350);
+        pill.style.display = 'none';
     }
 
     function hideModalElementsIfUpToDate() {
@@ -1706,8 +1737,8 @@
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const installedVer = getInstalledVersion();
 
-        // If not forced and already up to date according to semver and meta, do NOT show
-        if (!force && !isManualCheck && compareSemver(targetVersion, installedVer) <= 0) {
+        // If not a manual check and already up to date according to semver, NEVER show
+        if (!isManualCheck && compareSemver(targetVersion, installedVer) <= 0) {
             if (swRegistration && swRegistration.waiting) {
                 try { swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' }); } catch(e) {}
             }
@@ -1733,12 +1764,13 @@
             return;
         }
 
-        // Suppress prompt within 30s of an applied update reload ONLY if target matches the just-updated version
+        // Suppress prompt within 60s of an applied update reload ONLY if target matches or is older than the just-updated version
         const justUpdatedVer = sessionStorage.getItem('pwa_updated_ver');
         const justUpdatedAt = parseInt(sessionStorage.getItem('pwa_just_updated_at') || '0', 10);
         const justUpdatedRecent = (sessionStorage.getItem('pwa_just_updated') === 'true') ||
-                                  (justUpdatedVer && (targetVersion === justUpdatedVer) && (Date.now() - justUpdatedAt < 30000));
+                                  (justUpdatedVer && (compareSemver(targetVersion, justUpdatedVer) <= 0) && (Date.now() - justUpdatedAt < 60000));
         if (justUpdatedRecent && !isManualCheck && !force) {
+            hideModalElementsIfUpToDate();
             return;
         }
 
@@ -1751,8 +1783,8 @@
         const isSnoozed = !isNewerThanDismissed && (Date.now() - dismissedAt < DISMISS_COOLDOWN_MS);
 
         if (!isManualCheck && !force && isSnoozed) {
-            // Within snooze cooldown: keep modal closed, but show unobtrusive fallback pill
-            showUpdateFallbackPill(targetVersion);
+            // Within snooze cooldown: keep modal and pill closed
+            hideModalElementsIfUpToDate();
             return;
         }
 
@@ -1828,17 +1860,15 @@
             backdrop.classList.remove('show');
             backdrop.style.display = 'none';
         }
+        hideUpdateFallbackPill();
 
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const currentUpdateKey = (targetVersion || '') + '_' + (latestServerTimestamp || '') + '_' + (latestDetectedSwVersion || '');
         
-        // Snooze cooldown in sessionStorage for current browsing session only
+        // Snooze cooldown in sessionStorage
         sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
         sessionStorage.setItem('pwa_update_dismissed_tag', currentUpdateKey);
         sessionStorage.setItem('pwa_update_dismissed_at', String(Date.now()));
-
-        // Show the subtle fallback pill so user can still update anytime with 1 tap
-        showUpdateFallbackPill(targetVersion);
     }
 
     async function applySystemUpdate() {
@@ -2025,23 +2055,23 @@
                                 isUpdateAvailable = true;
                             }
 
-                            // Check 2: Server explicitly reports not up to date
-                            if (serverData.is_up_to_date === false) {
+                            // Check 2: Server explicitly reports not up to date AND latest > installed
+                            if (serverData.is_up_to_date === false && compareSemver(latestVer, installedVer) > 0) {
                                 isUpdateAvailable = true;
                             }
 
-                            // Check 3: Server's latest_version > server's installed_version
-                            if (serverData.latest_version && serverData.installed_version && compareSemver(serverData.latest_version, serverData.installed_version) > 0) {
+                            // Check 3: Server's latest_version > server's installed_version AND latest > client installed
+                            if (serverData.latest_version && serverData.installed_version && compareSemver(serverData.latest_version, serverData.installed_version) > 0 && compareSemver(serverData.latest_version, installedVer) > 0) {
                                 isUpdateAvailable = true;
                             }
 
-                            // Check 4: Service worker version bumped
-                            if (!isUpdateAvailable && serverData.sw_version && installedSwVer && parseSwNum(serverData.sw_version) > parseSwNum(installedSwVer)) {
+                            // Check 4: Service worker version bumped AND latest > installed
+                            if (!isUpdateAvailable && serverData.sw_version && installedSwVer && parseSwNum(serverData.sw_version) > parseSwNum(installedSwVer) && compareSemver(latestVer, installedVer) > 0) {
                                 isUpdateAvailable = true;
                             }
 
-                            // Check 5: Build changed
-                            if (!isUpdateAvailable && serverData.build && DOC_BUILD_ID && serverData.build !== DOC_BUILD_ID && compareSemver(latestVer, installedVer) >= 0) {
+                            // Check 5: Build changed AND latest > installed
+                            if (!isUpdateAvailable && serverData.build && DOC_BUILD_ID && serverData.build !== DOC_BUILD_ID && compareSemver(latestVer, installedVer) > 0) {
                                 isUpdateAvailable = true;
                             }
 
@@ -2057,9 +2087,14 @@
                     // Network failure or abort — fail gracefully without breaking UI
                 }
 
-                // Check 6: Service worker has a waiting update
+                // Check 6: Service worker has a waiting update (only if latest > installed)
                 if (swRegistration && swRegistration.waiting) {
-                    isUpdateAvailable = true;
+                    if (compareSemver(latestVer, installedVer) > 0) {
+                        isUpdateAvailable = true;
+                    } else {
+                        // Up to date: silently activate waiting service worker
+                        try { swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' }); } catch(e) {}
+                    }
                 }
 
                 // Fallback check if offline or network error: compare local metadata
@@ -2072,9 +2107,13 @@
                     isUpdateAvailable = false;
                 }
 
+                // If installed version is already >= latest version, it is NOT an update unless forced manual check
+                if (compareSemver(installedVer, latestVer) >= 0 && !isManualCheck) {
+                    isUpdateAvailable = false;
+                }
+
                 if (isUpdateAvailable) {
-                    // Show the "Update Available" prompt with force=true so server detection is never self-blocked
-                    showUpdateReadyPrompt(latestVer, true, updateChangelog, isManualCheck);
+                    showUpdateReadyPrompt(latestVer, isManualCheck, updateChangelog, isManualCheck);
                     return { upToDate: false, updateAvailable: true, version: latestVer };
                 } else {
                     // Up to date: close modal elements if currently showing, without writing false dismissal cooldown to storage
@@ -2095,7 +2134,7 @@
         if (justUpdated) {
             sessionStorage.removeItem('pwa_just_updated');
             const updatedVer = sessionStorage.getItem('pwa_updated_ver') || getLatestVersion();
-            sessionStorage.removeItem('pwa_updated_ver');
+            // Preserve pwa_updated_ver in sessionStorage so 60s suppression window remains active
             setTimeout(() => {
                 showSystemUpdatedToast(updatedVer);
             }, 400);
