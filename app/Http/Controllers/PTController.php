@@ -308,51 +308,10 @@ class PTController extends Controller
                 }
             } elseif ($user->isAdmin()) {
                 Log::info('Admin login successful', ['user_id' => $user->id, 'session_id' => $request->session()->getId()]);
-
-                if (app()->environment('local', 'testing')) {
-                    $request->session()->put('admin_2fa_verified', true);
-                    $request->session()->save();
-                    $targetUrl = route('admin.dashboard');
-                } else {
-                    $otp = \App\Models\Otp::generate($user->id, 'admin_login');
-                    $emailDelivered = true;
-                    try {
-                        $deliveryResult = app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'admin_login', $user->name);
-                        $emailDelivered = $deliveryResult->success;
-                    } catch (\Exception $e) {
-                        Log::error('Failed to send admin 2FA OTP: ' . $e->getMessage());
-                        $emailDelivered = false;
-                    }
-
-                    if (!$emailDelivered) {
-                        // Email delivery failed — log the admin out and surface a meaningful error
-                        Auth::logout();
-                        $request->session()->invalidate();
-                        $request->session()->regenerateToken();
-                        $emailError = 'Unable to send the verification code to ' . $user->email . '. Please ensure the email address is valid and reachable, then try again.';
-                        Log::warning('Admin 2FA aborted — OTP email could not be delivered.', ['user_id' => $user->id, 'email' => $user->email]);
-
-                        if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
-                            return response()->json([
-                                'status'  => 'error',
-                                'success' => false,
-                                'message' => $emailError,
-                            ], 503);
-                        }
-                        return back()->withInput($request->only('identifier'))
-                            ->withErrors(['identifier' => $emailError]);
-                    }
-
-                    if ($request->expectsJson() || $request->is('api/*') || $request->ajax()) {
-                        return response()->json([
-                            'status' => '2fa_required',
-                            'requires_2fa' => true,
-                            'redirect_url' => route('admin.2fa.form'),
-                            'message' => 'Please check your email for the verification code.',
-                        ]);
-                    }
-                    return redirect()->route('admin.2fa.form')->with('info', 'Please check your email for the verification code.');
-                }
+                // 2FA disabled — go straight to dashboard
+                $request->session()->put('admin_2fa_verified', true);
+                $request->session()->save();
+                $targetUrl = route('admin.dashboard');
             } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
                 $targetUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
