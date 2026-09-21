@@ -1,9 +1,9 @@
 {
-    "version": "9.0.0",
+    "version": "9.1.0",
     "build": "20260920.001",
     "commit": "f8c42a6",
     "release_date": "2026-09-20",
     "channel": "stable",
     "name": "Smart Classroom Attendance System",
-    "installed_version": "9.0.0"
+    "installed_version": "9.1.0"
 }
