@@ -19,6 +19,10 @@
         <i class="bi bi-calendar-event-fill"></i>
         <span class="nav-link-text">Calendar</span>
     </a>
+    <a href="{{ route('admin.announcements.index') }}" class="nav-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}" data-title="Announcements">
+        <i class="bi bi-megaphone-fill"></i>
+        <span class="nav-link-text">Announcements</span>
+    </a>
 
     {{-- ── PEOPLE ── --}}
     <div class="nav-section-label">People</div>
@@ -43,29 +47,13 @@
         <i class="bi bi-calendar3"></i>
         <span class="nav-link-text">Academic Terms</span>
     </a>
-    <a href="{{ route('admin.courses.index') }}" class="nav-link {{ request()->routeIs('admin.courses*') ? 'active' : '' }}" data-title="Courses">
+    <a href="{{ route('admin.courses.index') }}" class="nav-link {{ (request()->routeIs('admin.courses*') || request()->routeIs('admin.sections*')) ? 'active' : '' }}" data-title="Courses & Sections">
         <i class="bi bi-book-fill"></i>
-        <span class="nav-link-text">Courses</span>
+        <span class="nav-link-text">Courses &amp; Sections</span>
     </a>
-    <a href="{{ route('admin.sections.index') }}" class="nav-link {{ request()->routeIs('admin.sections*') ? 'active' : '' }}" data-title="Sections">
-        <i class="bi bi-diagram-3-fill"></i>
-        <span class="nav-link-text">Sections</span>
-    </a>
-    <a href="{{ route('admin.subjects') }}" class="nav-link {{ request()->routeIs('admin.subject*') ? 'active' : '' }}" data-title="Subjects">
-        <i class="bi bi-journals"></i>
-        <span class="nav-link-text">Subjects</span>
-    </a>
-    <a href="{{ route('admin.class-schedules.index') }}" class="nav-link {{ request()->routeIs('admin.class-schedules*') ? 'active' : '' }}" data-title="Schedules">
-        <i class="bi bi-clock-fill"></i>
-        <span class="nav-link-text">Schedules</span>
-    </a>
-
-
-    {{-- ── COMMUNICATION ── --}}
-    <div class="nav-section-label">Communication</div>
-    <a href="{{ route('admin.announcements.index') }}" class="nav-link {{ request()->routeIs('admin.announcements*') ? 'active' : '' }}" data-title="Announcements">
-        <i class="bi bi-megaphone-fill"></i>
-        <span class="nav-link-text">Announcements</span>
+    <a href="{{ route('admin.subjects') }}" class="nav-link {{ (request()->routeIs('admin.subject*') || request()->routeIs('admin.class-schedules*')) ? 'active' : '' }}" data-title="Subjects & Schedules">
+        <i class="bi bi-journal-bookmark-fill"></i>
+        <span class="nav-link-text">Subjects &amp; Schedules</span>
     </a>
 
     {{-- ── SYSTEM ── --}}

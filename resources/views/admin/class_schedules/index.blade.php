@@ -16,6 +16,15 @@
     </div>
 </div>
 
+<div style="display:flex; gap:10px; margin-bottom:20px;">
+    <a href="{{ route('admin.subjects') }}" class="saas-btn {{ request()->routeIs('admin.subject*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
+        <i class="bi bi-journals me-1"></i> Subjects & Curriculum
+    </a>
+    <a href="{{ route('admin.class-schedules.index') }}" class="saas-btn {{ request()->routeIs('admin.class-schedules*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
+        <i class="bi bi-clock-fill me-1"></i> Class Schedules
+    </a>
+</div>
+
 <div class="saas-card" style="margin-bottom:24px;">
     <div class="saas-card-header" style="gap:16px; flex-wrap:wrap;">
         <div class="saas-search" style="width:250px;">

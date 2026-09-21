@@ -839,13 +839,13 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
                         <span class="more-sheet-item-label">Calendar</span>
                     </a>
-                    <a href="{{ route('admin.sections.index') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
-                        <span class="more-sheet-item-label">Sections</span>
+                    <a href="{{ route('admin.courses.index') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-book-fill"></i></div>
+                        <span class="more-sheet-item-label">Courses &amp; Sections</span>
                     </a>
                     <a href="{{ route('admin.subjects') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-book-half"></i></div>
-                        <span class="more-sheet-item-label">Subjects</span>
+                        <div class="more-sheet-item-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+                        <span class="more-sheet-item-label">Subjects &amp; Schedules</span>
                     </a>
                     <a href="{{ route('admin.excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
