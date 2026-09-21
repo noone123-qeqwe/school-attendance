@@ -21,6 +21,8 @@
                 $destUrl = route('home');
             }
         }
+        $isMobileDevice = class_exists(\App\Helpers\DeviceHelper::class) && \App\Helpers\DeviceHelper::isMobile();
+        $initialVideoSrc = $isMobileDevice ? '/videos/Mobile.mp4' : '/videos/Desktop.mp4';
     @endphp
 
 
@@ -219,7 +221,7 @@
     <!-- Video (Mobile & Desktop native sources) -->
     <!-- JS sets the correct src before autoplay; media attr on <source> is ignored by most browsers -->
     <video id="introVideo" autoplay muted playsinline preload="auto">
-        <source id="introVideoSrc" src="/videos/Desktop.mp4" type="video/mp4">
+        <source id="introVideoSrc" src="{{ $initialVideoSrc }}" type="video/mp4">
     </video>
 
     <!-- Cinematic Overlays -->
@@ -254,17 +256,22 @@
         const destUrl     = @json($destUrl);
         const progressBar = document.getElementById('progressBar');
         const fadeOut     = document.getElementById('fadeOut');
-        const isMobileScreen = window.innerWidth <= 768 || window.screen.width <= 768;
+        const isMobileScreen = window.innerWidth <= 768 || 
+                               window.screen.width <= 768 || 
+                               /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
         const INTRO_START_TIME = 0.0; // Play high-definition animation fully from the beginning
         let hasTransitioned = false;
         let hasInitialized = false;
 
-        // Set the correct video source based on screen size BEFORE autoplay
-        const MOBILE_VIDEO = '/videos/AQOaaE6jZacgyWrkhWS3WYsjNUWccQA8sMeUEspCIZZLMV-APH1gnBGzhBXWSlj9GssKpgCThK1RAhxre96EbUetLSNEhvPmfGiigjXKmQ.mp4';
+        // Set the correct video source based on screen size:
+        // Mobile.mp4 is the intro ONLY for the mobile version; Desktop.mp4 for desktop version
+        const MOBILE_VIDEO  = '/videos/Mobile.mp4';
         const DESKTOP_VIDEO = '/videos/Desktop.mp4';
-        if (isMobileScreen) {
-            const srcEl = document.getElementById('introVideoSrc');
-            if (srcEl) srcEl.src = MOBILE_VIDEO;
+        const targetVideo   = isMobileScreen ? MOBILE_VIDEO : DESKTOP_VIDEO;
+
+        const srcEl = document.getElementById('introVideoSrc');
+        if (srcEl && !srcEl.src.endsWith(targetVideo)) {
+            srcEl.src = targetVideo;
             if (video) video.load();
         }
 
