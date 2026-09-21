@@ -477,7 +477,7 @@ class AdminController extends Controller
     public function studentDetail(User $student)
     {
         abort_unless($student->role === 'student', 404);
-        $student->load('deviceBinding');
+        $student->load(['deviceBinding', 'parents']);
         $records = Attendance::with('subject')
             ->where('user_id', $student->id)
             ->orderBy('date', 'desc')->get();
@@ -488,7 +488,44 @@ class AdminController extends Controller
         $total        = $records->count();
         $rate         = $total > 0 ? round((($totalPresent + $totalLate) / $total) * 100) : 0;
 
-        return view('admin.student', compact('student','records','totalPresent','totalLate','totalAbsent','total','rate'));
+        $availableParents = User::where('role', 'parent')
+            ->where('is_active', true)
+            ->whereNotIn('id', $student->parents->pluck('id'))
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.student', compact('student','records','totalPresent','totalLate','totalAbsent','total','rate', 'availableParents'));
+    }
+
+    public function linkParent(Request $request, User $student, \App\Services\ParentService $parentService)
+    {
+        abort_unless($student->role === 'student', 404);
+
+        $request->validate([
+            'parent_id' => 'required|exists:users,id',
+        ]);
+
+        $parent = User::findOrFail($request->parent_id);
+
+        try {
+            $parentService->linkDirectlyByAdmin(Auth::user(), $parent, $student);
+            return back()->with('success', "Parent account {$parent->name} has been linked to {$student->name} successfully.");
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+    public function unlinkParent(User $student, User $parent, \App\Services\ParentService $parentService)
+    {
+        abort_unless($student->role === 'student', 404);
+        abort_unless($parent->role === 'parent', 404);
+
+        try {
+            $parentService->unlink(Auth::user(), $parent, $student);
+            return back()->with('success', "Parent account {$parent->name} unlinked from {$student->name} successfully.");
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function resetDevice(User $student)

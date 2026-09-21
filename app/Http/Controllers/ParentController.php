@@ -145,7 +145,12 @@ class ParentController extends Controller
      */
     public function linkChildForm()
     {
-        return view('parent.link-child');
+        $user = Auth::user();
+        $linkedChildren = $user->children()->with(['attendances' => function ($q) {
+            $q->orderBy('date', 'desc')->take(1);
+        }])->get();
+
+        return view('parent.link-child', compact('linkedChildren'));
     }
 
     /**
@@ -177,10 +182,71 @@ class ParentController extends Controller
         ]);
 
         try {
-            $this->parentService->verifyAndLink(Auth::user(), $request->student_number, $request->otp);
-            return response()->json(['success' => true, 'message' => 'Successfully linked to student!']);
+            $student = $this->parentService->verifyAndLink(Auth::user(), $request->student_number, $request->otp);
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully linked to {$student->name}!",
+                'student' => [
+                    'id'             => $student->id,
+                    'name'           => $student->name,
+                    'student_number' => $student->student_number,
+                ],
+            ]);
         } catch (Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Verify instant 6-digit student link code and link child
+     */
+    public function linkWithCode(Request $request)
+    {
+        $request->validate([
+            'code' => 'required|string|size:6',
+        ]);
+
+        try {
+            $student = $this->parentService->verifyAndLinkWithStudentCode(Auth::user(), $request->code);
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully linked to {$student->name}!",
+                'student' => [
+                    'id'             => $student->id,
+                    'name'           => $student->name,
+                    'student_number' => $student->student_number,
+                ],
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Unlink a student from this parent account
+     */
+    public function unlinkChild(Request $request)
+    {
+        $request->validate([
+            'student_id' => 'required|exists:users,id',
+        ]);
+
+        $child = User::findOrFail($request->student_id);
+
+        try {
+            $this->parentService->unlink(Auth::user(), Auth::user(), $child);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Successfully disconnected {$child->name}.",
+                ]);
+            }
+            return back()->with('success', "Successfully disconnected {$child->name}.");
+        } catch (Exception $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            return back()->with('error', $e->getMessage());
         }
     }
 

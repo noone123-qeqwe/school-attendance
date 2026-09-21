@@ -432,6 +432,10 @@ Route::middleware(['auth', 'student'])->group(function () {
     // Continuous Presence Verification
     Route::post('/student/presence-verify', [App\Http\Controllers\QrAttendanceController::class, 'verifyPresence'])->name('student.presence.verify')->middleware('device.bound');
     Route::get('/student/active-presence-session', [App\Http\Controllers\QrAttendanceController::class, 'getActivePresenceSession'])->name('student.presence.active');
+
+    // Student Parent Linking & Guardian Controls
+    Route::post('/student/parent-link/generate-code', [App\Http\Controllers\HomeController::class, 'generateParentLinkCode'])->name('student.parent_link.generate_code');
+    Route::post('/student/parent-link/unlink', [App\Http\Controllers\HomeController::class, 'unlinkParent'])->name('student.parent_link.unlink');
 });
 
 // WebAuthn (Fingerprint / Biometric Management for all authenticated users)
@@ -565,6 +569,8 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     Route::get('/link-child', [App\Http\Controllers\ParentController::class, 'linkChildForm'])->name('link.form');
     Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->middleware('throttle:otp.send')->name('link.send-otp');
     Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->middleware('throttle:otp.verify')->name('link.verify-otp');
+    Route::post('/link-child/code', [App\Http\Controllers\ParentController::class, 'linkWithCode'])->name('link.code');
+    Route::post('/link-child/unlink', [App\Http\Controllers\ParentController::class, 'unlinkChild'])->name('link.unlink');
     
     Route::get('/child/{child}', [App\Http\Controllers\ParentController::class, 'childDetail'])->name('child');
     Route::get('/child/{child}/report', [App\Http\Controllers\ParentController::class, 'downloadReport'])->name('child.report');
@@ -633,6 +639,8 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::patch('/student/{student}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateStudent'])->name('student.deactivate');
     Route::patch('/student/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateStudent'])->name('student.reactivate');
     Route::post('/student/{student}/reset-device', [App\Http\Controllers\AdminController::class, 'resetDevice'])->name('student.reset_device');
+    Route::post('/student/{student}/link-parent', [App\Http\Controllers\AdminController::class, 'linkParent'])->name('student.link_parent');
+    Route::delete('/student/{student}/unlink-parent/{parent}', [App\Http\Controllers\AdminController::class, 'unlinkParent'])->name('student.unlink_parent');
 
     // Subject management
     Route::get('/subjects', [App\Http\Controllers\AdminController::class, 'subjects'])->name('subjects');

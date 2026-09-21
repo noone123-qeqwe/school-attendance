@@ -124,6 +124,64 @@
     </div>
 </div>
 
+<!-- Linked Parents / Guardians Management -->
+<div class="adm-card" style="margin-bottom:24px;">
+    <div class="adm-card-head" style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="adm-card-title">
+            <div class="adm-card-icon" style="background:#fef3c7;color:#b45309;"><i class="bi bi-people-fill"></i></div>
+            Linked Parents &amp; Guardians
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span class="badge" style="background:rgba(207,164,111,0.15);color:#cfa46f;border:1px solid rgba(207,164,111,0.3);font-size:0.75rem;padding:5px 10px;border-radius:8px;">
+                {{ $student->parents->count() }} Connected
+            </span>
+            <button type="button" onclick="openLinkParentModal()" class="adm-btn adm-btn-primary" style="font-size:0.8rem;padding:6px 14px;background:linear-gradient(135deg, #cfa46f 0%, #a67c43 100%);color:#140703;font-weight:700;border:none;">
+                <i class="bi bi-person-plus-fill me-1"></i> Link Parent Account
+            </button>
+        </div>
+    </div>
+    <div style="padding:16px 24px;">
+        @if($student->parents->isNotEmpty())
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            @foreach($student->parents as $parent)
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;gap:12px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+                    <img src="{{ $parent->profile_photo_url }}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;">
+                    <div style="min-width:0;flex:1;">
+                        <div style="font-weight:700;color:#1e293b;font-size:0.95rem;">{{ $parent->name }}</div>
+                        <div style="font-size:0.78rem;color:#64748b;display:flex;gap:10px;flex-wrap:wrap;margin-top:2px;">
+                            <span><i class="bi bi-envelope me-1"></i>{{ $parent->email }}</span>
+                            @if($parent->phone)
+                                <span><i class="bi bi-phone me-1"></i>{{ $parent->phone }}</span>
+                            @endif
+                            <span class="badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.7rem;padding:2px 8px;border-radius:99px;">
+                                <i class="bi bi-check-circle-fill me-1"></i>Authorized
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <form action="{{ route('admin.student.unlink_parent', [$student, $parent]) }}" method="POST" onsubmit="return confirm('Are you sure you want to unlink parent {{ addslashes($parent->name) }} from this student?')" style="margin:0;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="adm-btn" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:0.8rem;padding:6px 12px;">
+                        <i class="bi bi-link-45deg me-1"></i>Unlink
+                    </button>
+                </form>
+            </div>
+            @endforeach
+        </div>
+        @else
+        <div style="text-align:center;padding:24px 16px;color:#64748b;font-size:0.88rem;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px;">
+            <i class="bi bi-person-x" style="font-size:2rem;color:#94a3b8;display:block;margin-bottom:6px;"></i>
+            <div style="font-weight:700;color:#334155;margin-bottom:4px;">No Parents / Guardians Linked</div>
+            <p style="font-size:0.8rem;color:#64748b;margin-bottom:0;">
+                Click "Link Parent Account" above to associate a registered parent account with this student.
+            </p>
+        </div>
+        @endif
+    </div>
+</div>
+
 <!-- Attendance Records -->
 <div class="adm-card">
     <div class="adm-card-head">
@@ -231,9 +289,62 @@
     </div>
 </div>
 
+<!-- Link Parent Account Modal -->
+<div class="modal fade" id="linkParentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); background: rgba(26,14,11,0.95); box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <h5 class="modal-title" style="color: #f3e7cd;">
+                    <i class="bi bi-person-plus-fill text-gold me-2"></i>
+                    Link Parent to {{ $student->name }}
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="linkParentForm" method="POST" action="{{ route('admin.student.link_parent', $student) }}">
+                @csrf
+                <div class="modal-body" style="padding: 20px;">
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #b39b82; font-size: 0.85rem; font-weight: 600;">
+                            Select Parent / Guardian Account
+                        </label>
+                        @if(isset($availableParents) && $availableParents->isNotEmpty())
+                            <select name="parent_id" class="adm-input" required style="width:100%;">
+                                <option value="">-- Choose Registered Parent --</option>
+                                @foreach($availableParents as $p)
+                                    <option value="{{ $p->id }}">{{ $p->name }} ({{ $p->email }}{{ $p->phone ? ' • ' . $p->phone : '' }})</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <div style="padding:14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);border-radius:10px;color:#fca5a5;font-size:0.85rem;">
+                                No other active parent accounts found to link. Create a parent account first if needed.
+                            </div>
+                        @endif
+                    </div>
+                    <div style="background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.15);border-radius:10px;padding:12px;font-size:0.78rem;color:#e6dbce;line-height:1.45;">
+                        <i class="bi bi-info-circle me-1 text-gold"></i>
+                        Linking directly as an Administrator binds the accounts immediately and updates the student's primary guardian email address for automated attendance notifications.
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(255,255,255,0.05); padding: 16px 20px;">
+                    <button type="button" class="adm-btn adm-btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    @if(isset($availableParents) && $availableParents->isNotEmpty())
+                    <button type="submit" class="adm-btn adm-btn-primary" style="background: linear-gradient(135deg, #cfa46f 0%, #a67c43 100%); color:#140703; font-weight:700; border:none;">
+                        <i class="bi bi-link-45deg me-1"></i> Confirm &amp; Link Parent
+                    </button>
+                    @endif
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function openWarningModal(studentId, studentName) {
     new bootstrap.Modal(document.getElementById('warningModal')).show();
+}
+
+function openLinkParentModal() {
+    new bootstrap.Modal(document.getElementById('linkParentModal')).show();
 }
 
 function toggleCustomMessage() {

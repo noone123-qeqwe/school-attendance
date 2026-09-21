@@ -1965,6 +1965,9 @@
             <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Biometrics</button>
             <button class="stab" data-tab="device" onclick="switchTab('device',this)"><i class="bi bi-phone-fill me-1"></i> Device Binding</button>
             <button class="stab" data-tab="attendance" onclick="switchTab('attendance',this)"><i class="bi bi-bar-chart-fill me-1"></i> Attendance</button>
+            @if(Auth::user()->isStudent())
+            <button class="stab" data-tab="family" onclick="switchTab('family',this)"><i class="bi bi-people-fill me-1"></i> Family / Guardian</button>
+            @endif
             <button class="stab" data-tab="preferences" data-tab-id="preferences" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
         </div>
         <button type="button" class="stabs-arrow stabs-arrow-right" id="stabsArrowRight" onclick="scrollStabs('right')" aria-label="Scroll right">
@@ -2894,6 +2897,140 @@
             </div>
         </div>
     </div>
+
+    @if(Auth::user()->isStudent())
+    <!-- ── TAB: FAMILY / GUARDIAN ── -->
+    <div id="tab-family" class="spanel">
+
+        <!-- Hero Header -->
+        <div class="sec-health-hero mb-4" style="background:linear-gradient(135deg, rgba(34,20,14,0.95) 0%, rgba(20,12,8,0.95) 100%);border-color:rgba(207,164,111,0.3);">
+            <div class="sec-health-left">
+                <div class="sec-health-icon" style="background:rgba(207,164,111,0.15);color:#f5dfa8;border:1px solid rgba(207,164,111,0.3);">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div>
+                    <div class="sec-health-title">Family &amp; Guardian Connections</div>
+                    <div class="sec-health-sub">Authorize family members to monitor your attendance records and receive absence notices</div>
+                </div>
+            </div>
+            <div class="sec-health-pill {{ (isset($linkedParents) && $linkedParents->count() > 0) ? 'emerald' : '' }}">
+                <span class="sec-pulse-dot" style="{{ (isset($linkedParents) && $linkedParents->count() > 0) ? 'background:#34d399;' : 'background:#f59e0b;' }}"></span>
+                <span>{{ (isset($linkedParents) && $linkedParents->count() > 0) ? $linkedParents->count() . ' Guardian(s) Linked' : 'No Guardians Linked' }}</span>
+            </div>
+        </div>
+
+        <div class="sec-cards-grid">
+            <!-- Card 1: Instant Parent Link Code Generator -->
+            <div class="sec-card" style="--card-accent: #cfa46f;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(207,164,111,0.15);color:#f5dfa8;border:1px solid rgba(207,164,111,0.3);">
+                        <i class="bi bi-upc-scan"></i>
+                    </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Instant Link Code</span>
+                            <span class="sec-badge sec-badge-gold">
+                                <i class="bi bi-lightning-charge-fill"></i> Zero Email Delay
+                            </span>
+                        </div>
+                        <div class="sec-card-subtitle">Generate a 6-digit code or QR for your parent to scan</div>
+                    </div>
+                </div>
+
+                <div class="sec-card-content">
+                    <div style="font-size:0.82rem;color:#b39b82;line-height:1.5;margin-bottom:14px;">
+                        Generate a secure 6-digit code. Your parent can enter it in their Parent Portal under <strong>Link Student</strong> to instantly bind with zero waiting.
+                    </div>
+
+                    <!-- Code Display Card (Hidden until generated) -->
+                    <div id="parentCodeDisplayCard" style="display:none;background:rgba(14,8,5,0.7);border:1.5px solid rgba(207,164,111,0.4);border-radius:16px;padding:20px 16px;margin-bottom:16px;text-align:center;">
+                        <div style="font-size:0.75rem;font-weight:700;color:#cfa46f;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Your 6-Digit Linking Code</div>
+                        <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin:8px 0;">
+                            <div id="parentCodeValue" style="font-size:2.2rem;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-weight:800;color:#f3e7cd;letter-spacing:8px;padding:6px 14px;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(207,164,111,0.25);">
+                                ------
+                            </div>
+                            <button type="button" class="sbtn btn-gold" onclick="copyParentLinkCode(this)" style="padding:10px 16px;font-size:0.8rem;width:auto;" title="Copy Code">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                        </div>
+                        <div id="parentCodeTimer" style="font-size:0.78rem;font-weight:700;color:#34d399;margin-bottom:14px;">
+                            Valid for: 15:00
+                        </div>
+
+                        <!-- QR Code Box -->
+                        <div style="display:inline-block;padding:12px;background:#ffffff;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.5);margin:0 auto 10px;">
+                            <div id="parentCodeQrBox" style="width:170px;height:170px;display:flex;align-items:center;justify-content:center;"></div>
+                        </div>
+                        <div style="font-size:0.74rem;color:#b39b82;">
+                            Parents can scan this QR code with their mobile camera to link instantly.
+                        </div>
+                    </div>
+
+                    <button type="button" id="generateParentCodeBtn" onclick="generateParentLinkCode()" class="sec-action-btn sec-btn-gold" style="width:100%;padding:12px;font-size:0.9rem;">
+                        <i class="bi bi-key-fill me-1"></i> Generate Parent Link Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: Connected Guardians List -->
+            <div class="sec-card" style="--card-accent: #10b981;">
+                <div class="sec-card-top">
+                    <div class="sec-card-icon" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <div class="sec-card-meta">
+                        <div class="sec-card-header-line">
+                            <span class="sec-card-name">Authorized Guardians</span>
+                            <span class="sec-badge {{ (isset($linkedParents) && $linkedParents->count() > 0) ? 'sec-badge-emerald' : 'sec-badge-amber' }}">
+                                <i class="bi bi-patch-check-fill"></i> {{ (isset($linkedParents) && $linkedParents->count() > 0) ? 'Active' : 'Unlinked' }}
+                            </span>
+                        </div>
+                        <div class="sec-card-subtitle">Parents and guardians with view-only attendance access</div>
+                    </div>
+                </div>
+
+                <div class="sec-card-content">
+                    @if(isset($linkedParents) && $linkedParents->isNotEmpty())
+                        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px;">
+                            @foreach($linkedParents as $guardian)
+                            <div class="info-row" id="guardian-item-{{ $guardian->id }}" style="padding:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(207,164,111,0.15);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                                <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+                                    <img src="{{ $guardian->profile_photo_url }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(207,164,111,0.4);">
+                                    <div style="min-width:0;flex:1;">
+                                        <div style="font-weight:700;color:#f3e7cd;font-size:0.92rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $guardian->name }}</div>
+                                        <div style="font-size:0.75rem;color:#b39b82;">
+                                            <span>{{ $guardian->email }}</span>
+                                            @if($guardian->phone)
+                                                <span>• {{ $guardian->phone }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-action-danger" style="padding:6px 12px;font-size:0.76rem;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#fca5a5;cursor:pointer;flex-shrink:0;"
+                                    onclick="unlinkGuardianByStudent({{ $guardian->id }}, '{{ addslashes($guardian->name) }}')">
+                                    <i class="bi bi-x-circle me-1"></i> Revoke
+                                </button>
+                            </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div style="text-align:center;padding:26px 16px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);margin-bottom:12px;">
+                            <i class="bi bi-person-x" style="font-size:2.2rem;color:rgba(207,164,111,0.35);display:block;margin-bottom:6px;"></i>
+                            <div style="font-weight:700;color:#f3e7cd;font-size:0.9rem;margin-bottom:4px;">No Guardians Connected</div>
+                            <div style="font-size:0.78rem;color:#b39b82;">Click "Generate Parent Link Code" to invite your guardian.</div>
+                        </div>
+                    @endif
+
+                    <div style="background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.15);border-radius:12px;padding:12px 14px;font-size:0.78rem;color:#e6dbce;line-height:1.45;">
+                        <i class="bi bi-shield-lock-fill text-gold me-1"></i>
+                        <strong>Privacy Safeguard:</strong> Guardians have view-only access to your attendance logs, late marks, and subject summaries. They cannot edit your profile or excuse records without instructor review.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    @endif
 
     <!-- ── TAB: PREFERENCES ── -->
     <div id="tab-preferences" class="spanel">
@@ -5399,5 +5536,143 @@ window.retryBiometricRegistration = retryBiometricRegistration;
 window.switchBiometricMethodFallback = switchBiometricMethodFallback;
 window.loadDevices = loadDevices;
 window.removeDevice = removeDevice;
+
+// ── Student Family & Guardian Binding Handlers ──
+let studentLinkCountdownTimer = null;
+
+async function generateParentLinkCode() {
+    const btn = document.getElementById('generateParentCodeBtn');
+    const displayCard = document.getElementById('parentCodeDisplayCard');
+    const codeEl = document.getElementById('parentCodeValue');
+    const qrContainer = document.getElementById('parentCodeQrBox');
+    const timerEl = document.getElementById('parentCodeTimer');
+
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generating Code...';
+
+    try {
+        const resp = await fetch('{{ route("student.parent_link.generate_code") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            }
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+            if (codeEl) codeEl.textContent = data.code;
+            if (displayCard) displayCard.style.display = 'block';
+
+            // Generate QR Code if library is loaded
+            if (qrContainer && typeof QRCode !== 'undefined') {
+                qrContainer.innerHTML = '';
+                const linkUrl = '{{ route("parent.link.form") }}?code=' + data.code;
+                new QRCode(qrContainer, {
+                    text: linkUrl,
+                    width: 170,
+                    height: 170,
+                    colorDark: '#140d07',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+
+            // Start countdown timer
+            if (studentLinkCountdownTimer) clearInterval(studentLinkCountdownTimer);
+            let remaining = data.expires_in_seconds || 900;
+            const updateTimerDisplay = () => {
+                if (remaining <= 0) {
+                    clearInterval(studentLinkCountdownTimer);
+                    if (timerEl) timerEl.textContent = 'Expired. Click Generate to refresh.';
+                    if (codeEl) codeEl.style.opacity = '0.5';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Generate New Code';
+                    return;
+                }
+                const mins = Math.floor(remaining / 60);
+                const secs = remaining % 60;
+                if (timerEl) {
+                    timerEl.textContent = `Valid for: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                }
+                remaining--;
+            };
+            updateTimerDisplay();
+            studentLinkCountdownTimer = setInterval(updateTimerDisplay, 1000);
+
+            if (typeof showToast === 'function') {
+                showToast('Link Code generated! Share it with your parent.', 'success');
+            }
+            btn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Regenerate Code';
+        } else {
+            alert(data.message || 'Failed to generate link code.');
+            btn.innerHTML = '<i class="bi bi-key-fill me-1"></i> Generate Parent Link Code';
+        }
+    } catch (err) {
+        alert('Network error while generating code.');
+        btn.innerHTML = '<i class="bi bi-key-fill me-1"></i> Generate Parent Link Code';
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function copyParentLinkCode(btn) {
+    const codeEl = document.getElementById('parentCodeValue');
+    if (!codeEl) return;
+    const code = codeEl.textContent.trim();
+    navigator.clipboard.writeText(code).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied!';
+        if (typeof showToast === 'function') showToast('Code copied to clipboard!', 'success');
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
+    });
+}
+
+async function unlinkGuardianByStudent(parentId, parentName) {
+    if (!confirm(`Are you sure you want to disconnect guardian "${parentName}"? They will no longer have access to view your classroom attendance records.`)) {
+        return;
+    }
+
+    try {
+        const resp = await fetch('{{ route("student.parent_link.unlink") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ parent_id: parentId })
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+            const tile = document.getElementById('guardian-item-' + parentId);
+            if (tile) {
+                tile.style.opacity = '0.3';
+                tile.style.transform = 'scale(0.96)';
+                setTimeout(() => tile.remove(), 300);
+            }
+            if (typeof showToast === 'function') {
+                showToast(data.message || 'Guardian disconnected.', 'success');
+            } else {
+                alert(data.message || 'Guardian disconnected.');
+            }
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            alert(data.message || 'Failed to disconnect guardian.');
+        }
+    } catch (err) {
+        alert('Network error while disconnecting guardian.');
+    }
+}
+
+window.generateParentLinkCode = generateParentLinkCode;
+window.copyParentLinkCode = copyParentLinkCode;
+window.unlinkGuardianByStudent = unlinkGuardianByStudent;
 </script>
+@if(Auth::user()->isStudent())
+<script src="{{ asset('js/qrcode.min.js') }}"></script>
+@endif
 @endsection

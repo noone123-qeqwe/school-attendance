@@ -469,7 +469,57 @@ class HomeController extends Controller
 
     public function settings()
     {
-        return view('settings');
+        $user = Auth::user();
+        $linkedParents = ($user && $user->isStudent()) ? $user->parents()->get() : collect();
+        return view('settings', compact('linkedParents'));
+    }
+
+    /**
+     * Generate an instant 6-digit link code for the authenticated student
+     */
+    public function generateParentLinkCode(\App\Services\ParentService $parentService)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isStudent()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        try {
+            $data = $parentService->generateStudentLinkCode($user);
+            return response()->json(array_merge(['success' => true], $data));
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Allow student to unlink a connected parent
+     */
+    public function unlinkParent(Request $request, \App\Services\ParentService $parentService)
+    {
+        $user = Auth::user();
+        if (!$user || !$user->isStudent()) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $request->validate([
+            'parent_id' => 'required|exists:users,id',
+        ]);
+
+        $parent = User::findOrFail($request->parent_id);
+
+        try {
+            $parentService->unlink($user, $parent, $user);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'message' => "Successfully removed {$parent->name} from your guardians."]);
+            }
+            return back()->with('success', "Successfully removed {$parent->name} from your guardians.");
+        } catch (\Exception $e) {
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function notifications()
