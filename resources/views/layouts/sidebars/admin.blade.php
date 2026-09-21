@@ -66,10 +66,6 @@
         <i class="bi bi-list-check"></i>
         <span class="nav-link-text">Audit Logs</span>
     </a>
-    <a href="{{ route('admin.policies.edit') }}" class="nav-link {{ request()->routeIs('admin.policies*') ? 'active' : '' }}" data-title="Privacy & Terms">
-        <i class="bi bi-shield-lock-fill"></i>
-        <span class="nav-link-text">Privacy &amp; Terms</span>
-    </a>
     <a href="{{ route('admin.profile') }}" class="nav-link {{ request()->routeIs('admin.profile') ? 'active' : '' }}" data-title="Profile">
         <i class="bi bi-person-circle"></i>
         <span class="nav-link-text">Biometric &amp; Profile</span>
