@@ -26,8 +26,8 @@
     $semesterText = $semesterMap[(int) $user->semester] ?? ('Semester ' . ($user->semester ?? '1'));
 
     $currentYear = (int) date('Y');
-    // If current month is Jan-May (second sem), academic year is (Y-1) - Y; if Jun-Dec, Y - (Y+1)
-    $academicYear = $currentYear . ' - ' . ($currentYear + 1);
+    // Compute current academic year span
+    $academicYear = (date('n') >= 6) ? $currentYear . ' - ' . ($currentYear + 1) : ($currentYear - 1) . ' - ' . $currentYear;
 
     // ── COURSE FULL NAME EXPANSION ──
     $courseNames = [
@@ -46,11 +46,11 @@
     $courseCode = $user->course ?? 'BSCS';
     $courseFull = $courseNames[$courseCode] ?? ($courseCode ?: 'Bachelor of Science in Computer Science');
 
-    $studentNumber = $user->student_number ?? '2312215';
-    $sectionDisplay = $user->section ?: 'BSCS 4A';
+    $studentNumber = !empty($user->student_number) ? $user->student_number : ('ST-' . str_pad((string)$user->id, 6, '0', STR_PAD_LEFT));
+    $sectionDisplay = $user->section ?: ($courseCode . ' ' . ($user->year_level ?? '1') . 'A');
 
     // ── SCHEDULE DAY HELPER ──
-    $todayName = now()->format('l'); // e.g. "Monday"
+    $todayName = now()->format('l');
 
     $formatDaysAbbr = function (array $days): string {
         $order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -85,10 +85,10 @@
         $subjectSchedules = $subject->schedules ?? collect();
         $instructorName = $subject->instructorUser?->name ?? $subject->instructor ?? 'TBA';
         $units = (float) ($subject->units ?: 3.0);
-        $section = $subject->section ?: ($user->section ?: '1 1423');
+        $rawSection = $subject->section ?: ($user->section ?: '1420');
 
         if ($subjectSchedules->count() > 0) {
-            // Group slots by time and room
+            // Group schedule slots by time and room
             $slots = [];
             foreach ($subjectSchedules as $sched) {
                 $key = ($sched->start_time ?? '') . '|' . ($sched->end_time ?? '') . '|' . ($sched->room ?? '');
@@ -107,12 +107,17 @@
             foreach ($slots as $slot) {
                 $daysAbbr = $formatDaysAbbr($slot['days']);
                 $isToday = in_array($todayName, $slot['days']);
-                $classNum = str_pad((string) ($subject->id * 10 + $slotIndex), 2, '0', STR_PAD_LEFT);
+                $classNum = str_pad((string) (20 + (($subject->id * 3 + $slotIndex) % 70)), 2, '0', STR_PAD_LEFT);
+                $currentRow = $rowNumber++;
+
+                // If rawSection already contains leading row numbers, keep it; else prefix row number
+                $sectionLabel = preg_match('/^\d+\s+/', $rawSection) ? $rawSection : ($currentRow . ' ' . $rawSection);
 
                 $groupedSchedules[] = (object) [
-                    'row_num'         => $rowNumber++,
+                    'row_num'         => $currentRow,
                     'subject_id'      => $subject->id,
-                    'section'         => $section,
+                    'section'         => $sectionLabel,
+                    'raw_section'     => $rawSection,
                     'code'            => $subject->code,
                     'name'            => $subject->name,
                     'class_number'    => $classNum,
@@ -130,13 +135,17 @@
             }
         } else {
             // Subject without specified schedule
+            $currentRow = $rowNumber++;
+            $sectionLabel = preg_match('/^\d+\s+/', $rawSection) ? $rawSection : ($currentRow . ' ' . $rawSection);
+
             $groupedSchedules[] = (object) [
-                'row_num'         => $rowNumber++,
+                'row_num'         => $currentRow,
                 'subject_id'      => $subject->id,
-                'section'         => $section,
+                'section'         => $sectionLabel,
+                'raw_section'     => $rawSection,
                 'code'            => $subject->code,
                 'name'            => $subject->name,
-                'class_number'    => str_pad((string) $subject->id, 2, '0', STR_PAD_LEFT),
+                'class_number'    => str_pad((string) (20 + (($subject->id * 3) % 70)), 2, '0', STR_PAD_LEFT),
                 'units'           => number_format($units, 1),
                 'raw_units'       => $units,
                 'start_time'      => null,
@@ -155,17 +164,18 @@
 @endphp
 
 <style>
-/* ── CERTIFICATE OF REGISTRATION (COR) DIGITAL THEME ── */
+/* ── CERTIFICATE OF REGISTRATION (COR) & SCHEDULE UNIFIED THEME ── */
 :root {
     --cor-gold: #cfa46f;
     --cor-gold-bright: #dfb784;
     --cor-gold-amber: #ffd166;
+    --cor-gold-soft: rgba(207, 164, 111, 0.12);
     --cor-maroon: #800000;
     --cor-maroon-dark: #4a0000;
     --cor-paper-bg: #140b08;
     --cor-card-bg: rgba(26, 16, 12, 0.94);
-    --cor-border-gold: rgba(207, 164, 111, 0.38);
-    --cor-border-subtle: rgba(207, 164, 111, 0.18);
+    --cor-border-gold: rgba(207, 164, 111, 0.42);
+    --cor-border-subtle: rgba(207, 164, 111, 0.22);
     --cor-text-main: #f8e7d3;
     --cor-text-muted: #b39b82;
 }
@@ -183,7 +193,7 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 16px;
     margin-bottom: 22px;
 }
 
@@ -202,6 +212,27 @@
     font-size: 0.88rem;
     color: var(--cor-text-muted);
     margin: 0;
+}
+
+.cor-summary-chips-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.cor-summary-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    background: rgba(207, 164, 111, 0.1);
+    border: 1px solid rgba(207, 164, 111, 0.25);
+    color: var(--cor-gold-bright);
 }
 
 .cor-btn-group {
@@ -226,13 +257,13 @@
 }
 
 .cor-btn-pdf {
-    background: linear-gradient(135deg, rgba(207, 164, 111, 0.22), rgba(184, 134, 56, 0.12));
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.24), rgba(184, 134, 56, 0.14));
     border-color: rgba(207, 164, 111, 0.45);
     color: var(--cor-gold-bright);
 }
 
 .cor-btn-pdf:hover {
-    background: linear-gradient(135deg, rgba(207, 164, 111, 0.36), rgba(184, 134, 56, 0.22));
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.38), rgba(184, 134, 56, 0.24));
     color: #fff;
     transform: translateY(-1px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
@@ -250,42 +281,17 @@
     transform: translateY(-1px);
 }
 
-/* ── THE OFFICIAL COR SHEET CARD ── */
+/* ── THE OFFICIAL DOCUMENT SHEET (Inspired by Reference Slip) ── */
 .cor-sheet {
     background: var(--cor-card-bg);
     border: 2px solid var(--cor-border-gold);
-    border-radius: 20px;
+    border-radius: 18px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     position: relative;
-    padding: 36px;
+    padding: 32px;
     overflow: hidden;
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-}
-
-/* Subtle academic watermark overlay */
-.cor-sheet::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 440px;
-    height: 440px;
-    background: radial-gradient(circle, rgba(207, 164, 111, 0.04) 0%, transparent 70%);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 0;
-}
-
-/* Decorative inner diploma frame line */
-.cor-sheet::after {
-    content: '';
-    position: absolute;
-    inset: 10px;
-    border: 1px dashed rgba(207, 164, 111, 0.2);
-    border-radius: 12px;
-    pointer-events: none;
-    z-index: 1;
 }
 
 .cor-content-relative {
@@ -296,15 +302,15 @@
 /* ── INSTITUTIONAL HEADER ── */
 .cor-header-block {
     text-align: center;
-    padding-bottom: 22px;
-    margin-bottom: 24px;
+    padding-bottom: 20px;
+    margin-bottom: 22px;
     border-bottom: 2px solid var(--cor-border-gold);
 }
 
 .cor-seal-wrapper {
-    width: 68px;
-    height: 68px;
-    margin: 0 auto 12px;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 10px;
     border-radius: 50%;
     padding: 3px;
     background: linear-gradient(135deg, var(--cor-gold), #800000);
@@ -323,7 +329,7 @@
 }
 
 .cor-college-name {
-    font-size: 1.55rem;
+    font-size: 1.5rem;
     font-weight: 900;
     letter-spacing: 2px;
     text-transform: uppercase;
@@ -333,7 +339,7 @@
 }
 
 .cor-college-city {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 600;
     color: var(--cor-gold);
     letter-spacing: 1px;
@@ -341,7 +347,7 @@
 }
 
 .cor-doc-title {
-    font-size: 1.18rem;
+    font-size: 1.15rem;
     font-weight: 800;
     letter-spacing: 1.5px;
     text-transform: uppercase;
@@ -350,7 +356,7 @@
 }
 
 .cor-doc-sem {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: var(--cor-text-main);
     margin: 0;
@@ -363,32 +369,40 @@
     background: rgba(16, 185, 129, 0.12);
     border: 1px solid rgba(16, 185, 129, 0.35);
     color: #34d399;
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     font-weight: 800;
     letter-spacing: 0.5px;
-    padding: 4px 12px;
+    padding: 3px 12px;
     border-radius: 99px;
     margin-top: 10px;
 }
 
-/* ── STUDENT INFORMATION DEMOGRAPHIC GRID (COR Box) ── */
+/* ── STUDENT INFORMATION DEMOGRAPHIC GRID (Matches Visual Reference Document) ── */
 .cor-student-info-grid {
     width: 100%;
     border: 1.5px solid var(--cor-border-gold);
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 24px;
-    background: rgba(0, 0, 0, 0.25);
+    margin-bottom: 22px;
+    background: rgba(0, 0, 0, 0.28);
 }
 
 .cor-info-row {
     display: grid;
-    grid-template-columns: 180px 1fr 150px 1fr;
-    border-bottom: 1px solid var(--cor-border-subtle);
+    border-bottom: 1.5px solid var(--cor-border-gold);
 }
 
 .cor-info-row:last-child {
     border-bottom: none;
+}
+
+/* Exact layout matching reference image:
+   Row 1: Student Number (col 1-2) | Year Level (col 3-4)
+   Row 2: Course (col 1) | Course Value (cols 2-4 spanning right)
+   Row 3: Name (col 1) | Name Value (cols 2-4 spanning right with Section tag)
+*/
+.cor-info-row.four-col {
+    grid-template-columns: 180px 1fr 150px 1fr;
 }
 
 .cor-info-row.two-col {
@@ -396,26 +410,26 @@
 }
 
 .cor-info-label {
-    padding: 12px 16px;
+    padding: 11px 16px;
     background: rgba(207, 164, 111, 0.08);
-    font-size: 0.72rem;
+    font-size: 0.75rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: var(--cor-gold);
-    border-right: 1px solid var(--cor-border-subtle);
+    border-right: 1.5px solid var(--cor-border-gold);
     display: flex;
     align-items: center;
 }
 
 .cor-info-value {
-    padding: 12px 18px;
+    padding: 11px 18px;
     font-size: 0.94rem;
     font-weight: 700;
     color: var(--cor-text-main);
     display: flex;
     align-items: center;
-    border-right: 1px solid var(--cor-border-subtle);
+    border-right: 1.5px solid var(--cor-border-gold);
     word-break: break-word;
 }
 
@@ -522,7 +536,7 @@
 }
 
 .cor-toggle-btn {
-    padding: 5px 10px;
+    padding: 5px 12px;
     border-radius: 6px;
     font-size: 0.75rem;
     font-weight: 700;
@@ -540,20 +554,20 @@
     color: #120804;
 }
 
-/* ── SCHEDULE TABLE (Official COR Format) ── */
+/* ── UNIFIED ACADEMIC SCHEDULE TABLE (Exact Columns Matching Visual Reference) ── */
 .cor-table-scroll-wrapper {
     width: 100%;
     overflow-x: auto;
     border: 1.5px solid var(--cor-border-gold);
-    border-radius: 12px;
-    background: rgba(0, 0, 0, 0.2);
-    margin-bottom: 24px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.25);
+    margin-bottom: 22px;
     -webkit-overflow-scrolling: touch;
 }
 
 .cor-table {
     width: 100%;
-    min-width: 900px;
+    min-width: 880px;
     border-collapse: collapse;
     font-size: 0.88rem;
     color: var(--cor-text-main);
@@ -566,9 +580,9 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    padding: 14px 16px;
+    padding: 13px 14px;
     border-bottom: 2px solid var(--cor-border-gold);
-    border-right: 1px solid var(--cor-border-subtle);
+    border-right: 1.5px solid var(--cor-border-gold);
     white-space: nowrap;
     text-align: left;
 }
@@ -583,7 +597,7 @@
 }
 
 .cor-table tbody tr {
-    border-bottom: 1px solid var(--cor-border-subtle);
+    border-bottom: 1.5px solid var(--cor-border-gold);
     transition: background-color 0.15s ease;
 }
 
@@ -592,12 +606,12 @@
 }
 
 .cor-table tbody tr.is-today {
-    background-color: rgba(207, 164, 111, 0.07);
+    background-color: rgba(207, 164, 111, 0.09);
 }
 
 .cor-table tbody td {
-    padding: 13px 16px;
-    border-right: 1px solid var(--cor-border-subtle);
+    padding: 12px 14px;
+    border-right: 1.5px solid var(--cor-border-gold);
     vertical-align: middle;
 }
 
@@ -606,13 +620,20 @@
 }
 
 /* Specific Table Column Styling */
+.cor-section-val {
+    font-weight: 800;
+    font-size: 0.88rem;
+    color: var(--cor-gold-amber);
+    white-space: nowrap;
+}
+
 .cor-code-badge {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 800;
     font-size: 0.82rem;
     color: var(--cor-gold-amber);
     background: rgba(207, 164, 111, 0.12);
-    border: 1px solid rgba(207, 164, 111, 0.25);
+    border: 1px solid rgba(207, 164, 111, 0.28);
     padding: 3px 8px;
     border-radius: 6px;
     display: inline-block;
@@ -635,8 +656,9 @@
 .cor-time-text {
     font-size: 0.82rem;
     font-weight: 600;
-    color: #e5e5e5;
+    color: #f1f1f1;
     white-space: nowrap;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 .cor-day-badge {
@@ -647,8 +669,9 @@
     font-weight: 800;
     letter-spacing: 0.5px;
     background: rgba(255, 209, 102, 0.14);
-    border: 1px solid rgba(255, 209, 102, 0.3);
+    border: 1px solid rgba(255, 209, 102, 0.32);
     color: var(--cor-gold-amber);
+    white-space: nowrap;
 }
 
 .cor-room-badge {
@@ -657,10 +680,11 @@
     font-weight: 700;
     color: #38bdf8;
     background: rgba(14, 165, 233, 0.12);
-    border: 1px solid rgba(14, 165, 233, 0.25);
+    border: 1px solid rgba(14, 165, 233, 0.28);
     padding: 3px 9px;
     border-radius: 6px;
     display: inline-block;
+    white-space: nowrap;
 }
 
 .cor-teacher-name {
@@ -687,9 +711,9 @@
 /* Table Footer Row for Total Units */
 .cor-table tfoot td {
     background: rgba(207, 164, 111, 0.12);
-    padding: 14px 16px;
+    padding: 13px 14px;
     border-top: 2px solid var(--cor-border-gold);
-    border-right: 1px solid var(--cor-border-subtle);
+    border-right: 1.5px solid var(--cor-border-gold);
     font-weight: 800;
     color: var(--cor-gold-amber);
     vertical-align: middle;
@@ -714,56 +738,111 @@
     font-family: 'JetBrains Mono', monospace;
 }
 
-/* ── MOBILE CARD LAYOUT (Alternative to Table) ── */
+/* ── MOBILE RESPONSIVE CARDS VIEW (Clean Touch Layout Without Excessive Horizontal Scrolling) ── */
 .cor-mobile-cards-view {
     display: none;
     flex-direction: column;
     gap: 12px;
-    margin-bottom: 24px;
+    margin-bottom: 22px;
 }
 
 .cor-card-item {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1.5px solid var(--cor-border-subtle);
+    background: rgba(22, 13, 9, 0.88);
+    border: 1.5px solid var(--cor-border-gold);
     border-radius: 12px;
-    padding: 16px;
-    transition: border-color 0.2s;
+    padding: 15px;
     position: relative;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .cor-card-item.is-today {
-    border-color: rgba(207, 164, 111, 0.5);
-    background: linear-gradient(135deg, rgba(207, 164, 111, 0.08), rgba(0, 0, 0, 0.35));
+    border-color: rgba(207, 164, 111, 0.65);
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.12), rgba(22, 13, 9, 0.95));
 }
 
-.cor-card-header {
+.cor-card-top-bar {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 12px;
-    border-bottom: 1px solid var(--cor-border-subtle);
-    padding-bottom: 10px;
+    gap: 8px;
+    margin-bottom: 10px;
 }
 
-.cor-card-grid {
+.cor-card-section-tag {
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--cor-gold-bright);
+    background: rgba(207, 164, 111, 0.14);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.cor-card-units-tag {
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--cor-gold-amber);
+    background: rgba(255, 209, 102, 0.14);
+    border: 1px solid rgba(255, 209, 102, 0.3);
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.cor-card-subj-block {
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--cor-border-subtle);
+}
+
+.cor-card-subj-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--cor-text-main);
+    margin: 5px 0 0;
+    line-height: 1.3;
+}
+
+/* 2x2 Mini Schedule Matrix Grid with Borders matching the document feel */
+.cor-card-sched-matrix {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px 14px;
-    font-size: 0.82rem;
+    border: 1px solid var(--cor-border-subtle);
+    border-radius: 8px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.25);
 }
 
-.cor-card-field-label {
-    font-size: 0.7rem;
+.cor-card-matrix-cell {
+    padding: 8px 10px;
+    border-right: 1px solid var(--cor-border-subtle);
+    border-bottom: 1px solid var(--cor-border-subtle);
+}
+
+.cor-card-matrix-cell:nth-child(2n) {
+    border-right: none;
+}
+
+.cor-card-matrix-cell:nth-child(n+3) {
+    border-bottom: none;
+}
+
+.cor-card-matrix-label {
+    font-size: 0.65rem;
+    font-weight: 800;
     text-transform: uppercase;
-    font-weight: 700;
     color: var(--cor-gold);
+    letter-spacing: 0.6px;
     margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
-.cor-card-field-val {
+.cor-card-matrix-value {
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--cor-text-main);
+    word-break: break-word;
 }
 
 /* ── REGISTRATION CERTIFICATION & FOOTER SECTION ── */
@@ -771,13 +850,13 @@
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: 24px;
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1.5px solid var(--cor-border-gold);
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 2px solid var(--cor-border-gold);
 }
 
 .cor-assessment-box {
-    border: 1.5px solid var(--cor-border-subtle);
+    border: 1.5px solid var(--cor-border-gold);
     border-radius: 10px;
     overflow: hidden;
     background: rgba(0, 0, 0, 0.25);
@@ -796,7 +875,7 @@
 
 .cor-assessment-label {
     padding: 10px 14px;
-    background: rgba(207, 164, 111, 0.06);
+    background: rgba(207, 164, 111, 0.08);
     color: var(--cor-gold);
     font-weight: 700;
     border-right: 1px solid var(--cor-border-subtle);
@@ -861,15 +940,15 @@
     margin-bottom: 12px;
 }
 
-/* ── RESPONSIVE STYLES ── */
+/* ── RESPONSIVE ADAPTATIONS ── */
 @media (max-width: 991px) {
     .cor-sheet {
-        padding: 24px;
-    }
-    .cor-student-info-grid .cor-info-row {
-        grid-template-columns: 140px 1fr;
+        padding: 22px 18px;
     }
     .cor-student-info-grid .cor-info-row.four-col {
+        grid-template-columns: 140px 1fr 130px 1fr;
+    }
+    .cor-student-info-grid .cor-info-row.two-col {
         grid-template-columns: 140px 1fr;
     }
     .cor-footer-section {
@@ -883,20 +962,17 @@
         padding-bottom: 110px;
     }
     .cor-sheet {
-        padding: 18px 14px;
-        border-radius: 16px;
-    }
-    .cor-sheet::after {
-        display: none;
+        padding: 16px 12px;
+        border-radius: 14px;
     }
     .cor-college-name {
-        font-size: 1.25rem;
+        font-size: 1.22rem;
     }
     .cor-doc-title {
-        font-size: 1.02rem;
+        font-size: 1rem;
     }
     .cor-doc-sem {
-        font-size: 0.85rem;
+        font-size: 0.84rem;
     }
     .cor-actions-bar {
         flex-direction: column;
@@ -911,20 +987,28 @@
         justify-content: center;
     }
 
-    .cor-student-info-grid .cor-info-row {
+    /* Demographic table stacks cleanly on mobile phones */
+    .cor-student-info-grid .cor-info-row.four-col,
+    .cor-student-info-grid .cor-info-row.two-col {
         grid-template-columns: 1fr;
     }
     .cor-info-label {
         border-right: none;
-        border-bottom: 1px solid var(--cor-border-subtle);
+        border-bottom: 1px solid var(--cor-border-gold);
         padding: 8px 12px;
+        font-size: 0.7rem;
     }
     .cor-info-value {
         border-right: none;
-        padding: 10px 12px;
+        border-bottom: 1px solid var(--cor-border-subtle);
+        padding: 9px 12px;
+        font-size: 0.88rem;
+    }
+    .cor-info-row .cor-info-value:last-child {
+        border-bottom: none;
     }
 
-    /* Mobile toggle defaults */
+    /* Mobile toggle defaults: Cards are shown, Table is hidden unless force-shown */
     .cor-table-scroll-wrapper {
         display: none;
     }
@@ -937,13 +1021,25 @@
     .cor-mobile-cards-view.force-hide {
         display: none;
     }
+
+    .cor-assessment-row {
+        grid-template-columns: 1fr;
+    }
+    .cor-assessment-label {
+        border-right: none;
+        border-bottom: 1px solid var(--cor-border-subtle);
+        padding: 8px 12px;
+    }
+    .cor-assessment-val {
+        padding: 8px 12px;
+    }
 }
 
 /* ── PRINT MEDIA STYLES (Clean Paper-Authentic COR) ── */
 @media print {
     @page {
-        size: A4 portrait;
-        margin: 12mm 10mm;
+        size: A4 landscape;
+        margin: 8mm 8mm;
     }
     body {
         background: #ffffff !important;
@@ -969,12 +1065,8 @@
         color: #000000 !important;
         border: 2px solid #000000 !important;
         box-shadow: none !important;
-        padding: 16px !important;
+        padding: 12px !important;
         border-radius: 0 !important;
-    }
-    .cor-sheet::before,
-    .cor-sheet::after {
-        display: none !important;
     }
     .cor-header-block {
         border-bottom: 2px solid #000000 !important;
@@ -1075,6 +1167,19 @@
                 Classes & Schedule
             </h1>
             <p>Official Certificate of Registration (COR) & Academic Timetable</p>
+            <div class="cor-summary-chips-row">
+                <span class="cor-summary-chip">
+                    <i class="bi bi-journal-check"></i> {{ $subjects->count() }} Subjects
+                </span>
+                <span class="cor-summary-chip">
+                    <i class="bi bi-award"></i> {{ number_format($totalUnits, 1) }} Total Units
+                </span>
+                @if($todayClassesCount > 0)
+                    <span class="cor-summary-chip" style="background: rgba(16,185,129,0.14); border-color: rgba(16,185,129,0.35); color: #34d399;">
+                        <i class="bi bi-clock-history"></i> {{ $todayClassesCount }} Meeting Today
+                    </span>
+                @endif
+            </div>
         </div>
 
         <div class="cor-btn-group">
@@ -1084,7 +1189,7 @@
             </a>
             <button type="button" class="cor-btn-action cor-btn-print" onclick="window.print()" id="printCorBtn" title="Print Certificate of Registration">
                 <i class="bi bi-printer-fill"></i>
-                <span>Print Official COR</span>
+                <span>Print Slip</span>
             </button>
         </div>
     </div>
@@ -1101,7 +1206,7 @@
                 <div class="cor-college-name">Osmeña Colleges</div>
                 <div class="cor-college-city">Masbate City, Philippines</div>
                 <div class="cor-doc-title">Certificate of Registration ( COR )</div>
-                <div class="cor-doc-sem">{{ $semesterText }} {{ $academicYear }}</div>
+                <div class="cor-doc-sem">{{ $semesterText }} • Academic Year {{ $academicYear }}</div>
                 <div>
                     <span class="cor-status-badge-chip">
                         <i class="bi bi-patch-check-fill"></i> OFFICIALLY ENROLLED • REGULAR
@@ -1109,9 +1214,9 @@
                 </div>
             </div>
 
-            <!-- 2. Student Demographic Profile (COR Table Header) -->
+            <!-- 2. Student Demographic Profile (Matching Reference Document Layout) -->
             <div class="cor-student-info-grid">
-                <!-- Row 1 -->
+                <!-- Row 1: Student Number & Year Level -->
                 <div class="cor-info-row four-col">
                     <div class="cor-info-label">Student Number :</div>
                     <div class="cor-info-value cor-student-num-val">{{ $studentNumber }}</div>
@@ -1119,16 +1224,23 @@
                     <div class="cor-info-value">{{ $yearText }}</div>
                 </div>
 
-                <!-- Row 2 -->
+                <!-- Row 2: Course / Degree Program -->
                 <div class="cor-info-row two-col">
-                    <div class="cor-info-label">Course / Program :</div>
-                    <div class="cor-info-value">{{ $courseFull }} ({{ $courseCode }})</div>
+                    <div class="cor-info-label">Course :</div>
+                    <div class="cor-info-value">
+                        <span>{{ $courseFull }}</span>
+                        <span class="badge ms-2" style="background:rgba(207,164,111,0.18); border:1px solid rgba(207,164,111,0.4); color:var(--cor-gold-bright); font-size:0.75rem;">
+                            {{ $courseCode }}
+                        </span>
+                    </div>
                 </div>
 
-                <!-- Row 3 -->
+                <!-- Row 3: Name & Section -->
                 <div class="cor-info-row four-col">
-                    <div class="cor-info-label">Student Name :</div>
-                    <div class="cor-info-value">{{ $user->name }}</div>
+                    <div class="cor-info-label">Name :</div>
+                    <div class="cor-info-value" style="font-weight: 800; color: #fff;">
+                        {{ $user->name }}
+                    </div>
                     <div class="cor-info-label">Section :</div>
                     <div class="cor-info-value">
                         <span class="badge" style="background:rgba(207,164,111,0.18); border:1px solid rgba(207,164,111,0.4); color:var(--cor-gold-bright); font-weight:700;">
@@ -1145,7 +1257,7 @@
                     <input type="text" 
                            id="scheduleSearchInput" 
                            class="cor-search-input" 
-                           placeholder="Search subject, code, instructor, room..." 
+                           placeholder="Search subject code, description, instructor, room..." 
                            aria-label="Filter schedule records">
                 </div>
 
@@ -1175,7 +1287,7 @@
                 </div>
             </div>
 
-            <!-- 4. Class Schedule Table (Official Full-Width COR Layout) -->
+            <!-- 4. Class Schedule Table (Official Full-Width COR Layout Inspired by Reference) -->
             <div class="cor-table-scroll-wrapper" id="corTableScrollWrapper">
                 <table class="cor-table" id="corScheduleTable">
                     <thead>
@@ -1197,7 +1309,7 @@
                                 data-is-today="{{ $sched->is_today ? '1' : '0' }}">
                                 <!-- Section -->
                                 <td>
-                                    <strong>{{ $sched->section }}</strong>
+                                    <span class="cor-section-val">{{ $sched->section }}</span>
                                 </td>
 
                                 <!-- Subject Code & Name -->
@@ -1212,7 +1324,7 @@
                                 </td>
 
                                 <!-- Class Number -->
-                                <td class="center font-monospace" style="color: var(--cor-text-muted);">
+                                <td class="center font-monospace" style="color: var(--cor-text-muted); font-weight: 700;">
                                     {{ $sched->class_number }}
                                 </td>
 
@@ -1275,7 +1387,7 @@
                             <td class="center cor-total-units-val">
                                 {{ number_format($totalUnits, 1) }}
                             </td>
-                            <td colspan="4" style="color: var(--cor-text-muted); font-size: 0.8rem;">
+                            <td colspan="4" style="color: var(--cor-text-muted); font-size: 0.8rem; font-weight: 700;">
                                 {{ $subjects->count() }} Registered Subject{{ $subjects->count() === 1 ? '' : 's' }}
                             </td>
                         </tr>
@@ -1283,36 +1395,42 @@
                 </table>
             </div>
 
-            <!-- 5. Mobile Responsive Cards View (Alternative to scrollable table on mobile) -->
+            <!-- 5. Mobile Responsive Cards View (Optimized for Phones Without Excessive Horizontal Scroll) -->
             <div class="cor-mobile-cards-view" id="corMobileCardsView">
                 @forelse($groupedSchedules as $sched)
                     <div class="cor-card-item {{ $sched->is_today ? 'is-today' : '' }}" 
                          data-days="{{ implode(',', $sched->raw_days) }}" 
                          data-is-today="{{ $sched->is_today ? '1' : '0' }}">
-                        <div class="cor-card-header">
-                            <div>
-                                <div class="d-flex align-items-center gap-1 flex-wrap">
-                                    <span class="cor-code-badge">{{ $sched->code }}</span>
-                                    <span class="badge" style="background:rgba(207,164,111,0.15); color:var(--cor-gold); font-size:0.72rem;">Sec {{ $sched->section }}</span>
-                                    @if($sched->is_today)
-                                        <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
-                                    @endif
-                                </div>
-                                <div class="cor-subject-name" style="font-size: 0.98rem; font-weight: 700; margin-top: 4px;">
-                                    {{ $sched->name }}
-                                </div>
+                        
+                        <!-- Top Meta Bar -->
+                        <div class="cor-card-top-bar">
+                            <div class="d-flex align-items-center gap-1">
+                                <span class="cor-card-section-tag">Sec {{ $sched->section }}</span>
+                                <span class="badge" style="background:rgba(255,255,255,0.06); color:var(--cor-text-muted); font-size:0.72rem;">#{{ $sched->class_number }}</span>
                             </div>
-                            <div class="text-end">
-                                <div class="badge" style="background: rgba(207,164,111,0.22); color: var(--cor-gold-bright); font-size: 0.82rem; font-weight: 800;">
-                                    {{ $sched->units !== '—' ? $sched->units . ' Units' : 'Lab/Lec' }}
-                                </div>
-                            </div>
+                            <span class="cor-card-units-tag">
+                                {{ $sched->units !== '—' ? $sched->units . ' Units' : 'Lab/Lec' }}
+                            </span>
                         </div>
 
-                        <div class="cor-card-grid">
-                            <div>
-                                <div class="cor-card-field-label"><i class="bi bi-clock me-1"></i> Time</div>
-                                <div class="cor-card-field-val">
+                        <!-- Subject Title Block -->
+                        <div class="cor-card-subj-block">
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                <span class="cor-code-badge">{{ $sched->code }}</span>
+                                @if($sched->is_today)
+                                    <span class="cor-today-indicator"><i class="bi bi-dot"></i> Today</span>
+                                @endif
+                            </div>
+                            <h4 class="cor-card-subj-title">
+                                {{ $sched->name }}
+                            </h4>
+                        </div>
+
+                        <!-- 2x2 Mini Schedule Matrix Grid with Borders -->
+                        <div class="cor-card-sched-matrix">
+                            <div class="cor-card-matrix-cell">
+                                <div class="cor-card-matrix-label"><i class="bi bi-clock"></i> Time</div>
+                                <div class="cor-card-matrix-value cor-time-text">
                                     @if($sched->start_time && $sched->end_time)
                                         {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i A') }}
                                     @else
@@ -1321,16 +1439,16 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <div class="cor-card-field-label"><i class="bi bi-calendar-event me-1"></i> Day</div>
-                                <div class="cor-card-field-val">
+                            <div class="cor-card-matrix-cell">
+                                <div class="cor-card-matrix-label"><i class="bi bi-calendar-event"></i> Day</div>
+                                <div class="cor-card-matrix-value">
                                     <span class="cor-day-badge">{{ $sched->days }}</span>
                                 </div>
                             </div>
 
-                            <div>
-                                <div class="cor-card-field-label"><i class="bi bi-geo-alt me-1"></i> Room</div>
-                                <div class="cor-card-field-val">
+                            <div class="cor-card-matrix-cell">
+                                <div class="cor-card-matrix-label"><i class="bi bi-geo-alt"></i> Room</div>
+                                <div class="cor-card-matrix-value">
                                     @if($sched->room && $sched->room !== 'TBA')
                                         <span class="cor-room-badge">{{ $sched->room }}</span>
                                     @else
@@ -1339,13 +1457,14 @@
                                 </div>
                             </div>
 
-                            <div>
-                                <div class="cor-card-field-label"><i class="bi bi-person me-1"></i> Instructor</div>
-                                <div class="cor-card-field-val text-truncate" title="{{ $sched->teacher }}">
+                            <div class="cor-card-matrix-cell">
+                                <div class="cor-card-matrix-label"><i class="bi bi-person"></i> Teacher</div>
+                                <div class="cor-card-matrix-value text-truncate" title="{{ $sched->teacher }}">
                                     {{ $sched->teacher }}
                                 </div>
                             </div>
                         </div>
+
                     </div>
                 @empty
                     <div class="cor-empty-state">
