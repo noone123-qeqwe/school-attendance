@@ -43,10 +43,6 @@
         <i class="bi bi-calendar3"></i>
         <span class="nav-link-text">Academic Terms</span>
     </a>
-    <a href="{{ route('admin.departments.index') }}" class="nav-link {{ request()->routeIs('admin.departments*') ? 'active' : '' }}" data-title="Departments">
-        <i class="bi bi-building"></i>
-        <span class="nav-link-text">Departments</span>
-    </a>
     <a href="{{ route('admin.courses.index') }}" class="nav-link {{ request()->routeIs('admin.courses*') ? 'active' : '' }}" data-title="Courses">
         <i class="bi bi-book-fill"></i>
         <span class="nav-link-text">Courses</span>

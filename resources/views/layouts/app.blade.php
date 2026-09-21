@@ -839,10 +839,6 @@
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
                         <span class="more-sheet-item-label">Calendar</span>
                     </a>
-                    <a href="{{ route('admin.departments.index') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-building"></i></div>
-                        <span class="more-sheet-item-label">Departments</span>
-                    </a>
                     <a href="{{ route('admin.sections.index') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
                         <span class="more-sheet-item-label">Sections</span>
