@@ -95,6 +95,9 @@
                         <a href="{{ route('admin.enrollments.index', $subject) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:var(--ent-primary);" title="Manage Roster">
                             <i class="bi bi-people"></i>
                         </a>
+                        <a href="{{ route('admin.class-schedules.index', ['subject_id' => $subject->id]) }}" class="ent-btn ent-btn-xs ent-btn-ghost" style="color:#D4AF37;" title="Assign / View Schedule">
+                            <i class="bi bi-clock-fill"></i>
+                        </a>
                         <button class="ent-btn ent-btn-xs ent-btn-ghost" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
