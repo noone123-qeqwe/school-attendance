@@ -67,10 +67,6 @@
         <i class="bi bi-megaphone-fill"></i>
         <span class="nav-link-text">Announcements</span>
     </a>
-    <a href="{{ route('admin.notifications') }}" class="nav-link {{ request()->routeIs('admin.notifications*') ? 'active' : '' }}" data-title="Notifications">
-        <i class="bi bi-bell-fill"></i>
-        <span class="nav-link-text">Notifications</span>
-    </a>
 
     {{-- ── SYSTEM ── --}}
     <div class="nav-section-label">System</div>

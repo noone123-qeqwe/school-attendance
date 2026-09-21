@@ -48,10 +48,6 @@
             <i class="bi bi-calendar3-fill"></i>
             <span class="nav-link-text">Holiday Calendar</span>
         </a>
-        <a href="{{ route('admin.notifications') }}" class="nav-link {{ request()->routeIs('admin.notifications*') ? 'active' : '' }}">
-            <i class="bi bi-bell-fill"></i>
-            <span class="nav-link-text">Notifications</span>
-        </a>
         <div style="padding:6px 8px;color:rgba(255,255,255,0.35);text-transform:uppercase;font-weight:700;font-size:0.62rem;">Account</div>
         <a href="{{ route('admin.profile') }}" class="nav-link {{ request()->routeIs('admin.profile') ? 'active' : '' }}">
             <i class="bi bi-person-fill"></i>
