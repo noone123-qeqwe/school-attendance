@@ -34,12 +34,10 @@
         <i class="bi bi-person-badge-fill"></i>
         <span class="nav-link-text">Instructors</span>
     </a>
-    @if(Auth::user()->isSuperAdmin())
-    <a href="{{ route('admin.admins') }}" class="nav-link {{ request()->routeIs('admin.admins*') ? 'active' : '' }}" data-title="Admins">
-        <i class="bi bi-shield-fill-check"></i>
-        <span class="nav-link-text">Administrators</span>
+    <a href="{{ route('admin.parents.index') }}" class="nav-link {{ request()->routeIs('admin.parents*') ? 'active' : '' }}" data-title="Parents">
+        <i class="bi bi-people-fill"></i>
+        <span class="nav-link-text">Parents</span>
     </a>
-    @endif
 
     {{-- ── ACADEMICS ── --}}
     <div class="nav-section-label">Academics</div>

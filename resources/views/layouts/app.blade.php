@@ -829,8 +829,12 @@
                         <span class="more-sheet-item-label">Teachers</span>
                     </a>
                     <a href="{{ route('admin.students') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-people-fill"></i></div>
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-fill"></i></div>
                         <span class="more-sheet-item-label">Students</span>
+                    </a>
+                    <a href="{{ route('admin.parents.index') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-people-fill"></i></div>
+                        <span class="more-sheet-item-label">Parents</span>
                     </a>
                     <a href="{{ route('admin.attendance') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>

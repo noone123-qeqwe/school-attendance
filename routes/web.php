@@ -720,6 +720,16 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::patch('/admin/{admin}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateAdmin'])->name('admin.deactivate');
     Route::patch('/admin/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateAdmin'])->name('admin.reactivate');
 
+    // Parent Management
+    Route::get('/parents', [App\Http\Controllers\Admin\ParentManagementController::class, 'index'])->name('parents.index');
+    Route::post('/parents', [App\Http\Controllers\Admin\ParentManagementController::class, 'store'])->name('parents.store');
+    Route::put('/parents/{parent}', [App\Http\Controllers\Admin\ParentManagementController::class, 'update'])->name('parents.update');
+    Route::delete('/parents/{parent}', [App\Http\Controllers\Admin\ParentManagementController::class, 'destroy'])->name('parents.destroy');
+    Route::patch('/parents/{parent}/deactivate', [App\Http\Controllers\Admin\ParentManagementController::class, 'deactivate'])->name('parents.deactivate');
+    Route::patch('/parents/{id}/reactivate', [App\Http\Controllers\Admin\ParentManagementController::class, 'reactivate'])->name('parents.reactivate');
+    Route::post('/parents/{parent}/link-student', [App\Http\Controllers\Admin\ParentManagementController::class, 'linkStudent'])->name('parents.link_student');
+    Route::delete('/parents/{parent}/unlink-student/{student}', [App\Http\Controllers\Admin\ParentManagementController::class, 'unlinkStudent'])->name('parents.unlink_student');
+
     // Bulk Excuse Approval
     Route::post('/excuses/bulk-approve', [App\Http\Controllers\AdminController::class, 'bulkApproveExcuses'])->name('excuses.bulk.approve');
     Route::post('/excuses/bulk-reject', [App\Http\Controllers\AdminController::class, 'bulkRejectExcuses'])->name('excuses.bulk.reject');
