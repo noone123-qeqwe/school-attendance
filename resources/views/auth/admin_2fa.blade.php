@@ -142,9 +142,15 @@
         </div>
         @endif
 
+        @isset($emailError)
+        @if($emailError)
+        <div class="alert-err"><i class="bi bi-envelope-x me-2"></i>{{ $emailError }}</div>
+        @endif
+        @else
         @if(session('info'))
         <div class="alert-info"><i class="bi bi-info-circle me-2"></i>{{ session('info') }}</div>
         @endif
+        @endisset
         @if($errors->any())
         <div class="alert-err"><i class="bi bi-exclamation-circle me-2"></i>{{ $errors->first() }}</div>
         @endif

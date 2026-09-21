@@ -1214,14 +1214,21 @@ class AdminController extends Controller
             ->latest()
             ->first();
 
+        $emailError = null;
+
         if (!$validOtp) {
             $validOtp = \App\Models\Otp::generate($user->id, 'admin_login');
             \Illuminate\Support\Facades\Log::info("Admin 2FA OTP generated for user #{$user->id} ({$user->email}): {$validOtp->code}");
 
             try {
-                app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $validOtp->code, 'admin_login', $user->name);
+                $deliveryResult = app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $validOtp->code, 'admin_login', $user->name);
+                if (!$deliveryResult->success) {
+                    $emailError = 'Unable to send the verification code to ' . $user->email . '. Please ensure the email address is valid and reachable, or use the Resend Code button below.';
+                    \Illuminate\Support\Facades\Log::error('Failed to deliver 2FA OTP: ' . $deliveryResult->error);
+                }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error('Failed to send 2FA OTP: ' . $e->getMessage());
+                $emailError = 'Unable to send the verification code to ' . $user->email . '. Please ensure the email address is valid and reachable, or use the Resend Code button below.';
             }
         }
 
@@ -1229,8 +1236,9 @@ class AdminController extends Controller
             session()->flash('dev_otp', $validOtp->code);
         }
         
-        return view('auth.admin_2fa');
+        return view('auth.admin_2fa', compact('emailError'));
     }
+
 
     public function verifyTwoFactor(Request $request)
     {
