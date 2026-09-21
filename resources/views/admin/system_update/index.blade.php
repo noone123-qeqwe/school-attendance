@@ -5,28 +5,73 @@
 @section('content')
 <div class="system-update-container">
 
+    <!-- Early definition of Tab Switching System with CSP nonce -->
+    <script @cspNonce>
+    function switchMaintenanceTab(tabName, btnElement) {
+        if (!btnElement) {
+            const btnId = tabName === 'backups' ? 'tabBtnBackups' : (tabName === 'health' ? 'tabBtnHealth' : 'tabBtnUpdates');
+            btnElement = document.getElementById(btnId);
+        }
+        document.querySelectorAll('.maintenance-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.maintenance-tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+            pane.style.display = 'none';
+        });
+
+        if (btnElement) {
+            btnElement.classList.add('active');
+        }
+
+        const targetPane = document.getElementById(tabName === 'backups' ? 'paneBackups' : (tabName === 'health' ? 'paneHealth' : 'paneUpdates'));
+        if (targetPane) {
+            targetPane.classList.add('active');
+            targetPane.style.display = 'flex';
+        }
+
+        try {
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', tabName);
+            window.history.replaceState(null, '', url.toString());
+        } catch(e) {
+            window.history.replaceState(null, '', '?tab=' + tabName);
+        }
+    }
+    </script>
+
     <!-- Top Tabbed Control Plane -->
     <div class="maintenance-tabs-nav">
-        <button type="button" class="maintenance-tab-btn {{ $activeTab === 'updates' ? 'active' : '' }}" onclick="switchMaintenanceTab('updates', this)" id="tabBtnUpdates">
+        <a href="{{ route('admin.system-update.index', ['tab' => 'updates']) }}"
+           class="maintenance-tab-btn {{ $activeTab === 'updates' ? 'active' : '' }}"
+           onclick="event.preventDefault(); switchMaintenanceTab('updates', this)"
+           id="tabBtnUpdates"
+           role="button">
             <span class="tab-btn-glow"></span>
             <i class="bi bi-lightning-charge-fill tab-icon"></i>
             <span class="tab-label">Updates & Maintenance</span>
             @if($pendingMigrationsCount > 0)
                 <span class="tab-badge tab-badge-alert">{{ $pendingMigrationsCount }} Migrations</span>
             @endif
-        </button>
-        <button type="button" class="maintenance-tab-btn {{ $activeTab === 'backups' ? 'active' : '' }}" onclick="switchMaintenanceTab('backups', this)" id="tabBtnBackups">
+        </a>
+        <a href="{{ route('admin.system-update.index', ['tab' => 'backups']) }}"
+           class="maintenance-tab-btn {{ $activeTab === 'backups' ? 'active' : '' }}"
+           onclick="event.preventDefault(); switchMaintenanceTab('backups', this)"
+           id="tabBtnBackups"
+           role="button">
             <span class="tab-btn-glow"></span>
             <i class="bi bi-shield-check tab-icon"></i>
             <span class="tab-label">Backups & Restore Hub</span>
             <span class="tab-badge">{{ $totalBackupCount }}</span>
-        </button>
-        <button type="button" class="maintenance-tab-btn {{ $activeTab === 'health' ? 'active' : '' }}" onclick="switchMaintenanceTab('health', this)" id="tabBtnHealth">
+        </a>
+        <a href="{{ route('admin.system-update.index', ['tab' => 'health']) }}"
+           class="maintenance-tab-btn {{ $activeTab === 'health' ? 'active' : '' }}"
+           onclick="event.preventDefault(); switchMaintenanceTab('health', this)"
+           id="tabBtnHealth"
+           role="button">
             <span class="tab-btn-glow"></span>
             <i class="bi bi-activity tab-icon"></i>
             <span class="tab-label">System Diagnostics & Health</span>
             <span class="tab-badge-score {{ $healthScore >= 90 ? 'score-green' : ($healthScore >= 70 ? 'score-amber' : 'score-red') }}" id="topTabHealthBadge">{{ $healthScore }}%</span>
-        </button>
+        </a>
     </div>
 
     <!-- Alert Messages (for backup actions etc.) -->
@@ -1064,11 +1109,18 @@
     color: #D1C5B4;
     font-size: 0.9rem;
     font-weight: 600;
-    cursor: pointer;
+    cursor: pointer !important;
+    text-decoration: none !important;
     white-space: nowrap;
     position: relative;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: auto !important;
+    user-select: none;
+}
+
+.maintenance-tab-btn * {
+    pointer-events: none;
 }
 
 .maintenance-tab-btn:hover {
@@ -1193,7 +1245,7 @@
 }
 
 .maintenance-tab-pane.active {
-    display: flex;
+    display: flex !important;
 }
 
 @keyframes fadeInPane {
@@ -3190,7 +3242,7 @@
 }
 </style>
 
-<script>
+<script @cspNonce>
 // Tab Switching System with URL Hash & State Sync
 function switchMaintenanceTab(tabName, btnElement) {
     document.querySelectorAll('.maintenance-tab-btn').forEach(btn => btn.classList.remove('active'));
