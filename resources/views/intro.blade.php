@@ -217,10 +217,9 @@
 <body>
 
     <!-- Video (Mobile & Desktop native sources) -->
+    <!-- JS sets the correct src before autoplay; media attr on <source> is ignored by most browsers -->
     <video id="introVideo" autoplay muted playsinline preload="auto">
-        <source src="/videos/AQOaaE6jZacgyWrkhWS3WYsjNUWccQA8sMeUEspCIZZLMV-APH1gnBGzhBXWSlj9GssKpgCThK1RAhxre96EbUetLSNEhvPmfGiigjXKmQ.mp4" type="video/mp4" media="(max-width: 768px)">
-        <source src="/videos/intro_mobile.mp4" type="video/mp4" media="(max-width: 768px)">
-        <source src="/videos/intro.mp4" type="video/mp4">
+        <source id="introVideoSrc" src="/videos/intro.mp4" type="video/mp4">
     </video>
 
     <!-- Cinematic Overlays -->
@@ -255,10 +254,19 @@
         const destUrl     = @json($destUrl);
         const progressBar = document.getElementById('progressBar');
         const fadeOut     = document.getElementById('fadeOut');
-        const isMobileScreen = window.innerWidth <= 768;
+        const isMobileScreen = window.innerWidth <= 768 || window.screen.width <= 768;
         const INTRO_START_TIME = 0.0; // Play high-definition animation fully from the beginning
         let hasTransitioned = false;
         let hasInitialized = false;
+
+        // Set the correct video source based on screen size BEFORE autoplay
+        const MOBILE_VIDEO = '/videos/AQOaaE6jZacgyWrkhWS3WYsjNUWccQA8sMeUEspCIZZLMV-APH1gnBGzhBXWSlj9GssKpgCThK1RAhxre96EbUetLSNEhvPmfGiigjXKmQ.mp4';
+        const DESKTOP_VIDEO = '/videos/intro.mp4';
+        if (isMobileScreen) {
+            const srcEl = document.getElementById('introVideoSrc');
+            if (srcEl) srcEl.src = MOBILE_VIDEO;
+            if (video) video.load();
+        }
 
         function goToNext(e) {
             if (e && typeof e.preventDefault === 'function') {
