@@ -864,58 +864,6 @@
             line-height: 1.3;
         }
 
-        /* Saved Accounts Chips & Multi-Account Switcher */
-        .saved-account-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(212, 175, 55, 0.28);
-            border-radius: 99px;
-            padding: 4px 11px;
-            font-size: 0.74rem;
-            color: rgba(255, 255, 255, 0.85);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-        }
-        .saved-account-chip:hover {
-            background: rgba(212, 175, 55, 0.16);
-            border-color: rgba(212, 175, 55, 0.55);
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
-        .saved-account-chip.active {
-            background: rgba(212, 175, 55, 0.24);
-            border-color: rgba(212, 175, 55, 0.75);
-            color: #d4af37;
-            font-weight: 600;
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
-        }
-        .saved-account-chip .chip-name {
-            max-width: 140px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .saved-account-chip .chip-del {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            color: rgba(255, 255, 255, 0.45);
-            font-size: 0.72rem;
-            margin-left: 2px;
-            transition: all 0.15s;
-        }
-        .saved-account-chip .chip-del:hover {
-            color: #ff6b6b;
-            background: rgba(255, 255, 255, 0.12);
-        }
 
         /* Desktop elevation for optical vertical centering */
         @media (min-width: 769px) {
@@ -1347,15 +1295,6 @@ if (document.readyState === 'loading') {
             @error('identifier')
                 <div class="invalid-feedback-custom anim-fade-up anim-d4">{{ $message }}</div>
             @enderror
-
-            <!-- Multi-Account Quick Switcher on Device -->
-            <div id="savedAccountsSection" style="display:none; margin-top:-6px; margin-bottom:12px;" class="anim-fade-up anim-d4">
-                <div style="font-size:0.73rem; color:rgba(212,175,55,0.88); font-weight:600; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center; padding: 0 2px;">
-                    <span><i class="bi bi-people-fill me-1"></i>Accounts on this device</span>
-                    <button type="button" id="clearAllAccountsBtn" style="background:none; border:none; color:rgba(255,255,255,0.45); font-size:0.7rem; cursor:pointer; padding:0; text-decoration:underline;" title="Clear all saved accounts from this device">Clear list</button>
-                </div>
-                <div id="savedAccountsChips" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
-            </div>
 
             <!-- Biometric Authentication (WebAuthn supported) -->
             <div id="fingerprintSection" style="display: block;">
@@ -1817,62 +1756,7 @@ function clearAllSavedAccounts() {
 window.clearAllSavedAccounts = clearAllSavedAccounts;
 
 function renderSavedAccounts() {
-    var container = document.getElementById('savedAccountsSection');
-    var chipsContainer = document.getElementById('savedAccountsChips');
-    if (!container || !chipsContainer) return;
-
-    var accounts = getSavedAccounts();
-    if (accounts.length === 0) {
-        container.style.display = 'none';
-        chipsContainer.innerHTML = '';
-        return;
-    }
-
-    container.style.display = 'block';
-    chipsContainer.innerHTML = '';
-
-    var currentId = (idInput && idInput.value ? idInput.value.trim() : '').toLowerCase();
-
-    accounts.forEach(function(acc) {
-        var chip = document.createElement('button');
-        chip.type = 'button';
-        var isActive = (currentId && acc.identifier.toLowerCase() === currentId);
-        chip.className = 'saved-account-chip' + (isActive ? ' active' : '');
-        chip.setAttribute('title', 'Select ' + (acc.name || acc.identifier) + ' (' + acc.identifier + ')');
-
-        var icon = document.createElement('i');
-        icon.className = 'bi bi-person-badge';
-        chip.appendChild(icon);
-
-        var nameSpan = document.createElement('span');
-        nameSpan.className = 'chip-name';
-        nameSpan.textContent = acc.name || acc.identifier;
-        chip.appendChild(nameSpan);
-
-        var delBtn = document.createElement('span');
-        delBtn.className = 'chip-del';
-        delBtn.innerHTML = '&times;';
-        delBtn.setAttribute('title', 'Remove ' + (acc.name || acc.identifier) + ' from this device');
-        delBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            removeSavedAccount(acc.identifier);
-        });
-        chip.appendChild(delBtn);
-
-        chip.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (idInput) {
-                idInput.value = acc.identifier;
-                localStorage.setItem('attendance_saved_identifier', acc.identifier);
-                updateAccountBanner();
-                clearErrorStates();
-                var pw = document.getElementById('loginPassword');
-                if (pw) pw.focus();
-            }
-        });
-
-        chipsContainer.appendChild(chip);
-    });
+    // Multi-account switcher on device removed per design
 }
 
 function updateBiometricHint() {
@@ -1941,13 +1825,6 @@ if (clearIdBtn) {
     });
 }
 
-var clearAllAccountsBtn = document.getElementById('clearAllAccountsBtn');
-if (clearAllAccountsBtn) {
-    clearAllAccountsBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        clearAllSavedAccounts();
-    });
-}
 
 function clearErrorStates() {
     var alerts = document.querySelectorAll('.glass-alert, .invalid-feedback-custom');
