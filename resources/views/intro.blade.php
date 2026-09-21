@@ -219,7 +219,7 @@
     <!-- Video (Mobile & Desktop native sources) -->
     <!-- JS sets the correct src before autoplay; media attr on <source> is ignored by most browsers -->
     <video id="introVideo" autoplay muted playsinline preload="auto">
-        <source id="introVideoSrc" src="/videos/intro.mp4" type="video/mp4">
+        <source id="introVideoSrc" src="/videos/Desktop.mp4" type="video/mp4">
     </video>
 
     <!-- Cinematic Overlays -->
@@ -261,7 +261,7 @@
 
         // Set the correct video source based on screen size BEFORE autoplay
         const MOBILE_VIDEO = '/videos/AQOaaE6jZacgyWrkhWS3WYsjNUWccQA8sMeUEspCIZZLMV-APH1gnBGzhBXWSlj9GssKpgCThK1RAhxre96EbUetLSNEhvPmfGiigjXKmQ.mp4';
-        const DESKTOP_VIDEO = '/videos/intro.mp4';
+        const DESKTOP_VIDEO = '/videos/Desktop.mp4';
         if (isMobileScreen) {
             const srcEl = document.getElementById('introVideoSrc');
             if (srcEl) srcEl.src = MOBILE_VIDEO;
