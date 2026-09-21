@@ -1775,9 +1775,12 @@
         }
 
         const currentUpdateKey = (targetVersion || '') + '_' + (latestServerTimestamp || '') + '_' + (latestDetectedSwVersion || '');
-        const dismissedVer = sessionStorage.getItem('pwa_update_dismissed_ver');
-        const dismissedAt = parseInt(sessionStorage.getItem('pwa_update_dismissed_at') || '0', 10);
-        
+        // Check dismiss state in sessionStorage (within tab) OR localStorage (across navigations)
+        const dismissedVer = sessionStorage.getItem('pwa_update_dismissed_ver') || localStorage.getItem('pwa_update_dismissed_ver') || '';
+        const dismissedAtSession = parseInt(sessionStorage.getItem('pwa_update_dismissed_at') || '0', 10);
+        const dismissedAtLocal   = parseInt(localStorage.getItem('pwa_update_dismissed_at')   || '0', 10);
+        const dismissedAt = Math.max(dismissedAtSession, dismissedAtLocal);
+
         // If target version is strictly newer than the dismissed version, never suppress!
         const isNewerThanDismissed = dismissedVer && compareSemver(targetVersion, dismissedVer) > 0;
         const isSnoozed = !isNewerThanDismissed && (Date.now() - dismissedAt < DISMISS_COOLDOWN_MS);
@@ -1865,10 +1868,15 @@
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const currentUpdateKey = (targetVersion || '') + '_' + (latestServerTimestamp || '') + '_' + (latestDetectedSwVersion || '');
         
-        // Snooze cooldown in sessionStorage
+        // Snooze cooldown — persist in BOTH sessionStorage (fast) and localStorage (survives navigation)
+        const dismissNow = String(Date.now());
         sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
         sessionStorage.setItem('pwa_update_dismissed_tag', currentUpdateKey);
-        sessionStorage.setItem('pwa_update_dismissed_at', String(Date.now()));
+        sessionStorage.setItem('pwa_update_dismissed_at', dismissNow);
+        try {
+            localStorage.setItem('pwa_update_dismissed_ver', targetVersion);
+            localStorage.setItem('pwa_update_dismissed_at', dismissNow);
+        } catch(e) {}
     }
 
     async function applySystemUpdate() {
@@ -2154,9 +2162,15 @@
     window.hideUpdateFallbackPill = hideUpdateFallbackPill;
 
     // ── Universal Background Lifecycle Triggers Across Desktop & Mobile ──
-    // Clean up any stale persistent dismissal timestamp from localStorage
+    // Sync stale localStorage installed version: if the server-rendered meta says we're at the latest,
+    // update localStorage so checkInstantUpdateAvailable() doesn't produce a false positive.
     try {
-        localStorage.removeItem('pwa_update_dismissed_at');
+        if (DOC_INSTALLED_VER && DOC_LATEST_VER && compareSemver(DOC_INSTALLED_VER, DOC_LATEST_VER) >= 0) {
+            // Server confirms we are up to date — align localStorage with actual installed version
+            localStorage.setItem('app_installed_version', DOC_INSTALLED_VER);
+            localStorage.setItem('pwa_installed_version', DOC_INSTALLED_VER);
+            localStorage.setItem('pwa_app_version', DOC_INSTALLED_VER);
+        }
     } catch(e) {}
 
     // 0. Immediate local/meta check on launch: if metadata indicates update available, display immediately
