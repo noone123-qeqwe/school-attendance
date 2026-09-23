@@ -13,6 +13,10 @@
         <i class="bi bi-grid-fill"></i>
         <span class="nav-link-text">Dashboard</span>
     </a>
+    <a href="{{ route('profile') }}" class="nav-link {{ request()->routeIs('profile') ? 'active' : '' }}">
+        <i class="bi bi-person-circle"></i>
+        <span class="nav-link-text">My Profile</span>
+    </a>
     <a href="{{ route('student.classes') }}" class="nav-link {{ request()->routeIs('student.classes', 'student.schedule') ? 'active' : '' }}" title="Classes & Schedule">
         <i class="bi bi-journal-bookmark-fill"></i>
         <span class="nav-link-text">Classes & Schedule</span>

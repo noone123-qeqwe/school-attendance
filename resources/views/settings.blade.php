@@ -2151,7 +2151,44 @@
             </div>
         </div>
 
+        <!-- Personal Information (Editable) -->
+        <div class="sc">
+            <div class="sc-head">
+                <div class="sc-icon" style="background:rgba(207,164,111,0.14);color:#cfa46f;"><i class="bi bi-person-lines-fill"></i></div>
+                <div>
+                    <div class="sc-title">Personal Information</div>
+                    <div class="sc-sub">Update your contact details</div>
+                </div>
+            </div>
+            <div class="sc-body">
+                <form action="{{ route('settings.update') }}" method="POST" id="personalInfoForm">
+                    @csrf
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="sl" for="phoneInput">Phone Number</label>
+                            <input type="text"
+                                   id="phoneInput"
+                                   name="phone"
+                                   class="si"
+                                   value="{{ old('phone', Auth::user()->phone) }}"
+                                   placeholder="+63 900 000 0000"
+                                   maxlength="20">
+                            <div class="mt-1" style="font-size:0.73rem;color:#b39b82;">
+                                <i class="bi bi-info-circle me-1"></i>Used for emergency contact and account recovery.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="submit" class="sbtn">
+                            <i class="bi bi-save me-2"></i>Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Academic Info -->
+
         <div class="sc">
             <div class="sc-head">
                 <div class="sc-icon" style="background:#f0fdf4;color:#16a34a;"><i class="bi bi-mortarboard-fill"></i></div>

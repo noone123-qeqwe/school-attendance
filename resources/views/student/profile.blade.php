@@ -206,9 +206,13 @@
                     <span>Student ID: <strong style="color: #f3e7cd; letter-spacing: 0.5px;">{{ Auth::user()->student_number ?: 'Not Assigned' }}</strong></span>
                 </div>
             </div>
-            <div class="d-flex gap-2 align-items-center pb-1">
+            <div class="d-flex gap-2 align-items-center pb-1 flex-wrap">
                 <span class="course-badge">{{ Auth::user()->course ?? 'BSCS' }}</span>
                 <span class="year-badge">Year {{ Auth::user()->year_level ?? '1' }}</span>
+                <a href="{{ route('settings') }}" class="btn btn-sm d-inline-flex align-items-center gap-1"
+                   style="background:linear-gradient(135deg,#cfa46f,#9a733e);color:#140703;font-weight:700;font-size:0.78rem;border-radius:99px;padding:5px 14px;border:none;text-decoration:none;box-shadow:0 3px 10px rgba(207,164,111,0.3);">
+                    <i class="bi bi-pencil-fill" style="font-size:0.7rem;"></i> Edit Profile
+                </a>
             </div>
         </div>
     </div>
