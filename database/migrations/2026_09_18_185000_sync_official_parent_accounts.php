@@ -32,12 +32,6 @@ return new class extends Migration
                 'student_numbers' => ['0703250'], // Ibn Kervi J. Amatos
             ],
             [
-                'name'            => 'Rowena Portugal',
-                'email'           => 'rowena.portugal@gmail.com',
-                'phone'           => '09226789012',
-                'student_numbers' => ['2312215'], // Karla Villamor Portugal
-            ],
-            [
                 'name'            => 'Maricel Herminado',
                 'email'           => 'maricel.herminado@gmail.com',
                 'phone'           => '09237890123',

@@ -19,9 +19,9 @@ class UnifiedClassesAndScheduleTest extends TestCase
         parent::setUp();
 
         $this->student = User::factory()->create([
-            'name' => 'Karla Jean Villamor Portugal',
+            'name' => 'Jack C. Ole',
             'role' => 'student',
-            'student_number' => '2312215',
+            'student_number' => '1234567',
             'year_level' => 4,
             'semester' => 1,
             'course' => 'BSCS',
@@ -60,10 +60,10 @@ class UnifiedClassesAndScheduleTest extends TestCase
         $response = $this->actingAs($this->student)->get('/my-classes');
 
         $response->assertStatus(200);
-        $response->assertSee('2312215');
+        $response->assertSee('1234567');
         $response->assertSee('Fourth Year');
         $response->assertSee('Bachelor of Science in Computer Science');
-        $response->assertSee('Karla Jean Villamor Portugal');
+        $response->assertSee('Jack C. Ole');
         $response->assertSee('Student Number');
         $response->assertSee('Year Level');
         $response->assertSee('Course');
