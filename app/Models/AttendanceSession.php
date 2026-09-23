@@ -28,6 +28,9 @@ class AttendanceSession extends Model
 
     public function getAllowedRadius(): int
     {
+        if ($this->radius_meters !== null && (int) $this->radius_meters <= 0) {
+            return 0; // Geofence explicitly disabled for this session
+        }
         $systemRadius = (int) \App\Models\Setting::get('gps_radius', 50);
         $sessionRadius = (int) ($this->radius_meters ?? 0);
         if ($sessionRadius > 0 && $systemRadius > 0) {

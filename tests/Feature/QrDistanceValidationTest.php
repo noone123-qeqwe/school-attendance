@@ -350,4 +350,83 @@ class QrDistanceValidationTest extends TestCase
         $this->assertEquals('Present', $response->json('status'));
         $this->assertEquals('active', $response->json('monitoring_status'));
     }
+
+    public function test_geofence_can_be_disabled_with_zero_or_negative_radius()
+    {
+        // Teacher disables geofence for session (radius = -1)
+        $this->session->update(['radius_meters' => -1]);
+        $this->assertEquals(0, $this->session->getAllowedRadius());
+
+        // Student is 50km away
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 14.950000,
+            'longitude' => 121.450000,
+            'accuracy'  => 10,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+    }
+
+    public function test_first_local_scan_auto_anchors_session_when_teacher_coordinates_null()
+    {
+        // Teacher creates session without GPS coordinates (e.g., from desktop or laptop before GPS lock)
+        $this->session->update([
+            'classroom_lat' => null,
+            'classroom_lng' => null,
+        ]);
+
+        // Student scans in room (user's real coordinates ~14.5096, 121.0090)
+        // Which is ~3557m from the Taguig default fallback anchor
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 14.509600,
+            'longitude' => 121.009000,
+            'accuracy'  => 12,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+
+        // Verify session was auto-anchored in the database
+        $this->session->refresh();
+        $this->assertEquals(14.509600, (float) $this->session->classroom_lat);
+        $this->assertEquals(121.009000, (float) $this->session->classroom_lng);
+
+        // A second student in the same room is validated against this new anchor
+        $student2 = User::factory()->create(['role' => 'student']);
+        $student2->enrolledSubjects()->attach($this->subject->id);
+        $response2 = $this->actingAs($student2)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 14.509610,
+            'longitude' => 121.009015,
+            'accuracy'  => 8,
+        ]);
+
+        $response2->assertStatus(200);
+        $this->assertTrue($response2->json('success'));
+    }
+
+    public function test_teacher_can_update_active_session_location_via_endpoint()
+    {
+        $response = $this->actingAs($this->teacher)->postJson(route('teacher.qr.update-location'), [
+            'session_id'    => $this->session->id,
+            'classroom_lat' => 14.509612,
+            'classroom_lng' => 121.009045,
+            'radius_meters' => 100,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals(14.509612, $response->json('classroom_lat'));
+        $this->assertEquals(121.009045, $response->json('classroom_lng'));
+        $this->assertEquals(100, $response->json('radius_meters'));
+
+        $this->session->refresh();
+        $this->assertEquals(14.509612, (float) $this->session->classroom_lat);
+        $this->assertEquals(121.009045, (float) $this->session->classroom_lng);
+        $this->assertEquals(100, $this->session->radius_meters);
+    }
 }
+

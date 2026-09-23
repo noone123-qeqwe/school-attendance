@@ -440,7 +440,7 @@ function requestLocation(options) {
         document.getElementById('accuracyInput').value = accuracy;
 
         // Check if student is within classroom geofence
-        if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
+        if (RADIUS_METERS > 0 && CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
             // Handle weak or inaccurate GPS signals gracefully instead of incorrectly reporting too far away
             if (accuracy > 150) {
                 showWeakGpsError(accuracy);
@@ -475,7 +475,7 @@ function requestLocation(options) {
         }
 
         var isWithinBounds = false;
-        if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
+        if (RADIUS_METERS > 0 && CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
             var rawDist = calculateDistance(pos.coords.latitude, pos.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
             var allowance = (pos.coords.accuracy > 0) ? Math.min(pos.coords.accuracy, 150) : 15;
             isWithinBounds = (Math.max(0, rawDist - allowance) <= RADIUS_METERS);
@@ -551,7 +551,7 @@ function requestLocation(options) {
     locationWatcher = navigator.geolocation.watchPosition(onSuccess, onError, options);
     fastFallbackTimer = setTimeout(function() {
         if (bestLocation && bestAccuracy <= GPS_MAX_FAST_ACCEPT) {
-            if (CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
+            if (RADIUS_METERS > 0 && CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
                 var earlyDist = calculateDistance(bestLocation.coords.latitude, bestLocation.coords.longitude, CLASSROOM_LAT, CLASSROOM_LNG);
                 var earlyAllowance = (bestAccuracy > 0) ? Math.min(bestAccuracy, 150) : 15;
                 if (Math.max(0, earlyDist - earlyAllowance) <= RADIUS_METERS) {

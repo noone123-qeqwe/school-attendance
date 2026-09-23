@@ -147,6 +147,34 @@
                 </div>
             </div>
 
+            <!-- Campus GPS Coordinates -->
+            <div style="background:rgba(255,255,255,0.02);border:1px solid var(--saas-border);border-radius:12px;padding:16px;margin-bottom:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+                    <div>
+                        <div style="font-weight:600;font-size:0.9rem;display:flex;align-items:center;gap:6px;">
+                            <i class="bi bi-geo-alt-fill" style="color:var(--saas-primary);"></i> Campus Anchor GPS Coordinates
+                        </div>
+                        <p class="saas-text-muted" style="font-size:0.75rem;margin:2px 0 0 0;">
+                            Default coordinates used as the school campus geofence anchor when sessions are created without a device GPS fix.
+                        </p>
+                    </div>
+                    <button type="button" class="saas-btn saas-btn-secondary" style="padding:5px 12px;font-size:0.8rem;" onclick="detectCampusGps()">
+                        <i class="bi bi-crosshair"></i> Detect My Current Location
+                    </button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div class="saas-form-group">
+                        <label class="saas-label">Campus Latitude</label>
+                        <input type="number" step="any" name="gps_lat" id="setting_gps_lat" class="saas-input" placeholder="e.g. 14.509600" value="{{ \App\Models\Setting::get('gps_lat', '') }}">
+                    </div>
+                    <div class="saas-form-group">
+                        <label class="saas-label">Campus Longitude</label>
+                        <input type="number" step="any" name="gps_lng" id="setting_gps_lng" class="saas-input" placeholder="e.g. 121.009000" value="{{ \App\Models\Setting::get('gps_lng', '') }}">
+                    </div>
+                </div>
+                <div id="campusGpsStatus" style="font-size:0.75rem;margin-top:8px;display:none;"></div>
+            </div>
+
             <script>
                 function resetAttendanceRules() {
                     document.getElementById('setting_qr_expiry').value = 20;
@@ -155,6 +183,40 @@
                     document.getElementById('setting_auto_holiday').checked = true;
                     document.getElementById('setting_enforce_device_binding').checked = true;
                     document.getElementById('setting_anti_proxy_device_check').checked = true;
+                }
+
+                function detectCampusGps() {
+                    const statusEl = document.getElementById('campusGpsStatus');
+                    if (!navigator.geolocation) {
+                        if (statusEl) {
+                            statusEl.style.display = 'block';
+                            statusEl.style.color = '#ef4444';
+                            statusEl.textContent = 'Geolocation is not supported by your browser.';
+                        }
+                        return;
+                    }
+                    if (statusEl) {
+                        statusEl.style.display = 'block';
+                        statusEl.style.color = 'var(--saas-gold, #cfa46f)';
+                        statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width:12px;height:12px;"></span> Detecting current location...';
+                    }
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            document.getElementById('setting_gps_lat').value = pos.coords.latitude.toFixed(6);
+                            document.getElementById('setting_gps_lng').value = pos.coords.longitude.toFixed(6);
+                            if (statusEl) {
+                                statusEl.style.color = '#10b981';
+                                statusEl.innerHTML = '<i class="bi bi-check-circle me-1"></i> Location captured: ' + pos.coords.latitude.toFixed(6) + ', ' + pos.coords.longitude.toFixed(6) + ' (Accuracy: ±' + Math.round(pos.coords.accuracy) + 'm). Click Save Changes to apply.';
+                            }
+                        },
+                        (err) => {
+                            if (statusEl) {
+                                statusEl.style.color = '#ef4444';
+                                statusEl.textContent = 'Unable to detect location (' + err.message + '). Please enter coordinates manually.';
+                            }
+                        },
+                        { enableHighAccuracy: false, timeout: 8000 }
+                    );
                 }
             </script>
 

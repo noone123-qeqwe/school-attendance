@@ -719,6 +719,7 @@ let locationWatchId = null;
 let locationTimeoutId = null;
 let locationDowngraded = false;
 let refreshCountdownSeconds = 300;
+let selectedRadius = 50;
 
 // Audio & Roster State
 let clockInSoundEnabled = true;
@@ -738,6 +739,17 @@ const locationStatus = document.getElementById('locationStatus');
 // Check schedule on page load or restore active session
 document.addEventListener('DOMContentLoaded', () => {
     if (currentSession) {
+        if (currentSession.radius_meters !== undefined && currentSession.radius_meters !== null) {
+            selectedRadius = Number(currentSession.radius_meters);
+        }
+        if (currentSession.classroom_lat && currentSession.classroom_lng) {
+            teacherLocation = {
+                latitude: Number(currentSession.classroom_lat),
+                longitude: Number(currentSession.classroom_lng),
+                accuracy: 15,
+                timestamp: Date.now()
+            };
+        }
         showQRCode(currentSession.scan_url);
         updateUIForActiveSession();
         startIntervals();
@@ -857,13 +869,21 @@ startBtn.addEventListener('click', async () => {
         startBtn.disabled = true;
         startBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Starting...';
 
+        // Fast wait for location if not yet acquired (up to 2.5s)
+        if (!teacherLocation && navigator.geolocation && selectedRadius > 0) {
+            startBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Acquiring Room GPS...';
+            await waitForTeacherLocation(2500);
+            startBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Starting...';
+        }
+
         const lat = teacherLocation ? teacherLocation.latitude : null;
         const lng = teacherLocation ? teacherLocation.longitude : null;
 
         const bodyPayload = {
             subject_code: '{{ $subject->code }}',
             classroom_lat: lat,
-            classroom_lng: lng
+            classroom_lng: lng,
+            radius_meters: selectedRadius
         };
 
         const response = await fetch('{{ route("teacher.qr.start") }}', {
@@ -880,6 +900,10 @@ startBtn.addEventListener('click', async () => {
 
         if (data.success) {
             currentSession = data;
+            if (data.radius_meters !== undefined && data.radius_meters !== null) {
+                selectedRadius = Number(data.radius_meters);
+            }
+            renderLocationHUD();
             knownClockedInIds.clear();
             recentCheckInsQueue = [];
 
@@ -1679,17 +1703,158 @@ function showTeacherToast(message, type = 'info') {
     }, 4000);
 }
 
-function captureTeacherLocation() {
-    if (!navigator.geolocation) {
+function waitForTeacherLocation(maxWaitMs = 2500) {
+    return new Promise((resolve) => {
+        if (teacherLocation) {
+            return resolve(teacherLocation);
+        }
+        const start = Date.now();
+        const check = setInterval(() => {
+            if (teacherLocation || (Date.now() - start >= maxWaitMs)) {
+                clearInterval(check);
+                resolve(teacherLocation);
+            }
+        }, 100);
+    });
+}
+
+async function syncSessionClassroomLocation(sessionId, lat, lng, radius) {
+    try {
+        const payload = {
+            session_id: sessionId,
+            classroom_lat: lat,
+            classroom_lng: lng
+        };
+        if (radius !== undefined && radius !== null) {
+            payload.radius_meters = radius;
+        }
+
+        const res = await fetch('{{ route("teacher.qr.update-location") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.success) {
+            console.log('Session classroom location synced:', data);
+            if (currentSession) {
+                currentSession.classroom_lat = data.classroom_lat;
+                currentSession.classroom_lng = data.classroom_lng;
+                currentSession.radius_meters = data.radius_meters;
+            }
+            renderLocationHUD();
+        }
+    } catch (e) {
+        console.warn('Failed to sync session location:', e);
+    }
+}
+
+function renderLocationHUD(state) {
+    if (!locationStatus) return;
+
+    if (state === 'acquiring') {
         locationStatus.innerHTML = `
-            <div class="qr-alert qr-alert-warning">
-                <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
-                <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-geo-alt me-1"></i> Location Not Available</h6>
-                    <p class="qr-alert-body mb-0">Your browser does not support geolocation. Students will be validated against the default campus coordinates.</p>
+            <div class="qr-alert qr-alert-info d-flex align-items-center justify-content-between p-3" style="border-radius: 14px;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <div>
+                        <div class="fw-bold" style="font-size: 0.9rem;">Acquiring Classroom Location...</div>
+                        <div class="text-muted small">Detecting Wi-Fi/GPS coordinates for this classroom session.</div>
+                    </div>
                 </div>
             </div>
         `;
+        return;
+    }
+
+    const hasCoords = teacherLocation && teacherLocation.latitude && teacherLocation.longitude;
+    const radiusLabel = selectedRadius <= 0 ? 'Disabled' : selectedRadius + 'm';
+
+    let html = `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(207,164,111,0.25); border-radius: 16px; padding: 14px 18px; margin-top: 10px;">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-geo-alt-fill" style="color: ${hasCoords ? '#10b981' : (selectedRadius <= 0 ? '#60a5fa' : '#f59e0b')}; font-size: 1.15rem;"></i>
+                    <span style="font-weight: 700; color: #f3e7cd; font-size: 0.92rem;">
+                        ${selectedRadius <= 0 
+                            ? 'Geofence: Disabled' 
+                            : (hasCoords 
+                                ? 'Classroom Geofence: Active (' + radiusLabel + ')' 
+                                : 'Classroom Geofence: Auto-Anchor Ready')}
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1" onclick="recalibrateLocation()" style="font-size: 0.78rem;">
+                        <i class="bi bi-arrow-repeat me-1"></i> Recalibrate Room GPS
+                    </button>
+                    <button type="button" class="btn btn-sm ${selectedRadius <= 0 ? 'btn-warning' : 'btn-outline-secondary'} rounded-pill px-3 py-1" onclick="toggleGeofenceDisable()" style="font-size: 0.78rem;">
+                        <i class="bi bi-slash-circle me-1"></i> ${selectedRadius <= 0 ? 'Enable Geofence' : 'Disable Geofence'}
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 text-muted small" style="font-size: 0.8rem;">
+                <div>
+                    ${hasCoords 
+                        ? `<span><strong>Coords:</strong> ${teacherLocation.latitude.toFixed(6)}, ${teacherLocation.longitude.toFixed(6)} (±${Math.round(teacherLocation.accuracy || 15)}m)</span>`
+                        : (selectedRadius <= 0 
+                            ? `<span>Students anywhere (home/remote/labs) can record attendance without location restrictions.</span>`
+                            : `<span>Session will automatically anchor classroom GPS from the first verified in-room scan.</span>`)}
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span style="color: #b39b82;">Radius:</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn ${selectedRadius === 50 ? 'btn-warning' : 'btn-outline-secondary'} py-0 px-2" onclick="setSessionRadius(50)">50m</button>
+                        <button type="button" class="btn ${selectedRadius === 100 ? 'btn-warning' : 'btn-outline-secondary'} py-0 px-2" onclick="setSessionRadius(100)">100m</button>
+                        <button type="button" class="btn ${selectedRadius === 200 ? 'btn-warning' : 'btn-outline-secondary'} py-0 px-2" onclick="setSessionRadius(200)">200m</button>
+                        <button type="button" class="btn ${selectedRadius <= 0 ? 'btn-danger' : 'btn-outline-secondary'} py-0 px-2" onclick="setSessionRadius(-1)">Off</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    locationStatus.innerHTML = html;
+}
+
+function recalibrateLocation() {
+    locationDowngraded = false;
+    teacherLocation = null;
+    try { sessionStorage.removeItem('teacher_classroom_geo'); } catch(e) {}
+    captureTeacherLocation();
+    showTeacherToast('Recalibrating classroom location...', 'info');
+}
+
+function setSessionRadius(radius) {
+    selectedRadius = radius;
+    renderLocationHUD();
+    if (currentSession && currentSession.session_id) {
+        const lat = teacherLocation ? teacherLocation.latitude : (currentSession.classroom_lat || null);
+        const lng = teacherLocation ? teacherLocation.longitude : (currentSession.classroom_lng || null);
+        if (lat && lng) {
+            syncSessionClassroomLocation(currentSession.session_id, lat, lng, selectedRadius);
+        } else {
+            syncSessionClassroomLocation(currentSession.session_id, 0, 0, selectedRadius);
+        }
+        showTeacherToast('Geofence radius set to ' + (radius <= 0 ? 'Disabled' : radius + 'm'), 'success');
+    }
+}
+
+function toggleGeofenceDisable() {
+    if (selectedRadius <= 0) {
+        setSessionRadius(50);
+    } else {
+        setSessionRadius(-1);
+    }
+}
+
+function captureTeacherLocation() {
+    if (!navigator.geolocation) {
+        renderLocationHUD();
         return;
     }
 
@@ -1701,17 +1866,20 @@ function captureTeacherLocation() {
         clearTimeout(locationTimeoutId);
         locationTimeoutId = null;
     }
-    locationDowngraded = false;
 
-    locationStatus.innerHTML = `
-        <div class="qr-alert qr-alert-info">
-            <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
-            <div>
-                <h6 class="qr-alert-title mb-1"><i class="bi bi-geo-alt me-1"></i> Capturing Classroom Location...</h6>
-                <p class="qr-alert-body mb-0">Please allow location access so the student scan area matches your room.</p>
-            </div>
-        </div>
-    `;
+    // Try reading cached location from session storage if fresh (< 1 hour)
+    try {
+        const cached = sessionStorage.getItem('teacher_classroom_geo');
+        if (cached && !teacherLocation) {
+            const parsed = JSON.parse(cached);
+            if (Date.now() - parsed.timestamp < 3600000) {
+                teacherLocation = parsed;
+                renderLocationHUD();
+            }
+        }
+    } catch(e) {}
+
+    renderLocationHUD('acquiring');
 
     const onSuccess = (position) => {
         if (locationWatchId !== null) {
@@ -1727,25 +1895,31 @@ function captureTeacherLocation() {
         teacherLocation = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            accuracy: accuracy
+            accuracy: accuracy,
+            timestamp: Date.now()
         };
 
-        const isReliable = accuracy <= 200;
-        startBtn.disabled = false;
+        try {
+            sessionStorage.setItem('teacher_classroom_geo', JSON.stringify(teacherLocation));
+        } catch(e) {}
 
-        locationStatus.innerHTML = `
-            <div class="qr-alert ${isReliable ? 'qr-alert-success' : 'qr-alert-warning'}">
-                <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: ${isReliable ? '#10b981' : '#f59e0b'};"></i>
-                <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-laptop me-1"></i> Using Classroom Location</h6>
-                    <p class="qr-alert-body mb-1">Latitude: ${teacherLocation.latitude.toFixed(6)}, Longitude: ${teacherLocation.longitude.toFixed(6)}</p>
-                    <p class="qr-alert-body mb-0">Accuracy: ${Math.round(accuracy)}m &mdash; ${isReliable ? '<i class="bi bi-check2 text-success me-1"></i> This is acceptable for classroom location.' : 'This is a weaker fix, but the session will still use it.'}</p>
-                </div>
-            </div>
-        `;
+        startBtn.disabled = false;
+        renderLocationHUD();
+
+        // If a session is currently running, automatically sync these coordinates to the server!
+        if (currentSession && currentSession.session_id) {
+            syncSessionClassroomLocation(currentSession.session_id, teacherLocation.latitude, teacherLocation.longitude, selectedRadius);
+        }
     };
 
     const onError = (error) => {
+        if (!locationDowngraded) {
+            locationDowngraded = true;
+            // Immediate fallback to standard accuracy (resolves instantly on laptops/Wi-Fi)
+            startLocationWatch(false);
+            return;
+        }
+
         if (locationWatchId !== null) {
             navigator.geolocation.clearWatch(locationWatchId);
             locationWatchId = null;
@@ -1755,33 +1929,8 @@ function captureTeacherLocation() {
             locationTimeoutId = null;
         }
 
-        if (!locationDowngraded && (error.code === error.TIMEOUT || error.code === error.POSITION_UNAVAILABLE)) {
-            locationDowngraded = true;
-            locationStatus.innerHTML = `
-                <div class="qr-alert qr-alert-info">
-                    <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
-                    <div>
-                        <h6 class="qr-alert-title mb-1"><i class="bi bi-arrow-repeat me-1"></i> Retrying location capture...</h6>
-                        <p class="qr-alert-body mb-0">High accuracy did not respond. Trying a fallback request now.</p>
-                    </div>
-                </div>
-            `;
-            startLocationWatch(false);
-            return;
-        }
-
-        teacherLocation = null;
         startBtn.disabled = false;
-
-        locationStatus.innerHTML = `
-            <div class="qr-alert qr-alert-info">
-                <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
-                <div>
-                    <h6 class="qr-alert-title mb-1"><i class="bi bi-building-check me-1"></i> Using Campus Geofence</h6>
-                    <p class="qr-alert-body mb-0">Device GPS fix was not detected. The attendance session will validate students using campus coordinates.</p>
-                </div>
-            </div>
-        `;
+        renderLocationHUD();
     };
 
     const startLocationWatch = (highAccuracy) => {
@@ -1793,7 +1942,7 @@ function captureTeacherLocation() {
 
         locationWatchId = navigator.geolocation.watchPosition(onSuccess, onError, {
             enableHighAccuracy: highAccuracy,
-            timeout: highAccuracy ? 15000 : 20000,
+            timeout: highAccuracy ? 3500 : 8000,
             maximumAge: 10000
         });
 
@@ -1804,20 +1953,11 @@ function captureTeacherLocation() {
             }
             if (!locationDowngraded) {
                 locationDowngraded = true;
-                locationStatus.innerHTML = `
-                    <div class="qr-alert qr-alert-info">
-                        <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #3b82f6;"></i>
-                        <div>
-                            <h6 class="qr-alert-title mb-1"><i class="bi bi-arrow-repeat me-1"></i> Trying fallback...</h6>
-                            <p class="qr-alert-body mb-0">If this still fails, default campus coordinates will be used.</p>
-                        </div>
-                    </div>
-                `;
                 startLocationWatch(false);
             } else {
                 onError({ code: 0 });
             }
-        }, highAccuracy ? 18000 : 22000);
+        }, highAccuracy ? 4000 : 9000);
     };
 
     startLocationWatch(true);
@@ -1831,3 +1971,4 @@ document.addEventListener('keydown', (e) => {
 });
 </script>
 @endsection
+

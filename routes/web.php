@@ -477,6 +477,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/qr/stop', [App\Http\Controllers\QrAttendanceController::class, 'stopTeacherSession'])->name('qr.stop');
     Route::post('/qr/override', [App\Http\Controllers\QrAttendanceController::class, 'overrideStudentStatus'])->name('qr.override');
     Route::get('/qr/clockins', [App\Http\Controllers\QrAttendanceController::class, 'getTeacherClockIns'])->name('qr.clockins');
+    Route::post('/qr/update-location', [App\Http\Controllers\QrAttendanceController::class, 'updateSessionLocation'])->name('qr.update-location');
     // Parameterized route comes last
     Route::get('/qr/{subjectCode}', [App\Http\Controllers\QrAttendanceController::class, 'showTeacherQrPage'])->name('qr');
     

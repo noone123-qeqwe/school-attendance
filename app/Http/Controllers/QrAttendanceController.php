@@ -42,6 +42,86 @@ class QrAttendanceController extends Controller
         return (int) \App\Models\Setting::get('gps_radius', 50);
     }
 
+    /**
+     * Resolve classroom coordinates with smart auto-anchoring:
+     * 1. If radius <= 0, geofence is disabled.
+     * 2. If session has explicit coordinates, use them.
+     * 3. If admin configured campus GPS in Setting table, use them.
+     * 4. If neither is set, and student is in regional proximity (<= 10km of default Taguig anchor),
+     *    auto-anchor the session to the first local in-room scan location!
+     * 5. Otherwise (student > 10km away), retain regional anchor to reject remote scans.
+     */
+    private function resolveClassroomCoords(AttendanceSession $session, float $studentLat, float $studentLng): array
+    {
+        $radius = (int) $session->getAllowedRadius();
+        if ($radius <= 0) {
+            return [
+                'schoolLat'  => $studentLat,
+                'schoolLng'  => $studentLng,
+                'isExplicit' => false,
+                'disabled'   => true,
+            ];
+        }
+
+        if ($session->classroom_lat !== null && $session->classroom_lng !== null) {
+            return [
+                'schoolLat'  => (float) $session->classroom_lat,
+                'schoolLng'  => (float) $session->classroom_lng,
+                'isExplicit' => true,
+                'disabled'   => false,
+            ];
+        }
+
+        // Check if school admin explicitly configured campus GPS in database
+        $customLat = \App\Models\Setting::where('key', 'gps_lat')->value('value');
+        $customLng = \App\Models\Setting::where('key', 'gps_lng')->value('value');
+
+        if ($customLat !== null && $customLat !== '' && $customLng !== null && $customLng !== '') {
+            return [
+                'schoolLat'  => (float) $customLat,
+                'schoolLng'  => (float) $customLng,
+                'isExplicit' => true,
+                'disabled'   => false,
+            ];
+        }
+
+        // Regional fallback anchor (Taguig default)
+        $defaultLat = 14.538800;
+        $defaultLng = 121.022300;
+        $regionalDist = $this->distance($studentLat, $studentLng, $defaultLat, $defaultLng);
+
+        // If student is within regional bounds (<= 10km), auto-anchor session to this verified local classroom location
+        if ($regionalDist <= 10000) {
+            try {
+                $session->classroom_lat = $studentLat;
+                $session->classroom_lng = $studentLng;
+                $session->save();
+
+                Log::info('Auto-anchored session classroom coordinates from local scan', [
+                    'session_id'  => $session->id,
+                    'lat'         => $studentLat,
+                    'lng'         => $studentLng,
+                    'region_dist' => round($regionalDist),
+                ]);
+            } catch (\Throwable $e) {}
+
+            return [
+                'schoolLat'  => $studentLat,
+                'schoolLng'  => $studentLng,
+                'isExplicit' => true,
+                'disabled'   => false,
+            ];
+        }
+
+        // Student is far away (> 10km, e.g. 60km remote scan attempt)
+        return [
+            'schoolLat'  => $defaultLat,
+            'schoolLng'  => $defaultLng,
+            'isExplicit' => false,
+            'disabled'   => false,
+        ];
+    }
+
     private function getRpId(Request $request): string
     {
         $host = trim((string) $request->header('x-forwarded-host', $request->getHost()));
@@ -229,7 +309,7 @@ class QrAttendanceController extends Controller
             'subject_code'         => 'required|string|exists:subjects,code',
             'classroom_lat'        => 'nullable|numeric|between:-90,90',
             'classroom_lng'        => 'nullable|numeric|between:-180,180',
-            'radius_meters'        => 'nullable|integer|min:10|max:1000',
+            'radius_meters'        => 'nullable|integer|min:-1|max:1000',
             'grace_period_minutes' => 'nullable|integer|min:1|max:60',
         ]);
 
@@ -284,6 +364,51 @@ class QrAttendanceController extends Controller
                 'message' => $e->getMessage(),
             ], 422);
         }
+    }
+
+    // ─────────────────────────────────────────
+    // Teacher: Update session classroom location & geofence
+    // ─────────────────────────────────────────
+    public function updateSessionLocation(Request $request)
+    {
+        $request->validate([
+            'session_id'    => 'required|integer|exists:attendance_sessions,id',
+            'classroom_lat' => 'required|numeric|between:-90,90',
+            'classroom_lng' => 'required|numeric|between:-180,180',
+            'radius_meters' => 'nullable|integer|min:-1|max:1000',
+        ]);
+
+        $session = AttendanceSession::findOrFail($request->session_id);
+        $user = Auth::user();
+        $isTeacher = ((int) $session->created_by === (int) $user->id) 
+            || ($session->subject && (int) $session->subject->instructor_id === (int) $user->id);
+
+        if (!$isTeacher && !in_array($user->role, ['admin', 'department_head'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized to update this session.'], 403);
+        }
+
+        $session->classroom_lat = $request->classroom_lat;
+        $session->classroom_lng = $request->classroom_lng;
+        if ($request->has('radius_meters') && $request->radius_meters !== null) {
+            $session->radius_meters = (int) $request->radius_meters;
+        }
+        $session->save();
+
+        Log::info('Teacher updated session classroom location', [
+            'session_id'    => $session->id,
+            'teacher_id'    => $user->id,
+            'classroom_lat' => $session->classroom_lat,
+            'classroom_lng' => $session->classroom_lng,
+            'radius'        => $session->getAllowedRadius(),
+        ]);
+
+        return response()->json([
+            'success'       => true,
+            'message'       => 'Classroom location synced successfully.',
+            'classroom_lat' => (float) $session->classroom_lat,
+            'classroom_lng' => (float) $session->classroom_lng,
+            'radius_meters' => (int) $session->getAllowedRadius(),
+        ]);
     }
     // ─────────────────────────────────────────
     // Teacher: Refresh QR token
@@ -785,6 +910,28 @@ class QrAttendanceController extends Controller
         $radius = $session->getAllowedRadius();
         $graceMinutes = $session->getGracePeriodMinutes();
 
+        if ($radius <= 0) {
+            $attendance->update([
+                'last_location_check_at'    => $now,
+                'last_latitude'             => $request->filled('latitude') ? (float) $request->latitude : null,
+                'last_longitude'            => $request->filled('longitude') ? (float) $request->longitude : null,
+                'last_accuracy'             => $request->filled('accuracy') ? (float) $request->accuracy : null,
+                'last_distance_meters'      => 0,
+                'outside_since'             => null,
+                'consecutive_outside_count' => 0,
+                'monitoring_status'         => 'active',
+            ]);
+
+            return response()->json([
+                'success'           => true,
+                'status'            => $attendance->status,
+                'monitoring_status' => 'active',
+                'distance'          => 0,
+                'radius'            => 0,
+                'message'           => 'Presence verified (Geofence disabled).'
+            ]);
+        }
+
         // 1. Client-reported GPS permission denial or location hardware failure
         if ($request->filled('error_code')) {
             $outsideSince = $attendance->outside_since ? Carbon::parse($attendance->outside_since) : $now;
@@ -883,8 +1030,9 @@ class QrAttendanceController extends Controller
         }
 
         // Server-side Haversine distance calculation
-        $schoolLat = (float) ($session->classroom_lat ?? $this->getSchoolLat());
-        $schoolLng = (float) ($session->classroom_lng ?? $this->getSchoolLng());
+        $coords = $this->resolveClassroomCoords($session, $studentLat, $studentLng);
+        $schoolLat = $coords['schoolLat'];
+        $schoolLng = $coords['schoolLng'];
         $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
 
         // Account for GPS accuracy error margins instead of rejecting students due to small indoor inaccuracies
@@ -1205,8 +1353,15 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        $classroomLat = (float) ($session->classroom_lat ?? $this->getSchoolLat());
-        $classroomLng = (float) ($session->classroom_lng ?? $this->getSchoolLng());
+        $dbLat = \App\Models\Setting::where('key', 'gps_lat')->value('value');
+        $dbLng = \App\Models\Setting::where('key', 'gps_lng')->value('value');
+
+        $classroomLat = $session->classroom_lat !== null 
+            ? (float) $session->classroom_lat 
+            : ($dbLat !== null && $dbLat !== '' ? (float) $dbLat : null);
+        $classroomLng = $session->classroom_lng !== null 
+            ? (float) $session->classroom_lng 
+            : ($dbLng !== null && $dbLng !== '' ? (float) $dbLng : null);
         $radiusMeters = (int) $session->getAllowedRadius();
 
         return view('qr.verify', [
@@ -1441,62 +1596,46 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $schoolLat    = (float) ($session->classroom_lat ?? $this->getSchoolLat());
-        $schoolLng    = (float) ($session->classroom_lng ?? $this->getSchoolLng());
         $radiusMeters = (int) $session->getAllowedRadius();
 
-        $studentAccuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+        if ($radiusMeters > 0) {
+            $studentAccuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
-        if ($studentAccuracy !== null && $studentAccuracy <= 0) {
-            return response()->json([
-                'success'    => false,
-                'error_type' => 'unreliable_gps',
-                'message'    => 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.'
-            ], 422);
-        }
+            if ($studentAccuracy !== null && $studentAccuracy <= 0) {
+                return response()->json([
+                    'success'    => false,
+                    'error_type' => 'unreliable_gps',
+                    'message'    => 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.'
+                ], 422);
+            }
 
-        // GPS Accuracy check: If accuracy reading is very imprecise (>150m), do not falsely claim student is outside
-        if ($studentAccuracy !== null && $studentAccuracy > 150) {
-            return response()->json([
-                'success'    => false,
-                'error_type' => 'unreliable_gps',
-                'accuracy'   => round($studentAccuracy),
-                'radius'     => $radiusMeters,
-                'message'    => 'GPS signal accuracy is too low (±' . round($studentAccuracy) . 'm) to verify your classroom location. Please move near a window, enable High Accuracy GPS, and try again.'
-            ], 422);
-        }
+            // GPS Accuracy check: If accuracy reading is very imprecise (>150m), do not falsely claim student is outside
+            if ($studentAccuracy !== null && $studentAccuracy > 150) {
+                return response()->json([
+                    'success'    => false,
+                    'error_type' => 'unreliable_gps',
+                    'accuracy'   => round($studentAccuracy),
+                    'radius'     => $radiusMeters,
+                    'message'    => 'GPS signal accuracy is too low (±' . round($studentAccuracy) . 'm) to verify your classroom location. Please move near a window, enable High Accuracy GPS, and try again.'
+                ], 422);
+            }
 
-        $distance = $this->distance(
-            (float) $request->latitude,
-            (float) $request->longitude,
-            $schoolLat,
-            $schoolLng
-        );
+            $coords = $this->resolveClassroomCoords($session, (float) $request->latitude, (float) $request->longitude);
+            $schoolLat = $coords['schoolLat'];
+            $schoolLng = $coords['schoolLng'];
 
-        // Account for GPS accuracy margin instead of rejecting students due to indoor inaccuracy
-        $accuracyAllowance = ($studentAccuracy !== null && $studentAccuracy > 0) ? min($studentAccuracy, 150.0) : 15.0;
-        $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
+            $distance = $this->distance(
+                (float) $request->latitude,
+                (float) $request->longitude,
+                $schoolLat,
+                $schoolLng
+            );
 
-        Log::info('QR distance check', [
-            'session_id'                    => $session->id,
-            'session_token'                 => $session->token,
-            'student_id'                    => $user->id,
-            'student_lat'                   => (float) $request->latitude,
-            'student_lng'                   => (float) $request->longitude,
-            'student_accuracy'              => $studentAccuracy,
-            'accuracy_allowance'            => $accuracyAllowance,
-            'classroom_lat'                 => $schoolLat,
-            'classroom_lng'                 => $schoolLng,
-            'session_classroom_lat_from_db' => $session->classroom_lat,
-            'session_classroom_lng_from_db' => $session->classroom_lng,
-            'distance_meters'               => $distance,
-            'effective_distance'            => $effectiveDistance,
-            'radius_limit'                  => $radiusMeters,
-            'result'                        => $effectiveDistance <= $radiusMeters ? 'PASS' : 'FAIL'
-        ]);
+            // Account for GPS accuracy margin instead of rejecting students due to indoor inaccuracy
+            $accuracyAllowance = ($studentAccuracy !== null && $studentAccuracy > 0) ? min($studentAccuracy, 150.0) : 15.0;
+            $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
 
-        if ($effectiveDistance > $radiusMeters) {
-            Log::warning('QR distance validation failed: student outside classroom', [
+            Log::info('QR distance check', [
                 'session_id'                    => $session->id,
                 'session_token'                 => $session->token,
                 'student_id'                    => $user->id,
@@ -1511,16 +1650,36 @@ class QrAttendanceController extends Controller
                 'distance_meters'               => $distance,
                 'effective_distance'            => $effectiveDistance,
                 'radius_limit'                  => $radiusMeters,
+                'result'                        => $effectiveDistance <= $radiusMeters ? 'PASS' : 'FAIL'
             ]);
 
-            return response()->json([
-                'success'            => false,
-                'error_type'         => 'outside_classroom',
-                'distance'           => round($distance),
-                'effective_distance' => round($effectiveDistance),
-                'radius'             => $radiusMeters,
-                'message'            => 'Failed to scan: You are outside the classroom (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Attendance can only be marked while inside the classroom.'
-            ], 422);
+            if ($effectiveDistance > $radiusMeters) {
+                Log::warning('QR distance validation failed: student outside classroom', [
+                    'session_id'                    => $session->id,
+                    'session_token'                 => $session->token,
+                    'student_id'                    => $user->id,
+                    'student_lat'                   => (float) $request->latitude,
+                    'student_lng'                   => (float) $request->longitude,
+                    'student_accuracy'              => $studentAccuracy,
+                    'accuracy_allowance'            => $accuracyAllowance,
+                    'classroom_lat'                 => $schoolLat,
+                    'classroom_lng'                 => $schoolLng,
+                    'session_classroom_lat_from_db' => $session->classroom_lat,
+                    'session_classroom_lng_from_db' => $session->classroom_lng,
+                    'distance_meters'               => $distance,
+                    'effective_distance'            => $effectiveDistance,
+                    'radius_limit'                  => $radiusMeters,
+                ]);
+
+                return response()->json([
+                    'success'            => false,
+                    'error_type'         => 'outside_classroom',
+                    'distance'           => round($distance),
+                    'effective_distance' => round($effectiveDistance),
+                    'radius'             => $radiusMeters,
+                    'message'            => 'Failed to scan: You are outside the classroom (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Attendance can only be marked while inside the classroom.'
+                ], 422);
+            }
         }
 
         $existing = Attendance::where('user_id', $user->id)
@@ -2103,58 +2262,61 @@ class QrAttendanceController extends Controller
         }
 
         // 3. Geofence Distance Check
-        $schoolLat = (float) ($session->classroom_lat ?? $this->getSchoolLat());
-        $schoolLng = (float) ($session->classroom_lng ?? $this->getSchoolLng());
         $radiusMeters = (int) $session->getAllowedRadius();
-
         $hasCoordinates = $request->filled('latitude') && $request->filled('longitude');
 
-        if ($hasCoordinates) {
-            $studentLat = (float) $request->latitude;
-            $studentLng = (float) $request->longitude;
-            $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+        if ($radiusMeters > 0) {
+            if ($hasCoordinates) {
+                $studentLat = (float) $request->latitude;
+                $studentLng = (float) $request->longitude;
+                $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
-            if ($accuracy !== null && $accuracy <= 0) {
+                if ($accuracy !== null && $accuracy <= 0) {
+                    return response()->json([
+                        'success'    => false,
+                        'error_type' => 'unreliable_gps',
+                        'message'    => 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.'
+                    ], 422);
+                }
+
+                // GPS Accuracy check: If accuracy reading is very imprecise (>150m), do not falsely claim student is outside
+                if ($accuracy !== null && $accuracy > 150) {
+                    return response()->json([
+                        'success'    => false,
+                        'error_type' => 'unreliable_gps',
+                        'accuracy'   => round($accuracy),
+                        'radius'     => $radiusMeters,
+                        'message'    => 'GPS signal accuracy is too low (±' . round($accuracy) . 'm) to verify your classroom location. Please move near a window, enable High Accuracy GPS, and try again.'
+                    ], 422);
+                }
+
+                $coords = $this->resolveClassroomCoords($session, $studentLat, $studentLng);
+                $schoolLat = $coords['schoolLat'];
+                $schoolLng = $coords['schoolLng'];
+
+                $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
+
+                // Account for GPS accuracy margin instead of rejecting students due to indoor inaccuracy
+                $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
+                $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
+
+                if ($effectiveDistance > $radiusMeters) {
+                    return response()->json([
+                        'success'            => false,
+                        'error_type'         => 'outside_classroom',
+                        'distance'           => round($distance),
+                        'effective_distance' => round($effectiveDistance),
+                        'radius'             => $radiusMeters,
+                        'message'            => 'You are outside the classroom boundary (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Please scan inside the classroom.'
+                    ], 422);
+                }
+            } elseif ($session->classroom_lat !== null) {
                 return response()->json([
                     'success'    => false,
-                    'error_type' => 'unreliable_gps',
-                    'message'    => 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.'
+                    'error_type' => 'location_required',
+                    'message'    => 'Location coordinates are required to verify you are present in the classroom. Please enable GPS permissions and try again.'
                 ], 422);
             }
-
-            // GPS Accuracy check: If accuracy reading is very imprecise (>150m), do not falsely claim student is outside
-            if ($accuracy !== null && $accuracy > 150) {
-                return response()->json([
-                    'success'    => false,
-                    'error_type' => 'unreliable_gps',
-                    'accuracy'   => round($accuracy),
-                    'radius'     => $radiusMeters,
-                    'message'    => 'GPS signal accuracy is too low (±' . round($accuracy) . 'm) to verify your classroom location. Please move near a window, enable High Accuracy GPS, and try again.'
-                ], 422);
-            }
-
-            $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
-
-            // Account for GPS accuracy margin instead of rejecting students due to indoor inaccuracy
-            $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
-            $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
-
-            if ($effectiveDistance > $radiusMeters) {
-                return response()->json([
-                    'success'            => false,
-                    'error_type'         => 'outside_classroom',
-                    'distance'           => round($distance),
-                    'effective_distance' => round($effectiveDistance),
-                    'radius'             => $radiusMeters,
-                    'message'            => 'You are outside the classroom boundary (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Please scan inside the classroom.'
-                ], 422);
-            }
-        } elseif ($session->classroom_lat !== null) {
-            return response()->json([
-                'success'    => false,
-                'error_type' => 'location_required',
-                'message'    => 'Location coordinates are required to verify you are present in the classroom. Please enable GPS permissions and try again.'
-            ], 422);
         }
 
         // 4. Calculate Timing (Present vs Late threshold)

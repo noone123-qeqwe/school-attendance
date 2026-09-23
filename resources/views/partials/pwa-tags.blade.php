@@ -1641,6 +1641,7 @@
 
         // 1. Semantic Version update (e.g. 2.4.1 > 2.4.0)
         if (compareSemver(latestVer, installedVer) > 0) {
+            try { localStorage.removeItem('pwa_update_dismissed_at'); } catch(e) {}
             return true;
         }
 
