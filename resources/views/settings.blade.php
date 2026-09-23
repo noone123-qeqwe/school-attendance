@@ -1116,34 +1116,36 @@
 /* Face Idle Graphic */
 .bio-idle-face-box {
     position: relative;
-    width: 90px;
-    height: 104px;
+    width: 130px;
+    height: 150px;
     margin: 0 auto 16px auto;
-    border-radius: 18px;
+    border-radius: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: rgba(6, 182, 212, 0.05);
-    border: 1px dashed rgba(6, 182, 212, 0.25);
+    border: 1.5px dashed rgba(6, 182, 212, 0.3);
 }
 .hud-corner {
     position: absolute;
-    width: 12px;
-    height: 12px;
+    width: 20px;
+    height: 20px;
     border-color: #06b6d4;
     border-style: solid;
+    pointer-events: none;
+    z-index: 10;
 }
-.hud-tl { top: -2px; left: -2px; border-width: 2.5px 0 0 2.5px; border-top-left-radius: 5px; }
-.hud-tr { top: -2px; right: -2px; border-width: 2.5px 2.5px 0 0; border-top-right-radius: 5px; }
-.hud-bl { bottom: -2px; left: -2px; border-width: 0 0 2.5px 2.5px; border-bottom-left-radius: 5px; }
-.hud-br { bottom: -2px; right: -2px; border-width: 0 2.5px 2.5px 0; border-bottom-right-radius: 5px; }
+.hud-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
+.hud-tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-top-right-radius: 8px; }
+.hud-bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-bottom-left-radius: 8px; }
+.hud-br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-bottom-right-radius: 8px; }
 .hud-face-reticle {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .bio-idle-face-icon {
-    font-size: 2.6rem;
+    font-size: 3.4rem;
 }
 
 .bio-preview-title {
@@ -1240,52 +1242,63 @@
 /* Face Recognition Live Active Scanner */
 .face-scan-frame {
     position: relative;
-    width: 150px;
-    height: 175px;
-    margin: 0 auto 16px auto;
-    border-radius: 22px;
+    width: 100%;
+    max-width: 360px;
+    height: 360px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto 18px auto;
+    border-radius: 28px;
     background: rgba(6, 182, 212, 0.05);
-    border: 1.5px solid rgba(6, 182, 212, 0.4);
-    box-shadow: 0 0 30px rgba(6, 182, 212, 0.25);
+    border: 2.5px solid rgba(6, 182, 212, 0.5);
+    box-shadow: 0 0 35px rgba(6, 182, 212, 0.3), inset 0 0 25px rgba(6, 182, 212, 0.12);
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+}
+@media (max-width: 480px) {
+    .face-scan-frame {
+        max-width: min(340px, 84vw);
+        height: min(340px, 84vw);
+        border-radius: 22px;
+    }
 }
 /* Face Flash / Fill Light Controls */
 .face-hud-flash-btn {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    z-index: 15;
+    top: 12px;
+    right: 12px;
+    z-index: 25;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 3px 9px;
-    background: rgba(15, 23, 42, 0.82);
-    border: 1px solid rgba(255, 255, 255, 0.28);
+    gap: 6px;
+    padding: 5px 12px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1.5px solid rgba(255, 255, 255, 0.35);
     color: #f1f5f9;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     font-weight: 600;
-    border-radius: 18px;
+    border-radius: 20px;
     cursor: pointer;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
 }
 .face-hud-flash-btn:hover {
     background: rgba(30, 41, 59, 0.95);
     border-color: #facc15;
     color: #fef08a;
     transform: scale(1.05);
-    box-shadow: 0 0 12px rgba(250, 204, 21, 0.45);
+    box-shadow: 0 0 16px rgba(250, 204, 21, 0.55);
 }
 .face-hud-flash-btn.active-flash {
     background: linear-gradient(135deg, #facc15, #f59e0b) !important;
     border-color: #ffffff !important;
     color: #0f172a !important;
-    box-shadow: 0 0 18px rgba(250, 204, 21, 0.85), 0 0 5px #ffffff !important;
+    box-shadow: 0 0 20px rgba(250, 204, 21, 0.9), 0 0 8px #ffffff !important;
     font-weight: 700;
     transform: scale(1.04);
 }
@@ -1298,7 +1311,7 @@
 }
 @keyframes flashBtnSuggestPulse {
     0%, 100% { border-color: rgba(250, 204, 21, 0.4); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
-    50% { border-color: #facc15; box-shadow: 0 0 14px rgba(250, 204, 21, 0.65); color: #facc15; }
+    50% { border-color: #facc15; box-shadow: 0 0 16px rgba(250, 204, 21, 0.75); color: #facc15; }
 }
 
 /* Face Screen Flash Overlay (Selfie Fill Light) */
@@ -1306,14 +1319,12 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    z-index: 8;
+    z-index: 12;
     opacity: 0;
-    transition: opacity 0.28s ease, box-shadow 0.28s ease;
+    transition: opacity 0.25s ease, box-shadow 0.25s ease;
     border-radius: inherit;
-    /* Perimeter halo ring illuminates face in darkness while center stays clear for camera view */
-    background: radial-gradient(circle at center, transparent 48%, rgba(255, 255, 255, 0.35) 75%, rgba(255, 255, 255, 0.85) 100%);
-    box-shadow: inset 0 0 45px 10px rgba(255, 255, 255, 0.95), 0 0 65px 15px rgba(255, 255, 255, 0.8);
-    border: 3.5px solid rgba(255, 255, 255, 0.95);
+    box-shadow: inset 0 0 60px 20px rgba(255, 255, 255, 0.95), 0 0 80px 25px rgba(255, 255, 255, 0.9);
+    border: 4px solid #ffffff;
 }
 .face-screen-flash-overlay.active {
     opacity: 1;
@@ -1321,7 +1332,26 @@
 
 .face-scan-frame.flash-on,
 .bio-login-camera-box.flash-on {
-    box-shadow: 0 0 75px 22px rgba(255, 255, 255, 0.92), 0 0 110px 45px rgba(250, 204, 21, 0.32) !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 0 0 12px #ffffff, 0 0 80px 30px rgba(255, 255, 255, 0.95), 0 0 140px 60px rgba(255, 255, 255, 0.8) !important;
+}
+
+/* Card-wide screen fill light when flash is active */
+.bio-scanner-card.flash-on {
+    background: #ffffff !important;
+    box-shadow: 0 0 140px 60px rgba(255, 255, 255, 0.95), 0 0 0 9999px rgba(255, 255, 255, 0.45) !important;
+    color: #0f172a !important;
+    border-color: #ffffff !important;
+}
+.bio-scanner-card.flash-on .bio-scanning-title {
+    color: #0f172a !important;
+}
+.bio-scanner-card.flash-on .bio-scanning-sub {
+    color: #334155 !important;
+}
+.bio-scanner-card.flash-on .bio-progress-state,
+.bio-scanner-card.flash-on .bio-progress-pct {
+    color: #0f172a !important;
 }
 
 @keyframes faceCaptureBurst {
@@ -1364,60 +1394,61 @@
 }
 .face-holo-mesh {
     position: relative;
-    width: 90px;
-    height: 120px;
+    width: 220px;
+    height: 260px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .face-oval-target {
-    width: 76px;
-    height: 100px;
+    width: 190px;
+    height: 240px;
     border-radius: 50% / 60% 60% 40% 40%;
-    border: 1.5px dashed rgba(6, 182, 212, 0.4);
+    border: 2px dashed rgba(6, 182, 212, 0.45);
     position: relative;
     animation: faceOvalPulse 2s ease-in-out infinite;
 }
 @keyframes faceOvalPulse {
-    0%, 100% { border-color: rgba(6, 182, 212, 0.35); transform: scale(1); }
-    50% { border-color: rgba(56, 189, 248, 0.7); transform: scale(1.02); }
+    0%, 100% { border-color: rgba(6, 182, 212, 0.4); transform: scale(1); }
+    50% { border-color: rgba(56, 189, 248, 0.75); transform: scale(1.02); }
 }
 .face-mesh-node {
     position: absolute;
-    width: 6px;
-    height: 6px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background: #38bdf8;
-    box-shadow: 0 0 8px #06b6d4;
+    box-shadow: 0 0 10px #06b6d4;
     animation: meshNodePulse 1.8s infinite ease-in-out;
 }
-.n-forehead { top: 22px; left: 42px; }
-.n-eye-l    { top: 44px; left: 24px; animation-delay: 0.2s; }
-.n-eye-r    { top: 44px; right: 24px; animation-delay: 0.3s; }
-.n-nose     { top: 62px; left: 42px; animation-delay: 0.5s; }
-.n-mouth    { top: 82px; left: 42px; animation-delay: 0.7s; }
-.n-jaw-l    { top: 98px; left: 28px; animation-delay: 0.9s; }
-.n-jaw-r    { top: 98px; right: 28px; animation-delay: 1s; }
+.n-forehead { top: 35px; left: 50%; transform: translateX(-50%); }
+.n-eye-l    { top: 80px; left: 35px; animation-delay: 0.2s; }
+.n-eye-r    { top: 80px; right: 35px; animation-delay: 0.3s; }
+.n-nose     { top: 120px; left: 50%; transform: translateX(-50%); animation-delay: 0.5s; }
+.n-mouth    { top: 165px; left: 50%; transform: translateX(-50%); animation-delay: 0.7s; }
+.n-jaw-l    { top: 200px; left: 45px; animation-delay: 0.9s; }
+.n-jaw-r    { top: 200px; right: 45px; animation-delay: 1s; }
 @keyframes meshNodePulse {
     0%, 100% { opacity: 0.4; transform: scale(0.8); }
     50% { opacity: 1; transform: scale(1.3); }
 }
 
 .bio-scanning-title {
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #f3e7cd;
     margin-bottom: 4px;
 }
 .bio-scanning-sub {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
     color: #b39b82;
     margin-bottom: 16px;
 }
 
 /* Progressive Scan Feedback */
 .bio-progress-container {
-    max-width: 280px;
+    width: 100%;
+    max-width: 360px;
     margin: 0 auto 16px auto;
 }
 .bio-progress-track {
@@ -3863,14 +3894,15 @@ async function startBioCamera() {
         bioCameraStream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: 'user',
-                width: { ideal: 480 },
-                height: { ideal: 480 }
+                width: { ideal: 640 },
+                height: { ideal: 640 }
             }
         });
         if (video && bioCameraStream) {
             video.srcObject = bioCameraStream;
             video.style.display = 'block';
             if (holo) holo.style.display = 'none';
+            try { await video.play(); } catch(e) {}
         }
     } catch(err) {
         console.warn('Camera feed unavailable or denied for face HUD, falling back to holographic mesh:', err);
@@ -3886,6 +3918,7 @@ async function toggleFaceFlash(stream, overlayId, btnId) {
     const overlay = document.getElementById(overlayId || 'faceScreenFlashOverlay');
     const btn = document.getElementById(btnId || 'faceFlashToggleBtn');
     const frame = document.getElementById('faceScanFrame') || document.querySelector('.bio-login-camera-box');
+    const scannerCard = document.getElementById('bioScannerStage');
     
     if (overlay) {
         if (isFaceFlashActive) {
@@ -3902,6 +3935,14 @@ async function toggleFaceFlash(stream, overlayId, btnId) {
             frame.classList.remove('flash-on');
         }
     }
+
+    if (scannerCard) {
+        if (isFaceFlashActive) {
+            scannerCard.classList.add('flash-on');
+        } else {
+            scannerCard.classList.remove('flash-on');
+        }
+    }
     
     if (btn) {
         btn.classList.remove('flash-suggest-pulse');
@@ -3910,10 +3951,12 @@ async function toggleFaceFlash(stream, overlayId, btnId) {
             btn.classList.add('active-flash');
             if (textSpan) textSpan.textContent = 'Flash ON';
             btn.setAttribute('title', 'Turn Flash / Fill Light OFF');
+            btn.setAttribute('aria-pressed', 'true');
         } else {
             btn.classList.remove('active-flash');
             if (textSpan) textSpan.textContent = 'Flash';
             btn.setAttribute('title', 'Turn Flash / Fill Light ON');
+            btn.setAttribute('aria-pressed', 'false');
         }
     }
 
@@ -3924,7 +3967,7 @@ async function toggleFaceFlash(stream, overlayId, btnId) {
             const track = activeStream.getVideoTracks()[0];
             if (track) {
                 const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                if (capabilities.torch) {
+                if (capabilities.torch || ('torch' in capabilities)) {
                     await track.applyConstraints({
                         advanced: [{ torch: isFaceFlashActive }]
                     });
@@ -3944,14 +3987,17 @@ function resetFaceFlash(overlayId, btnId) {
     const overlay = document.getElementById(overlayId || 'faceScreenFlashOverlay');
     const btn = document.getElementById(btnId || 'faceFlashToggleBtn');
     const frame = document.getElementById('faceScanFrame') || document.querySelector('.bio-login-camera-box');
+    const scannerCard = document.getElementById('bioScannerStage');
     if (overlay) overlay.classList.remove('active');
     if (frame) frame.classList.remove('flash-on');
+    if (scannerCard) scannerCard.classList.remove('flash-on');
     if (btn) {
         btn.classList.remove('active-flash');
         btn.classList.remove('flash-suggest-pulse');
         const textSpan = btn.querySelector('.flash-text');
         if (textSpan) textSpan.textContent = 'Flash';
         btn.setAttribute('title', 'Toggle Flash / Fill Light');
+        btn.setAttribute('aria-pressed', 'false');
     }
 }
 
@@ -4415,7 +4461,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     const avgEdgeGradient = edgeSamples > 0 ? (totalEdgeEnergy / edgeSamples) : 0;
 
     // Reject dark / covered frame (supports low-light rooms with screen flash fill light)
-    if (avgLuma < 14 || lumaContrast < 12 || lumaStdDev < 4.5) {
+    if (avgLuma < 10 || (avgLuma < 14 && lumaContrast < 12 && lumaStdDev < 4.0)) {
         return {
             status: 'UNUSABLE',
             passed: false,
@@ -4426,7 +4472,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     }
 
     // Reject extreme glare / washed out frame
-    if (avgLuma > 246 && lumaContrast < 25) {
+    if (avgLuma > 248 && lumaContrast < 18) {
         return {
             status: 'UNUSABLE',
             passed: false,
@@ -4437,7 +4483,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     }
 
     // Reject blurry / unfocused frame (relaxed threshold to support 720p webcams while detecting motion blur)
-    if (avgEdgeGradient < 1.3) {
+    if (avgEdgeGradient < 0.9) {
         return {
             status: 'BLURRY',
             passed: false,
@@ -4518,22 +4564,22 @@ async function detectAndAnalyzeFaceFrame(video) {
             const val = maxC / 255;
 
             // Multi-spectral skin tone classifier ensemble (inclusive of light, tan, olive, dark brown, and deep tones)
-            const isYcbcrSkin = (yVal >= 15 && yVal <= 255) &&
-                                (cbVal >= 65 && cbVal <= 155) &&
-                                (crVal >= 115 && crVal <= 195);
+            const isYcbcrSkin = (yVal >= 8 && yVal <= 255) &&
+                                (cbVal >= 55 && cbVal <= 170) &&
+                                (crVal >= 110 && crVal <= 200);
 
-            const isNormRgbSkin = (normR >= 0.28 && normR <= 0.68) &&
-                                  (normG >= 0.20 && normG <= 0.44) &&
-                                  (normR >= normG - 0.08);
+            const isNormRgbSkin = (normR >= 0.24 && normR <= 0.74) &&
+                                  (normG >= 0.18 && normG <= 0.46);
 
-            const isHsvSkin = ((hue >= 0 && hue <= 58) || (hue >= 320 && hue <= 360)) &&
-                              (sat >= 0.06 && sat <= 0.88) &&
-                              (val >= 0.10);
+            const isHsvSkin = ((hue >= 0 && hue <= 68) || (hue >= 305 && hue <= 360)) &&
+                              (sat >= 0.04 && sat <= 0.90) &&
+                              (val >= 0.06);
 
             const isSkin = (isYcbcrSkin && (isNormRgbSkin || isHsvSkin)) ||
                            (isNormRgbSkin && isHsvSkin) ||
                            (isYcbcrSkin && (r > b - 15)) ||
-                           (r > 75 && g > 40 && b > 20 && r > g && (r - b) > 10 && Math.abs(r - g) > 10);
+                           (r > 55 && g > 30 && b > 15 && r >= g && (r - b) >= 6) ||
+                           (Math.abs(r - g) < 22 && r > b && (r - b) >= 8);
 
             if (isSkin) {
                 cellSkinCounts[cellIdx]++;
@@ -4545,7 +4591,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     const activeGrid = new Array(gridCols * gridRows).fill(false);
     for (let i = 0; i < gridCols * gridRows; i++) {
         const density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-        if (density >= 0.14) {
+        if (density >= 0.08) {
             activeGrid[i] = true;
         }
     }
@@ -4581,7 +4627,7 @@ async function detectAndAnalyzeFaceFrame(video) {
                     }
                 }
 
-                if (clusterCells.length >= 3) {
+                if (clusterCells.length >= 2) {
                     let minR = gridRows, maxR = 0, minC = gridCols, maxC = 0;
                     for (const [cr, cc] of clusterCells) {
                         if (cr < minR) minR = cr;
@@ -4589,12 +4635,16 @@ async function detectAndAnalyzeFaceFrame(video) {
                         if (cc < minC) minC = cc;
                         if (cc > maxC) maxC = cc;
                     }
+                    const centerCol = (minC + maxC) / 2;
+                    const centerRw = (minR + maxR) / 2;
+                    const distFromCenter = Math.hypot(centerCol - 4.5, centerRw - 4.5);
                     clusters.push({
                         cells: clusterCells.length,
                         minC: minC, maxC: maxC,
                         minR: minR, maxR: maxR,
-                        centerC: (minC + maxC) / 2,
-                        centerR: (minR + maxR) / 2,
+                        centerC: centerCol,
+                        centerR: centerRw,
+                        distFromCenter: distFromCenter,
                         wPx: (maxC - minC + 1) * cellW,
                         hPx: (maxR - minR + 1) * cellH
                     });
@@ -4610,8 +4660,8 @@ async function detectAndAnalyzeFaceFrame(video) {
         const secondary = clusters[1];
         const secondaryAspect = secondary.hPx / Math.max(1, secondary.wPx);
         // Only trigger multiple faces if secondary cluster is a substantial face-shaped head
-        if (secondary.cells >= 8 && secondary.cells >= primary.cells * 0.55 &&
-            Math.abs(primary.centerC - secondary.centerC) >= 2.8 &&
+        if (secondary.cells >= 12 && secondary.cells >= primary.cells * 0.70 &&
+            Math.abs(primary.centerC - secondary.centerC) >= 3.8 &&
             secondaryAspect >= 0.75 && secondaryAspect <= 2.2) {
             return {
                 status: 'MULTIPLE_FACES',
@@ -4621,6 +4671,9 @@ async function detectAndAnalyzeFaceFrame(video) {
                 message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
             };
         }
+        clusters.sort((a, b) => {
+            return (a.distFromCenter * 0.7 - a.cells * 0.3) - (b.distFromCenter * 0.7 - b.cells * 0.3);
+        });
     }
 
     // If nativeFace exists, integrate its bounding box; otherwise use primary CV cluster
@@ -4650,21 +4703,21 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 4. Distance / Proximity Validation (Real-Time Guidance)
     const wRatio = faceW / vw;
-    if (wRatio < 0.18 || faceW < 28 || faceH < 32) {
+    if (wRatio < 0.14 || faceW < 22 || faceH < 26) {
         return {
             status: 'TOO_FAR',
             passed: false,
             facesCount: 1,
-            score: 25,
+            score: 30,
             message: 'Move closer to the camera.'
         };
     }
-    if (wRatio > 0.88 || faceW > 142 || faceH > 146) {
+    if (wRatio > 0.94 || faceW > 152 || faceH > 154) {
         return {
             status: 'TOO_CLOSE',
             passed: false,
             facesCount: 1,
-            score: 30,
+            score: 32,
             message: 'Move farther away from the camera.'
         };
     }
@@ -4675,7 +4728,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     const offX = Math.abs(centerX - (vw / 2)) / vw;
     const offY = Math.abs(centerY - (vh / 2)) / vh;
 
-    if (offX > 0.28 || offY > 0.30) {
+    if (offX > 0.32 || offY > 0.34) {
         return {
             status: 'OFF_CENTER',
             passed: false,
@@ -4685,7 +4738,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if ((faceX <= 1 || faceY <= 1 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 85 || faceH > 90)) {
+    if ((faceX <= 0 || faceY <= 0 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 110 || faceH > 115)) {
         return {
             status: 'PARTIAL_FACE',
             passed: false,
@@ -4697,7 +4750,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 6. Facial Aspect Ratio Validation
     const aspect = faceH / Math.max(1, faceW);
-    if (aspect < 0.72 || aspect > 2.4) {
+    if (aspect < 0.65 || aspect > 2.6) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -4764,69 +4817,67 @@ async function detectAndAnalyzeFaceFrame(video) {
     const avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
 
     // 8. Compute Facial Confidence & Verification Score (0 - 100)
-    let score = isNativeDetected ? 40 : 25; // Base confidence for confirmed face
+    let score = isNativeDetected ? 62 : 50; // Base confidence for confirmed face
 
-    // A. Aspect ratio fit (0 - 18 pts)
-    if (aspect >= 1.05 && aspect <= 1.75) {
-        score += 18;
-    } else if (aspect >= 0.85 && aspect <= 2.05) {
-        score += 12;
+    // A. Aspect ratio fit (0 - 15 pts)
+    if (aspect >= 1.00 && aspect <= 1.80) {
+        score += 15;
+    } else if (aspect >= 0.80 && aspect <= 2.15) {
+        score += 10;
     } else {
-        score += 6;
+        score += 5;
     }
 
-    // B. Centering and scale optimality (0 - 18 pts)
-    if (offX <= 0.14 && offY <= 0.16 && wRatio >= 0.28 && wRatio <= 0.75) {
-        score += 18;
-    } else if (offX <= 0.22 && offY <= 0.24) {
-        score += 12;
+    // B. Centering and scale optimality (0 - 15 pts)
+    if (offX <= 0.16 && offY <= 0.18 && wRatio >= 0.24 && wRatio <= 0.78) {
+        score += 15;
+    } else if (offX <= 0.26 && offY <= 0.28) {
+        score += 10;
     } else {
-        score += 6;
+        score += 5;
     }
 
-    // C. Eye socket bilateral depression & symmetry (0 - 18 pts)
+    // C. Eye socket bilateral depression & symmetry (0 - 12 pts)
     const eyeCheekRatioL = avgCheek > 0 ? (avgLeftEye / avgCheek) : 1;
     const eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
     const eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
 
-    if (eyeCheekRatioL <= 1.10 && eyeCheekRatioR <= 1.10) {
-        score += 10;
-    } else if (eyeCheekRatioL <= 1.25 && eyeCheekRatioR <= 1.25) {
+    if (eyeCheekRatioL <= 1.15 && eyeCheekRatioR <= 1.15) {
         score += 6;
     } else {
         score += 3;
     }
 
-    if (eyeSymmetryDiff < 0.28) {
+    if (eyeSymmetryDiff < 0.35) {
+        score += 6;
+    } else if (eyeSymmetryDiff < 0.55) {
+        score += 4;
+    } else {
+        score += 2;
+    }
+
+    // D. Nose bridge highlight vs eye contrast (0 - 8 pts)
+    const noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
+    if (noseEyeDiff > -6) {
         score += 8;
-    } else if (eyeSymmetryDiff < 0.48) {
+    } else if (noseEyeDiff > -16) {
         score += 5;
     } else {
         score += 2;
     }
 
-    // D. Nose bridge highlight vs eye contrast (0 - 10 pts)
-    const noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
-    if (noseEyeDiff > -4) {
-        score += 10;
-    } else if (noseEyeDiff > -14) {
+    // E. Mouth cavity depression / contrast (0 - 6 pts)
+    const mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
+    if (mouthCheekRatio < 1.15) {
         score += 6;
     } else {
-        score += 2;
-    }
-
-    // E. Mouth cavity depression / contrast (0 - 10 pts)
-    const mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
-    if (mouthCheekRatio < 1.12) {
-        score += 10;
-    } else {
-        score += 5;
+        score += 3;
     }
 
     // F. Edge definition & sharpness bonus (0 - 6 pts)
-    if (avgEdgeGradient >= 2.5) {
+    if (avgEdgeGradient >= 1.8) {
         score += 6;
-    } else if (avgEdgeGradient >= 1.4) {
+    } else if (avgEdgeGradient >= 1.1) {
         score += 4;
     } else {
         score += 2;
@@ -4837,7 +4888,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     // 9. Enforce Recognition & Matching Threshold
     const MATCHING_THRESHOLD = 70;
 
-    if (score < 45) {
+    if (score < 35) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -4847,7 +4898,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (score >= 45 && score < MATCHING_THRESHOLD) {
+    if (score >= 35 && score < MATCHING_THRESHOLD) {
         return {
             status: 'ALIGNING',
             passed: false,
@@ -4891,10 +4942,10 @@ async function executeFaceCaptureAndVerificationSequence(video) {
 
     faceAnalysisActive = true;
     let consecutiveValidFrames = 0;
-    const REQUIRED_CONSECUTIVE_FRAMES = 5; // Fast, stable verification (~0.5s)
+    const REQUIRED_CONSECUTIVE_FRAMES = 4; // Fast, stable verification (~0.4s)
     const SCAN_TIMEOUT_MS = 45000; // 45 seconds timeout
     const startTime = Date.now();
-    let currentProgress = 10;
+    let currentProgress = 15;
     let lastVerifiedResult = null;
     const flashBtn = document.getElementById('faceFlashToggleBtn');
 
@@ -4936,7 +4987,7 @@ async function executeFaceCaptureAndVerificationSequence(video) {
 
         if (analysis.status === 'NO_FACE') {
             consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            currentProgress = Math.max(10, currentProgress - 4);
+            currentProgress = Math.max(15, currentProgress - 2);
             updateProgressiveFeedback(currentProgress, 'No face detected. Please position your face in front of the camera.');
             if (scanningTitle) scanningTitle.textContent = 'Position Your Face';
             if (statusSub) statusSub.textContent = 'No face detected. Please position your face in front of the camera.';
@@ -4944,7 +4995,7 @@ async function executeFaceCaptureAndVerificationSequence(video) {
             if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
         } else if (analysis.status === 'MULTIPLE_FACES') {
             consecutiveValidFrames = 0;
-            currentProgress = 10;
+            currentProgress = 15;
             updateProgressiveFeedback(currentProgress, 'Multiple faces detected');
             if (scanningTitle) scanningTitle.textContent = 'Multiple Faces Detected';
             if (statusSub) statusSub.textContent = 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.';
@@ -4987,7 +5038,9 @@ async function executeFaceCaptureAndVerificationSequence(video) {
         } else if (analysis.status === 'ALIGNING') {
             if (flashBtn) flashBtn.classList.remove('flash-suggest-pulse');
             consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            updateProgressiveFeedback(Math.max(20, Math.round(analysis.score || 35)), 'Face detected. Aligning with reticle...');
+            const alignProgress = Math.max(30, Math.min(65, Math.round(analysis.score || 45)));
+            currentProgress = Math.max(currentProgress, alignProgress);
+            updateProgressiveFeedback(currentProgress, 'Face detected. Aligning with reticle...');
             if (scanningTitle) scanningTitle.textContent = 'Align Your Face';
             if (statusSub) statusSub.textContent = analysis.message || 'Face detected. Please hold still and center your face in the frame.';
             if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(6, 182, 212, 0.6)';
@@ -5003,13 +5056,14 @@ async function executeFaceCaptureAndVerificationSequence(video) {
 
             // Progressive scan feedback as face remains verified
             const stepRatio = consecutiveValidFrames / REQUIRED_CONSECUTIVE_FRAMES;
-            currentProgress = Math.min(95, Math.round(25 + stepRatio * 70));
+            const targetProg = Math.min(96, Math.max(60, Math.round(40 + stepRatio * 56)));
+            currentProgress = Math.max(currentProgress, targetProg);
 
-            if (consecutiveValidFrames <= 2) {
+            if (consecutiveValidFrames <= 1) {
                 if (scanningTitle) scanningTitle.textContent = 'Face Detected';
                 if (statusSub) statusSub.textContent = 'Hold still, verifying facial landmarks...';
                 updateProgressiveFeedback(currentProgress, `Face detected (${analysis.score}% match). Hold still...`);
-            } else if (consecutiveValidFrames <= 3) {
+            } else if (consecutiveValidFrames <= 2) {
                 if (scanningTitle) scanningTitle.textContent = 'Analyzing Facial Geometry';
                 if (statusSub) statusSub.textContent = 'Mapping 3D contours and anti-spoofing...';
                 updateProgressiveFeedback(currentProgress, 'Mapping 3D biometric landmarks...');

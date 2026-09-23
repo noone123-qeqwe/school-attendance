@@ -477,7 +477,7 @@
         .bio-modal-dialog {
             position: relative;
             width: 100%;
-            max-width: 360px;
+            max-width: 440px;
             z-index: 2;
             transform: scale(0.92) translateY(12px);
             transition: transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -747,53 +747,63 @@
         /* Modal Face Recognition Camera Scanner */
         .bio-login-camera-box {
             position: relative;
-            width: 220px;
-            height: 220px;
+            width: 100%;
+            max-width: 360px;
+            height: 360px;
+            aspect-ratio: 1 / 1;
             margin: 0 auto;
-            border-radius: 20px;
+            border-radius: 28px;
             overflow: hidden;
             background: #000000;
-            border: 2px solid rgba(6, 182, 212, 0.5);
-            box-shadow: 0 0 30px rgba(6, 182, 212, 0.25), inset 0 0 20px rgba(6, 182, 212, 0.1);
+            border: 2.5px solid rgba(6, 182, 212, 0.6);
+            box-shadow: 0 0 35px rgba(6, 182, 212, 0.3), inset 0 0 25px rgba(6, 182, 212, 0.15);
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        @media (max-width: 480px) {
+            .bio-login-camera-box {
+                max-width: min(340px, 84vw);
+                height: min(340px, 84vw);
+                border-radius: 22px;
+            }
         }
         /* Face Flash / Fill Light Controls */
         .face-hud-flash-btn {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            z-index: 15;
+            top: 12px;
+            right: 12px;
+            z-index: 25;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            padding: 3px 9px;
-            background: rgba(15, 23, 42, 0.82);
-            border: 1px solid rgba(255, 255, 255, 0.28);
+            gap: 6px;
+            padding: 5px 12px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1.5px solid rgba(255, 255, 255, 0.35);
             color: #f1f5f9;
-            font-size: 0.72rem;
+            font-size: 0.78rem;
             font-weight: 600;
-            border-radius: 18px;
+            border-radius: 20px;
             cursor: pointer;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
         }
         .face-hud-flash-btn:hover {
             background: rgba(30, 41, 59, 0.95);
             border-color: #facc15;
             color: #fef08a;
             transform: scale(1.05);
-            box-shadow: 0 0 12px rgba(250, 204, 21, 0.45);
+            box-shadow: 0 0 16px rgba(250, 204, 21, 0.55);
         }
         .face-hud-flash-btn.active-flash {
             background: linear-gradient(135deg, #facc15, #f59e0b) !important;
             border-color: #ffffff !important;
             color: #0f172a !important;
-            box-shadow: 0 0 18px rgba(250, 204, 21, 0.85), 0 0 5px #ffffff !important;
+            box-shadow: 0 0 20px rgba(250, 204, 21, 0.9), 0 0 8px #ffffff !important;
             font-weight: 700;
             transform: scale(1.04);
         }
@@ -806,7 +816,7 @@
         }
         @keyframes flashBtnSuggestPulse {
             0%, 100% { border-color: rgba(250, 204, 21, 0.4); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
-            50% { border-color: #facc15; box-shadow: 0 0 14px rgba(250, 204, 21, 0.65); color: #facc15; }
+            50% { border-color: #facc15; box-shadow: 0 0 16px rgba(250, 204, 21, 0.75); color: #facc15; }
         }
 
         /* Face Screen Flash Overlay (Selfie Fill Light) */
@@ -814,14 +824,12 @@
             position: absolute;
             inset: 0;
             pointer-events: none;
-            z-index: 8;
+            z-index: 12;
             opacity: 0;
-            transition: opacity 0.28s ease, box-shadow 0.28s ease;
+            transition: opacity 0.25s ease, box-shadow 0.25s ease;
             border-radius: inherit;
-            /* Perimeter halo ring illuminates face in darkness while center stays clear for camera view */
-            background: radial-gradient(circle at center, transparent 48%, rgba(255, 255, 255, 0.35) 75%, rgba(255, 255, 255, 0.85) 100%);
-            box-shadow: inset 0 0 45px 10px rgba(255, 255, 255, 0.95), 0 0 65px 15px rgba(255, 255, 255, 0.8);
-            border: 3.5px solid rgba(255, 255, 255, 0.95);
+            box-shadow: inset 0 0 60px 20px rgba(255, 255, 255, 0.95), 0 0 80px 25px rgba(255, 255, 255, 0.9);
+            border: 4px solid #ffffff;
         }
         .face-screen-flash-overlay.active {
             opacity: 1;
@@ -829,7 +837,33 @@
 
         .face-scan-frame.flash-on,
         .bio-login-camera-box.flash-on {
-            box-shadow: 0 0 75px 22px rgba(255, 255, 255, 0.92), 0 0 110px 45px rgba(250, 204, 21, 0.32) !important;
+            border-color: #ffffff !important;
+            box-shadow: 0 0 0 12px #ffffff, 0 0 80px 30px rgba(255, 255, 255, 0.95), 0 0 140px 60px rgba(255, 255, 255, 0.8) !important;
+        }
+
+        /* Modal-wide screen fill light when flash is active */
+        .bio-modal-card.face-screen-fill-active {
+            background: #ffffff !important;
+            box-shadow: 0 0 140px 60px rgba(255, 255, 255, 0.95), 0 0 0 9999px rgba(255, 255, 255, 0.45) !important;
+            color: #0f172a !important;
+            border-color: #ffffff !important;
+        }
+        .bio-modal-card.face-screen-fill-active .bio-modal-title,
+        .bio-modal-card.face-screen-fill-active #bioModalTitle {
+            color: #0f172a !important;
+            text-shadow: none !important;
+        }
+        .bio-modal-card.face-screen-fill-active .bio-modal-desc,
+        .bio-modal-card.face-screen-fill-active #bioModalDesc {
+            color: #334155 !important;
+        }
+        .bio-modal-card.face-screen-fill-active .bio-modal-close {
+            background: rgba(15, 23, 42, 0.12) !important;
+            color: #0f172a !important;
+            border-color: rgba(15, 23, 42, 0.25) !important;
+        }
+        .bio-modal-card.face-screen-fill-active .bio-login-progress-meta {
+            color: #1e293b !important;
         }
 
         @keyframes faceCaptureBurst {
@@ -865,17 +899,17 @@
         }
         .bio-login-reticle-corner {
             position: absolute;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             border-color: #06b6d4;
             border-style: solid;
             pointer-events: none;
-            z-index: 3;
+            z-index: 10;
         }
-        .bio-login-reticle-corner.tl { top: 8px; left: 8px; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
-        .bio-login-reticle-corner.tr { top: 8px; right: 8px; border-width: 3px 3px 0 0; border-top-right-radius: 8px; }
-        .bio-login-reticle-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 3px 3px; border-bottom-left-radius: 8px; }
-        .bio-login-reticle-corner.br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; border-bottom-right-radius: 8px; }
+        .bio-login-reticle-corner.tl { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-top-left-radius: 10px; }
+        .bio-login-reticle-corner.tr { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-top-right-radius: 10px; }
+        .bio-login-reticle-corner.bl { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-bottom-left-radius: 10px; }
+        .bio-login-reticle-corner.br { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-bottom-right-radius: 10px; }
         
         .bio-login-laser-bar {
             position: absolute;
@@ -895,7 +929,7 @@
         }
         .bio-login-hud-badge {
             position: absolute;
-            bottom: 10px;
+            bottom: 12px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.78);
@@ -903,15 +937,15 @@
             -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 99px;
-            padding: 3px 12px;
-            font-size: 0.7rem;
+            padding: 4px 14px;
+            font-size: 0.72rem;
             font-weight: 700;
             letter-spacing: 0.5px;
             color: #ffffff;
             display: flex;
             align-items: center;
             gap: 6px;
-            z-index: 5;
+            z-index: 10;
             white-space: nowrap;
         }
         .bio-login-pulse-dot {
@@ -927,7 +961,8 @@
             50% { opacity: 1; transform: scale(1.25); }
         }
         .bio-login-progress-wrap {
-            max-width: 240px;
+            width: 100%;
+            max-width: 360px;
             margin: 14px auto 0 auto;
         }
         .bio-login-progress-bar {
@@ -1556,11 +1591,11 @@ if (document.readyState === 'loading') {
                 </div>
                 <div class="bio-login-progress-wrap">
                     <div class="bio-login-progress-bar">
-                        <div class="bio-login-progress-fill" id="bioLoginFaceProgressFill" style="width: 10%;"></div>
+                        <div class="bio-login-progress-fill" id="bioLoginFaceProgressFill" style="width: 15%;"></div>
                     </div>
                     <div class="bio-login-progress-meta">
                         <span id="bioLoginFaceStateLabel">Searching for face in camera frame...</span>
-                        <span id="bioLoginFacePctLabel">10%</span>
+                        <span id="bioLoginFacePctLabel">15%</span>
                     </div>
                 </div>
             </div>
@@ -2774,6 +2809,7 @@ async function toggleBioLoginFlash() {
     var overlay = document.getElementById('bioLoginScreenFlashOverlay');
     var btn = document.getElementById('bioLoginFlashToggleBtn');
     var box = document.getElementById('bioLoginCameraBox');
+    var modalCard = document.querySelector('.bio-modal-card');
 
     if (overlay) {
         if (isBioLoginFlashActive) {
@@ -2791,6 +2827,14 @@ async function toggleBioLoginFlash() {
         }
     }
 
+    if (modalCard) {
+        if (isBioLoginFlashActive) {
+            modalCard.classList.add('face-screen-fill-active');
+        } else {
+            modalCard.classList.remove('face-screen-fill-active');
+        }
+    }
+
     if (btn) {
         btn.classList.remove('flash-suggest-pulse');
         var textSpan = btn.querySelector('.flash-text');
@@ -2798,10 +2842,12 @@ async function toggleBioLoginFlash() {
             btn.classList.add('active-flash');
             if (textSpan) textSpan.textContent = 'Flash ON';
             btn.setAttribute('title', 'Turn Flash / Fill Light OFF');
+            btn.setAttribute('aria-pressed', 'true');
         } else {
             btn.classList.remove('active-flash');
             if (textSpan) textSpan.textContent = 'Flash';
             btn.setAttribute('title', 'Turn Flash / Fill Light ON');
+            btn.setAttribute('aria-pressed', 'false');
         }
     }
 
@@ -2810,7 +2856,7 @@ async function toggleBioLoginFlash() {
             var track = bioFaceLoginStream.getVideoTracks()[0];
             if (track) {
                 var capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                if (capabilities.torch) {
+                if (capabilities.torch || ('torch' in capabilities)) {
                     await track.applyConstraints({
                         advanced: [{ torch: isBioLoginFlashActive }]
                     });
@@ -2820,6 +2866,7 @@ async function toggleBioLoginFlash() {
             console.warn('Hardware torch toggle not supported on this device/track:', e);
         }
     }
+    if (window.triggerHaptic) window.triggerHaptic('light');
     return isBioLoginFlashActive;
 }
 
@@ -2828,14 +2875,17 @@ function resetBioLoginFlash() {
     var overlay = document.getElementById('bioLoginScreenFlashOverlay');
     var btn = document.getElementById('bioLoginFlashToggleBtn');
     var box = document.getElementById('bioLoginCameraBox');
+    var modalCard = document.querySelector('.bio-modal-card');
     if (overlay) overlay.classList.remove('active');
     if (box) box.classList.remove('flash-on');
+    if (modalCard) modalCard.classList.remove('face-screen-fill-active');
     if (btn) {
         btn.classList.remove('active-flash');
         btn.classList.remove('flash-suggest-pulse');
         var textSpan = btn.querySelector('.flash-text');
         if (textSpan) textSpan.textContent = 'Flash';
         btn.setAttribute('title', 'Toggle Flash / Fill Light');
+        btn.setAttribute('aria-pressed', 'false');
     }
 }
 
@@ -2932,7 +2982,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var lumaContrast = maxLuma - minLuma;
     var avgEdgeGradient = edgeSamples > 0 ? (totalEdgeEnergy / edgeSamples) : 0;
 
-    if (avgLuma < 14 || lumaContrast < 12 || lumaStdDev < 4.5) {
+    if (avgLuma < 10 || (avgLuma < 14 && lumaContrast < 12 && lumaStdDev < 4.0)) {
         return {
             status: 'UNUSABLE',
             passed: false,
@@ -2942,7 +2992,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (avgLuma > 246 && lumaContrast < 25) {
+    if (avgLuma > 248 && lumaContrast < 18) {
         return {
             status: 'UNUSABLE',
             passed: false,
@@ -2952,7 +3002,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (avgEdgeGradient < 1.3) {
+    if (avgEdgeGradient < 0.9) {
         return {
             status: 'BLURRY',
             passed: false,
@@ -3025,22 +3075,22 @@ async function detectAndAnalyzeFaceFrame(video) {
             var sat = maxC > 0 ? (delta / maxC) : 0;
             var val = maxC / 255;
 
-            var isYcbcrSkin = (yVal >= 15 && yVal <= 255) &&
-                              (cbVal >= 65 && cbVal <= 155) &&
-                              (crVal >= 115 && crVal <= 195);
+            var isYcbcrSkin = (yVal >= 8 && yVal <= 255) &&
+                              (cbVal >= 55 && cbVal <= 170) &&
+                              (crVal >= 110 && crVal <= 200);
 
-            var isNormRgbSkin = (normR >= 0.28 && normR <= 0.68) &&
-                                (normG >= 0.20 && normG <= 0.44) &&
-                                (normR >= normG - 0.08);
+            var isNormRgbSkin = (normR >= 0.24 && normR <= 0.74) &&
+                                (normG >= 0.18 && normG <= 0.46);
 
-            var isHsvSkin = ((hue >= 0 && hue <= 58) || (hue >= 320 && hue <= 360)) &&
-                            (sat >= 0.06 && sat <= 0.88) &&
-                            (val >= 0.10);
+            var isHsvSkin = ((hue >= 0 && hue <= 68) || (hue >= 305 && hue <= 360)) &&
+                            (sat >= 0.04 && sat <= 0.90) &&
+                            (val >= 0.06);
 
             var isSkin = (isYcbcrSkin && (isNormRgbSkin || isHsvSkin)) ||
                          (isNormRgbSkin && isHsvSkin) ||
                          (isYcbcrSkin && (r > b - 15)) ||
-                         (r > 75 && g > 40 && b > 20 && r > g && (r - b) > 10 && Math.abs(r - g) > 10);
+                         (r > 55 && g > 30 && b > 15 && r >= g && (r - b) >= 6) ||
+                         (Math.abs(r - g) < 22 && r > b && (r - b) >= 8);
 
             if (isSkin) {
                 cellSkinCounts[cellIdx]++;
@@ -3051,7 +3101,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var activeGrid = new Array(gridCols * gridRows).fill(false);
     for (var i = 0; i < gridCols * gridRows; i++) {
         var density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-        if (density >= 0.14) {
+        if (density >= 0.08) {
             activeGrid[i] = true;
         }
     }
@@ -3090,7 +3140,7 @@ async function detectAndAnalyzeFaceFrame(video) {
                     }
                 }
 
-                if (clusterCells.length >= 3) {
+                if (clusterCells.length >= 2) {
                     var minR = gridRows, maxR = 0, minC = gridCols, maxC = 0;
                     for (var k = 0; k < clusterCells.length; k++) {
                         var cr = clusterCells[k][0];
@@ -3100,12 +3150,16 @@ async function detectAndAnalyzeFaceFrame(video) {
                         if (cc < minC) minC = cc;
                         if (cc > maxC) maxC = cc;
                     }
+                    var centerCol = (minC + maxC) / 2;
+                    var centerRw = (minR + maxR) / 2;
+                    var distFromCenter = Math.hypot(centerCol - 4.5, centerRw - 4.5);
                     clusters.push({
                         cells: clusterCells.length,
                         minC: minC, maxC: maxC,
                         minR: minR, maxR: maxR,
-                        centerC: (minC + maxC) / 2,
-                        centerR: (minR + maxR) / 2,
+                        centerC: centerCol,
+                        centerR: centerRw,
+                        distFromCenter: distFromCenter,
                         wPx: (maxC - minC + 1) * cellW,
                         hPx: (maxR - minR + 1) * cellH
                     });
@@ -3119,8 +3173,8 @@ async function detectAndAnalyzeFaceFrame(video) {
         var primary = clusters[0];
         var secondary = clusters[1];
         var secondaryAspect = secondary.hPx / Math.max(1, secondary.wPx);
-        if (secondary.cells >= 8 && secondary.cells >= primary.cells * 0.55 &&
-            Math.abs(primary.centerC - secondary.centerC) >= 2.8 &&
+        if (secondary.cells >= 12 && secondary.cells >= primary.cells * 0.70 &&
+            Math.abs(primary.centerC - secondary.centerC) >= 3.8 &&
             secondaryAspect >= 0.75 && secondaryAspect <= 2.2) {
             return {
                 status: 'MULTIPLE_FACES',
@@ -3130,6 +3184,9 @@ async function detectAndAnalyzeFaceFrame(video) {
                 message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
             };
         }
+        clusters.sort(function(a, b) {
+            return (a.distFromCenter * 0.7 - a.cells * 0.3) - (b.distFromCenter * 0.7 - b.cells * 0.3);
+        });
     }
 
     var faceX = 0, faceY = 0, faceW = 0, faceH = 0;
@@ -3158,21 +3215,21 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 4. Proximity
     var wRatio = faceW / vw;
-    if (wRatio < 0.18 || faceW < 28 || faceH < 32) {
+    if (wRatio < 0.14 || faceW < 22 || faceH < 26) {
         return {
             status: 'TOO_FAR',
             passed: false,
             facesCount: 1,
-            score: 25,
+            score: 30,
             message: 'Move closer to the camera.'
         };
     }
-    if (wRatio > 0.88 || faceW > 142 || faceH > 146) {
+    if (wRatio > 0.94 || faceW > 152 || faceH > 154) {
         return {
             status: 'TOO_CLOSE',
             passed: false,
             facesCount: 1,
-            score: 30,
+            score: 32,
             message: 'Move farther away from the camera.'
         };
     }
@@ -3183,7 +3240,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var offX = Math.abs(centerX - (vw / 2)) / vw;
     var offY = Math.abs(centerY - (vh / 2)) / vh;
 
-    if (offX > 0.28 || offY > 0.30) {
+    if (offX > 0.32 || offY > 0.34) {
         return {
             status: 'OFF_CENTER',
             passed: false,
@@ -3193,7 +3250,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if ((faceX <= 1 || faceY <= 1 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 85 || faceH > 90)) {
+    if ((faceX <= 0 || faceY <= 0 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 110 || faceH > 115)) {
         return {
             status: 'PARTIAL_FACE',
             passed: false,
@@ -3205,7 +3262,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 6. Aspect ratio
     var aspect = faceH / Math.max(1, faceW);
-    if (aspect < 0.72 || aspect > 2.4) {
+    if (aspect < 0.65 || aspect > 2.6) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -3268,69 +3325,67 @@ async function detectAndAnalyzeFaceFrame(video) {
     var avgCheek      = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
     var avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
 
-    var score = isNativeDetected ? 40 : 25; // Base confidence for confirmed face
+    var score = isNativeDetected ? 62 : 50; // Base confidence for confirmed face
 
-    // A. Aspect ratio fit (0 - 18 pts)
-    if (aspect >= 1.05 && aspect <= 1.75) {
-        score += 18;
-    } else if (aspect >= 0.85 && aspect <= 2.05) {
-        score += 12;
+    // A. Aspect ratio fit (0 - 15 pts)
+    if (aspect >= 1.00 && aspect <= 1.80) {
+        score += 15;
+    } else if (aspect >= 0.80 && aspect <= 2.15) {
+        score += 10;
     } else {
-        score += 6;
+        score += 5;
     }
 
-    // B. Centering and scale optimality (0 - 18 pts)
-    if (offX <= 0.14 && offY <= 0.16 && wRatio >= 0.28 && wRatio <= 0.75) {
-        score += 18;
-    } else if (offX <= 0.22 && offY <= 0.24) {
-        score += 12;
+    // B. Centering and scale optimality (0 - 15 pts)
+    if (offX <= 0.16 && offY <= 0.18 && wRatio >= 0.24 && wRatio <= 0.78) {
+        score += 15;
+    } else if (offX <= 0.26 && offY <= 0.28) {
+        score += 10;
     } else {
-        score += 6;
+        score += 5;
     }
 
-    // C. Eye socket bilateral depression & symmetry (0 - 18 pts)
+    // C. Eye socket bilateral depression & symmetry (0 - 12 pts)
     var eyeCheekRatioL = avgCheek > 0 ? (avgLeftEye / avgCheek) : 1;
     var eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
     var eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
 
-    if (eyeCheekRatioL <= 1.10 && eyeCheekRatioR <= 1.10) {
-        score += 10;
-    } else if (eyeCheekRatioL <= 1.25 && eyeCheekRatioR <= 1.25) {
+    if (eyeCheekRatioL <= 1.15 && eyeCheekRatioR <= 1.15) {
         score += 6;
     } else {
         score += 3;
     }
 
-    if (eyeSymmetryDiff < 0.28) {
+    if (eyeSymmetryDiff < 0.35) {
+        score += 6;
+    } else if (eyeSymmetryDiff < 0.55) {
+        score += 4;
+    } else {
+        score += 2;
+    }
+
+    // D. Nose bridge highlight vs eye contrast (0 - 8 pts)
+    var noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
+    if (noseEyeDiff > -6) {
         score += 8;
-    } else if (eyeSymmetryDiff < 0.48) {
+    } else if (noseEyeDiff > -16) {
         score += 5;
     } else {
         score += 2;
     }
 
-    // D. Nose bridge highlight vs eye contrast (0 - 10 pts)
-    var noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
-    if (noseEyeDiff > -4) {
-        score += 10;
-    } else if (noseEyeDiff > -14) {
+    // E. Mouth cavity depression / contrast (0 - 6 pts)
+    var mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
+    if (mouthCheekRatio < 1.15) {
         score += 6;
     } else {
-        score += 2;
-    }
-
-    // E. Mouth cavity depression / contrast (0 - 10 pts)
-    var mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
-    if (mouthCheekRatio < 1.12) {
-        score += 10;
-    } else {
-        score += 5;
+        score += 3;
     }
 
     // F. Edge definition & sharpness bonus (0 - 6 pts)
-    if (avgEdgeGradient >= 2.5) {
+    if (avgEdgeGradient >= 1.8) {
         score += 6;
-    } else if (avgEdgeGradient >= 1.4) {
+    } else if (avgEdgeGradient >= 1.1) {
         score += 4;
     } else {
         score += 2;
@@ -3339,7 +3394,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     score = Math.min(96, Math.max(0, Math.round(score)));
 
     var MATCHING_THRESHOLD = 70;
-    if (score < 45) {
+    if (score < 35) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -3349,7 +3404,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (score >= 45 && score < MATCHING_THRESHOLD) {
+    if (score >= 35 && score < MATCHING_THRESHOLD) {
         return {
             status: 'ALIGNING',
             passed: false,
@@ -3497,8 +3552,9 @@ async function startFaceRecognitionLogin(identifier, opts) {
     var stateLabel = document.getElementById('bioLoginFaceStateLabel');
     var hudStatus = document.getElementById('bioLoginHudStatus');
 
-    if (progressFill) progressFill.style.width = '10%';
-    if (pctLabel) pctLabel.textContent = '10%';
+    var currentProgress = 15;
+    if (progressFill) progressFill.style.width = '15%';
+    if (pctLabel) pctLabel.textContent = '15%';
     if (stateLabel) stateLabel.textContent = 'Accessing camera...';
     if (hudStatus) {
         hudStatus.textContent = 'INITIALIZING';
@@ -3517,8 +3573,8 @@ async function startFaceRecognitionLogin(identifier, opts) {
         bioFaceLoginStream = await navigator.mediaDevices.getUserMedia({
             video: {
                 facingMode: 'user',
-                width: { ideal: 480 },
-                height: { ideal: 480 }
+                width: { ideal: 640 },
+                height: { ideal: 640 }
             }
         });
         if (video && bioFaceLoginStream) {
@@ -3542,7 +3598,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
 
     resetBioLoginFlash();
     var consecutiveValidFrames = 0;
-    var REQUIRED_FRAMES = 5;
+    var REQUIRED_FRAMES = 4;
     var SCAN_TIMEOUT_MS = 40000;
     var startTime = Date.now();
     var lastVerifiedAnalysis = null;
@@ -3576,13 +3632,17 @@ async function startFaceRecognitionLogin(identifier, opts) {
 
         if (analysis.status === 'NO_FACE') {
             consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            if (progressFill) progressFill.style.width = '10%';
-            if (pctLabel) pctLabel.textContent = '10%';
+            currentProgress = Math.max(15, currentProgress - 2);
+            if (progressFill) progressFill.style.width = currentProgress + '%';
+            if (pctLabel) pctLabel.textContent = currentProgress + '%';
             if (stateLabel) stateLabel.textContent = 'No face detected. Please position your face in front of the camera.';
             if (hudStatus) { hudStatus.textContent = 'POSITION FACE'; hudStatus.style.color = '#ef4444'; }
             if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
         } else if (analysis.status === 'MULTIPLE_FACES') {
             consecutiveValidFrames = 0;
+            currentProgress = 15;
+            if (progressFill) progressFill.style.width = '15%';
+            if (pctLabel) pctLabel.textContent = '15%';
             if (stateLabel) stateLabel.textContent = 'Multiple faces detected. Please ensure only one person is visible.';
             if (hudStatus) { hudStatus.textContent = 'MULTIPLE FACES'; hudStatus.style.color = '#ef4444'; }
             if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
@@ -3611,9 +3671,10 @@ async function startFaceRecognitionLogin(identifier, opts) {
             }
         } else if (analysis.status === 'ALIGNING') {
             consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            var alPct = Math.max(15, Math.round(analysis.score || 35));
-            if (progressFill) progressFill.style.width = alPct + '%';
-            if (pctLabel) pctLabel.textContent = alPct + '%';
+            var alPct = Math.max(30, Math.min(65, Math.round(analysis.score || 45)));
+            currentProgress = Math.max(currentProgress, alPct);
+            if (progressFill) progressFill.style.width = currentProgress + '%';
+            if (pctLabel) pctLabel.textContent = currentProgress + '%';
             if (stateLabel) stateLabel.textContent = 'Face detected (' + Math.round(analysis.score) + '%). Hold still...';
             if (hudStatus) { hudStatus.textContent = 'ALIGNING'; hudStatus.style.color = '#06b6d4'; }
             if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%)';
@@ -3623,14 +3684,16 @@ async function startFaceRecognitionLogin(identifier, opts) {
             if (flashBtn) {
                 flashBtn.classList.remove('flash-suggest-pulse');
             }
-            var pct = Math.min(98, Math.round(20 + (consecutiveValidFrames / REQUIRED_FRAMES) * 80));
-            if (progressFill) progressFill.style.width = pct + '%';
-            if (pctLabel) pctLabel.textContent = pct + '%';
+            var pct = Math.min(98, Math.round(55 + (consecutiveValidFrames / REQUIRED_FRAMES) * 43));
+            currentProgress = Math.max(currentProgress, pct);
+            if (progressFill) progressFill.style.width = currentProgress + '%';
+            if (pctLabel) pctLabel.textContent = currentProgress + '%';
             if (stateLabel) stateLabel.textContent = 'Verifying facial geometry (' + Math.round(analysis.score) + '% match)...';
             if (hudStatus) { hudStatus.textContent = 'VERIFYING'; hudStatus.style.color = '#22c55e'; }
             if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%)';
 
             if (consecutiveValidFrames >= REQUIRED_FRAMES) {
+                currentProgress = 100;
                 if (progressFill) progressFill.style.width = '100%';
                 if (pctLabel) pctLabel.textContent = '100%';
                 if (stateLabel) stateLabel.textContent = 'Face verified ✓ Authenticating...';
