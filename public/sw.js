@@ -1,8 +1,8 @@
-/* BUMP_TIMESTAMP: 2026-09-20T12:19:23+02:00 */
-const CACHE_VERSION = 'v364';
-const CACHE_NAME = `attendance-v364`;
+/* BUMP_TIMESTAMP: 2026-09-24T02:52:00+08:00 */
+const CACHE_VERSION = 'v365';
+const CACHE_NAME = `attendance-v365`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v364`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-v365`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
@@ -40,11 +40,9 @@ async function trimCache(cacheName, maxItems) {
 
 // Install: precache essential offline assets
 self.addEventListener('install', (event) => {
-    // If there is no existing active worker, activate immediately on first install.
-    // If an existing worker is active, allow the user to confirm the update before activating.
-    if (!self.registration || !self.registration.active) {
-        self.skipWaiting();
-    }
+    // Always activate immediately — prevents deadlocks where the old SW
+    // serves a cached offline/error page and the update popup never appears.
+    self.skipWaiting();
 
     event.waitUntil(
         caches.open(STATIC_CACHE_NAME).then((cache) => {
@@ -65,6 +63,7 @@ self.addEventListener('install', (event) => {
         })
     );
 });
+
 
 // Activate: clean up old caches (seamless, no auto-reloading or claiming open windows)
 self.addEventListener('activate', (event) => {
