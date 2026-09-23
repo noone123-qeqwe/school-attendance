@@ -371,5 +371,33 @@ class FaceRecognitionRegistrationTest extends TestCase
 
         $this->assertGuest();
     }
+
+    public function test_settings_page_renders_camera_flash_elements_and_handlers()
+    {
+        $user = User::factory()->create();
+
+        $settingsResponse = $this->actingAs($user)->get(route('settings'));
+        $settingsResponse->assertOk();
+        $settingsResponse->assertSee('id="faceFlashToggleBtn"', false);
+        $settingsResponse->assertSee('id="faceScreenFlashOverlay"', false);
+        $settingsResponse->assertSee('toggleFaceFlash', false);
+        $settingsResponse->assertSee('resetFaceFlash', false);
+        $settingsResponse->assertSee('face-hud-flash-btn', false);
+        $settingsResponse->assertSee('face-screen-flash-overlay', false);
+    }
+
+    public function test_login_page_renders_camera_flash_elements_and_handlers()
+    {
+        $loginResponse = $this->get(route('login'));
+        $loginResponse->assertOk();
+        $loginResponse->assertSee('id="bioLoginFlashToggleBtn"', false);
+        $loginResponse->assertSee('id="bioLoginScreenFlashOverlay"', false);
+        $loginResponse->assertSee('toggleBioLoginFlash', false);
+        $loginResponse->assertSee('resetBioLoginFlash', false);
+        $loginResponse->assertSee('triggerCaptureFlash', false);
+        $loginResponse->assertSee('face-hud-flash-btn', false);
+        $loginResponse->assertSee('face-screen-flash-overlay', false);
+    }
 }
+
 

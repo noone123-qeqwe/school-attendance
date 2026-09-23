@@ -767,54 +767,74 @@
             z-index: 15;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
-            padding: 3px 8px;
-            background: rgba(15, 23, 42, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.22);
-            color: #e2e8f0;
+            gap: 5px;
+            padding: 3px 9px;
+            background: rgba(15, 23, 42, 0.82);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            color: #f1f5f9;
             font-size: 0.72rem;
             font-weight: 600;
-            border-radius: 16px;
+            border-radius: 18px;
             cursor: pointer;
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            transition: all 0.2s ease;
+            transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
         }
         .face-hud-flash-btn:hover {
-            background: rgba(30, 41, 59, 0.9);
+            background: rgba(30, 41, 59, 0.95);
             border-color: #facc15;
-            color: #facc15;
+            color: #fef08a;
             transform: scale(1.05);
+            box-shadow: 0 0 12px rgba(250, 204, 21, 0.45);
         }
         .face-hud-flash-btn.active-flash {
-            background: linear-gradient(135deg, #eab308, #f59e0b);
-            border-color: #fef08a;
-            color: #0f172a;
-            box-shadow: 0 0 14px rgba(250, 204, 21, 0.65), 0 0 4px #ffffff;
+            background: linear-gradient(135deg, #facc15, #f59e0b) !important;
+            border-color: #ffffff !important;
+            color: #0f172a !important;
+            box-shadow: 0 0 18px rgba(250, 204, 21, 0.85), 0 0 5px #ffffff !important;
             font-weight: 700;
+            transform: scale(1.04);
         }
         .face-hud-flash-btn.active-flash i {
-            color: #0f172a;
+            color: #0f172a !important;
+            text-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
         }
+        .face-hud-flash-btn.flash-suggest-pulse {
+            animation: flashBtnSuggestPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes flashBtnSuggestPulse {
+            0%, 100% { border-color: rgba(250, 204, 21, 0.4); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
+            50% { border-color: #facc15; box-shadow: 0 0 14px rgba(250, 204, 21, 0.65); color: #facc15; }
+        }
+
+        /* Face Screen Flash Overlay (Selfie Fill Light) */
         .face-screen-flash-overlay {
             position: absolute;
             inset: 0;
             pointer-events: none;
-            z-index: 7;
+            z-index: 8;
             opacity: 0;
-            transition: opacity 0.25s ease;
-            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.6) 70%, rgba(255, 255, 255, 0.9) 100%);
-            box-shadow: inset 0 0 35px rgba(255, 255, 255, 0.95), 0 0 30px rgba(255, 255, 255, 0.85);
-            border: 3px solid rgba(255, 255, 255, 0.95);
+            transition: opacity 0.28s ease, box-shadow 0.28s ease;
             border-radius: inherit;
+            /* Perimeter halo ring illuminates face in darkness while center stays clear for camera view */
+            background: radial-gradient(circle at center, transparent 48%, rgba(255, 255, 255, 0.35) 75%, rgba(255, 255, 255, 0.85) 100%);
+            box-shadow: inset 0 0 45px 10px rgba(255, 255, 255, 0.95), 0 0 65px 15px rgba(255, 255, 255, 0.8);
+            border: 3.5px solid rgba(255, 255, 255, 0.95);
         }
         .face-screen-flash-overlay.active {
             opacity: 1;
         }
+
+        .face-scan-frame.flash-on,
+        .bio-login-camera-box.flash-on {
+            box-shadow: 0 0 75px 22px rgba(255, 255, 255, 0.92), 0 0 110px 45px rgba(250, 204, 21, 0.32) !important;
+        }
+
         @keyframes faceCaptureBurst {
             0% { opacity: 0; }
-            25% { opacity: 0.95; background: #ffffff; }
+            20% { opacity: 1; background: #ffffff; }
             100% { opacity: 0; }
         }
         .face-scan-frame.face-flash-burst::after,
@@ -823,10 +843,10 @@
             position: absolute;
             inset: 0;
             background: #ffffff;
-            z-index: 25;
+            z-index: 30;
             pointer-events: none;
             border-radius: inherit;
-            animation: faceCaptureBurst 0.35s ease-out forwards;
+            animation: faceCaptureBurst 0.38s ease-out forwards;
         }
         .bio-login-face-feed {
             width: 100%;
@@ -1515,7 +1535,7 @@ if (document.readyState === 'loading') {
             <!-- Face Recognition Camera Scanner Wrap (Inside Modal) -->
             <div id="bioModalFaceScannerWrap" style="display:none; margin: 14px 0;">
                 <div class="bio-login-camera-box" id="bioLoginCameraBox">
-                    <button type="button" id="bioLoginFlashToggleBtn" class="face-hud-flash-btn" title="Toggle Flash / Fill Light" aria-label="Toggle Flash">
+                    <button type="button" id="bioLoginFlashToggleBtn" class="face-hud-flash-btn" onclick="toggleBioLoginFlash()" title="Toggle Flash / Fill Light" aria-label="Toggle Flash">
                         <i class="bi bi-lightning-fill"></i>
                         <span class="flash-text">Flash</span>
                     </button>
@@ -2753,6 +2773,7 @@ async function toggleBioLoginFlash() {
     isBioLoginFlashActive = !isBioLoginFlashActive;
     var overlay = document.getElementById('bioLoginScreenFlashOverlay');
     var btn = document.getElementById('bioLoginFlashToggleBtn');
+    var box = document.getElementById('bioLoginCameraBox');
 
     if (overlay) {
         if (isBioLoginFlashActive) {
@@ -2762,7 +2783,16 @@ async function toggleBioLoginFlash() {
         }
     }
 
+    if (box) {
+        if (isBioLoginFlashActive) {
+            box.classList.add('flash-on');
+        } else {
+            box.classList.remove('flash-on');
+        }
+    }
+
     if (btn) {
+        btn.classList.remove('flash-suggest-pulse');
         var textSpan = btn.querySelector('.flash-text');
         if (isBioLoginFlashActive) {
             btn.classList.add('active-flash');
@@ -2797,9 +2827,12 @@ function resetBioLoginFlash() {
     isBioLoginFlashActive = false;
     var overlay = document.getElementById('bioLoginScreenFlashOverlay');
     var btn = document.getElementById('bioLoginFlashToggleBtn');
+    var box = document.getElementById('bioLoginCameraBox');
     if (overlay) overlay.classList.remove('active');
+    if (box) box.classList.remove('flash-on');
     if (btn) {
         btn.classList.remove('active-flash');
+        btn.classList.remove('flash-suggest-pulse');
         var textSpan = btn.querySelector('.flash-text');
         if (textSpan) textSpan.textContent = 'Flash';
         btn.setAttribute('title', 'Toggle Flash / Fill Light');
@@ -2919,7 +2952,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (avgEdgeGradient < 1.6) {
+    if (avgEdgeGradient < 1.3) {
         return {
             status: 'BLURRY',
             passed: false,
@@ -2941,7 +2974,7 @@ async function detectAndAnalyzeFaceFrame(video) {
                         passed: false,
                         facesCount: detected.length,
                         score: 0,
-                        message: 'Multiple faces detected. Please ensure only one person is visible.'
+                        message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
                     };
                 }
                 if (detected.length === 1 && detected[0].boundingBox) {
@@ -2992,21 +3025,22 @@ async function detectAndAnalyzeFaceFrame(video) {
             var sat = maxC > 0 ? (delta / maxC) : 0;
             var val = maxC / 255;
 
-            var isYcbcrSkin = (yVal >= 20 && yVal <= 250) &&
-                              (cbVal >= 68 && cbVal <= 146) &&
-                              (crVal >= 120 && crVal <= 190);
+            var isYcbcrSkin = (yVal >= 15 && yVal <= 255) &&
+                              (cbVal >= 65 && cbVal <= 155) &&
+                              (crVal >= 115 && crVal <= 195);
 
-            var isNormRgbSkin = (normR >= 0.29 && normR <= 0.64) &&
-                                (normG >= 0.21 && normG <= 0.42) &&
-                                (normR >= normG - 0.05);
+            var isNormRgbSkin = (normR >= 0.28 && normR <= 0.68) &&
+                                (normG >= 0.20 && normG <= 0.44) &&
+                                (normR >= normG - 0.08);
 
-            var isHsvSkin = ((hue >= 0 && hue <= 56) || (hue >= 325 && hue <= 360)) &&
-                            (sat >= 0.08 && sat <= 0.85) &&
-                            (val >= 0.12);
+            var isHsvSkin = ((hue >= 0 && hue <= 58) || (hue >= 320 && hue <= 360)) &&
+                            (sat >= 0.06 && sat <= 0.88) &&
+                            (val >= 0.10);
 
             var isSkin = (isYcbcrSkin && (isNormRgbSkin || isHsvSkin)) ||
                          (isNormRgbSkin && isHsvSkin) ||
-                         (isYcbcrSkin && (r > b - 15));
+                         (isYcbcrSkin && (r > b - 15)) ||
+                         (r > 75 && g > 40 && b > 20 && r > g && (r - b) > 10 && Math.abs(r - g) > 10);
 
             if (isSkin) {
                 cellSkinCounts[cellIdx]++;
@@ -3017,7 +3051,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var activeGrid = new Array(gridCols * gridRows).fill(false);
     for (var i = 0; i < gridCols * gridRows; i++) {
         var density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-        if (density >= 0.16) {
+        if (density >= 0.14) {
             activeGrid[i] = true;
         }
     }
@@ -3084,23 +3118,28 @@ async function detectAndAnalyzeFaceFrame(video) {
         clusters.sort(function(a, b) { return b.cells - a.cells; });
         var primary = clusters[0];
         var secondary = clusters[1];
-        if (secondary.cells >= 4 && secondary.cells >= primary.cells * 0.35 && Math.abs(primary.centerC - secondary.centerC) >= 2.5) {
+        var secondaryAspect = secondary.hPx / Math.max(1, secondary.wPx);
+        if (secondary.cells >= 8 && secondary.cells >= primary.cells * 0.55 &&
+            Math.abs(primary.centerC - secondary.centerC) >= 2.8 &&
+            secondaryAspect >= 0.75 && secondaryAspect <= 2.2) {
             return {
                 status: 'MULTIPLE_FACES',
                 passed: false,
                 facesCount: clusters.length,
                 score: 0,
-                message: 'Multiple faces detected. Please ensure only one person is visible.'
+                message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
             };
         }
     }
 
     var faceX = 0, faceY = 0, faceW = 0, faceH = 0;
-    if (nativeFace && nativeFace.width >= 24 && nativeFace.height >= 28) {
+    var isNativeDetected = false;
+    if (nativeFace && nativeFace.width >= 20 && nativeFace.height >= 24) {
         faceX = Math.max(0, Math.floor(nativeFace.x));
         faceY = Math.max(0, Math.floor(nativeFace.y));
         faceW = Math.min(vw - faceX, Math.floor(nativeFace.width));
         faceH = Math.min(vh - faceY, Math.floor(nativeFace.height));
+        isNativeDetected = true;
     } else if (clusters.length > 0) {
         var primaryCluster = clusters[0];
         faceX = Math.max(0, Math.floor(primaryCluster.minC * cellW));
@@ -3119,7 +3158,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 4. Proximity
     var wRatio = faceW / vw;
-    if (wRatio < 0.20 || faceW < 32 || faceH < 36) {
+    if (wRatio < 0.18 || faceW < 28 || faceH < 32) {
         return {
             status: 'TOO_FAR',
             passed: false,
@@ -3128,7 +3167,7 @@ async function detectAndAnalyzeFaceFrame(video) {
             message: 'Move closer to the camera.'
         };
     }
-    if (wRatio > 0.85 || faceW > 136 || faceH > 142) {
+    if (wRatio > 0.88 || faceW > 142 || faceH > 146) {
         return {
             status: 'TOO_CLOSE',
             passed: false,
@@ -3144,7 +3183,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var offX = Math.abs(centerX - (vw / 2)) / vw;
     var offY = Math.abs(centerY - (vh / 2)) / vh;
 
-    if (offX > 0.24 || offY > 0.26) {
+    if (offX > 0.28 || offY > 0.30) {
         return {
             status: 'OFF_CENTER',
             passed: false,
@@ -3154,7 +3193,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if ((faceX <= 1 || faceY <= 1 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 68 || faceH > 74)) {
+    if ((faceX <= 1 || faceY <= 1 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 85 || faceH > 90)) {
         return {
             status: 'PARTIAL_FACE',
             passed: false,
@@ -3166,7 +3205,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 6. Aspect ratio
     var aspect = faceH / Math.max(1, faceW);
-    if (aspect < 0.78 || aspect > 2.3) {
+    if (aspect < 0.72 || aspect > 2.4) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -3229,40 +3268,78 @@ async function detectAndAnalyzeFaceFrame(video) {
     var avgCheek      = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
     var avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
 
-    var score = 15;
-    if (aspect >= 1.05 && aspect <= 1.75) score += 20;
-    else if (aspect >= 0.88 && aspect <= 2.0) score += 14;
-    else score += 6;
+    var score = isNativeDetected ? 40 : 25; // Base confidence for confirmed face
 
-    if (offX <= 0.12 && offY <= 0.14 && wRatio >= 0.30 && wRatio <= 0.72) score += 18;
-    else if (offX <= 0.18 && offY <= 0.20) score += 12;
-    else score += 5;
+    // A. Aspect ratio fit (0 - 18 pts)
+    if (aspect >= 1.05 && aspect <= 1.75) {
+        score += 18;
+    } else if (aspect >= 0.85 && aspect <= 2.05) {
+        score += 12;
+    } else {
+        score += 6;
+    }
 
+    // B. Centering and scale optimality (0 - 18 pts)
+    if (offX <= 0.14 && offY <= 0.16 && wRatio >= 0.28 && wRatio <= 0.75) {
+        score += 18;
+    } else if (offX <= 0.22 && offY <= 0.24) {
+        score += 12;
+    } else {
+        score += 6;
+    }
+
+    // C. Eye socket bilateral depression & symmetry (0 - 18 pts)
     var eyeCheekRatioL = avgCheek > 0 ? (avgLeftEye / avgCheek) : 1;
     var eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
     var eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
 
-    if (eyeCheekRatioL <= 1.04 && eyeCheekRatioR <= 1.04) score += 12;
-    else if (eyeCheekRatioL <= 1.12 && eyeCheekRatioR <= 1.12) score += 7;
+    if (eyeCheekRatioL <= 1.10 && eyeCheekRatioR <= 1.10) {
+        score += 10;
+    } else if (eyeCheekRatioL <= 1.25 && eyeCheekRatioR <= 1.25) {
+        score += 6;
+    } else {
+        score += 3;
+    }
 
-    if (eyeSymmetryDiff < 0.22) score += 10;
-    else if (eyeSymmetryDiff < 0.35) score += 5;
+    if (eyeSymmetryDiff < 0.28) {
+        score += 8;
+    } else if (eyeSymmetryDiff < 0.48) {
+        score += 5;
+    } else {
+        score += 2;
+    }
 
+    // D. Nose bridge highlight vs eye contrast (0 - 10 pts)
     var noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
-    if (noseEyeDiff > -4) score += 12;
-    else if (noseEyeDiff > -12) score += 6;
+    if (noseEyeDiff > -4) {
+        score += 10;
+    } else if (noseEyeDiff > -14) {
+        score += 6;
+    } else {
+        score += 2;
+    }
 
+    // E. Mouth cavity depression / contrast (0 - 10 pts)
     var mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
-    if (mouthCheekRatio < 1.08) score += 10;
-    else score += 5;
+    if (mouthCheekRatio < 1.12) {
+        score += 10;
+    } else {
+        score += 5;
+    }
 
-    if (avgEdgeGradient >= 3.0) score += 6;
-    else if (avgEdgeGradient >= 1.8) score += 4;
+    // F. Edge definition & sharpness bonus (0 - 6 pts)
+    if (avgEdgeGradient >= 2.5) {
+        score += 6;
+    } else if (avgEdgeGradient >= 1.4) {
+        score += 4;
+    } else {
+        score += 2;
+    }
 
     score = Math.min(96, Math.max(0, Math.round(score)));
 
-    var MATCHING_THRESHOLD = 72;
-    if (score < 48) {
+    var MATCHING_THRESHOLD = 70;
+    if (score < 45) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -3272,7 +3349,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (score >= 48 && score < MATCHING_THRESHOLD) {
+    if (score >= 45 && score < MATCHING_THRESHOLD) {
         return {
             status: 'ALIGNING',
             passed: false,
@@ -3465,10 +3542,11 @@ async function startFaceRecognitionLogin(identifier, opts) {
 
     resetBioLoginFlash();
     var consecutiveValidFrames = 0;
-    var REQUIRED_FRAMES = 6;
+    var REQUIRED_FRAMES = 5;
     var SCAN_TIMEOUT_MS = 40000;
     var startTime = Date.now();
     var lastVerifiedAnalysis = null;
+    var flashBtn = document.getElementById('bioLoginFlashToggleBtn');
 
     var sleep = function(ms) {
         return new Promise(function(resolve) {
@@ -3526,8 +3604,11 @@ async function startFaceRecognitionLogin(identifier, opts) {
             if (hudStatus) { hudStatus.textContent = 'HOLD STEADY'; hudStatus.style.color = '#f59e0b'; }
         } else if (analysis.status === 'UNUSABLE') {
             consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            if (stateLabel) stateLabel.textContent = analysis.message || 'Improve lighting in front of camera.';
-            if (hudStatus) { hudStatus.textContent = 'CHECK LIGHT'; hudStatus.style.color = '#f59e0b'; }
+            if (stateLabel) stateLabel.textContent = 'Lighting is dark. Tap Flash to illuminate your face, or improve lighting.';
+            if (hudStatus) { hudStatus.textContent = 'LIGHTING LOW'; hudStatus.style.color = '#f59e0b'; }
+            if (flashBtn && !isBioLoginFlashActive) {
+                flashBtn.classList.add('flash-suggest-pulse');
+            }
         } else if (analysis.status === 'ALIGNING') {
             consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
             var alPct = Math.max(15, Math.round(analysis.score || 35));
@@ -3539,6 +3620,9 @@ async function startFaceRecognitionLogin(identifier, opts) {
         } else if (analysis.status === 'VALID_FACE' && analysis.passed) {
             consecutiveValidFrames++;
             lastVerifiedAnalysis = analysis;
+            if (flashBtn) {
+                flashBtn.classList.remove('flash-suggest-pulse');
+            }
             var pct = Math.min(98, Math.round(20 + (consecutiveValidFrames / REQUIRED_FRAMES) * 80));
             if (progressFill) progressFill.style.width = pct + '%';
             if (pctLabel) pctLabel.textContent = pct + '%';
@@ -3707,7 +3791,10 @@ async function handleBiometricLogin() {
         return;
     }
 
-    if (!window.PublicKeyCredential || !navigator.credentials || typeof navigator.credentials.get !== 'function') {
+    var hasWebAuthn = window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.get === 'function';
+    var hasCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+
+    if (!hasWebAuthn && !hasCamera) {
         resetBiometricButton();
         showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Biometric authentication is not supported on this browser. Please sign in with your password.');
         focusPasswordField();
