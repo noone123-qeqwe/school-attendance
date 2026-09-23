@@ -8,15 +8,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('webauthn_credentials', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('credential_id', 512)->unique();
-            $table->text('public_key');
-            $table->bigInteger('sign_count')->default(0);
-            $table->string('device_name')->nullable();
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('webauthn_credentials')) {
+            Schema::create('webauthn_credentials', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained()->onDelete('cascade');
+                $table->string('credential_id', 512)->unique();
+                $table->text('public_key');
+                $table->bigInteger('sign_count')->default(0);
+                $table->string('device_name')->nullable();
+                $table->timestamps();
+            });
+        }
     }
 
     public function down(): void
