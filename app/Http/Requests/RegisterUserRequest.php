@@ -85,6 +85,30 @@ class RegisterUserRequest extends FormRequest
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';
 
+        } elseif ($this->role === 'parent') {
+            $rules['student_number'] = [
+                'nullable',
+                'string',
+                'max:100',
+                function ($attribute, $value, $fail) {
+                    $cleaned = trim((string)$value);
+                    if ($cleaned === '') return;
+                    $rawNumbers = preg_split('/[,\s]+/', $cleaned, -1, PREG_SPLIT_NO_EMPTY);
+                    foreach ($rawNumbers as $num) {
+                        $st = \App\Models\User::where('role', 'student')->where(function($q) use ($num) {
+                            $q->where('student_number', $num)
+                              ->orWhere('student_number', ltrim($num, '0'))
+                              ->orWhere('id', $num);
+                        })->first();
+                        if (!$st) {
+                            $fail("No student found with Student ID '{$num}'. Please check the Student ID or leave empty to connect later.");
+                            return;
+                        }
+                    }
+                }
+            ];
+            $rules['student_id'] = 'nullable|string|max:100';
+
         } elseif ($this->role === 'teacher') {
             $rules['employee_id']    = 'nullable|string|max:50|unique:users';
             $rules['department']     = 'nullable|string|max:255';

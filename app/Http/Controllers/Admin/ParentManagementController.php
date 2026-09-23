@@ -79,7 +79,10 @@ class ParentManagementController extends Controller
             ],
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8',
-            'student_id' => 'nullable|exists:users,id',
+            'student_id' => 'nullable',
+            'student_ids' => 'nullable|array',
+            'student_ids.*' => 'nullable|exists:users,id',
+            'student_number' => 'nullable|string|max:255',
         ]);
 
         $password = $request->filled('password') ? $request->password : 'Parent@' . date('Y');
@@ -94,9 +97,41 @@ class ParentManagementController extends Controller
             'email_verified_at' => now(),
         ]);
 
+        $studentIdsToLink = [];
+
+        // 1. Array of student_ids
+        if ($request->filled('student_ids') && is_array($request->student_ids)) {
+            foreach ($request->student_ids as $sid) {
+                if ($sid) $studentIdsToLink[] = (int) $sid;
+            }
+        }
+
+        // 2. Single student_id
         if ($request->filled('student_id')) {
-            $student = User::find($request->student_id);
-            if ($student && $student->role === 'student') {
+            $studentIdsToLink[] = (int) $request->student_id;
+        }
+
+        // 3. String student_number(s)
+        if ($request->filled('student_number')) {
+            $rawNumbers = preg_split('/[,\s]+/', trim((string) $request->student_number), -1, PREG_SPLIT_NO_EMPTY);
+            foreach ($rawNumbers as $num) {
+                $st = User::where('role', 'student')->where(function($q) use ($num) {
+                    $q->where('student_number', $num)
+                      ->orWhere('student_number', ltrim($num, '0'))
+                      ->orWhere('id', $num);
+                })->first();
+                if ($st) {
+                    $studentIdsToLink[] = $st->id;
+                }
+            }
+        }
+
+        $studentIdsToLink = array_values(array_unique(array_filter($studentIdsToLink)));
+        $linkedStudentNames = [];
+
+        foreach ($studentIdsToLink as $sid) {
+            $student = User::where('role', 'student')->find($sid);
+            if ($student) {
                 DB::table('parent_student')->insertOrIgnore([
                     'parent_id' => $parent->id,
                     'student_id' => $student->id,
@@ -107,10 +142,26 @@ class ParentManagementController extends Controller
                 if (empty($student->guardian_email)) {
                     $student->update(['guardian_email' => $parent->email]);
                 }
+
+                $linkedStudentNames[] = $student->name;
+
+                try {
+                    \App\Models\Notification::create([
+                        'user_id' => $student->id,
+                        'sent_by' => auth()->id() ?? $parent->id,
+                        'type'    => 'parent_linked',
+                        'message' => "An administrator connected parent/guardian {$parent->name} ({$parent->email}) to your profile.",
+                        'is_read' => false,
+                    ]);
+                } catch (\Throwable $e) {}
             }
         }
 
-        return redirect()->route('admin.parents.index')->with('success', "Parent account '{$parent->name}' registered successfully. Default password is '{$password}'.");
+        $linkNotice = !empty($linkedStudentNames)
+            ? " and connected to " . implode(', ', $linkedStudentNames)
+            : "";
+
+        return redirect()->route('admin.parents.index')->with('success', "Parent account '{$parent->name}' registered successfully{$linkNotice}. Default password is '{$password}'.");
     }
 
     /**
@@ -134,6 +185,8 @@ class ParentManagementController extends Controller
             ],
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8',
+            'student_id' => 'nullable|exists:users,id',
+            'student_number' => 'nullable|string|max:255',
         ]);
 
         $data = [
@@ -148,7 +201,34 @@ class ParentManagementController extends Controller
 
         $parent->update($data);
 
-        return redirect()->route('admin.parents.index')->with('success', "Parent account '{$parent->name}' updated successfully.");
+        // Connect additional student if provided
+        $studentToLink = null;
+        if ($request->filled('student_id')) {
+            $studentToLink = User::where('role', 'student')->find($request->student_id);
+        } elseif ($request->filled('student_number')) {
+            $num = trim($request->student_number);
+            $studentToLink = User::where('role', 'student')->where(function($q) use ($num) {
+                $q->where('student_number', $num)
+                  ->orWhere('student_number', ltrim($num, '0'))
+                  ->orWhere('id', $num);
+            })->first();
+        }
+
+        $linkNotice = '';
+        if ($studentToLink) {
+            DB::table('parent_student')->insertOrIgnore([
+                'parent_id' => $parent->id,
+                'student_id' => $studentToLink->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            if (empty($studentToLink->guardian_email)) {
+                $studentToLink->update(['guardian_email' => $parent->email]);
+            }
+            $linkNotice = " and connected to student {$studentToLink->name}";
+        }
+
+        return redirect()->route('admin.parents.index')->with('success', "Parent account '{$parent->name}' updated successfully{$linkNotice}.");
     }
 
     /**

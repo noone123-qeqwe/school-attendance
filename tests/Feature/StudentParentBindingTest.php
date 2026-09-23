@@ -317,4 +317,84 @@ class StudentParentBindingTest extends TestCase
             ->assertSee('Instant Link Code')
             ->assertSee('Maria Dela Cruz');
     }
+
+    public function test_admin_parent_creation_connects_to_student(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.parents.store'), [
+                'name'       => 'Pedro Santos',
+                'email'      => 'pedro.santos@gmail.com',
+                'phone'      => '09181112233',
+                'student_id' => $this->student->id,
+            ]);
+
+        $response->assertRedirect(route('admin.parents.index'));
+        $response->assertSessionHas('success');
+
+        $parent = User::where('email', 'pedro.santos@gmail.com')->first();
+        $this->assertNotNull($parent);
+        $this->assertEquals('parent', $parent->role);
+
+        $this->assertDatabaseHas('parent_student', [
+            'parent_id'  => $parent->id,
+            'student_id' => $this->student->id,
+        ]);
+
+        $this->assertEquals('pedro.santos@gmail.com', $this->student->fresh()->guardian_email);
+    }
+
+    public function test_admin_parent_creation_connects_by_student_number(): void
+    {
+        $response = $this->actingAs($this->admin)
+            ->post(route('admin.parents.store'), [
+                'name'           => 'Elena Gomez',
+                'email'          => 'elena.gomez@gmail.com',
+                'phone'          => '09192223344',
+                'student_number' => $this->student->student_number,
+            ]);
+
+        $response->assertRedirect(route('admin.parents.index'));
+
+        $parent = User::where('email', 'elena.gomez@gmail.com')->first();
+        $this->assertNotNull($parent);
+
+        $this->assertDatabaseHas('parent_student', [
+            'parent_id'  => $parent->id,
+            'student_id' => $this->student->id,
+        ]);
+    }
+
+    public function test_public_parent_registration_connects_to_student(): void
+    {
+        $regEmail = 'parent.registrant@gmail.com';
+
+        $response = $this->withSession(['reg_email_verified' => $regEmail])
+            ->post(route('register'), [
+                'name'                  => 'Parent Registrant',
+                'first_name'            => 'Parent',
+                'surname'               => 'Registrant',
+                'email'                 => $regEmail,
+                'password'              => 'SecurePass123!',
+                'password_confirmation' => 'SecurePass123!',
+                'role'                  => 'parent',
+                'student_number'        => $this->student->student_number,
+                'terms'                 => '1',
+            ]);
+
+        $response->assertRedirect(route('parent.dashboard'));
+
+        $parent = User::where('email', $regEmail)->first();
+        $this->assertNotNull($parent);
+
+        $this->assertDatabaseHas('parent_student', [
+            'parent_id'  => $parent->id,
+            'student_id' => $this->student->id,
+        ]);
+
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $this->student->id,
+            'sent_by' => $parent->id,
+            'type'    => 'parent_linked',
+        ]);
+    }
 }

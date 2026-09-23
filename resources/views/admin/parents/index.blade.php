@@ -842,16 +842,42 @@
                     <input type="password" name="password" class="par-form-control" placeholder="Leave empty for default (Parent@{{ date('Y') }})">
                 </div>
 
-                <div style="margin-bottom: 0;">
-                    <label class="par-form-label">Initial Student to Link (Optional)</label>
-                    <select name="student_id" class="par-form-control">
-                        <option value="">-- Select Student to Link --</option>
-                        @foreach($students as $student)
-                            <option value="{{ $student->id }}">
-                                {{ $student->name }} ({{ $student->student_number ?? 'No ID' }} - {{ $student->course ?? 'N/A' }})
-                            </option>
-                        @endforeach
-                    </select>
+                <!-- Connect to Student Section -->
+                <div style="margin-top: 18px; padding: 16px; background: rgba(212, 175, 55, 0.06); border: 1px dashed rgba(212, 175, 55, 0.35); border-radius: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-link-45deg" style="color: #D4AF37; font-size: 1.25rem;"></i>
+                            <span style="font-weight: 700; color: #FCF8F2; font-size: 0.95rem;">Connect to Student</span>
+                        </div>
+                        <span style="font-size: 0.72rem; background: rgba(212, 175, 55, 0.18); color: #D4AF37; padding: 3px 8px; border-radius: 6px; font-weight: 600;">Optional</span>
+                    </div>
+                    <div style="font-size: 0.78rem; color: #A39683; margin-bottom: 14px; line-height: 1.45;">
+                        Connect this parent account directly to one or more students. You can choose from the student directory or enter their Student ID number directly.
+                    </div>
+
+                    <div style="margin-bottom: 12px;">
+                        <label class="par-form-label" style="font-size: 0.8rem; display: flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-mortarboard" style="color: #D4AF37;"></i> Select Student from Directory
+                        </label>
+                        <select name="student_id" class="par-form-control" id="addParentStudentSelect">
+                            <option value="">-- Choose Student to Link (Optional) --</option>
+                            @foreach($students as $student)
+                                <option value="{{ $student->id }}">
+                                    {{ $student->name }} ({{ $student->student_number ?? 'No ID' }} &bull; {{ $student->course ?? 'BSCS' }} {{ $student->year_level ? 'Yr '.$student->year_level : '' }} {{ $student->section }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="par-form-label" style="font-size: 0.8rem; display: flex; align-items: center; gap: 5px;">
+                            <i class="bi bi-upc-scan" style="color: #D4AF37;"></i> Or Enter Student ID Number Directly
+                        </label>
+                        <input type="text" name="student_number" class="par-form-control" placeholder="e.g. 2311969 (or multiple separated by commas)">
+                        <div style="font-size: 0.72rem; color: #A39683; margin-top: 4px;">
+                            Matches student ID / number in the system and automatically links them.
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="par-modal-footer">
@@ -895,9 +921,30 @@
                     <input type="text" name="phone" id="edit_phone" class="par-form-control">
                 </div>
 
-                <div style="margin-bottom: 0;">
+                <div style="margin-bottom: 16px;">
                     <label class="par-form-label">New Password (Optional)</label>
                     <input type="password" name="password" class="par-form-control" placeholder="Leave empty to keep current password">
+                </div>
+
+                <!-- Connect Additional Student -->
+                <div style="margin-top: 16px; padding: 14px 16px; background: rgba(212, 175, 55, 0.05); border: 1px dashed rgba(212, 175, 55, 0.25); border-radius: 12px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-link-45deg" style="color: #D4AF37; font-size: 1.15rem;"></i>
+                            <span style="font-weight: 600; color: #FCF8F2; font-size: 0.9rem;">Connect Additional Student</span>
+                        </div>
+                        <span style="font-size: 0.7rem; background: rgba(212, 175, 55, 0.15); color: #D4AF37; padding: 2px 7px; border-radius: 6px;">Optional</span>
+                    </div>
+                    <div>
+                        <select name="student_id" class="par-form-control">
+                            <option value="">-- Connect Another Student --</option>
+                            @foreach($students as $student)
+                                <option value="{{ $student->id }}">
+                                    {{ $student->name }} ({{ $student->student_number ?? 'No ID' }} &bull; {{ $student->course ?? 'BSCS' }} {{ $student->year_level ? 'Yr '.$student->year_level : '' }} {{ $student->section }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
             </div>
             <div class="par-modal-footer">
