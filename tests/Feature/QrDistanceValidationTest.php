@@ -369,16 +369,15 @@ class QrDistanceValidationTest extends TestCase
         $this->assertTrue($response->json('success'));
     }
 
-    public function test_first_local_scan_auto_anchors_session_when_teacher_coordinates_null()
+    public function test_scan_rejected_with_clear_message_when_teacher_coordinates_null()
     {
-        // Teacher creates session without GPS coordinates (e.g., from desktop or laptop before GPS lock)
+        // Teacher creates session without GPS coordinates
         $this->session->update([
             'classroom_lat' => null,
             'classroom_lng' => null,
+            'radius_meters' => 50,
         ]);
 
-        // Student scans in room (user's real coordinates ~14.5096, 121.0090)
-        // Which is ~3557m from the Taguig default fallback anchor
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token'     => $this->session->token,
             'latitude'  => 14.509600,
@@ -386,26 +385,10 @@ class QrDistanceValidationTest extends TestCase
             'accuracy'  => 12,
         ]);
 
-        $response->assertStatus(200);
-        $this->assertTrue($response->json('success'));
-
-        // Verify session was auto-anchored in the database
-        $this->session->refresh();
-        $this->assertEquals(14.509600, (float) $this->session->classroom_lat);
-        $this->assertEquals(121.009000, (float) $this->session->classroom_lng);
-
-        // A second student in the same room is validated against this new anchor
-        $student2 = User::factory()->create(['role' => 'student']);
-        $student2->enrolledSubjects()->attach($this->subject->id);
-        $response2 = $this->actingAs($student2)->postJson('/qr/scan-process', [
-            'token'     => $this->session->token,
-            'latitude'  => 14.509610,
-            'longitude' => 121.009015,
-            'accuracy'  => 8,
-        ]);
-
-        $response2->assertStatus(200);
-        $this->assertTrue($response2->json('success'));
+        $response->assertStatus(422);
+        $this->assertFalse($response->json('success'));
+        $this->assertEquals('teacher_location_unavailable', $response->json('error_type'));
+        $this->assertStringContainsString('teacher\'s laptop location is not available', $response->json('message'));
     }
 
     public function test_teacher_can_update_active_session_location_via_endpoint()
@@ -429,22 +412,16 @@ class QrDistanceValidationTest extends TestCase
         $this->assertEquals(100, $this->session->radius_meters);
     }
 
-    public function test_masbate_student_is_accepted_and_not_compared_against_taguig()
+    public function test_masbate_student_physically_beside_teacher_laptop_is_accepted()
     {
-        // Campus configured in Masbate (Osmeña Colleges coordinates: 12.371250, 123.619437)
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_lat'], ['value' => '12.371250']);
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_lng'], ['value' => '123.619437']);
-        \App\Models\Setting::updateOrCreate(['key' => 'gps_radius'], ['value' => '50']);
-
-        // Session created with null classroom coords (e.g. desktop teacher without GPS)
+        // Teacher's laptop is at Masbate location (12.371250, 123.619437)
         $this->session->update([
-            'classroom_lat' => null,
-            'classroom_lng' => null,
+            'classroom_lat' => 12.371250,
+            'classroom_lng' => 123.619437,
             'radius_meters' => 50,
         ]);
 
-        // Student scans physically inside the Masbate classroom (within 10m of 12.371250, 123.619437)
-        // 12.371300, 123.619437 is ~5.5 meters away
+        // Student scans physically beside the teacher's laptop (~5.5 meters away)
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token'     => $this->session->token,
             'latitude'  => 12.371300,

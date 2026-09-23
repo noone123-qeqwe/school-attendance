@@ -57,46 +57,51 @@ class AttendanceController extends Controller
         return redirect()->back()->with('error', 'You are not enrolled in this subject.');
     }
 
-    // SCHOOL LOCATION — Read dynamically from active session if present, else admin settings
+    // CENTRAL LOCATION — The teacher's laptop is the only central device for the geofence
     $activeSession = \App\Models\AttendanceSession::where('subject_code', $subject->code)
         ->where('active', true)
         ->latest('id')
         ->first();
 
-    $rawSchoolLat = $activeSession?->classroom_lat ?? \App\Models\Setting::get('gps_lat', 12.371250);
-    $rawSchoolLng = $activeSession?->classroom_lng ?? \App\Models\Setting::get('gps_lng', 123.619437);
-    [$schoolLat, $schoolLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $rawSchoolLat, (float) $rawSchoolLng);
-    $radiusMeters = (int) ($activeSession ? $activeSession->getAllowedRadius() : \App\Models\Setting::get('gps_radius', 50));
+    $radiusMeters = (int) ($activeSession ? $activeSession->getAllowedRadius() : 50);
 
-    // GPS VALIDATION — use is_null() so 0.0 is accepted
-    if (is_null($request->latitude) || is_null($request->longitude)) {
-        return redirect()->back()->with('error', 'GPS location is required for clock-in.');
-    }
+    if ($radiusMeters > 0) {
+        if (!$activeSession || $activeSession->classroom_lat === null || $activeSession->classroom_lng === null) {
+            return redirect()->back()->with('error', 'The teacher\'s laptop location is not available for this session. Please ask your instructor to enable location on their laptop.');
+        }
 
-    [$studentLat, $studentLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
-    $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
+        [$schoolLat, $schoolLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $activeSession->classroom_lat, (float) $activeSession->classroom_lng);
 
-    if ($accuracy !== null && $accuracy <= 0) {
-        return redirect()->back()->with('error', 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.');
-    }
+        // GPS VALIDATION — use is_null() so 0.0 is accepted
+        if (is_null($request->latitude) || is_null($request->longitude)) {
+            return redirect()->back()->with('error', 'GPS location is required for clock-in.');
+        }
 
-    if ($accuracy !== null && $accuracy > 150) {
-        return redirect()->back()->with('error', "GPS signal accuracy is too low (±" . round($accuracy) . "m) to verify your classroom location. Please move near a window, enable High Accuracy GPS, and try again.");
-    }
+        [$studentLat, $studentLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
+        $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
-    // CALCULATE DISTANCE
-    $distance = $this->distance(
-        $studentLat,
-        $studentLng,
-        $schoolLat,
-        $schoolLng
-    );
+        if ($accuracy !== null && $accuracy <= 0) {
+            return redirect()->back()->with('error', 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.');
+        }
 
-    $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
-    $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
+        if ($accuracy !== null && $accuracy > 150) {
+            return redirect()->back()->with('error', "GPS signal accuracy is too low (±" . round($accuracy) . "m) to verify your proximity. Please move near a window, enable High Accuracy GPS, and try again.");
+        }
 
-    if ($effectiveDistance > $radiusMeters) {
-        return redirect()->back()->with('error', "You are outside the classroom boundary (" . round($distance) . "m away, allowed within {$radiusMeters}m). Attendance can only be marked while inside the classroom.");
+        // CALCULATE DISTANCE (Haversine formula in meters)
+        $distance = $this->distance(
+            $studentLat,
+            $studentLng,
+            $schoolLat,
+            $schoolLng
+        );
+
+        $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
+        $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
+
+        if ($effectiveDistance > $radiusMeters) {
+            return redirect()->back()->with('error', "You are outside the attendance boundary (" . round($distance) . "m away, allowed within {$radiusMeters}m). Attendance can only be marked while near the teacher's laptop.");
+        }
     }
 
     // 1. DAY VALIDATION

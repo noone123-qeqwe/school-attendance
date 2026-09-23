@@ -1444,6 +1444,26 @@ function stopContinuousLocationWatch() {
     }
 }
 
+function normalizeCoordinates(lat, lng) {
+    let latitude = Number(lat);
+    let longitude = Number(lng);
+    if (isNaN(latitude) || isNaN(longitude)) return [0, 0];
+
+    // Definite swap: lat cannot exceed 90 or be less than -90
+    if (Math.abs(latitude) > 90 && Math.abs(longitude) <= 90) {
+        const t = latitude;
+        latitude = longitude;
+        longitude = t;
+    }
+    // Regional swap detection (e.g. Philippines lat ~12, lng ~123)
+    if (latitude > 50 && latitude <= 180 && longitude >= -90 && longitude <= 30) {
+        const t = latitude;
+        latitude = longitude;
+        longitude = t;
+    }
+    return [latitude, longitude];
+}
+
 function refreshStudentLocation(force = false) {
     if (!navigator.geolocation) return Promise.resolve(null);
     const now = Date.now();
@@ -1477,9 +1497,10 @@ function refreshStudentLocation(force = false) {
             pos => {
                 clearTimeout(safetyTimer);
                 if (pos && pos.coords) {
+                    const [normLat, normLng] = normalizeCoordinates(pos.coords.latitude, pos.coords.longitude);
                     studentGeoCoords = {
-                        lat: pos.coords.latitude,
-                        lng: pos.coords.longitude,
+                        lat: normLat,
+                        lng: normLng,
                         acc: pos.coords.accuracy || 0
                     };
                     studentGeoTimestamp = Date.now();
@@ -1492,9 +1513,10 @@ function refreshStudentLocation(force = false) {
                     pos => {
                         clearTimeout(safetyTimer);
                         if (pos && pos.coords) {
+                            const [normLat, normLng] = normalizeCoordinates(pos.coords.latitude, pos.coords.longitude);
                             studentGeoCoords = {
-                                lat: pos.coords.latitude,
-                                lng: pos.coords.longitude,
+                                lat: normLat,
+                                lng: normLng,
                                 acc: pos.coords.accuracy || 0
                             };
                             studentGeoTimestamp = Date.now();
@@ -2656,6 +2678,12 @@ function renderScanError(data) {
         iconBox.innerHTML = '<i class="bi bi-geo-alt-fill" style="color: #fbbf24;"></i>';
         title.textContent = 'Location Required';
         if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Enable Location & Retry';
+    } else if (errType === 'teacher_location_unavailable') {
+        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
+        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
+        iconBox.innerHTML = '<i class="bi bi-laptop" style="color: #fbbf24;"></i>';
+        title.textContent = 'Teacher Location Unavailable';
+        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry Verification';
     } else if (errType === 'unreliable_gps') {
         iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
         iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';

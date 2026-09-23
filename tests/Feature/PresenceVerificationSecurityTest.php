@@ -457,7 +457,7 @@ class PresenceVerificationSecurityTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success'    => false,
-                'error_type' => 'outside_classroom',
+                'error_type' => 'teacher_location_unavailable',
             ]);
     }
 

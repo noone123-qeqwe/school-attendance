@@ -425,8 +425,8 @@ function startGPS() {
         return;
     }
 
-    // Start with a higher-accuracy request to avoid IP-based or network-only location errors.
-    requestLocation({ timeout: 10000, enableHighAccuracy: true, maximumAge: 5000 });
+    // Request a fresh high-accuracy location reading immediately before geofence verification
+    requestLocation({ timeout: 10000, enableHighAccuracy: true, maximumAge: 0 });
 }
 
 function requestLocation(options) {
@@ -465,8 +465,13 @@ function requestLocation(options) {
         document.getElementById('lngInput').value = lng;
         document.getElementById('accuracyInput').value = accuracy;
 
-        // Check if student is within classroom geofence
-        if (RADIUS_METERS > 0 && CLASSROOM_LAT !== null && CLASSROOM_LNG !== null) {
+        // Check if student is within teacher laptop geofence
+        if (RADIUS_METERS > 0) {
+            if (CLASSROOM_LAT === null || CLASSROOM_LNG === null) {
+                showTeacherLocationMissingError();
+                return;
+            }
+
             // Handle weak or inaccurate GPS signals gracefully instead of incorrectly reporting too far away
             if (accuracy > 150) {
                 showWeakGpsError(accuracy);
@@ -476,7 +481,7 @@ function requestLocation(options) {
             var dist = calculateDistance(lat, lng, CLASSROOM_LAT, CLASSROOM_LNG);
             var accuracyAllowance = (accuracy > 0) ? Math.min(accuracy, 150) : 15;
             var effectiveDist = Math.max(0, dist - accuracyAllowance);
-            console.log('Classroom distance check: raw ' + Math.round(dist) + 'm, allowance ' + Math.round(accuracyAllowance) + 'm, effective ' + Math.round(effectiveDist) + 'm, limit: ' + RADIUS_METERS + 'm');
+            console.log('Teacher laptop proximity check: raw ' + Math.round(dist) + 'm, allowance ' + Math.round(accuracyAllowance) + 'm, effective ' + Math.round(effectiveDist) + 'm, limit: ' + RADIUS_METERS + 'm');
 
             if (effectiveDist > RADIUS_METERS) {
                 showOutsideClassroomError(dist, RADIUS_METERS);
@@ -683,6 +688,11 @@ function submitAttendance(credentialData) {
             return;
         }
 
+        if (response.error_type === 'teacher_location_unavailable') {
+            showTeacherLocationMissingError();
+            return;
+        }
+
         if (response.error_type === 'unreliable_gps') {
             showWeakGpsError(response.accuracy || accuracy);
             return;
@@ -846,6 +856,18 @@ function submitForm(msg) {
     document.getElementById('vTitle').textContent = 'Unable to Clock In';
     document.getElementById('vSub').textContent = msg;
     showMsg('err', '<i class="bi bi-exclamation-circle me-1"></i> ' + msg);
+}
+
+function showTeacherLocationMissingError() {
+    fingerprintInProgress = false;
+    setIcon('#fef3c7', 'bi bi-laptop', '#d97706');
+    document.getElementById('vTitle').textContent = 'Teacher Location Unavailable';
+    document.getElementById('vSub').textContent = 'Reference location for this session has not been set.';
+    showMsg('err', '<i class="bi bi-exclamation-triangle-fill me-1"></i> The teacher\'s laptop location is not available for this session. Please ask your instructor to enable location on their laptop.');
+    var btn = document.getElementById('retryFpBtn');
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Refresh Page';
+    btn.onclick = function() { window.location.reload(); };
+    btn.style.display = 'flex';
 }
 
 function showWeakGpsError(acc) {
