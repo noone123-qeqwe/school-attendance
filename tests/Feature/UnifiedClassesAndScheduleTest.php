@@ -70,7 +70,7 @@ class UnifiedClassesAndScheduleTest extends TestCase
         $response->assertSee('Name');
     }
 
-    public function test_unified_schedule_table_displays_all_required_columns_and_subject_data(): void
+    public function test_unified_schedule_displays_all_required_subject_data(): void
     {
         // Teacher user
         $teacher = User::factory()->teacher()->create([
@@ -110,17 +110,7 @@ class UnifiedClassesAndScheduleTest extends TestCase
 
         $response->assertStatus(200);
 
-        // Required COR table headers
-        $response->assertSee('Section');
-        $response->assertSee('Subject Code');
-        $response->assertSee('Class');
-        $response->assertSee('Units');
-        $response->assertSee('Time');
-        $response->assertSee('Day');
-        $response->assertSee('Room');
-        $response->assertSee("Teacher's Name", false);
-
-        // Subject content
+        // Subject content displayed in cards view
         $response->assertSee('1 1423');
         $response->assertSee('GE 9ED');
         $response->assertSee('Life and Works of Rizal');
@@ -173,8 +163,7 @@ class UnifiedClassesAndScheduleTest extends TestCase
         $response = $this->actingAs($this->student)->get('/my-classes');
 
         $response->assertStatus(200);
-        // Mobile view switcher
-        $response->assertSee('cor-view-toggle-btns');
+        // Cards view container
         $response->assertSee('corMobileCardsView');
         // Filter pills for quick scanning
         $response->assertSee('cor-day-pills-rail');

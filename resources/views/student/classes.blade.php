@@ -525,37 +525,10 @@
     border-color: var(--cor-gold);
     color: var(--cor-gold-amber);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
+    }
 
-.cor-view-toggle-btns {
-    display: flex;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--cor-border-gold);
-    border-radius: 8px;
-    padding: 2px;
-}
-
-.cor-toggle-btn {
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    border: none;
-    background: transparent;
-    color: var(--cor-text-muted);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.cor-toggle-btn.active {
-    background: var(--cor-gold);
-    color: #120804;
-}
-
-/* ── UNIFIED ACADEMIC SCHEDULE TABLE (Exact Columns Matching Visual Reference) ── */
-.cor-table-scroll-wrapper {
+    /* ── UNIFIED ACADEMIC SCHEDULE TABLE (Exact Columns Matching Visual Reference) ── */
+    .cor-table-scroll-wrapper {
     width: 100%;
     overflow-x: auto;
     border: 1.5px solid var(--cor-border-gold);
@@ -739,111 +712,111 @@
 }
 
 /* ── MOBILE RESPONSIVE CARDS VIEW (Clean Touch Layout Without Excessive Horizontal Scrolling) ── */
-.cor-mobile-cards-view {
-    display: none;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 22px;
-}
+    .cor-mobile-cards-view {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 22px;
+    }
 
-.cor-card-item {
-    background: rgba(22, 13, 9, 0.88);
-    border: 1.5px solid var(--cor-border-gold);
-    border-radius: 12px;
-    padding: 15px;
-    position: relative;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-}
+    .cor-card-item {
+        background: rgba(22, 13, 9, 0.88);
+        border: 1.5px solid var(--cor-border-gold);
+        border-radius: 12px;
+        padding: 12px 14px;
+        position: relative;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    }
 
-.cor-card-item.is-today {
-    border-color: rgba(207, 164, 111, 0.65);
-    background: linear-gradient(135deg, rgba(207, 164, 111, 0.12), rgba(22, 13, 9, 0.95));
-}
+    .cor-card-item.is-today {
+        border-color: rgba(207, 164, 111, 0.65);
+        background: linear-gradient(135deg, rgba(207, 164, 111, 0.12), rgba(22, 13, 9, 0.95));
+    }
 
-.cor-card-top-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 10px;
-}
+    .cor-card-top-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
 
-.cor-card-section-tag {
-    font-size: 0.76rem;
-    font-weight: 800;
-    color: var(--cor-gold-bright);
-    background: rgba(207, 164, 111, 0.14);
-    border: 1px solid rgba(207, 164, 111, 0.3);
-    padding: 3px 8px;
-    border-radius: 6px;
-}
+    .cor-card-section-tag {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--cor-gold-bright);
+        background: rgba(207, 164, 111, 0.14);
+        border: 1px solid rgba(207, 164, 111, 0.3);
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
 
-.cor-card-units-tag {
-    font-size: 0.76rem;
-    font-weight: 800;
-    color: var(--cor-gold-amber);
-    background: rgba(255, 209, 102, 0.14);
-    border: 1px solid rgba(255, 209, 102, 0.3);
-    padding: 3px 8px;
-    border-radius: 6px;
-}
+    .cor-card-units-tag {
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: var(--cor-gold-amber);
+        background: rgba(255, 209, 102, 0.14);
+        border: 1px solid rgba(255, 209, 102, 0.3);
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
 
-.cor-card-subj-block {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 1px dashed var(--cor-border-subtle);
-}
+    .cor-card-subj-block {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px dashed var(--cor-border-subtle);
+    }
 
-.cor-card-subj-title {
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: var(--cor-text-main);
-    margin: 5px 0 0;
-    line-height: 1.3;
-}
+    .cor-card-subj-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--cor-text-main);
+        margin: 4px 0 0;
+        line-height: 1.3;
+    }
 
-/* 2x2 Mini Schedule Matrix Grid with Borders matching the document feel */
-.cor-card-sched-matrix {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--cor-border-subtle);
-    border-radius: 8px;
-    overflow: hidden;
-    background: rgba(0, 0, 0, 0.25);
-}
+    /* 2x2 Mini Schedule Matrix Grid with Borders matching the document feel */
+    .cor-card-sched-matrix {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border: 1px solid var(--cor-border-subtle);
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.25);
+    }
 
-.cor-card-matrix-cell {
-    padding: 8px 10px;
-    border-right: 1px solid var(--cor-border-subtle);
-    border-bottom: 1px solid var(--cor-border-subtle);
-}
+    .cor-card-matrix-cell {
+        padding: 7px 9px;
+        border-right: 1px solid var(--cor-border-subtle);
+        border-bottom: 1px solid var(--cor-border-subtle);
+    }
 
-.cor-card-matrix-cell:nth-child(2n) {
-    border-right: none;
-}
+    .cor-card-matrix-cell:nth-child(2n) {
+        border-right: none;
+    }
 
-.cor-card-matrix-cell:nth-child(n+3) {
-    border-bottom: none;
-}
+    .cor-card-matrix-cell:nth-child(n+3) {
+        border-bottom: none;
+    }
 
-.cor-card-matrix-label {
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    color: var(--cor-gold);
-    letter-spacing: 0.6px;
-    margin-bottom: 2px;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
+    .cor-card-matrix-label {
+        font-size: 0.62rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--cor-gold);
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
 
-.cor-card-matrix-value {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--cor-text-main);
-    word-break: break-word;
-}
+    .cor-card-matrix-value {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--cor-text-main);
+        word-break: break-word;
+    }
 
 /* ── REGISTRATION CERTIFICATION & FOOTER SECTION ── */
 .cor-footer-section {
@@ -958,82 +931,176 @@
 }
 
 @media (max-width: 767px) {
-    .cor-page-wrapper {
-        padding-bottom: 110px;
-    }
-    .cor-sheet {
-        padding: 16px 12px;
-        border-radius: 14px;
-    }
-    .cor-college-name {
-        font-size: 1.22rem;
-    }
-    .cor-doc-title {
-        font-size: 1rem;
-    }
-    .cor-doc-sem {
-        font-size: 0.84rem;
-    }
-    .cor-actions-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 12px;
-    }
-    .cor-btn-group {
-        width: 100%;
-    }
-    .cor-btn-action {
-        flex: 1;
-        justify-content: center;
+        .cor-page-wrapper {
+            padding-bottom: 110px;
+        }
+        .cor-sheet {
+            padding: 14px 10px;
+            border-radius: 14px;
+        }
+        .cor-college-name {
+            font-size: 1.15rem;
+        }
+        .cor-doc-title {
+            font-size: 0.95rem;
+        }
+        .cor-doc-sem {
+            font-size: 0.8rem;
+        }
+        .cor-actions-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .cor-btn-group {
+            width: 100%;
+        }
+        .cor-btn-action {
+            flex: 1;
+            justify-content: center;
+            padding: 8px 14px;
+            font-size: 0.8rem;
+        }
+
+        /* Demographic table stacks cleanly on mobile phones */
+        .cor-student-info-grid .cor-info-row.four-col,
+        .cor-student-info-grid .cor-info-row.two-col {
+            grid-template-columns: 1fr;
+        }
+        .cor-info-label {
+            border-right: none;
+            border-bottom: 1px solid var(--cor-border-gold);
+            padding: 7px 10px;
+            font-size: 0.66rem;
+        }
+        .cor-info-value {
+            border-right: none;
+            border-bottom: 1px solid var(--cor-border-subtle);
+            padding: 8px 10px;
+            font-size: 0.84rem;
+        }
+        .cor-info-row .cor-info-value:last-child {
+            border-bottom: none;
+        }
+
+        /* Mobile: Cards view always shown, table hidden */
+        .cor-table-scroll-wrapper {
+            display: none;
+        }
+        .cor-mobile-cards-view {
+            display: flex;
+        }
+
+        .cor-assessment-row {
+            grid-template-columns: 1fr;
+        }
+        .cor-assessment-label {
+            border-right: none;
+            border-bottom: 1px solid var(--cor-border-subtle);
+            padding: 7px 10px;
+            font-size: 0.8rem;
+        }
+        .cor-assessment-val {
+            padding: 7px 10px;
+            font-size: 0.82rem;
+        }
+
+        /* Search bar and toolbar improvements */
+        .cor-search-box {
+            min-width: 100%;
+            max-width: none;
+            width: 100%;
+        }
+
+        .cor-search-input {
+            padding: 10px 14px 10px 38px;
+            font-size: 0.85rem;
+        }
+
+        .cor-day-pills-rail {
+            width: 100%;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            gap: 5px;
+            padding: 4px 0;
+        }
+
+        .cor-day-btn {
+            padding: 7px 12px;
+            font-size: 0.74rem;
+        }
+
+        .cor-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+
+        /* Card optimizations for mobile */
+        .cor-card-item {
+            padding: 10px 12px;
+        }
+
+        .cor-card-subj-title {
+            font-size: 0.86rem;
+        }
+
+        .cor-card-matrix-cell {
+            padding: 6px 8px;
+        }
+
+        .cor-card-matrix-label {
+            font-size: 0.6rem;
+        }
+
+        .cor-card-matrix-value {
+            font-size: 0.74rem;
+        }
     }
 
-    /* Demographic table stacks cleanly on mobile phones */
-    .cor-student-info-grid .cor-info-row.four-col,
-    .cor-student-info-grid .cor-info-row.two-col {
-        grid-template-columns: 1fr;
+    /* Extra small mobile devices (320px - 360px) */
+    @media (max-width: 380px) {
+        .cor-page-wrapper {
+            padding-bottom: 110px;
+        }
+        .cor-sheet {
+            padding: 12px 8px;
+        }
+        .cor-college-name {
+            font-size: 1rem;
+        }
+        .cor-doc-title {
+            font-size: 0.88rem;
+        }
+        .cor-info-label,
+        .cor-info-value {
+            padding: 6px 8px;
+            font-size: 0.62rem;
+        }
+        .cor-info-value {
+            font-size: 0.78rem;
+        }
+        .cor-card-item {
+            padding: 8px 10px;
+        }
+        .cor-card-subj-title {
+            font-size: 0.82rem;
+        }
+        .cor-card-matrix-cell {
+            padding: 5px 6px;
+        }
+        .cor-card-matrix-label {
+            font-size: 0.56rem;
+        }
+        .cor-card-matrix-value {
+            font-size: 0.7rem;
+        }
+        .cor-day-btn {
+            padding: 6px 10px;
+            font-size: 0.7rem;
+        }
     }
-    .cor-info-label {
-        border-right: none;
-        border-bottom: 1px solid var(--cor-border-gold);
-        padding: 8px 12px;
-        font-size: 0.7rem;
-    }
-    .cor-info-value {
-        border-right: none;
-        border-bottom: 1px solid var(--cor-border-subtle);
-        padding: 9px 12px;
-        font-size: 0.88rem;
-    }
-    .cor-info-row .cor-info-value:last-child {
-        border-bottom: none;
-    }
-
-    /* Mobile toggle defaults: Cards are shown, Table is hidden unless force-shown */
-    .cor-table-scroll-wrapper {
-        display: none;
-    }
-    .cor-mobile-cards-view {
-        display: flex;
-    }
-    .cor-table-scroll-wrapper.force-show {
-        display: block;
-    }
-    .cor-mobile-cards-view.force-hide {
-        display: none;
-    }
-
-    .cor-assessment-row {
-        grid-template-columns: 1fr;
-    }
-    .cor-assessment-label {
-        border-right: none;
-        border-bottom: 1px solid var(--cor-border-subtle);
-        padding: 8px 12px;
-    }
-    .cor-assessment-val {
-        padding: 8px 12px;
-    }
-}
 
 /* ── PRINT MEDIA STYLES (Clean Paper-Authentic COR) ── */
 @media print {
@@ -1250,7 +1317,7 @@
                 </div>
             </div>
 
-            <!-- 3. Screen Controls Toolbar (Search, Filter, Mobile View Toggle) -->
+            <!-- 3. Screen Controls Toolbar (Search, Filter) -->
             <div class="cor-toolbar no-print">
                 <div class="cor-search-box">
                     <i class="bi bi-search cor-search-icon"></i>
@@ -1275,127 +1342,9 @@
                     <button type="button" class="cor-day-btn" data-day="Friday">Fri</button>
                     <button type="button" class="cor-day-btn" data-day="Saturday">Sat</button>
                 </div>
-
-                <!-- Mobile view switcher (Visible only on small screens) -->
-                <div class="cor-view-toggle-btns d-md-none">
-                    <button type="button" class="cor-toggle-btn active" id="viewCardsBtn" onclick="setMobileView('cards')" title="Cards layout">
-                        <i class="bi bi-grid-fill"></i> Cards
-                    </button>
-                    <button type="button" class="cor-toggle-btn" id="viewTableBtn" onclick="setMobileView('table')" title="Official table layout">
-                        <i class="bi bi-table"></i> Table
-                    </button>
-                </div>
             </div>
 
-            <!-- 4. Class Schedule Table (Official Full-Width COR Layout Inspired by Reference) -->
-            <div class="cor-table-scroll-wrapper" id="corTableScrollWrapper">
-                <table class="cor-table" id="corScheduleTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 10%;">Section</th>
-                            <th style="width: 28%;">Subject Code & Description</th>
-                            <th class="center" style="width: 10%;">Class Number</th>
-                            <th class="center" style="width: 8%;">Units</th>
-                            <th style="width: 16%;">Time</th>
-                            <th class="center" style="width: 8%;">Day</th>
-                            <th class="center" style="width: 8%;">Room</th>
-                            <th style="width: 16%;">Teacher's Name</th>
-                        </tr>
-                    </thead>
-                    <tbody id="corTableBody">
-                        @forelse($groupedSchedules as $sched)
-                            <tr class="cor-schedule-row {{ $sched->is_today ? 'is-today' : '' }}" 
-                                data-days="{{ implode(',', $sched->raw_days) }}" 
-                                data-is-today="{{ $sched->is_today ? '1' : '0' }}">
-                                <!-- Section -->
-                                <td>
-                                    <span class="cor-section-val">{{ $sched->section }}</span>
-                                </td>
-
-                                <!-- Subject Code & Name -->
-                                <td>
-                                    <div class="d-flex align-items-center flex-wrap gap-1">
-                                        <span class="cor-code-badge">{{ $sched->code }}</span>
-                                        @if($sched->is_today)
-                                            <span class="cor-today-indicator no-print"><i class="bi bi-dot"></i> Today</span>
-                                        @endif
-                                    </div>
-                                    <div class="cor-subject-name">{{ $sched->name }}</div>
-                                </td>
-
-                                <!-- Class Number -->
-                                <td class="center font-monospace" style="color: var(--cor-text-muted); font-weight: 700;">
-                                    {{ $sched->class_number }}
-                                </td>
-
-                                <!-- Units -->
-                                <td class="center cor-units-cell">
-                                    {{ $sched->units }}
-                                </td>
-
-                                <!-- Time -->
-                                <td>
-                                    @if($sched->start_time && $sched->end_time)
-                                        <div class="cor-time-text">
-                                            <i class="bi bi-clock me-1 text-gold no-print"></i>
-                                            {{ \Carbon\Carbon::parse($sched->start_time)->format('h:i A') }} – {{ \Carbon\Carbon::parse($sched->end_time)->format('h:i A') }}
-                                        </div>
-                                    @else
-                                        <span class="text-muted">TBA</span>
-                                    @endif
-                                </td>
-
-                                <!-- Day -->
-                                <td class="center">
-                                    <span class="cor-day-badge">{{ $sched->days }}</span>
-                                </td>
-
-                                <!-- Room -->
-                                <td class="center">
-                                    @if($sched->room && $sched->room !== 'TBA')
-                                        <span class="cor-room-badge">{{ $sched->room }}</span>
-                                    @else
-                                        <span class="text-muted">TBA</span>
-                                    @endif
-                                </td>
-
-                                <!-- Teacher's Name -->
-                                <td>
-                                    <div class="cor-teacher-name">
-                                        <i class="bi bi-person-fill text-gold me-1 no-print"></i>
-                                        {{ $sched->teacher }}
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8">
-                                    <div class="cor-empty-state">
-                                        <i class="bi bi-journal-x cor-empty-icon"></i>
-                                        <h5>No Enrolled Subjects Found</h5>
-                                        <p class="mb-0">You are currently not registered for any classes this semester.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="3" class="cor-total-units-label">
-                                Total Units :
-                            </td>
-                            <td class="center cor-total-units-val">
-                                {{ number_format($totalUnits, 1) }}
-                            </td>
-                            <td colspan="4" style="color: var(--cor-text-muted); font-size: 0.8rem; font-weight: 700;">
-                                {{ $subjects->count() }} Registered Subject{{ $subjects->count() === 1 ? '' : 's' }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <!-- 5. Mobile Responsive Cards View (Optimized for Phones Without Excessive Horizontal Scroll) -->
+            <!-- 4. Class Schedule Cards View (Primary Mobile Layout) -->
             <div class="cor-mobile-cards-view" id="corMobileCardsView">
                 @forelse($groupedSchedules as $sched)
                     <div class="cor-card-item {{ $sched->is_today ? 'is-today' : '' }}" 
@@ -1517,98 +1466,53 @@
 </div>
 
 <script @cspNonce>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('scheduleSearchInput');
-    const dayButtons = document.querySelectorAll('.cor-day-btn');
-    const tableRows = document.querySelectorAll('.cor-schedule-row');
-    const cards = document.querySelectorAll('.cor-card-item');
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('scheduleSearchInput');
+        const dayButtons = document.querySelectorAll('.cor-day-btn');
+        const cards = document.querySelectorAll('.cor-card-item');
 
-    let activeDay = 'all';
+        let activeDay = 'all';
 
-    function applyFilter() {
-        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        function applyFilter() {
+            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
 
-        // 1. Filter Table Rows
-        tableRows.forEach(row => {
-            const rowText = row.textContent.toLowerCase();
-            const daysAttr = row.getAttribute('data-days') || '';
-            const isTodayAttr = row.getAttribute('data-is-today') === '1';
+            // Filter Mobile Cards
+            cards.forEach(card => {
+                const cardText = card.textContent.toLowerCase();
+                const daysAttr = card.getAttribute('data-days') || '';
+                const isTodayAttr = card.getAttribute('data-is-today') === '1';
 
-            let matchesDay = true;
-            if (activeDay === 'all') {
-                matchesDay = true;
-            } else if (activeDay === 'today') {
-                matchesDay = isTodayAttr;
-            } else {
-                matchesDay = daysAttr.split(',').includes(activeDay);
-            }
+                let matchesDay = true;
+                if (activeDay === 'all') {
+                    matchesDay = true;
+                } else if (activeDay === 'today') {
+                    matchesDay = isTodayAttr;
+                } else {
+                    matchesDay = daysAttr.split(',').includes(activeDay);
+                }
 
-            const matchesSearch = query === '' || rowText.includes(query);
+                const matchesSearch = query === '' || cardText.includes(query);
 
-            if (matchesDay && matchesSearch) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+                if (matchesDay && matchesSearch) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
 
-        // 2. Filter Mobile Cards
-        cards.forEach(card => {
-            const cardText = card.textContent.toLowerCase();
-            const daysAttr = card.getAttribute('data-days') || '';
-            const isTodayAttr = card.getAttribute('data-is-today') === '1';
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilter);
+        }
 
-            let matchesDay = true;
-            if (activeDay === 'all') {
-                matchesDay = true;
-            } else if (activeDay === 'today') {
-                matchesDay = isTodayAttr;
-            } else {
-                matchesDay = daysAttr.split(',').includes(activeDay);
-            }
-
-            const matchesSearch = query === '' || cardText.includes(query);
-
-            if (matchesDay && matchesSearch) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
-            }
-        });
-    }
-
-    if (searchInput) {
-        searchInput.addEventListener('input', applyFilter);
-    }
-
-    dayButtons.forEach(btn => {
-        btn.addEventListener('click', function() {
-            dayButtons.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            activeDay = this.getAttribute('data-day');
-            applyFilter();
+        dayButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                dayButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                activeDay = this.getAttribute('data-day');
+                applyFilter();
+            });
         });
     });
-
-    // Mobile view switch function
-    window.setMobileView = function(view) {
-        const table = document.getElementById('corTableScrollWrapper');
-        const cardsView = document.getElementById('corMobileCardsView');
-        const btnCards = document.getElementById('viewCardsBtn');
-        const btnTable = document.getElementById('viewTableBtn');
-
-        if (view === 'table') {
-            if (table) table.classList.add('force-show');
-            if (cardsView) cardsView.classList.add('force-hide');
-            if (btnTable) btnTable.classList.add('active');
-            if (btnCards) btnCards.classList.remove('active');
-        } else {
-            if (table) table.classList.remove('force-show');
-            if (cardsView) cardsView.classList.remove('force-hide');
-            if (btnCards) btnCards.classList.add('active');
-            if (btnTable) btnTable.classList.remove('active');
-        }
-    };
-});
-</script>
+    </script>
 @endsection
