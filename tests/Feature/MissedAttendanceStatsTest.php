@@ -32,6 +32,7 @@ class MissedAttendanceStatsTest extends TestCase
             'year_level' => 2,
             'semester' => 1,
             'course' => 'BSCS',
+            'created_at' => Carbon::parse('2026-08-17 07:00:00', 'Asia/Manila'),
         ]);
 
         $subject = Subject::create([
@@ -90,6 +91,7 @@ class MissedAttendanceStatsTest extends TestCase
             'year_level' => 2,
             'semester' => 1,
             'course' => 'BSCS',
+            'created_at' => Carbon::parse('2026-08-17 07:00:00', 'Asia/Manila'),
         ]);
 
         $parent->children()->attach($student->id);
@@ -151,6 +153,7 @@ class MissedAttendanceStatsTest extends TestCase
             'year_level' => 3,
             'semester' => 1,
             'course' => 'BSCS',
+            'created_at' => Carbon::parse('2026-08-17 07:00:00', 'Asia/Manila'),
         ]);
 
         $subject = Subject::create([
@@ -198,6 +201,7 @@ class MissedAttendanceStatsTest extends TestCase
             'year_level' => 3,
             'semester' => 1,
             'course' => 'BSCS',
+            'created_at' => Carbon::parse('2026-08-17 07:00:00', 'Asia/Manila'),
         ]);
 
         $subject = Subject::create([

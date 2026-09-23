@@ -46,9 +46,32 @@ class MarkAbsentStudents extends Command
             $subject = $schedule->subject;
             if (!$subject) continue;
 
+            $scheduleStart = Carbon::parse($today->toDateString() . ' ' . $schedule->start_time, 'Asia/Manila');
             $students = $subject->getAllStudents();
 
             foreach ($students as $student) {
+                // If student account was created after this class session started, skip marking absent
+                if ($student->created_at) {
+                    $studentCreated = Carbon::parse($student->created_at)->timezone('Asia/Manila');
+                    if ($studentCreated->greaterThan($scheduleStart)) {
+                        continue;
+                    }
+                }
+
+                // If explicitly enrolled via enrollments table, ensure enrolled before session started
+                if (\Illuminate\Support\Facades\Schema::hasTable('enrollments')) {
+                    $enrollment = \Illuminate\Support\Facades\DB::table('enrollments')
+                        ->where('user_id', $student->id)
+                        ->where('subject_id', $subject->id)
+                        ->first();
+                    if ($enrollment && !empty($enrollment->created_at)) {
+                        $enrolledAt = Carbon::parse($enrollment->created_at)->timezone('Asia/Manila');
+                        if ($enrolledAt->greaterThan($scheduleStart)) {
+                            continue;
+                        }
+                    }
+                }
+
                 \Illuminate\Support\Facades\DB::transaction(function () use ($student, $subject, $today, &$absentCount, &$notificationsSentCount, &$osasWarningsCount) {
                     // Check if already has attendance record today for this subject
                     $exists = Attendance::where('user_id', $student->id)

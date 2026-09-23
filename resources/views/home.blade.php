@@ -1321,7 +1321,7 @@
                 <div class="schedule-items-grid">
                 @foreach($todaySchedule as $item)
                     @php
-                        $statusColor = $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : 'var(--gold)'));
+                        $statusColor = $item->status === 'completed' ? '#4ade80' : ($item->status === 'ongoing' ? '#fbbf24' : ($item->status === 'missed' ? '#f87171' : ($item->status === 'past' ? '#9ca3af' : 'var(--gold)')));
                     @endphp
                     <div class="schedule-modern-card" style="border-left: 3.5px solid {{ $statusColor }};">
                         <div class="schedule-main-info">
@@ -1343,6 +1343,7 @@
                             @if($item->status === 'completed') <x-badge type="present">Done</x-badge>
                             @elseif($item->status === 'ongoing') <x-badge type="late">Now</x-badge>
                             @elseif($item->status === 'missed') <x-badge type="absent">Missed</x-badge>
+                            @elseif($item->status === 'past') <x-badge type="secondary">Past</x-badge>
                             @else <x-badge type="info">Later</x-badge>
                             @endif
                         </div>

@@ -41,16 +41,26 @@ class MobileController extends Controller
             $checkInTime = Carbon::parse($todayAttendance->time_in)->format('g:i A');
             $todayStatusSubtext = '';
         } else {
-            // Check if any class has ended today
+            // Check if any class has ended today (only considering classes that started after user registered)
+            $userCreated = $user->created_at ? Carbon::parse($user->created_at)->timezone('Asia/Manila') : null;
             $anyClassEnded = Subject::where('year_level', $user->year_level)
                 ->where('semester', $user->semester)
-                ->whereHas('schedules', function($query) use ($now) {
+                ->where(function ($q) use ($user) {
+                    $q->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
+                })
+                ->where(function ($q) use ($user) {
+                    $q->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
+                })
+                ->whereHas('schedules', function($query) use ($now, $userCreated) {
                     $query->where('day', $now->format('l'))
                           ->whereTime('end_time', '<', $now->format('H:i:s'));
+                    if ($userCreated && $userCreated->isToday()) {
+                        $query->whereTime('start_time', '>=', $userCreated->format('H:i:s'));
+                    }
                 })
                 ->exists();
 
-            if ($anyClassEnded) {
+            if ($anyClassEnded && (!$userCreated || !$userCreated->isFuture())) {
                 $todayStatus = 'absent';
                 $todayStatusText = 'Absent';
                 $todayStatusSubtext = 'No attendance recorded today';

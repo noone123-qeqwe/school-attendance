@@ -32,7 +32,8 @@ class AttendanceLifecycleTest extends TestCase
             'year_level' => 1,
             'semester' => 1,
             'course' => 'BSCS',
-            'section' => 'A'
+            'section' => 'A',
+            'created_at' => Carbon::parse('2026-08-01 07:00:00', 'Asia/Manila'),
         ]);
         
         // Create subject

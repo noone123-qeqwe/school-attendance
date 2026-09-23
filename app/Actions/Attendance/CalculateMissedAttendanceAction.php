@@ -54,7 +54,7 @@ class CalculateMissedAttendanceAction
 
         $subjects->loadMissing('schedules');
 
-        // 2. Resolve tracking start date (with cached academic year start)
+        // 2. Resolve tracking start date (bounded by student registration and enrollment)
         $earliestRecord = Attendance::where('user_id', $student->id)->min('date');
         $semesterStart = app()->environment('testing')
             ? AcademicYear::where('is_current', true)->value('start_date')
@@ -62,15 +62,34 @@ class CalculateMissedAttendanceAction
                 return AcademicYear::where('is_current', true)->value('start_date');
             });
 
-        $startDate = $now->copy()->subDays(90);
-        if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
-            $startDate = Carbon::parse($semesterStart);
-        }
+        // Determine student registration timestamp and boundary (never count before registration)
+        $studentRegisteredAt = $student->created_at 
+            ? Carbon::parse($student->created_at)->timezone('Asia/Manila')
+            : $now->copy();
+        $studentRegDate = $studentRegisteredAt->copy()->startOfDay();
+
+        // Earliest date of actual attendance record (if any historical record exists earlier)
         if ($earliestRecord) {
-            $earliest = Carbon::parse($earliestRecord);
-            if ($earliest->lt($startDate)) {
-                $startDate = $earliest;
+            $earliest = Carbon::parse($earliestRecord)->timezone('Asia/Manila')->startOfDay();
+            if ($earliest->lt($studentRegDate)) {
+                $studentRegDate = $earliest;
             }
+        }
+
+        // Pre-fetch explicit pivot enrollments if any
+        $pivotEnrollments = \Illuminate\Support\Facades\Schema::hasTable('enrollments')
+            ? \Illuminate\Support\Facades\DB::table('enrollments')
+                ->where('user_id', $student->id)
+                ->pluck('created_at', 'subject_id')
+            : collect();
+
+        if ($semesterStart && Carbon::parse($semesterStart)->lt($now)) {
+            $semStart = Carbon::parse($semesterStart)->timezone('Asia/Manila')->startOfDay();
+            // In both testing and production, a student registered after semester start only tracks from registration
+            $startDate = $studentRegDate->gt($semStart) ? $studentRegDate : $semStart;
+        } else {
+            // When no academic year is configured, tracking strictly begins at the student's registration date
+            $startDate = $studentRegDate;
         }
 
         // 3. Pre-fetch holidays in a single lookup list
@@ -101,9 +120,18 @@ class CalculateMissedAttendanceAction
                 continue;
             }
 
+            // Subject-specific enrollment date if explicitly enrolled via pivot
+            $subjStartDate = $startDate->copy();
+            if ($pivotEnrollments->has($subj->id) && $pivotEnrollments->get($subj->id)) {
+                $pivotDate = Carbon::parse($pivotEnrollments->get($subj->id))->timezone('Asia/Manila')->startOfDay();
+                if ($pivotDate->gt($subjStartDate)) {
+                    $subjStartDate = $pivotDate;
+                }
+            }
+
             $scheduledDaysSet = array_flip($scheduledDays->toArray());
             $expectedSessions = 0;
-            $cursor = $startDate->copy();
+            $cursor = $subjStartDate->copy();
 
             while ($cursor->lte($now)) {
                 $cursorDayName = $cursor->format('l');
@@ -111,15 +139,17 @@ class CalculateMissedAttendanceAction
 
                 if (!isset($holidaySet[$cursorDateStr]) && $cursorDayName !== 'Sunday') {
                     if (isset($scheduledDaysSet[$cursorDayName])) {
-                        if ($cursorDateStr === $todayDate) {
-                            $todaySchedules = $subj->schedules->where('day', $cursorDayName);
-                            foreach ($todaySchedules as $sched) {
-                                if ($sched->end_time < $currentTime) {
-                                    $expectedSessions++;
-                                }
+                        $daySchedules = $subj->schedules->where('day', $cursorDayName);
+                        foreach ($daySchedules as $sched) {
+                            // If today, only count sessions that have already concluded
+                            if ($cursorDateStr === $todayDate && $sched->end_time >= $currentTime) {
+                                continue;
                             }
-                        } else {
-                            $expectedSessions += $subj->schedules->where('day', $cursorDayName)->count();
+                            // If the date is the student's registration date, skip sessions that started before registration!
+                            if ($cursorDateStr === $studentRegisteredAt->toDateString() && $sched->start_time <= $studentRegisteredAt->format('H:i:s')) {
+                                continue;
+                            }
+                            $expectedSessions++;
                         }
                     }
                 }

@@ -61,9 +61,32 @@ class AttendanceAutoCloseService
         // Get all students who should attend this class
         $enrolledStudents = $subject->getAllStudents();
         
+        $sessionEnd = Carbon::parse($session->session_ends_at ?? $session->expires_at ?? $session->created_at)->timezone('Asia/Manila');
         $absentCount = 0;
         
         foreach ($enrolledStudents as $student) {
+            // If student account was created after the session ended, skip marking absent
+            if ($student->created_at) {
+                $studentCreated = Carbon::parse($student->created_at)->timezone('Asia/Manila');
+                if ($studentCreated->greaterThan($sessionEnd)) {
+                    continue;
+                }
+            }
+
+            // If explicitly enrolled, ensure enrolled before session ended
+            if (\Illuminate\Support\Facades\Schema::hasTable('enrollments')) {
+                $enrollment = \Illuminate\Support\Facades\DB::table('enrollments')
+                    ->where('user_id', $student->id)
+                    ->where('subject_id', $subject->id)
+                    ->first();
+                if ($enrollment && !empty($enrollment->created_at)) {
+                    $enrolledAt = Carbon::parse($enrollment->created_at)->timezone('Asia/Manila');
+                    if ($enrolledAt->greaterThan($sessionEnd)) {
+                        continue;
+                    }
+                }
+            }
+
             \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $today, &$absentCount) {
                 // Check if student already has attendance record for this session
                 $existingAttendance = Attendance::where('user_id', $student->id)

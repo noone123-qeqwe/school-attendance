@@ -508,9 +508,32 @@ class QrAttendanceController extends Controller
         if ($subject) {
             try {
                 $students = $subject->getAllStudents();
+                $sessionEnd = Carbon::parse($session->session_ends_at ?? $session->expires_at ?? $session->created_at)->timezone('Asia/Manila');
                 
                 foreach ($students as $student) {
                     try {
+                        // If student account was created after the session ended, skip marking absent
+                        if ($student->created_at) {
+                            $studentCreated = Carbon::parse($student->created_at)->timezone('Asia/Manila');
+                            if ($studentCreated->greaterThan($sessionEnd)) {
+                                continue;
+                            }
+                        }
+
+                        // If explicitly enrolled, ensure enrolled before session ended
+                        if (\Illuminate\Support\Facades\Schema::hasTable('enrollments')) {
+                            $enrollment = \Illuminate\Support\Facades\DB::table('enrollments')
+                                ->where('user_id', $student->id)
+                                ->where('subject_id', $subject->id)
+                                ->first();
+                            if ($enrollment && !empty($enrollment->created_at)) {
+                                $enrolledAt = Carbon::parse($enrollment->created_at)->timezone('Asia/Manila');
+                                if ($enrolledAt->greaterThan($sessionEnd)) {
+                                    continue;
+                                }
+                            }
+                        }
+
                         // Ensure record exists; if not, mark absent
                         $attendance = \App\Models\Attendance::updateOrCreateRecord(
                             [

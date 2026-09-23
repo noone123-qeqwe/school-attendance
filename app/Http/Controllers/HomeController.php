@@ -198,11 +198,20 @@ class HomeController extends Controller
 
             $existing = $todayAttendances->get($subject->code);
 
+            // Check if student registered after this class session started
+            $userCreated = $user->created_at ? Carbon::parse($user->created_at)->timezone('Asia/Manila') : null;
+            $registeredAfterSessionStarted = $userCreated && $userCreated->greaterThan($classStart);
+
             $status = 'upcoming';
             if ($existing && in_array($existing->status, ['Present', 'Late'])) {
                 $status = 'completed';
+            } elseif ($existing && $existing->status === 'Absent') {
+                $status = 'missed';
+            } elseif ($registeredAfterSessionStarted) {
+                // Class started before account registration; not missed by this student
+                $status = 'past';
             } elseif ($now->greaterThan($classEnd)) {
-                $status = $existing && $existing->status === 'Absent' ? 'missed' : 'missed';
+                $status = 'missed';
                 if (!$existing) {
                     $dynamicMissesTotal++;
                 }
@@ -231,7 +240,7 @@ class HomeController extends Controller
 
     $attendanceRate = $totalRecords > 0
         ? round(($presentRecords / $totalRecords) * 100)
-        : 0; // If they have 0 total classes, attendance is 0%
+        : 100; // If they have 0 total classes, attendance is 100% (clean initial standing)
 
     // 8b. Detailed stats for dashboard donut chart
     // (Already captured above)
