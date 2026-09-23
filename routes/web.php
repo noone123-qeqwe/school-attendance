@@ -551,6 +551,10 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
 
     // Attendance Corrections
     Route::get('/corrections', [App\Http\Controllers\TeacherController::class, 'corrections'])->name('corrections');
+
+    // Offline Attendance Sync
+    Route::post('/offline-attendance/sync', [App\Http\Controllers\OfflineAttendanceController::class, 'sync'])->name('offline.sync');
+    Route::get('/offline-attendance/roster', [App\Http\Controllers\OfflineAttendanceController::class, 'roster'])->name('offline.roster');
 });
 
 // Guest Excuse Submission (Signed URLs)

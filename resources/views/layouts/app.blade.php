@@ -1503,6 +1503,30 @@
     </script>
 
 
+    @if(Auth::check() && (Auth::user()->isTeacher() || Auth::user()->isDepartmentHead()))
+    <script src="/js/offline-attendance.js?v={{ filemtime(public_path('js/offline-attendance.js')) }}"></script>
+    <script @cspNonce>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.OfflineAttendance) {
+                OfflineAttendance.init({
+                    csrfToken: document.querySelector('meta[name="csrf-token"]')?.content || '',
+                    teacherId: {{ Auth::id() }},
+                });
+            }
+            // Listen for Background Sync messages from the Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.addEventListener('message', function(event) {
+                    if (event.data && event.data.type === 'OFFLINE_ATTENDANCE_SYNC') {
+                        if (window.OfflineAttendance) {
+                            OfflineAttendance.syncNow();
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+    @endif
+
     @stack('scripts')
 </body>
 </html>

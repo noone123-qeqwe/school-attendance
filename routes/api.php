@@ -24,6 +24,11 @@ Route::post('/reset-password', [OtpApiController::class, 'resetPassword'])->midd
 Route::post('/email/verify', [OtpApiController::class, 'sendEmailVerification'])->middleware('throttle:email.verify');
 Route::post('/email/resend', [OtpApiController::class, 'sendEmailVerification'])->middleware('throttle:email.verify');
 
+// Lightweight connectivity check for offline-first features
+Route::get('/ping', function () {
+    return response()->json(['pong' => true, 'ts' => now()->toIso8601String()]);
+})->name('api.ping');
+
 // Authenticated API Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {

@@ -367,6 +367,9 @@
     <button class="tab-btn active" data-tab="students">
         <i class="bi bi-people"></i> Students ({{ $totalStudents }})
     </button>
+    <button class="tab-btn" data-tab="mark-attendance">
+        <i class="bi bi-pencil-square"></i> Manual Attendance
+    </button>
     <button class="tab-btn" data-tab="attendance">
         <i class="bi bi-list-check"></i> Attendance History ({{ $totalRecords }})
     </button>
@@ -429,6 +432,71 @@
     @endif
 </div>
 
+<div class="tab-content" id="mark-attendance-tab">
+    <div id="oaOfflineBannerSlot"></div>
+    <form method="POST" action="{{ route('teacher.classroom.attendance.store', $subject->code) }}" id="manualAttendanceForm">
+        @csrf
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="ds-form-group mb-0" style="min-width: 200px;">
+                <label class="ds-label" style="color:#b39b82;font-size:.78rem;font-weight:700;">Date</label>
+                <input type="date" name="date" class="ds-input" value="{{ now()->format('Y-m-d') }}" required style="background:rgba(207,164,111,.08);border:1px solid rgba(207,164,111,.25);color:#f3e7cd;border-radius:10px;padding:8px 14px;">
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" id="markAllPresentBtn" class="btn-action btn-secondary" style="padding:8px 16px;font-size:.85rem;">
+                    <i class="bi bi-check-all"></i> Mark All Present
+                </button>
+                <button type="submit" class="btn-action" style="padding:8px 20px;font-size:.85rem;">
+                    <i class="bi bi-save"></i> Save Attendance
+                </button>
+            </div>
+        </div>
+
+        @if($students->isEmpty())
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <h3 style="color:#f3e7cd;font-weight:700;">No Students</h3>
+                <p style="color:#b39b82;">No students are enrolled in this class.</p>
+            </div>
+        @else
+            <div class="students-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Student Number</th>
+                            <th>Name</th>
+                            <th class="text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($students as $student)
+                        <tr data-student-id="{{ $student->id }}" data-student-name="{{ $student->name }}" data-student-number="{{ $student->student_number }}">
+                            <td><span style="font-family:monospace;font-weight:600;">{{ $student->student_number }}</span></td>
+                            <td>{{ $student->name }}</td>
+                            <td class="text-center">
+                                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                                    <label class="attendance-radio-label">
+                                        <input type="radio" name="attendance[{{ $student->id }}]" value="Present" checked>
+                                        <span class="attendance-radio-pill present"><i class="bi bi-check-lg"></i> Present</span>
+                                    </label>
+                                    <label class="attendance-radio-label">
+                                        <input type="radio" name="attendance[{{ $student->id }}]" value="Late">
+                                        <span class="attendance-radio-pill late"><i class="bi bi-clock"></i> Late</span>
+                                    </label>
+                                    <label class="attendance-radio-label">
+                                        <input type="radio" name="attendance[{{ $student->id }}]" value="Absent">
+                                        <span class="attendance-radio-pill absent"><i class="bi bi-x-lg"></i> Absent</span>
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </form>
+</div>
+
 <div class="tab-content" id="attendance-tab">
     @if($attendanceRecords->isEmpty())
         <div class="empty-state">
@@ -482,24 +550,82 @@
 </div>
 @endsection
 
+@push('styles')
+<style>
+    .attendance-radio-label input[type="radio"] { display: none; }
+    .attendance-radio-pill {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+        cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+        background: rgba(255,255,255,0.04); color: #b39b82;
+    }
+    .attendance-radio-pill:hover { background: rgba(255,255,255,0.08); }
+    .attendance-radio-label input:checked + .attendance-radio-pill.present {
+        background: rgba(40,167,69,0.2); border-color: #28a745; color: #5fd17a;
+    }
+    .attendance-radio-label input:checked + .attendance-radio-pill.late {
+        background: rgba(255,193,7,0.2); border-color: #ffc107; color: #ffd24d;
+    }
+    .attendance-radio-label input:checked + .attendance-radio-pill.absent {
+        background: rgba(220,53,69,0.2); border-color: #dc3545; color: #f27983;
+    }
+</style>
+@endpush
+
 @push('scripts')
 <script>
     // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            // Remove active class from all tabs
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            // Add active class to clicked tab
             this.classList.add('active');
             const tabId = this.dataset.tab + '-tab';
             document.getElementById(tabId).classList.add('active');
         });
     });
-    
+
+    // Mark All Present
+    var markAllBtn = document.getElementById('markAllPresentBtn');
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', function() {
+            document.querySelectorAll('#manualAttendanceForm input[type="radio"][value="Present"]').forEach(function(r) {
+                r.checked = true;
+            });
+            if (window.showPremiumToast) showPremiumToast('All students marked as Present', 'success');
+        });
+    }
+
+    // Offline attendance form interception
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.OfflineAttendance) {
+            var form = document.getElementById('manualAttendanceForm');
+            if (form) {
+                OfflineAttendance.interceptClassroomForm(form, '{{ $subject->code }}', '{{ $subject->name }}');
+            }
+        }
+
+        // Show offline banner in the form slot
+        function updateOfflineBanner() {
+            var slot = document.getElementById('oaOfflineBannerSlot');
+            if (!slot) return;
+            if (window.OfflineAttendance && OfflineAttendance.isOffline()) {
+                if (!slot.querySelector('.oa-offline-banner')) {
+                    var banner = document.createElement('div');
+                    banner.className = 'oa-offline-banner';
+                    banner.innerHTML = '<i class="bi bi-wifi-off"></i> You are offline. Attendance will be saved locally and synced when connection is restored.';
+                    slot.appendChild(banner);
+                }
+            } else {
+                var existing = slot.querySelector('.oa-offline-banner:not(.success)');
+                if (existing) existing.remove();
+            }
+        }
+        updateOfflineBanner();
+        window.addEventListener('offline-attendance-connection', updateOfflineBanner);
+    });
+
     function showEditModal(recordId, status, excused) {
-        // TODO: Implement edit attendance modal
         alert('Edit functionality - Record ID: ' + recordId);
     }
 </script>

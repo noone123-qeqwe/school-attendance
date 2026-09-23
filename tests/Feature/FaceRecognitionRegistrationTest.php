@@ -157,6 +157,9 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertSee('Move farther away', false);
         $response->assertSee('Center your face', false);
         $response->assertSee('Improve lighting', false);
+        $response->assertSee('id="faceFlashToggleBtn"', false);
+        $response->assertSee('id="faceScreenFlashOverlay"', false);
+        $response->assertSee('toggleFaceFlash', false);
     }
 
     public function test_face_registration_fails_when_confidence_score_below_security_threshold()
@@ -241,6 +244,9 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertSee('id="bioModalFaceScannerWrap"', false);
         $response->assertSee('id="bioLoginFaceVideo"', false);
         $response->assertSee('id="bioLoginLaserBar"', false);
+        $response->assertSee('id="bioLoginFlashToggleBtn"', false);
+        $response->assertSee('id="bioLoginScreenFlashOverlay"', false);
+        $response->assertSee('toggleBioLoginFlash', false);
         $response->assertSee('startFaceRecognitionLogin', false);
     }
 

@@ -273,3 +273,23 @@ self.addEventListener('message', (event) => {
         });
     }
 });
+
+// Background Sync: Offline Attendance Auto-Upload
+// When the browser regains connectivity, the SyncManager fires this event.
+// We notify all open windows to trigger the OfflineAttendance sync engine.
+self.addEventListener('sync', (event) => {
+    if (event.tag === 'sync-offline-attendance') {
+        event.waitUntil(
+            self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+                windowClients.forEach((client) => {
+                    client.postMessage({
+                        type: 'OFFLINE_ATTENDANCE_SYNC',
+                        timestamp: Date.now()
+                    });
+                });
+            }).catch((err) => {
+                console.warn('[PWA SW] Background sync notification error:', err);
+            })
+        );
+    }
+});
