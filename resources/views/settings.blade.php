@@ -1206,9 +1206,15 @@
 .fp-ridge {
     transition: stroke 0.3s ease;
 }
-.bio-scanner-card.bio-detected .fp-svg {
+.bio-scanner-card.bio-detected .fp-svg,
+.fp-scan-frame.bio-detected .fp-svg {
     stroke: #4ade80 !important;
-    filter: drop-shadow(0 0 10px #22c55e);
+    filter: drop-shadow(0 0 12px #22c55e);
+    transform: scale(1.04);
+}
+.fp-scan-frame.bio-detected {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 35px rgba(34, 197, 94, 0.45) !important;
 }
 .fp-laser-line {
     position: absolute;
@@ -1218,25 +1224,40 @@
     background: linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%);
     box-shadow: 0 0 18px #4ade80, 0 0 8px #22c55e;
     z-index: 5;
-    top: 0;
-    animation: fpLaserSweep 2.2s ease-in-out infinite;
+    top: 5%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
-@keyframes fpLaserSweep {
-    0%   { top: 5%; opacity: 0.7; }
+/* Laser line only activates when sensor touch is detected and confirmed */
+.fp-scan-frame.bio-detected .fp-laser-line,
+.bio-scanner-card.bio-detected .fp-laser-line {
+    opacity: 1;
+    animation: fpLaserSweepSuccess 0.85s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes fpLaserSweepSuccess {
+    0%   { top: 5%; opacity: 1; }
     50%  { top: 92%; opacity: 1; }
-    100% { top: 5%; opacity: 0.7; }
+    100% { top: 50%; opacity: 0; }
 }
 .fp-pulse-wave {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    border: 1.5px solid rgba(74, 222, 128, 0.5);
-    animation: fpPulseExpand 2.4s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
+    border: 1.5px solid rgba(74, 222, 128, 0.35);
+    animation: fpTouchWaitPulse 3s ease-in-out infinite;
 }
-@keyframes fpPulseExpand {
-    0% { transform: scale(0.3); opacity: 0.9; }
-    100% { transform: scale(3.5); opacity: 0; }
+@keyframes fpTouchWaitPulse {
+    0%, 100% { transform: scale(0.9); opacity: 0.25; }
+    50%      { transform: scale(1.15); opacity: 0.7; }
+}
+.fp-scan-frame.bio-detected .fp-pulse-wave,
+.bio-scanner-card.bio-detected .fp-pulse-wave {
+    animation: fpPulseDetected 0.7s ease-out forwards;
+}
+@keyframes fpPulseDetected {
+    0%   { transform: scale(0.9); opacity: 1; border-color: #4ade80; }
+    100% { transform: scale(3.5); opacity: 0; border-color: #22c55e; }
 }
 
 /* Face Recognition Live Active Scanner */
@@ -2606,17 +2627,17 @@
                                             <path class="fp-ridge" d="M50 15 C70 15 80 28 80 45 C80 65 75 85 73 105" />
                                         </svg>
                                     </div>
-                                    <div class="bio-scanning-title" id="fpScanningTitle">Scanning Fingerprint...</div>
-                                    <div class="bio-scanning-sub" id="fpStatusSub">Touch your device sensor or Windows Hello prompt</div>
+                                    <div class="bio-scanning-title" id="fpScanningTitle">Touch Fingerprint Sensor</div>
+                                    <div class="bio-scanning-sub" id="fpStatusSub">Place your finger on your device sensor or confirm the prompt</div>
 
                                     <!-- Progressive Scan Feedback -->
                                     <div class="bio-progress-container">
                                         <div class="bio-progress-track">
-                                            <div class="bio-progress-fill" id="fpProgressFill" style="width: 0%;"></div>
+                                            <div class="bio-progress-fill" id="fpProgressFill" style="width: 25%;"></div>
                                         </div>
                                         <div class="bio-progress-labels">
-                                            <span class="bio-progress-state" id="fpStateLabel">Initializing sensor...</span>
-                                            <span class="bio-progress-pct" id="fpPctLabel">0%</span>
+                                            <span class="bio-progress-state" id="fpStateLabel">Waiting for sensor touch...</span>
+                                            <span class="bio-progress-pct" id="fpPctLabel">Ready</span>
                                         </div>
                                     </div>
                                 </div>
@@ -4058,29 +4079,18 @@ function updateProgressiveFeedback(pct, stateText) {
 
 function startScanProgressAnimation() {
     clearInterval(bioScanProgressTimer);
-    let currentPct = 5;
-    updateProgressiveFeedback(currentPct, selectedBioMethod === 'fingerprint' ? 'Initializing biometric sensor...' : 'Aligning facial geometry...');
-    
-    bioScanProgressTimer = setInterval(() => {
-        if (currentPct < 85) {
-            currentPct += Math.floor(Math.random() * 5) + 3;
-            if (currentPct > 85) currentPct = 85;
-            
-            let label = '';
-            if (selectedBioMethod === 'fingerprint') {
-                if (currentPct < 25) label = 'Accessing hardware enclave...';
-                else if (currentPct < 55) label = 'Scanning fingerprint ridges...';
-                else if (currentPct < 80) label = 'Generating cryptographic keypair...';
-                else label = 'Touch sensor or confirm OS prompt...';
-            } else {
-                if (currentPct < 25) label = 'Locating facial contours...';
-                else if (currentPct < 55) label = 'Mapping 3D biometric landmarks...';
-                else if (currentPct < 80) label = 'Validating anti-spoofing liveness...';
-                else label = 'Look directly at camera / confirm prompt...';
-            }
-            updateProgressiveFeedback(currentPct, label);
-        }
-    }, 280);
+    bioScanProgressTimer = null;
+    if (selectedBioMethod === 'fingerprint') {
+        updateProgressiveFeedback(25, 'Sensor ready — place finger on device sensor...');
+        const pctEl = document.getElementById('fpPctLabel');
+        if (pctEl) pctEl.textContent = 'Ready';
+        const titleEl = document.getElementById('fpScanningTitle');
+        const subEl = document.getElementById('fpStatusSub');
+        if (titleEl) titleEl.textContent = 'Touch Fingerprint Sensor';
+        if (subEl) subEl.textContent = 'Place your finger on your device sensor or confirm the prompt';
+    } else {
+        updateProgressiveFeedback(25, 'Aligning facial geometry...');
+    }
 }
 
 function triggerBiometricDetected() {
@@ -5322,7 +5332,18 @@ async function beginFingerprintRegistration() {
     if (fpScan) fpScan.classList.add('active');
     stopBioCamera();
 
-    startScanProgressAnimation();
+    const fpScanFrame = document.querySelector('.fp-scan-frame');
+    if (fpScanFrame) {
+        fpScanFrame.classList.remove('bio-detected');
+    }
+    const fpScanningTitle = document.getElementById('fpScanningTitle');
+    const fpStatusSub = document.getElementById('fpStatusSub');
+    if (fpScanningTitle) fpScanningTitle.textContent = 'Touch Fingerprint Sensor';
+    if (fpStatusSub) fpStatusSub.textContent = 'Place your finger on your device sensor or confirm the prompt';
+    updateProgressiveFeedback(25, 'Sensor ready — place finger on sensor...');
+    const fpPctLabel = document.getElementById('fpPctLabel');
+    if (fpPctLabel) fpPctLabel.textContent = 'Ready';
+
     bioAbortController = new AbortController();
 
     try {
@@ -5381,6 +5402,11 @@ async function beginFingerprintRegistration() {
 
         const credential = await Promise.race([createPromise, timeoutPromise]);
 
+        if (fpScanFrame) {
+            fpScanFrame.classList.add('bio-detected');
+        }
+        if (fpScanningTitle) fpScanningTitle.textContent = 'Fingerprint Verified ✓';
+        if (fpStatusSub) fpStatusSub.textContent = 'Sensor touch confirmed. Registering credential...';
         triggerBiometricDetected();
 
         const credentialId = bufferToBase64Url(credential.rawId);
@@ -5449,6 +5475,7 @@ async function beginFingerprintRegistration() {
     } catch(err) {
         clearInterval(bioScanProgressTimer);
         bioScanProgressTimer = null;
+        if (fpScanFrame) fpScanFrame.classList.remove('bio-detected');
 
         if (err.name === 'AbortError') {
             if (scanningView) scanningView.style.display = 'none';
