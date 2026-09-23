@@ -89,10 +89,11 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch Strategy:
-// 1. Navigation (HTML pages): Network-first with /offline fallback
+// 1. Navigation (HTML pages): Network-first with timeout + retry, /offline fallback
 // 2. Static Assets (CSS, JS, Fonts): Stale-While-Revalidate
 // 3. Media/Images: Cache-First with network fallback
 // 4. API & Non-GET requests: Direct network pass-through
+// 5. Connectivity probes: Always bypass cache (network-only)
 self.addEventListener('fetch', (event) => {
     const request = event.request;
 
@@ -103,18 +104,58 @@ self.addEventListener('fetch', (event) => {
 
     const url = new URL(request.url);
 
+    // 5. Connectivity probes — always bypass SW cache (network-only)
+    // This ensures the offline page's retry mechanism gets real network status.
+    if (url.pathname === '/api/ping' ||
+        url.pathname === '/up' ||
+        (url.pathname === '/manifest.json' && url.search.includes('_t='))) {
+        event.respondWith(
+            fetch(request, { cache: 'no-store' })
+        );
+        return;
+    }
+
     // 1. Navigation requests (Page transitions, link clicks)
     if (request.mode === 'navigate') {
         event.respondWith(
             (async () => {
+                // Helper: fetch with a timeout to handle slow Render cold starts
+                async function fetchWithTimeout(req, timeoutMs) {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), timeoutMs);
+                    try {
+                        const res = await fetch(req, { signal: controller.signal });
+                        clearTimeout(timer);
+                        return res;
+                    } catch (err) {
+                        clearTimeout(timer);
+                        throw err;
+                    }
+                }
+
                 try {
+                    // Try navigation preload first
                     const preloadResponse = await event.preloadResponse;
                     if (preloadResponse) {
                         return preloadResponse;
                     }
-                    const networkResponse = await fetch(request);
-                    return networkResponse;
+
+                    // Attempt 1: Fetch with 12s timeout (generous for Render cold starts)
+                    try {
+                        const networkResponse = await fetchWithTimeout(request, 12000);
+                        return networkResponse;
+                    } catch (firstError) {
+                        // Attempt 2: Retry after a short delay (handles transient mobile network blips)
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        try {
+                            const retryResponse = await fetchWithTimeout(request, 10000);
+                            return retryResponse;
+                        } catch (retryError) {
+                            throw retryError; // Fall through to offline
+                        }
+                    }
                 } catch (error) {
+                    // All attempts failed — show offline page
                     const cache = await caches.open(STATIC_CACHE_NAME);
                     const offlineResponse = await cache.match(OFFLINE_URL);
                     return offlineResponse || new Response(
@@ -126,6 +167,7 @@ self.addEventListener('fetch', (event) => {
         );
         return;
     }
+
 
     // 2. Static Assets (CSS, JS, Web Fonts) -> Stale-While-Revalidate
     const isStyleOrScript = (

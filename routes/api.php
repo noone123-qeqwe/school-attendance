@@ -6,6 +6,14 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ParentApiController;
 use App\Http\Controllers\Api\OtpApiController;
 
+// Lightweight health/connectivity probe — no auth, no session, no CSRF
+Route::get('/ping', function () {
+    return response()->json(['status' => 'ok', 'ts' => now()->timestamp], 200, [
+        'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        'Pragma' => 'no-cache',
+    ]);
+});
+
 // Authentication & Brute-Force Protected Login (supports /api/login and /api/auth/login)
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');

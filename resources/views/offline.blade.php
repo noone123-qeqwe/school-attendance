@@ -344,102 +344,192 @@
             }
         } catch (e) {}
 
-        function updateConnectivityUI() {
-            const isOnline = navigator.onLine;
+        // ── Connection State Management ──
+        // Three states: 'no-internet' | 'server-unreachable' | 'connected'
+        let currentState = 'no-internet';
+        let isReconnecting = false;
+        let probeInFlight = false;
+
+        function updateUI(state) {
+            currentState = state;
             const badge = document.getElementById('statusBadge');
             const badgeText = document.getElementById('statusBadgeText');
             const heading = document.getElementById('offlineHeading');
             const msg = document.getElementById('offlineMsg');
             const retryText = document.getElementById('retryText');
 
-            if (isOnline) {
+            if (state === 'server-unreachable') {
+                // Has internet, server unreachable (Render cold start, etc.)
                 if (badge) badge.classList.add('server-mode');
-                if (badgeText) badgeText.textContent = 'Server Unreachable / Starting Up';
+                if (badgeText) badgeText.textContent = 'Server Unreachable';
                 if (heading) heading.textContent = 'Server Starting Up';
                 if (msg) msg.innerHTML = 'Your internet connection is active, but the school attendance server is sleeping (Render free-tier cold start) or temporarily unreachable. We are checking every few seconds and will reconnect automatically.';
-                if (retryText && retryText.textContent.includes('Retry')) retryText.textContent = 'Retry Connecting to Server';
+                if (retryText && !retryText.textContent.includes('...')) retryText.textContent = 'Retry Connecting to Server';
             } else {
+                // No internet connection
                 if (badge) badge.classList.remove('server-mode');
                 if (badgeText) badgeText.textContent = 'No Connection';
                 if (heading) heading.textContent = "You're Offline";
                 if (msg) msg.textContent = "We can't connect to the School Attendance server right now. Please check your Wi-Fi or mobile data connection.";
-                if (retryText && retryText.textContent.includes('Retry')) retryText.textContent = 'Retry Connection';
+                if (retryText && !retryText.textContent.includes('...')) retryText.textContent = 'Retry Connection';
             }
         }
 
-        let isReconnecting = false;
-        function probeServer(onSuccess, onError) {
-            const pingUrl = '/manifest.json?_t=' + Date.now();
-            fetch(pingUrl, { method: 'HEAD', cache: 'no-store' })
-                .then((res) => {
+        // Probe the server with multiple fallback URLs
+        // Returns: 'connected' | 'server-unreachable' | 'no-internet'
+        async function probeConnectivity() {
+            // First check: can we reach ANYTHING on the internet?
+            // We try our server's /api/ping endpoint first (bypasses SW cache)
+            const probeUrls = [
+                '/api/ping?_t=' + Date.now(),
+                '/up?_t=' + Date.now(),
+                '/manifest.json?_t=' + Date.now()
+            ];
+
+            for (const url of probeUrls) {
+                try {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 6000);
+                    const res = await fetch(url, {
+                        method: 'GET',
+                        cache: 'no-store',
+                        signal: controller.signal,
+                        headers: { 'Accept': 'application/json, */*' }
+                    });
+                    clearTimeout(timer);
+
                     if (res.ok || res.status < 500) {
-                        if (onSuccess) onSuccess();
-                    } else {
-                        if (onError) onError();
+                        return 'connected';
                     }
-                })
-                .catch(() => {
-                    if (onError) onError();
-                });
+                    // Server responded but with 5xx — server is having issues
+                    return 'server-unreachable';
+                } catch (err) {
+                    // This URL failed, try next
+                    continue;
+                }
+            }
+
+            // All our server probes failed. Check if we have internet at all
+            // by trying a known external resource.
+            if (navigator.onLine) {
+                try {
+                    const extController = new AbortController();
+                    const extTimer = setTimeout(() => extController.abort(), 4000);
+                    // Try fetching a tiny external resource to verify internet connectivity
+                    await fetch('https://www.google.com/generate_204', {
+                        method: 'HEAD',
+                        mode: 'no-cors',
+                        cache: 'no-store',
+                        signal: extController.signal
+                    });
+                    clearTimeout(extTimer);
+                    // Internet works but our server is unreachable
+                    return 'server-unreachable';
+                } catch (e) {
+                    // Can't reach Google either — genuinely offline
+                    return 'no-internet';
+                }
+            }
+
+            return 'no-internet';
         }
 
-        function handleRetry() {
+        function handleConnected() {
             if (isReconnecting) return;
+            isReconnecting = true;
+            const notice = document.getElementById('reconnectNotice');
+            const retryText = document.getElementById('retryText');
+            if (notice) notice.style.display = 'flex';
+            if (retryText) retryText.textContent = 'Connected! Reloading...';
+            // Reload to the intended page (or home)
+            setTimeout(() => {
+                // Try going back to the page they were trying to visit
+                const intended = sessionStorage.getItem('pwa_intended_url');
+                if (intended) {
+                    sessionStorage.removeItem('pwa_intended_url');
+                    window.location.href = intended;
+                } else {
+                    window.location.reload();
+                }
+            }, 800);
+        }
+
+        async function handleRetry() {
+            if (isReconnecting || probeInFlight) return;
+            probeInFlight = true;
             const btn = document.getElementById('btnRetry');
             const icon = document.getElementById('retryIcon');
             const text = document.getElementById('retryText');
-            
+
             icon.classList.add('spin');
-            text.textContent = navigator.onLine ? 'Pinging server...' : 'Checking connection...';
+            text.textContent = 'Checking connection...';
             btn.disabled = true;
 
-            probeServer(
-                () => {
-                    isReconnecting = true;
-                    text.textContent = 'Connected! Reloading...';
-                    const notice = document.getElementById('reconnectNotice');
-                    if (notice) notice.style.display = 'flex';
-                    setTimeout(() => window.location.reload(), 800);
-                },
-                () => {
-                    setTimeout(() => {
-                        icon.classList.remove('spin');
-                        text.textContent = navigator.onLine ? 'Server Still Starting - Retry' : 'Still Offline - Try Again';
-                        btn.disabled = false;
-                        updateConnectivityUI();
-                    }, 1200);
+            try {
+                const state = await probeConnectivity();
+
+                if (state === 'connected') {
+                    handleConnected();
+                    return;
                 }
-            );
+
+                updateUI(state);
+                setTimeout(() => {
+                    icon.classList.remove('spin');
+                    btn.disabled = false;
+                }, 400);
+            } catch (err) {
+                updateUI('no-internet');
+                icon.classList.remove('spin');
+                btn.disabled = false;
+            } finally {
+                probeInFlight = false;
+            }
         }
 
-        // Automatic background ping every 5 seconds if internet is present
+        // Automatic background probe every 3 seconds
         let autoPingInterval = null;
         function startAutoProbe() {
             if (autoPingInterval) clearInterval(autoPingInterval);
-            autoPingInterval = setInterval(() => {
-                if (navigator.onLine && !isReconnecting) {
-                    probeServer(() => {
-                        isReconnecting = true;
-                        const notice = document.getElementById('reconnectNotice');
-                        if (notice) notice.style.display = 'flex';
-                        setTimeout(() => window.location.reload(), 1000);
-                    });
+            autoPingInterval = setInterval(async () => {
+                if (isReconnecting || probeInFlight) return;
+                probeInFlight = true;
+
+                try {
+                    const state = await probeConnectivity();
+                    if (state === 'connected') {
+                        handleConnected();
+                    } else if (state !== currentState) {
+                        updateUI(state);
+                    }
+                } catch (e) {
+                    // Ignore probe errors
+                } finally {
+                    probeInFlight = false;
                 }
-            }, 5000);
+            }, 3000);
         }
 
-        // React to online / offline events
+        // React to online / offline browser events
         window.addEventListener('online', () => {
-            updateConnectivityUI();
+            updateUI('server-unreachable');
             handleRetry();
         });
         window.addEventListener('offline', () => {
-            updateConnectivityUI();
+            updateUI('no-internet');
         });
 
-        // Initialize state
-        updateConnectivityUI();
-        startAutoProbe();
+        // Initialize: determine current state immediately
+        (async () => {
+            const state = await probeConnectivity();
+            if (state === 'connected') {
+                handleConnected();
+            } else {
+                updateUI(state);
+            }
+            startAutoProbe();
+        })();
     </script>
 </body>
 </html>
+
