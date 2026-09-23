@@ -403,7 +403,7 @@ class QrAttendanceFlowTest extends TestCase
         ]);
     }
 
-    public function test_qr_session_stays_active_for_5_minutes()
+    public function test_qr_session_expires_and_regenerates_every_15_seconds()
     {
         $teacher = User::factory()->create(['role' => 'teacher']);
 
@@ -417,16 +417,16 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse->assertStatus(200);
-        $this->assertEquals(300, $startResponse->json('ttl'));
+        $this->assertEquals(15, $startResponse->json('ttl'));
 
         $sessionId = $startResponse->json('session_id');
         $session = AttendanceSession::find($sessionId);
 
         $this->assertNotNull($session);
-        // Expiration is ~300 seconds (5 minutes) in the future
+        // Expiration is 15 seconds in the future
         $diffSeconds = now()->diffInSeconds($session->expires_at, false);
-        $this->assertGreaterThanOrEqual(290, $diffSeconds);
-        $this->assertLessThanOrEqual(305, $diffSeconds);
+        $this->assertGreaterThanOrEqual(13, $diffSeconds);
+        $this->assertLessThanOrEqual(16, $diffSeconds);
     }
 
     public function test_student_in_app_qr_scanner_handles_full_url_qr_scan()

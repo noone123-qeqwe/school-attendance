@@ -14,7 +14,7 @@ class AttendanceSession extends Model
     use HasFactory, LogsActivity;
 
     protected $fillable = [
-        'subject_code', 'created_by', 'token', 'previous_token', 'session_code', 'expires_at', 'session_ends_at', 'active',
+        'subject_code', 'created_by', 'token', 'previous_token', 'session_code', 'previous_session_code', 'expires_at', 'session_ends_at', 'active',
         'classroom_lat', 'classroom_lng', 'radius_meters', 'grace_period_minutes', 'webauthn_challenge',
     ];
 
@@ -70,6 +70,78 @@ class AttendanceSession extends Model
     public function isTokenValid(): bool
     {
         return $this->active && $this->expires_at && $this->expires_at->isFuture();
+    }
+
+    /**
+     * Check if a given token or attendance code is valid for this session under the 15-second rotation window.
+     * Accommodates network latency and clock sync via grace period.
+     *
+     * @param string|null $token
+     * @param string|null $code
+     * @param int $ttlSeconds (Default 15s)
+     * @param int $graceSeconds (Default 5s)
+     * @return array ['valid' => bool, 'is_expired' => bool, 'reason' => string]
+     */
+    public function validateCodeOrToken(?string $token, ?string $code, int $ttlSeconds = 15, int $graceSeconds = 5): array
+    {
+        if (!$this->isSessionActive()) {
+            return [
+                'valid' => false,
+                'is_expired' => true,
+                'reason' => 'session_ended'
+            ];
+        }
+
+        $cleanCode = !empty($code) ? strtoupper(preg_replace('/[^0-9A-Za-z]/', '', (string) $code)) : null;
+        $cleanToken = !empty($token) ? trim((string) $token) : null;
+
+        $matchesCurrentToken = $cleanToken && ($this->token === $cleanToken);
+        $matchesCurrentCode = $cleanCode && ($this->session_code === $cleanCode);
+        $matchesPrevToken = $cleanToken && ($this->previous_token === $cleanToken);
+        $matchesPrevCode = $cleanCode && ($this->previous_session_code === $cleanCode);
+
+        if (!$matchesCurrentToken && !$matchesCurrentCode && !$matchesPrevToken && !$matchesPrevCode) {
+            return [
+                'valid' => false,
+                'is_expired' => false,
+                'reason' => 'not_found'
+            ];
+        }
+
+        $now = now('Asia/Manila');
+        $expiresAt = $this->expires_at ? Carbon::parse($this->expires_at)->setTimezone('Asia/Manila') : $now;
+
+        // Current token or current code:
+        if ($matchesCurrentToken || $matchesCurrentCode) {
+            // Valid if current time is before or at expires_at + graceSeconds
+            if ($now->lte($expiresAt->copy()->addSeconds($graceSeconds))) {
+                return ['valid' => true, 'is_expired' => false, 'reason' => 'current_valid'];
+            }
+            return [
+                'valid' => false,
+                'is_expired' => true,
+                'reason' => 'current_expired'
+            ];
+        }
+
+        // Previous token or previous code:
+        if ($matchesPrevToken || $matchesPrevCode) {
+            // The previous code was rotated at ($expiresAt - $ttlSeconds).
+            // It expired at that rotation moment. It is accepted within graceSeconds after rotation.
+            $rotationTime = $expiresAt->copy()->subSeconds($ttlSeconds);
+            $elapsedSeconds = $now->timestamp - $rotationTime->timestamp;
+
+            if ($elapsedSeconds <= $graceSeconds) {
+                return ['valid' => true, 'is_expired' => false, 'reason' => 'previous_valid_in_grace'];
+            }
+            return [
+                'valid' => false,
+                'is_expired' => true,
+                'reason' => 'previous_expired'
+            ];
+        }
+
+        return ['valid' => false, 'is_expired' => true, 'reason' => 'expired'];
     }
 
     public function isSessionActive(): bool

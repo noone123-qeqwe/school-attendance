@@ -52,22 +52,24 @@ class QrSessionService
         }
             
         return AttendanceSession::create([
-            'subject_code'         => $subjectCode,
-            'created_by'           => $teacherId,
-            'token'                => AttendanceSession::generateToken($subjectCode),
-            'session_code'         => $sessionCode,
-            'expires_at'           => $now->copy()->addSeconds(300)->min($sessionEnd),
-            'session_ends_at'      => $sessionEnd,
-            'active'               => true,
-            'classroom_lat'        => $lat,
-            'classroom_lng'        => $lng,
-            'radius_meters'        => $radiusMeters ?? (int) \App\Models\Setting::get('gps_radius', 50),
-            'grace_period_minutes' => $gracePeriodMinutes ?? (int) \App\Models\Setting::get('presence_grace_minutes', 5),
+            'subject_code'          => $subjectCode,
+            'created_by'            => $teacherId,
+            'token'                 => AttendanceSession::generateToken($subjectCode),
+            'session_code'          => $sessionCode,
+            'previous_session_code' => null,
+            'previous_token'        => null,
+            'expires_at'            => $now->copy()->addSeconds(15)->min($sessionEnd),
+            'session_ends_at'       => $sessionEnd,
+            'active'                => true,
+            'classroom_lat'         => $lat,
+            'classroom_lng'         => $lng,
+            'radius_meters'         => $radiusMeters ?? (int) \App\Models\Setting::get('gps_radius', 50),
+            'grace_period_minutes'  => $gracePeriodMinutes ?? (int) \App\Models\Setting::get('presence_grace_minutes', 5),
         ]);
     }
     
     /**
-     * Refresh the QR token for an active session.
+     * Refresh the QR token and attendance code for an active session (15-second rotation).
      */
     public function refreshToken(AttendanceSession $session)
     {
@@ -78,15 +80,39 @@ class QrSessionService
         }
         
         $oldToken = $session->token;
+        $oldCode  = $session->session_code;
+        $now      = now('Asia/Manila');
+
         if ($oldToken) {
-            // Keep rotated token valid for 300s (5 minutes) grace period to prevent race conditions during refresh
-            \Illuminate\Support\Facades\Cache::put("session_prev_token_{$oldToken}", $session->id, 300);
+            // Keep rotated token in cache with rotation timestamp for network delay validation
+            \Illuminate\Support\Facades\Cache::put("session_prev_token_{$oldToken}", [
+                'session_id' => $session->id,
+                'rotated_at' => $now->timestamp,
+            ], 60);
+        }
+
+        if ($oldCode) {
+            // Keep rotated session code in cache with rotation timestamp for network delay validation
+            \Illuminate\Support\Facades\Cache::put("session_prev_code_{$oldCode}", [
+                'session_id' => $session->id,
+                'rotated_at' => $now->timestamp,
+            ], 60);
+        }
+
+        $newCode = AttendanceSession::generateSessionCode();
+        while (
+            $newCode === $oldCode || 
+            AttendanceSession::where('session_code', $newCode)->where('active', true)->where('id', '!=', $session->id)->exists()
+        ) {
+            $newCode = AttendanceSession::generateSessionCode();
         }
 
         $session->update([
-            'token'          => AttendanceSession::generateToken($session->subject_code),
-            'previous_token' => $oldToken,
-            'expires_at'     => now('Asia/Manila')->addSeconds(300)->min($session->session_ends_at),
+            'token'                 => AttendanceSession::generateToken($session->subject_code),
+            'previous_token'        => $oldToken,
+            'session_code'          => $newCode,
+            'previous_session_code' => $oldCode,
+            'expires_at'            => $now->copy()->addSeconds(15)->min($session->session_ends_at),
         ]);
         
         return $session;

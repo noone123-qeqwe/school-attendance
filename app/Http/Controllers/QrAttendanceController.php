@@ -25,7 +25,8 @@ class QrAttendanceController extends Controller
     {
         $this->qrSessionService = $qrSessionService;
     }
-    private const QR_TTL_SECONDS = 300; // QR and Code stay active for 5 minutes (300 seconds) before refresh
+    public const QR_TTL_SECONDS = 15; // QR and attendance code regenerate every 15 seconds
+    public const NETWORK_GRACE_SECONDS = 5; // Grace period for in-flight requests and clock skew
 
     private function getSchoolLat(): float
     {
@@ -281,6 +282,15 @@ class QrAttendanceController extends Controller
 
         $activeSessionPayload = null;
         if ($activeSession) {
+            // If the 15-second rotation window has elapsed, refresh to active code
+            if ($activeSession->expires_at && now('Asia/Manila')->gt($activeSession->expires_at)) {
+                try {
+                    $activeSession = $this->qrSessionService->refreshToken($activeSession);
+                } catch (\Throwable $e) {}
+            }
+
+            $remainingTtl = max(1, $activeSession->expires_at ? now('Asia/Manila')->diffInSeconds($activeSession->expires_at, false) : self::QR_TTL_SECONDS);
+
             $activeSessionPayload = [
                 'success'        => true,
                 'session_id'     => $activeSession->id,
@@ -288,8 +298,9 @@ class QrAttendanceController extends Controller
                 'session_code'   => $activeSession->session_code,
                 'formatted_code' => $activeSession->getFormattedCode(),
                 'scan_url'       => $this->buildScanUrl($activeSession->token, $activeSession->session_ends_at),
-                'expires_at'     => $activeSession->expires_at->timestamp,
+                'expires_at'     => $activeSession->expires_at ? $activeSession->expires_at->timestamp : now()->timestamp,
                 'ttl'            => self::QR_TTL_SECONDS,
+                'remaining_ttl'  => $remainingTtl,
                 'session_end'    => $activeSession->session_ends_at->timestamp,
                 'classroom_lat'  => $activeSession->classroom_lat,
                 'classroom_lng'  => $activeSession->classroom_lng,
@@ -1318,6 +1329,11 @@ class QrAttendanceController extends Controller
             return view('qr.result', ['status' => 'expired', 'message' => 'This QR code is no longer active. Please scan the latest QR from your teacher.']);
         }
 
+        $tokenValidation = $session->validateCodeOrToken($token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        if (!$tokenValidation['valid']) {
+            return view('qr.result', ['status' => 'expired', 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR from your teacher.']);
+        }
+
         // Only check if the entire session has expired (20 minutes), not individual token expiry
         if (!$session->active || now()->gt($session->session_ends_at)) {
             return view('qr.result', ['status' => 'closed', 'message' => 'The attendance window for this class has closed.']);
@@ -1420,6 +1436,11 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'QR session not found. Please scan a fresh QR code.'], 422);
         }
 
+        $tokenValidation = $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        if (!$tokenValidation['valid']) {
+            return response()->json(['success' => false, 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR code displayed by your teacher.'], 422);
+        }
+
         // Only check if the entire session has expired, not individual token expiry
         if (!$session->active || now()->gt($session->session_ends_at)) {
             Log::error('QR verificationOptions - session expired', [
@@ -1508,6 +1529,11 @@ class QrAttendanceController extends Controller
 
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'This QR code is no longer active.'], 422);
+        }
+
+        $tokenValidation = $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        if (!$tokenValidation['valid']) {
+            return response()->json(['success' => false, 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR code displayed by your teacher.'], 422);
         }
 
         // Only check if the entire session has expired, not individual token expiry
@@ -2095,7 +2121,7 @@ class QrAttendanceController extends Controller
 
         $isCodeMethod = ($request->input('method') === 'code') || (!empty($extractedCode) && empty($extractedToken));
 
-        // Step 1: Look for an ACTIVE session matching token, previous_token, or session_code
+        // Step 1: Look for an ACTIVE session matching token, previous_token, session_code, or previous_session_code
         $session = null;
         if (!empty($extractedToken) || !empty($extractedCode)) {
             $session = AttendanceSession::with(['subject.instructor'])
@@ -2105,21 +2131,34 @@ class QrAttendanceController extends Controller
                     if (!empty($extractedToken) && !empty($extractedCode)) {
                         $query->where('token', $extractedToken)
                               ->orWhere('previous_token', $extractedToken)
-                              ->orWhere('session_code', $extractedCode);
+                              ->orWhere('session_code', $extractedCode)
+                              ->orWhere('previous_session_code', $extractedCode);
                     } elseif (!empty($extractedToken)) {
                         $query->where('token', $extractedToken)
                               ->orWhere('previous_token', $extractedToken);
                     } else {
-                        $query->where('session_code', $extractedCode);
+                        $query->where('session_code', $extractedCode)
+                              ->orWhere('previous_session_code', $extractedCode);
                     }
                 })
                 ->latest('id')
                 ->first();
         }
 
-        // Step 2: Check cache for rotated token within grace window (e.g. refreshed within last 5 minutes)
+        // Step 2: Check cache for rotated token or code within grace window
+        if (!$session && !empty($extractedCode)) {
+            $cachedCode = Cache::get("session_prev_code_{$extractedCode}");
+            $prevSessionId = is_array($cachedCode) ? ($cachedCode['session_id'] ?? null) : $cachedCode;
+            if ($prevSessionId) {
+                $prevSession = AttendanceSession::with(['subject.instructor'])->find($prevSessionId);
+                if ($prevSession && $prevSession->active && now('Asia/Manila')->lte($prevSession->session_ends_at)) {
+                    $session = $prevSession;
+                }
+            }
+        }
         if (!$session && !empty($extractedToken)) {
-            $prevSessionId = Cache::get("session_prev_token_{$extractedToken}");
+            $cachedToken = Cache::get("session_prev_token_{$extractedToken}");
+            $prevSessionId = is_array($cachedToken) ? ($cachedToken['session_id'] ?? null) : $cachedToken;
             if ($prevSessionId) {
                 $prevSession = AttendanceSession::with(['subject.instructor'])->find($prevSessionId);
                 if ($prevSession && $prevSession->active && now('Asia/Manila')->lte($prevSession->session_ends_at)) {
@@ -2128,7 +2167,22 @@ class QrAttendanceController extends Controller
             }
         }
 
-        // Step 3: If no active session found, query for expired/inactive sessions to provide specific error message
+        // Step 3: Validate server-side 15-second expiration and network grace tolerance
+        if ($session) {
+            $codeValidation = $session->validateCodeOrToken($extractedToken, $extractedCode, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+            if (!$codeValidation['valid']) {
+                return response()->json([
+                    'success'      => false,
+                    'error_type'   => 'invalid_or_expired',
+                    'error_detail' => $isCodeMethod ? 'code_expired' : 'token_expired',
+                    'message'      => $isCodeMethod
+                        ? 'This attendance code has expired (codes regenerate every 15 seconds). Please enter the latest code shown on the screen.'
+                        : 'This QR code has expired (QR codes regenerate every 15 seconds). Please scan the live QR code on screen.'
+                ], 422);
+            }
+        }
+
+        // Step 4: If no active session found, query for expired/inactive sessions to provide specific error message
         if (!$session) {
             $pastSession = null;
             if (!empty($extractedToken) || !empty($extractedCode)) {
@@ -2136,12 +2190,14 @@ class QrAttendanceController extends Controller
                     if (!empty($extractedToken) && !empty($extractedCode)) {
                         $query->where('token', $extractedToken)
                               ->orWhere('previous_token', $extractedToken)
-                              ->orWhere('session_code', $extractedCode);
+                              ->orWhere('session_code', $extractedCode)
+                              ->orWhere('previous_session_code', $extractedCode);
                     } elseif (!empty($extractedToken)) {
                         $query->where('token', $extractedToken)
                               ->orWhere('previous_token', $extractedToken);
                     } else {
-                        $query->where('session_code', $extractedCode);
+                        $query->where('session_code', $extractedCode)
+                              ->orWhere('previous_session_code', $extractedCode);
                     }
                 })->latest('id')->first();
             }
@@ -2163,6 +2219,15 @@ class QrAttendanceController extends Controller
                         'message' => 'This attendance session is no longer active and has ended. The instructor has closed this session.'
                     ], 422);
                 }
+
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'invalid_or_expired',
+                    'error_detail' => $isCodeMethod ? 'code_expired' : 'token_expired',
+                    'message' => $isCodeMethod
+                        ? 'This attendance code has expired (codes regenerate every 15 seconds). Please enter the latest code shown on the screen.'
+                        : 'This QR code has expired (QR codes regenerate every 15 seconds). Please scan the live QR code on screen.'
+                ], 422);
             }
 
             return response()->json([

@@ -524,12 +524,12 @@
                     <!-- QR Refresh Countdown -->
                     <div id="qrRefreshCountdown" style="display: none; text-align: center; margin: 1.5rem auto;">
                         <div style="font-size: 3.2rem; font-weight: 800; font-family: monospace; color: #cfa46f; line-height: 1; text-shadow: 0 4px 12px rgba(0,0,0,0.4);">
-                            <span id="refreshCountdownText">05:00</span>
+                            <span id="refreshCountdownText">15s</span>
                         </div>
                         <div class="progress" style="height: 6px; border-radius: 3px; max-width: 220px; margin: 10px auto; background: rgba(255,255,255,0.08); overflow: hidden;">
                             <div id="qrProgressIndicator" class="progress-bar" style="width: 100%; background: linear-gradient(90deg, #cfa46f, #e5be8a); transition: width 1s linear;"></div>
                         </div>
-                        <small style="color: #b39b82; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 0.75rem;">Code Refresh In</small>
+                        <small style="color: #b39b82; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; font-size: 0.75rem;">Regenerating Code & QR In</small>
                     </div>
                     
                     <!-- Session Timer -->
@@ -684,8 +684,8 @@
                 <div style="font-size: 1.5rem; font-weight: 800; color: #4ade80;" id="projectorCount">0 Present</div>
             </div>
             <div style="background: rgba(255,255,255,0.06); padding: 10px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="font-size: 0.72rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Code Refresh In</div>
-                <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24; font-family: monospace;" id="projectorCountdown">05:00</div>
+                <div style="font-size: 0.72rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Regenerating In</div>
+                <div style="font-size: 1.5rem; font-weight: 800; color: #fbbf24; font-family: monospace;" id="projectorCountdown">15s</div>
             </div>
             <div style="background: rgba(255,255,255,0.06); padding: 10px 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
                 <div style="font-size: 0.72rem; color: #b39b82; text-transform: uppercase; font-weight: 700;">Session Timer</div>
@@ -718,7 +718,7 @@ let teacherLocation = null;
 let locationWatchId = null;
 let locationTimeoutId = null;
 let locationDowngraded = false;
-let refreshCountdownSeconds = 300;
+let refreshCountdownSeconds = 15;
 let selectedRadius = 50;
 
 // Audio & Roster State
@@ -1054,28 +1054,32 @@ function updateUIForActiveSession() {
 
 function formatTtlCountdown(totalSecs) {
     if (totalSecs < 0) totalSecs = 0;
-    const m = Math.floor(totalSecs / 60);
-    const s = totalSecs % 60;
-    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+    const s = Math.floor(totalSecs);
+    return `${s < 10 ? '0' : ''}${s}s`;
 }
 
-function getRefreshIntervalSeconds() {
-    const ttl = Number(currentSession?.ttl) || 300;
-    return Math.max(ttl - 5, 290);
-}
+function resetRefreshTimers(initialSecs = null) {
+    const ttl = Number(currentSession?.ttl) || 15;
+    if (initialSecs !== null && initialSecs !== undefined) {
+        refreshCountdownSeconds = initialSecs;
+    } else if (currentSession && currentSession.remaining_ttl) {
+        refreshCountdownSeconds = Number(currentSession.remaining_ttl);
+        currentSession.remaining_ttl = null;
+    } else {
+        refreshCountdownSeconds = ttl;
+    }
 
-function resetRefreshTimers() {
-    const ttl = Number(currentSession?.ttl) || 300;
-    refreshCountdownSeconds = ttl;
     const formatted = formatTtlCountdown(refreshCountdownSeconds);
-    document.getElementById('refreshCountdownText').textContent = formatted;
+    const cdText = document.getElementById('refreshCountdownText');
+    if (cdText) cdText.textContent = formatted;
     const projCountdown = document.getElementById('projectorCountdown');
     if (projCountdown) projCountdown.textContent = formatted;
     
     const progressIndicator = document.getElementById('qrProgressIndicator');
     if (progressIndicator) {
         progressIndicator.style.transition = 'none';
-        progressIndicator.style.width = '100%';
+        progressIndicator.style.width = Math.max(0, Math.min(100, (refreshCountdownSeconds / ttl) * 100)) + '%';
+        progressIndicator.style.background = 'linear-gradient(90deg, #cfa46f, #e5be8a)';
         void progressIndicator.offsetWidth;
         progressIndicator.style.transition = 'width 1s linear';
     }
@@ -1083,51 +1087,46 @@ function resetRefreshTimers() {
     if (refreshCountdownInterval) clearInterval(refreshCountdownInterval);
     refreshCountdownInterval = setInterval(() => {
         refreshCountdownSeconds--;
+        if (refreshCountdownSeconds < 0) refreshCountdownSeconds = 0;
+
         const formatted = formatTtlCountdown(refreshCountdownSeconds);
         const pCd = document.getElementById('projectorCountdown');
         if (pCd) pCd.textContent = formatted;
-        document.getElementById('refreshCountdownText').textContent = formatted;
+        const cdEl = document.getElementById('refreshCountdownText');
+        if (cdEl) cdEl.textContent = formatted;
 
-        if (refreshCountdownSeconds <= 0) {
-            refreshCountdownSeconds = ttl;
-            if (progressIndicator) {
-                progressIndicator.style.transition = 'none';
-                progressIndicator.style.width = '100%';
-                void progressIndicator.offsetWidth;
-                progressIndicator.style.transition = 'width 1s linear';
-            }
-        } else {
-            if (progressIndicator) {
-                const percentage = (refreshCountdownSeconds / ttl) * 100;
-                progressIndicator.style.width = percentage + '%';
+        if (progressIndicator) {
+            const percentage = Math.max(0, Math.min(100, (refreshCountdownSeconds / ttl) * 100));
+            progressIndicator.style.width = percentage + '%';
+            if (refreshCountdownSeconds <= 3) {
+                progressIndicator.style.background = 'linear-gradient(90deg, #ef4444, #f59e0b)';
+            } else {
+                progressIndicator.style.background = 'linear-gradient(90deg, #cfa46f, #e5be8a)';
             }
         }
+
+        if (refreshCountdownSeconds <= 0) {
+            // Automatically regenerate QR code and attendance code every 15 seconds without full page reload
+            performAutoRefresh(false);
+        }
     }, 1000);
-
-    if (refreshInterval) clearInterval(refreshInterval);
-    refreshInterval = setInterval(() => refreshBtn.click(), getRefreshIntervalSeconds() * 1000);
 }
 
-function startIntervals() {
-    document.getElementById('qrRefreshCountdown').style.display = 'block';
-    resetRefreshTimers();
-    startSessionTimer(currentSession.session_end);
-    updateClockIns();
-    if (clockinInterval) clearInterval(clockinInterval);
-    clockinInterval = setInterval(updateClockIns, 3000); // 3-second live polling loop
-}
-
-// Refresh QR
-refreshBtn.addEventListener('click', async () => {
+let isRefreshingQr = false;
+async function performAutoRefresh(isManual = false) {
+    if (isRefreshingQr) return;
     const sessionId = currentSession?.session_id || currentSession?.id;
     if (!sessionId && !currentSession) {
-        showTeacherToast('No active attendance session to refresh', 'warning');
+        if (isManual) showTeacherToast('No active attendance session to refresh', 'warning');
         return;
     }
-    
+
+    isRefreshingQr = true;
     const originalHtml = refreshBtn.innerHTML;
-    refreshBtn.disabled = true;
-    refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Refreshing...';
+    if (isManual) {
+        refreshBtn.disabled = true;
+        refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Refreshing...';
+    }
 
     try {
         const response = await fetch('{{ route("teacher.qr.refresh") }}', {
@@ -1148,33 +1147,76 @@ refreshBtn.addEventListener('click', async () => {
         if (response.ok && data.success) {
             currentSession.token = data.token;
             currentSession.scan_url = data.scan_url;
-            currentSession.ttl = data.ttl || currentSession.ttl || 300;
+            currentSession.ttl = data.ttl || 15;
             if (data.session_code) {
                 currentSession.session_code = data.session_code;
                 currentSession.formatted_code = data.formatted_code;
                 const codeBox = document.getElementById('displaySessionCode');
-                if (codeBox) codeBox.textContent = data.formatted_code || data.session_code;
+                if (codeBox) {
+                    codeBox.textContent = data.formatted_code || data.session_code;
+                    codeBox.style.transition = 'transform 0.25s ease, color 0.25s ease';
+                    codeBox.style.transform = 'scale(1.08)';
+                    codeBox.style.color = '#ffffff';
+                    setTimeout(() => {
+                        codeBox.style.transform = 'scale(1)';
+                        codeBox.style.color = '#ffd700';
+                    }, 350);
+                }
                 const pCode = document.getElementById('projectorSessionCode');
-                if (pCode) pCode.textContent = data.formatted_code || data.session_code;
+                if (pCode) {
+                    pCode.textContent = data.formatted_code || data.session_code;
+                    pCode.style.transition = 'transform 0.25s ease, color 0.25s ease';
+                    pCode.style.transform = 'scale(1.08)';
+                    pCode.style.color = '#ffffff';
+                    setTimeout(() => {
+                        pCode.style.transform = 'scale(1)';
+                        pCode.style.color = '#ffd700';
+                    }, 350);
+                }
             }
             showQRCode(data.scan_url);
-            resetRefreshTimers();
-            showTeacherToast('Attendance QR refreshed successfully', 'success');
+            resetRefreshTimers(data.ttl || 15);
+            if (isManual) {
+                showTeacherToast('Attendance QR & Code refreshed successfully', 'success');
+            }
         } else {
             const errorMsg = data.message || 'Unable to refresh QR code.';
-            showTeacherToast(errorMsg, 'warning');
+            if (isManual) {
+                showTeacherToast(errorMsg, 'warning');
+            }
             if (data.session_expired || response.status === 404) {
                 enterGracePeriod();
+            } else {
+                // Retry in 3 seconds on transient network failure
+                resetRefreshTimers(3);
             }
         }
     } catch (error) {
-        console.error('Error refreshing:', error);
-        showTeacherToast('Network error while refreshing QR code', 'error');
+        console.error('Error refreshing QR:', error);
+        if (isManual) {
+            showTeacherToast('Network error while refreshing QR code', 'error');
+        }
+        resetRefreshTimers(3);
     } finally {
-        refreshBtn.disabled = false;
-        refreshBtn.innerHTML = originalHtml;
+        isRefreshingQr = false;
+        if (isManual) {
+            refreshBtn.disabled = false;
+            refreshBtn.innerHTML = originalHtml;
+        }
     }
-});
+}
+
+function startIntervals() {
+    document.getElementById('qrRefreshCountdown').style.display = 'block';
+    resetRefreshTimers();
+    startSessionTimer(currentSession.session_end);
+    updateClockIns();
+    if (clockinInterval) clearInterval(clockinInterval);
+    clockinInterval = setInterval(updateClockIns, 3000); // 3-second live polling loop
+}
+
+// Manual Refresh QR button
+refreshBtn.addEventListener('click', () => performAutoRefresh(true));
 
 // Stop session
 stopBtn.addEventListener('click', async () => {

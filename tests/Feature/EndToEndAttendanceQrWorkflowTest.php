@@ -277,7 +277,8 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $newToken = $refreshResponse->json('token');
 
         $this->assertNotEquals($initialToken, $newToken);
-        $this->assertEquals($sessionCode, $refreshResponse->json('session_code'));
+        $this->assertNotEquals($sessionCode, $refreshResponse->json('session_code'));
+        $this->assertEquals($sessionCode, \App\Models\AttendanceSession::find($sessionId)->previous_session_code);
 
         // Student 1 scans with the newly refreshed token
         $scanNewResponse = $this->actingAs($this->studentQr)->postJson('/qr/scan-process', [
