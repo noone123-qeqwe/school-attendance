@@ -212,15 +212,25 @@ class User extends Authenticatable
 
         $phoneVariants = static::getPhoneVariants($raw);
 
+        // Strip common prefixes (e.g. "ID:", "ID#", "Student ID:", "Student #", "SN:", "LRN:")
+        $normalizedRaw = preg_replace('/^(?:student[\s_-]*(?:id|number|no|#)?|id[\s:#_-]*|sn[\s:#_-]*|lrn[\s:#_-]*)\s*/i', '', $raw);
+        if ($normalizedRaw === '' || $normalizedRaw === null) {
+            $normalizedRaw = $raw;
+        }
+
         // 0. High-performance Fast Path: Direct indexed match on email, employee_id, student_number, or phone
         // MySQL / TiDB indexed varchar lookups are already case-insensitive and execute via B-tree index (avoiding full table scans)
         $fastUser = static::query()
             ->whereNull('deleted_at')
-            ->where(function ($q) use ($raw, $phoneVariants) {
+            ->where(function ($q) use ($raw, $normalizedRaw, $phoneVariants) {
                 $q->where('email', $raw)
                   ->orWhere('employee_id', $raw)
                   ->orWhere('student_number', $raw)
                   ->orWhere('phone', $raw);
+                if ($normalizedRaw !== $raw) {
+                    $q->orWhere('student_number', $normalizedRaw)
+                      ->orWhere('employee_id', $normalizedRaw);
+                }
                 if (!empty($phoneVariants)) {
                     $q->orWhereIn('phone', $phoneVariants);
                 }
@@ -231,11 +241,12 @@ class User extends Authenticatable
             return $fastUser;
         }
 
-        $findInQuery = function ($baseQuery) use ($raw, $phoneVariants): ?self {
+        $findInQuery = function ($baseQuery) use ($raw, $normalizedRaw, $phoneVariants): ?self {
             $lower = strtolower($raw);
+            $normLower = strtolower($normalizedRaw);
 
             // 1. Direct match on standard fields (exact, trimmed, or lowercase)
-            $user = (clone $baseQuery)->where(function ($q) use ($raw, $lower, $phoneVariants) {
+            $user = (clone $baseQuery)->where(function ($q) use ($raw, $lower, $normalizedRaw, $normLower, $phoneVariants) {
                 $q->where('student_number', $raw)
                   ->orWhere('email', $raw)
                   ->orWhere('employee_id', $raw)
@@ -251,6 +262,13 @@ class User extends Authenticatable
                   ->orWhereRaw('LOWER(TRIM(student_number)) = ?', [$lower])
                   ->orWhereRaw('LOWER(TRIM(employee_id)) = ?', [$lower]);
 
+                if ($normalizedRaw !== $raw) {
+                    $q->orWhere('student_number', $normalizedRaw)
+                      ->orWhere('employee_id', $normalizedRaw)
+                      ->orWhereRaw('LOWER(student_number) = ?', [$normLower])
+                      ->orWhereRaw('LOWER(employee_id) = ?', [$normLower]);
+                }
+
                 if (!empty($phoneVariants)) {
                     $q->orWhereIn('phone', $phoneVariants);
                 }
@@ -260,18 +278,19 @@ class User extends Authenticatable
                 return $user;
             }
 
-            // 2. If numeric, check institutional 7-digit zero-padded or unpadded student number / employee id
-            if (ctype_digit($raw) || is_numeric($raw)) {
-                $num = (int) $raw;
+            // 2. Numeric checks: check unpadded and zero-padded variations (6, 7, 8 digits)
+            $numericCandidate = ctype_digit($normalizedRaw) ? $normalizedRaw : (ctype_digit($raw) ? $raw : null);
+            if ($numericCandidate !== null) {
+                $num = (int) $numericCandidate;
                 $unpadded = (string) $num;
+                $padded6 = sprintf('%06d', $num);
                 $padded7 = sprintf('%07d', $num);
+                $padded8 = sprintf('%08d', $num);
+                $paddedList = array_unique([$unpadded, $padded6, $padded7, $padded8]);
 
-                // Check unpadded (e.g. user typed 0703250 and DB has 703250) or padded (user typed 703250 and DB has 0703250)
-                $user = (clone $baseQuery)->where(function ($q) use ($unpadded, $padded7) {
-                    $q->where('student_number', $padded7)
-                      ->orWhere('employee_id', $padded7)
-                      ->orWhere('student_number', $unpadded)
-                      ->orWhere('employee_id', $unpadded);
+                $user = (clone $baseQuery)->where(function ($q) use ($paddedList) {
+                    $q->whereIn('student_number', $paddedList)
+                      ->orWhereIn('employee_id', $paddedList);
                 })->first();
 
                 if ($user) {
@@ -285,10 +304,27 @@ class User extends Authenticatable
                 }
             }
 
-            // 3. Clean non-alphanumeric characters (e.g. hyphens, spaces in 070-3250, T-2024-001)
-            $clean = preg_replace('/[^a-zA-Z0-9]/', '', $raw);
-            if ($clean !== '' && $clean !== $raw) {
+            // 3. Clean non-alphanumeric characters (e.g. hyphens, spaces in 070-3250, T-2024-001, 2024-0002)
+            $cleanCandidates = [
+                preg_replace('/[^a-zA-Z0-9]/', '', $raw),
+                preg_replace('/[^a-zA-Z0-9]/', '', $normalizedRaw),
+            ];
+
+            if (preg_match('/^([a-zA-Z0-9]+)[-\s]+([0-9]+)$/', $normalizedRaw, $m) || preg_match('/^([a-zA-Z0-9]+)[-\s]+([0-9]+)$/', $raw, $m)) {
+                $pfx = $m[1];
+                $seqVal = (int) $m[2];
+                $cleanCandidates[] = $pfx . $seqVal;
+                $cleanCandidates[] = $pfx . sprintf('%03d', $seqVal);
+                $cleanCandidates[] = $pfx . sprintf('%04d', $seqVal);
+                $cleanCandidates[] = $pfx . sprintf('%05d', $seqVal);
+            }
+
+            $cleanCandidates = array_unique(array_filter($cleanCandidates));
+
+            foreach ($cleanCandidates as $clean) {
+                if ($clean === '') continue;
                 $cleanLower = strtolower($clean);
+
                 $user = (clone $baseQuery)->where(function ($q) use ($clean, $cleanLower) {
                     $q->where('student_number', $clean)
                       ->orWhere('employee_id', $clean)
@@ -305,12 +341,14 @@ class User extends Authenticatable
                 if (ctype_digit($clean)) {
                     $num = (int) $clean;
                     $unpadded = (string) $num;
+                    $padded6 = sprintf('%06d', $num);
                     $padded7 = sprintf('%07d', $num);
-                    $user = (clone $baseQuery)->where(function ($q) use ($unpadded, $padded7) {
-                        $q->where('student_number', $padded7)
-                          ->orWhere('employee_id', $padded7)
-                          ->orWhere('student_number', $unpadded)
-                          ->orWhere('employee_id', $unpadded);
+                    $padded8 = sprintf('%08d', $num);
+                    $pList = array_unique([$unpadded, $padded6, $padded7, $padded8]);
+
+                    $user = (clone $baseQuery)->where(function ($q) use ($pList) {
+                        $q->whereIn('student_number', $pList)
+                          ->orWhereIn('employee_id', $pList);
                     })->first();
 
                     if ($user) {
@@ -361,17 +399,29 @@ class User extends Authenticatable
             return null;
         }
 
+        $normalizedRaw = preg_replace('/^(?:student[\s_-]*(?:id|number|no|#)?|id[\s:#_-]*|sn[\s:#_-]*|lrn[\s:#_-]*)\s*/i', '', $raw);
+        if ($normalizedRaw === '' || $normalizedRaw === null) {
+            $normalizedRaw = $raw;
+        }
+
         $lower = strtolower($raw);
+        $normLower = strtolower($normalizedRaw);
         $phoneVariants = static::getPhoneVariants($raw);
 
         // 1. Direct match on student_number, employee_id, or phone
         $user = static::whereNull('deleted_at')
-            ->where(function ($q) use ($raw, $lower, $phoneVariants) {
+            ->where(function ($q) use ($raw, $lower, $normalizedRaw, $normLower, $phoneVariants) {
                 $q->where('student_number', $raw)
                   ->orWhere('employee_id', $raw)
                   ->orWhere('phone', $raw)
                   ->orWhereRaw('LOWER(student_number) = ?', [$lower])
                   ->orWhereRaw('LOWER(employee_id) = ?', [$lower]);
+                if ($normalizedRaw !== $raw) {
+                    $q->orWhere('student_number', $normalizedRaw)
+                      ->orWhere('employee_id', $normalizedRaw)
+                      ->orWhereRaw('LOWER(student_number) = ?', [$normLower])
+                      ->orWhereRaw('LOWER(employee_id) = ?', [$normLower]);
+                }
                 if (!empty($phoneVariants)) {
                     $q->orWhereIn('phone', $phoneVariants);
                 }
@@ -381,9 +431,25 @@ class User extends Authenticatable
             return $user;
         }
 
-        // 2. Clean non-alphanumeric characters (e.g. 070-3250, T-2024-001)
-        $clean = preg_replace('/[^a-zA-Z0-9]/', '', $raw);
-        if ($clean !== '' && $clean !== $raw) {
+        // 2. Clean non-alphanumeric characters (e.g. 070-3250, T-2024-001, 2024-0002)
+        $cleanCandidates = [
+            preg_replace('/[^a-zA-Z0-9]/', '', $raw),
+            preg_replace('/[^a-zA-Z0-9]/', '', $normalizedRaw),
+        ];
+
+        if (preg_match('/^([a-zA-Z0-9]+)[-\s]+([0-9]+)$/', $normalizedRaw, $m) || preg_match('/^([a-zA-Z0-9]+)[-\s]+([0-9]+)$/', $raw, $m)) {
+            $pfx = $m[1];
+            $seqVal = (int) $m[2];
+            $cleanCandidates[] = $pfx . $seqVal;
+            $cleanCandidates[] = $pfx . sprintf('%03d', $seqVal);
+            $cleanCandidates[] = $pfx . sprintf('%04d', $seqVal);
+            $cleanCandidates[] = $pfx . sprintf('%05d', $seqVal);
+        }
+
+        $cleanCandidates = array_unique(array_filter($cleanCandidates));
+
+        foreach ($cleanCandidates as $clean) {
+            if ($clean === '') continue;
             $cleanLower = strtolower($clean);
             $user = static::whereNull('deleted_at')
                 ->where(function ($q) use ($clean, $cleanLower) {
@@ -398,18 +464,42 @@ class User extends Authenticatable
             if ($user) {
                 return $user;
             }
+
+            if (ctype_digit($clean)) {
+                $num = (int) $clean;
+                $unpadded = (string) $num;
+                $padded6 = sprintf('%06d', $num);
+                $padded7 = sprintf('%07d', $num);
+                $padded8 = sprintf('%08d', $num);
+                $pList = array_unique([$unpadded, $padded6, $padded7, $padded8]);
+
+                $user = static::whereNull('deleted_at')
+                    ->where(function ($q) use ($pList, $num) {
+                        $q->whereIn('student_number', $pList)
+                          ->orWhereIn('employee_id', $pList)
+                          ->orWhere('id', $num);
+                    })->first();
+
+                if ($user) {
+                    return $user;
+                }
+            }
         }
 
         // 3. Numeric checks: padded/unpadded institutional numbers or primary key id
-        if (ctype_digit($raw)) {
-            $num = (int) $raw;
+        $numericCandidate = ctype_digit($normalizedRaw) ? $normalizedRaw : (ctype_digit($raw) ? $raw : null);
+        if ($numericCandidate !== null) {
+            $num = (int) $numericCandidate;
+            $unpadded = (string) $num;
+            $padded6 = sprintf('%06d', $num);
             $padded7 = sprintf('%07d', $num);
+            $padded8 = sprintf('%08d', $num);
+            $pList = array_unique([$unpadded, $padded6, $padded7, $padded8]);
+
             $user = static::whereNull('deleted_at')
-                ->where(function ($q) use ($raw, $padded7, $num) {
-                    $q->where('student_number', $padded7)
-                      ->orWhere('employee_id', $padded7)
-                      ->orWhere('student_number', (string)$num)
-                      ->orWhere('employee_id', (string)$num)
+                ->where(function ($q) use ($pList, $num) {
+                    $q->whereIn('student_number', $pList)
+                      ->orWhereIn('employee_id', $pList)
                       ->orWhere('id', $num);
                 })->first();
 
