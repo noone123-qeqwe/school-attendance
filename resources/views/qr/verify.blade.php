@@ -306,13 +306,39 @@ var RADIUS_METERS = {{ isset($radiusMeters) && $radiusMeters !== null ? (int) $r
 
 var fingerprintInProgress = false; // Add guard against multiple simultaneous calls
 
+function normalizeCoordinates(lat, lng) {
+    let latitude = Number(lat);
+    let longitude = Number(lng);
+    if (isNaN(latitude) || isNaN(longitude)) return [0, 0];
+
+    // Definite swap: lat cannot exceed 90 or be less than -90
+    if (Math.abs(latitude) > 90 && Math.abs(longitude) <= 90) {
+        const t = latitude;
+        latitude = longitude;
+        longitude = t;
+    }
+    // Regional swap detection (e.g. Philippines lat ~12, lng ~123)
+    if (latitude > 50 && latitude <= 180 && longitude >= -90 && longitude <= 50) {
+        const t = latitude;
+        latitude = longitude;
+        longitude = t;
+    }
+    return [latitude, longitude];
+}
+
 function calculateDistance(lat1, lon1, lat2, lon2) {
+    var c1 = normalizeCoordinates(lat1, lon1);
+    var c2 = normalizeCoordinates(lat2, lon2);
+    lat1 = c1[0]; lon1 = c1[1];
+    lat2 = c2[0]; lon2 = c2[1];
+
     var R = 6371000; // meters
     var dLat = (lat2 - lat1) * Math.PI / 180;
     var dLon = (lon2 - lon1) * Math.PI / 180;
     var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
             Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    a = Math.min(1.0, Math.max(0.0, a));
     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
@@ -839,7 +865,8 @@ function showOutsideClassroomError(dist, limit) {
     fingerprintInProgress = false;
     setIcon('#fef2f2', 'bi bi-geo-alt-fill', '#dc2626');
     document.getElementById('vTitle').textContent = 'Failed to Scan';
-    document.getElementById('vSub').textContent = 'You are outside the classroom (' + Math.round(dist) + 'm away).';
+    const roundedDist = Math.round(dist);
+    document.getElementById('vSub').textContent = 'You are outside the classroom (' + roundedDist.toLocaleString() + 'm away).';
     showMsg('err', '<i class="bi bi-x-circle-fill me-1"></i> <strong>Outside Classroom:</strong> Attendance can only be recorded while physically inside the classroom (within ' + limit + 'm).');
     var btn = document.getElementById('retryFpBtn');
     btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
@@ -849,7 +876,7 @@ function showOutsideClassroomError(dist, limit) {
     showOutsideRangePopup({
         distance: dist,
         radius: limit,
-        message: 'You are outside the classroom boundary (' + Math.round(dist) + 'm away, allowed within ' + limit + 'm). Attendance can only be recorded while physically inside the classroom.'
+        message: 'You are outside the classroom boundary (' + roundedDist.toLocaleString() + 'm away, allowed within ' + limit + 'm). Attendance can only be recorded while physically inside the classroom.'
     });
 }
 
@@ -857,14 +884,19 @@ function showOutsideRangePopup(data) {
     const modal = document.getElementById('outsideRangePopupModal');
     if (!modal) return;
 
-    const dist = data.distance ? Math.round(data.distance) : (data.dist ? Math.round(data.dist) : null);
-    const radius = data.radius ? Math.round(data.radius) : (data.limit ? Math.round(data.limit) : 50);
+    const rawDist = (data.distance !== undefined && data.distance !== null) ? Number(data.distance) : 
+                    ((data.dist !== undefined && data.dist !== null) ? Number(data.dist) : null);
+    const rawRadius = (data.radius !== undefined && data.radius !== null) ? Number(data.radius) : 
+                      ((data.limit !== undefined && data.limit !== null) ? Number(data.limit) : 50);
+
+    const dist = (rawDist !== null && !isNaN(rawDist)) ? Math.round(rawDist) : null;
+    const radius = !isNaN(rawRadius) ? Math.round(rawRadius) : 50;
 
     const distEl = document.getElementById('outsideRangeDetectedDist');
     const radEl = document.getElementById('outsideRangeAllowedRadius');
     const msgEl = document.getElementById('outsideRangeMessage');
 
-    if (distEl) distEl.textContent = dist !== null ? (dist + 'm away') : 'Out of range';
+    if (distEl) distEl.textContent = dist !== null ? (dist.toLocaleString() + 'm away') : 'Out of range';
     if (radEl) radEl.textContent = radius + 'm radius';
     if (msgEl && data.message) {
         msgEl.textContent = data.message;

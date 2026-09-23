@@ -1447,8 +1447,8 @@ function stopContinuousLocationWatch() {
 function refreshStudentLocation(force = false) {
     if (!navigator.geolocation) return Promise.resolve(null);
     const now = Date.now();
-    // Accept existing fix if fresh (< 10s) and high accuracy (<= 45m)
-    if (!force && studentGeoCoords && (now - studentGeoTimestamp < 10000) && (studentGeoCoords.acc <= 45)) {
+    // Accept existing fix if not forced, fresh (< 5s), and high accuracy (<= 30m)
+    if (!force && studentGeoCoords && (now - studentGeoTimestamp < 5000) && (studentGeoCoords.acc <= 30)) {
         return Promise.resolve(studentGeoCoords);
     }
     if (studentGeoPromise && !force) {
@@ -1471,7 +1471,7 @@ function refreshStudentLocation(force = false) {
             } else {
                 finish(null);
             }
-        }, 7000);
+        }, 5000);
 
         navigator.geolocation.getCurrentPosition(
             pos => {
@@ -1504,7 +1504,6 @@ function refreshStudentLocation(force = false) {
                     err2 => {
                         clearTimeout(safetyTimer);
                         console.warn('Fallback GPS fix failed:', err2);
-                        // Only use existing coords if less than 25s old to avoid stale location rejections
                         if (studentGeoCoords && (Date.now() - studentGeoTimestamp < 25000)) {
                             finish(studentGeoCoords);
                         } else {
@@ -1512,10 +1511,10 @@ function refreshStudentLocation(force = false) {
                             finish(null);
                         }
                     },
-                    { enableHighAccuracy: false, timeout: 4000, maximumAge: 5000 }
+                    { enableHighAccuracy: false, timeout: 3000, maximumAge: 3000 }
                 );
             },
-            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 3500, maximumAge: 0 }
         );
     });
 
@@ -2456,12 +2455,13 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     const parsedData = extractQrToken(decodedText);
     const resolvedMethod = (method === 'code' || currentScannerMode === 'code' || (parsedData.code && !parsedData.token)) ? 'code' : 'qr';
 
-    // Ensure user's location is fresh and accurate before performing distance check
-    const isStale = !studentGeoCoords || (Date.now() - studentGeoTimestamp > 12000) || (studentGeoCoords.acc && studentGeoCoords.acc > 80);
-    if (isStale && navigator.geolocation) {
+    // Refresh the user's location immediately before performing the geofence check
+    if (navigator.geolocation) {
         try {
             await refreshStudentLocation(true);
-        } catch(e) {}
+        } catch(e) {
+            console.warn('Geolocation refresh warning:', e);
+        }
     }
 
     const devKey = (typeof window.getOrCreateDeviceKey === 'function')
@@ -2651,9 +2651,17 @@ function renderScanError(data) {
     } else if (errType === 'invalid_or_expired') {
         title.textContent = currentScannerMode === 'code' ? 'Invalid Attendance Code' : 'Invalid QR Code';
     } else if (errType === 'location_required') {
+        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
+        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
+        iconBox.innerHTML = '<i class="bi bi-geo-alt-fill" style="color: #fbbf24;"></i>';
         title.textContent = 'Location Required';
+        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-geo-alt me-1"></i> Enable Location & Retry';
     } else if (errType === 'unreliable_gps') {
+        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
+        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
+        iconBox.innerHTML = '<i class="bi bi-broadcast" style="color: #fbbf24;"></i>';
         title.textContent = 'Weak GPS Signal';
+        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry with High Accuracy';
     } else if (errType === 'outside_classroom') {
         title.textContent = 'Outside Classroom Range';
         showOutsideRangePopup(data);
@@ -2675,14 +2683,21 @@ function showOutsideRangePopup(data) {
     const modal = document.getElementById('outsideRangePopupModal');
     if (!modal) return;
 
-    const dist = data.distance ? Math.round(data.distance) : (data.dist ? Math.round(data.dist) : null);
-    const radius = data.radius ? Math.round(data.radius) : (data.limit ? Math.round(data.limit) : 50);
+    const rawDist = (data.distance !== undefined && data.distance !== null) ? Number(data.distance) : 
+                    ((data.dist !== undefined && data.dist !== null) ? Number(data.dist) : null);
+    const rawRadius = (data.radius !== undefined && data.radius !== null) ? Number(data.radius) : 
+                      ((data.limit !== undefined && data.limit !== null) ? Number(data.limit) : 50);
+
+    const dist = (rawDist !== null && !isNaN(rawDist)) ? Math.round(rawDist) : null;
+    const radius = !isNaN(rawRadius) ? Math.round(rawRadius) : 50;
 
     const distEl = document.getElementById('outsideRangeDetectedDist');
     const radEl = document.getElementById('outsideRangeAllowedRadius');
     const msgEl = document.getElementById('outsideRangeMessage');
 
-    if (distEl) distEl.textContent = dist !== null ? (dist + 'm away') : 'Out of range';
+    if (distEl) {
+        distEl.textContent = dist !== null ? (dist.toLocaleString() + 'm away') : 'Out of range';
+    }
     if (radEl) radEl.textContent = radius + 'm radius';
     if (msgEl && data.message) {
         msgEl.textContent = data.message;

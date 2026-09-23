@@ -63,8 +63,9 @@ class AttendanceController extends Controller
         ->latest('id')
         ->first();
 
-    $schoolLat    = (float) ($activeSession?->classroom_lat ?? \App\Models\Setting::get('gps_lat', 14.538800));
-    $schoolLng    = (float) ($activeSession?->classroom_lng ?? \App\Models\Setting::get('gps_lng', 121.002200));
+    $rawSchoolLat = $activeSession?->classroom_lat ?? \App\Models\Setting::get('gps_lat', 12.371250);
+    $rawSchoolLng = $activeSession?->classroom_lng ?? \App\Models\Setting::get('gps_lng', 123.619437);
+    [$schoolLat, $schoolLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $rawSchoolLat, (float) $rawSchoolLng);
     $radiusMeters = (int) ($activeSession ? $activeSession->getAllowedRadius() : \App\Models\Setting::get('gps_radius', 50));
 
     // GPS VALIDATION — use is_null() so 0.0 is accepted
@@ -72,6 +73,7 @@ class AttendanceController extends Controller
         return redirect()->back()->with('error', 'GPS location is required for clock-in.');
     }
 
+    [$studentLat, $studentLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
     $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
     if ($accuracy !== null && $accuracy <= 0) {
@@ -84,8 +86,8 @@ class AttendanceController extends Controller
 
     // CALCULATE DISTANCE
     $distance = $this->distance(
-        (float) $request->latitude,
-        (float) $request->longitude,
+        $studentLat,
+        $studentLng,
         $schoolLat,
         $schoolLng
     );
@@ -256,23 +258,26 @@ if (!$scheduledDays->contains($todayFull)) {
 
     return redirect()->route('home')->with('success', "Clock-in successful! Status: $status");
 }
-private function distance($lat1, $lon1, $lat2, $lon2)
-{
-    $earthRadius = 6371000;
+    private function distance($lat1, $lon1, $lat2, $lon2)
+    {
+        [$lat1, $lon1] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $lat1, (float) $lon1);
+        [$lat2, $lon2] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $lat2, (float) $lon2);
 
-    $dLat = deg2rad($lat2 - $lat1);
-    $dLon = deg2rad($lon2 - $lon1);
+        $earthRadius = 6371000.0;
 
-    $a = sin($dLat/2) * sin($dLat/2) +
-         cos(deg2rad($lat1)) *
-         cos(deg2rad($lat2)) *
-         sin($dLon/2) *
-         sin($dLon/2);
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
 
-    $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $a = sin($dLat / 2) * sin($dLat / 2) +
+             cos(deg2rad($lat1)) *
+             cos(deg2rad($lat2)) *
+             sin($dLon / 2) *
+             sin($dLon / 2);
 
-    return $earthRadius * $c;
+        $a = min(1.0, max(0.0, $a));
 
-}
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
+        return $earthRadius * $c;
+    }
 }

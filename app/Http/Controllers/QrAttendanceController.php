@@ -30,12 +30,20 @@ class QrAttendanceController extends Controller
 
     private function getSchoolLat(): float
     {
-        return (float) \App\Models\Setting::get('gps_lat', 14.538800);
+        $val = \App\Models\Setting::get('gps_lat');
+        if ($val !== null && $val !== '') {
+            return (float) $val;
+        }
+        return 12.371250;
     }
 
     private function getSchoolLng(): float
     {
-        return (float) \App\Models\Setting::get('gps_lng', 121.022300);
+        $val = \App\Models\Setting::get('gps_lng');
+        if ($val !== null && $val !== '') {
+            return (float) $val;
+        }
+        return 123.619437;
     }
 
     private function getRadiusMeters(): int
@@ -44,16 +52,51 @@ class QrAttendanceController extends Controller
     }
 
     /**
-     * Resolve classroom coordinates with smart auto-anchoring:
+     * Normalize and validate coordinates, automatically detecting and correcting swapped (lng, lat) coordinates.
+     * Latitude must be in [-90, 90], Longitude in [-180, 180].
+     *
+     * @param float $lat
+     * @param float $lng
+     * @return array [float $lat, float $lng]
+     */
+    public static function normalizeCoordinates(float $lat, float $lng): array
+    {
+        // 1. Definite swap: Latitude cannot exceed 90 or be less than -90 degrees
+        if (abs($lat) > 90.0 && abs($lng) <= 90.0) {
+            $temp = $lat;
+            $lat = $lng;
+            $lng = $temp;
+        }
+
+        // 2. Regional swap detection for Philippines / Southeast Asia:
+        // Longitudes in the Philippines are ~115° to ~128°E, while latitudes are ~4° to ~22°N.
+        // If someone passes lat=123.619 and lng=12.371, lat > 50 and lng < 30 means they are inverted.
+        if ($lat > 50.0 && $lat <= 180.0 && $lng >= -90.0 && $lng <= 50.0) {
+            $temp = $lat;
+            $lat = $lng;
+            $lng = $temp;
+        }
+
+        // 3. Clamp within valid mathematical boundaries
+        $lat = min(90.0, max(-90.0, $lat));
+        $lng = min(180.0, max(-180.0, $lng));
+
+        return [$lat, $lng];
+    }
+
+    /**
+     * Resolve classroom coordinates with reliable fallback and smart auto-anchoring:
      * 1. If radius <= 0, geofence is disabled.
      * 2. If session has explicit coordinates, use them.
      * 3. If admin configured campus GPS in Setting table, use them.
-     * 4. If neither is set, and student is in regional proximity (<= 10km of default Taguig anchor),
-     *    auto-anchor the session to the first local in-room scan location!
-     * 5. Otherwise (student > 10km away), retain regional anchor to reject remote scans.
+     * 4. If previous recent session from this instructor or school has coordinates, use them.
+     * 5. If neither is set, auto-anchor the session to the first in-room student scan location!
+     * 6. Default campus fallback is the school's registered campus coordinates.
      */
     private function resolveClassroomCoords(AttendanceSession $session, float $studentLat, float $studentLng): array
     {
+        [$studentLat, $studentLng] = self::normalizeCoordinates($studentLat, $studentLng);
+
         $radius = (int) $session->getAllowedRadius();
         if ($radius <= 0) {
             return [
@@ -64,45 +107,92 @@ class QrAttendanceController extends Controller
             ];
         }
 
+        // 1. Session has explicit classroom coordinates
         if ($session->classroom_lat !== null && $session->classroom_lng !== null) {
+            [$cLat, $cLng] = self::normalizeCoordinates((float) $session->classroom_lat, (float) $session->classroom_lng);
             return [
-                'schoolLat'  => (float) $session->classroom_lat,
-                'schoolLng'  => (float) $session->classroom_lng,
+                'schoolLat'  => $cLat,
+                'schoolLng'  => $cLng,
                 'isExplicit' => true,
                 'disabled'   => false,
             ];
         }
 
-        // Check if school admin explicitly configured campus GPS in database
+        // 2. Check if school admin explicitly configured campus GPS in database
         $customLat = \App\Models\Setting::where('key', 'gps_lat')->value('value');
         $customLng = \App\Models\Setting::where('key', 'gps_lng')->value('value');
 
         if ($customLat !== null && $customLat !== '' && $customLng !== null && $customLng !== '') {
+            [$cLat, $cLng] = self::normalizeCoordinates((float) $customLat, (float) $customLng);
             return [
-                'schoolLat'  => (float) $customLat,
-                'schoolLng'  => (float) $customLng,
+                'schoolLat'  => $cLat,
+                'schoolLng'  => $cLng,
                 'isExplicit' => true,
                 'disabled'   => false,
             ];
         }
 
-        // Regional fallback anchor (Taguig default)
-        $defaultLat = 14.538800;
-        $defaultLng = 121.022300;
-        $regionalDist = $this->distance($studentLat, $studentLng, $defaultLat, $defaultLng);
+        // 3. Check for previous verified session coordinates by this instructor
+        $previousSession = AttendanceSession::whereNotNull('classroom_lat')
+            ->whereNotNull('classroom_lng')
+            ->where('created_by', $session->created_by)
+            ->where('id', '!=', $session->id)
+            ->latest('id')
+            ->first();
 
-        // If student is within regional bounds (<= 10km), auto-anchor session to this verified local classroom location
-        if ($regionalDist <= 10000) {
+        if ($previousSession) {
+            [$cLat, $cLng] = self::normalizeCoordinates((float) $previousSession->classroom_lat, (float) $previousSession->classroom_lng);
+            return [
+                'schoolLat'  => $cLat,
+                'schoolLng'  => $cLng,
+                'isExplicit' => true,
+                'disabled'   => false,
+            ];
+        }
+
+        // 4. Regional proximity check against campus anchor
+        $recentWithCoords = AttendanceSession::whereNotNull('classroom_lat')
+            ->whereNotNull('classroom_lng')
+            ->where('id', '!=', $session->id)
+            ->latest('id')
+            ->first();
+
+        if ($recentWithCoords) {
+            [$anchorLat, $anchorLng] = self::normalizeCoordinates((float) $recentWithCoords->classroom_lat, (float) $recentWithCoords->classroom_lng);
+            $campusDist = $this->distance($studentLat, $studentLng, $anchorLat, $anchorLng);
+        } else {
+            $configuredLat = \App\Models\Setting::get('gps_lat');
+            $configuredLng = \App\Models\Setting::get('gps_lng');
+            if ($configuredLat !== null && $configuredLat !== '' && $configuredLng !== null && $configuredLng !== '') {
+                $anchorLat = (float) $configuredLat;
+                $anchorLng = (float) $configuredLng;
+                $campusDist = $this->distance($studentLat, $studentLng, $anchorLat, $anchorLng);
+            } else {
+                $distMasbate = $this->distance($studentLat, $studentLng, 12.371250, 123.619437);
+                $distTaguig  = $this->distance($studentLat, $studentLng, 14.538800, 121.022300);
+                if ($distTaguig < $distMasbate) {
+                    $anchorLat = 14.538800;
+                    $anchorLng = 121.022300;
+                    $campusDist = $distTaguig;
+                } else {
+                    $anchorLat = 12.371250;
+                    $anchorLng = 123.619437;
+                    $campusDist = $distMasbate;
+                }
+            }
+        }
+
+        // If student is in local proximity (<= 15km of campus anchor), auto-anchor session
+        if ($campusDist <= 15000) {
             try {
                 $session->classroom_lat = $studentLat;
                 $session->classroom_lng = $studentLng;
                 $session->save();
 
-                Log::info('Auto-anchored session classroom coordinates from local scan', [
-                    'session_id'  => $session->id,
-                    'lat'         => $studentLat,
-                    'lng'         => $studentLng,
-                    'region_dist' => round($regionalDist),
+                Log::info('Auto-anchored session classroom coordinates from in-room scan', [
+                    'session_id' => $session->id,
+                    'lat'        => $studentLat,
+                    'lng'        => $studentLng,
                 ]);
             } catch (\Throwable $e) {}
 
@@ -114,10 +204,10 @@ class QrAttendanceController extends Controller
             ];
         }
 
-        // Student is far away (> 10km, e.g. 60km remote scan attempt)
+        // Student is far away (> 15km, remote scan attempt) - reject remote attempt
         return [
-            'schoolLat'  => $defaultLat,
-            'schoolLng'  => $defaultLng,
+            'schoolLat'  => $anchorLat,
+            'schoolLng'  => $anchorLng,
             'isExplicit' => false,
             'disabled'   => false,
         ];
@@ -334,12 +424,18 @@ class QrAttendanceController extends Controller
             }
         }
 
+        $lat = $request->classroom_lat;
+        $lng = $request->classroom_lng;
+        if ($lat !== null && $lng !== null) {
+            [$lat, $lng] = self::normalizeCoordinates((float) $lat, (float) $lng);
+        }
+
         try {
             $session = $this->qrSessionService->startSession(
                 $teacherId, 
                 $request->subject_code, 
-                $request->classroom_lat, 
-                $request->classroom_lng,
+                $lat, 
+                $lng,
                 $request->radius_meters,
                 $request->grace_period_minutes
             );
@@ -398,8 +494,9 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized to update this session.'], 403);
         }
 
-        $session->classroom_lat = $request->classroom_lat;
-        $session->classroom_lng = $request->classroom_lng;
+        [$lat, $lng] = self::normalizeCoordinates((float) $request->classroom_lat, (float) $request->classroom_lng);
+        $session->classroom_lat = $lat;
+        $session->classroom_lng = $lng;
         if ($request->has('radius_meters') && $request->radius_meters !== null) {
             $session->radius_meters = (int) $request->radius_meters;
         }
@@ -1392,15 +1489,9 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        $dbLat = \App\Models\Setting::where('key', 'gps_lat')->value('value');
-        $dbLng = \App\Models\Setting::where('key', 'gps_lng')->value('value');
-
-        $classroomLat = $session->classroom_lat !== null 
-            ? (float) $session->classroom_lat 
-            : ($dbLat !== null && $dbLat !== '' ? (float) $dbLat : null);
-        $classroomLng = $session->classroom_lng !== null 
-            ? (float) $session->classroom_lng 
-            : ($dbLng !== null && $dbLng !== '' ? (float) $dbLng : null);
+        $coords = $this->resolveClassroomCoords($session, 12.371250, 123.619437);
+        $classroomLat = $coords['schoolLat'];
+        $classroomLng = $coords['schoolLng'];
         $radiusMeters = (int) $session->getAllowedRadius();
 
         return view('qr.verify', [
@@ -1669,13 +1760,14 @@ class QrAttendanceController extends Controller
                 ], 422);
             }
 
-            $coords = $this->resolveClassroomCoords($session, (float) $request->latitude, (float) $request->longitude);
+            [$studentLat, $studentLng] = self::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
+            $coords = $this->resolveClassroomCoords($session, $studentLat, $studentLng);
             $schoolLat = $coords['schoolLat'];
             $schoolLng = $coords['schoolLng'];
 
             $distance = $this->distance(
-                (float) $request->latitude,
-                (float) $request->longitude,
+                $studentLat,
+                $studentLng,
                 $schoolLat,
                 $schoolLng
             );
@@ -1688,8 +1780,8 @@ class QrAttendanceController extends Controller
                 'session_id'                    => $session->id,
                 'session_token'                 => $session->token,
                 'student_id'                    => $user->id,
-                'student_lat'                   => (float) $request->latitude,
-                'student_lng'                   => (float) $request->longitude,
+                'student_lat'                   => $studentLat,
+                'student_lng'                   => $studentLng,
                 'student_accuracy'              => $studentAccuracy,
                 'accuracy_allowance'            => $accuracyAllowance,
                 'classroom_lat'                 => $schoolLat,
@@ -2355,8 +2447,7 @@ class QrAttendanceController extends Controller
 
         if ($radiusMeters > 0) {
             if ($hasCoordinates) {
-                $studentLat = (float) $request->latitude;
-                $studentLng = (float) $request->longitude;
+                [$studentLat, $studentLng] = self::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
                 $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
                 if ($accuracy !== null && $accuracy <= 0) {
@@ -2450,16 +2541,16 @@ class QrAttendanceController extends Controller
                     'time_in'                   => $now->format('H:i:s'),
                     'checked_in_at'             => $now,
                     'last_location_check_at'    => $now,
-                    'last_latitude'             => $request->latitude,
-                    'last_longitude'            => $request->longitude,
+                    'last_latitude'             => isset($studentLat) ? $studentLat : $request->latitude,
+                    'last_longitude'            => isset($studentLng) ? $studentLng : $request->longitude,
                     'last_accuracy'             => $request->accuracy,
                     'last_distance_meters'      => isset($distance) ? $distance : 0,
                     'outside_since'             => null,
                     'consecutive_outside_count' => 0,
                     'escaped_at'                => null,
                     'monitoring_status'         => 'active',
-                    'latitude'                  => $request->latitude,
-                    'longitude'                 => $request->longitude,
+                    'latitude'                  => isset($studentLat) ? $studentLat : $request->latitude,
+                    'longitude'                 => isset($studentLng) ? $studentLng : $request->longitude,
                     'gps_accuracy'              => $request->accuracy,
                     'method'                    => $isCodeMethod ? 'code' : 'qr',
                     'academic_year_id'          => $currentAcademicYearId,
@@ -2596,13 +2687,32 @@ class QrAttendanceController extends Controller
         return null;
     }
 
-    private function distance(float $lat1, float $lon1, float $lat2, float $lon2): float
+    /**
+     * Compute Haversine distance between two coordinates in meters.
+     */
+    public function distance(float $lat1, float $lon1, float $lat2, float $lon2): float
     {
-        $earthRadius = 6371000; // meters
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        [$lat1, $lon1] = self::normalizeCoordinates($lat1, $lon1);
+        [$lat2, $lon2] = self::normalizeCoordinates($lat2, $lon2);
+
+        $earthRadius = 6371000.0; // Mean Earth radius in meters (WGS84 spherical approximation)
+
+        $lat1Rad = deg2rad($lat1);
+        $lat2Rad = deg2rad($lat2);
+        $dLatRad = deg2rad($lat2 - $lat1);
+        $dLonRad = deg2rad($lon2 - $lon1);
+
+        $sinHalfLat = sin($dLatRad / 2.0);
+        $sinHalfLon = sin($dLonRad / 2.0);
+
+        $a = ($sinHalfLat * $sinHalfLat) +
+             cos($lat1Rad) * cos($lat2Rad) * ($sinHalfLon * $sinHalfLon);
+
+        // Clamp $a between 0.0 and 1.0 to prevent floating-point precision domain errors in sqrt/asin
+        $a = min(1.0, max(0.0, $a));
+
+        $c = 2.0 * atan2(sqrt($a), sqrt(1.0 - $a));
+
         return $earthRadius * $c;
     }
 }

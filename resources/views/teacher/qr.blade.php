@@ -876,8 +876,11 @@ startBtn.addEventListener('click', async () => {
             startBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Starting...';
         }
 
-        const lat = teacherLocation ? teacherLocation.latitude : null;
-        const lng = teacherLocation ? teacherLocation.longitude : null;
+        // Only use teacher device location if accuracy is reliable (<= 100m)
+        // If teacher is on desktop Wi-Fi/IP with high inaccuracy (> 100m), send null so server uses campus coordinates / auto-calibration!
+        const isReliable = teacherLocation && (!teacherLocation.accuracy || teacherLocation.accuracy <= 100);
+        const lat = isReliable ? teacherLocation.latitude : null;
+        const lng = isReliable ? teacherLocation.longitude : null;
 
         const bodyPayload = {
             subject_code: '{{ $subject->code }}',
@@ -1842,7 +1845,9 @@ function renderLocationHUD(state) {
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 text-muted small" style="font-size: 0.8rem;">
                 <div>
                     ${hasCoords 
-                        ? `<span><strong>Coords:</strong> ${teacherLocation.latitude.toFixed(6)}, ${teacherLocation.longitude.toFixed(6)} (±${Math.round(teacherLocation.accuracy || 15)}m)</span>`
+                        ? (teacherLocation.accuracy && teacherLocation.accuracy > 100
+                            ? `<span><i class="bi bi-wifi me-1 text-warning"></i> Desktop Wi-Fi location (±${Math.round(teacherLocation.accuracy)}m) detected. Campus preset / in-room scan will anchor classroom.</span>`
+                            : `<span><strong>Coords:</strong> ${teacherLocation.latitude.toFixed(6)}, ${teacherLocation.longitude.toFixed(6)} (±${Math.round(teacherLocation.accuracy || 15)}m)</span>`)
                         : (selectedRadius <= 0 
                             ? `<span>Students anywhere (home/remote/labs) can record attendance without location restrictions.</span>`
                             : `<span>Session will automatically anchor classroom GPS from the first verified in-room scan.</span>`)}
@@ -1948,8 +1953,8 @@ function captureTeacherLocation() {
         startBtn.disabled = false;
         renderLocationHUD();
 
-        // If a session is currently running, automatically sync these coordinates to the server!
-        if (currentSession && currentSession.session_id) {
+        // If a session is currently running, automatically sync these coordinates to the server if high accuracy!
+        if (currentSession && currentSession.session_id && (!accuracy || accuracy <= 100)) {
             syncSessionClassroomLocation(currentSession.session_id, teacherLocation.latitude, teacherLocation.longitude, selectedRadius);
         }
     };

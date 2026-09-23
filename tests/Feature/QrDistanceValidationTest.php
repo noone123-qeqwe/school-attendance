@@ -428,5 +428,75 @@ class QrDistanceValidationTest extends TestCase
         $this->assertEquals(121.009045, (float) $this->session->classroom_lng);
         $this->assertEquals(100, $this->session->radius_meters);
     }
+
+    public function test_masbate_student_is_accepted_and_not_compared_against_taguig()
+    {
+        // Campus configured in Masbate (Osmeña Colleges coordinates: 12.371250, 123.619437)
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_lat'], ['value' => '12.371250']);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_lng'], ['value' => '123.619437']);
+        \App\Models\Setting::updateOrCreate(['key' => 'gps_radius'], ['value' => '50']);
+
+        // Session created with null classroom coords (e.g. desktop teacher without GPS)
+        $this->session->update([
+            'classroom_lat' => null,
+            'classroom_lng' => null,
+            'radius_meters' => 50,
+        ]);
+
+        // Student scans physically inside the Masbate classroom (within 10m of 12.371250, 123.619437)
+        // 12.371300, 123.619437 is ~5.5 meters away
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 12.371300,
+            'longitude' => 123.619437,
+            'accuracy'  => 10,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+    }
+
+    public function test_inverted_coordinates_are_automatically_normalized()
+    {
+        $this->session->update([
+            'classroom_lat' => 12.371250,
+            'classroom_lng' => 123.619437,
+            'radius_meters' => 50,
+        ]);
+
+        // Student submits swapped coordinates (latitude: 123.619440, longitude: 12.371260)
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 123.619440,
+            'longitude' => 12.371260,
+            'accuracy'  => 8,
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertTrue($response->json('success'));
+    }
+
+    public function test_poor_gps_accuracy_returns_unreliable_gps_message_instead_of_outside_classroom()
+    {
+        $this->session->update([
+            'classroom_lat' => 12.371250,
+            'classroom_lng' => 123.619437,
+            'radius_meters' => 50,
+        ]);
+
+        // Student submits with poor GPS accuracy (e.g. 180m indoor Wi-Fi)
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token'     => $this->session->token,
+            'latitude'  => 12.371250,
+            'longitude' => 123.619437,
+            'accuracy'  => 180,
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertFalse($response->json('success'));
+        $this->assertEquals('unreliable_gps', $response->json('error_type'));
+        $this->assertStringContainsString('GPS signal accuracy is too low', $response->json('message'));
+        $this->assertStringContainsString('High Accuracy GPS', $response->json('message'));
+    }
 }
 
