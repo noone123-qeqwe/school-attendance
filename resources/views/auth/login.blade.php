@@ -1523,7 +1523,7 @@ if (document.readyState === 'loading') {
                 </button>
             </div>
             <div style="margin-top: 8px;">
-                <a href="{{ route('pwa.download.apk') }}" download="SmartAttendance.apk"
+                <a href="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" download="SmartAttendance.apk"
                    style="font-size: 0.76rem; color: rgba(207,164,111,0.65); text-decoration: underline; font-weight: 500; transition: color 0.2s;">
                     <i class="bi bi-download me-1"></i>Or download direct Android APK (.apk)
                 </a>

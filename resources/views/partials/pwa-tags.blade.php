@@ -923,7 +923,7 @@
 
             <!-- Main CTA Download / Action Button -->
             <div class="pwa-cta-container">
-                <button type="button" id="pwaModalDownloadApkBtn" class="pwa-hero-dl-btn" data-apk-url="{{ route('pwa.download.apk') }}" data-action="download">
+                <button type="button" id="pwaModalDownloadApkBtn" class="pwa-hero-dl-btn" data-apk-url="{{ \Illuminate\Support\Facades\Route::has('pwa.download.apk') ? route('pwa.download.apk') : url('/download/apk') }}" data-action="download">
                     <span class="pwa-dl-btn-content" id="pwaDlBtnContent" style="display:flex; align-items:center; justify-content:center; gap:8px;">
                         <i class="bi bi-arrow-down-circle-fill pwa-dl-icon" id="pwaDlIcon"></i>
                         <span class="pwa-dl-label" id="pwaDlLabel">Download APK</span>
