@@ -97,6 +97,18 @@ php artisan schedule:work >> /var/www/html/storage/logs/scheduler.log 2>&1 &
 echo "📨 Starting Laravel Queue Worker..."
 php artisan queue:work --sleep=3 --tries=3 --timeout=90 >> /var/www/html/storage/logs/queue.log 2>&1 &
 
+# ── Keep-alive self-pinger ────────────────────────────────────────────────────
+# Render free tier spins down after ~15 min of inactivity.
+# This loop pings /up every 10 minutes to prevent cold-start timeouts.
+echo "💓 Starting keep-alive pinger (every 10 minutes)..."
+(
+    APP_PING_URL="http://localhost:${PORT:-80}/up"
+    while true; do
+        sleep 600
+        curl -sf --max-time 10 "$APP_PING_URL" > /dev/null 2>&1 || true
+    done
+) &
+
 # Start Nginx in the foreground
 echo "🚀 Starting Nginx..."
 exec nginx -g "daemon off;"
