@@ -307,6 +307,18 @@
             <div class="cached-profile-meta" id="cachedMeta">Attendance ID: --</div>
         </div>
 
+        <!-- ISP / Network Route Notice Box (Shown when internet is active but server is unreachable) -->
+        <div class="isp-tip-box" id="ispTipBox" style="display: none; background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 12px; padding: 14px; margin-bottom: 22px; font-size: 0.84rem; color: #FDE047; text-align: left; line-height: 1.55;">
+            <div style="font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;">
+                <span>🌐 Internet Active &bull; Host Connection Blocked</span>
+            </div>
+            <div>Your device has active internet, but your network provider (e.g. PLDT or Smart) is blocking or failing to route to the server host.</div>
+            <div style="margin-top: 8px; font-size: 0.8rem; color: rgba(254, 240, 138, 0.85);">
+                &bull; If you have <strong>Cloudflare WARP (1.1.1.1)</strong>, turn it on.<br>
+                &bull; Or try switching between Wi-Fi and Mobile Data.
+            </div>
+        </div>
+
         <button class="btn-retry" id="btnRetry" onclick="handleRetry()">
             <svg id="retryIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
@@ -357,13 +369,15 @@
             const heading = document.getElementById('offlineHeading');
             const msg = document.getElementById('offlineMsg');
             const retryText = document.getElementById('retryText');
+            const ispTip = document.getElementById('ispTipBox');
 
             if (state === 'server-unreachable') {
-                // Has internet, server unreachable (Render cold start, etc.)
+                // Has internet, server unreachable (Render cold start / ISP routing block)
                 if (badge) badge.classList.add('server-mode');
                 if (badgeText) badgeText.textContent = 'Server Unreachable';
-                if (heading) heading.textContent = 'Server Starting Up';
-                if (msg) msg.innerHTML = 'Your internet connection is active, but the school attendance server is sleeping (Render free-tier cold start) or temporarily unreachable. We are checking every few seconds and will reconnect automatically.';
+                if (heading) heading.textContent = 'Server Unreachable';
+                if (msg) msg.innerHTML = 'Your internet connection is active, but your network provider cannot route to the school attendance server. We are probing continuously in the background.';
+                if (ispTip) ispTip.style.display = 'block';
                 if (retryText && !retryText.textContent.includes('...')) retryText.textContent = 'Retry Connecting to Server';
             } else {
                 // No internet connection
@@ -371,15 +385,60 @@
                 if (badgeText) badgeText.textContent = 'No Connection';
                 if (heading) heading.textContent = "You're Offline";
                 if (msg) msg.textContent = "We can't connect to the School Attendance server right now. Please check your Wi-Fi or mobile data connection.";
+                if (ispTip) ispTip.style.display = 'none';
                 if (retryText && !retryText.textContent.includes('...')) retryText.textContent = 'Retry Connection';
             }
+        }
+
+        async function probeExternalInternet() {
+            if (!navigator.onLine) return false;
+
+            // Probe 1: Google generate_204
+            try {
+                const c1 = new AbortController();
+                const t1 = setTimeout(() => c1.abort(), 3500);
+                await fetch('https://www.google.com/generate_204', {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    cache: 'no-store',
+                    signal: c1.signal
+                });
+                clearTimeout(t1);
+                return true;
+            } catch (e) {}
+
+            // Probe 2: Cloudflare trace
+            try {
+                const c2 = new AbortController();
+                const t2 = setTimeout(() => c2.abort(), 3500);
+                await fetch('https://1.1.1.1/cdn-cgi/trace', {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    cache: 'no-store',
+                    signal: c2.signal
+                });
+                clearTimeout(t2);
+                return true;
+            } catch (e) {}
+
+            // Probe 3: Remote Image Ping (completely immune to CORS/connect-src)
+            try {
+                const imgOk = await new Promise((resolve) => {
+                    const img = new Image();
+                    const t3 = setTimeout(() => { img.src = ''; resolve(false); }, 3500);
+                    img.onload = () => { clearTimeout(t3); resolve(true); };
+                    img.onerror = () => { clearTimeout(t3); resolve(false); };
+                    img.src = 'https://ui-avatars.com/api/?name=OK&size=16&_t=' + Date.now();
+                });
+                if (imgOk) return true;
+            } catch (e) {}
+
+            return false;
         }
 
         // Probe the server with multiple fallback URLs
         // Returns: 'connected' | 'server-unreachable' | 'no-internet'
         async function probeConnectivity() {
-            // First check: can we reach ANYTHING on the internet?
-            // We try our server's /api/ping endpoint first (bypasses SW cache)
             const probeUrls = [
                 '/api/ping?_t=' + Date.now(),
                 '/up?_t=' + Date.now(),
@@ -401,37 +460,15 @@
                     if (res.ok || res.status < 500) {
                         return 'connected';
                     }
-                    // Server responded but with 5xx — server is having issues
                     return 'server-unreachable';
                 } catch (err) {
-                    // This URL failed, try next
                     continue;
                 }
             }
 
-            // All our server probes failed. Check if we have internet at all
-            // by trying a known external resource.
-            if (navigator.onLine) {
-                try {
-                    const extController = new AbortController();
-                    const extTimer = setTimeout(() => extController.abort(), 4000);
-                    // Try fetching a tiny external resource to verify internet connectivity
-                    await fetch('https://www.google.com/generate_204', {
-                        method: 'HEAD',
-                        mode: 'no-cors',
-                        cache: 'no-store',
-                        signal: extController.signal
-                    });
-                    clearTimeout(extTimer);
-                    // Internet works but our server is unreachable
-                    return 'server-unreachable';
-                } catch (e) {
-                    // Can't reach Google either — genuinely offline
-                    return 'no-internet';
-                }
-            }
-
-            return 'no-internet';
+            // Server was unreachable. Check if we have internet at all
+            const hasInternet = await probeExternalInternet();
+            return hasInternet ? 'server-unreachable' : 'no-internet';
         }
 
         function handleConnected() {

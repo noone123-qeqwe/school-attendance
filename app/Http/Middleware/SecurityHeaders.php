@@ -69,9 +69,8 @@ class SecurityHeaders
             // Images: data: / blob: for canvas/QR; specific remote hosts only.
             "img-src 'self' data: blob: https://ui-avatars.com https://api.qrserver.com https://*.tile.openstreetmap.org https://res.cloudinary.com https://*.cloudinary.com;",
 
-            // Fetch / XHR: same-origin + WebSocket for real-time + the specific
-            // remote JSON APIs the front-end actually calls.
-            "connect-src 'self' wss: https://res.cloudinary.com https://*.cloudinary.com;",
+            // Fetch / XHR: same-origin + WebSocket for real-time + Cloudinary + connectivity probe hosts
+            "connect-src 'self' wss: https://res.cloudinary.com https://*.cloudinary.com https://www.google.com https://1.1.1.1 https://cloudflare.com;",
 
             "media-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com;",
 
