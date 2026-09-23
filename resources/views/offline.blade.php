@@ -132,6 +132,13 @@
             letter-spacing: 0.5px;
             text-transform: uppercase;
             margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .status-badge.server-mode {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #FBBF24;
         }
 
         .status-dot {
@@ -140,6 +147,11 @@
             border-radius: 50%;
             background: #EF4444;
             animation: blink 1.5s infinite ease-in-out;
+        }
+
+        .status-badge.server-mode .status-dot {
+            background: #F59E0B;
+            box-shadow: 0 0 8px #F59E0B;
         }
 
         @keyframes blink {
@@ -264,7 +276,7 @@
         </div>
 
         <div class="status-badge" id="statusBadge">
-            <span class="status-dot"></span> No Connection
+            <span class="status-dot"></span> <span id="statusBadgeText">No Connection</span>
         </div>
 
         <div class="icon-wrapper">
@@ -277,7 +289,7 @@
             </div>
         </div>
 
-        <h1>You're Offline</h1>
+        <h1 id="offlineHeading">You're Offline</h1>
         <p id="offlineMsg">
             We can't connect to the School Attendance server right now. Please check your Wi-Fi or mobile data connection.
         </p>
@@ -332,39 +344,102 @@
             }
         } catch (e) {}
 
+        function updateConnectivityUI() {
+            const isOnline = navigator.onLine;
+            const badge = document.getElementById('statusBadge');
+            const badgeText = document.getElementById('statusBadgeText');
+            const heading = document.getElementById('offlineHeading');
+            const msg = document.getElementById('offlineMsg');
+            const retryText = document.getElementById('retryText');
+
+            if (isOnline) {
+                if (badge) badge.classList.add('server-mode');
+                if (badgeText) badgeText.textContent = 'Server Unreachable / Starting Up';
+                if (heading) heading.textContent = 'Server Starting Up';
+                if (msg) msg.innerHTML = 'Your internet connection is active, but the school attendance server is sleeping (Render free-tier cold start) or temporarily unreachable. We are checking every few seconds and will reconnect automatically.';
+                if (retryText && retryText.textContent.includes('Retry')) retryText.textContent = 'Retry Connecting to Server';
+            } else {
+                if (badge) badge.classList.remove('server-mode');
+                if (badgeText) badgeText.textContent = 'No Connection';
+                if (heading) heading.textContent = "You're Offline";
+                if (msg) msg.textContent = "We can't connect to the School Attendance server right now. Please check your Wi-Fi or mobile data connection.";
+                if (retryText && retryText.textContent.includes('Retry')) retryText.textContent = 'Retry Connection';
+            }
+        }
+
+        let isReconnecting = false;
+        function probeServer(onSuccess, onError) {
+            const pingUrl = '/manifest.json?_t=' + Date.now();
+            fetch(pingUrl, { method: 'HEAD', cache: 'no-store' })
+                .then((res) => {
+                    if (res.ok || res.status < 500) {
+                        if (onSuccess) onSuccess();
+                    } else {
+                        if (onError) onError();
+                    }
+                })
+                .catch(() => {
+                    if (onError) onError();
+                });
+        }
+
         function handleRetry() {
+            if (isReconnecting) return;
             const btn = document.getElementById('btnRetry');
             const icon = document.getElementById('retryIcon');
             const text = document.getElementById('retryText');
             
             icon.classList.add('spin');
-            text.textContent = 'Checking connection...';
+            text.textContent = navigator.onLine ? 'Pinging server...' : 'Checking connection...';
             btn.disabled = true;
 
-            fetch('/manifest.json', { method: 'HEAD', cache: 'no-store' })
-                .then(() => {
-                    text.textContent = 'Connected! Loading...';
-                    window.location.reload();
-                })
-                .catch(() => {
+            probeServer(
+                () => {
+                    isReconnecting = true;
+                    text.textContent = 'Connected! Reloading...';
+                    const notice = document.getElementById('reconnectNotice');
+                    if (notice) notice.style.display = 'flex';
+                    setTimeout(() => window.location.reload(), 800);
+                },
+                () => {
                     setTimeout(() => {
                         icon.classList.remove('spin');
-                        text.textContent = 'Still Offline - Try Again';
+                        text.textContent = navigator.onLine ? 'Server Still Starting - Retry' : 'Still Offline - Try Again';
                         btn.disabled = false;
+                        updateConnectivityUI();
                     }, 1200);
-                });
+                }
+            );
         }
 
-        // Automatic reconnection detection
+        // Automatic background ping every 5 seconds if internet is present
+        let autoPingInterval = null;
+        function startAutoProbe() {
+            if (autoPingInterval) clearInterval(autoPingInterval);
+            autoPingInterval = setInterval(() => {
+                if (navigator.onLine && !isReconnecting) {
+                    probeServer(() => {
+                        isReconnecting = true;
+                        const notice = document.getElementById('reconnectNotice');
+                        if (notice) notice.style.display = 'flex';
+                        setTimeout(() => window.location.reload(), 1000);
+                    });
+                }
+            }, 5000);
+        }
+
+        // React to online / offline events
         window.addEventListener('online', () => {
-            const notice = document.getElementById('reconnectNotice');
-            if (notice) {
-                notice.style.display = 'flex';
-            }
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
+            updateConnectivityUI();
+            handleRetry();
         });
+        window.addEventListener('offline', () => {
+            updateConnectivityUI();
+        });
+
+        // Initialize state
+        updateConnectivityUI();
+        startAutoProbe();
     </script>
 </body>
 </html>
