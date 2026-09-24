@@ -311,6 +311,7 @@ class QrAttendanceController extends Controller
                 'session_end'    => $activeSession->session_ends_at->timestamp,
                 'classroom_lat'  => $activeSession->classroom_lat,
                 'classroom_lng'  => $activeSession->classroom_lng,
+                'radius_meters' => $activeSession->getAllowedRadius(),
             ];
         }
 
@@ -327,7 +328,8 @@ class QrAttendanceController extends Controller
             'subject_code'         => 'required|string|exists:subjects,code',
             'classroom_lat'        => 'nullable|numeric|between:-90,90',
             'classroom_lng'        => 'nullable|numeric|between:-180,180',
-            'radius_meters'        => 'nullable|integer|min:-1|max:1000',
+            'teacher_accuracy'     => 'nullable|numeric|gt:0|max:10000',
+            'radius_meters'        => 'nullable|integer|min:0|max:1000',
             'grace_period_minutes' => 'nullable|integer|min:1|max:60',
         ]);
 
@@ -341,8 +343,18 @@ class QrAttendanceController extends Controller
             }
         }
 
+        $radius = $request->has('radius_meters') ? (int) $request->radius_meters : 50;
+        if ($radius > 0 && (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy'))) {
+            return response()->json(['success' => false, 'message' => 'A fresh, accurate teacher laptop location is required to start a geofenced session.'], 422);
+        }
+        if ($radius > 0 && (float) $request->teacher_accuracy > 50) {
+            return response()->json(['success' => false, 'message' => 'Teacher laptop GPS accuracy is too poor. Please retry location capture.'], 422);
+        }
         $lat = $request->classroom_lat;
         $lng = $request->classroom_lng;
+        if ($radius > 0 && (float) $lat === 0.0 && (float) $lng === 0.0) {
+            return response()->json(['success' => false, 'message' => 'The laptop returned an invalid 0,0 location. Please retry.'], 422);
+        }
         if ($lat !== null && $lng !== null) {
             [$lat, $lng] = self::normalizeCoordinates((float) $lat, (float) $lng);
         }
@@ -353,7 +365,7 @@ class QrAttendanceController extends Controller
                 $request->subject_code, 
                 $lat, 
                 $lng,
-                $request->radius_meters,
+                $radius,
                 $request->grace_period_minutes
             );
 
@@ -365,6 +377,15 @@ class QrAttendanceController extends Controller
                 'radius'       => $session->getAllowedRadius(),
                 'grace_period' => $session->getGracePeriodMinutes(),
             ]);
+            if (config('app.debug')) {
+                Log::debug('Geofence teacher center captured', [
+                    'session_id' => $session->id,
+                    'teacher_latitude' => $session->classroom_lat,
+                    'teacher_longitude' => $session->classroom_lng,
+                    'teacher_accuracy_meters' => $request->teacher_accuracy,
+                    'allowed_radius_meters' => $session->getAllowedRadius(),
+                ]);
+            }
 
             return response()->json([
                 'success'              => true,
@@ -397,9 +418,10 @@ class QrAttendanceController extends Controller
     {
         $request->validate([
             'session_id'    => 'required|integer|exists:attendance_sessions,id',
-            'classroom_lat' => 'required|numeric|between:-90,90',
-            'classroom_lng' => 'required|numeric|between:-180,180',
-            'radius_meters' => 'nullable|integer|min:-1|max:1000',
+            'classroom_lat' => 'nullable|numeric|between:-90,90',
+            'classroom_lng' => 'nullable|numeric|between:-180,180',
+            'teacher_accuracy' => 'nullable|numeric|gt:0|max:10000',
+            'radius_meters' => 'nullable|integer|min:0|max:1000',
         ]);
 
         $session = AttendanceSession::findOrFail($request->session_id);
@@ -411,13 +433,44 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized to update this session.'], 403);
         }
 
-        [$lat, $lng] = self::normalizeCoordinates((float) $request->classroom_lat, (float) $request->classroom_lng);
-        $session->classroom_lat = $lat;
-        $session->classroom_lng = $lng;
+        if (!$session->isSessionActive()) {
+            return response()->json(['success' => false, 'message' => 'Only an active session can be updated.'], 422);
+        }
+        $hasLocation = $request->filled('classroom_lat') || $request->filled('classroom_lng');
+        if (!$hasLocation && !$request->has('radius_meters')) {
+            return response()->json(['success' => false, 'message' => 'No location or radius change was provided.'], 422);
+        }
+        if ($hasLocation) {
+            if (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy')) {
+                return response()->json(['success' => false, 'message' => 'Both laptop coordinates and GPS accuracy are required to update the center.'], 422);
+            }
+            if ((float) $request->teacher_accuracy > 50) {
+                return response()->json(['success' => false, 'message' => 'Teacher laptop GPS accuracy is too poor. Please retry.'], 422);
+            }
+            [$lat, $lng] = self::normalizeCoordinates((float) $request->classroom_lat, (float) $request->classroom_lng);
+            if ($lat === 0.0 && $lng === 0.0) {
+                return response()->json(['success' => false, 'message' => 'The laptop returned an invalid 0,0 location. Please retry.'], 422);
+            }
+            $session->classroom_lat = $lat;
+            $session->classroom_lng = $lng;
+        }
+        if ($request->has('radius_meters') && (int) $request->radius_meters > 0 &&
+            ($session->classroom_lat === null || $session->classroom_lng === null)) {
+            return response()->json(['success' => false, 'message' => 'Capture the teacher laptop location before enabling the geofence.'], 422);
+        }
         if ($request->has('radius_meters') && $request->radius_meters !== null) {
             $session->radius_meters = (int) $request->radius_meters;
         }
         $session->save();
+        if (config('app.debug')) {
+            Log::debug('Geofence session updated by teacher', [
+                'session_id' => $session->id,
+                'teacher_latitude' => $session->classroom_lat,
+                'teacher_longitude' => $session->classroom_lng,
+                'teacher_accuracy_meters' => $request->teacher_accuracy,
+                'allowed_radius_meters' => $session->getAllowedRadius(),
+            ]);
+        }
 
         Log::info('Teacher updated session classroom location', [
             'session_id'    => $session->id,
