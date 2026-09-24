@@ -4239,44 +4239,7 @@
 
         </div>
 
-        <!-- Full-Width Card: Anti-Proxy & Multi-Tier Verification Security Summary -->
-        <div class="sc mt-4" style="border-color:rgba(207,164,111,0.14);">
-            <div class="sc-head">
-                <div class="sc-icon" style="background:rgba(207,164,111,0.12);color:#cfa46f;"><i class="bi bi-shield-check"></i></div>
-                <div>
-                    <div class="sc-title">Device Security &amp; Multi-Tier Anti-Proxy Engine</div>
-                    <div class="sc-sub">How our hardware binding protects attendance integrity</div>
-                </div>
-            </div>
-            <div class="sc-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
-                            <div style="font-size:1.05rem;font-weight:700;color:#4ade80;margin-bottom:6px;"><i class="bi bi-fingerprint"></i> Silicon Fingerprint</div>
-                            <div style="font-size:0.8rem;color:#b39b82;line-height:1.5;">
-                                Deep WebGL shader compilation, GPU vendor unmasking, and canvas hashing creates a unique silicon fingerprint tied directly to your attendance profile.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
-                            <div style="font-size:1.05rem;font-weight:700;color:#60a5fa;margin-bottom:6px;"><i class="bi bi-broadcast-pin"></i> Cellular &amp; Wi-Fi Roaming</div>
-                            <div style="font-size:0.8rem;color:#b39b82;line-height:1.5;">
-                                Multi-tier self-healing recognizes dynamic IP address shifts between school Wi-Fi and mobile 4G/5G data without triggering false device mismatch errors.
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.08);border-radius:12px;padding:16px;">
-                            <div style="font-size:1.05rem;font-weight:700;color:#f59e0b;margin-bottom:6px;"><i class="bi bi-person-x-fill"></i> Anti-Proxy Sharing Protection</div>
-                            <div style="font-size:0.8rem;color:#b39b82;line-height:1.5;">
-                                Strict 1-student-per-device rules prevent unauthorized proxy clock-ins from shared hardware within the same classroom session.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
 
     </div>
 
@@ -7396,7 +7359,7 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Fingerprint Registration', desc: 'Register hardware fingerprint sensor via WebAuthn', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'methodCardFp' },
     { title: 'Face Recognition Registration', desc: 'Scan and register facial biometric vector', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-camera-video', elId: 'methodCardFace' },
     { title: 'Registered Hardware Credentials', desc: 'View, test, or remove registered biometric tokens', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-usb-drive', elId: 'deviceList' },
-    { title: 'Device Binding & Silicon Trust', desc: 'Hardware binding, WebGL silicon fingerprinting, trust score', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
+    { title: 'Device Binding & Trust', desc: 'Hardware device binding and attendance authorization', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
     { title: 'Bind Current Device', desc: 'Cryptographically bind this phone or computer to your attendance', cat: 'Security & Access', tab: 'device', icon: 'bi-phone-fill', elId: 'tabDeviceBindBtn' },
     { title: 'Emergency Device Lock', desc: 'Lock attendance check-ins exclusively to your authorized device', cat: 'Security & Access', tab: 'device', icon: 'bi-shield-lock-fill', elId: 'tab-device' },
     { title: 'Attendance Standing & KPIs', desc: 'Present, Late, Absent metrics and overall percentage', cat: 'System & Academics', tab: 'attendance', icon: 'bi-bar-chart-fill', elId: 'tab-attendance' },
