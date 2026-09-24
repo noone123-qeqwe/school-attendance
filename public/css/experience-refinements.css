@@ -1,0 +1,275 @@
+/*
+ * Shared experience refinements
+ * Loaded after the portal styles so desktop, tablet, and phone controls share
+ * the same usable spacing, focus treatment, and responsive behavior.
+ */
+
+:root {
+    --ux-focus: rgba(249, 229, 150, 0.78);
+    --ux-focus-ring: rgba(212, 175, 55, 0.22);
+    --ux-surface-raised: rgba(255, 255, 255, 0.045);
+    --ux-divider: rgba(255, 255, 255, 0.08);
+}
+
+html {
+    /* Avoid oversized desktop controls while preserving mobile's natural scale. */
+    zoom: 1;
+}
+
+body {
+    text-rendering: optimizeLegibility;
+}
+
+::selection {
+    background: rgba(212, 175, 55, 0.36);
+    color: #fffdf7;
+}
+
+/* Keyboard users get a highly visible, consistent path through every screen. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--ux-focus) !important;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 5px var(--ux-focus-ring) !important;
+}
+
+/* Reliable target sizes and comfortable form controls on touch and pointer devices. */
+button,
+.btn,
+.ent-btn,
+.btn-modern-primary,
+.btn-modern-gold,
+.btn-modern-glass,
+.header-search-bar {
+    min-height: 42px;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select,
+textarea,
+.form-control,
+.form-select {
+    border-radius: 10px;
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
+select,
+.form-control,
+.form-select {
+    min-height: 44px;
+}
+
+textarea,
+.form-control,
+.form-select,
+input:not([type='checkbox']):not([type='radio']):not([type='range']) {
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.form-control:focus,
+.form-select:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: rgba(249, 229, 150, 0.78) !important;
+    box-shadow: 0 0 0 4px var(--ux-focus-ring) !important;
+}
+
+/* Desktop: use the available canvas without allowing long rows to become hard to scan. */
+@media (min-width: 769px) {
+    .content-pad {
+        padding: clamp(24px, 3vw, 44px) clamp(24px, 4vw, 64px);
+        max-width: 1720px;
+    }
+
+    .top-header {
+        padding-inline: clamp(20px, 2.5vw, 40px);
+    }
+
+    .sidebar .nav-link {
+        min-height: 44px;
+        margin-bottom: 4px;
+    }
+
+    .sidebar .nav-link.active {
+        box-shadow: inset 0 0 0 1px rgba(212, 175, 55, 0.12);
+    }
+
+    .adm-card-head,
+    .modern-table-card-head,
+    .saas-card-header {
+        gap: 16px;
+    }
+}
+
+/* Prevent dense action rows and tables from creating accidental horizontal clipping. */
+.page-actions,
+.header-actions,
+.card-actions,
+.directory-actions {
+    gap: 10px;
+}
+
+.table-responsive,
+.saas-table-container,
+.adm-table-wrap,
+.modern-table-card {
+    scrollbar-color: rgba(212, 175, 55, 0.55) transparent;
+    scrollbar-width: thin;
+}
+
+table th {
+    letter-spacing: 0.035em;
+}
+
+/* Better reading rhythm in cards without changing the page-specific visual system. */
+.adm-card,
+.tch-card,
+.glass-card,
+.modern-table-card,
+.saas-card,
+.ent-section {
+    scroll-margin-top: 100px;
+}
+
+/* Phone and compact tablet: information gets a predictable single-column cadence. */
+@media (max-width: 768px) {
+    body {
+        font-size: 16px;
+    }
+
+    .content-pad,
+    .container-fluid,
+    .p-4 {
+        padding-left: max(16px, env(safe-area-inset-left)) !important;
+        padding-right: max(16px, env(safe-area-inset-right)) !important;
+    }
+
+    .content-pad {
+        padding-top: 20px !important;
+    }
+
+    .top-header {
+        padding-inline: max(12px, env(safe-area-inset-left));
+    }
+
+    .header-page-sub {
+        display: none;
+    }
+
+    .header-page-title {
+        max-width: 36vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .header-search-bar {
+        width: 42px !important;
+        min-width: 42px;
+        padding: 0;
+        justify-content: center;
+    }
+
+    .header-search-bar .header-search-text,
+    .header-search-bar .header-search-shortcut {
+        display: none;
+    }
+
+    .header-search-icon {
+        margin-right: 0;
+    }
+
+    .stat-grid,
+    .stat-grid-3,
+    .stat-grid-4 {
+        gap: 12px;
+    }
+
+    .adm-card,
+    .tch-card,
+    .glass-card,
+    .modern-table-card,
+    .saas-card,
+    .ent-section {
+        border-radius: 16px;
+        margin-bottom: 16px;
+    }
+
+    .adm-card-head,
+    .modern-table-card-head,
+    .saas-card-header {
+        padding: 16px;
+    }
+
+    .page-actions > .btn,
+    .header-actions > .btn,
+    .card-actions > .btn,
+    .directory-actions > .btn {
+        min-height: 42px;
+    }
+
+    .table-responsive,
+    .saas-table-container,
+    .adm-table-wrap {
+        margin-inline: -2px;
+    }
+
+    /* Dedicated mobile shell */
+    .mobile-app {
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+        padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 28px);
+    }
+
+    .mobile-header {
+        background: rgba(26, 26, 26, 0.94);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+    }
+
+    .mobile-bottom-nav {
+        background: rgba(26, 26, 26, 0.94);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border-top-color: rgba(207, 164, 111, 0.18);
+    }
+
+    .mobile-bottom-nav .nav-item,
+    .mobile-bottom-nav .mbn-item {
+        min-height: 48px;
+    }
+
+    .quick-actions-grid {
+        gap: 10px;
+    }
+
+    .quick-action-btn {
+        min-height: 126px;
+        padding: 18px 12px;
+    }
+}
+
+@media (max-width: 380px) {
+    .content-pad,
+    .container-fluid,
+    .p-4,
+    .mobile-app {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .header-page-title {
+        max-width: 31vw;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}

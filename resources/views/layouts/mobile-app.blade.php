@@ -171,6 +171,7 @@
 
     @include('partials.pwa-tags')
     @stack('styles')
+    <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
 </head>
 <body class="mobile-app-layout">
     <!-- Mobile Header -->
