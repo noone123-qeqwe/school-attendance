@@ -40,9 +40,10 @@ async function trimCache(cacheName, maxItems) {
 
 // Install: precache essential offline assets
 self.addEventListener('install', (event) => {
-    // Always activate immediately — prevents deadlocks where the old SW
-    // serves a cached offline/error page and the update popup never appears.
-    self.skipWaiting();
+    // If there is no active controller, activate immediately; otherwise preserve active session
+    if (!self.registration || !self.registration.active) {
+        self.skipWaiting();
+    }
 
     event.waitUntil(
         caches.open(STATIC_CACHE_NAME).then((cache) => {

@@ -2368,6 +2368,11 @@ function openBiometricModal(config) {
 
 function closeBiometricModal() {
     if (typeof stopFaceRecognitionLoginCamera === 'function') stopFaceRecognitionLoginCamera();
+    if (bioAbortController) {
+        try { bioAbortController.abort(); } catch(e) {}
+        bioAbortController = null;
+    }
+    resetBiometricButton();
     var modal = document.getElementById('biometricModal');
     if (!modal) return;
     modal.classList.remove('active');
@@ -2757,32 +2762,33 @@ function filterAvailableBiometricMethods(serverMethods, deviceCaps) {
         });
     }
 
-    // Fallback if empty but platform authenticator available
-    if (methods.length === 0 && deviceCaps.isPlatformAvailable) {
-        if (deviceCaps.isIosFaceId) {
-            methods.push({
-                id: 'face',
-                name: 'Face ID',
-                desc: 'Look at screen to sign in with Face ID',
-                icon: 'bi-person-bounding-box',
-                uv: 'preferred'
-            });
-        } else {
+    // Fallback if empty
+    if (methods.length === 0) {
+        if (deviceCaps.isWebAuthnSupported || deviceCaps.isPlatformAvailable) {
             methods.push({
                 id: 'fingerprint',
-                name: 'Fingerprint',
+                name: deviceCaps.isMac ? 'Touch ID / Fingerprint' : 'Fingerprint / Biometric',
                 desc: 'Touch sensor or scan fingerprint to sign in',
                 icon: 'bi-fingerprint',
                 uv: 'preferred'
             });
+            methods.push({
+                id: 'device_lock',
+                name: deviceCaps.isWindows ? 'Windows Hello / PIN' : 'Device PIN / Passkey',
+                desc: 'Use device PIN, passkey, or screen lock',
+                icon: 'bi-shield-lock-fill',
+                uv: 'preferred'
+            });
         }
-        methods.push({
-            id: 'device_lock',
-            name: 'Device PIN / Screen Lock',
-            desc: 'Use device PIN, pattern, or system password',
-            icon: 'bi-shield-lock-fill',
-            uv: 'required'
-        });
+        if (deviceCaps.hasCamera) {
+            methods.push({
+                id: 'face',
+                name: deviceCaps.isIOS ? 'Face ID' : 'Face Recognition',
+                desc: 'Look at camera to verify your face',
+                icon: 'bi-person-bounding-box',
+                uv: 'preferred'
+            });
+        }
     }
 
     return methods;
@@ -2902,7 +2908,7 @@ function triggerCaptureFlash(containerId) {
 
 async function detectAndAnalyzeFaceFrame(video) {
     // 1. Validate video readyState and dimensions
-    if (!video || !video.videoWidth || !video.videoHeight || video.readyState < 2 || video.paused) {
+    if (!video || !video.videoWidth || !video.videoHeight || video.readyState < 2) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -2910,6 +2916,9 @@ async function detectAndAnalyzeFaceFrame(video) {
             score: 0,
             message: 'No face detected. Please position your face in front of the camera.'
         };
+    }
+    if (video.paused && video.srcObject) {
+        try { await video.play(); } catch(e) {}
     }
 
     var vw = 160;
@@ -2930,7 +2939,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    // Undistorted center-crop
+    // Undistorted center-crop: crop square region from center of video to preserve true facial aspect ratio
     var srcW = video.videoWidth;
     var srcH = video.videoHeight;
     var minDim = Math.min(srcW, srcH);
@@ -2965,6 +2974,7 @@ async function detectAndAnalyzeFaceFrame(video) {
             if (luma > maxLuma) maxLuma = luma;
             sampledCount++;
 
+            // Sample edge gradients in central facial zone
             if (x >= 24 && x <= 136 && y >= 24 && y <= 136 && x + 2 < vw && y + 2 < vh) {
                 var rightIdx = (y * vw + (x + 2)) * 4;
                 var downIdx = ((y + 2) * vw + x) * 4;
@@ -2982,6 +2992,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var lumaContrast = maxLuma - minLuma;
     var avgEdgeGradient = edgeSamples > 0 ? (totalEdgeEnergy / edgeSamples) : 0;
 
+    // Reject dark / covered frame
     if (avgLuma < 10 || (avgLuma < 14 && lumaContrast < 12 && lumaStdDev < 4.0)) {
         return {
             status: 'UNUSABLE',
@@ -2992,6 +3003,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
+    // Reject glare
     if (avgLuma > 248 && lumaContrast < 18) {
         return {
             status: 'UNUSABLE',
@@ -3002,7 +3014,8 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if (avgEdgeGradient < 0.9) {
+    // Sharpness check: threshold relaxed to 0.28 to accommodate smooth webcams / indoor lighting
+    if (avgEdgeGradient < 0.28) {
         return {
             status: 'BLURRY',
             passed: false,
@@ -3099,10 +3112,22 @@ async function detectAndAnalyzeFaceFrame(video) {
     }
 
     var activeGrid = new Array(gridCols * gridRows).fill(false);
+    var activeCount = 0;
     for (var i = 0; i < gridCols * gridRows; i++) {
         var density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-        if (density >= 0.08) {
+        if (density >= 0.20) {
             activeGrid[i] = true;
+            activeCount++;
+        }
+    }
+
+    // Adaptive fallback if lighting makes skin counts softer
+    if (activeCount < 4) {
+        for (var i = 0; i < gridCols * gridRows; i++) {
+            var density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
+            if (density >= 0.12) {
+                activeGrid[i] = true;
+            }
         }
     }
 
@@ -3150,6 +3175,12 @@ async function detectAndAnalyzeFaceFrame(video) {
                         if (cc < minC) minC = cc;
                         if (cc > maxC) maxC = cc;
                     }
+
+                    // Trim excessive bottom rows (neck / clothing) if cluster spans almost all vertical rows
+                    if (minR <= 2 && maxR >= 8 && (maxR - minR >= 7)) {
+                        maxR = Math.min(maxR, 7);
+                    }
+
                     var centerCol = (minC + maxC) / 2;
                     var centerRw = (minR + maxR) / 2;
                     var distFromCenter = Math.hypot(centerCol - 4.5, centerRw - 4.5);
@@ -3224,7 +3255,7 @@ async function detectAndAnalyzeFaceFrame(video) {
             message: 'Move closer to the camera.'
         };
     }
-    if (wRatio > 0.94 || faceW > 152 || faceH > 154) {
+    if (wRatio > 0.96 || (faceW > 154 && faceH > 154)) {
         return {
             status: 'TOO_CLOSE',
             passed: false,
@@ -3240,7 +3271,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var offX = Math.abs(centerX - (vw / 2)) / vw;
     var offY = Math.abs(centerY - (vh / 2)) / vh;
 
-    if (offX > 0.32 || offY > 0.34) {
+    if (offX > 0.34 || offY > 0.36) {
         return {
             status: 'OFF_CENTER',
             passed: false,
@@ -3250,7 +3281,11 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if ((faceX <= 0 || faceY <= 0 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 110 || faceH > 115)) {
+    // Partial face check: only flag if significantly cut off at edges
+    var isClippedLeft = faceX <= 0 && (faceX + faceW) < 80;
+    var isClippedRight = (faceX + faceW) >= 159 && faceX > 80;
+    var isClippedBottom = (faceY + faceH) >= 159 && faceY > 90;
+    if (isClippedLeft || isClippedRight || isClippedBottom) {
         return {
             status: 'PARTIAL_FACE',
             passed: false,
@@ -3262,7 +3297,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 6. Aspect ratio
     var aspect = faceH / Math.max(1, faceW);
-    if (aspect < 0.65 || aspect > 2.6) {
+    if (aspect < 0.60 || aspect > 2.8) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -3325,21 +3360,21 @@ async function detectAndAnalyzeFaceFrame(video) {
     var avgCheek      = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
     var avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
 
-    var score = isNativeDetected ? 62 : 50; // Base confidence for confirmed face
+    var score = isNativeDetected ? 65 : 54; // Base confidence for confirmed face
 
     // A. Aspect ratio fit (0 - 15 pts)
-    if (aspect >= 1.00 && aspect <= 1.80) {
+    if (aspect >= 0.85 && aspect <= 1.95) {
         score += 15;
-    } else if (aspect >= 0.80 && aspect <= 2.15) {
+    } else if (aspect >= 0.70 && aspect <= 2.30) {
         score += 10;
     } else {
         score += 5;
     }
 
     // B. Centering and scale optimality (0 - 15 pts)
-    if (offX <= 0.16 && offY <= 0.18 && wRatio >= 0.24 && wRatio <= 0.78) {
+    if (offX <= 0.20 && offY <= 0.22 && wRatio >= 0.20 && wRatio <= 0.85) {
         score += 15;
-    } else if (offX <= 0.26 && offY <= 0.28) {
+    } else if (offX <= 0.30 && offY <= 0.32) {
         score += 10;
     } else {
         score += 5;
@@ -3350,15 +3385,15 @@ async function detectAndAnalyzeFaceFrame(video) {
     var eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
     var eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
 
-    if (eyeCheekRatioL <= 1.15 && eyeCheekRatioR <= 1.15) {
+    if (eyeCheekRatioL <= 1.25 && eyeCheekRatioR <= 1.25) {
         score += 6;
     } else {
         score += 3;
     }
 
-    if (eyeSymmetryDiff < 0.35) {
+    if (eyeSymmetryDiff < 0.45) {
         score += 6;
-    } else if (eyeSymmetryDiff < 0.55) {
+    } else if (eyeSymmetryDiff < 0.65) {
         score += 4;
     } else {
         score += 2;
@@ -3366,29 +3401,29 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // D. Nose bridge highlight vs eye contrast (0 - 8 pts)
     var noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
-    if (noseEyeDiff > -6) {
+    if (noseEyeDiff > -10) {
         score += 8;
-    } else if (noseEyeDiff > -16) {
+    } else if (noseEyeDiff > -20) {
         score += 5;
     } else {
-        score += 2;
+        score += 3;
     }
 
     // E. Mouth cavity depression / contrast (0 - 6 pts)
     var mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
-    if (mouthCheekRatio < 1.15) {
+    if (mouthCheekRatio < 1.25) {
         score += 6;
     } else {
         score += 3;
     }
 
     // F. Edge definition & sharpness bonus (0 - 6 pts)
-    if (avgEdgeGradient >= 1.8) {
+    if (avgEdgeGradient >= 0.9) {
         score += 6;
-    } else if (avgEdgeGradient >= 1.1) {
-        score += 4;
+    } else if (avgEdgeGradient >= 0.35) {
+        score += 5;
     } else {
-        score += 2;
+        score += 3;
     }
 
     score = Math.min(96, Math.max(0, Math.round(score)));
@@ -3562,6 +3597,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
     }
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        resetBiometricButton();
         if (video) video.style.display = 'none';
         if (holo) holo.style.display = 'flex';
         if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;">Camera access is not supported on this browser or requires HTTPS. Please sign in with your password.</span>';
@@ -3585,6 +3621,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
         }
     } catch(camErr) {
         console.warn('Camera error for face login:', camErr);
+        resetBiometricButton();
         if (video) video.style.display = 'none';
         if (holo) holo.style.display = 'flex';
         if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;"><i class="bi bi-camera-video-off me-1"></i>Camera access was denied. Please allow camera permission in browser settings, or use another method.</span>';
@@ -3620,6 +3657,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
         if (Date.now() - startTime > SCAN_TIMEOUT_MS) {
             bioFaceLoginActive = false;
             stopFaceRecognitionLoginCamera();
+            resetBiometricButton();
             if (descEl) descEl.innerHTML = '<span style="color:#fca5a5;"><i class="bi bi-clock-history me-1"></i>Face recognition timed out. Please position your face clearly in good lighting and try again.</span>';
             if (stateLabel) stateLabel.textContent = 'Face detection timed out';
             return;
@@ -3709,6 +3747,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
 
     if (bioAbortController?.signal?.aborted || !lastVerifiedAnalysis || !lastVerifiedAnalysis.passed) {
         stopFaceRecognitionLoginCamera();
+        resetBiometricButton();
         return;
     }
 
@@ -3836,15 +3875,19 @@ async function handleBiometricLogin() {
         fpRowBtn.blur();
     }
 
-    // If an active biometric scan is already in progress, tapping acts as a clean cancel!
-    if (isBioPending) {
+    // If an active biometric scan is already in progress and modal is visible, tapping acts as a clean cancel!
+    var bioModalEl = document.getElementById('biometricModal');
+    var isModalActive = bioModalEl && (bioModalEl.classList.contains('active') || bioModalEl.style.display === 'flex');
+    if (isBioPending && isModalActive) {
         if (bioAbortController) {
             try { bioAbortController.abort(); } catch(e) {}
+            bioAbortController = null;
         }
         resetBiometricButton();
         closeBiometricModal();
         return;
     }
+    isBioPending = false;
 
     // Guard: ensure environment supports WebAuthn / secure context
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -3941,15 +3984,16 @@ async function handleBiometricLogin() {
             resetBiometricButton();
             // Account has not registered biometrics
             if (opts.code === 'NOT_REGISTERED' || (optRes.status === 404 && opts.user_exists)) {
-                showFpMessage('warning', '<i class="bi bi-exclamation-triangle-fill me-2"></i>Biometric login is not registered for this account. Please use your password or register your biometrics first.');
+                showFpMessage('warning', '<i class="bi bi-shield-lock-fill me-2"></i>Biometric login is not registered for this account. Please use your password or set up biometrics.');
                 openBiometricModal({
                     title: 'BIOMETRIC NOT REGISTERED',
-                    message: 'Biometric login is not registered for this account. Please use your password or register your biometrics first.',
+                    identifier: identifier,
+                    message: 'Biometric sign-in is not registered for this account.<br><br>Would you like to verify your password and set up biometrics on this device now?',
                     badgeType: 'warning',
-                    primaryBtnText: 'SIGN IN WITH PASSWORD',
-                    secondaryBtnText: 'CANCEL',
-                    onPrimaryClick: closeBiometricModalAndFocusPassword,
-                    onSecondaryClick: closeBiometricModal
+                    primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>SET UP BIOMETRICS',
+                    secondaryBtnText: 'SIGN IN WITH PASSWORD',
+                    onPrimaryClick: function() { openBiometricSetupModal(identifier); },
+                    onSecondaryClick: closeBiometricModalAndFocusPassword
                 });
                 return;
             } else if (opts.code === 'ACCOUNT_NOT_FOUND' || optRes.status === 404) {

@@ -31,6 +31,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'pwa/update',
             'pwa/update/*',
+            'webauthn/login-options',
+            'webauthn/available-methods',
+            'webauthn/login',
+            'webauthn/setup-options',
+            'webauthn/setup-register',
+            'webauthn/register-options',
+            'webauthn/register',
+            'webauthn/devices',
+            'webauthn/device',
         ]);
 
         $middleware->alias([

@@ -592,6 +592,10 @@ async function registerFingerprint() {
         });
         const opts = await optRes.json();
 
+        if (!optRes.ok || !opts.challenge || !opts.user) {
+            throw new Error(opts.message || 'Failed to initialize biometric registration options.');
+        }
+
         const challenge = base64ToUint8Array(opts.challenge);
         const userId = base64ToUint8Array(opts.user.id);
         const hostname = window.location.hostname;
@@ -608,25 +612,56 @@ async function registerFingerprint() {
             id: base64ToUint8Array(c.id)
         }));
 
-        const credential = await navigator.credentials.create({
-            publicKey: {
-                challenge,
-                rp: rp,
-                user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-                pubKeyCredParams: opts.pubKeyCredParams || [
-                    { type: 'public-key', alg: -7 },
-                    { type: 'public-key', alg: -257 }
-                ],
-                authenticatorSelection: opts.authenticatorSelection || {
-                    authenticatorAttachment: 'platform',
-                    userVerification: 'preferred',
-                    requireResidentKey: false
-                },
-                timeout: opts.timeout || 60000,
-                attestation: opts.attestation || 'none',
-                excludeCredentials
+        let credential = null;
+        try {
+            credential = await navigator.credentials.create({
+                publicKey: {
+                    challenge,
+                    rp: rp,
+                    user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
+                    pubKeyCredParams: opts.pubKeyCredParams || [
+                        { type: 'public-key', alg: -7 },
+                        { type: 'public-key', alg: -257 }
+                    ],
+                    authenticatorSelection: opts.authenticatorSelection || {
+                        authenticatorAttachment: 'platform',
+                        userVerification: 'preferred',
+                        requireResidentKey: false
+                    },
+                    timeout: opts.timeout || 60000,
+                    attestation: opts.attestation || 'none',
+                    excludeCredentials
+                }
+            });
+        } catch (credErr) {
+            // Fallback for devices without strict platform authenticator
+            if (credErr.name === 'NotSupportedError' || credErr.name === 'ConstraintError') {
+                credential = await navigator.credentials.create({
+                    publicKey: {
+                        challenge,
+                        rp: rp,
+                        user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
+                        pubKeyCredParams: opts.pubKeyCredParams || [
+                            { type: 'public-key', alg: -7 },
+                            { type: 'public-key', alg: -257 }
+                        ],
+                        authenticatorSelection: {
+                            userVerification: 'preferred',
+                            requireResidentKey: false
+                        },
+                        timeout: opts.timeout || 60000,
+                        attestation: 'none',
+                        excludeCredentials
+                    }
+                });
+            } else {
+                throw credErr;
             }
-        });
+        }
+
+        if (!credential) {
+            throw new Error('Biometric registration was cancelled.');
+        }
 
         const rawId = bufferToBase64Url(credential.rawId);
         const clientDataJSON = bufferToBase64Url(

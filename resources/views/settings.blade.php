@@ -4425,7 +4425,7 @@ if ('FaceDetector' in window) {
  */
 async function detectAndAnalyzeFaceFrame(video) {
     // 1. Validate video readyState and dimensions
-    if (!video || !video.videoWidth || !video.videoHeight || video.readyState < 2 || video.paused) {
+    if (!video || !video.videoWidth || !video.videoHeight || video.readyState < 2) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -4433,6 +4433,9 @@ async function detectAndAnalyzeFaceFrame(video) {
             score: 0,
             message: 'No face detected. Please position your face in front of the camera.'
         };
+    }
+    if (video.paused && video.srcObject) {
+        try { await video.play(); } catch(e) {}
     }
 
     const vw = 160;
@@ -4530,7 +4533,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     }
 
     // Reject blurry / unfocused frame (relaxed threshold to support 720p webcams while detecting motion blur)
-    if (avgEdgeGradient < 0.9) {
+    if (avgEdgeGradient < 0.28) {
         return {
             status: 'BLURRY',
             passed: false,
@@ -4636,10 +4639,22 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // Spatial Grid Clustering
     const activeGrid = new Array(gridCols * gridRows).fill(false);
+    let activeCount = 0;
     for (let i = 0; i < gridCols * gridRows; i++) {
         const density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-        if (density >= 0.08) {
+        if (density >= 0.20) {
             activeGrid[i] = true;
+            activeCount++;
+        }
+    }
+
+    // Adaptive fallback if lighting makes skin counts softer
+    if (activeCount < 4) {
+        for (let i = 0; i < gridCols * gridRows; i++) {
+            const density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
+            if (density >= 0.12) {
+                activeGrid[i] = true;
+            }
         }
     }
 
@@ -4682,6 +4697,12 @@ async function detectAndAnalyzeFaceFrame(video) {
                         if (cc < minC) minC = cc;
                         if (cc > maxC) maxC = cc;
                     }
+
+                    // Trim excessive bottom rows (neck / clothing) if cluster spans almost all vertical rows
+                    if (minR <= 2 && maxR >= 8 && (maxR - minR >= 7)) {
+                        maxR = Math.min(maxR, 7);
+                    }
+
                     const centerCol = (minC + maxC) / 2;
                     const centerRw = (minR + maxR) / 2;
                     const distFromCenter = Math.hypot(centerCol - 4.5, centerRw - 4.5);
@@ -4759,7 +4780,7 @@ async function detectAndAnalyzeFaceFrame(video) {
             message: 'Move closer to the camera.'
         };
     }
-    if (wRatio > 0.94 || faceW > 152 || faceH > 154) {
+    if (wRatio > 0.96 || (faceW > 154 && faceH > 154)) {
         return {
             status: 'TOO_CLOSE',
             passed: false,
@@ -4775,7 +4796,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     const offX = Math.abs(centerX - (vw / 2)) / vw;
     const offY = Math.abs(centerY - (vh / 2)) / vh;
 
-    if (offX > 0.32 || offY > 0.34) {
+    if (offX > 0.34 || offY > 0.36) {
         return {
             status: 'OFF_CENTER',
             passed: false,
@@ -4785,7 +4806,11 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    if ((faceX <= 0 || faceY <= 0 || (faceX + faceW) >= 159 || (faceY + faceH) >= 159) && (faceW > 110 || faceH > 115)) {
+    // Partial face check: only flag if significantly cut off at edges
+    const isClippedLeft = faceX <= 0 && (faceX + faceW) < 80;
+    const isClippedRight = (faceX + faceW) >= 159 && faceX > 80;
+    const isClippedBottom = (faceY + faceH) >= 159 && faceY > 90;
+    if (isClippedLeft || isClippedRight || isClippedBottom) {
         return {
             status: 'PARTIAL_FACE',
             passed: false,
@@ -4797,7 +4822,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // 6. Facial Aspect Ratio Validation
     const aspect = faceH / Math.max(1, faceW);
-    if (aspect < 0.65 || aspect > 2.6) {
+    if (aspect < 0.60 || aspect > 2.8) {
         return {
             status: 'NO_FACE',
             passed: false,
@@ -4864,21 +4889,21 @@ async function detectAndAnalyzeFaceFrame(video) {
     const avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
 
     // 8. Compute Facial Confidence & Verification Score (0 - 100)
-    let score = isNativeDetected ? 62 : 50; // Base confidence for confirmed face
+    let score = isNativeDetected ? 65 : 54; // Base confidence for confirmed face
 
     // A. Aspect ratio fit (0 - 15 pts)
-    if (aspect >= 1.00 && aspect <= 1.80) {
+    if (aspect >= 0.85 && aspect <= 1.95) {
         score += 15;
-    } else if (aspect >= 0.80 && aspect <= 2.15) {
+    } else if (aspect >= 0.70 && aspect <= 2.30) {
         score += 10;
     } else {
         score += 5;
     }
 
     // B. Centering and scale optimality (0 - 15 pts)
-    if (offX <= 0.16 && offY <= 0.18 && wRatio >= 0.24 && wRatio <= 0.78) {
+    if (offX <= 0.20 && offY <= 0.22 && wRatio >= 0.20 && wRatio <= 0.85) {
         score += 15;
-    } else if (offX <= 0.26 && offY <= 0.28) {
+    } else if (offX <= 0.30 && offY <= 0.32) {
         score += 10;
     } else {
         score += 5;
@@ -4889,15 +4914,15 @@ async function detectAndAnalyzeFaceFrame(video) {
     const eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
     const eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
 
-    if (eyeCheekRatioL <= 1.15 && eyeCheekRatioR <= 1.15) {
+    if (eyeCheekRatioL <= 1.25 && eyeCheekRatioR <= 1.25) {
         score += 6;
     } else {
         score += 3;
     }
 
-    if (eyeSymmetryDiff < 0.35) {
+    if (eyeSymmetryDiff < 0.45) {
         score += 6;
-    } else if (eyeSymmetryDiff < 0.55) {
+    } else if (eyeSymmetryDiff < 0.65) {
         score += 4;
     } else {
         score += 2;
@@ -4905,29 +4930,29 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     // D. Nose bridge highlight vs eye contrast (0 - 8 pts)
     const noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
-    if (noseEyeDiff > -6) {
+    if (noseEyeDiff > -10) {
         score += 8;
-    } else if (noseEyeDiff > -16) {
+    } else if (noseEyeDiff > -20) {
         score += 5;
     } else {
-        score += 2;
+        score += 3;
     }
 
     // E. Mouth cavity depression / contrast (0 - 6 pts)
     const mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
-    if (mouthCheekRatio < 1.15) {
+    if (mouthCheekRatio < 1.25) {
         score += 6;
     } else {
         score += 3;
     }
 
     // F. Edge definition & sharpness bonus (0 - 6 pts)
-    if (avgEdgeGradient >= 1.8) {
+    if (avgEdgeGradient >= 0.9) {
         score += 6;
-    } else if (avgEdgeGradient >= 1.1) {
-        score += 4;
+    } else if (avgEdgeGradient >= 0.35) {
+        score += 5;
     } else {
-        score += 2;
+        score += 3;
     }
 
     score = Math.min(96, Math.max(0, Math.round(score)));
@@ -5416,25 +5441,41 @@ async function beginFingerprintRegistration() {
             setTimeout(() => reject(err), 60000);
         });
 
+        const basePublicKey = {
+            challenge: challenge,
+            rp: rp,
+            user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
+            pubKeyCredParams: opts.pubKeyCredParams || [
+                { type: 'public-key', alg: -7 },
+                { type: 'public-key', alg: -257 }
+            ],
+            timeout: opts.timeout || 60000,
+            attestation: opts.attestation || 'none',
+            excludeCredentials: excludeCredentials
+        };
+
         const createPromise = navigator.credentials.create({
-            publicKey: {
-                challenge: challenge,
-                rp: rp,
-                user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-                pubKeyCredParams: opts.pubKeyCredParams || [
-                    { type: 'public-key', alg: -7 },
-                    { type: 'public-key', alg: -257 }
-                ],
+            publicKey: Object.assign({}, basePublicKey, {
                 authenticatorSelection: opts.authenticatorSelection || {
                     authenticatorAttachment: 'platform',
-                    userVerification: 'required',
+                    userVerification: 'preferred',
                     requireResidentKey: false
-                },
-                timeout: opts.timeout || 60000,
-                attestation: opts.attestation || 'none',
-                excludeCredentials: excludeCredentials
-            },
+                }
+            }),
             signal: bioAbortController.signal
+        }).catch(async (cErr) => {
+            if (cErr.name === 'NotSupportedError' || cErr.name === 'ConstraintError') {
+                return navigator.credentials.create({
+                    publicKey: Object.assign({}, basePublicKey, {
+                        authenticatorSelection: {
+                            userVerification: 'preferred',
+                            requireResidentKey: false
+                        }
+                    }),
+                    signal: bioAbortController.signal
+                });
+            }
+            throw cErr;
         });
 
         const credential = await Promise.race([createPromise, timeoutPromise]);
