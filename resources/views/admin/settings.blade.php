@@ -3,7 +3,8 @@
 @section('title', 'System Settings')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="admin-settings-page">
+<div class="admin-settings-header">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Settings</h1>
         <p class="saas-text-muted" style="margin:0;">Configure global system parameters and preferences.</p>
@@ -16,10 +17,10 @@
     </div>
 </div>
 
-<div style="display:grid; grid-template-columns:minmax(0, 1fr) 300px; gap:24px;">
+<div class="admin-settings-layout">
     
     <!-- Main Settings Form -->
-    <div class="saas-card" style="padding:24px;">
+    <div class="saas-card admin-settings-form" style="padding:24px;">
         <form id="settingsForm" action="{{ route('admin.settings.update') }}" method="POST">
             @csrf
             
@@ -27,7 +28,7 @@
                 <i class="bi bi-building saas-text-muted"></i> Institution Details
             </h3>
             
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+            <div class="admin-settings-fields" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">School / Institution Name</label>
                     <input type="text" name="school_name" class="saas-input" value="{{ env('APP_NAME', 'Smart Classroom System') }}">
@@ -49,7 +50,7 @@
                 <i class="bi bi-clock-history saas-text-muted"></i> Academic & Attendance
             </h3>
             
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+            <div class="admin-settings-fields" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">Current Academic Year</label>
                     <select name="academic_year" class="saas-input saas-select">
@@ -67,7 +68,7 @@
                 </div>
             </div>
             
-            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+            <div class="admin-settings-fields admin-settings-fields-three" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">Late Threshold (Minutes)</label>
                     <input type="number" name="late_threshold" class="saas-input" value="{{ \App\Models\Setting::get('late_threshold', 15) }}">
@@ -96,7 +97,7 @@
                 </button>
             </div>
             
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
+            <div class="admin-settings-fields" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
                 <div class="saas-form-group">
                     <label class="saas-label">QR Token Expiry (Seconds)</label>
                     <input type="number" name="qr_expiry" id="setting_qr_expiry" class="saas-input" value="{{ \App\Models\Setting::get('qr_expiry', 20) }}">
@@ -162,7 +163,7 @@
                         <i class="bi bi-crosshair"></i> Detect My Current Location
                     </button>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="admin-settings-fields" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                     <div class="saas-form-group">
                         <label class="saas-label">Campus Latitude</label>
                         <input type="number" step="any" name="gps_lat" id="setting_gps_lat" class="saas-input" placeholder="e.g. 14.509600" value="{{ \App\Models\Setting::get('gps_lat', '') }}">
@@ -254,11 +255,14 @@
                 <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Comma-separated list of IP addresses allowed to access the Admin panel. Leave blank to disable whitelisting.</p>
             </div>
             
+            <div class="admin-settings-footer">
+                <button type="submit" class="saas-btn saas-btn-primary"><i class="bi bi-save"></i> Save Changes</button>
+            </div>
         </form>
     </div>
     
     <!-- Sidebar Settings/Info -->
-    <div>
+    <div class="admin-settings-aside">
         <div class="saas-card" style="padding:20px; margin-bottom:20px;">
             <h4 class="saas-heading saas-heading-sm" style="margin-bottom:12px;">System Information</h4>
             <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
@@ -292,6 +296,7 @@
             </button>
         </div>
     </div>
+</div>
 </div>
 
 <script>
