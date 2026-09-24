@@ -42,29 +42,31 @@
 }
 
 .sp {
-    max-width: 1160px;
+    max-width: 1220px;
     margin: 0 auto;
     padding-bottom: 40px;
 }
 
-/* ── Command Center Header ── */
+/* ── Executive Command Header & Top Navbar ── */
+.settings-top-navbar,
 .settings-command-header {
-    background: linear-gradient(135deg, rgba(32, 23, 17, 0.9) 0%, rgba(18, 13, 10, 0.95) 100%);
+    background: linear-gradient(135deg, rgba(32, 23, 17, 0.94) 0%, rgba(18, 13, 10, 0.98) 100%);
     border: 1px solid rgba(207, 164, 111, 0.22);
     border-radius: 20px;
-    padding: 24px 28px;
-    margin-bottom: 24px;
+    padding: 20px 26px;
+    margin-bottom: 22px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 20px;
     flex-wrap: wrap;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
+.settings-top-navbar::after,
 .settings-command-header::after {
     content: '';
     position: absolute;
@@ -74,18 +76,20 @@
     height: 100%;
     background: radial-gradient(circle at 80% 30%, rgba(207, 164, 111, 0.12) 0%, transparent 70%);
     pointer-events: none;
+    border-radius: 20px;
 }
+.settings-top-left,
 .settings-command-left {
     display: flex;
     align-items: center;
     gap: 18px;
     min-width: 0;
-    flex: 1;
+    flex: 1 1 360px;
 }
 .settings-avatar-chip {
     position: relative;
-    width: 58px;
-    height: 58px;
+    width: 54px;
+    height: 54px;
     border-radius: 16px;
     padding: 2.5px;
     background: linear-gradient(135deg, #f5dfa8 0%, #cfa46f 50%, #754535 100%);
@@ -104,12 +108,45 @@
     position: absolute;
     bottom: -2px;
     right: -2px;
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: #22c55e;
     border: 2.5px solid #140e0b;
     box-shadow: 0 0 8px #22c55e;
+}
+.settings-title-group {
+    min-width: 0;
+    flex: 1;
+}
+.settings-breadcrumb-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: #a89885;
+    background: rgba(207, 164, 111, 0.08);
+    border: 1px solid rgba(207, 164, 111, 0.16);
+    padding: 3px 10px;
+    border-radius: 99px;
+}
+.crumb-root {
+    color: #cfa46f;
+    display: inline-flex;
+    align-items: center;
+}
+.crumb-sep {
+    font-size: 0.65rem;
+    color: #7d6e5d;
+}
+.crumb-cat {
+    color: #f3e7cd;
+}
+.crumb-active {
+    color: #ffd700;
+    font-weight: 800;
 }
 .settings-header-badge-row {
     display: flex;
@@ -156,7 +193,7 @@
     50% { transform: scale(1.4); opacity: 0.5; }
 }
 .pg-title {
-    font-size: 1.65rem;
+    font-size: 1.55rem;
     font-weight: 800;
     background: linear-gradient(135deg, #ffffff 0%, #fef3c7 45%, #cfa46f 100%);
     -webkit-background-clip: text;
@@ -166,25 +203,164 @@
     margin: 0;
 }
 .pg-sub {
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     color: #b39b82;
-    margin-top: 4px;
-    line-height: 1.4;
+    margin-top: 3px;
+    line-height: 1.35;
 }
+
+/* ── Top Navbar Right & Search Filter ── */
+.settings-top-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.settings-search-box {
+    position: relative;
+    width: 290px;
+}
+.settings-search-icon {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #cfa46f;
+    font-size: 0.85rem;
+    pointer-events: none;
+}
+.settings-search-input {
+    width: 100%;
+    background: rgba(14, 11, 9, 0.75);
+    border: 1px solid rgba(207, 164, 111, 0.28);
+    border-radius: 12px;
+    padding: 9px 38px 9px 36px;
+    color: #fcfbf9;
+    font-size: 0.82rem;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.22s ease;
+}
+.settings-search-input:focus {
+    border-color: #cfa46f;
+    background: rgba(22, 17, 13, 0.96);
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.2), 0 6px 18px rgba(0,0,0,0.6);
+}
+.settings-search-input::placeholder {
+    color: #8c7d6d;
+    font-size: 0.78rem;
+}
+.settings-search-kbd {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 1px 6px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    font-family: inherit;
+    color: #cfa46f;
+    background: rgba(207, 164, 111, 0.12);
+    border: 1px solid rgba(207, 164, 111, 0.3);
+    border-radius: 6px;
+    pointer-events: none;
+}
+.settings-search-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    min-width: 320px;
+    background: #18130f;
+    border: 1px solid rgba(207, 164, 111, 0.35);
+    border-radius: 14px;
+    box-shadow: 0 16px 38px rgba(0,0,0,0.75), 0 0 18px rgba(207,164,111,0.18);
+    z-index: 1050;
+    padding: 6px;
+    max-height: 380px;
+    overflow-y: auto;
+    backdrop-filter: blur(25px);
+}
+.search-item-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    border: 1px solid transparent;
+}
+.search-item-row:hover, .search-item-row.selected {
+    background: rgba(207, 164, 111, 0.14);
+    border-color: rgba(207, 164, 111, 0.32);
+}
+.search-item-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(207, 164, 111, 0.14);
+    color: #f5dfa8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+.search-item-body {
+    flex: 1;
+    min-width: 0;
+}
+.search-item-title {
+    display: block;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #fffbeb;
+    line-height: 1.25;
+}
+.search-item-sub {
+    display: block;
+    font-size: 0.72rem;
+    color: #a89885;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.search-item-cat {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #cfa46f;
+    margin-left: auto;
+    padding: 2px 7px;
+    background: rgba(207, 164, 111, 0.1);
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.search-empty-state {
+    padding: 18px 14px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #8c7d6d;
+}
+
 .settings-command-telemetry {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
 }
 .telemetry-pill {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
     background: rgba(20, 15, 12, 0.65);
     border: 1px solid rgba(207, 164, 111, 0.18);
     border-radius: 12px;
-    padding: 8px 14px;
+    padding: 7px 12px;
     backdrop-filter: blur(10px);
     transition: all 0.2s ease;
 }
@@ -194,14 +370,14 @@
     transform: translateY(-1px);
 }
 .telemetry-pill i {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
 }
 .telemetry-pill-text {
     display: flex;
     flex-direction: column;
 }
 .telemetry-lbl {
-    font-size: 0.64rem;
+    font-size: 0.62rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
@@ -209,11 +385,210 @@
     line-height: 1;
 }
 .telemetry-val {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 800;
     color: #f3e7cd;
     line-height: 1.25;
     margin-top: 2px;
+}
+
+/* ── Master-Detail Layout Grid & Sidebar Navigation ── */
+.settings-layout-grid {
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    gap: 26px;
+    align-items: start;
+}
+.settings-sidebar {
+    background: linear-gradient(145deg, rgba(26, 20, 16, 0.92) 0%, rgba(16, 13, 11, 0.96) 100%);
+    border: 1px solid rgba(207, 164, 111, 0.18);
+    border-radius: 18px;
+    padding: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    position: sticky;
+    top: 24px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+.snav-group {
+    margin-bottom: 16px;
+}
+.snav-group:last-of-type {
+    margin-bottom: 8px;
+}
+.snav-group-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #8c7d6d;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+}
+.snav-group-header i {
+    color: #cfa46f;
+    font-size: 0.8rem;
+}
+.snav-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 3px;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+}
+.snav-item:hover {
+    background: rgba(207, 164, 111, 0.08);
+    border-color: rgba(207, 164, 111, 0.22);
+    transform: translateX(2px);
+}
+.snav-item.active {
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.22) 0%, rgba(166, 124, 67, 0.32) 100%) !important;
+    border: 1px solid rgba(207, 164, 111, 0.42) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+.snav-item-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(207, 164, 111, 0.1);
+    color: #cfa46f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+.snav-item:hover .snav-item-icon {
+    color: #f5dfa8;
+    background: rgba(207, 164, 111, 0.18);
+}
+.snav-item.active .snav-item-icon {
+    background: linear-gradient(135deg, #cfa46f 0%, #a67c43 100%);
+    color: #140703;
+    box-shadow: 0 2px 10px rgba(207, 164, 111, 0.4);
+}
+.snav-item-body {
+    flex: 1;
+    min-width: 0;
+}
+.snav-item-title {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #f3e7cd;
+    line-height: 1.25;
+}
+.snav-item.active .snav-item-title {
+    color: #fffbeb;
+}
+.snav-item-desc {
+    display: block;
+    font-size: 0.7rem;
+    color: #8f826f;
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.snav-item.active .snav-item-desc {
+    color: #dfceb7;
+}
+.snav-badge {
+    font-size: 0.63rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+}
+.snav-badge-emerald {
+    background: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+.snav-badge-amber {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.snav-badge-rose {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.snav-footer-card {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(207, 164, 111, 0.05);
+    border: 1px solid rgba(207, 164, 111, 0.12);
+}
+.snav-footer-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+.snav-footer-title {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #f3e7cd;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.snav-footer-sub {
+    font-size: 0.68rem;
+    color: #8c7d6d;
+    line-height: 1.35;
+}
+
+.settings-main-content {
+    min-width: 0;
+    flex: 1;
+}
+
+/* Quick jump highlight animation */
+@keyframes searchHighlightGlow {
+    0% { outline: 2px solid rgba(207, 164, 111, 0.95); box-shadow: 0 0 25px rgba(207, 164, 111, 0.6); }
+    100% { outline: 2px solid transparent; box-shadow: none; }
+}
+.search-highlight-pulse {
+    animation: searchHighlightGlow 2.5s ease-out;
+}
+
+/* Desktop and Tablet visibility rules */
+@media (min-width: 992px) {
+    .stabs-wrapper {
+        display: none !important;
+    }
+    .settings-sidebar {
+        display: block !important;
+    }
+}
+@media (max-width: 991.98px) {
+    .settings-layout-grid {
+        display: block !important;
+    }
+    .settings-sidebar {
+        display: none !important;
+    }
+    .stabs-wrapper {
+        display: flex !important;
+        margin-bottom: 22px !important;
+    }
 }
 
 /* ── Modern Segmented Pill Track ── */
@@ -2544,11 +2919,13 @@
             padding-right: 14px !important;
         }
 
+        .settings-top-navbar,
         .settings-command-header {
-            padding: 18px 18px !important;
+            padding: 16px 18px !important;
             border-radius: 16px !important;
-            gap: 16px !important;
+            gap: 14px !important;
         }
+        .settings-top-left,
         .settings-command-left {
             gap: 14px !important;
         }
@@ -2560,11 +2937,20 @@
         .settings-chip-avatar {
             border-radius: 10px !important;
         }
+        .settings-top-navbar .pg-title,
         .settings-command-header .pg-title {
-            font-size: 1.35rem !important;
+            font-size: 1.3rem !important;
         }
+        .settings-top-navbar .pg-sub,
         .settings-command-header .pg-sub {
-            font-size: 0.78rem !important;
+            font-size: 0.76rem !important;
+        }
+        .settings-search-box {
+            width: 100% !important;
+        }
+        .settings-top-right {
+            width: 100% !important;
+            justify-content: stretch !important;
         }
         .settings-command-telemetry {
             width: 100% !important;
@@ -2665,57 +3051,68 @@
 
 <div class="sp">
 
-    <!-- ── COMMAND CENTER HEADER ── -->
-    <div class="settings-command-header">
-        <div class="settings-command-left">
+    <!-- ── EXECUTIVE COMMAND HEADER & BREADCRUMBS ── -->
+    <div class="settings-top-navbar settings-command-header">
+        <div class="settings-top-left settings-command-left">
             <div class="settings-avatar-chip">
                 <img src="{{ Auth::user()->profile_photo_url }}" alt="{{ Auth::user()->name }}" class="settings-chip-avatar">
                 <span class="settings-chip-status" title="Account Active & Protected"></span>
             </div>
-            <div>
-                <div class="settings-header-badge-row">
-                    <span class="settings-system-pill">
-                        <i class="bi bi-shield-check"></i> System Settings
-                    </span>
-                    <span class="settings-status-pill">
-                        <span class="pulse-beacon"></span> Protected
-                    </span>
+            <div class="settings-title-group">
+                <div class="settings-breadcrumb-bar">
+                    <span class="crumb-root"><i class="bi bi-shield-check me-1"></i>Settings</span>
+                    <i class="bi bi-chevron-right crumb-sep"></i>
+                    <span id="settingsBreadcrumbCategory" class="crumb-cat">Account</span>
+                    <i class="bi bi-chevron-right crumb-sep"></i>
+                    <span id="settingsBreadcrumbTab" class="crumb-active">Profile</span>
                 </div>
-                <div class="pg-title">Settings</div>
-                <div class="pg-sub">Manage your account, security credentials, hardware biometrics, and preferences</div>
+                <div class="pg-title">Settings & System Hub</div>
+                <div class="pg-sub">Manage your identity, biometric hardware, security locks, and portal configurations</div>
             </div>
         </div>
-        <div class="settings-command-telemetry">
-            <div class="telemetry-pill">
-                <i class="bi {{ Auth::user()->isAdmin() ? 'bi-shield-shaded' : (Auth::user()->isTeacher() ? 'bi-mortarboard-fill' : 'bi-person-badge-fill') }}" style="color:#cfa46f;"></i>
-                <div class="telemetry-pill-text">
-                    <span class="telemetry-lbl">Account Role</span>
-                    <span class="telemetry-val">{{ ucfirst(Auth::user()->role ?? 'Member') }}</span>
-                </div>
+
+        <div class="settings-top-right">
+            <!-- Search & Quick Navigation Input -->
+            <div class="settings-search-box">
+                <i class="bi bi-search settings-search-icon"></i>
+                <input type="text" id="settingsSearchInput" class="settings-search-input" placeholder="Search settings (Press '/' to focus)..." autocomplete="off" spellcheck="false" aria-label="Search settings">
+                <kbd class="settings-search-kbd">/</kbd>
+                <div id="settingsSearchResults" class="settings-search-dropdown" style="display:none;"></div>
             </div>
-            <div class="telemetry-pill">
-                <i class="bi bi-fingerprint" style="color:#4ade80;"></i>
-                <div class="telemetry-pill-text">
-                    <span class="telemetry-lbl">Biometrics</span>
-                    <span class="telemetry-val">FIDO2 Ready</span>
+
+            <!-- Quick Telemetry Chips -->
+            <div class="settings-command-telemetry">
+                <div class="telemetry-pill" title="Role">
+                    <i class="bi {{ Auth::user()->isAdmin() ? 'bi-shield-shaded' : (Auth::user()->isTeacher() ? 'bi-mortarboard-fill' : 'bi-person-badge-fill') }}" style="color:#cfa46f;"></i>
+                    <div class="telemetry-pill-text">
+                        <span class="telemetry-lbl">Role</span>
+                        <span class="telemetry-val">{{ ucfirst(Auth::user()->role ?? 'Member') }}</span>
+                    </div>
                 </div>
-            </div>
-            <div class="telemetry-pill">
-                <i class="bi bi-phone" style="color:{{ $deviceBinding ? '#34d399' : '#fbbf24' }};"></i>
-                <div class="telemetry-pill-text">
-                    <span class="telemetry-lbl">Device Lock</span>
-                    <span class="telemetry-val">{{ $deviceBinding ? 'Bound' : 'Not Bound' }}</span>
+                <div class="telemetry-pill" title="Biometrics">
+                    <i class="bi bi-fingerprint" style="color:#4ade80;"></i>
+                    <div class="telemetry-pill-text">
+                        <span class="telemetry-lbl">Biometrics</span>
+                        <span class="telemetry-val">FIDO2 Ready</span>
+                    </div>
                 </div>
-            </div>
-            @if(Auth::user()->isStudent() && $totalRecords > 0)
-            <div class="telemetry-pill">
-                <i class="bi bi-graph-up-arrow" style="color:{{ $rate >= 75 ? '#4ade80' : '#f87171' }};"></i>
-                <div class="telemetry-pill-text">
-                    <span class="telemetry-lbl">Attendance</span>
-                    <span class="telemetry-val">{{ $rate }}% Standing</span>
+                <div class="telemetry-pill" title="Device Lock">
+                    <i class="bi bi-phone" style="color:{{ $deviceBinding ? '#34d399' : '#fbbf24' }};"></i>
+                    <div class="telemetry-pill-text">
+                        <span class="telemetry-lbl">Device Lock</span>
+                        <span class="telemetry-val">{{ $deviceBinding ? 'Bound' : 'Not Bound' }}</span>
+                    </div>
                 </div>
+                @if(Auth::user()->isStudent() && $totalRecords > 0)
+                <div class="telemetry-pill" title="Attendance Standing">
+                    <i class="bi bi-graph-up-arrow" style="color:{{ $rate >= 75 ? '#4ade80' : '#f87171' }};"></i>
+                    <div class="telemetry-pill-text">
+                        <span class="telemetry-lbl">Attendance</span>
+                        <span class="telemetry-val">{{ $rate }}% Standing</span>
+                    </div>
+                </div>
+                @endif
             </div>
-            @endif
         </div>
     </div>
 
@@ -2726,7 +3123,7 @@
     <div class="flash-err"><i class="bi bi-exclamation-circle-fill fs-5"></i><span>{{ $errors->first() }}</span></div>
     @endif
 
-    <!-- TABS -->
+    <!-- ── MOBILE / COMPACT HORIZONTAL TAB BAR (<992px) ── -->
     <div class="stabs-wrapper">
         <div class="stabs-floating-hint" id="stabsFloatingHint" onclick="scrollStabs('right')" title="Scroll tabs" aria-label="Scrollable horizontal tabs">
             <span class="stabs-floating-pulse"></span>
@@ -2751,6 +3148,105 @@
             <i class="bi bi-chevron-right"></i>
         </button>
     </div>
+
+    <!-- ── MASTER-DETAIL LAYOUT GRID ── -->
+    <div class="settings-layout-grid">
+        <!-- ── MASTER SIDEBAR NAVIGATION (Desktop ≥992px) ── -->
+        <aside class="settings-sidebar">
+            <nav class="settings-side-nav" aria-label="Settings Categories">
+                <!-- Group 1: Account -->
+                <div class="snav-group">
+                    <div class="snav-group-header">
+                        <i class="bi bi-person-badge"></i>
+                        <span>Account</span>
+                    </div>
+                    <button type="button" class="snav-item active" data-tab="profile" onclick="switchTab('profile', this)">
+                        <span class="snav-item-icon"><i class="bi bi-person-circle"></i></span>
+                        <div class="snav-item-body">
+                            <span class="snav-item-title">Profile & Identity</span>
+                            <span class="snav-item-desc">Avatar, name & identity</span>
+                        </div>
+                    </button>
+                    @if(Auth::user()->isStudent())
+                    <button type="button" class="snav-item" data-tab="family" onclick="switchTab('family', this)">
+                        <span class="snav-item-icon"><i class="bi bi-people-fill"></i></span>
+                        <div class="snav-item-body">
+                            <span class="snav-item-title">Family & Guardian</span>
+                            <span class="snav-item-desc">Linked parent access</span>
+                        </div>
+                    </button>
+                    @endif
+                </div>
+
+                <!-- Group 2: Security & Hardware -->
+                <div class="snav-group">
+                    <div class="snav-group-header">
+                        <i class="bi bi-shield-lock"></i>
+                        <span>Security & Access</span>
+                    </div>
+                    <button type="button" class="snav-item" data-tab="security" onclick="switchTab('security', this)">
+                        <span class="snav-item-icon"><i class="bi bi-shield-lock-fill"></i></span>
+                        <div class="snav-item-body">
+                            <span class="snav-item-title">Security & Password</span>
+                            <span class="snav-item-desc">Password & 2FA protection</span>
+                        </div>
+                    </button>
+                    <button type="button" class="snav-item" data-tab="fingerprint" onclick="switchTab('fingerprint', this)">
+                        <span class="snav-item-icon"><i class="bi bi-fingerprint"></i></span>
+                        <div class="snav-item-body">
+                            <span class="snav-item-title">Biometrics Sensors</span>
+                            <span class="snav-item-desc">Fingerprint & Face ID</span>
+                        </div>
+                        <span class="snav-badge snav-badge-emerald">FIDO2</span>
+                    </button>
+                    <button type="button" class="snav-item" data-tab="device" onclick="switchTab('device', this)">
+                        <span class="snav-item-icon"><i class="bi bi-phone-fill"></i></span>
+                        <div class="snav-item-body">
+                            <span class="snav-item-title">Device Binding</span>
+                            <span class="snav-item-desc">Hardware trust & silicon locks</span>
+                        </div>
+                        <span class="snav-badge {{ $deviceBinding ? 'snav-badge-emerald' : 'snav-badge-amber' }}">{{ $deviceBinding ? 'Bound' : 'Action Req' }}</span>
+                    </button>
+                </div>
+
+                <!-- Group 3: Academics & Preferences -->
+                <div class="snav-group">
+                    <div class="snav-group-header">
+                        <i class="bi bi-sliders"></i>
+                        <span>System & Academics</span>
+                    </div>
+                    <button type="button" class="snav-item" data-tab="attendance" onclick="switchTab('attendance', this)">
+                        <span class="snav-item-icon"><i class="bi bi-bar-chart-fill"></i></span>
+                        <div class="snav-item-body">
+                            <span class="snav-item-title">Attendance History</span>
+                            <span class="snav-item-desc">KPIs, standing & records</span>
+                        </div>
+                        @if(Auth::user()->isStudent() && $totalRecords > 0)
+                        <span class="snav-badge {{ $rate >= 75 ? 'snav-badge-emerald' : 'snav-badge-rose' }}">{{ $rate }}%</span>
+                        @endif
+                    </button>
+                    <button type="button" class="snav-item" data-tab="preferences" onclick="switchTab('preferences', this)">
+                        <span class="snav-item-icon"><i class="bi bi-sliders"></i></span>
+                        <div class="snav-item-body">
+                            <span class="snav-item-title">System Preferences</span>
+                            <span class="snav-item-desc">Language, alerts & updates</span>
+                        </div>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Sidebar Trust & Quick Status Footer Card -->
+            <div class="snav-footer-card">
+                <div class="snav-footer-header">
+                    <span class="pulse-beacon"></span>
+                    <span class="snav-footer-title">Account Security</span>
+                </div>
+                <div class="snav-footer-sub">All credentials encrypted with AES-256 and WebAuthn hardware roots.</div>
+            </div>
+        </aside>
+
+        <!-- ── MAIN CONTENT WORKSPACE ── -->
+        <main class="settings-main-content">
 
     <!-- ── TAB: PROFILE ── -->
     <div id="tab-profile" class="spanel active">
@@ -4125,6 +4621,8 @@
         </div>
     </div>
 
+        </main> <!-- /settings-main-content -->
+    </div> <!-- /settings-layout-grid -->
 </div>
 
 <script nonce="{{ csp_nonce() }}">
@@ -4274,6 +4772,7 @@ window.switchTab = function(id, btn) {
     if (id === 'biometrics') id = 'fingerprint';
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.snav-item').forEach(b => b.classList.remove('active'));
 
     const targetPanel = document.getElementById('tab-' + id);
     if (targetPanel) {
@@ -4286,7 +4785,18 @@ window.switchTab = function(id, btn) {
     }
     if (targetBtn) {
         targetBtn.classList.add('active');
-        targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        if (typeof targetBtn.scrollIntoView === 'function') {
+            targetBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+    }
+
+    let targetNavItem = (btn && btn.classList && btn.classList.contains('snav-item')) ? btn : document.querySelector(`.snav-item[data-tab="${id}"]`);
+    if (targetNavItem) {
+        targetNavItem.classList.add('active');
+    }
+
+    if (typeof window.updateSettingsBreadcrumbs === 'function') {
+        window.updateSettingsBreadcrumbs(id);
     }
 
     if (id === 'fingerprint') {
@@ -4301,6 +4811,23 @@ window.switchTab = function(id, btn) {
         window.history.replaceState(null, null, '#tab-' + id);
     }
     setTimeout(updateStabsScrollArrows, 300);
+};
+
+window.updateSettingsBreadcrumbs = function(tabId) {
+    const meta = {
+        'profile': { cat: 'Account', name: 'Profile & Identity' },
+        'family': { cat: 'Account', name: 'Family & Guardian' },
+        'security': { cat: 'Security & Access', name: 'Security & Password' },
+        'fingerprint': { cat: 'Security & Access', name: 'Biometrics Sensors' },
+        'device': { cat: 'Security & Access', name: 'Device Binding' },
+        'attendance': { cat: 'System & Academics', name: 'Attendance History' },
+        'preferences': { cat: 'System & Academics', name: 'System Preferences' }
+    };
+    const info = meta[tabId] || { cat: 'Settings', name: tabId.charAt(0).toUpperCase() + tabId.slice(1) };
+    const catEl = document.getElementById('settingsBreadcrumbCategory');
+    const tabEl = document.getElementById('settingsBreadcrumbTab');
+    if (catEl) catEl.textContent = info.cat;
+    if (tabEl) tabEl.textContent = info.name;
 };
 
 // ── Attendance Device Binding API Handlers ──
@@ -6801,13 +7328,188 @@ function downloadRecoveryCodes() {
 
 
 
+const SETTINGS_SEARCH_INDEX = [
+    { title: 'Profile Photo & Avatar', desc: 'Change avatar, upload photo, preview appearance', cat: 'Account', tab: 'profile', icon: 'bi-person-bounding-box', elId: 'tab-profile' },
+    { title: 'Personal Information', desc: 'Name, email address, and role identity', cat: 'Account', tab: 'profile', icon: 'bi-person-vcard', elId: 'name' },
+    { title: 'Student ID Number', desc: '7-character institutional student ID', cat: 'Account', tab: 'profile', icon: 'bi-card-text', elId: 'studentId' },
+    { title: 'Change Password', desc: 'Update account password and security credentials', cat: 'Security & Access', tab: 'security', icon: 'bi-key-fill', elId: 'current_password' },
+    { title: 'Active Sessions & Audit Trail', desc: 'Review login history and active device sessions', cat: 'Security & Access', tab: 'security', icon: 'bi-shield-check', elId: 'tab-security' },
+    { title: 'Biometrics Sensors', desc: 'Manage hardware biometric credentials', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'tab-fingerprint' },
+    { title: 'Fingerprint Registration', desc: 'Register hardware fingerprint sensor via WebAuthn', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'methodCardFp' },
+    { title: 'Face Recognition Registration', desc: 'Scan and register facial biometric vector', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-camera-video', elId: 'methodCardFace' },
+    { title: 'Registered Hardware Credentials', desc: 'View, test, or remove registered biometric tokens', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-usb-drive', elId: 'deviceList' },
+    { title: 'Device Binding & Silicon Trust', desc: 'Hardware binding, WebGL silicon fingerprinting, trust score', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
+    { title: 'Bind Current Device', desc: 'Cryptographically bind this phone or computer to your attendance', cat: 'Security & Access', tab: 'device', icon: 'bi-phone-fill', elId: 'tabDeviceBindBtn' },
+    { title: 'Emergency Device Lock', desc: 'Lock attendance check-ins exclusively to your authorized device', cat: 'Security & Access', tab: 'device', icon: 'bi-shield-lock-fill', elId: 'tab-device' },
+    { title: 'Attendance Standing & KPIs', desc: 'Present, Late, Absent metrics and overall percentage', cat: 'System & Academics', tab: 'attendance', icon: 'bi-bar-chart-fill', elId: 'tab-attendance' },
+    { title: 'Attendance Log Records', desc: 'Detailed log history of classroom check-ins', cat: 'System & Academics', tab: 'attendance', icon: 'bi-calendar-check', elId: 'tab-attendance' },
+    { title: 'System Display Language', desc: 'Select English (US), Filipino, or Bikolano', cat: 'System & Academics', tab: 'preferences', icon: 'bi-translate', elId: 'tab-preferences' },
+    { title: 'Notification Alerts', desc: 'In-app notifications and email alert preferences', cat: 'System & Academics', tab: 'preferences', icon: 'bi-bell-fill', elId: 'tab-preferences' },
+    { title: 'Software Updates & PWA Assets', desc: 'Check latest system updates, security patches and offline assets', cat: 'System & Academics', tab: 'preferences', icon: 'bi-cloud-arrow-down-fill', elId: 'checkUpdateBtn' },
+    { title: 'Family & Guardian Link', desc: 'Connect parent accounts with QR code or link code', cat: 'Account', tab: 'family', icon: 'bi-people-fill', elId: 'tab-family' },
+    { title: 'Linked Guardians List', desc: 'View and manage authorized guardians with view-only access', cat: 'Account', tab: 'family', icon: 'bi-person-lines-fill', elId: 'tab-family' }
+];
+
+function initSettingsSearch() {
+    const input = document.getElementById('settingsSearchInput');
+    const dropdown = document.getElementById('settingsSearchResults');
+    if (!input || !dropdown) return;
+
+    let selectedIndex = -1;
+    let currentResults = [];
+
+    function renderResults(query) {
+        const q = (query || '').trim().toLowerCase();
+        if (!q) {
+            dropdown.style.display = 'none';
+            dropdown.innerHTML = '';
+            currentResults = [];
+            selectedIndex = -1;
+            return;
+        }
+
+        currentResults = SETTINGS_SEARCH_INDEX.filter(item => {
+            return item.title.toLowerCase().includes(q) ||
+                   item.desc.toLowerCase().includes(q) ||
+                   item.cat.toLowerCase().includes(q) ||
+                   item.tab.toLowerCase().includes(q);
+        });
+
+        if (currentResults.length === 0) {
+            dropdown.innerHTML = `<div class="search-empty-state"><i class="bi bi-search me-2"></i>No settings found matching "${query}".</div>`;
+            dropdown.style.display = 'block';
+            selectedIndex = -1;
+            return;
+        }
+
+        selectedIndex = 0;
+        dropdown.innerHTML = currentResults.map((item, idx) => `
+            <div class="search-item-row ${idx === 0 ? 'selected' : ''}" data-idx="${idx}">
+                <div class="search-item-icon"><i class="bi ${item.icon}"></i></div>
+                <div class="search-item-body">
+                    <span class="search-item-title">${item.title}</span>
+                    <span class="search-item-sub">${item.desc}</span>
+                </div>
+                <span class="search-item-cat">${item.cat}</span>
+            </div>
+        `).join('');
+
+        dropdown.querySelectorAll('.search-item-row').forEach(row => {
+            row.addEventListener('click', function() {
+                const idx = parseInt(this.getAttribute('data-idx'));
+                executeSearchJump(currentResults[idx]);
+            });
+        });
+
+        dropdown.style.display = 'block';
+    }
+
+    function executeSearchJump(item) {
+        if (!item) return;
+        dropdown.style.display = 'none';
+        input.value = '';
+        input.blur();
+
+        if (window.switchTab) {
+            window.switchTab(item.tab);
+        }
+
+        if (item.elId) {
+            setTimeout(() => {
+                const el = document.getElementById(item.elId);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.add('search-highlight-pulse');
+                    setTimeout(() => el.classList.remove('search-highlight-pulse'), 2500);
+                }
+            }, 150);
+        }
+    }
+
+    input.addEventListener('input', function() {
+        renderResults(this.value);
+    });
+
+    input.addEventListener('focus', function() {
+        if (this.value.trim()) {
+            renderResults(this.value);
+        }
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (currentResults.length > 0) {
+                selectedIndex = (selectedIndex + 1) % currentResults.length;
+                updateSelection();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (currentResults.length > 0) {
+                selectedIndex = (selectedIndex - 1 + currentResults.length) % currentResults.length;
+                updateSelection();
+            }
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && selectedIndex < currentResults.length) {
+                executeSearchJump(currentResults[selectedIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            dropdown.style.display = 'none';
+            input.blur();
+        }
+    });
+
+    function updateSelection() {
+        const rows = dropdown.querySelectorAll('.search-item-row');
+        rows.forEach((r, idx) => {
+            r.classList.toggle('selected', idx === selectedIndex);
+            if (idx === selectedIndex) {
+                r.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        });
+    }
+
+    // Global keyboard shortcut '/' or 'Ctrl+K'
+    document.addEventListener('keydown', function(e) {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') {
+            return;
+        }
+        if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
+            e.preventDefault();
+            input.focus();
+            input.select();
+        }
+    });
+
+    // Close on outside click
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+}
+
 function initSettingsPage() {
     if (typeof loadDevices === 'function') loadDevices();
     if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
     if (typeof updateStabsScrollArrows === 'function') updateStabsScrollArrows();
+    if (typeof initSettingsSearch === 'function') initSettingsSearch();
 
-    // Attach direct click event listeners to all stab buttons for guaranteed response
+    // Attach direct click event listeners to all mobile stab buttons
     document.querySelectorAll('.stab').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const tab = this.getAttribute('data-tab') || this.dataset.tab;
+            if (tab && window.switchTab) {
+                window.switchTab(tab, this);
+            }
+        });
+    });
+
+    // Attach direct click event listeners to all sidebar navigation items
+    document.querySelectorAll('.snav-item').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const tab = this.getAttribute('data-tab') || this.dataset.tab;
@@ -6824,18 +7526,12 @@ function initSettingsPage() {
     window.addEventListener('resize', updateStabsScrollArrows, { passive: true });
 
     // Direct event listener bindings for Biometrics Registration (CSP compliant)
-    // NOTE: Inline onclick attributes have been removed from the HTML elements
-    // to prevent duplicate event handler calls. All click wiring is done here only.
     const cardFp = document.getElementById('methodCardFp') || document.getElementById('methodCardFingerprint');
     if (cardFp) cardFp.addEventListener('click', () => selectBiometricMethod('fingerprint'));
     const cardFace = document.getElementById('methodCardFace');
     if (cardFace) cardFace.addEventListener('click', () => selectBiometricMethod('face'));
     const startBioBtn = document.getElementById('startBioBtn');
     if (startBioBtn) {
-        // Single authoritative click handler — no inline onclick on the button.
-        // beginSelectedBiometricRegistration re-reads the DOM to determine
-        // whether face or fingerprint was selected, preventing device verification
-        // from firing accidentally during face recognition registration.
         startBioBtn.addEventListener('click', () => beginSelectedBiometricRegistration());
     }
     const cancelBioBtn = document.querySelector('.bio-cancel-btn');
@@ -6850,7 +7546,7 @@ function initSettingsPage() {
     // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint or #fingerprint)
     const rawHash = window.location.hash.replace('#tab-', '').replace('#', '');
     const storedTab = localStorage.getItem('active_settings_tab');
-    const targetTab = rawHash || storedTab;
+    const targetTab = rawHash || storedTab || 'profile';
     if (targetTab && window.switchTab) {
         localStorage.removeItem('active_settings_tab');
         window.switchTab(targetTab);
