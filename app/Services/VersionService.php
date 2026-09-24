@@ -75,13 +75,13 @@ class VersionService
             }
         }
 
-        // 1. Explicit environment overrides
+        // 1. Environment metadata can be useful, but a stale deployment
+        // variable must not hide a newer version shipped in version.json.
         $envVer = env('APP_VERSION', env('APP_LATEST_VERSION'));
+        $cleanEnv = null;
         if (!empty($envVer)) {
-            $cleanEnv = ltrim(trim((string)$envVer), 'vV ');
-            if (preg_match('/^\d+(\.\d+)*$/', $cleanEnv)) {
-                return $cleanEnv;
-            }
+            $candidate = ltrim(trim((string)$envVer), 'vV ');
+            if (preg_match('/^\d+(\.\d+)*$/', $candidate)) $cleanEnv = $candidate;
         }
 
         // 2. Discover build version from disk files (version.json)
@@ -92,6 +92,10 @@ class VersionService
             if (preg_match('/^\d+(\.\d+)*$/', $cleanFile)) {
                 $diskVer = $cleanFile;
             }
+        }
+
+        if ($cleanEnv !== null && ($diskVer === null || version_compare($cleanEnv, $diskVer, '>'))) {
+            $diskVer = $cleanEnv;
         }
 
         // Application configuration metadata fallback if version.json is absent
@@ -186,6 +190,15 @@ class VersionService
      */
     public function getCommit(): string
     {
+        // Managed deployments often omit .git and retain an old commit in
+        // version.json. Prefer the platform's current deployment revision.
+        foreach (['RENDER_GIT_COMMIT', 'RAILWAY_GIT_COMMIT_SHA', 'VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'] as $variable) {
+            $revision = getenv($variable);
+            if (is_string($revision) && preg_match('/^[a-f0-9]{7,40}$/i', $revision)) {
+                return substr($revision, 0, 7);
+            }
+        }
+
         $file = $this->getFileData();
         $configCommit = config('version.commit') ?: ($file['commit'] ?? null);
 

@@ -67,7 +67,7 @@ class UpdateNowPopupTest extends TestCase
         Setting::flushCache();
         $versionService->refresh();
 
-        $response = $this->postJson('/pwa/update', [
+        $response = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', [
             'version' => $latest,
         ]);
 
@@ -100,9 +100,16 @@ class UpdateNowPopupTest extends TestCase
         $this->assertStringContainsString('showUpdateReadyPrompt', $content);
         $this->assertStringContainsString('DOMContentLoaded', $content);
 
-        // 4. Safe update apply with URL parameter preservation and abort timeout
+        // 4. Applying an update is local to the browser; ordinary users must not
+        // mutate the shared installed-version record on the server.
         $this->assertStringContainsString('applySystemUpdate', $content);
         $this->assertStringContainsString('new URL(window.location.href)', $content);
-        $this->assertStringContainsString('fetch(\'/pwa/update\'', $content);
+        $this->assertStringNotContainsString('fetch(\'/pwa/update\'', $content);
+
+        // 5. An unchanged semantic version must not suppress a new deployment.
+        $this->assertStringContainsString('function hasUnappliedRelease()', $content);
+        $this->assertStringContainsString("localStorage.setItem('pwa_applied_release_key', getLatestReleaseKey())", $content);
+        $this->assertStringContainsString('if (hasUnappliedRelease()) isUpdateAvailable = true;', $content);
+        $this->assertStringNotContainsString("localStorage.setItem('app_installed_version', serverData.installed_version)", $content);
     }
 }
