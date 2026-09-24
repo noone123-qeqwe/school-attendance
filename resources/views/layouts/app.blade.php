@@ -126,14 +126,14 @@
                     @endphp
 
                     <div class="dropdown">
-                        <div class="notif-btn position-relative" data-bs-toggle="dropdown" style="cursor:pointer;" id="topNavNotifBtn">
-                            <i class="bi bi-bell-fill" style="font-size:0.95rem;"></i>
+                        <button type="button" class="notif-btn position-relative" data-bs-toggle="dropdown" aria-label="Notifications{{ $unreadCount > 0 ? ': '.$unreadCount.' unread' : '' }}" aria-expanded="false" id="topNavNotifBtn">
+                            <i class="bi bi-bell-fill" style="font-size:0.95rem;" aria-hidden="true"></i>
                             @if($unreadCount > 0)
                             <span id="topNavNotifBadge" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#dc2626;color:white;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid white;">
                                 {{ $unreadCount > 9 ? '9+' : $unreadCount }}
                             </span>
                             @endif
-                        </div>
+                        </button>
                         <div class="dropdown-menu dropdown-menu-end mt-2" style="width:340px;max-width:calc(100vw - 32px);border-radius:14px;border:1px solid rgba(255,255,255,0.08);background:rgba(25,15,15,0.95);backdrop-filter:blur(16px);box-shadow:0 20px 60px rgba(0,0,0,0.5);padding:0;overflow:hidden;">
                             <div style="padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
                                 <span style="font-size:.9rem;font-weight:700;color:#f3e7cd;">Notifications</span>
@@ -275,8 +275,8 @@
                         @php
                             $profileImageUrl = Auth::user()->profile_photo_url_with_version;
                         @endphp
-                        <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2">
-                            <img src="{{ $profileImageUrl }}" class="header-profile-img user-avatar-img">
+                        <a href="#" data-bs-toggle="dropdown" class="text-decoration-none d-flex align-items-center gap-2" aria-label="Open account menu for {{ Auth::user()->name }}" aria-expanded="false">
+                            <img src="{{ $profileImageUrl }}" class="header-profile-img user-avatar-img" alt="">
                             <div class="d-none d-md-block text-start" style="line-height:1.2;">
                                 <div style="font-size:0.8rem;font-weight:600;color:#ffffff;">{{ Auth::user()->name }}</div>
                             </div>
@@ -358,7 +358,7 @@
     </div>
 
     <!-- System Toast Container (for websocket notifications) -->
-    <div class="toast-container" id="toastContainer"></div>
+    <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="false"></div>
 
     @auth
         <x-command-palette />
@@ -583,6 +583,7 @@
                 // 1. Update bell badge
                 const notifBtn = document.getElementById('topNavNotifBtn') || document.querySelector('.notif-btn');
                 if (notifBtn) {
+                    notifBtn.setAttribute('aria-label', data.unread_count > 0 ? `Notifications: ${data.unread_count} unread` : 'Notifications');
                     let badge = notifBtn.querySelector('span');
                     if (data.unread_count > 0) {
                         if (!badge) {
