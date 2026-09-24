@@ -1,5 +1,5 @@
 <header class="mobile-header" id="mobileHeader">
-    <button class="header-btn-left" id="headerBtnLeft">
+    <button type="button" class="header-btn-left" id="headerBtnLeft" aria-label="{{ !empty($showBack) ? 'Go back' : 'Open navigation menu' }}" @if(empty($showBack)) aria-controls="mobileNavigationMenu" aria-expanded="false" @endif>
         @if(isset($showBack) && $showBack)
             <i class="bi bi-arrow-left"></i>
         @else
@@ -11,7 +11,7 @@
     
     <div class="header-actions">
         @if(isset($showNotifications) && $showNotifications)
-            <button class="header-btn-right" id="notificationBtn">
+            <button type="button" class="header-btn-right" id="notificationBtn" aria-label="Notifications">
                 <i class="bi bi-bell"></i>
                 @if(isset($notificationCount) && $notificationCount > 0)
                     <span class="notification-badge">{{ $notificationCount }}</span>
@@ -20,18 +20,29 @@
         @endif
         
         @if(isset($showSearch) && $showSearch)
-            <button class="header-btn-right" id="searchBtn">
+            <button type="button" class="header-btn-right" id="searchBtn" aria-label="Search">
                 <i class="bi bi-search"></i>
             </button>
         @endif
         
         @if(isset($showMore) && $showMore)
-            <button class="header-btn-right" id="moreBtn">
+            <button type="button" class="header-btn-right" id="moreBtn" aria-label="More options">
                 <i class="bi bi-three-dots-vertical"></i>
             </button>
         @endif
     </div>
 </header>
+
+@if(empty($showBack))
+<div class="mobile-menu-backdrop" id="mobileMenuBackdrop" hidden></div>
+<nav class="mobile-navigation-menu" id="mobileNavigationMenu" aria-label="Mobile navigation" hidden>
+    <div class="mobile-menu-heading">
+        <span>Navigate</span>
+        <button type="button" class="mobile-menu-close" id="mobileMenuClose" aria-label="Close navigation menu"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+    </div>
+    <div id="mobileMenuLinks" class="mobile-menu-links"></div>
+</nav>
+@endif
 
 <style>
     .mobile-header {
@@ -147,13 +158,56 @@
             });
         }
 
-        // Menu button handler (you can customize this)
-        if (backBtn && backBtn.querySelector('.bi-list')) {
+        document.addEventListener('DOMContentLoaded', function() {
+        const menu = document.getElementById('mobileNavigationMenu');
+        const backdrop = document.getElementById('mobileMenuBackdrop');
+        const closeButton = document.getElementById('mobileMenuClose');
+        const menuLinks = document.getElementById('mobileMenuLinks');
+        if (backBtn && menu && backdrop && menuLinks) {
+            const bottomNav = document.getElementById('mobileBottomNav');
+            bottomNav?.querySelectorAll('.nav-item').forEach(function(item) {
+                const link = item.cloneNode(true);
+                link.removeAttribute('id');
+                link.classList.remove('nav-item-primary');
+                link.classList.add('mobile-menu-link');
+                menuLinks.appendChild(link);
+            });
+            const closeMenu = function() {
+                menu.hidden = true;
+                backdrop.hidden = true;
+                backBtn.setAttribute('aria-expanded', 'false');
+                document.body.classList.remove('mobile-menu-open');
+                backBtn.focus();
+            };
             backBtn.addEventListener('click', function() {
-                // Open side menu or show options
-                console.log('Menu clicked');
-                // You can implement a slide-out menu here
+                menu.hidden = false;
+                backdrop.hidden = false;
+                backBtn.setAttribute('aria-expanded', 'true');
+                document.body.classList.add('mobile-menu-open');
+                closeButton.focus();
+            });
+            closeButton.addEventListener('click', closeMenu);
+            backdrop.addEventListener('click', closeMenu);
+            menuLinks.addEventListener('click', function(event) {
+                if (event.target.closest('button')) closeMenu();
+            });
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && !menu.hidden) closeMenu();
+                if (event.key === 'Tab' && !menu.hidden) {
+                    const focusable = Array.from(menu.querySelectorAll('a, button')).filter(function(item) { return !item.disabled; });
+                    if (!focusable.length) return;
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                }
             });
         }
+        });
     })();
 </script>

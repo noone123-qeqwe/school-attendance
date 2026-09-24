@@ -273,3 +273,399 @@ table th {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* Shared layout rhythm across the admin, teacher, parent, and student portals. */
+.main-content,
+.main-content > .page-enter,
+.content-pad,
+.ent-section,
+.adm-card,
+.tch-card,
+.saas-card,
+.modern-table-card {
+    min-width: 0;
+}
+
+.main-content > .page-enter {
+    width: min(100%, 1720px);
+    margin-inline: auto;
+}
+
+:where(.content-pad, .main-content > .page-enter, .mobile-app) :where(h1, h2, h3, h4) {
+    text-wrap: balance;
+    line-height: 1.25;
+}
+
+:where(.content-pad, .main-content > .page-enter, .mobile-app) :where(p, small, .text-muted, .saas-text-muted) {
+    line-height: 1.55;
+}
+
+:where(.content-pad, .main-content > .page-enter, .mobile-app) :where(.row, .d-flex, .d-grid) > * {
+    min-width: 0;
+}
+
+/* Controls use the existing brand tones and expose all interaction states. */
+:where(.btn, .ent-btn, .btn-modern-primary, .btn-modern-gold, .btn-modern-glass, .quick-action-btn) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    line-height: 1.3;
+    text-align: center;
+    text-decoration: none;
+    white-space: normal;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease;
+}
+
+:where(button, .btn, .ent-btn, input, select, textarea):disabled,
+:where(button, .btn, .ent-btn)[aria-disabled='true'] {
+    cursor: not-allowed !important;
+    opacity: 0.55;
+    box-shadow: none !important;
+}
+
+:where(button, .btn, .ent-btn)[aria-busy='true'] {
+    cursor: progress;
+    opacity: 0.72;
+}
+
+:where(.form-control, .form-select, .ds-input, .ds-select, .ds-textarea, input, select, textarea)[aria-invalid='true'],
+:where(.form-control, .form-select, .ds-input, .ds-select, .ds-textarea).is-invalid {
+    border-color: var(--ds-danger, #f87171) !important;
+}
+
+:where(.invalid-feedback, .form-error, .error-message) {
+    display: block;
+    line-height: 1.45;
+}
+
+:where(.form-label, label:not(.btn):not(.nav-link)) {
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+:where(.form-text, .help-text, .field-hint) {
+    line-height: 1.45;
+}
+
+/* Section headers and tables remain legible without adding visual noise. */
+:where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head, .tch-card-head) {
+    flex-wrap: wrap;
+    row-gap: 12px;
+}
+
+:where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head) > :last-child {
+    max-width: 100%;
+}
+
+:where(.table-responsive, .saas-table-container, .adm-table-wrap) {
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+:where(.adm-table, .ent-table, .saas-table, .tch-table, .table) :where(th, td) {
+    overflow-wrap: anywhere;
+    vertical-align: middle;
+}
+
+:where(.adm-table, .ent-table, .saas-table, .tch-table, .table) tbody tr:focus-within {
+    outline: 1px solid var(--ds-border-strong, rgba(212, 175, 55, 0.45));
+    outline-offset: -1px;
+}
+
+:where(.pagination, .page-actions, .header-actions, .card-actions, .directory-actions) {
+    flex-wrap: wrap;
+}
+
+.pagination .page-link {
+    min-width: 40px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Dialog content stays reachable on short screens and with the keyboard open. */
+.modal-dialog {
+    max-width: min(var(--bs-modal-width, 500px), calc(100vw - 24px));
+    margin-inline: auto;
+}
+
+.modal-content {
+    max-height: calc(100dvh - 32px);
+}
+
+.modal-body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (min-width: 769px) {
+    .main-content > .page-enter {
+        padding-inline: clamp(22px, 3vw, 48px) !important;
+        padding-block: clamp(24px, 2.5vw, 40px) !important;
+    }
+
+    .sidebar .nav-link:focus-visible,
+    .sidebar .dropdown-toggle-btn:focus-visible {
+        position: relative;
+        z-index: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content > .page-enter {
+        padding: 16px max(16px, env(safe-area-inset-right)) 28px max(16px, env(safe-area-inset-left)) !important;
+    }
+
+    .header-left,
+    .header-title-container {
+        min-width: 0;
+    }
+
+    .header-page-title {
+        max-width: none !important;
+        font-size: clamp(0.88rem, 4vw, 1.05rem) !important;
+    }
+
+    .header-right {
+        gap: 4px !important;
+    }
+
+    .header-right :where(button, .notif-btn),
+    .mobile-back-btn,
+    .mobile-menu-btn {
+        min-width: 42px !important;
+        min-height: 42px !important;
+    }
+
+    :where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head) {
+        padding: 16px !important;
+    }
+
+    :where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head) > :last-child {
+        width: 100%;
+        flex-shrink: 1 !important;
+    }
+
+    :where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head) :where(input, select, .form-control, .form-select) {
+        max-width: 100% !important;
+    }
+
+    :where(.adm-table, .ent-table, .saas-table, .tch-table, .table) tbody td[colspan] {
+        display: block !important;
+        text-align: center !important;
+    }
+
+    :where(.adm-table, .ent-table, .saas-table, .tch-table, .table) tbody td[colspan]::before,
+    :where(.adm-table, .ent-table, .saas-table, .tch-table, .table) tbody td:not([data-label])::before {
+        display: none !important;
+    }
+
+    :where(.adm-table, .ent-table, .saas-table, .tch-table, .table) tbody td:not([data-label]) {
+        overflow-wrap: anywhere;
+    }
+
+    .modal-dialog {
+        max-width: calc(100vw - 16px);
+        margin: 8px auto;
+    }
+
+    .modal-content {
+        max-height: calc(100dvh - 16px);
+    }
+
+    .modal-header,
+    .modal-footer {
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .mobile-bottom-nav .mbn-item span,
+    .mobile-bottom-nav .nav-item span {
+        font-size: 0.7rem;
+        line-height: 1.2;
+    }
+
+    .mobile-app-layout .mobile-app {
+        width: min(100%, 680px);
+        margin-inline: auto;
+    }
+}
+
+/* Dedicated mobile navigation uses the links already shown in the bottom bar. */
+.mobile-menu-backdrop[hidden],
+.mobile-navigation-menu[hidden] {
+    display: none !important;
+}
+
+.mobile-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 1001;
+}
+
+.mobile-navigation-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(320px, calc(100vw - 36px));
+    padding: max(24px, env(safe-area-inset-top)) 16px 24px;
+    background: var(--bg-dark, #1a1a1a);
+    border-right: 1px solid rgba(207, 164, 111, 0.2);
+    box-shadow: 16px 0 40px rgba(0, 0, 0, 0.36);
+    z-index: 1002;
+    overflow-y: auto;
+}
+
+.mobile-menu-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 8px 18px;
+    color: var(--text-primary, #f3e7cd);
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.mobile-menu-close {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 12px;
+    background: var(--bg-card, rgba(207, 164, 111, 0.08));
+    color: var(--text-primary, #f3e7cd);
+}
+
+.mobile-menu-links {
+    display: grid;
+    gap: 6px;
+}
+
+.mobile-navigation-menu .mobile-menu-link {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 14px;
+    flex: none;
+    min-height: 50px;
+    margin: 0;
+    padding: 11px 14px;
+    width: 100%;
+    border-radius: 12px;
+    color: var(--text-primary, #f3e7cd);
+    font-size: 0.94rem;
+    text-align: left;
+}
+
+.mobile-navigation-menu .mobile-menu-link i {
+    width: 24px;
+    height: auto;
+    background: none;
+    box-shadow: none;
+    color: var(--gold-primary, #cfa46f);
+    font-size: 1.25rem;
+}
+
+.mobile-navigation-menu .mobile-menu-link span {
+    color: inherit;
+    font-size: inherit;
+}
+
+.mobile-navigation-menu .mobile-menu-link.active {
+    background: var(--bg-card-hover, rgba(207, 164, 111, 0.12));
+    color: var(--gold-primary, #cfa46f);
+}
+
+.mobile-menu-open {
+    overflow: hidden;
+}
+
+/* Dense directory pages: keep actions and filters discoverable at every width. */
+.directory-page-header {
+    row-gap: 18px;
+}
+
+.directory-page-actions .btn {
+    min-height: 44px;
+}
+
+.directory-status-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    padding-bottom: 4px;
+}
+
+.directory-status-tabs a {
+    flex: 0 0 auto;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.directory-filter-bar > * {
+    min-width: 0 !important;
+}
+
+.directory-pagination {
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .directory-page-actions {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .directory-page-actions .btn {
+        width: 100%;
+        padding-inline: 8px;
+    }
+
+    .directory-page-actions .btn:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .directory-filter-bar {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        justify-content: stretch !important;
+    }
+
+    .directory-filter-bar > :first-child {
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: none !important;
+    }
+
+    .directory-filter-bar .form-control,
+    .directory-filter-bar .form-select {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    .directory-pagination {
+        justify-content: center !important;
+        text-align: center;
+    }
+}
+
+@media (max-width: 380px) {
+    .directory-page-actions,
+    .directory-filter-bar {
+        grid-template-columns: 1fr;
+    }
+
+    .directory-page-actions .btn:last-child,
+    .directory-filter-bar > :first-child {
+        grid-column: auto;
+    }
+}
