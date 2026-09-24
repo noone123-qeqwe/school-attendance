@@ -4463,10 +4463,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" class="btn-action-danger" style="padding:6px 12px;font-size:0.76rem;border-radius:8px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.1);color:#fca5a5;cursor:pointer;flex-shrink:0;"
-                                    onclick="unlinkGuardianByStudent({{ $guardian->id }}, '{{ addslashes($guardian->name) }}')">
-                                    <i class="bi bi-x-circle me-1"></i> Revoke
-                                </button>
+                                <span class="sec-badge sec-badge-green" style="font-size:0.74rem;">
+                                    <i class="bi bi-shield-check"></i> Linked
+                                </span>
                             </div>
                             @endforeach
                         </div>
@@ -4480,7 +4479,7 @@
 
                     <div style="background:rgba(207,164,111,0.06);border:1px solid rgba(207,164,111,0.15);border-radius:12px;padding:12px 14px;font-size:0.78rem;color:#e6dbce;line-height:1.45;">
                         <i class="bi bi-shield-lock-fill text-gold me-1"></i>
-                        <strong>Privacy Safeguard:</strong> Guardians have view-only access to your attendance logs, late marks, and subject summaries. They cannot edit your profile or excuse records without instructor review.
+                        <strong>Privacy Safeguard:</strong> Guardians have view-only access to your attendance logs, late marks, and subject summaries. To protect attendance integrity, guardian links cannot be unlinked by students and can only be managed by your guardian or school administrator.
                     </div>
                 </div>
             </div>
@@ -7368,7 +7367,7 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Notification Alerts', desc: 'In-app notifications and email alert preferences', cat: 'System & Academics', tab: 'preferences', icon: 'bi-bell-fill', elId: 'tab-preferences' },
     { title: 'Software Updates & PWA Assets', desc: 'Check latest system updates, security patches and offline assets', cat: 'System & Academics', tab: 'preferences', icon: 'bi-cloud-arrow-down-fill', elId: 'checkUpdateBtn' },
     { title: 'Family & Guardian Link', desc: 'Connect parent accounts with QR code or link code', cat: 'Account', tab: 'family', icon: 'bi-people-fill', elId: 'tab-family' },
-    { title: 'Linked Guardians List', desc: 'View and manage authorized guardians with view-only access', cat: 'Account', tab: 'family', icon: 'bi-person-lines-fill', elId: 'tab-family' }
+    { title: 'Linked Guardians List', desc: 'View authorized guardians with view-only attendance access', cat: 'Account', tab: 'family', icon: 'bi-person-lines-fill', elId: 'tab-family' }
 ];
 
 function initSettingsSearch() {
@@ -7691,47 +7690,8 @@ function copyParentLinkCode(btn) {
     });
 }
 
-async function unlinkGuardianByStudent(parentId, parentName) {
-    if (!confirm(`Are you sure you want to disconnect guardian "${parentName}"? They will no longer have access to view your classroom attendance records.`)) {
-        return;
-    }
-
-    try {
-        const resp = await fetch('{{ route("student.parent_link.unlink") }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ parent_id: parentId })
-        });
-
-        const data = await resp.json();
-        if (data.success) {
-            const tile = document.getElementById('guardian-item-' + parentId);
-            if (tile) {
-                tile.style.opacity = '0.3';
-                tile.style.transform = 'scale(0.96)';
-                setTimeout(() => tile.remove(), 300);
-            }
-            if (typeof showToast === 'function') {
-                showToast(data.message || 'Guardian disconnected.', 'success');
-            } else {
-                alert(data.message || 'Guardian disconnected.');
-            }
-            setTimeout(() => window.location.reload(), 1000);
-        } else {
-            alert(data.message || 'Failed to disconnect guardian.');
-        }
-    } catch (err) {
-        alert('Network error while disconnecting guardian.');
-    }
-}
-
 window.generateParentLinkCode = generateParentLinkCode;
 window.copyParentLinkCode = copyParentLinkCode;
-window.unlinkGuardianByStudent = unlinkGuardianByStudent;
 </script>
 @if(Auth::user()->isStudent())
 <script src="{{ asset('js/qrcode.min.js') }}"></script>

@@ -183,12 +183,17 @@ class ParentService
     }
 
     /**
-     * Unlink a parent and a student. Can be invoked by parent, student, or admin.
+     * Unlink a parent and a student. Can be invoked by parent or admin.
+     * Students are not permitted to revoke their guardians.
      */
     public function unlink(User $actor, User $parent, User $student): void
     {
-        // Authorization check: Actor must be the parent, the student, or an admin
-        if ($actor->id !== $parent->id && $actor->id !== $student->id && !$actor->isAdmin()) {
+        // Authorization check: Actor must be the parent or an admin (students cannot revoke guardian links)
+        if ($actor->id === $student->id && !$actor->isAdmin()) {
+            throw new Exception("Students are not authorized to revoke guardian connections.");
+        }
+
+        if ($actor->id !== $parent->id && !$actor->isAdmin()) {
             throw new Exception("You are not authorized to unlink this connection.");
         }
 

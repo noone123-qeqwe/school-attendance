@@ -224,7 +224,7 @@ class StudentParentBindingTest extends TestCase
         ]);
     }
 
-    public function test_student_can_unlink_parent(): void
+    public function test_student_cannot_unlink_parent(): void
     {
         // Bind parent and student
         DB::table('parent_student')->insert([
@@ -237,18 +237,12 @@ class StudentParentBindingTest extends TestCase
         $response = $this->actingAs($this->student)
             ->postJson(route('student.parent_link.unlink'), ['parent_id' => $this->parent->id]);
 
-        $response->assertStatus(200)
-            ->assertJson(['success' => true]);
+        $response->assertStatus(403)
+            ->assertJson(['success' => false]);
 
-        $this->assertDatabaseMissing('parent_student', [
+        $this->assertDatabaseHas('parent_student', [
             'parent_id'  => $this->parent->id,
             'student_id' => $this->student->id,
-        ]);
-
-        // Parent notified
-        $this->assertDatabaseHas('notifications', [
-            'user_id' => $this->parent->id,
-            'type'    => 'student_unlinked',
         ]);
     }
 

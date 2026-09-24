@@ -502,33 +502,17 @@ class HomeController extends Controller
     }
 
     /**
-     * Allow student to unlink a connected parent
+     * Students are not permitted to unlink guardians.
      */
     public function unlinkParent(Request $request, \App\Services\ParentService $parentService)
     {
-        $user = Auth::user();
-        if (!$user || !$user->isStudent()) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Students are not authorized to revoke guardian connections. Please contact your school administrator or guardian.',
+            ], 403);
         }
-
-        $request->validate([
-            'parent_id' => 'required|exists:users,id',
-        ]);
-
-        $parent = User::findOrFail($request->parent_id);
-
-        try {
-            $parentService->unlink($user, $parent, $user);
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => true, 'message' => "Successfully removed {$parent->name} from your guardians."]);
-            }
-            return back()->with('success', "Successfully removed {$parent->name} from your guardians.");
-        } catch (\Exception $e) {
-            if ($request->wantsJson() || $request->ajax()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
-            }
-            return back()->with('error', $e->getMessage());
-        }
+        return back()->with('error', 'Students are not authorized to revoke guardian connections. Please contact your school administrator or guardian.');
     }
 
     public function notifications()
