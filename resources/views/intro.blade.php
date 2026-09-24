@@ -57,7 +57,7 @@
 
         @media (max-width: 768px), (orientation: portrait) {
             #introVideo {
-                object-fit: cover;
+                object-fit: contain;
                 object-position: center center;
             }
             .vignette {
@@ -221,7 +221,7 @@
 <body>
 
     <!-- Video: Desktop intro = Desktop.mp4, Mobile intro = Mobile.mp4 -->
-    <video id="introVideo" autoplay muted playsinline preload="auto" src="{{ $initialVideoSrc }}">
+    <video id="introVideo" autoplay muted playsinline preload="auto">
         <source id="introVideoSrcMobile" src="{{ $mobileVideoUrl }}" type="video/mp4" media="(max-width: 768px), (orientation: portrait)">
         <source id="introVideoSrcDesktop" src="{{ $desktopVideoUrl }}" type="video/mp4" media="(min-width: 769px) and (orientation: landscape)">
         <source id="introVideoSrc" src="{{ $initialVideoSrc }}" type="video/mp4">
@@ -261,7 +261,8 @@
         const fadeOut     = document.getElementById('fadeOut');
         const isMobileScreen = window.innerWidth <= 768 || 
                                window.screen.width <= 768 || 
-                               /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+                               (window.matchMedia && window.matchMedia('(max-width: 768px), (orientation: portrait)').matches) ||
+                               /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
         const INTRO_START_TIME = 0.0; // Play high-definition animation fully from the beginning
         let hasTransitioned = false;
         let hasInitialized = false;
@@ -278,7 +279,7 @@
             const isCurrentlyMobile = cur.includes('mobile.mp4');
             const isCurrentlyDesktop = cur.includes('desktop.mp4');
 
-            if ((shouldBeMobile && !isCurrentlyMobile) || (!shouldBeMobile && !isCurrentlyDesktop)) {
+            if (!cur || (shouldBeMobile && !isCurrentlyMobile) || (!shouldBeMobile && !isCurrentlyDesktop)) {
                 video.src = targetVideo;
                 const srcEl = document.getElementById('introVideoSrc');
                 if (srcEl) srcEl.src = targetVideo;
@@ -289,7 +290,9 @@
         // Handle dynamic viewport / orientation changes gracefully
         window.addEventListener('resize', () => {
             if (hasTransitioned || !video) return;
-            const nowMobile = window.innerWidth <= 768 || window.screen.width <= 768;
+            const nowMobile = window.innerWidth <= 768 || 
+                              window.screen.width <= 768 || 
+                              (window.matchMedia && window.matchMedia('(orientation: portrait)').matches);
             const cur = (video.currentSrc || video.src || '').toLowerCase();
             const shouldTarget = nowMobile ? MOBILE_VIDEO : DESKTOP_VIDEO;
             const isCorrect = nowMobile ? cur.includes('mobile.mp4') : cur.includes('desktop.mp4');
