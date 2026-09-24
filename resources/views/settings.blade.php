@@ -555,6 +555,36 @@
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
+.snav-sub-item {
+    margin-left: 14px !important;
+    padding: 7px 12px !important;
+    border-left: 2px solid rgba(207, 164, 111, 0.2) !important;
+    border-radius: 0 10px 10px 0 !important;
+    background: rgba(255, 235, 190, 0.02) !important;
+    opacity: 0.88;
+}
+.snav-sub-item:hover {
+    opacity: 1 !important;
+    border-left-color: rgba(207, 164, 111, 0.55) !important;
+    background: rgba(207, 164, 111, 0.08) !important;
+}
+.snav-sub-item.active {
+    border-left-color: #cfa46f !important;
+    background: rgba(207, 164, 111, 0.16) !important;
+    opacity: 1 !important;
+}
+.snav-sub-item .snav-item-icon {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.84rem !important;
+    border-radius: 8px !important;
+}
+.snav-sub-item .snav-item-title {
+    font-size: 0.8rem !important;
+}
+.snav-sub-item .snav-item-desc {
+    font-size: 0.65rem !important;
+}
 .snav-footer-card {
     margin-top: 14px;
     padding: 12px 14px;
@@ -1366,6 +1396,130 @@
 .sec-matrix-item:hover {
     border-color: rgba(207, 164, 111, 0.25);
     background: rgba(255, 235, 190, 0.06);
+}
+
+/* ── Security Sub-Navigation Segmented Pill Bar ── */
+.sec-subnav-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(18, 14, 11, 0.85);
+    border: 1px solid rgba(207, 164, 111, 0.2);
+    border-radius: 14px;
+    padding: 6px 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.sec-subnav-bar::-webkit-scrollbar {
+    display: none;
+}
+.sec-subnav-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #a89885;
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    line-height: 1.2;
+}
+.sec-subnav-pill:hover {
+    color: #fef3c7;
+    background: rgba(207, 164, 111, 0.08);
+    border-color: rgba(207, 164, 111, 0.18);
+    transform: translateY(-1px);
+}
+.sec-subnav-pill:active {
+    transform: scale(0.97);
+}
+.sec-subnav-pill.active {
+    color: #fffbeb !important;
+    background: linear-gradient(135deg, rgba(207, 164, 111, 0.25) 0%, rgba(166, 124, 67, 0.35) 100%) !important;
+    border-color: rgba(207, 164, 111, 0.45) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 12px rgba(207, 164, 111, 0.2) !important;
+}
+.sec-subnav-pill.active i {
+    color: #fde68a !important;
+}
+.sec-subnav-badge {
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+.sec-subnav-badge.badge-emerald {
+    background: rgba(34, 197, 94, 0.18);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+.sec-subnav-badge.badge-amber {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+/* ── Security Group Panels & Headers ── */
+.sec-group-panel {
+    margin-bottom: 24px;
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.sec-group-panel:last-child {
+    margin-bottom: 0;
+}
+.sec-group-header {
+    background: linear-gradient(135deg, rgba(28, 21, 16, 0.88) 0%, rgba(18, 13, 10, 0.96) 100%);
+    border: 1px solid rgba(207, 164, 111, 0.18);
+    border-radius: 14px;
+    padding: 13px 18px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.sec-group-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+.sec-group-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.sec-group-title {
+    font-size: 0.96rem;
+    font-weight: 800;
+    color: #f3e7cd;
+    letter-spacing: -0.2px;
+    line-height: 1.25;
+}
+.sec-group-desc {
+    font-size: 0.74rem;
+    color: #b39b82;
+    margin-top: 1px;
+    line-height: 1.35;
 }
 
 .sec-cards-grid {
@@ -3059,14 +3213,13 @@
 
     <!-- ── MOBILE / COMPACT HORIZONTAL TAB BAR (<992px) ── -->
     <div class="stabs-wrapper">
+        <span id="stabsFloatingHint" class="stabs-floating-hint d-none" aria-hidden="true">Scrollable</span>
         <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll left" style="display:none;">
             <i class="bi bi-chevron-left"></i>
         </button>
         <div class="stabs" id="stabsNav">
             <button class="stab active" data-tab="profile" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
             <button class="stab" data-tab="security" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
-            <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Biometrics</button>
-            <button class="stab" data-tab="device" onclick="switchTab('device',this)"><i class="bi bi-phone-fill me-1"></i> Device Binding</button>
             @if(Auth::user()->isStudent())
             <button class="stab" data-tab="family" onclick="switchTab('family',this)"><i class="bi bi-people-fill me-1"></i> Family / Guardian</button>
             @endif
@@ -3106,32 +3259,32 @@
                     @endif
                 </div>
 
-                <!-- Group 2: Security & Hardware -->
+                <!-- Group 2: Security & Authentication Controls -->
                 <div class="snav-group">
                     <div class="snav-group-header">
                         <i class="bi bi-shield-lock"></i>
-                        <span>Security & Access</span>
+                        <span>Security &amp; Access</span>
                     </div>
                     <button type="button" class="snav-item" data-tab="security" onclick="switchTab('security', this)">
                         <span class="snav-item-icon"><i class="bi bi-shield-lock-fill"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">Security & Password</span>
-                            <span class="snav-item-desc">Password & 2FA protection</span>
+                            <span class="snav-item-title">Security &amp; Access</span>
+                            <span class="snav-item-desc">All authentication controls</span>
                         </div>
                     </button>
-                    <button type="button" class="snav-item" data-tab="fingerprint" onclick="switchTab('fingerprint', this)">
+                    <button type="button" class="snav-item snav-sub-item" data-tab="fingerprint" data-sec-sub="biometrics" onclick="switchTab('fingerprint', this)">
                         <span class="snav-item-icon"><i class="bi bi-fingerprint"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">Biometrics Sensors</span>
-                            <span class="snav-item-desc">Fingerprint & Face ID</span>
+                            <span class="snav-item-title">Biometrics Verification</span>
+                            <span class="snav-item-desc">Fingerprint &amp; Face ID</span>
                         </div>
                         <span class="snav-badge snav-badge-emerald">FIDO2</span>
                     </button>
-                    <button type="button" class="snav-item" data-tab="device" onclick="switchTab('device', this)">
+                    <button type="button" class="snav-item snav-sub-item" data-tab="device" data-sec-sub="device" onclick="switchTab('device', this)">
                         <span class="snav-item-icon"><i class="bi bi-phone-fill"></i></span>
                         <div class="snav-item-body">
                             <span class="snav-item-title">Device Binding</span>
-                            <span class="snav-item-desc">Hardware trust & silicon locks</span>
+                            <span class="snav-item-desc">Hardware trust &amp; anti-proxy</span>
                         </div>
                         <span class="snav-badge {{ $deviceBinding ? 'snav-badge-emerald' : 'snav-badge-amber' }}">{{ $deviceBinding ? 'Bound' : 'Action Req' }}</span>
                     </button>
@@ -3308,7 +3461,7 @@
         </div>
     </div>
 
-    <!-- ── TAB: SECURITY ── -->
+    <!-- ── TAB: SECURITY & ACCESS CONTROL ── -->
     <div id="tab-security" class="spanel">
 
         <!-- ── Security Hero Header ── -->
@@ -3318,13 +3471,15 @@
                     <i class="bi bi-shield-lock-fill"></i>
                 </div>
                 <div>
-                    <div class="sec-health-title">Security & Access Control</div>
-                    <div class="sec-health-sub">Manage credentials, biometric authentication, and emergency vault</div>
+                    <div class="sec-health-title">Security &amp; Access Control</div>
+                    <div class="sec-health-sub">Manage credentials, biometric verification, authorized devices, and emergency vault</div>
                 </div>
             </div>
-            <div class="sec-health-pill">
-                <span class="sec-pulse-dot"></span>
-                <span>Account Protected</span>
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <div class="sec-health-pill {{ $deviceBinding && $deviceBinding->isLocked() ? 'gold' : '' }}">
+                    <span class="sec-pulse-dot" style="{{ $deviceBinding && $deviceBinding->isLocked() ? 'background:#ef4444;' : 'background:#4ade80;' }}"></span>
+                    <span>{{ $deviceBinding && $deviceBinding->isLocked() ? 'Device Locked' : 'Account Protected' }}</span>
+                </div>
             </div>
         </div>
 
@@ -3340,7 +3495,11 @@
             </div>
             <div class="sec-matrix-item">
                 <i class="bi bi-fingerprint text-success"></i>
-                <span>FIDO2 Ready</span>
+                <span>FIDO2 / Biometrics</span>
+            </div>
+            <div class="sec-matrix-item">
+                <i class="bi bi-phone-fill" style="color:{{ $deviceBinding ? '#34d399' : '#fbbf24' }};"></i>
+                <span>{{ $deviceBinding ? 'Hardware Bound' : 'Device Unbound' }}</span>
             </div>
             <div class="sec-matrix-item">
                 <i class="bi bi-safe-fill" style="color:#f5dfa8;"></i>
@@ -3348,172 +3507,714 @@
             </div>
         </div>
 
-        <!-- ── 2-Column Responsive Security Cards Grid ── -->
-        <div class="sec-cards-grid">
+        <!-- ── Security Section Interactive Sub-Navigation / Filter Bar ── -->
+        <div class="sec-subnav-bar" id="secSubnavBar">
+            <button type="button" class="sec-subnav-pill active" data-sec-sub="all" onclick="switchSecuritySub('all', this)">
+                <i class="bi bi-grid-fill"></i>
+                <span>All Controls</span>
+            </button>
+            <button type="button" class="sec-subnav-pill" data-sec-sub="credentials" onclick="switchSecuritySub('credentials', this)">
+                <i class="bi bi-key-fill"></i>
+                <span>Password &amp; Email</span>
+            </button>
+            <button type="button" class="sec-subnav-pill" data-sec-sub="biometrics" onclick="switchSecuritySub('biometrics', this)">
+                <i class="bi bi-fingerprint"></i>
+                <span>Biometrics Verification</span>
+                <span class="sec-subnav-badge badge-emerald">FIDO2</span>
+            </button>
+            <button type="button" class="sec-subnav-pill" data-sec-sub="device" onclick="switchSecuritySub('device', this)">
+                <i class="bi bi-phone-fill"></i>
+                <span>Device Binding</span>
+                <span class="sec-subnav-badge {{ $deviceBinding ? 'badge-emerald' : 'badge-amber' }}">{{ $deviceBinding ? 'Bound' : 'Action Req' }}</span>
+            </button>
+            <button type="button" class="sec-subnav-pill" data-sec-sub="recovery" onclick="switchSecuritySub('recovery', this)">
+                <i class="bi bi-safe-fill"></i>
+                <span>Emergency Vault</span>
+            </button>
+        </div>
 
-            <!-- ── Card 1: Email Address Management ── -->
-            <div class="sec-card" style="--card-accent: #3b82f6;">
-                <div class="sec-card-top">
-                    <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
-                        <i class="bi bi-envelope-check-fill"></i>
-                    </div>
-                    <div class="sec-card-meta">
-                        <div class="sec-card-header-line">
-                            <span class="sec-card-name">Primary Email Address</span>
-                            <span class="sec-badge sec-badge-blue"><i class="bi bi-patch-check-fill"></i> Verified</span>
-                        </div>
-                        <div class="sec-card-subtitle">Primary channel for portal alerts & OTP security codes</div>
-                    </div>
-                </div>
-
-                <div class="sec-card-content">
-                    <div id="emailStep1">
-                        <div class="sec-input-display mb-2">
-                            <i class="bi bi-envelope-at-fill text-primary me-2"></i>
-                            <span class="sec-input-val" id="displayUserEmail">{{ Auth::user()->email }}</span>
-                            <button type="button" onclick="navigator.clipboard.writeText('{{ Auth::user()->email }}'); if(typeof showToast==='function') showToast('Email address copied!','info');" class="sec-copy-btn" title="Copy email">
-                                <i class="bi bi-clipboard"></i>
-                            </button>
-                        </div>
-                        <div style="margin: 10px 0 12px;">
-                            <label class="sl" style="font-size:0.75rem;margin-bottom:4px;color:#f3e7cd;display:block;">New Email Address (where OTP will be sent)</label>
-                            <input type="email" id="inputNewEmail" class="si" placeholder="Enter new email address (e.g. name@gmail.com)" style="padding:9px 12px;font-size:0.84rem;width:100%;">
-                        </div>
-                        <p class="sec-card-hint">
-                            A 6-digit security code will be sent to this email address to verify ownership before updating.
-                        </p>
-                        <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sec-action-btn sec-btn-blue">
-                            <i class="bi bi-send-fill me-2"></i>Send Verification OTP
-                        </button>
-                    </div>
-
-                    <div id="emailStep2" style="display:none;">
-                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-                            <i class="bi bi-envelope-check-fill" style="font-size:1.05rem;"></i>
-                            <span>Code sent to <strong id="emailSentDestination">{{ Auth::user()->email }}</strong></span>
-                        </div>
-                        <form action="{{ route('otp.email.change') }}" method="POST">
-                            @csrf
-                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
-                            <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
-                                @for($j=1;$j<=6;$j++)
-                                <input type="text" class="email-otp-digit" maxlength="1" inputmode="numeric" id="ed{{$j}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
-                                @endfor
-                            </div>
-                            <input type="hidden" name="otp" id="emailOtpHidden">
-                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Email Address</label>
-                            <input type="email" name="new_email" id="confirmNewEmailInput" class="si" placeholder="name@example.com" style="margin-bottom:12px;padding:9px 12px;font-size:0.84rem;" required>
-                            <div style="display:flex;gap:8px;">
-                                <button type="button" onclick="cancelEmailOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
-                                <button type="button" class="sec-action-btn sec-btn-blue" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-1"></i>Confirm Email</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ── Card 2: Password Authentication ── -->
-            <div class="sec-card" style="--card-accent: #f59e0b;">
-                <div class="sec-card-top">
-                    <div class="sec-card-icon" style="background:rgba(207,164,111,0.12);color:#f5dfa8;border:1px solid rgba(207,164,111,0.25);">
+        <!-- ── 1. ACCOUNT CREDENTIALS & PASSWORD SECTION ── -->
+        <div class="sec-group-panel" id="sec-section-credentials">
+            <div class="sec-group-header">
+                <div class="sec-group-header-left">
+                    <div class="sec-group-icon" style="background:rgba(207,164,111,0.12);color:#f5dfa8;border:1px solid rgba(207,164,111,0.25);">
                         <i class="bi bi-key-fill"></i>
                     </div>
-                    <div class="sec-card-meta">
-                        <div class="sec-card-header-line">
-                            <span class="sec-card-name">Password Authentication</span>
-                            <span class="sec-badge sec-badge-amber"><i class="bi bi-shield-lock-fill"></i> Encrypted</span>
-                        </div>
-                        <div class="sec-card-subtitle">Protected by salted bcrypt-12 hashing & rate limits</div>
-                    </div>
-                </div>
-
-                <div class="sec-card-content">
-                    <div id="otpStep1">
-                        <div class="sec-status-tile">
-                            <i class="bi bi-shield-check text-warning"></i>
-                            <span>Active • Encrypted with salted bcrypt-12</span>
-                        </div>
-                        <p class="sec-card-hint">
-                            A verification code is required before creating a new password.
-                        </p>
-                        <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sec-action-btn sec-btn-amber">
-                            <i class="bi bi-shield-lock-fill me-2"></i>Request Password Reset OTP
-                        </button>
-                    </div>
-
-                    <div id="otpStep2" style="display:none;">
-                        <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-                            <i class="bi bi-check-circle-fill" style="font-size:1.05rem;"></i>
-                            <span>OTP sent to <strong>{{ Auth::user()->email }}</strong></span>
-                        </div>
-                        <form action="{{ route('otp.change') }}" method="POST">
-                            @csrf
-                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
-                            <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
-                                @for($i=1;$i<=6;$i++)
-                                <input type="text" class="otp-digit-s" maxlength="1" inputmode="numeric" id="sd{{$i}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
-                                @endfor
-                            </div>
-                            <input type="hidden" name="otp" id="settingsOtpHidden">
-                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Password</label>
-                            <div class="pw-wrap" style="margin-bottom:10px;">
-                                <input type="password" name="password" id="spw1" class="si" placeholder="Minimum 8 characters" style="padding:9px 12px;font-size:0.84rem;" required>
-                                <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
-                            </div>
-                            <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Confirm Password</label>
-                            <div class="pw-wrap" style="margin-bottom:14px;">
-                                <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" style="padding:9px 12px;font-size:0.84rem;" required>
-                                <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
-                            </div>
-                            <div style="display:flex;gap:8px;">
-                                <button type="button" onclick="cancelOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
-                                <button type="button" class="sec-action-btn sec-btn-amber" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-1"></i>Update Password</button>
-                            </div>
-                        </form>
+                    <div>
+                        <div class="sec-group-title">Account Credentials &amp; Authentication</div>
+                        <div class="sec-group-desc">Manage primary email for security OTP codes and salted bcrypt-12 encrypted password</div>
                     </div>
                 </div>
             </div>
 
-            <!-- ── Card 3: Biometric & Fingerprint Login ── -->
-            <div class="sec-card" style="--card-accent: #22c55e;">
-                <div class="sec-card-top">
-                    <div class="sec-card-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25);">
+            <div class="sec-cards-grid">
+                <!-- Card 1: Primary Email Address Management -->
+                <div class="sec-card" style="--card-accent: #3b82f6;">
+                    <div class="sec-card-top">
+                        <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
+                            <i class="bi bi-envelope-check-fill"></i>
+                        </div>
+                        <div class="sec-card-meta">
+                            <div class="sec-card-header-line">
+                                <span class="sec-card-name">Primary Email Address</span>
+                                <span class="sec-badge sec-badge-blue"><i class="bi bi-patch-check-fill"></i> Verified</span>
+                            </div>
+                            <div class="sec-card-subtitle">Primary channel for portal alerts &amp; OTP security codes</div>
+                        </div>
+                    </div>
+
+                    <div class="sec-card-content">
+                        <div id="emailStep1">
+                            <div class="sec-input-display mb-2">
+                                <i class="bi bi-envelope-at-fill text-primary me-2"></i>
+                                <span class="sec-input-val" id="displayUserEmail">{{ Auth::user()->email }}</span>
+                                <button type="button" onclick="navigator.clipboard.writeText('{{ Auth::user()->email }}'); if(typeof showToast==='function') showToast('Email address copied!','info');" class="sec-copy-btn" title="Copy email">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </div>
+                            <div style="margin: 10px 0 12px;">
+                                <label class="sl" style="font-size:0.75rem;margin-bottom:4px;color:#f3e7cd;display:block;">New Email Address (where OTP will be sent)</label>
+                                <input type="email" id="inputNewEmail" class="si" placeholder="Enter new email address (e.g. name@gmail.com)" style="padding:9px 12px;font-size:0.84rem;width:100%;">
+                            </div>
+                            <p class="sec-card-hint">
+                                A 6-digit security code will be sent to this email address to verify ownership before updating.
+                            </p>
+                            <button type="button" onclick="requestEmailOtp()" id="sendEmailOtpBtn" class="sec-action-btn sec-btn-blue">
+                                <i class="bi bi-send-fill me-2"></i>Send Verification OTP
+                            </button>
+                        </div>
+
+                        <div id="emailStep2" style="display:none;">
+                            <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                                <i class="bi bi-envelope-check-fill" style="font-size:1.05rem;"></i>
+                                <span>Code sent to <strong id="emailSentDestination">{{ Auth::user()->email }}</strong></span>
+                            </div>
+                            <form action="{{ route('otp.email.change') }}" method="POST">
+                                @csrf
+                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
+                                <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
+                                    @for($j=1;$j<=6;$j++)
+                                    <input type="text" class="email-otp-digit" maxlength="1" inputmode="numeric" id="ed{{$j}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
+                                    @endfor
+                                </div>
+                                <input type="hidden" name="otp" id="emailOtpHidden">
+                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Email Address</label>
+                                <input type="email" name="new_email" id="confirmNewEmailInput" class="si" placeholder="name@example.com" style="margin-bottom:12px;padding:9px 12px;font-size:0.84rem;" required>
+                                <div style="display:flex;gap:8px;">
+                                    <button type="button" onclick="cancelEmailOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
+                                    <button type="button" class="sec-action-btn sec-btn-blue" style="flex:1;" onclick="collectEmailOtp(this)"><i class="bi bi-check2-circle me-1"></i>Confirm Email</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Password Authentication -->
+                <div class="sec-card" style="--card-accent: #f59e0b;">
+                    <div class="sec-card-top">
+                        <div class="sec-card-icon" style="background:rgba(207,164,111,0.12);color:#f5dfa8;border:1px solid rgba(207,164,111,0.25);">
+                            <i class="bi bi-key-fill"></i>
+                        </div>
+                        <div class="sec-card-meta">
+                            <div class="sec-card-header-line">
+                                <span class="sec-card-name">Password Authentication</span>
+                                <span class="sec-badge sec-badge-amber"><i class="bi bi-shield-lock-fill"></i> Encrypted</span>
+                            </div>
+                            <div class="sec-card-subtitle">Protected by salted bcrypt-12 hashing &amp; rate limits</div>
+                        </div>
+                    </div>
+
+                    <div class="sec-card-content">
+                        <div id="otpStep1">
+                            <div class="sec-status-tile">
+                                <i class="bi bi-shield-check text-warning"></i>
+                                <span>Active • Encrypted with salted bcrypt-12</span>
+                            </div>
+                            <p class="sec-card-hint">
+                                A verification code is required before creating a new password.
+                            </p>
+                            <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sec-action-btn sec-btn-amber">
+                                <i class="bi bi-shield-lock-fill me-2"></i>Request Password Reset OTP
+                            </button>
+                        </div>
+
+                        <div id="otpStep2" style="display:none;">
+                            <div style="background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;border-radius:10px;padding:10px 12px;font-size:0.78rem;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                                <i class="bi bi-check-circle-fill" style="font-size:1.05rem;"></i>
+                                <span>OTP sent to <strong>{{ Auth::user()->email }}</strong></span>
+                            </div>
+                            <form action="{{ route('otp.change') }}" method="POST">
+                                @csrf
+                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Enter 6-Digit Code</label>
+                                <div style="display:flex;gap:6px;margin-bottom:12px;justify-content:space-between;">
+                                    @for($i=1;$i<=6;$i++)
+                                    <input type="text" class="otp-digit-s" maxlength="1" inputmode="numeric" id="sd{{$i}}" style="flex:1;min-width:0;max-width:44px;height:42px;border-radius:8px;border:1.5px solid rgba(255,215,145,0.15);font-size:1.15rem;font-weight:800;text-align:center;color:#f3e7cd;background:rgba(255,235,190,0.06);outline:none;transition:all .2s;">
+                                    @endfor
+                                </div>
+                                <input type="hidden" name="otp" id="settingsOtpHidden">
+                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Password</label>
+                                <div class="pw-wrap" style="margin-bottom:10px;">
+                                    <input type="password" name="password" id="spw1" class="si" placeholder="Minimum 8 characters" style="padding:9px 12px;font-size:0.84rem;" required>
+                                    <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
+                                </div>
+                                <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Confirm Password</label>
+                                <div class="pw-wrap" style="margin-bottom:14px;">
+                                    <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" style="padding:9px 12px;font-size:0.84rem;" required>
+                                    <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
+                                </div>
+                                <div style="display:flex;gap:8px;">
+                                    <button type="button" onclick="cancelOtp()" class="cancel-btn" style="flex:0 0 auto;padding:8px 14px;font-size:0.8rem;">Cancel</button>
+                                    <button type="button" class="sec-action-btn sec-btn-amber" style="flex:1;" onclick="collectOtp(this)"><i class="bi bi-check2-circle me-1"></i>Update Password</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── 2. BIOMETRICS VERIFICATION SECTION ── -->
+        <div class="sec-group-panel" id="sec-section-biometrics">
+            <div class="sc mb-0" id="tab-fingerprint">
+                <div class="sc-head">
+                    <div class="sc-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;">
                         <i class="bi bi-fingerprint"></i>
                     </div>
-                    <div class="sec-card-meta">
-                        <div class="sec-card-header-line">
-                            <span class="sec-card-name">Biometric & Fingerprint Login</span>
-                            <span class="sec-badge sec-badge-green"><i class="bi bi-patch-check-fill"></i> FIDO2 Ready</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                            <div class="sc-title">Biometrics Verification</div>
+                            <span class="sec-badge sec-badge-green"><i class="bi bi-patch-check-fill"></i> FIDO2 / WebAuthn Active</span>
                         </div>
-                        <div class="sec-card-subtitle">Hardware-grade passwordless biometric authentication</div>
+                        <div class="sc-sub">Manage biometric authentication settings such as fingerprint or face verification for instant passwordless login and QR clock-in</div>
+                    </div>
+                </div>
+                <div class="sc-body">
+
+                    <!-- In-app browser & Insecure Context Alert -->
+                    <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
+                        <div style="display:flex;align-items:flex-start;gap:12px;">
+                            <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
+                            <div>
+                                <div style="font-weight:700;margin-bottom:4px;" id="unsupportedTitle">Biometric sensor not available on this browser</div>
+                                <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
+                                    Your current browser or connection does not support hardware biometric sign-in.
+                                </div>
+                                <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:none;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
+                                    <i class="bi bi-box-arrow-up-right"></i> Open in External Browser
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Step 1: Method Selection ── -->
+                    <div class="bio-flow-section">
+                        <div class="bio-section-title-wrap">
+                            <span class="bio-step-badge">Step 1</span>
+                            <div>
+                                <div class="bio-step-title">Choose Biometric Authentication Method</div>
+                                <div class="bio-step-subtitle">Select ONE preferred biometric method to register for passwordless login and QR clock-in:</div>
+                            </div>
+                        </div>
+
+                        <div class="bio-method-grid">
+                            <!-- Option 1: Fingerprint -->
+                            <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" tabindex="0" role="button" aria-pressed="true" onclick="selectBiometricMethod('fingerprint')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
+                                <div class="bio-card-radio">
+                                    <div class="bio-radio-inner">
+                                        <i class="bi bi-check-lg"></i>
+                                    </div>
+                                </div>
+                                <div class="bio-method-icon-wrap bio-fp-icon">
+                                    <i class="bi bi-fingerprint"></i>
+                                </div>
+                                <div class="bio-method-info">
+                                    <div class="bio-method-header">
+                                        <span class="bio-method-name">Fingerprint</span>
+                                        <span class="bio-status-pill not-reg" id="statusBadgeFingerprint">Checking...</span>
+                                    </div>
+                                    <p class="bio-method-desc">
+                                        Authenticate in seconds using your device's built-in fingerprint scanner, Touch ID sensor, or USB security key.
+                                    </p>
+                                    <div class="bio-method-meta">
+                                        <span><i class="bi bi-lightning-charge-fill me-1" style="color:#4ade80;"></i>Ultra-Fast</span>
+                                        <span><i class="bi bi-cpu-fill me-1" style="color:#cfa46f;"></i>Local Enclave</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Option 2: Face Recognition -->
+                            <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
+                                <div class="bio-card-radio">
+                                    <div class="bio-radio-inner">
+                                        <i class="bi bi-check-lg"></i>
+                                    </div>
+                                </div>
+                                <div class="bio-method-icon-wrap bio-face-icon">
+                                    <i class="bi bi-person-bounding-box"></i>
+                                </div>
+                                <div class="bio-method-info">
+                                    <div class="bio-method-header">
+                                        <span class="bio-method-name">Face Recognition</span>
+                                        <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
+                                    </div>
+                                    <p class="bio-method-desc">
+                                        Authenticate hands-free using Face ID, Windows Hello Face recognition camera, or front-facing facial geometry.
+                                    </p>
+                                    <div class="bio-method-meta">
+                                        <span><i class="bi bi-eye-fill me-1" style="color:#38bdf8;"></i>Hands-Free</span>
+                                        <span><i class="bi bi-camera-fill me-1" style="color:#cfa46f;"></i>Front Sensor</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Step 2: Registration & Scanning Stage ── -->
+                    <div class="bio-flow-section" style="margin-top:24px;">
+                        <div class="bio-section-title-wrap">
+                            <span class="bio-step-badge">Step 2</span>
+                            <div>
+                                <div class="bio-step-title" id="bioStep2Title">Biometric Sensor Capture</div>
+                                <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected: <strong id="selectedMethodDisplay" style="color:#4ade80;">Fingerprint</strong> — Ready to register this device</div>
+                            </div>
+                        </div>
+
+                        <!-- Scanner Stage Container -->
+                        <div class="bio-scanner-card" id="bioScannerStage">
+
+                            <!-- State A: Idle / Ready Overview -->
+                            <div class="bio-stage-view" id="bioIdleView">
+                                <div class="bio-preview-container">
+                                    <!-- Fingerprint Idle Graphic -->
+                                    <div id="fpIdlePreview" class="bio-method-preview active">
+                                        <div class="bio-idle-sensor-ring">
+                                            <div class="bio-radar-ring"></div>
+                                            <div class="bio-radar-ring delay-1"></div>
+                                            <i class="bi bi-fingerprint bio-idle-sensor-icon" style="color:#4ade80;"></i>
+                                        </div>
+                                        <div class="bio-preview-title">Register Fingerprint Authentication</div>
+                                        <div class="bio-preview-sub">Click the button below to start the hardware fingerprint enrollment for this account.</div>
+                                        <div class="mt-2 text-start px-2 py-1 rounded" style="font-size: 11.5px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2); color: #bae6fd; max-width: 380px; margin: 8px auto 0;">
+                                            <i class="bi bi-info-circle-fill me-1 text-info"></i>
+                                            <strong>Android Notice:</strong> If prompted <em>"Choose a device for your passkey"</em>, tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> (or <strong>This device</strong>) to scan your fingerprint.
+                                        </div>
+                                    </div>
+
+                                    <!-- Face Idle Graphic -->
+                                    <div id="faceIdlePreview" class="bio-method-preview">
+                                        <div class="bio-idle-face-box">
+                                            <span class="hud-corner hud-tl"></span>
+                                            <span class="hud-corner hud-tr"></span>
+                                            <span class="hud-corner hud-bl"></span>
+                                            <span class="hud-corner hud-br"></span>
+                                            <div class="hud-face-reticle">
+                                                <i class="bi bi-person-bounding-box bio-idle-face-icon" style="color:#38bdf8;"></i>
+                                            </div>
+                                        </div>
+                                        <div class="bio-preview-title">Register Face Recognition</div>
+                                        <div class="bio-preview-sub">Click the button below to start facial biometric enrollment using Face ID or your device camera.</div>
+                                    </div>
+                                </div>
+
+                                <div class="bio-action-row">
+                                    <button type="button" id="startBioBtn" class="sbtn btn-emerald bio-primary-cta">
+                                        <i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint
+                                    </button>
+                                    <span class="bio-hardware-note">
+                                        <i class="bi bi-shield-check text-success me-1"></i>FIDO2 / WebAuthn Hardware Security
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- State B: Active Live Scanning Stage -->
+                            <div class="bio-stage-view" id="bioScanningView" style="display:none;">
+                                <div class="bio-scan-hud-container">
+
+                                    <!-- Fingerprint Realistic Scanner -->
+                                    <div id="fpActiveScanner" class="bio-scanner-display active">
+                                        <div class="fp-scan-frame">
+                                            <div class="fp-pulse-wave"></div>
+                                            <div class="fp-laser-line" id="fpLaserLine"></div>
+                                            <svg class="fp-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
+                                                <path class="fp-ridge" d="M50 15 C30 15 20 28 20 45 C20 65 25 85 27 105" />
+                                                <path class="fp-ridge" d="M50 25 C36 25 28 35 28 48 C28 68 33 88 35 105" />
+                                                <path class="fp-ridge" d="M50 35 C42 35 36 42 36 52 C36 72 40 92 42 105" />
+                                                <path class="fp-ridge" d="M50 45 C46 45 44 48 44 55 C44 75 48 95 49 105" />
+                                                <path class="fp-ridge" d="M50 55 C52 55 54 58 54 62 C54 78 52 94 51 105" />
+                                                <path class="fp-ridge" d="M50 35 C58 35 64 42 64 52 C64 72 60 92 58 105" />
+                                                <path class="fp-ridge" d="M50 25 C64 25 72 35 72 48 C72 68 67 88 65 105" />
+                                                <path class="fp-ridge" d="M50 15 C70 15 80 28 80 45 C80 65 75 85 73 105" />
+                                            </svg>
+                                        </div>
+                                        <div class="bio-scanning-title" id="fpScanningTitle">Touch Fingerprint Sensor</div>
+                                        <div class="bio-scanning-sub" id="fpStatusSub">Place your finger on your device sensor or confirm the prompt</div>
+
+                                        <!-- Progressive Scan Feedback -->
+                                        <div class="bio-progress-container">
+                                            <div class="bio-progress-track">
+                                                <div class="bio-progress-fill" id="fpProgressFill" style="width: 25%;"></div>
+                                            </div>
+                                            <div class="bio-progress-labels">
+                                                <span class="bio-progress-state" id="fpStateLabel">Waiting for sensor touch...</span>
+                                                <span class="bio-progress-pct" id="fpPctLabel">Ready</span>
+                                            </div>
+                                        </div>
+                                        <div class="mt-2 text-center" style="max-width: 340px; margin: 8px auto 0;">
+                                            <span class="badge bg-dark-subtle text-secondary border border-secondary-subtle px-2 py-1" style="font-size: 11px; white-space: normal; line-height: 1.4;">
+                                                <i class="bi bi-phone me-1 text-warning"></i>
+                                                If phone asks <em>"Choose a device"</em>: Tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> or <strong>This device</strong>.
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Face Recognition Realistic Scanner -->
+                                    <div id="faceActiveScanner" class="bio-scanner-display">
+                                        <div class="face-scan-frame" id="faceScanFrame">
+                                            <button type="button" id="faceFlashToggleBtn" class="face-hud-flash-btn" onclick="toggleFaceFlash()" title="Toggle Flash / Fill Light" aria-label="Toggle Flash">
+                                                <i class="bi bi-lightning-fill"></i>
+                                                <span class="flash-text">Flash</span>
+                                            </button>
+                                            <div id="faceScreenFlashOverlay" class="face-screen-flash-overlay"></div>
+                                            <span class="hud-corner hud-tl"></span>
+                                            <span class="hud-corner hud-tr"></span>
+                                            <span class="hud-corner hud-bl"></span>
+                                            <span class="hud-corner hud-br"></span>
+                                            <div class="face-laser-bar" id="faceLaserBar"></div>
+
+                                            <video id="faceCameraVideo" class="face-camera-feed" autoplay playsinline muted style="display:none;"></video>
+                                            <div id="faceHoloGraphic" class="face-holo-mesh">
+                                                <div class="face-oval-target"></div>
+                                                <div class="face-mesh-node n-forehead"></div>
+                                                <div class="face-mesh-node n-eye-l"></div>
+                                                <div class="face-mesh-node n-eye-r"></div>
+                                                <div class="face-mesh-node n-nose"></div>
+                                                <div class="face-mesh-node n-mouth"></div>
+                                                <div class="face-mesh-node n-jaw-l"></div>
+                                                <div class="face-mesh-node n-jaw-r"></div>
+                                            </div>
+                                        </div>
+                                        <div class="bio-scanning-title" id="faceScanningTitle">Scanning Facial Landmarks...</div>
+                                        <div class="bio-scanning-sub" id="faceStatusSub">Align face within the target frame and follow device prompt</div>
+
+                                        <!-- Progressive Scan Feedback -->
+                                        <div class="bio-progress-container">
+                                            <div class="bio-progress-track">
+                                                <div class="bio-progress-fill cyan-fill" id="faceProgressFill" style="width: 0%;"></div>
+                                            </div>
+                                            <div class="bio-progress-labels">
+                                                <span class="bio-progress-state" id="faceStateLabel">Aligning facial geometry...</span>
+                                                <span class="bio-progress-pct" id="facePctLabel">0%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bio-cancel-row">
+                                    <button type="button" onclick="cancelBiometricRegistration()" class="cancel-btn bio-cancel-btn">
+                                        <i class="bi bi-x-circle me-1"></i>Cancel Registration
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- State C: Success View -->
+                            <div class="bio-stage-view" id="bioSuccessView" style="display:none;">
+                                <div class="bio-success-wrap">
+                                    <div class="bio-success-icon-ring">
+                                        <svg class="bio-success-svg" viewBox="0 0 52 52">
+                                            <circle class="bio-success-circle" cx="26" cy="26" r="25" fill="none"/>
+                                            <path class="bio-success-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                        </svg>
+                                    </div>
+                                    <div class="bio-success-title" id="bioSuccessTitle">Biometric Registered Successfully!</div>
+                                    <div class="bio-success-desc" id="bioSuccessDesc">
+                                        Your credential has been securely enrolled in your hardware enclave and linked to your account.
+                                    </div>
+                                    <div class="bio-success-actions">
+                                        <button type="button" onclick="resetToSelectionStage()" class="sbtn btn-emerald" style="padding:10px 24px;">
+                                            <i class="bi bi-check-lg me-1"></i>Done
+                                        </button>
+                                        <button type="button" onclick="switchOrRegisterOtherMethod()" class="cancel-btn" id="registerOtherBtn" style="padding:10px 20px;">
+                                            <i class="bi bi-plus-circle me-1"></i>Register Other Method
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- State D: Error View -->
+                            <div class="bio-stage-view" id="bioErrorView" style="display:none;">
+                                <div class="bio-error-wrap">
+                                    <div class="bio-error-icon-box">
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                    </div>
+                                    <div class="bio-error-title" id="bioErrorTitle">Registration Failed</div>
+                                    <div class="bio-error-desc" id="bioErrorDesc">
+                                        The biometric prompt was cancelled or timed out.
+                                    </div>
+                                    <div class="bio-error-actions">
+                                        <button type="button" onclick="retryBiometricRegistration()" class="sbtn btn-emerald" id="retryBtn" style="padding:10px 24px;">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Try Again
+                                        </button>
+                                        <button type="button" onclick="switchBiometricMethodFallback()" class="cancel-btn" id="fallbackSwitchBtn" style="padding:10px 20px;">
+                                            <i class="bi bi-arrow-left-right me-1"></i>Switch Method
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- ── Step 3: Registered Hardware Credentials List ── -->
+                    <div style="margin-top:28px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;">
+                            <div style="font-size:.78rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Hardware Credentials</div>
+                            <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;">Loading...</span>
+                        </div>
+                        <div id="deviceList">
+                            <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
+                                <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
+                                <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
+                                <div style="font-size:.78rem;color:#b39b82;">Choose Fingerprint or Face Recognition above to register this device.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ── 3. ATTENDANCE DEVICE BINDING & HARDWARE TRUST SECTION ── -->
+        <div class="sec-group-panel" id="sec-section-device">
+            <div id="tab-device">
+                <div class="sec-group-header">
+                    <div class="sec-group-header-left">
+                        <div class="sec-group-icon" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">
+                            <i class="bi bi-phone-fill"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+                                <div class="sec-group-title">Attendance Device Binding &amp; Silicon Telemetry</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="sec-health-pill" id="deviceTrustScorePill" style="background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#60a5fa;display:none;">
+                                        <i class="bi bi-shield-check me-1"></i>
+                                        <span id="deviceTrustScoreText">Trust Score: 85/100</span>
+                                    </div>
+                                    <div class="sec-health-pill {{ $deviceBinding ? ($deviceBinding->isLocked() ? 'gold' : 'emerald') : '' }}" id="deviceHeroPill">
+                                        <span class="sec-pulse-dot" style="{{ $deviceBinding ? ($deviceBinding->isLocked() ? 'background:#ef4444;' : 'background:#34d399;') : 'background:#f59e0b;' }}"></span>
+                                        <span id="deviceHeroPillText">
+                                            @if(!$deviceBinding)
+                                                Device Not Bound
+                                            @elseif($deviceBinding->isLocked())
+                                                Device Locked
+                                            @else
+                                                Device Bound
+                                            @endif
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="sec-group-desc">Manage the devices authorized to access the account and provide appropriate options for viewing, adding, or removing trusted devices</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="sec-card-content">
-                    <div class="sec-feature-chips">
-                        <span><i class="bi bi-check2"></i> Touch ID</span>
-                        <span><i class="bi bi-check2"></i> Face ID</span>
-                        <span><i class="bi bi-check2"></i> Windows Hello</span>
-                        <span><i class="bi bi-qr-code"></i> Fast QR Clock-In</span>
+                <!-- Lock Warning Alert (Visible only when locked) -->
+                <div id="deviceLockedAlert" style="{{ $deviceBinding && $deviceBinding->isLocked() ? 'display:flex;' : 'display:none;' }};align-items:center;justify-content:space-between;gap:16px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;margin-bottom:20px;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <i class="bi bi-shield-slash-fill" style="font-size:1.8rem;color:#f87171;"></i>
+                        <div>
+                            <div style="font-weight:700;color:#fca5a5;font-size:0.95rem;">Attendance Frozen: Device Locked</div>
+                            <div style="font-size:0.82rem;color:#fecaca;" id="deviceLockedReasonText">
+                                Reason: {{ $deviceBinding && $deviceBinding->locked_reason ? $deviceBinding->locked_reason : 'Suspicious activity or manual anti-theft freeze' }}
+                            </div>
+                        </div>
                     </div>
-                    <p class="sec-card-hint">
-                        Sign in instantly and verify classroom attendance QR scans without typing passwords.
-                    </p>
-                    <button type="button" onclick="switchTab('fingerprint')" class="sec-action-btn sec-btn-emerald">
-                        <i class="bi bi-fingerprint me-2"></i>Manage Biometrics & Devices
+                    <button type="button" onclick="handleUnlockDevice()" id="tabDeviceUnlockBtn" class="sec-action-btn" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;font-size:0.85rem;white-space:nowrap;">
+                        <i class="bi bi-unlock-fill me-1"></i> Unlock Device
                     </button>
+                </div>
+
+                <!-- 2-Column Responsive Device Grid -->
+                <div class="sec-cards-grid">
+
+                    <!-- Card 1: This Physical Device (Current Browser Telemetry) -->
+                    <div class="sec-card" style="--card-accent: #3b82f6;">
+                        <div class="sec-card-top">
+                            <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
+                                <i class="bi bi-laptop"></i>
+                            </div>
+                            <div class="sec-card-meta">
+                                <div class="sec-card-header-line">
+                                    <span class="sec-card-name">This Device (Current Hardware)</span>
+                                    <span class="sec-badge sec-badge-blue" id="currentDeviceMatchBadge" style="display:none;">
+                                        <i class="bi bi-shield-check"></i> Current Device
+                                    </span>
+                                </div>
+                                <div class="sec-card-subtitle">Active browser and real-time silicon environment identity</div>
+                            </div>
+                        </div>
+
+                        <div class="sec-card-content">
+                            <div class="info-row" style="padding:10px 0;">
+                                <div class="info-icon"><i class="bi bi-cpu-fill"></i></div>
+                                <div style="flex:1;min-width:0;">
+                                    <div class="info-lbl">Detected Hardware Model</div>
+                                    <div class="info-val" id="thisDeviceModelText">{{ request()->header('User-Agent') ? Str::limit(request()->header('User-Agent'), 45) : 'Client Device' }}</div>
+                                </div>
+                            </div>
+
+                            <div class="info-row" style="padding:10px 0;">
+                                <div class="info-icon"><i class="bi bi-gpu-card"></i></div>
+                                <div style="flex:1;min-width:0;">
+                                    <div class="info-lbl">Graphics / GPU Engine</div>
+                                    <div class="info-val" id="thisDeviceGpuText" style="font-size:0.82rem;color:#93c5fd;">Inspecting Silicon...</div>
+                                </div>
+                            </div>
+
+                            <div class="info-row" style="padding:10px 0;">
+                                <div class="info-icon"><i class="bi bi-display"></i></div>
+                                <div style="flex:1;min-width:0;">
+                                    <div class="info-lbl">Display &amp; Processing Cores</div>
+                                    <div class="info-val" id="thisDeviceDisplayCores" style="font-size:0.82rem;color:#e2e8f0;">Reading Environment...</div>
+                                </div>
+                            </div>
+
+                            <div class="info-row" style="padding:10px 0;">
+                                <div class="info-icon"><i class="bi bi-globe2"></i></div>
+                                <div style="flex:1;min-width:0;">
+                                    <div class="info-lbl">Current Network &amp; IP</div>
+                                    <div class="info-val" id="thisDeviceNetworkText" style="font-family:monospace;color:#60a5fa;">{{ request()->ip() }}</div>
+                                </div>
+                            </div>
+
+                            <div class="info-row" style="padding:10px 0;border-bottom:none;">
+                                <div class="info-icon"><i class="bi bi-fingerprint"></i></div>
+                                <div style="flex:1;min-width:0;">
+                                    <div class="info-lbl">Hardware Environment Protection</div>
+                                    <div class="info-val" style="color:#4ade80;font-size:0.82rem;"><i class="bi bi-check2-circle me-1"></i> WebGL &amp; Canvas Silicon Hash Active</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:16px;">
+                                <button type="button" onclick="handleBindCurrentDevice()" id="tabDeviceBindBtn" class="sec-action-btn sec-btn-emerald" style="width:100%;padding:12px;font-size:0.9rem;">
+                                    <i class="bi bi-link-45deg me-2"></i><span id="tabDeviceBindBtnText">{{ $deviceBinding ? 'Switch & Bind to This Device' : 'Bind to This Device' }}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Authorized Account Device -->
+                    <div class="sec-card" style="--card-accent: #10b981;">
+                        <div class="sec-card-top">
+                            <div class="sec-card-icon" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">
+                                <i class="bi {{ $deviceBinding ? $deviceBinding->getDeviceIcon() : 'bi-phone' }}" id="deviceTabBoundIcon"></i>
+                            </div>
+                            <div class="sec-card-meta">
+                                <div class="sec-card-header-line">
+                                    <span class="sec-card-name">Bound Attendance Device</span>
+                                    <span class="sec-badge {{ $deviceBinding ? ($deviceBinding->isLocked() ? 'sec-badge-danger' : 'sec-badge-emerald') : 'sec-badge-gold' }}" id="deviceTabAuthorizedBadge">
+                                        <i class="bi {{ $deviceBinding ? ($deviceBinding->isLocked() ? 'bi-lock-fill' : 'bi-patch-check-fill') : 'bi-shield-exclamation' }}"></i>
+                                        <span id="deviceTabAuthorizedBadgeText">
+                                            @if(!$deviceBinding)
+                                                Unregistered
+                                            @elseif($deviceBinding->isLocked())
+                                                Locked
+                                            @else
+                                                Authorized
+                                            @endif
+                                        </span>
+                                    </span>
+                                </div>
+                                <div class="sec-card-subtitle">Device registered to record student attendance</div>
+                            </div>
+                        </div>
+
+                        <div class="sec-card-content">
+                            <div id="deviceTabBoundTile" style="{{ $deviceBinding ? 'display:block;' : 'display:none;' }}">
+                                <div class="info-row" style="padding:10px 0;">
+                                    <div class="info-icon"><i class="bi bi-phone"></i></div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div class="info-lbl">Device Model / Name</div>
+                                        <div class="info-val" id="deviceTabBoundName">{{ $deviceBinding ? $deviceBinding->device_name : 'No device bound' }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="info-row" style="padding:10px 0;">
+                                    <div class="info-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div class="info-lbl">Trust Level &amp; Score</div>
+                                        <div class="info-val" id="deviceTabBoundTrust" style="color:#34d399;font-weight:700;">
+                                            {{ $deviceBinding ? ($deviceBinding->getTrustLevel() . ' (' . ($deviceBinding->trust_score ?? 85) . '/100)') : '—' }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-row" style="padding:10px 0;">
+                                    <div class="info-icon"><i class="bi bi-wifi"></i></div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div class="info-lbl">Registration IP &amp; Changes</div>
+                                        <div class="info-val" style="font-family:monospace;color:#4ade80;">
+                                            <span id="deviceTabBoundIp">{{ $deviceBinding ? ($deviceBinding->ip_address ?: 'Unknown') : '—' }}</span>
+                                            <span style="color:#b39b82;font-size:0.75rem;margin-left:8px;" id="deviceTabBoundChanges">({{ $deviceBinding ? (int)$deviceBinding->change_count : 0 }} switches)</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="info-row" style="padding:10px 0;border-bottom:none;">
+                                    <div class="info-icon"><i class="bi bi-clock-history"></i></div>
+                                    <div style="flex:1;min-width:0;">
+                                        <div class="info-lbl">Last Active Sync</div>
+                                        <div class="info-val" id="deviceTabBoundTime">{{ $deviceBinding && $deviceBinding->last_seen_at ? $deviceBinding->last_seen_at->diffForHumans() : 'Recently' }}</div>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex;gap:10px;margin-top:16px;">
+                                    <button type="button" onclick="handleLockDevice()" id="tabDeviceLockBtn" class="sec-action-btn" style="flex:1;padding:10px;font-size:0.84rem;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">
+                                        <i class="bi bi-lock-fill me-1"></i> Freeze / Lock
+                                    </button>
+                                    <button type="button" onclick="handleUnbindDevice()" id="tabDeviceUnbindBtn" class="sec-action-btn" style="flex:1;padding:10px;font-size:0.84rem;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3);">
+                                        <i class="bi bi-trash3-fill me-1"></i> Unbind
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="deviceTabUnboundTile" style="{{ $deviceBinding ? 'display:none;' : 'display:block;' }};text-align:center;padding:24px 16px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);">
+                                <i class="bi bi-phone" style="font-size:2.2rem;color:rgba(207,164,111,0.4);display:block;margin-bottom:8px;"></i>
+                                <div style="font-weight:700;color:#f3e7cd;font-size:0.92rem;margin-bottom:4px;">No Device Bound Yet</div>
+                                <p style="font-size:0.8rem;color:#b39b82;margin-bottom:0;">
+                                    Click "Bind to This Device" to authorize your device for classroom attendance scanning.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- ── 4. EMERGENCY RECOVERY VAULT SECTION ── -->
+        <div class="sec-group-panel" id="sec-section-recovery">
+            <div class="sec-group-header">
+                <div class="sec-group-header-left">
+                    <div class="sec-group-icon" style="background:rgba(234,179,8,0.12);color:#fbbf24;border:1px solid rgba(234,179,8,0.25);">
+                        <i class="bi bi-safe-fill"></i>
+                    </div>
+                    <div>
+                        <div class="sec-group-title">Emergency Recovery Vault</div>
+                        <div class="sec-group-desc">One-time offline emergency keys to restore account access if credentials or devices are lost</div>
+                    </div>
                 </div>
             </div>
 
-            <!-- ── Card 4: Emergency Recovery Codes Vault ── -->
-            <div class="sec-card" style="--card-accent: #cfa46f;">
+            <!-- Card: Emergency Recovery Codes Vault -->
+            <div class="sec-card" style="--card-accent: #cfa46f;max-width:680px;">
                 <div class="sec-card-top">
                     <div class="sec-card-icon" style="background:rgba(234,179,8,0.12);color:#fbbf24;border:1px solid rgba(234,179,8,0.25);">
                         <i class="bi bi-safe-fill"></i>
                     </div>
                     <div class="sec-card-meta">
                         <div class="sec-card-header-line">
-                            <span class="sec-card-name">Emergency Recovery Vault</span>
+                            <span class="sec-card-name">Account Recovery Vault</span>
                             <span class="sec-badge sec-badge-gold"><i class="bi bi-key-fill"></i> Backup Keys</span>
                         </div>
                         <div class="sec-card-subtitle">One-time offline emergency keys to restore account access</div>
@@ -3550,565 +4251,7 @@
                     </div>
                 </div>
             </div>
-
-            <!-- ── Card 5: Attendance Device Binding ── -->
-            <div class="sec-card" style="--card-accent: #10b981;">
-                <div class="sec-card-top">
-                    <div class="sec-card-icon" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">
-                        <i class="bi bi-phone-fill"></i>
-                    </div>
-                    <div class="sec-card-meta">
-                        <div class="sec-card-header-line">
-                            <span class="sec-card-name">Attendance Device Binding</span>
-                            <span class="sec-badge {{ $deviceBinding ? 'sec-badge-emerald' : 'sec-badge-gold' }}" id="secCardDeviceBadge">
-                                <i class="bi {{ $deviceBinding ? 'bi-patch-check-fill' : 'bi-shield-exclamation' }}"></i>
-                                <span id="secCardDeviceBadgeText">{{ $deviceBinding ? 'Device Bound' : 'No Device Bound' }}</span>
-                            </span>
-                        </div>
-                        <div class="sec-card-subtitle">Lock this physical hardware to your account for verified attendance</div>
-                    </div>
-                </div>
-
-                <div class="sec-card-content">
-                    <div class="sec-input-display mb-2" id="secCardDeviceDisplayWrap">
-                        <i class="bi {{ $deviceBinding ? $deviceBinding->getDeviceIcon() : 'bi-phone' }} text-success me-2" id="secCardDeviceIcon"></i>
-                        <span class="sec-input-val" id="secCardDeviceName">
-                            {{ $deviceBinding ? $deviceBinding->device_name : 'No device currently registered' }}
-                        </span>
-                    </div>
-
-                    <p class="sec-card-hint" id="secCardDeviceHint">
-                        @if($deviceBinding)
-                            Bound device IP: <strong style="color:#f3e7cd;">{{ $deviceBinding->ip_address ?: 'Unknown' }}</strong> • Active {{ $deviceBinding->last_seen_at ? $deviceBinding->last_seen_at->diffForHumans() : 'Recently' }}.
-                        @else
-                            Bind your smartphone, tablet, or laptop to unlock anti-proxy verified QR attendance clock-ins.
-                        @endif
-                    </p>
-
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
-                        <button type="button" onclick="switchTab('device')" class="sec-action-btn sec-btn-emerald" style="width:100%;">
-                            <i class="bi bi-phone-fill me-2"></i>Manage Device Binding & Hardware Trust
-                        </button>
-                    </div>
-                </div>
-            </div>
-
         </div>
-
-    </div>
-
-    <!-- ── TAB: BIOMETRICS REGISTRATION ── -->
-    <div id="tab-fingerprint" class="spanel">
-        <div class="sc">
-            <div class="sc-head">
-                <div class="sc-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;"><i class="bi bi-shield-lock-fill"></i></div>
-                <div>
-                    <div class="sc-title">Biometrics Registration</div>
-                    <div class="sc-sub">Hardware-grade FIDO2 / WebAuthn passwordless biometric authentication</div>
-                </div>
-            </div>
-            <div class="sc-body">
-
-                <!-- In-app browser & Insecure Context Alert -->
-                <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
-                    <div style="display:flex;align-items:flex-start;gap:12px;">
-                        <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
-                        <div>
-                            <div style="font-weight:700;margin-bottom:4px;" id="unsupportedTitle">Biometric sensor not available on this browser</div>
-                            <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
-                                Your current browser or connection does not support hardware biometric sign-in.
-                            </div>
-                            <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:none;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
-                                <i class="bi bi-box-arrow-up-right"></i> Open in External Browser
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── Step 1: Method Selection ── -->
-                <div class="bio-flow-section">
-                    <div class="bio-section-title-wrap">
-                        <span class="bio-step-badge">Step 1</span>
-                        <div>
-                            <div class="bio-step-title">Choose Biometric Authentication Method</div>
-                            <div class="bio-step-subtitle">Select ONE preferred biometric method to register for passwordless login and QR clock-in:</div>
-                        </div>
-                    </div>
-
-                    <div class="bio-method-grid">
-                        <!-- Option 1: Fingerprint -->
-                        <div class="bio-method-card selected" id="methodCardFp" data-method="fingerprint" tabindex="0" role="button" aria-pressed="true" onclick="selectBiometricMethod('fingerprint')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('fingerprint')">
-                            <div class="bio-card-radio">
-                                <div class="bio-radio-inner">
-                                    <i class="bi bi-check-lg"></i>
-                                </div>
-                            </div>
-                            <div class="bio-method-icon-wrap bio-fp-icon">
-                                <i class="bi bi-fingerprint"></i>
-                            </div>
-                            <div class="bio-method-info">
-                                <div class="bio-method-header">
-                                    <span class="bio-method-name">Fingerprint</span>
-                                    <span class="bio-status-pill not-reg" id="statusBadgeFingerprint">Checking...</span>
-                                </div>
-                                <p class="bio-method-desc">
-                                    Authenticate in seconds using your device's built-in fingerprint scanner, Touch ID sensor, or USB security key.
-                                </p>
-                                <div class="bio-method-meta">
-                                    <span><i class="bi bi-lightning-charge-fill me-1" style="color:#4ade80;"></i>Ultra-Fast</span>
-                                    <span><i class="bi bi-cpu-fill me-1" style="color:#cfa46f;"></i>Local Enclave</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Option 2: Face Recognition -->
-                        <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
-                            <div class="bio-card-radio">
-                                <div class="bio-radio-inner">
-                                    <i class="bi bi-check-lg"></i>
-                                </div>
-                            </div>
-                            <div class="bio-method-icon-wrap bio-face-icon">
-                                <i class="bi bi-person-bounding-box"></i>
-                            </div>
-                            <div class="bio-method-info">
-                                <div class="bio-method-header">
-                                    <span class="bio-method-name">Face Recognition</span>
-                                    <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
-                                </div>
-                                <p class="bio-method-desc">
-                                    Authenticate hands-free using Face ID, Windows Hello Face recognition camera, or front-facing facial geometry.
-                                </p>
-                                <div class="bio-method-meta">
-                                    <span><i class="bi bi-eye-fill me-1" style="color:#38bdf8;"></i>Hands-Free</span>
-                                    <span><i class="bi bi-camera-fill me-1" style="color:#cfa46f;"></i>Front Sensor</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── Step 2: Registration & Scanning Stage ── -->
-                <div class="bio-flow-section" style="margin-top:24px;">
-                    <div class="bio-section-title-wrap">
-                        <span class="bio-step-badge">Step 2</span>
-                        <div>
-                            <div class="bio-step-title" id="bioStep2Title">Biometric Sensor Capture</div>
-                            <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected: <strong id="selectedMethodDisplay" style="color:#4ade80;">Fingerprint</strong> — Ready to register this device</div>
-                        </div>
-                    </div>
-
-                    <!-- Scanner Stage Container -->
-                    <div class="bio-scanner-card" id="bioScannerStage">
-
-                        <!-- State A: Idle / Ready Overview -->
-                        <div class="bio-stage-view" id="bioIdleView">
-                            <div class="bio-preview-container">
-                                <!-- Fingerprint Idle Graphic -->
-                                <div id="fpIdlePreview" class="bio-method-preview active">
-                                    <div class="bio-idle-sensor-ring">
-                                        <div class="bio-radar-ring"></div>
-                                        <div class="bio-radar-ring delay-1"></div>
-                                        <i class="bi bi-fingerprint bio-idle-sensor-icon" style="color:#4ade80;"></i>
-                                    </div>
-                                    <div class="bio-preview-title">Register Fingerprint Authentication</div>
-                                    <div class="bio-preview-sub">Click the button below to start the hardware fingerprint enrollment for this account.</div>
-                                    <div class="mt-2 text-start px-2 py-1 rounded" style="font-size: 11.5px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2); color: #bae6fd; max-width: 380px; margin: 8px auto 0;">
-                                        <i class="bi bi-info-circle-fill me-1 text-info"></i>
-                                        <strong>Android Notice:</strong> If prompted <em>"Choose a device for your passkey"</em>, tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> (or <strong>This device</strong>) to scan your fingerprint.
-                                    </div>
-                                </div>
-
-                                <!-- Face Idle Graphic -->
-                                <div id="faceIdlePreview" class="bio-method-preview">
-                                    <div class="bio-idle-face-box">
-                                        <span class="hud-corner hud-tl"></span>
-                                        <span class="hud-corner hud-tr"></span>
-                                        <span class="hud-corner hud-bl"></span>
-                                        <span class="hud-corner hud-br"></span>
-                                        <div class="hud-face-reticle">
-                                            <i class="bi bi-person-bounding-box bio-idle-face-icon" style="color:#38bdf8;"></i>
-                                        </div>
-                                    </div>
-                                    <div class="bio-preview-title">Register Face Recognition</div>
-                                    <div class="bio-preview-sub">Click the button below to start facial biometric enrollment using Face ID or your device camera.</div>
-                                </div>
-                            </div>
-
-                            <div class="bio-action-row">
-                                <button type="button" id="startBioBtn" class="sbtn btn-emerald bio-primary-cta">
-                                    <i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint
-                                </button>
-                                <span class="bio-hardware-note">
-                                    <i class="bi bi-shield-check text-success me-1"></i>FIDO2 / WebAuthn Hardware Security
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- State B: Active Live Scanning Stage -->
-                        <div class="bio-stage-view" id="bioScanningView" style="display:none;">
-                            <div class="bio-scan-hud-container">
-
-                                <!-- Fingerprint Realistic Scanner -->
-                                <div id="fpActiveScanner" class="bio-scanner-display active">
-                                    <div class="fp-scan-frame">
-                                        <div class="fp-pulse-wave"></div>
-                                        <div class="fp-laser-line" id="fpLaserLine"></div>
-                                        <svg class="fp-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-                                            <path class="fp-ridge" d="M50 15 C30 15 20 28 20 45 C20 65 25 85 27 105" />
-                                            <path class="fp-ridge" d="M50 25 C36 25 28 35 28 48 C28 68 33 88 35 105" />
-                                            <path class="fp-ridge" d="M50 35 C42 35 36 42 36 52 C36 72 40 92 42 105" />
-                                            <path class="fp-ridge" d="M50 45 C46 45 44 48 44 55 C44 75 48 95 49 105" />
-                                            <path class="fp-ridge" d="M50 55 C52 55 54 58 54 62 C54 78 52 94 51 105" />
-                                            <path class="fp-ridge" d="M50 35 C58 35 64 42 64 52 C64 72 60 92 58 105" />
-                                            <path class="fp-ridge" d="M50 25 C64 25 72 35 72 48 C72 68 67 88 65 105" />
-                                            <path class="fp-ridge" d="M50 15 C70 15 80 28 80 45 C80 65 75 85 73 105" />
-                                        </svg>
-                                    </div>
-                                    <div class="bio-scanning-title" id="fpScanningTitle">Touch Fingerprint Sensor</div>
-                                    <div class="bio-scanning-sub" id="fpStatusSub">Place your finger on your device sensor or confirm the prompt</div>
-
-                                    <!-- Progressive Scan Feedback -->
-                                    <div class="bio-progress-container">
-                                        <div class="bio-progress-track">
-                                            <div class="bio-progress-fill" id="fpProgressFill" style="width: 25%;"></div>
-                                        </div>
-                                        <div class="bio-progress-labels">
-                                            <span class="bio-progress-state" id="fpStateLabel">Waiting for sensor touch...</span>
-                                            <span class="bio-progress-pct" id="fpPctLabel">Ready</span>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2 text-center" style="max-width: 340px; margin: 8px auto 0;">
-                                        <span class="badge bg-dark-subtle text-secondary border border-secondary-subtle px-2 py-1" style="font-size: 11px; white-space: normal; line-height: 1.4;">
-                                            <i class="bi bi-phone me-1 text-warning"></i>
-                                            If phone asks <em>"Choose a device"</em>: Tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> or <strong>This device</strong>.
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <!-- Face Recognition Realistic Scanner -->
-                                <div id="faceActiveScanner" class="bio-scanner-display">
-                                    <div class="face-scan-frame" id="faceScanFrame">
-                                        <button type="button" id="faceFlashToggleBtn" class="face-hud-flash-btn" onclick="toggleFaceFlash()" title="Toggle Flash / Fill Light" aria-label="Toggle Flash">
-                                            <i class="bi bi-lightning-fill"></i>
-                                            <span class="flash-text">Flash</span>
-                                        </button>
-                                        <div id="faceScreenFlashOverlay" class="face-screen-flash-overlay"></div>
-                                        <span class="hud-corner hud-tl"></span>
-                                        <span class="hud-corner hud-tr"></span>
-                                        <span class="hud-corner hud-bl"></span>
-                                        <span class="hud-corner hud-br"></span>
-                                        <div class="face-laser-bar" id="faceLaserBar"></div>
-
-                                        <video id="faceCameraVideo" class="face-camera-feed" autoplay playsinline muted style="display:none;"></video>
-                                        <div id="faceHoloGraphic" class="face-holo-mesh">
-                                            <div class="face-oval-target"></div>
-                                            <div class="face-mesh-node n-forehead"></div>
-                                            <div class="face-mesh-node n-eye-l"></div>
-                                            <div class="face-mesh-node n-eye-r"></div>
-                                            <div class="face-mesh-node n-nose"></div>
-                                            <div class="face-mesh-node n-mouth"></div>
-                                            <div class="face-mesh-node n-jaw-l"></div>
-                                            <div class="face-mesh-node n-jaw-r"></div>
-                                        </div>
-                                    </div>
-                                    <div class="bio-scanning-title" id="faceScanningTitle">Scanning Facial Landmarks...</div>
-                                    <div class="bio-scanning-sub" id="faceStatusSub">Align face within the target frame and follow device prompt</div>
-
-                                    <!-- Progressive Scan Feedback -->
-                                    <div class="bio-progress-container">
-                                        <div class="bio-progress-track">
-                                            <div class="bio-progress-fill cyan-fill" id="faceProgressFill" style="width: 0%;"></div>
-                                        </div>
-                                        <div class="bio-progress-labels">
-                                            <span class="bio-progress-state" id="faceStateLabel">Aligning facial geometry...</span>
-                                            <span class="bio-progress-pct" id="facePctLabel">0%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="bio-cancel-row">
-                                <button type="button" onclick="cancelBiometricRegistration()" class="cancel-btn bio-cancel-btn">
-                                    <i class="bi bi-x-circle me-1"></i>Cancel Registration
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- State C: Success View -->
-                        <div class="bio-stage-view" id="bioSuccessView" style="display:none;">
-                            <div class="bio-success-wrap">
-                                <div class="bio-success-icon-ring">
-                                    <svg class="bio-success-svg" viewBox="0 0 52 52">
-                                        <circle class="bio-success-circle" cx="26" cy="26" r="25" fill="none"/>
-                                        <path class="bio-success-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
-                                    </svg>
-                                </div>
-                                <div class="bio-success-title" id="bioSuccessTitle">Biometric Registered Successfully!</div>
-                                <div class="bio-success-desc" id="bioSuccessDesc">
-                                    Your credential has been securely enrolled in your hardware enclave and linked to your account.
-                                </div>
-                                <div class="bio-success-actions">
-                                    <button type="button" onclick="resetToSelectionStage()" class="sbtn btn-emerald" style="padding:10px 24px;">
-                                        <i class="bi bi-check-lg me-1"></i>Done
-                                    </button>
-                                    <button type="button" onclick="switchOrRegisterOtherMethod()" class="cancel-btn" id="registerOtherBtn" style="padding:10px 20px;">
-                                        <i class="bi bi-plus-circle me-1"></i>Register Other Method
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- State D: Error View -->
-                        <div class="bio-stage-view" id="bioErrorView" style="display:none;">
-                            <div class="bio-error-wrap">
-                                <div class="bio-error-icon-box">
-                                    <i class="bi bi-exclamation-triangle-fill"></i>
-                                </div>
-                                <div class="bio-error-title" id="bioErrorTitle">Registration Failed</div>
-                                <div class="bio-error-desc" id="bioErrorDesc">
-                                    The biometric prompt was cancelled or timed out.
-                                </div>
-                                <div class="bio-error-actions">
-                                    <button type="button" onclick="retryBiometricRegistration()" class="sbtn btn-emerald" id="retryBtn" style="padding:10px 24px;">
-                                        <i class="bi bi-arrow-repeat me-1"></i>Try Again
-                                    </button>
-                                    <button type="button" onclick="switchBiometricMethodFallback()" class="cancel-btn" id="fallbackSwitchBtn" style="padding:10px 20px;">
-                                        <i class="bi bi-arrow-left-right me-1"></i>Switch Method
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- ── Step 3: Registered Hardware Credentials List ── -->
-                <div style="margin-top:28px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;">
-                        <div style="font-size:.78rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Hardware Credentials</div>
-                        <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;">Loading...</span>
-                    </div>
-                    <div id="deviceList">
-                        <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
-                            <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                            <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
-                            <div style="font-size:.78rem;color:#b39b82;">Choose Fingerprint or Face Recognition above to register this device.</div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <!-- ── TAB: DEVICE BINDING ── -->
-    <div id="tab-device" class="spanel">
-
-        <!-- Hero Status Banner with Trust Meter -->
-        <div class="sec-health-hero mb-4" style="background:linear-gradient(135deg, rgba(26,20,16,0.95) 0%, rgba(16,24,18,0.95) 100%);">
-            <div class="sec-health-left">
-                <div class="sec-health-icon" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">
-                    <i class="bi bi-phone-fill"></i>
-                </div>
-                <div>
-                    <div class="sec-health-title">Attendance Device Binding &amp; Silicon Telemetry</div>
-                    <div class="sec-health-sub">Authorize and lock your physical hardware for anti-proxy classroom QR clock-ins</div>
-                </div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                <div class="sec-health-pill" id="deviceTrustScorePill" style="background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#60a5fa;display:none;">
-                    <i class="bi bi-shield-check me-1"></i>
-                    <span id="deviceTrustScoreText">Trust Score: 85/100</span>
-                </div>
-                <div class="sec-health-pill {{ $deviceBinding ? ($deviceBinding->isLocked() ? 'gold' : 'emerald') : '' }}" id="deviceHeroPill">
-                    <span class="sec-pulse-dot" style="{{ $deviceBinding ? ($deviceBinding->isLocked() ? 'background:#ef4444;' : 'background:#34d399;') : 'background:#f59e0b;' }}"></span>
-                    <span id="deviceHeroPillText">
-                        @if(!$deviceBinding)
-                            Device Not Bound
-                        @elseif($deviceBinding->isLocked())
-                            Device Locked
-                        @else
-                            Device Bound
-                        @endif
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lock Warning Alert (Visible only when locked) -->
-        <div id="deviceLockedAlert" style="{{ $deviceBinding && $deviceBinding->isLocked() ? 'display:flex;' : 'display:none;' }};align-items:center;justify-content:space-between;gap:16px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:16px;margin-bottom:20px;">
-            <div style="display:flex;align-items:center;gap:12px;">
-                <i class="bi bi-shield-slash-fill" style="font-size:1.8rem;color:#f87171;"></i>
-                <div>
-                    <div style="font-weight:700;color:#fca5a5;font-size:0.95rem;">Attendance Frozen: Device Locked</div>
-                    <div style="font-size:0.82rem;color:#fecaca;" id="deviceLockedReasonText">
-                        Reason: {{ $deviceBinding && $deviceBinding->locked_reason ? $deviceBinding->locked_reason : 'Suspicious activity or manual anti-theft freeze' }}
-                    </div>
-                </div>
-            </div>
-            <button type="button" onclick="handleUnlockDevice()" id="tabDeviceUnlockBtn" class="sec-action-btn" style="background:#ef4444;color:#fff;border:none;padding:8px 16px;font-size:0.85rem;white-space:nowrap;">
-                <i class="bi bi-unlock-fill me-1"></i> Unlock Device
-            </button>
-        </div>
-
-        <!-- 2-Column Responsive Device Grid -->
-        <div class="sec-cards-grid">
-
-            <!-- Card 1: This Physical Device (Current Browser Telemetry) -->
-            <div class="sec-card" style="--card-accent: #3b82f6;">
-                <div class="sec-card-top">
-                    <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
-                        <i class="bi bi-laptop"></i>
-                    </div>
-                    <div class="sec-card-meta">
-                        <div class="sec-card-header-line">
-                            <span class="sec-card-name">This Device (Current Hardware)</span>
-                            <span class="sec-badge sec-badge-blue" id="currentDeviceMatchBadge" style="display:none;">
-                                <i class="bi bi-shield-check"></i> Current Device
-                            </span>
-                        </div>
-                        <div class="sec-card-subtitle">Active browser and real-time silicon environment identity</div>
-                    </div>
-                </div>
-
-                <div class="sec-card-content">
-                    <div class="info-row" style="padding:10px 0;">
-                        <div class="info-icon"><i class="bi bi-cpu-fill"></i></div>
-                        <div style="flex:1;min-width:0;">
-                            <div class="info-lbl">Detected Hardware Model</div>
-                            <div class="info-val" id="thisDeviceModelText">{{ request()->header('User-Agent') ? Str::limit(request()->header('User-Agent'), 45) : 'Client Device' }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row" style="padding:10px 0;">
-                        <div class="info-icon"><i class="bi bi-gpu-card"></i></div>
-                        <div style="flex:1;min-width:0;">
-                            <div class="info-lbl">Graphics / GPU Engine</div>
-                            <div class="info-val" id="thisDeviceGpuText" style="font-size:0.82rem;color:#93c5fd;">Inspecting Silicon...</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row" style="padding:10px 0;">
-                        <div class="info-icon"><i class="bi bi-display"></i></div>
-                        <div style="flex:1;min-width:0;">
-                            <div class="info-lbl">Display &amp; Processing Cores</div>
-                            <div class="info-val" id="thisDeviceDisplayCores" style="font-size:0.82rem;color:#e2e8f0;">Reading Environment...</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row" style="padding:10px 0;">
-                        <div class="info-icon"><i class="bi bi-globe2"></i></div>
-                        <div style="flex:1;min-width:0;">
-                            <div class="info-lbl">Current Network &amp; IP</div>
-                            <div class="info-val" id="thisDeviceNetworkText" style="font-family:monospace;color:#60a5fa;">{{ request()->ip() }}</div>
-                        </div>
-                    </div>
-
-                    <div class="info-row" style="padding:10px 0;border-bottom:none;">
-                        <div class="info-icon"><i class="bi bi-fingerprint"></i></div>
-                        <div style="flex:1;min-width:0;">
-                            <div class="info-lbl">Hardware Environment Protection</div>
-                            <div class="info-val" style="color:#4ade80;font-size:0.82rem;"><i class="bi bi-check2-circle me-1"></i> WebGL &amp; Canvas Silicon Hash Active</div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top:16px;">
-                        <button type="button" onclick="handleBindCurrentDevice()" id="tabDeviceBindBtn" class="sec-action-btn sec-btn-emerald" style="width:100%;padding:12px;font-size:0.9rem;">
-                            <i class="bi bi-link-45deg me-2"></i><span id="tabDeviceBindBtnText">{{ $deviceBinding ? 'Switch & Bind to This Device' : 'Bind to This Device' }}</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 2: Authorized Account Device -->
-            <div class="sec-card" style="--card-accent: #10b981;">
-                <div class="sec-card-top">
-                    <div class="sec-card-icon" style="background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.25);">
-                        <i class="bi {{ $deviceBinding ? $deviceBinding->getDeviceIcon() : 'bi-phone' }}" id="deviceTabBoundIcon"></i>
-                    </div>
-                    <div class="sec-card-meta">
-                        <div class="sec-card-header-line">
-                            <span class="sec-card-name">Bound Attendance Device</span>
-                            <span class="sec-badge {{ $deviceBinding ? ($deviceBinding->isLocked() ? 'sec-badge-danger' : 'sec-badge-emerald') : 'sec-badge-gold' }}" id="deviceTabAuthorizedBadge">
-                                <i class="bi {{ $deviceBinding ? ($deviceBinding->isLocked() ? 'bi-lock-fill' : 'bi-patch-check-fill') : 'bi-shield-exclamation' }}"></i>
-                                <span id="deviceTabAuthorizedBadgeText">
-                                    @if(!$deviceBinding)
-                                        Unregistered
-                                    @elseif($deviceBinding->isLocked())
-                                        Locked
-                                    @else
-                                        Authorized
-                                    @endif
-                                </span>
-                            </span>
-                        </div>
-                        <div class="sec-card-subtitle">Device registered to record student attendance</div>
-                    </div>
-                </div>
-
-                <div class="sec-card-content">
-                    <div id="deviceTabBoundTile" style="{{ $deviceBinding ? 'display:block;' : 'display:none;' }}">
-                        <div class="info-row" style="padding:10px 0;">
-                            <div class="info-icon"><i class="bi bi-phone"></i></div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="info-lbl">Device Model / Name</div>
-                                <div class="info-val" id="deviceTabBoundName">{{ $deviceBinding ? $deviceBinding->device_name : 'No device bound' }}</div>
-                            </div>
-                        </div>
-
-                        <div class="info-row" style="padding:10px 0;">
-                            <div class="info-icon"><i class="bi bi-shield-lock-fill"></i></div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="info-lbl">Trust Level &amp; Score</div>
-                                <div class="info-val" id="deviceTabBoundTrust" style="color:#34d399;font-weight:700;">
-                                    {{ $deviceBinding ? ($deviceBinding->getTrustLevel() . ' (' . ($deviceBinding->trust_score ?? 85) . '/100)') : '—' }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="info-row" style="padding:10px 0;">
-                            <div class="info-icon"><i class="bi bi-wifi"></i></div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="info-lbl">Registration IP &amp; Changes</div>
-                                <div class="info-val" style="font-family:monospace;color:#4ade80;">
-                                    <span id="deviceTabBoundIp">{{ $deviceBinding ? ($deviceBinding->ip_address ?: 'Unknown') : '—' }}</span>
-                                    <span style="color:#b39b82;font-size:0.75rem;margin-left:8px;" id="deviceTabBoundChanges">({{ $deviceBinding ? (int)$deviceBinding->change_count : 0 }} switches)</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="info-row" style="padding:10px 0;border-bottom:none;">
-                            <div class="info-icon"><i class="bi bi-clock-history"></i></div>
-                            <div style="flex:1;min-width:0;">
-                                <div class="info-lbl">Last Active Sync</div>
-                                <div class="info-val" id="deviceTabBoundTime">{{ $deviceBinding && $deviceBinding->last_seen_at ? $deviceBinding->last_seen_at->diffForHumans() : 'Recently' }}</div>
-                            </div>
-                        </div>
-
-                        <div style="display:flex;gap:10px;margin-top:16px;">
-                            <button type="button" onclick="handleLockDevice()" id="tabDeviceLockBtn" class="sec-action-btn" style="flex:1;padding:10px;font-size:0.84rem;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">
-                                <i class="bi bi-lock-fill me-1"></i> Freeze / Lock
-                            </button>
-                            <button type="button" onclick="handleUnbindDevice()" id="tabDeviceUnbindBtn" class="sec-action-btn" style="flex:1;padding:10px;font-size:0.84rem;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.3);">
-                                <i class="bi bi-trash3-fill me-1"></i> Unbind
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="deviceTabUnboundTile" style="{{ $deviceBinding ? 'display:none;' : 'display:block;' }};text-align:center;padding:24px 16px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.2);">
-                        <i class="bi bi-phone" style="font-size:2.2rem;color:rgba(207,164,111,0.4);display:block;margin-bottom:8px;"></i>
-                        <div style="font-weight:700;color:#f3e7cd;font-size:0.92rem;margin-bottom:4px;">No Device Bound Yet</div>
-                        <p style="font-size:0.8rem;color:#b39b82;margin-bottom:0;">
-                            Click "Bind to This Device" to authorize your device for classroom attendance scanning.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-
 
     </div>
 
@@ -4523,9 +4666,124 @@ window.scrollStabs = function(direction) {
     setTimeout(updateStabsScrollArrows, 200);
 };
 
+window.switchSecuritySub = function(subKey, btn) {
+    if (!subKey) subKey = 'all';
+    if (subKey === 'fingerprint') subKey = 'biometrics';
+
+    // 1. Ensure parent tab-security panel is active
+    const secPanel = document.getElementById('tab-security');
+    if (secPanel && !secPanel.classList.contains('active')) {
+        document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
+        secPanel.classList.add('active');
+        document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+        const secStab = document.querySelector('.stab[data-tab="security"]');
+        if (secStab) secStab.classList.add('active');
+    }
+
+    // 2. Update subnav filter pills
+    document.querySelectorAll('.sec-subnav-pill').forEach(pill => {
+        if (pill.getAttribute('data-sec-sub') === subKey) {
+            pill.classList.add('active');
+        } else {
+            pill.classList.remove('active');
+        }
+    });
+
+    // 3. Update sidebar active status
+    document.querySelectorAll('.snav-item').forEach(b => b.classList.remove('active'));
+    if (subKey === 'biometrics') {
+        const item = document.querySelector('.snav-item[data-tab="fingerprint"]') || document.querySelector('.snav-item[data-sec-sub="biometrics"]');
+        if (item) item.classList.add('active');
+    } else if (subKey === 'device') {
+        const item = document.querySelector('.snav-item[data-tab="device"]') || document.querySelector('.snav-item[data-sec-sub="device"]');
+        if (item) item.classList.add('active');
+    } else {
+        const secNav = document.querySelector('.snav-item[data-tab="security"]');
+        if (secNav) secNav.classList.add('active');
+    }
+
+    // 4. Show/hide security group panels
+    const sections = {
+        credentials: document.getElementById('sec-section-credentials'),
+        biometrics: document.getElementById('sec-section-biometrics'),
+        device: document.getElementById('sec-section-device'),
+        recovery: document.getElementById('sec-section-recovery')
+    };
+
+    if (subKey === 'all') {
+        Object.values(sections).forEach(s => { if (s) s.style.display = 'block'; });
+    } else {
+        Object.entries(sections).forEach(([key, section]) => {
+            if (!section) return;
+            if (key === subKey) {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        });
+    }
+
+    // 5. Special handlers for biometrics or device sub-sections
+    if (subKey === 'biometrics' || subKey === 'all') {
+        if (typeof loadDevices === 'function') loadDevices();
+        if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
+    }
+    if (subKey === 'device' || subKey === 'all') {
+        if (typeof checkDeviceBindingStatus === 'function') checkDeviceBindingStatus();
+    }
+
+    // 6. Update breadcrumbs
+    if (typeof window.updateSettingsBreadcrumbs === 'function') {
+        if (subKey === 'biometrics') window.updateSettingsBreadcrumbs('fingerprint');
+        else if (subKey === 'device') window.updateSettingsBreadcrumbs('device');
+        else window.updateSettingsBreadcrumbs('security', subKey);
+    }
+
+    // 7. Update URL hash
+    if (window.history && window.history.replaceState) {
+        let hashTarget = 'security';
+        if (subKey === 'biometrics') hashTarget = 'fingerprint';
+        else if (subKey === 'device') hashTarget = 'device';
+        else if (subKey !== 'all') hashTarget = 'security-' + subKey;
+        window.history.replaceState(null, null, '#tab-' + hashTarget);
+    }
+
+    if (window.triggerHaptic) window.triggerHaptic('light');
+
+    // 8. If switching to a specific sub-section, scroll smoothly to it
+    if (subKey !== 'all' && sections[subKey]) {
+        try {
+            sections[subKey].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (e) {}
+    }
+};
+
 window.switchTab = function(id, btn) {
     if (!id) return;
     if (id === 'biometrics') id = 'fingerprint';
+
+    // If target is biometric sensors or device binding, route into unified Security section
+    if (id === 'fingerprint' || id === 'device') {
+        document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
+        const secPanel = document.getElementById('tab-security');
+        if (secPanel) secPanel.classList.add('active');
+
+        document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
+        const secStab = document.querySelector('.stab[data-tab="security"]');
+        if (secStab) {
+            secStab.classList.add('active');
+            if (typeof secStab.scrollIntoView === 'function') {
+                secStab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+        }
+
+        const subKey = (id === 'fingerprint') ? 'biometrics' : 'device';
+        window.switchSecuritySub(subKey, btn);
+        setTimeout(updateStabsScrollArrows, 300);
+        return;
+    }
+
+    // Standard primary tab switching (profile, security, family, preferences)
     document.querySelectorAll('.spanel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.stab').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.snav-item').forEach(b => b.classList.remove('active'));
@@ -4551,17 +4809,14 @@ window.switchTab = function(id, btn) {
         targetNavItem.classList.add('active');
     }
 
+    if (id === 'security') {
+        window.switchSecuritySub('all');
+    }
+
     if (typeof window.updateSettingsBreadcrumbs === 'function') {
         window.updateSettingsBreadcrumbs(id);
     }
 
-    if (id === 'fingerprint') {
-        if (typeof loadDevices === 'function') loadDevices();
-        if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
-    }
-    if (id === 'device') {
-        if (typeof checkDeviceBindingStatus === 'function') checkDeviceBindingStatus();
-    }
     if (window.triggerHaptic) window.triggerHaptic('light');
     if (window.history && window.history.replaceState) {
         window.history.replaceState(null, null, '#tab-' + id);
@@ -4569,16 +4824,22 @@ window.switchTab = function(id, btn) {
     setTimeout(updateStabsScrollArrows, 300);
 };
 
-window.updateSettingsBreadcrumbs = function(tabId) {
+window.updateSettingsBreadcrumbs = function(tabId, secSub) {
     const meta = {
         'profile': { cat: 'Account', name: 'Profile & Identity' },
         'family': { cat: 'Account', name: 'Family & Guardian' },
-        'security': { cat: 'Security & Access', name: 'Security & Password' },
-        'fingerprint': { cat: 'Security & Access', name: 'Biometrics Sensors' },
-        'device': { cat: 'Security & Access', name: 'Device Binding' },
+        'security': { cat: 'Security & Access', name: 'Security & Authentication Controls' },
+        'fingerprint': { cat: 'Security & Access', name: 'Biometrics Verification (FIDO2)' },
+        'device': { cat: 'Security & Access', name: 'Device Binding & Telemetry' },
         'preferences': { cat: 'System & Academics', name: 'System Preferences' }
     };
-    const info = meta[tabId] || { cat: 'Settings', name: tabId.charAt(0).toUpperCase() + tabId.slice(1) };
+    let info = meta[tabId] || { cat: 'Settings', name: tabId.charAt(0).toUpperCase() + tabId.slice(1) };
+    if (tabId === 'security' && secSub && secSub !== 'all') {
+        if (secSub === 'credentials') info = { cat: 'Security & Access', name: 'Password & Email Credentials' };
+        else if (secSub === 'biometrics') info = { cat: 'Security & Access', name: 'Biometrics Verification (FIDO2)' };
+        else if (secSub === 'device') info = { cat: 'Security & Access', name: 'Device Binding & Telemetry' };
+        else if (secSub === 'recovery') info = { cat: 'Security & Access', name: 'Emergency Recovery Vault' };
+    }
     const catEl = document.getElementById('settingsBreadcrumbCategory');
     const tabEl = document.getElementById('settingsBreadcrumbTab');
     if (catEl) catEl.textContent = info.cat;
@@ -7306,7 +7567,12 @@ function initSettingsPage() {
     const targetTab = rawHash || storedTab || 'profile';
     if (targetTab && window.switchTab) {
         localStorage.removeItem('active_settings_tab');
-        window.switchTab(targetTab);
+        if (targetTab.startsWith('security-')) {
+            const sub = targetTab.replace('security-', '');
+            window.switchSecuritySub(sub);
+        } else {
+            window.switchTab(targetTab);
+        }
     }
 
     // Initialize device binding status check
