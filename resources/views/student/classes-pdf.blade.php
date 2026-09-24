@@ -264,27 +264,6 @@
     </tfoot>
 </table>
 
-<!-- 3. Official Verification & Registrar Footer -->
-<div class="cor-footer-box">
-    <table style="width: 100%; border: none;">
-        <tr>
-            <td style="width: 60%; vertical-align: top; border: none; font-size: 9.5px; color: #555;">
-                <strong>Assessment & Subsidy Status:</strong><br>
-                Total Paid: ₱ 0.00 (CHED UniFAST Free Higher Education - RA 10931)<br>
-                Scholarship: TES Batch 10 Beneficiary<br>
-                Status: Officially Enrolled / Regular Student
-            </td>
-            <td style="width: 40%; vertical-align: top; border: none; text-align: center;">
-                <div style="font-family: 'Times New Roman', serif; font-style: italic; font-size: 13px; color: #333; margin-bottom: 2px;">
-                    Susan I. Aguilar
-                </div>
-                <div style="border-bottom: 1px solid #333; width: 180px; margin: 0 auto 4px;"></div>
-                <strong style="font-size: 10px; color: #111;">SUSAN I. AGUILAR</strong><br>
-                <span style="font-size: 9px; color: #666;">College Registrar • Office of the Registrar</span>
-            </td>
-        </tr>
-    </table>
-</div>
 
 @else
 <div style="text-align: center; padding: 30px; border: 1px dashed #999; margin: 20px 0;">

@@ -40,10 +40,7 @@ class UnifiedClassesAndScheduleTest extends TestCase
         $response = $this->actingAs($this->student)->get('/my-classes');
 
         $response->assertStatus(200);
-        $response->assertSee('Certificate of Registration');
         $response->assertSee('Classes & Schedule');
-        $response->assertSee('Osmeña Colleges');
-        $response->assertSee('Masbate City');
     }
 
     public function test_schedule_route_renders_unified_classes_and_schedule_page(): void
@@ -51,23 +48,18 @@ class UnifiedClassesAndScheduleTest extends TestCase
         $response = $this->actingAs($this->student)->get('/schedule');
 
         $response->assertStatus(200);
-        $response->assertSee('Certificate of Registration');
         $response->assertSee('Classes & Schedule');
     }
 
-    public function test_page_displays_student_demographics_matching_cor_layout(): void
+    public function test_page_displays_student_demographics_in_summary_chips(): void
     {
         $response = $this->actingAs($this->student)->get('/my-classes');
 
         $response->assertStatus(200);
         $response->assertSee('1234567');
         $response->assertSee('Fourth Year');
-        $response->assertSee('Bachelor of Science in Computer Science');
+        $response->assertSee('BSCS');
         $response->assertSee('Jack C. Ole');
-        $response->assertSee('Student Number');
-        $response->assertSee('Year Level');
-        $response->assertSee('Course');
-        $response->assertSee('Name');
     }
 
     public function test_unified_schedule_displays_all_required_subject_data(): void
@@ -147,15 +139,15 @@ class UnifiedClassesAndScheduleTest extends TestCase
         $response->assertSee('6.0');
     }
 
-    public function test_cor_footer_sections_are_rendered(): void
+    public function test_cor_fake_fee_and_registrar_footer_are_not_rendered(): void
     {
         $response = $this->actingAs($this->student)->get('/my-classes');
 
         $response->assertStatus(200);
-        $response->assertSee('Total Amount Paid');
-        $response->assertSee('Scholarship');
-        $response->assertSee('SUSAN I. AGUILAR');
-        $response->assertSee('Registrar');
+        $response->assertDontSee('Total Amount Paid');
+        $response->assertDontSee('Scholarship');
+        $response->assertDontSee('SUSAN I. AGUILAR');
+        $response->assertDontSee('TES Batch 10');
     }
 
     public function test_mobile_responsive_elements_are_rendered(): void

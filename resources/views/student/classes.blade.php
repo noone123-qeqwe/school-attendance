@@ -1230,11 +1230,17 @@
     <div class="cor-actions-bar no-print">
         <div class="cor-page-title-group">
             <h1>
-                <i class="bi bi-file-earmark-text text-gold"></i>
+                <i class="bi bi-calendar3 text-gold"></i>
                 Classes & Schedule
             </h1>
-            <p>Official Certificate of Registration (COR) & Academic Timetable</p>
+            <p>Your enrolled subjects and weekly class timetable</p>
             <div class="cor-summary-chips-row">
+                <span class="cor-summary-chip">
+                    <i class="bi bi-person-fill"></i> {{ $user->name }} ({{ $studentNumber }})
+                </span>
+                <span class="cor-summary-chip">
+                    <i class="bi bi-mortarboard-fill"></i> {{ $courseCode }} &bull; {{ $yearText }} (Sec {{ $sectionDisplay }})
+                </span>
                 <span class="cor-summary-chip">
                     <i class="bi bi-journal-check"></i> {{ $subjects->count() }} Subjects
                 </span>
@@ -1250,72 +1256,20 @@
         </div>
 
         <div class="cor-btn-group">
-            <a href="{{ route('student.classes.pdf') }}" class="cor-btn-action cor-btn-pdf" id="downloadPdfBtn" title="Download official COR PDF document">
+            <a href="{{ route('student.classes.pdf') }}" class="cor-btn-action cor-btn-pdf" id="downloadPdfBtn" title="Download schedule PDF">
                 <i class="bi bi-file-earmark-pdf-fill"></i>
                 <span>Download PDF</span>
             </a>
-            <button type="button" class="cor-btn-action cor-btn-print" onclick="window.print()" id="printCorBtn" title="Print Certificate of Registration">
+            <button type="button" class="cor-btn-action cor-btn-print" onclick="window.print()" id="printCorBtn" title="Print Schedule">
                 <i class="bi bi-printer-fill"></i>
-                <span>Print Slip</span>
+                <span>Print Schedule</span>
             </button>
         </div>
     </div>
 
-    <!-- ── THE CERTIFICATE OF REGISTRATION (COR) SHEET ── -->
+    <!-- ── THE SCHEDULE SHEET ── -->
     <div class="cor-sheet" id="corCertificateSheet">
         <div class="cor-content-relative">
-
-            <!-- 1. Institutional Header Block -->
-            <div class="cor-header-block">
-                <div class="cor-seal-wrapper">
-                    <img src="{{ asset('images/logo.png') }}" alt="Osmeña Colleges Seal" class="cor-seal-img" onerror="this.src='/favicon.ico';">
-                </div>
-                <div class="cor-college-name">Osmeña Colleges</div>
-                <div class="cor-college-city">Masbate City, Philippines</div>
-                <div class="cor-doc-title">Certificate of Registration ( COR )</div>
-                <div class="cor-doc-sem">{{ $semesterText }} • Academic Year {{ $academicYear }}</div>
-                <div>
-                    <span class="cor-status-badge-chip">
-                        <i class="bi bi-patch-check-fill"></i> OFFICIALLY ENROLLED • REGULAR
-                    </span>
-                </div>
-            </div>
-
-            <!-- 2. Student Demographic Profile (Matching Reference Document Layout) -->
-            <div class="cor-student-info-grid">
-                <!-- Row 1: Student Number & Year Level -->
-                <div class="cor-info-row four-col">
-                    <div class="cor-info-label">Student Number :</div>
-                    <div class="cor-info-value cor-student-num-val">{{ $studentNumber }}</div>
-                    <div class="cor-info-label">Year Level :</div>
-                    <div class="cor-info-value">{{ $yearText }}</div>
-                </div>
-
-                <!-- Row 2: Course / Degree Program -->
-                <div class="cor-info-row two-col">
-                    <div class="cor-info-label">Course :</div>
-                    <div class="cor-info-value">
-                        <span>{{ $courseFull }}</span>
-                        <span class="badge ms-2" style="background:rgba(207,164,111,0.18); border:1px solid rgba(207,164,111,0.4); color:var(--cor-gold-bright); font-size:0.75rem;">
-                            {{ $courseCode }}
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Row 3: Name & Section -->
-                <div class="cor-info-row four-col">
-                    <div class="cor-info-label">Name :</div>
-                    <div class="cor-info-value" style="font-weight: 800; color: #fff;">
-                        {{ $user->name }}
-                    </div>
-                    <div class="cor-info-label">Section :</div>
-                    <div class="cor-info-value">
-                        <span class="badge" style="background:rgba(207,164,111,0.18); border:1px solid rgba(207,164,111,0.4); color:var(--cor-gold-bright); font-weight:700;">
-                            {{ $sectionDisplay }}
-                        </span>
-                    </div>
-                </div>
-            </div>
 
             <!-- 3. Screen Controls Toolbar (Search, Filter) -->
             <div class="cor-toolbar no-print">
@@ -1422,42 +1376,6 @@
                         <p class="mb-0">You are currently not registered for any classes this semester.</p>
                     </div>
                 @endforelse
-            </div>
-
-            <!-- 6. Official Academic Verification & Certification Block (COR Footer) -->
-            <div class="cor-footer-section">
-                <!-- Assessment & Scholarship Box (Matches Physical COR) -->
-                <div class="cor-assessment-box">
-                    <div class="cor-assessment-row">
-                        <div class="cor-assessment-label">Total Amount Paid :</div>
-                        <div class="cor-assessment-val" style="font-family: 'JetBrains Mono', monospace; color: #34d399; font-weight: 800;">
-                            ₱ 0.00 (Fully Covered)
-                        </div>
-                    </div>
-                    <div class="cor-assessment-row">
-                        <div class="cor-assessment-label">Scholarship / Subsidy :</div>
-                        <div class="cor-assessment-val">
-                            TES Batch 10 • CHED UniFAST Free Higher Education (RA 10931)
-                        </div>
-                    </div>
-                    <div class="cor-assessment-row">
-                        <div class="cor-assessment-label">Total Academic Load :</div>
-                        <div class="cor-assessment-val" style="color: var(--cor-gold-amber);">
-                            {{ $subjects->count() }} Subjects • {{ number_format($totalUnits, 1) }} Total Units Validated
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Official Registrar Seal Block -->
-                <div class="cor-signature-box">
-                    <div class="mb-2" style="font-family: 'Times New Roman', serif; font-style: italic; color: var(--cor-gold); font-size: 1.15rem;">
-                        Susan I. Aguilar
-                    </div>
-                    <div class="cor-signature-line"></div>
-                    <div class="cor-registrar-name">SUSAN I. AGUILAR</div>
-                    <div class="cor-registrar-title">College Registrar</div>
-                    <div class="cor-registrar-dept">Osmeña Colleges • Office of the Registrar</div>
-                </div>
             </div>
 
         </div>
