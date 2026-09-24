@@ -1132,16 +1132,71 @@
             return (hash >>> 0).toString(16);
         }
 
+        // Extract GPU vendor & renderer via WebGL unmasked debug extension
+        function getWebGlInfo() {
+            var out = { vendor: '', renderer: '' };
+            try {
+                var c = document.createElement('canvas');
+                var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+                if (gl) {
+                    var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (dbg) {
+                        out.vendor = gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '';
+                        out.renderer = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '';
+                    }
+                }
+            } catch(e) {}
+            return out;
+        }
+
+        // Comprehensive Device Telemetry & Environmental Diagnostics
+        window.getDeviceTelemetry = function() {
+            try {
+                var gl = getWebGlInfo();
+                var s = window.screen || {};
+                var n = navigator || {};
+                var tz = '';
+                try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch(e) {}
+
+                var connType = 'unknown';
+                try {
+                    if (n.connection) {
+                        connType = n.connection.effectiveType || n.connection.type || 'standard';
+                    }
+                } catch(e) {}
+
+                return {
+                    screen_res: (s.width || 0) + 'x' + (s.height || 0),
+                    pixel_ratio: window.devicePixelRatio || 1,
+                    color_depth: s.colorDepth || 24,
+                    cores: n.hardwareConcurrency || 4,
+                    memory_gb: n.deviceMemory || null,
+                    touch_points: n.maxTouchPoints || 0,
+                    platform: n.platform || '',
+                    timezone: tz,
+                    gpu_vendor: gl.vendor,
+                    gpu_renderer: gl.renderer,
+                    webdriver: !!n.webdriver,
+                    connection_type: connType,
+                };
+            } catch(e) {
+                return {};
+            }
+        };
+
         // Generate deterministic client hardware environment fingerprint
         window.getDeviceFingerprint = function() {
             try {
+                var gl = getWebGlInfo();
                 var components = [
                     (window.screen ? window.screen.width + 'x' + window.screen.height + 'x' + window.screen.colorDepth : ''),
                     (window.devicePixelRatio || 1),
                     (navigator.hardwareConcurrency || 4),
                     (navigator.maxTouchPoints || 0),
                     (navigator.platform || ''),
-                    (Intl && Intl.DateTimeFormat ? Intl.DateTimeFormat().resolvedOptions().timeZone : '')
+                    (Intl && Intl.DateTimeFormat ? Intl.DateTimeFormat().resolvedOptions().timeZone : ''),
+                    gl.vendor,
+                    gl.renderer
                 ];
 
                 // Add lightweight canvas fingerprinting
@@ -1299,9 +1354,10 @@
             window.fetch = function(input, init) {
                 try {
                     init = init || {};
-                    var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
-                    var devFp  = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
-                    var devMod = window.getDeviceModel ? window.getDeviceModel() : '';
+                    var devKey  = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                    var devFp   = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
+                    var devMod  = window.getDeviceModel ? window.getDeviceModel() : '';
+                    var devMeta = window.getDeviceTelemetry ? JSON.stringify(window.getDeviceTelemetry()) : '';
 
                     if (devKey) {
                         if (!init.headers) init.headers = {};
@@ -1309,14 +1365,17 @@
                             if (!init.headers.has('X-Device-Key')) init.headers.set('X-Device-Key', devKey);
                             if (!init.headers.has('X-Device-Fingerprint')) init.headers.set('X-Device-Fingerprint', devFp || devKey);
                             if (!init.headers.has('X-Device-Model') && devMod) init.headers.set('X-Device-Model', devMod);
+                            if (!init.headers.has('X-Device-Metadata') && devMeta) init.headers.set('X-Device-Metadata', devMeta);
                         } else if (Array.isArray(init.headers)) {
                             init.headers.push(['X-Device-Key', devKey]);
                             init.headers.push(['X-Device-Fingerprint', devFp || devKey]);
                             if (devMod) init.headers.push(['X-Device-Model', devMod]);
+                            if (devMeta) init.headers.push(['X-Device-Metadata', devMeta]);
                         } else {
                             if (!init.headers['X-Device-Key']) init.headers['X-Device-Key'] = devKey;
                             if (!init.headers['X-Device-Fingerprint']) init.headers['X-Device-Fingerprint'] = devFp || devKey;
                             if (!init.headers['X-Device-Model'] && devMod) init.headers['X-Device-Model'] = devMod;
+                            if (!init.headers['X-Device-Metadata'] && devMeta) init.headers['X-Device-Metadata'] = devMeta;
                         }
                     }
                     if (!init.credentials) {
@@ -1346,13 +1405,15 @@
             XMLHttpRequest.prototype.send = function() {
                 try {
                     if (this.__isSameOrigin) {
-                        var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
-                        var devFp  = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
-                        var devMod = window.getDeviceModel ? window.getDeviceModel() : '';
+                        var devKey  = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                        var devFp   = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
+                        var devMod  = window.getDeviceModel ? window.getDeviceModel() : '';
+                        var devMeta = window.getDeviceTelemetry ? JSON.stringify(window.getDeviceTelemetry()) : '';
                         if (devKey) {
                             this.setRequestHeader('X-Device-Key', devKey);
                             this.setRequestHeader('X-Device-Fingerprint', devFp || devKey);
                             if (devMod) this.setRequestHeader('X-Device-Model', devMod);
+                            if (devMeta) this.setRequestHeader('X-Device-Metadata', devMeta);
                         }
                     }
                 } catch(e) {}
@@ -1365,9 +1426,10 @@
             var form = e.target;
             if (form && form.tagName === 'FORM' && form.method && form.method.toUpperCase() === 'POST') {
                 try {
-                    var devKey = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
-                    var devFp  = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
-                    var devMod = window.getDeviceModel ? window.getDeviceModel() : '';
+                    var devKey  = window.getOrCreateDeviceKey ? window.getOrCreateDeviceKey() : '';
+                    var devFp   = window.getDeviceFingerprint ? window.getDeviceFingerprint() : '';
+                    var devMod  = window.getDeviceModel ? window.getDeviceModel() : '';
+                    var devMeta = window.getDeviceTelemetry ? JSON.stringify(window.getDeviceTelemetry()) : '';
 
                     if (devKey && !form.querySelector('input[name="device_key"]')) {
                         var inp1 = document.createElement('input');
@@ -1389,6 +1451,13 @@
                         inp3.name = 'device_model';
                         inp3.value = devMod;
                         form.appendChild(inp3);
+                    }
+                    if (devMeta && !form.querySelector('input[name="device_metadata"]')) {
+                        var inp4 = document.createElement('input');
+                        inp4.type = 'hidden';
+                        inp4.name = 'device_metadata';
+                        inp4.value = devMeta;
+                        form.appendChild(inp4);
                     }
                 } catch(formErr) {}
             }

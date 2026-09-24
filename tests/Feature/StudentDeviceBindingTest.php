@@ -207,4 +207,189 @@ class StudentDeviceBindingTest extends TestCase
         $response->assertSee('Google Pixel 8');
         $response->assertSee('Reset Binding');
     }
+
+    public function test_client_hardware_telemetry_and_trust_score_are_saved(): void
+    {
+        $student = User::factory()->create([
+            'role'           => 'student',
+            'student_number' => 'S260010',
+            'password'       => bcrypt('Password123!'),
+        ]);
+
+        $service = app(DeviceBindingService::class);
+        $telemetry = [
+            'gpu_renderer'    => 'Apple M2 GPU',
+            'gpu_vendor'      => 'Apple',
+            'screen_res'      => '2560x1664',
+            'pixel_ratio'     => 2,
+            'cores'           => 8,
+            'memory_gb'       => 16,
+            'connection_type' => '4g',
+            'webdriver'       => false,
+        ];
+
+        $req = Request::create('/login', 'POST', [
+            'device_key'      => 'dev_uuid_telemetry_test',
+            'device_metadata' => $telemetry,
+        ]);
+        $req->setUserResolver(fn () => $student);
+
+        $binding = $service->bind($student, $req);
+
+        $this->assertNotNull($binding);
+        $this->assertIsArray($binding->client_metadata);
+        $this->assertEquals('Apple M2 GPU', $binding->client_metadata['gpu_renderer']);
+        $this->assertGreaterThanOrEqual(80, $binding->trust_score);
+        $this->assertEquals('VERIFIED', $binding->getTrustLevel());
+        $this->assertStringContainsString('Apple M2 GPU', (string)$binding->getGpuInfo());
+        $this->assertStringContainsString('2560x1664 @ 2x', (string)$binding->getDisplayInfo());
+    }
+
+    public function test_locked_device_is_rejected_for_attendance(): void
+    {
+        $student = User::factory()->create([
+            'role'           => 'student',
+            'student_number' => 'S260011',
+        ]);
+
+        $service = app(DeviceBindingService::class);
+        $devKey = 'dev_uuid_locked_test';
+
+        $req = Request::create('/login', 'POST', ['device_key' => $devKey]);
+        $req->setUserResolver(fn () => $student);
+        $binding = $service->bind($student, $req);
+
+        // Before locking, device is recognized
+        $checkReq = Request::create('/qr/scan-process', 'POST');
+        $checkReq->headers->set('X-Device-Key', $devKey);
+        $this->assertTrue($service->isCurrentDevice($student, $checkReq));
+
+        // Lock the device
+        $service->lockBinding($student, 'Stolen phone reported');
+        $binding->refresh();
+        $this->assertTrue($binding->isLocked());
+        $this->assertEquals('Stolen phone reported', $binding->locked_reason);
+
+        // After locking, device is rejected
+        $this->assertFalse($service->isCurrentDevice($student, $checkReq));
+
+        // Unlock the device
+        $service->unlockBinding($student);
+        $binding->refresh();
+        $this->assertFalse($binding->isLocked());
+        $this->assertTrue($service->isCurrentDevice($student, $checkReq));
+    }
+
+    public function test_student_can_lock_and_unlock_device_via_api(): void
+    {
+        $student = User::factory()->create([
+            'role'           => 'student',
+            'student_number' => 'S260012',
+            'password'       => bcrypt('SecretPassword123!'),
+        ]);
+
+        DeviceBinding::create([
+            'user_id'     => $student->id,
+            'device_hash' => 'dummy_hash_12',
+            'device_name' => 'Student Phone',
+            'is_locked'   => false,
+        ]);
+
+        // Student self-locks device
+        $lockRes = $this->actingAs($student)->postJson(route('device.lock'), [
+            'reason' => 'Lost my phone',
+        ]);
+        $lockRes->assertStatus(200);
+        $lockRes->assertJson(['success' => true, 'is_locked' => true]);
+
+        $this->assertDatabaseHas('device_bindings', [
+            'user_id'   => $student->id,
+            'is_locked' => true,
+        ]);
+
+        // Incorrect password fails to unlock
+        $badUnlock = $this->actingAs($student)->postJson(route('device.unlock'), [
+            'password' => 'WrongPassword',
+        ]);
+        $badUnlock->assertStatus(422);
+
+        // Correct password unlocks
+        $goodUnlock = $this->actingAs($student)->postJson(route('device.unlock'), [
+            'password' => 'SecretPassword123!',
+        ]);
+        $goodUnlock->assertStatus(200);
+        $goodUnlock->assertJson(['success' => true, 'is_locked' => false]);
+
+        $this->assertDatabaseHas('device_bindings', [
+            'user_id'   => $student->id,
+            'is_locked' => false,
+        ]);
+    }
+
+    public function test_admin_can_lock_and_unlock_student_device(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $student = User::factory()->create(['role' => 'student']);
+
+        $binding = DeviceBinding::create([
+            'user_id'     => $student->id,
+            'device_hash' => 'dummy_hash_admin_test',
+            'device_name' => 'Student Tablet',
+            'is_locked'   => false,
+        ]);
+
+        // Admin locks
+        $lockRes = $this->actingAs($admin)->post(route('admin.student.lock_device', $student->id), [
+            'reason' => 'Administrative inspection',
+        ]);
+        $lockRes->assertRedirect();
+        $this->assertDatabaseHas('device_bindings', [
+            'user_id'   => $student->id,
+            'is_locked' => true,
+        ]);
+
+        // Admin unlocks
+        $unlockRes = $this->actingAs($admin)->post(route('admin.student.unlock_device', $student->id));
+        $unlockRes->assertRedirect();
+        $this->assertDatabaseHas('device_bindings', [
+            'user_id'   => $student->id,
+            'is_locked' => false,
+        ]);
+    }
+
+    public function test_step_up_password_verification_on_device_rebind(): void
+    {
+        $student = User::factory()->create([
+            'role'           => 'student',
+            'student_number' => 'S260013',
+            'password'       => bcrypt('CorrectPassword123!'),
+        ]);
+
+        DeviceBinding::create([
+            'user_id'     => $student->id,
+            'device_hash' => 'hash_old_device',
+            'device_name' => 'Old iPhone',
+        ]);
+
+        // Attempting to re-bind with invalid password fails
+        $failRes = $this->actingAs($student)->postJson(route('device.bind'), [
+            'device_key'   => 'new_device_uuid_999',
+            'device_model' => 'New Android Phone',
+            'password'     => 'WrongPassword!',
+        ]);
+        $failRes->assertStatus(422);
+
+        // Attempting with correct password succeeds
+        $successRes = $this->actingAs($student)->postJson(route('device.bind'), [
+            'device_key'   => 'new_device_uuid_999',
+            'device_model' => 'New Android Phone',
+            'password'     => 'CorrectPassword123!',
+        ]);
+        $successRes->assertStatus(200);
+        $successRes->assertJson([
+            'success'  => true,
+            'is_bound' => true,
+        ]);
+    }
 }
+

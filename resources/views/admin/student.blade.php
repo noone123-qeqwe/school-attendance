@@ -89,22 +89,51 @@
         @if($student->deviceBinding)
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;">
             <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:44px;height:44px;border-radius:10px;background:#f0fdf4;color:#16a34a;display:flex;align-items:center;justify-content:center;font-size:1.3rem;">
-                    <i class="bi {{ $student->deviceBinding->getDeviceIcon() }}"></i>
+                <div style="width:44px;height:44px;border-radius:10px;background:{{ $student->deviceBinding->isLocked() ? '#fef2f2' : '#f0fdf4' }};color:{{ $student->deviceBinding->isLocked() ? '#dc2626' : '#16a34a' }};display:flex;align-items:center;justify-content:center;font-size:1.3rem;">
+                    <i class="bi {{ $student->deviceBinding->isLocked() ? 'bi-lock-fill' : $student->deviceBinding->getDeviceIcon() }}"></i>
                 </div>
                 <div>
-                    <div style="font-weight:700;font-size:0.95rem;color:#1e293b;">{{ $student->deviceBinding->device_name ?: 'Bound Mobile Device' }}</div>
-                    <div style="font-size:0.78rem;color:#64748b;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-weight:700;font-size:0.95rem;color:#1e293b;">{{ $student->deviceBinding->device_name ?: 'Bound Mobile Device' }}</span>
+                        @if($student->deviceBinding->isLocked())
+                            <span class="badge" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:0.7rem;padding:3px 7px;">Locked</span>
+                        @else
+                            <span class="badge" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.7rem;padding:3px 7px;">
+                                {{ $student->deviceBinding->getTrustLevel() }} ({{ $student->deviceBinding->trust_score ?? 85 }}/100)
+                            </span>
+                        @endif
+                    </div>
+                    <div style="font-size:0.78rem;color:#64748b;margin-top:2px;">
                         Bound: {{ $student->deviceBinding->created_at?->format('M d, Y g:i A') ?? 'N/A' }} •
                         Last Active: <span style="font-weight:600;color:#0f172a;">{{ $student->deviceBinding->last_seen_at?->diffForHumans() ?? 'Never' }}</span>
+                        @if($student->deviceBinding->getGpuInfo())
+                            • <span style="color:#0284c7;">{{ Str::limit($student->deviceBinding->getGpuInfo(), 30) }}</span>
+                        @endif
                     </div>
                 </div>
             </div>
-            <div style="display:flex;align-items:center;gap:12px;">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                 <div style="text-align:right;font-size:0.78rem;color:#64748b;">
                     <div>IP: <span style="font-family:monospace;color:#0f172a;">{{ $student->deviceBinding->ip_address ?: 'Unknown' }}</span></div>
                     <div>Changes: <span style="font-weight:600;color:{{ $student->deviceBinding->change_count > 2 ? '#dc2626' : '#16a34a' }};">{{ $student->deviceBinding->change_count ?? 0 }}</span></div>
                 </div>
+
+                @if($student->deviceBinding->isLocked())
+                <form action="{{ route('admin.student.unlock_device', $student->id) }}" method="POST" style="margin:0;">
+                    @csrf
+                    <button type="submit" class="adm-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:0.8rem;padding:7px 12px;">
+                        <i class="bi bi-unlock-fill me-1"></i>Unlock Device
+                    </button>
+                </form>
+                @else
+                <form action="{{ route('admin.student.lock_device', $student->id) }}" method="POST" onsubmit="return confirm('Freeze attendance for {{ addslashes($student->name) }}?')" style="margin:0;">
+                    @csrf
+                    <button type="submit" class="adm-btn" style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;font-size:0.8rem;padding:7px 12px;">
+                        <i class="bi bi-lock-fill me-1"></i>Lock Device
+                    </button>
+                </form>
+                @endif
+
                 <form action="{{ route('admin.student.reset_device', $student->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to reset the device binding for {{ addslashes($student->name) }}? The student will be prompted to bind their current device upon next sign in.')" style="margin:0;">
                     @csrf
                     <button type="submit" class="adm-btn" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:0.8rem;padding:7px 12px;">

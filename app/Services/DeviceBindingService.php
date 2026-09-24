@@ -112,6 +112,10 @@ class DeviceBindingService
 
         $sessionId = $request->hasSession() ? $request->session()->getId() : null;
 
+        // Extract client telemetry metadata and compute device trust score
+        $metadata = $this->extractClientMetadata($request);
+        $trustScore = $this->calculateTrustScore($request, $metadata);
+
         // Always update the binding to the current device
         $newBinding = DeviceBinding::updateOrCreate(
             ['user_id' => $user->id],
@@ -122,9 +126,14 @@ class DeviceBindingService
                 'device_name'           => $friendlyDeviceName,
                 'session_id'            => $sessionId,
                 'user_agent'            => substr((string) $request->userAgent(), 0, 500),
+                'client_metadata'       => !empty($metadata) ? $metadata : ($oldBinding->client_metadata ?? null),
                 'ip_address'            => $request->ip(),
                 'change_count'          => $changeCount,
+                'trust_score'           => $trustScore,
+                'is_locked'             => false,
+                'locked_reason'         => null,
                 'last_seen_at'          => now(),
+                'last_verified_at'      => now(),
             ]
         );
         $user->setRelation('deviceBinding', $newBinding);
@@ -175,6 +184,16 @@ class DeviceBindingService
         $binding = $user->deviceBinding ?: DeviceBinding::where('user_id', $user->id)->first();
         if ($binding) {
             $user->setRelation('deviceBinding', $binding);
+        }
+
+        // A locked device cannot record attendance under any circumstances
+        if ($binding && $binding->isLocked()) {
+            Log::warning('Attendance check rejected: student device is locked', [
+                'user_id' => $user->id,
+                'student_number' => $user->student_number,
+                'reason' => $binding->locked_reason,
+            ]);
+            return false;
         }
 
         // No binding exists yet — first-time user, allow through and bind on action
@@ -356,10 +375,206 @@ class DeviceBindingService
     private function touchBinding(DeviceBinding $binding, Request $request): void
     {
         $binding->forceFill([
-            'session_id'   => $request->hasSession() ? $request->session()->getId() : $binding->session_id,
-            'last_seen_at' => now(),
-            'ip_address'   => $request->ip(),
+            'session_id'        => $request->hasSession() ? $request->session()->getId() : $binding->session_id,
+            'last_seen_at'      => now(),
+            'last_verified_at'  => now(),
+            'ip_address'        => $request->ip(),
         ])->save();
+    }
+
+    /**
+     * Extract rich hardware and environment telemetry from request headers or payload.
+     */
+    public function extractClientMetadata(Request $request): array
+    {
+        $raw = $request->input('device_metadata')
+            ?? $request->input('client_metadata')
+            ?? $request->header('X-Device-Metadata');
+
+        $metadata = [];
+        if (is_array($raw)) {
+            $metadata = $raw;
+        } elseif (is_string($raw) && trim($raw) !== '') {
+            $trimmed = trim($raw);
+            if (str_starts_with($trimmed, 'eyJ') || str_starts_with($trimmed, 'ey')) {
+                $decoded = base64_decode($trimmed, true);
+                if ($decoded) {
+                    $json = json_decode($decoded, true);
+                    if (is_array($json)) $metadata = $json;
+                }
+            }
+            if (empty($metadata)) {
+                $json = json_decode($trimmed, true);
+                if (is_array($json)) $metadata = $json;
+            }
+        }
+
+        // Also check individual standard inputs
+        $fields = [
+            'screen_res', 'pixel_ratio', 'color_depth', 'gpu_renderer', 'gpu_vendor',
+            'cores', 'memory_gb', 'touch_points', 'canvas_hash', 'audio_hash',
+            'platform', 'webdriver', 'timezone', 'language', 'connection_type'
+        ];
+        foreach ($fields as $field) {
+            if ($request->filled($field)) {
+                $metadata[$field] = $request->input($field);
+            }
+        }
+
+        // Sanitize string lengths and types to prevent DB bloat
+        $sanitized = [];
+        foreach ($metadata as $k => $v) {
+            $cleanedKey = substr(preg_replace('/[^a-zA-Z0-9_\-]/', '', (string)$k), 0, 32);
+            if (empty($cleanedKey)) continue;
+
+            if (is_string($v)) {
+                $sanitized[$cleanedKey] = substr(strip_tags($v), 0, 255);
+            } elseif (is_numeric($v) || is_bool($v)) {
+                $sanitized[$cleanedKey] = $v;
+            }
+        }
+
+        return $sanitized;
+    }
+
+    /**
+     * Calculate an objective hardware trust score (0 - 100).
+     */
+    public function calculateTrustScore(Request $request, array $metadata = []): int
+    {
+        $score = 80; // Baseline genuine request
+
+        // WebGL GPU renderer inspection
+        $gpu = strtolower((string) ($metadata['gpu_renderer'] ?? ''));
+        if (!empty($gpu)) {
+            if (str_contains($gpu, 'swiftshader') || str_contains($gpu, 'llvmpipe') || str_contains($gpu, 'software rasterizer')) {
+                $score -= 35; // Headless / simulated GPU
+            } elseif (
+                str_contains($gpu, 'nvidia') || str_contains($gpu, 'amd') ||
+                str_contains($gpu, 'intel') || str_contains($gpu, 'apple') ||
+                str_contains($gpu, 'mali') || str_contains($gpu, 'adreno') ||
+                str_contains($gpu, 'geforce') || str_contains($gpu, 'radeon')
+            ) {
+                $score += 10; // Genuine physical silicon
+            }
+        }
+
+        // Display resolution sanity
+        $res = (string) ($metadata['screen_res'] ?? '');
+        if (!empty($res) && preg_match('/^(\d+)x(\d+)/', $res, $m)) {
+            $w = (int) $m[1];
+            $h = (int) $m[2];
+            if ($w >= 320 && $h >= 480) {
+                $score += 5;
+            } else {
+                $score -= 25; // Suspicious micro/zero screen
+            }
+        }
+
+        // Automation / Headless browser detection
+        $isAutomated = !empty($metadata['webdriver']) && filter_var($metadata['webdriver'], FILTER_VALIDATE_BOOLEAN);
+        $ua = strtolower((string) $request->userAgent());
+        if ($isAutomated || str_contains($ua, 'headless') || str_contains($ua, 'selenium') || str_contains($ua, 'puppeteer')) {
+            $score -= 45;
+        }
+
+        // Hardware concurrency
+        $cores = (int) ($metadata['cores'] ?? 0);
+        if ($cores >= 2 && $cores <= 64) {
+            $score += 5;
+        }
+
+        return (int) max(10, min(100, $score));
+    }
+
+    /**
+     * Check for proxy attendance conflict (another student clocked in using this same hardware).
+     */
+    public function detectProxyConflict(User $user, Request $request, ?int $sessionId = null): ?array
+    {
+        $currentDeviceHash = $user->deviceBinding?->device_hash ?: $this->getDeviceHashFromRequest($request);
+        $currentHwFp = $user->deviceBinding?->hardware_fingerprint ?: $this->getHardwareFingerprintFromRequest($request);
+
+        if (!$currentDeviceHash && !$currentHwFp) {
+            return null;
+        }
+
+        $otherUserIds = DeviceBinding::where(function ($q) use ($currentDeviceHash, $currentHwFp) {
+                if ($currentDeviceHash) {
+                    $q->where('device_hash', $currentDeviceHash);
+                }
+                if ($currentHwFp) {
+                    $q->orWhere('hardware_fingerprint', $currentHwFp);
+                }
+            })
+            ->where('user_id', '!=', $user->id)
+            ->pluck('user_id');
+
+        if ($otherUserIds->isEmpty()) {
+            return null;
+        }
+
+        if ($sessionId) {
+            $peerAttendance = \App\Models\Attendance::where('session_id', $sessionId)
+                ->whereIn('user_id', $otherUserIds)
+                ->whereIn('status', ['Present', 'Late'])
+                ->with('user')
+                ->first();
+
+            if ($peerAttendance) {
+                return [
+                    'conflict'  => true,
+                    'peer_id'   => $peerAttendance->user_id,
+                    'peer_name' => $peerAttendance->user?->name ?? 'Another student',
+                    'session_id'=> $sessionId,
+                ];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Lock a student's device binding (anti-theft or policy enforcement).
+     */
+    public function lockBinding(User $user, string $reason = 'manual'): bool
+    {
+        $binding = $user->deviceBinding ?: DeviceBinding::where('user_id', $user->id)->first();
+        if ($binding) {
+            $binding->lock($reason);
+            Log::info('Device binding locked', [
+                'user_id' => $user->id,
+                'student_number' => $user->student_number,
+                'reason' => $reason,
+            ]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Unlock a student's device binding.
+     */
+    public function unlockBinding(User $user): bool
+    {
+        $binding = $user->deviceBinding ?: DeviceBinding::where('user_id', $user->id)->first();
+        if ($binding) {
+            $binding->unlock();
+            Log::info('Device binding unlocked', [
+                'user_id' => $user->id,
+                'student_number' => $user->student_number,
+            ]);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Verify step-up authorization password.
+     */
+    public function verifyStepUpPassword(User $user, string $password): bool
+    {
+        return \Illuminate\Support\Facades\Hash::check($password, $user->password);
     }
 
     /**

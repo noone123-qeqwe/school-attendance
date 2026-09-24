@@ -308,6 +308,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/device/status', [App\Http\Controllers\DeviceBindingController::class, 'status'])->name('device.status');
     Route::post('/device/bind', [App\Http\Controllers\DeviceBindingController::class, 'bind'])->name('device.bind');
     Route::post('/device/unbind', [App\Http\Controllers\DeviceBindingController::class, 'unbind'])->name('device.unbind');
+    Route::post('/device/lock', [App\Http\Controllers\DeviceBindingController::class, 'lock'])->name('device.lock');
+    Route::post('/device/unlock', [App\Http\Controllers\DeviceBindingController::class, 'unlock'])->name('device.unlock');
 });
 
 // Mobile App Routes (All authenticated users)
@@ -649,6 +651,8 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::patch('/student/{student}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateStudent'])->name('student.deactivate');
     Route::patch('/student/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateStudent'])->name('student.reactivate');
     Route::post('/student/{student}/reset-device', [App\Http\Controllers\AdminController::class, 'resetDevice'])->name('student.reset_device');
+    Route::post('/student/{student}/lock-device', [App\Http\Controllers\AdminController::class, 'lockDevice'])->name('student.lock_device');
+    Route::post('/student/{student}/unlock-device', [App\Http\Controllers\AdminController::class, 'unlockDevice'])->name('student.unlock_device');
     Route::post('/student/{student}/link-parent', [App\Http\Controllers\AdminController::class, 'linkParent'])->name('student.link_parent');
     Route::delete('/student/{student}/unlink-parent/{parent}', [App\Http\Controllers\AdminController::class, 'unlinkParent'])->name('student.unlink_parent');
 

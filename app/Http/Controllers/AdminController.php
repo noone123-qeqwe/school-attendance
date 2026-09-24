@@ -531,11 +531,29 @@ class AdminController extends Controller
     public function resetDevice(User $student)
     {
         abort_unless($student->role === 'student', 404);
+        app(\App\Services\DeviceBindingService::class)->resetBinding($student);
         if ($student->deviceBinding) {
             $student->deviceBinding()->delete();
         }
         
         return back()->with('success', "Device binding for {$student->name} has been reset successfully.");
+    }
+
+    public function lockDevice(Request $request, User $student)
+    {
+        abort_unless($student->role === 'student', 404);
+        $reason = $request->input('reason', 'Administrative freeze');
+        app(\App\Services\DeviceBindingService::class)->lockBinding($student, (string) $reason);
+
+        return back()->with('success', "Attendance device for {$student->name} has been locked.");
+    }
+
+    public function unlockDevice(User $student)
+    {
+        abort_unless($student->role === 'student', 404);
+        app(\App\Services\DeviceBindingService::class)->unlockBinding($student);
+
+        return back()->with('success', "Attendance device for {$student->name} has been unlocked.");
     }
     // ─────────────────────────────────────────
     // WARNING SYSTEM (Admin-scoped)
