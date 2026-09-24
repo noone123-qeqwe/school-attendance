@@ -623,26 +623,28 @@
     margin-bottom: 26px;
     display: flex;
     align-items: center;
+    gap: 6px;
     width: 100%;
     background: rgba(18, 14, 11, 0.75);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(207, 164, 111, 0.18);
     border-radius: 16px;
-    padding: 6px;
+    padding: 6px 8px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .stabs {
+    flex: 1 1 0%;
+    min-width: 0;
     display: flex;
     gap: 6px;
-    width: 100%;
     border-bottom: none;
     overflow-x: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    padding: 2px 48px 2px 2px;
+    padding: 2px 2px;
 }
 .stabs::-webkit-scrollbar {
     display: none;
@@ -690,151 +692,34 @@
 }
 
 .stabs-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
-    width: 34px;
-    height: 34px;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: rgba(30, 24, 20, 0.96);
+    background: rgba(30, 24, 20, 0.92);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1.5px solid rgba(207, 164, 111, 0.5);
+    border: 1px solid rgba(207, 164, 111, 0.35);
     color: #f5dfa8;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 0.95rem;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.6), 0 0 12px rgba(207,164,111,0.3);
-    transition: all 0.22s ease;
+    font-size: 0.84rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    transition: all 0.2s ease;
     padding: 0;
+    z-index: 2;
 }
 .stabs-arrow:hover {
     background: rgba(45, 36, 30, 0.98);
     border-color: #cfa46f;
     color: #ffffff;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.7), 0 0 16px rgba(207,164,111,0.5);
-    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 10px rgba(207,164,111,0.4);
+    transform: scale(1.08);
 }
-.stabs-arrow-left {
-    left: 4px;
-    display: none;
-}
-.stabs-arrow-left.visible {
-    display: flex;
-}
-.stabs-arrow-right {
-    right: 4px;
-    display: flex;
-    animation: stabsArrowPulse 2.5s infinite ease-in-out;
-}
-@keyframes stabsArrowPulse {
-    0%, 100% {
-        transform: translateY(-50%) scale(1);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.6), 0 0 8px rgba(207,164,111,0.25);
-    }
-    50% {
-        transform: translateY(-50%) scale(1.12);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.7), 0 0 16px rgba(207,164,111,0.5);
-    }
-}
-.stabs-wrapper.has-scroll-right::after {
-    content: '';
-    position: absolute;
-    right: 38px;
-    top: 0;
-    bottom: 0;
-    width: 48px;
-    background: linear-gradient(to right, transparent, rgba(18, 14, 11, 0.95));
-    pointer-events: none;
-    z-index: 5;
-}
-.stabs-wrapper.has-scroll-left::before {
-    content: '';
-    position: absolute;
-    left: 38px;
-    top: 0;
-    bottom: 0;
-    width: 48px;
-    background: linear-gradient(to left, transparent, rgba(18, 14, 11, 0.95));
-    pointer-events: none;
-    z-index: 5;
-}
-.stabs-floating-hint {
-    position: absolute;
-    top: -26px;
-    right: 6px;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 3px 12px;
-    border-radius: 99px;
-    background: rgba(26, 20, 16, 0.95);
-    border: 1px solid rgba(207, 164, 111, 0.4);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    color: #f3e7cd;
-    font-size: 0.68rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55), 0 0 10px rgba(207, 164, 111, 0.25);
-    z-index: 12;
-    cursor: pointer;
-    user-select: none;
-    transition: all 0.25s ease;
-    animation: stabsFloatHint 3s ease-in-out infinite;
-}
-.stabs-floating-hint:hover {
-    background: rgba(45, 36, 30, 0.98);
-    border-color: #cfa46f;
-    color: #ffd700;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.65), 0 0 14px rgba(207, 164, 111, 0.4);
-    transform: translateY(-2px) scale(1.04);
-}
-.stabs-floating-hint i {
-    color: #cfa46f;
-    font-size: 0.76rem;
-    transition: color 0.2s ease;
-}
-.stabs-floating-hint:hover i {
-    color: #ffd700;
-}
-.stabs-floating-hint::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    right: 14px;
-    width: 7px;
-    height: 7px;
-    background: rgba(26, 20, 16, 0.94);
-    border-right: 1px solid rgba(207, 164, 111, 0.4);
-    border-bottom: 1px solid rgba(207, 164, 111, 0.4);
-    transform: rotate(45deg);
-    transition: all 0.25s ease;
-}
-.stabs-floating-hint:hover::after {
-    background: rgba(45, 36, 30, 0.98);
-    border-color: #cfa46f;
-}
-.stabs-floating-pulse {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #cfa46f;
-    box-shadow: 0 0 6px #ffd700;
-    display: inline-block;
-    animation: stabsPulseDot 1.8s infinite ease-in-out;
-}
-@keyframes stabsPulseDot {
-    0%, 100% { transform: scale(0.9); opacity: 0.6; }
-    50% { transform: scale(1.3); opacity: 1; }
-}
-@keyframes stabsFloatHint {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
+.stabs-arrow:active {
+    transform: scale(0.96);
 }
 
 .spanel { display: none; }
@@ -3015,23 +2900,23 @@
         .stabs-wrapper {
             margin-top: 6px !important;
             margin-bottom: 20px !important;
-            padding: 4px !important;
+            padding: 4px 6px !important;
             border-radius: 14px !important;
-        }
-        .stabs-floating-hint {
-            top: -24px !important;
-            right: 4px !important;
-            font-size: 0.64rem !important;
-            padding: 2px 8px !important;
+            gap: 4px !important;
         }
         .stabs {
-            gap: 6px !important;
-            padding: 2px 42px 2px 2px !important;
+            gap: 5px !important;
+            padding: 2px !important;
         }
         .stab {
-            padding: 8px 14px !important;
+            padding: 8px 13px !important;
             font-size: 0.82rem !important;
             border-radius: 9px !important;
+        }
+        .stabs-arrow {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 0.78rem !important;
         }
 
         .sc {
@@ -3174,12 +3059,7 @@
 
     <!-- ── MOBILE / COMPACT HORIZONTAL TAB BAR (<992px) ── -->
     <div class="stabs-wrapper">
-        <div class="stabs-floating-hint" id="stabsFloatingHint" onclick="scrollStabs('right')" title="Scroll tabs" aria-label="Scrollable horizontal tabs">
-            <span class="stabs-floating-pulse"></span>
-            <i class="bi bi-arrow-left-right"></i>
-            <span>Scrollable</span>
-        </div>
-        <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll left">
+        <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll left" style="display:none;">
             <i class="bi bi-chevron-left"></i>
         </button>
         <div class="stabs" id="stabsNav">
@@ -4726,61 +4606,42 @@ function updateStabsScrollArrows() {
     const nav = document.getElementById('stabsNav');
     const leftBtn = document.getElementById('stabsArrowLeft');
     const rightBtn = document.getElementById('stabsArrowRight');
-    const hint = document.getElementById('stabsFloatingHint');
-    const wrapper = nav?.closest('.stabs-wrapper');
     if (!nav || !leftBtn || !rightBtn) return;
 
     const maxScrollLeft = nav.scrollWidth - nav.clientWidth;
 
-    if (maxScrollLeft <= 8) {
-        leftBtn.classList.remove('visible');
+    if (maxScrollLeft <= 4) {
+        leftBtn.style.display = 'none';
         rightBtn.style.display = 'none';
-        if (hint) hint.style.display = 'none';
-        wrapper?.classList.remove('has-scroll-left', 'has-scroll-right');
         return;
     }
 
-    if (hint) hint.style.display = 'inline-flex';
-    rightBtn.style.display = '';
-
-    // Toggle left button visibility when scrolled right
-    if (nav.scrollLeft > 10) {
-        leftBtn.classList.add('visible');
-        wrapper?.classList.add('has-scroll-left');
+    // Show left arrow only when scrolled away from start
+    if (nav.scrollLeft > 6) {
+        leftBtn.style.display = 'flex';
     } else {
-        leftBtn.classList.remove('visible');
-        wrapper?.classList.remove('has-scroll-left');
+        leftBtn.style.display = 'none';
     }
 
-    // Always keep right arrow clearly visible on mobile & desktop
-    if (nav.scrollLeft >= maxScrollLeft - 8) {
-        rightBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i>';
-        rightBtn.setAttribute('title', 'Scroll to start');
-        if (hint) hint.setAttribute('title', 'Scroll to start');
-        wrapper?.classList.remove('has-scroll-right');
-    } else {
+    // Show right arrow only when there is more content to scroll to on the right
+    if (nav.scrollLeft < maxScrollLeft - 6) {
+        rightBtn.style.display = 'flex';
         rightBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
-        rightBtn.setAttribute('title', 'Scroll tabs');
-        if (hint) hint.setAttribute('title', 'Scroll tabs');
-        wrapper?.classList.add('has-scroll-right');
+        rightBtn.setAttribute('title', 'Scroll right');
+    } else {
+        rightBtn.style.display = 'none';
     }
 }
 
 window.scrollStabs = function(direction) {
     const nav = document.getElementById('stabsNav');
     if (!nav) return;
-    const maxScrollLeft = nav.scrollWidth - nav.clientWidth;
-
-    if (direction === 'right' && maxScrollLeft > 10 && nav.scrollLeft >= maxScrollLeft - 5) {
-        nav.scrollTo({ left: 0, behavior: 'smooth' });
-    } else {
-        const distance = 180;
-        nav.scrollBy({
-            left: direction === 'right' ? distance : -distance,
-            behavior: 'smooth'
-        });
-    }
-    setTimeout(updateStabsScrollArrows, 250);
+    const distance = 160;
+    nav.scrollBy({
+        left: direction === 'right' ? distance : -distance,
+        behavior: 'smooth'
+    });
+    setTimeout(updateStabsScrollArrows, 200);
 };
 
 window.switchTab = function(id, btn) {
