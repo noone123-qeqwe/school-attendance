@@ -22,7 +22,9 @@
             }
         }
         $isMobileDevice = class_exists(\App\Helpers\DeviceHelper::class) && \App\Helpers\DeviceHelper::isMobile();
-        $initialVideoSrc = $isMobileDevice ? '/videos/Mobile.mp4' : '/videos/Desktop.mp4';
+        $mobileVideoUrl = asset('videos/Mobile.mp4');
+        $desktopVideoUrl = asset('videos/Desktop.mp4');
+        $initialVideoSrc = $isMobileDevice ? $mobileVideoUrl : $desktopVideoUrl;
     @endphp
 
 
@@ -55,7 +57,7 @@
 
         @media (max-width: 768px), (orientation: portrait) {
             #introVideo {
-                object-fit: contain;
+                object-fit: cover;
                 object-position: center center;
             }
             .vignette {
@@ -218,9 +220,10 @@
 </head>
 <body>
 
-    <!-- Video (Mobile & Desktop native sources) -->
-    <!-- JS sets the correct src before autoplay; media attr on <source> is ignored by most browsers -->
-    <video id="introVideo" autoplay muted playsinline preload="auto">
+    <!-- Video: Desktop intro = Desktop.mp4, Mobile intro = Mobile.mp4 -->
+    <video id="introVideo" autoplay muted playsinline preload="auto" src="{{ $initialVideoSrc }}">
+        <source id="introVideoSrcMobile" src="{{ $mobileVideoUrl }}" type="video/mp4" media="(max-width: 768px), (orientation: portrait)">
+        <source id="introVideoSrcDesktop" src="{{ $desktopVideoUrl }}" type="video/mp4" media="(min-width: 769px) and (orientation: landscape)">
         <source id="introVideoSrc" src="{{ $initialVideoSrc }}" type="video/mp4">
     </video>
 
@@ -263,17 +266,43 @@
         let hasTransitioned = false;
         let hasInitialized = false;
 
-        // Set the correct video source based on screen size:
-        // Mobile.mp4 is the intro ONLY for the mobile version; Desktop.mp4 for desktop version
-        const MOBILE_VIDEO  = '/videos/Mobile.mp4';
-        const DESKTOP_VIDEO = '/videos/Desktop.mp4';
+        // Strict mapping: Desktop intro = Desktop.mp4, Mobile intro = Mobile.mp4
+        const MOBILE_VIDEO  = '{{ $mobileVideoUrl }}';
+        const DESKTOP_VIDEO = '{{ $desktopVideoUrl }}';
         const targetVideo   = isMobileScreen ? MOBILE_VIDEO : DESKTOP_VIDEO;
 
-        const srcEl = document.getElementById('introVideoSrc');
-        if (srcEl && !srcEl.src.endsWith(targetVideo)) {
-            srcEl.src = targetVideo;
-            if (video) video.load();
+        // Directly bind video.src on the video element for 100% reliable cross-browser source switching
+        if (video) {
+            const cur = (video.currentSrc || video.src || '').toLowerCase();
+            const shouldBeMobile = isMobileScreen;
+            const isCurrentlyMobile = cur.includes('mobile.mp4');
+            const isCurrentlyDesktop = cur.includes('desktop.mp4');
+
+            if ((shouldBeMobile && !isCurrentlyMobile) || (!shouldBeMobile && !isCurrentlyDesktop)) {
+                video.src = targetVideo;
+                const srcEl = document.getElementById('introVideoSrc');
+                if (srcEl) srcEl.src = targetVideo;
+                video.load();
+            }
         }
+
+        // Handle dynamic viewport / orientation changes gracefully
+        window.addEventListener('resize', () => {
+            if (hasTransitioned || !video) return;
+            const nowMobile = window.innerWidth <= 768 || window.screen.width <= 768;
+            const cur = (video.currentSrc || video.src || '').toLowerCase();
+            const shouldTarget = nowMobile ? MOBILE_VIDEO : DESKTOP_VIDEO;
+            const isCorrect = nowMobile ? cur.includes('mobile.mp4') : cur.includes('desktop.mp4');
+
+            if (!isCorrect) {
+                const prev = video.currentTime || 0;
+                video.src = shouldTarget;
+                const srcEl = document.getElementById('introVideoSrc');
+                if (srcEl) srcEl.src = shouldTarget;
+                video.currentTime = prev;
+                video.play().catch(() => {});
+            }
+        }, { passive: true });
 
         function goToNext(e) {
             if (e && typeof e.preventDefault === 'function') {
