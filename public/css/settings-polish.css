@@ -64,6 +64,8 @@
 .sp .settings-search-input {
     min-height: 44px !important;
     font-size: 0.88rem !important;
+    padding-left: 44px !important;
+    padding-right: 42px !important;
 }
 
 .sp .settings-layout-grid {

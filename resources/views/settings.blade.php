@@ -223,48 +223,74 @@
 }
 .settings-search-icon {
     position: absolute;
-    left: 13px;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
     color: #cfa46f;
-    font-size: 0.85rem;
+    font-size: 0.92rem;
     pointer-events: none;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+.settings-search-box:focus-within .settings-search-icon {
+    color: #f59e0b;
+    transform: translateY(-50%) scale(1.08);
 }
 .settings-search-input {
     width: 100%;
-    background: rgba(14, 11, 9, 0.75);
-    border: 1px solid rgba(207, 164, 111, 0.28);
+    min-height: 44px;
+    background: rgba(14, 11, 9, 0.8);
+    border: 1.5px solid rgba(207, 164, 111, 0.25);
     border-radius: 12px;
-    padding: 9px 38px 9px 36px;
+    padding: 10px 42px 10px 44px !important;
     color: #fcfbf9;
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-size: 0.85rem;
+    font-weight: 500;
     outline: none;
-    transition: all 0.22s ease;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.35);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.settings-search-input:hover {
+    border-color: rgba(207, 164, 111, 0.42);
+    background: rgba(18, 14, 11, 0.9);
 }
 .settings-search-input:focus {
     border-color: #cfa46f;
-    background: rgba(22, 17, 13, 0.96);
-    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.2), 0 6px 18px rgba(0,0,0,0.6);
+    background: rgba(22, 17, 13, 0.98);
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.2), 0 8px 20px rgba(0,0,0,0.5), inset 0 1px 2px rgba(0,0,0,0.2);
 }
 .settings-search-input::placeholder {
-    color: #8c7d6d;
-    font-size: 0.78rem;
+    color: #9e8e7c;
+    font-size: 0.82rem;
+    font-weight: 400;
 }
 .settings-search-kbd {
     position: absolute;
-    right: 10px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    padding: 1px 6px;
-    font-size: 0.68rem;
+    padding: 2px 7px;
+    font-size: 0.7rem;
     font-weight: 700;
     font-family: inherit;
     color: #cfa46f;
     background: rgba(207, 164, 111, 0.12);
     border: 1px solid rgba(207, 164, 111, 0.3);
     border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     pointer-events: none;
+    user-select: none;
+    line-height: 1.2;
+    transition: opacity 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.settings-search-box:focus-within .settings-search-kbd {
+    border-color: rgba(207, 164, 111, 0.55);
+    color: #f59e0b;
 }
 .settings-search-dropdown {
     position: absolute;
@@ -2956,6 +2982,11 @@
         .settings-search-box {
             width: 100% !important;
         }
+        .settings-search-input {
+            padding-left: 44px !important;
+            padding-right: 42px !important;
+            font-size: 0.85rem !important;
+        }
         .settings-top-right {
             width: 100% !important;
             justify-content: stretch !important;
@@ -3086,8 +3117,15 @@
             <!-- Search & Quick Navigation Input -->
             <div class="settings-search-box">
                 <i class="bi bi-search settings-search-icon"></i>
-                <input type="text" id="settingsSearchInput" class="settings-search-input" placeholder="Search settings (Press '/' to focus)..." autocomplete="off" spellcheck="false" aria-label="Search settings">
-                <kbd class="settings-search-kbd">/</kbd>
+                <input type="text"
+                       id="settingsSearchInput"
+                       class="settings-search-input"
+                       style="padding-left: 44px !important; padding-right: 42px !important;"
+                       placeholder="Search settings..."
+                       autocomplete="off"
+                       spellcheck="false"
+                       aria-label="Search settings">
+                <kbd class="settings-search-kbd" title="Press / to search">/</kbd>
                 <div id="settingsSearchResults" class="settings-search-dropdown" style="display:none;"></div>
             </div>
 
