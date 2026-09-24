@@ -3067,7 +3067,6 @@
             <button class="stab" data-tab="security" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
             <button class="stab" data-tab="fingerprint" onclick="switchTab('fingerprint',this)"><i class="bi bi-fingerprint me-1"></i> Biometrics</button>
             <button class="stab" data-tab="device" onclick="switchTab('device',this)"><i class="bi bi-phone-fill me-1"></i> Device Binding</button>
-            <button class="stab" data-tab="attendance" onclick="switchTab('attendance',this)"><i class="bi bi-bar-chart-fill me-1"></i> Attendance</button>
             @if(Auth::user()->isStudent())
             <button class="stab" data-tab="family" onclick="switchTab('family',this)"><i class="bi bi-people-fill me-1"></i> Family / Guardian</button>
             @endif
@@ -3138,22 +3137,12 @@
                     </button>
                 </div>
 
-                <!-- Group 3: Academics & Preferences -->
+                <!-- Group 3: System Preferences -->
                 <div class="snav-group">
                     <div class="snav-group-header">
                         <i class="bi bi-sliders"></i>
-                        <span>System & Academics</span>
+                        <span>System Preferences</span>
                     </div>
-                    <button type="button" class="snav-item" data-tab="attendance" onclick="switchTab('attendance', this)">
-                        <span class="snav-item-icon"><i class="bi bi-bar-chart-fill"></i></span>
-                        <div class="snav-item-body">
-                            <span class="snav-item-title">Attendance History</span>
-                            <span class="snav-item-desc">KPIs, standing & records</span>
-                        </div>
-                        @if(Auth::user()->isStudent() && $totalRecords > 0)
-                        <span class="snav-badge {{ $rate >= 75 ? 'snav-badge-emerald' : 'snav-badge-rose' }}">{{ $rate }}%</span>
-                        @endif
-                    </button>
                     <button type="button" class="snav-item" data-tab="preferences" onclick="switchTab('preferences', this)">
                         <span class="snav-item-icon"><i class="bi bi-sliders"></i></span>
                         <div class="snav-item-body">
@@ -4123,117 +4112,7 @@
 
     </div>
 
-    <!-- ── TAB: ATTENDANCE ── -->
-    <div id="tab-attendance" class="spanel">
-        <div class="sc">
-            <div class="sc-head">
-                <div class="sc-icon" style="background:rgba(34,197,94,0.12);color:#4ade80;"><i class="bi bi-bar-chart-fill"></i></div>
-                <div>
-                    <div class="sc-title">Attendance Overview & Analytics</div>
-                    <div class="sc-sub">Your complete academic standing and attendance performance summary</div>
-                </div>
-            </div>
-            <div class="sc-body">
 
-                <!-- 4 KPI Stat Grid -->
-                <div class="att-stat-grid">
-                    <div class="att-stat-card">
-                        <div class="att-stat-val" style="color:#f3e7cd;">{{ $totalRecords }}</div>
-                        <div class="att-stat-label">Total Classes</div>
-                    </div>
-                    <div class="att-stat-card" style="border-color:rgba(34,197,94,0.25)!important;background:rgba(34,197,94,0.06)!important;">
-                        <div class="att-stat-val" style="color:#4ade80;">{{ $totalPresent }}</div>
-                        <div class="att-stat-label" style="color:#86efac;">Present</div>
-                    </div>
-                    <div class="att-stat-card" style="border-color:rgba(234,179,8,0.25)!important;background:rgba(234,179,8,0.06)!important;">
-                        <div class="att-stat-val" style="color:#fbbf24;">{{ $totalLate }}</div>
-                        <div class="att-stat-label" style="color:#fde68a;">Late</div>
-                    </div>
-                    <div class="att-stat-card" style="border-color:rgba(239,68,68,0.25)!important;background:rgba(239,68,68,0.06)!important;">
-                        <div class="att-stat-val" style="color:#f87171;">{{ $totalAbsent }}</div>
-                        <div class="att-stat-label" style="color:#fca5a5;">Absent</div>
-                    </div>
-                </div>
-
-                <!-- Overall Standing Gauge -->
-                <div class="att-gauge-card">
-                    <div class="att-gauge-header">
-                        <div>
-                            <div style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#b39b82;">Overall Attendance Rate</div>
-                            <div style="font-size:1.3rem;font-weight:800;color:{{ $rate >= 75 ? '#4ade80' : '#f87171' }};margin-top:2px;">
-                                {{ $rate }}%
-                                <span style="font-size:0.75rem;font-weight:700;margin-left:8px;padding:3px 10px;border-radius:99px;background:{{ $rate >= 90 ? 'rgba(34,197,94,0.15)' : ($rate >= 75 ? 'rgba(234,179,8,0.15)' : 'rgba(239,68,68,0.15)') }};color:{{ $rate >= 90 ? '#4ade80' : ($rate >= 75 ? '#fbbf24' : '#f87171') }};border:1px solid currentColor;">
-                                    {{ $rate >= 90 ? 'Excellent Standing' : ($rate >= 75 ? 'Good Standing' : 'Attention Needed') }}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    @php
-                        $presPct = $totalRecords > 0 ? round(($totalPresent / $totalRecords) * 100, 1) : 0;
-                        $latePct = $totalRecords > 0 ? round(($totalLate / $totalRecords) * 100, 1) : 0;
-                        $absPct  = $totalRecords > 0 ? round(($totalAbsent / $totalRecords) * 100, 1) : 0;
-                    @endphp
-
-                    <!-- Segmented Multi-Color Distribution Bar -->
-                    <div class="att-segmented-bar">
-                        @if($totalRecords > 0)
-                            <div class="att-seg-present" style="width:{{ $presPct }}%;" title="Present: {{ $presPct }}%"></div>
-                            <div class="att-seg-late" style="width:{{ $latePct }}%;" title="Late: {{ $latePct }}%"></div>
-                            <div class="att-seg-absent" style="width:{{ $absPct }}%;" title="Absent: {{ $absPct }}%"></div>
-                        @else
-                            <div style="width:100%;background:rgba(255,255,255,0.08);"></div>
-                        @endif
-                    </div>
-
-                    <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.75rem;color:#b39b82;flex-wrap:wrap;gap:8px;">
-                        <div style="display:flex;gap:14px;align-items:center;">
-                            <span><i class="bi bi-circle-fill me-1" style="color:#22c55e;font-size:0.6rem;"></i>Present ({{ $presPct }}%)</span>
-                            <span><i class="bi bi-circle-fill me-1" style="color:#f59e0b;font-size:0.6rem;"></i>Late ({{ $latePct }}%)</span>
-                            <span><i class="bi bi-circle-fill me-1" style="color:#ef4444;font-size:0.6rem;"></i>Absent ({{ $absPct }}%)</span>
-                        </div>
-                        <div>
-                            {{ $rate >= 75 ? 'Maintaining compliant attendance standing.' : 'Attendance is below 75%. Please submit excuse slips if applicable.' }}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Activity Section -->
-                <div style="border-top:1px solid rgba(255,215,145,0.08);padding-top:20px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <div style="font-size:0.8rem;font-weight:700;color:#f3e7cd;text-transform:uppercase;letter-spacing:0.5px;">Recent Class Attendance</div>
-                        <a href="{{ route('attendance.records') }}" style="font-size:0.78rem;font-weight:700;color:#cfa46f;text-decoration:none;">
-                            View All <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                    @php $recent = Auth::user()->attendances()->with('subject')->latest('date')->take(5)->get(); @endphp
-                    <div style="display:flex;flex-direction:column;gap:8px;">
-                        @forelse($recent as $r)
-                        <div class="act-row" style="background:rgba(255,235,190,0.02);border:1px solid rgba(255,215,145,0.06);border-radius:12px;padding:12px 16px;">
-                            <div style="width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-                                {{ $r->status=='Present'?'background:rgba(34,197,94,0.15);color:#4ade80;':($r->status=='Late'?'background:rgba(234,179,8,0.15);color:#fbbf24;':'background:rgba(239,68,68,0.15);color:#f87171;') }}">
-                                <i class="bi {{ $r->status=='Present'?'bi-check2-circle':($r->status=='Late'?'bi-clock':'bi-x-circle') }}" style="font-size:1.1rem;"></i>
-                            </div>
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:.875rem;font-weight:700;color:#f3e7cd;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $r->subject->name ?? $r->subject_code }}</div>
-                                <div style="font-size:.74rem;color:#b39b82;">{{ \Carbon\Carbon::parse($r->date)->format('M d, Y') }} • {{ $r->time_in ? \Carbon\Carbon::parse($r->time_in)->format('h:i A') : 'Recorded' }}</div>
-                            </div>
-                            <span style="font-size:.72rem;font-weight:800;padding:4px 12px;border-radius:99px;
-                                {{ $r->status=='Present'?'background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);':($r->status=='Late'?'background:rgba(234,179,8,0.15);color:#fbbf24;border:1px solid rgba(234,179,8,0.3);':'background:rgba(239,68,68,0.15);color:#f87171;border:1px solid rgba(239,68,68,0.3);') }}">
-                                {{ $r->status }}
-                            </span>
-                        </div>
-                        @empty
-                        <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed rgba(207,164,111,0.15);">
-                            No attendance recorded yet.
-                        </div>
-                        @endforelse
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
 
     @if(Auth::user()->isStudent())
     <!-- ── TAB: FAMILY / GUARDIAN ── -->
@@ -4697,7 +4576,6 @@ window.updateSettingsBreadcrumbs = function(tabId) {
         'security': { cat: 'Security & Access', name: 'Security & Password' },
         'fingerprint': { cat: 'Security & Access', name: 'Biometrics Sensors' },
         'device': { cat: 'Security & Access', name: 'Device Binding' },
-        'attendance': { cat: 'System & Academics', name: 'Attendance History' },
         'preferences': { cat: 'System & Academics', name: 'System Preferences' }
     };
     const info = meta[tabId] || { cat: 'Settings', name: tabId.charAt(0).toUpperCase() + tabId.slice(1) };
@@ -7222,8 +7100,6 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Device Binding & Trust', desc: 'Hardware device binding and attendance authorization', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
     { title: 'Bind Current Device', desc: 'Cryptographically bind this phone or computer to your attendance', cat: 'Security & Access', tab: 'device', icon: 'bi-phone-fill', elId: 'tabDeviceBindBtn' },
     { title: 'Emergency Device Lock', desc: 'Lock attendance check-ins exclusively to your authorized device', cat: 'Security & Access', tab: 'device', icon: 'bi-shield-lock-fill', elId: 'tab-device' },
-    { title: 'Attendance Standing & KPIs', desc: 'Present, Late, Absent metrics and overall percentage', cat: 'System & Academics', tab: 'attendance', icon: 'bi-bar-chart-fill', elId: 'tab-attendance' },
-    { title: 'Attendance Log Records', desc: 'Detailed log history of classroom check-ins', cat: 'System & Academics', tab: 'attendance', icon: 'bi-calendar-check', elId: 'tab-attendance' },
     { title: 'System Display Language', desc: 'Select English (US), Filipino, or Bikolano', cat: 'System & Academics', tab: 'preferences', icon: 'bi-translate', elId: 'tab-preferences' },
     { title: 'Notification Alerts', desc: 'In-app notifications and email alert preferences', cat: 'System & Academics', tab: 'preferences', icon: 'bi-bell-fill', elId: 'tab-preferences' },
     { title: 'Software Updates & PWA Assets', desc: 'Check latest system updates, security patches and offline assets', cat: 'System & Academics', tab: 'preferences', icon: 'bi-cloud-arrow-down-fill', elId: 'checkUpdateBtn' },
