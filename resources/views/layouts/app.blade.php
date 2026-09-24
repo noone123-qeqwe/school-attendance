@@ -286,19 +286,7 @@
                             <i class="bi bi-chevron-down d-none d-md-block" style="font-size:0.7rem;color:rgba(255,255,255,0.75);"></i>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end fb-dropdown mt-2 shadow-lg">
-                            <!-- Profile summary (clickable for students, links to profile page) -->
-                            @if(Auth::user()->isStudent())
-                            <a href="{{ route('profile') }}" class="text-decoration-none" title="View My Profile">
-                            <div class="fb-profile-header" style="cursor:pointer;">
-                                <img src="{{ $profileImageUrl }}" class="user-avatar-img fb-dropdown-avatar" alt="{{ Auth::user()->name }}">
-                                <div class="fb-dropdown-user-info overflow-hidden">
-                                    <div class="fb-dropdown-name text-truncate" title="{{ Auth::user()->name }}">{{ Auth::user()->name }}</div>
-                                    <div class="fb-dropdown-sub text-truncate">{{ Auth::user()->student_number ?: (Auth::user()->employee_id ?: Auth::user()->email) }}</div>
-                                    <span class="badge fb-dropdown-role-badge mt-1">{{ ucfirst(Auth::user()->role) }}</span>
-                                </div>
-                            </div>
-                            </a>
-                            @else
+                            <!-- Profile summary -->
                             <div class="fb-profile-header" style="cursor:default;">
                                 <img src="{{ $profileImageUrl }}" class="user-avatar-img fb-dropdown-avatar" alt="{{ Auth::user()->name }}">
                                 <div class="fb-dropdown-user-info overflow-hidden">
@@ -307,7 +295,6 @@
                                     <span class="badge fb-dropdown-role-badge mt-1">{{ ucfirst(Auth::user()->role) }}</span>
                                 </div>
                             </div>
-                            @endif
                             <div class="fb-dropdown-divider my-2"></div>
                             @if(Auth::user()->isTeacher())
                             <a class="fb-dropdown-item" href="{{ route('teacher.profile') }}">
@@ -325,10 +312,6 @@
                                 <span>Settings</span>
                             </a>
                             @elseif(Auth::user()->isStudent())
-                            <a class="fb-dropdown-item" href="{{ route('profile') }}">
-                                <div class="fb-icon-circle" style="background:rgba(207,164,111,0.15);color:#cfa46f;"><i class="bi bi-person-circle"></i></div>
-                                <span>My Profile</span>
-                            </a>
                             <a class="fb-dropdown-item" href="{{ route('settings') }}">
                                 <div class="fb-icon-circle fb-icon-settings"><i class="bi bi-gear-fill"></i></div>
                                 <span>Settings</span>
