@@ -273,33 +273,34 @@
         .role-btn:hover:not(.active) { color: white; background: rgba(255,255,255,0.1); }
 
         /* Inputs */
-        #loginForm .glass-input-wrap { position: relative; margin-bottom: 14px; } /* Increased spacing */
-        #loginForm .glass-input-wrap .g-icon {
+        .glass-input-wrap { position: relative; margin-bottom: 14px; width: 100%; }
+        .glass-input-wrap .g-icon {
             position: absolute; left: 16px !important; top: 50%;
             transform: translateY(-50%);
             color: rgba(255,255,255,0.5); font-size: 1.05rem !important;
             pointer-events: none; transition: color 0.2s;
+            z-index: 2;
         }
-        #loginForm .glass-input {
+        .glass-input {
             width: 100%;
-            padding: 14px 16px 14px 50px; /* Increased padding significantly */
+            padding: 14px 16px 14px 50px;
             border-radius: 11px;
             border: 1.5px solid rgba(212, 175, 55, 0.25);
             background: rgba(0,0,0,0.3);
             color: white;
-            font-size: 0.92rem; /* Increased font size */
+            font-size: 0.92rem;
             font-family: 'Inter', sans-serif;
             outline: none;
             transition: all 0.2s;
         }
-        #loginForm .glass-input::placeholder { color: rgba(255,255,255,0.35); }
-        #loginForm .glass-input:hover { border-color: rgba(212, 175, 55, 0.4); background: rgba(0,0,0,0.4); }
-        #loginForm .glass-input:focus {
+        .glass-input::placeholder { color: rgba(255,255,255,0.35); }
+        .glass-input:hover { border-color: rgba(212, 175, 55, 0.4); background: rgba(0,0,0,0.4); }
+        .glass-input:focus {
             border-color: #d4af37;
             background: rgba(0,0,0,0.5);
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
         }
-        #loginForm .glass-input-wrap:focus-within .g-icon { color: rgba(255,255,255,0.85); }
+        .glass-input-wrap:focus-within .g-icon { color: rgba(255,255,255,0.85); }
         .glass-input.has-eye { padding-right: 50px !important; }
         .eye-toggle {
             position: absolute; right: 8px; top: 50%;
@@ -477,113 +478,235 @@
         .bio-modal-dialog {
             position: relative;
             width: 100%;
-            max-width: 440px;
+            max-width: 420px;
             z-index: 2;
-            transform: scale(0.92) translateY(12px);
-            transition: transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: scale(0.92) translateY(14px);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .bio-modal-overlay.active .bio-modal-dialog {
             transform: scale(1) translateY(0);
         }
         .bio-modal-card {
-            background: linear-gradient(145deg, rgba(38, 22, 22, 0.94) 0%, rgba(18, 10, 10, 0.98) 100%);
-            border: 1.5px solid rgba(212, 175, 55, 0.35);
-            border-radius: 22px;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75), 0 0 40px rgba(212, 175, 55, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-            padding: 24px 20px 20px;
-            color: #f3e7cd;
+            background: linear-gradient(155deg, rgba(38, 18, 20, 0.96) 0%, rgba(20, 9, 11, 0.98) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.38);
+            border-top: 1.5px solid rgba(245, 218, 138, 0.6);
+            border-radius: 26px;
+            box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.85), 0 0 45px rgba(212, 175, 55, 0.14), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+            padding: 28px 24px 22px;
+            color: #f5eedb;
             text-align: center;
             position: relative;
             max-height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
+        @media (max-width: 480px) {
+            .bio-modal-card {
+                padding: 24px 18px 20px;
+                border-radius: 22px;
+            }
+        }
         .bio-modal-close {
             position: absolute;
-            top: 14px;
-            right: 14px;
-            width: 32px;
-            height: 32px;
+            top: 16px;
+            right: 16px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: rgba(255, 255, 255, 0.7);
             font-size: 0.85rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
+            z-index: 10;
         }
         .bio-modal-close:hover {
-            background: rgba(255, 255, 255, 0.18);
+            background: rgba(212, 175, 55, 0.2);
+            border-color: rgba(212, 175, 55, 0.45);
             color: #ffffff;
-            transform: rotate(90deg);
+            transform: rotate(90deg) scale(1.05);
         }
         .bio-modal-icon-wrap {
             position: relative;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 14px;
         }
         .bio-modal-icon-circle {
-            width: 68px;
-            height: 68px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(212, 175, 55, 0.25) 0%, rgba(128, 0, 0, 0.35) 100%);
-            border: 2px solid rgba(212, 175, 55, 0.55);
+            background: radial-gradient(circle at 35% 35%, rgba(212, 175, 55, 0.3) 0%, rgba(139, 0, 0, 0.45) 60%, rgba(26, 9, 11, 0.9) 100%);
+            border: 2px solid rgba(212, 175, 55, 0.6);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 2rem;
-            color: #d4af37;
-            box-shadow: 0 0 24px rgba(212, 175, 55, 0.3);
-            animation: glowPulse 2.5s infinite;
+            font-size: 2.15rem;
+            color: #f5d77f;
+            box-shadow: 0 0 28px rgba(212, 175, 55, 0.28), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            animation: glowPulse 2.8s infinite;
         }
         .bio-modal-badge {
             position: absolute;
             bottom: -2px;
             right: -2px;
-            width: 24px;
-            height: 24px;
+            width: 25px;
+            height: 25px;
             border-radius: 50%;
-            background: #eab308;
-            color: #1a0a0a;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #1a0808;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.75rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
-            border: 2px solid #1a0a0a;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
+            border: 2.5px solid #1c0a0c;
         }
         .bio-modal-title {
-            font-size: 1.22rem;
+            font-size: 1.25rem;
             font-weight: 800;
             color: #ffffff;
-            margin-bottom: 6px;
-            letter-spacing: -0.3px;
+            margin-bottom: 8px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #ffffff 40%, #f6e6bd 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .bio-modal-user-pill {
             display: inline-flex;
             align-items: center;
-            background: rgba(212, 175, 55, 0.12);
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            color: #d4af37;
+            gap: 6px;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.16) 0%, rgba(128, 0, 0, 0.22) 100%);
+            border: 1px solid rgba(212, 175, 55, 0.42);
+            color: #f5dfa8;
             border-radius: 99px;
-            padding: 3px 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 10px;
+            padding: 4px 14px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            margin-bottom: 12px;
             max-width: 90%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
         }
         .bio-modal-desc {
-            font-size: 0.84rem;
-            line-height: 1.45;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.86rem;
+            line-height: 1.52;
+            color: rgba(255, 255, 255, 0.82);
             margin-bottom: 16px;
+            word-wrap: break-word;
         }
+        .bio-modal-desc strong {
+            color: #f7e4b5;
+            font-weight: 700;
+        }
+
+        /* Modal Password Section */
+        .bio-modal-card #bioModalPasswordWrap {
+            margin: 14px 0 8px 0;
+            text-align: left;
+        }
+        .bio-modal-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: rgba(245, 223, 168, 0.9);
+            margin-bottom: 7px;
+        }
+        .bio-modal-card .glass-input-wrap {
+            position: relative !important;
+            width: 100% !important;
+            margin-bottom: 0 !important;
+        }
+        .bio-modal-card .glass-input {
+            width: 100% !important;
+            height: 48px !important;
+            padding: 0 46px 0 44px !important;
+            border-radius: 13px !important;
+            border: 1.5px solid rgba(212, 175, 55, 0.32) !important;
+            background: rgba(8, 3, 4, 0.55) !important;
+            color: #ffffff !important;
+            font-size: 0.92rem !important;
+            font-family: 'Inter', sans-serif !important;
+            outline: none !important;
+            transition: all 0.25s ease !important;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5) !important;
+        }
+        .bio-modal-card .glass-input::placeholder {
+            color: rgba(255, 255, 255, 0.38) !important;
+            font-size: 0.86rem !important;
+        }
+        .bio-modal-card .glass-input:hover {
+            border-color: rgba(212, 175, 55, 0.5) !important;
+            background: rgba(8, 3, 4, 0.65) !important;
+        }
+        .bio-modal-card .glass-input:focus {
+            border-color: #d4af37 !important;
+            background: rgba(8, 3, 4, 0.8) !important;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.22), inset 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+        }
+        .bio-modal-card .glass-input-wrap .g-icon {
+            position: absolute !important;
+            left: 15px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            color: rgba(212, 175, 55, 0.75) !important;
+            font-size: 1.05rem !important;
+            pointer-events: none !important;
+            transition: color 0.2s !important;
+            z-index: 2 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .bio-modal-card .glass-input-wrap:focus-within .g-icon {
+            color: #d4af37 !important;
+        }
+        .bio-modal-card .eye-toggle {
+            position: absolute !important;
+            right: 6px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            width: 38px !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: transparent !important;
+            border: none !important;
+            color: rgba(255, 255, 255, 0.55) !important;
+            cursor: pointer !important;
+            border-radius: 9px !important;
+            transition: all 0.2s ease !important;
+            z-index: 5 !important;
+            padding: 0 !important;
+        }
+        .bio-modal-card .eye-toggle:hover {
+            color: #f5dfa8 !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+        }
+        .bio-modal-card .eye-toggle:active {
+            transform: translateY(-50%) scale(0.92) !important;
+        }
+        .bio-modal-card .eye-toggle i {
+            font-size: 1.15rem !important;
+            pointer-events: none !important;
+        }
+
         .bio-modal-steps {
             background: rgba(0, 0, 0, 0.35);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -633,26 +756,72 @@
             flex-shrink: 0;
             margin-top: 1px;
         }
+
+        /* Modal Action Buttons */
         .bio-modal-actions {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
+            margin-top: 20px;
         }
-        .bio-modal-actions .glass-btn {
-            margin: 0;
+        .bio-modal-actions #bioModalPrimaryBtn {
+            width: 100% !important;
+            padding: 14px 20px !important;
+            background: linear-gradient(135deg, #e8c872 0%, #d4af37 50%, #b89122 100%) !important;
+            color: #240a0c !important;
+            font-weight: 800 !important;
+            font-size: 0.92rem !important;
+            letter-spacing: 0.6px !important;
+            text-transform: uppercase !important;
+            border: 1px solid rgba(255, 255, 255, 0.45) !important;
+            border-radius: 14px !important;
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.32), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+            cursor: pointer !important;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+        }
+        .bio-modal-actions #bioModalPrimaryBtn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #f0d588 0%, #dfba42 50%, #c49d2a 100%) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45), 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+        }
+        .bio-modal-actions #bioModalPrimaryBtn:active:not(:disabled) {
+            transform: translateY(0) !important;
+            box-shadow: 0 3px 12px rgba(212, 175, 55, 0.25) !important;
+        }
+        .bio-modal-actions #bioModalPrimaryBtn:disabled {
+            opacity: 0.65 !important;
+            cursor: not-allowed !important;
+            transform: none !important;
         }
         .bio-modal-secondary-btn {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.8rem;
-            font-weight: 600;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
             cursor: pointer;
-            padding: 8px;
-            transition: color 0.2s;
+            padding: 12px 16px;
+            transition: all 0.22s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .bio-modal-secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
             color: #ffffff;
+            border-color: rgba(212, 175, 55, 0.35);
+            transform: translateY(-1px);
+        }
+        .bio-modal-secondary-btn:active {
+            transform: translateY(0);
         }
 
         /* Biometric Method Selection Cards */
@@ -1601,13 +1770,13 @@ if (document.readyState === 'loading') {
             </div>
 
             <!-- Inline Password Verification Field (for setup flow) -->
-            <div id="bioModalPasswordWrap" style="display:none; margin: 16px 0 8px 0; text-align: left;">
-                <label style="font-size:0.8rem; color:rgba(255,255,255,0.85); font-weight:600; margin-bottom:6px; display:block;">
-                    Account Password Verification
-                </label>
-                <div class="glass-input-wrap" style="margin-bottom:0;">
+            <div id="bioModalPasswordWrap" style="display:none;">
+                <div class="bio-modal-input-label">
+                    <span><i class="bi bi-shield-lock-fill me-1" style="color:#d4af37;"></i> Account Password Verification</span>
+                </div>
+                <div class="glass-input-wrap">
                     <i class="bi bi-lock-fill g-icon"></i>
-                    <input type="password" id="bioModalPasswordInput" class="glass-input has-eye" placeholder="Enter password to verify account" autocomplete="current-password">
+                    <input type="password" id="bioModalPasswordInput" class="glass-input has-eye" placeholder="Enter your password" autocomplete="current-password">
                     <button type="button" class="eye-toggle" data-toggle-password="bioModalPasswordInput" aria-controls="bioModalPasswordInput" aria-label="Show password" title="Show password" aria-pressed="false">
                         <i class="bi bi-eye-slash"></i>
                     </button>
@@ -1643,7 +1812,7 @@ if (document.readyState === 'loading') {
             </div>
 
             <!-- Action Buttons -->
-            <div class="bio-modal-actions" style="margin-top: 18px; display:flex; flex-direction:column; gap:8px;">
+            <div class="bio-modal-actions">
                 <button type="button" class="glass-btn glass-btn-primary" id="bioModalPrimaryBtn">
                     <i class="bi bi-shield-lock-fill me-2"></i>Set Up Biometrics
                 </button>
@@ -2353,6 +2522,9 @@ function openBiometricModal(config) {
         } else if (config.badgeType === 'info') {
             badgeEl.style.background = '#3b82f6';
             badgeEl.innerHTML = '<i class="bi bi-shield-check"></i>';
+        } else if (config.badgeType === 'warning') {
+            badgeEl.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+            badgeEl.innerHTML = '<i class="bi bi-shield-lock-fill"></i>';
         } else {
             badgeEl.style.background = '#d4af37';
             badgeEl.innerHTML = '<i class="bi bi-fingerprint"></i>';
