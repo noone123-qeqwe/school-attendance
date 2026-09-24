@@ -28,15 +28,11 @@ class AttendanceSession extends Model
 
     public function getAllowedRadius(): int
     {
-        if ($this->radius_meters !== null && (int) $this->radius_meters <= 0) {
-            return 0; // Geofence explicitly disabled for this session
+        // An explicit session radius must not change when an administrator edits defaults.
+        if ($this->radius_meters !== null) {
+            return max(0, (int) $this->radius_meters);
         }
-        $systemRadius = (int) \App\Models\Setting::get('gps_radius', 50);
-        $sessionRadius = (int) ($this->radius_meters ?? 0);
-        if ($sessionRadius > 0 && $systemRadius > 0) {
-            return max($sessionRadius, $systemRadius);
-        }
-        return $sessionRadius > 0 ? $sessionRadius : ($systemRadius > 0 ? $systemRadius : 50);
+        return max(0, (int) \App\Models\Setting::get('gps_radius', 50));
     }
 
     public function getGracePeriodMinutes(): int
