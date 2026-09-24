@@ -146,6 +146,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+                'accuracy' => 10,
         ]);
 
         // Ping with poor cell tower accuracy (e.g., 250 meters accuracy)
@@ -175,6 +176,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+                'accuracy' => 10,
         ]);
 
         // Student steps outside (300 meters away)
@@ -210,6 +212,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+                'accuracy' => 10,
         ]);
 
         // Step outside -> Warning
@@ -248,6 +251,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+                'accuracy' => 10,
         ]);
 
         $att = Attendance::where('user_id', $this->student->id)->first();
@@ -352,6 +356,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+                'accuracy' => 10,
         ]);
 
         // Teacher stops session
@@ -383,6 +388,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+                'accuracy' => 10,
         ]);
 
         $att = Attendance::where('user_id', $this->student->id)->first();
@@ -415,6 +421,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => $this->classroomLat,
             'longitude' => $this->classroomLng,
+                'accuracy' => 10,
         ]);
 
         // Student revokes location permissions in browser -> Guardian posts error_code
@@ -452,6 +459,7 @@ class PresenceVerificationSecurityTest extends TestCase
             'token'     => $this->session->token,
             'latitude'  => 14.9000,
             'longitude' => 121.5000,
+                'accuracy' => 10,
         ]);
 
         $response->assertStatus(422)
@@ -526,6 +534,7 @@ class PresenceVerificationSecurityTest extends TestCase
                 'token'              => $this->session->token,
                 'latitude'           => $this->classroomLat,
                 'longitude'          => $this->classroomLng,
+                'accuracy' => 10,
                 'device_fingerprint' => $rawKey,
             ]);
         $clockIn1->assertStatus(200)->assertJson(['success' => true]);
@@ -537,6 +546,7 @@ class PresenceVerificationSecurityTest extends TestCase
                 'token'              => $this->session->token,
                 'latitude'           => $this->classroomLat,
                 'longitude'          => $this->classroomLng,
+                'accuracy' => 10,
                 'device_fingerprint' => $rawKey,
             ]);
 

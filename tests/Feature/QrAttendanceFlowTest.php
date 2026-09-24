@@ -58,6 +58,7 @@ class QrAttendanceFlowTest extends TestCase
         // 2. Teacher Starts Session
         $response = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5,
             'classroom_lng' => 121.0
         ]);
@@ -158,6 +159,7 @@ class QrAttendanceFlowTest extends TestCase
         // Teacher starts session at classroom coordinates (14.5000, 121.0000)
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -226,6 +228,7 @@ class QrAttendanceFlowTest extends TestCase
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -281,6 +284,7 @@ class QrAttendanceFlowTest extends TestCase
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -291,14 +295,16 @@ class QrAttendanceFlowTest extends TestCase
         $this->actingAs($student)->postJson('/qr/scan-process', [
             'token' => $token,
             'latitude' => 14.5001,
-            'longitude' => 121.0001
+            'longitude' => 121.0001,
+            'accuracy' => 10,
         ]);
 
         // Second scan attempts duplicate
         $secondResponse = $this->actingAs($student)->postJson('/qr/scan-process', [
             'token' => $token,
             'latitude' => 14.5001,
-            'longitude' => 121.0001
+            'longitude' => 121.0001,
+            'accuracy' => 10,
         ]);
 
         $secondResponse->assertStatus(200);
@@ -329,7 +335,8 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $subject->code
+            'subject_code' => $subject->code,
+            'radius_meters' => 0,
         ]);
 
         $token = $startResponse->json('token');
@@ -374,6 +381,7 @@ class QrAttendanceFlowTest extends TestCase
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -388,7 +396,8 @@ class QrAttendanceFlowTest extends TestCase
         $scanResponse = $this->actingAs($student)->postJson('/qr/scan-process', [
             'code' => $formattedInput,
             'latitude' => 14.5001,
-            'longitude' => 121.0001
+            'longitude' => 121.0001,
+            'accuracy' => 10,
         ]);
 
         $scanResponse->assertStatus(200);
@@ -413,7 +422,8 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $subject->code
+            'subject_code' => $subject->code,
+            'radius_meters' => 0,
         ]);
 
         $startResponse->assertStatus(200);
@@ -451,7 +461,8 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $subject->code
+            'subject_code' => $subject->code,
+            'radius_meters' => 0,
         ]);
         $startResponse->assertStatus(200);
         $scanUrl = $startResponse->json('scan_url');
@@ -512,7 +523,8 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $subject->code
+            'subject_code' => $subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $startResponse->json('session_id');
         $token = $startResponse->json('token');
@@ -555,6 +567,7 @@ class QrAttendanceFlowTest extends TestCase
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -595,7 +608,8 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $subject->code
+            'subject_code' => $subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $startResponse->json('session_id');
 
@@ -642,7 +656,8 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $subject->code
+            'subject_code' => $subject->code,
+            'radius_meters' => 0,
         ]);
         $token = $startResponse->json('token');
         $sessionCode = $startResponse->json('session_code');
@@ -689,7 +704,8 @@ class QrAttendanceFlowTest extends TestCase
         ]);
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $subject->code
+            'subject_code' => $subject->code,
+            'radius_meters' => 0,
         ]);
         $token = $startResponse->json('token');
 
@@ -740,6 +756,7 @@ class QrAttendanceFlowTest extends TestCase
 
         $startResponse = $this->actingAs($teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000
         ]);
@@ -750,7 +767,8 @@ class QrAttendanceFlowTest extends TestCase
         $response = $this->actingAs($student)->postJson('/qr/scan-process', [
             'code' => $copiedText,
             'latitude' => 14.5001,
-            'longitude' => 121.0001
+            'longitude' => 121.0001,
+            'accuracy' => 10,
         ]);
         $response->assertOk();
         $this->assertTrue($response->json('success'));
@@ -764,7 +782,8 @@ class QrAttendanceFlowTest extends TestCase
         $response2 = $this->actingAs($student)->postJson('/qr/scan-process', [
             'code' => "  " . $spacedCode . "  ",
             'latitude' => 14.5001,
-            'longitude' => 121.0001
+            'longitude' => 121.0001,
+            'accuracy' => 10,
         ]);
         $response2->assertOk();
         $this->assertTrue($response2->json('success'));
@@ -776,7 +795,8 @@ class QrAttendanceFlowTest extends TestCase
         $response3 = $this->actingAs($student)->postJson('/qr/scan-process', [
             'code' => $chatMsg,
             'latitude' => 14.5001,
-            'longitude' => 121.0001
+            'longitude' => 121.0001,
+            'accuracy' => 10,
         ]);
         $response3->assertOk();
         $this->assertTrue($response3->json('success'));
@@ -789,7 +809,8 @@ class QrAttendanceFlowTest extends TestCase
         $response4 = $this->actingAs($student)->postJson('/qr/scan-process', [
             'code' => $copiedUrl,
             'latitude' => 14.5001,
-            'longitude' => 121.0001
+            'longitude' => 121.0001,
+            'accuracy' => 10,
         ]);
         $response4->assertOk();
         $this->assertTrue($response4->json('success'));

@@ -28,29 +28,6 @@ class QrAttendanceController extends Controller
     public const QR_TTL_SECONDS = 15; // QR and attendance code regenerate every 15 seconds
     public const NETWORK_GRACE_SECONDS = 5; // Grace period for in-flight requests and clock skew
 
-    private function getSchoolLat(): float
-    {
-        $val = \App\Models\Setting::get('gps_lat');
-        if ($val !== null && $val !== '') {
-            return (float) $val;
-        }
-        return 12.371250;
-    }
-
-    private function getSchoolLng(): float
-    {
-        $val = \App\Models\Setting::get('gps_lng');
-        if ($val !== null && $val !== '') {
-            return (float) $val;
-        }
-        return 123.619437;
-    }
-
-    private function getRadiusMeters(): int
-    {
-        return (int) \App\Models\Setting::get('gps_radius', 50);
-    }
-
     /**
      * Normalize and validate coordinates, automatically detecting and correcting swapped (lng, lat) coordinates.
      * Latitude must be in [-90, 90], Longitude in [-180, 180].
@@ -343,7 +320,7 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $radius = $request->has('radius_meters') ? (int) $request->radius_meters : 50;
+        $radius = $request->filled('radius_meters') ? (int) $request->radius_meters : 50;
         if ($radius > 0 && (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy'))) {
             return response()->json(['success' => false, 'message' => 'A fresh, accurate teacher laptop location is required to start a geofenced session.'], 422);
         }
@@ -475,8 +452,6 @@ class QrAttendanceController extends Controller
         Log::info('Teacher updated session classroom location', [
             'session_id'    => $session->id,
             'teacher_id'    => $user->id,
-            'classroom_lat' => $session->classroom_lat,
-            'classroom_lng' => $session->classroom_lng,
             'radius'        => $session->getAllowedRadius(),
         ]);
 
@@ -1096,8 +1071,8 @@ class QrAttendanceController extends Controller
         $studentLng = (float) $request->longitude;
         $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
-        // 2. Suspicious Exact Zero or Negative Accuracy (indicator of mock GPS injection)
-        if ($accuracy !== null && $accuracy <= 0) {
+        // Do not turn an unknown or imprecise fix into an outside-classroom penalty.
+        if ($accuracy === null || $accuracy <= 0) {
             $attendance->update([
                 'last_location_check_at' => $now,
                 'monitoring_status'      => 'unreliable_gps',
@@ -1111,8 +1086,7 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        // GPS Accuracy check: If accuracy reading is very imprecise (>150m and >2.5x radius), do not falsely penalize student
-        $isUnreliableAccuracy = ($accuracy !== null && $accuracy > 150 && $accuracy > ($radius * 2.5));
+        $isUnreliableAccuracy = $accuracy > 50;
         if ($isUnreliableAccuracy) {
             $attendance->update([
                 'last_location_check_at' => now(),
@@ -1134,15 +1108,19 @@ class QrAttendanceController extends Controller
         $coords = $this->resolveClassroomCoords($session, $studentLat, $studentLng);
         $schoolLat = $coords['schoolLat'];
         $schoolLng = $coords['schoolLng'];
+        if ($schoolLat === null || $schoolLng === null) {
+            return response()->json([
+                'success' => true,
+                'status' => $attendance->status,
+                'monitoring_status' => 'unreliable_gps',
+                'message' => 'Teacher laptop session center is unavailable. Ask the instructor to update the location.'
+            ]);
+        }
         $distance = $this->distance($studentLat, $studentLng, $schoolLat, $schoolLng);
-
-        // Account for GPS accuracy error margins instead of rejecting students due to small indoor inaccuracies
-        $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
-        $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
 
         $now = now();
 
-        if ($effectiveDistance <= $radius) {
+        if ($distance <= $radius) {
             // Check for impossible velocity / teleportation leap INTO classroom
             if ($attendance->last_latitude !== null && $attendance->last_longitude !== null && $attendance->last_location_check_at !== null) {
                 $prevLat = (float) $attendance->last_latitude;

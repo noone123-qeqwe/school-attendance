@@ -135,6 +135,7 @@ class MobileScanQrFeatureTest extends TestCase
                 'token' => $token,
                 'latitude' => 14.5995,
                 'longitude' => 120.9842,
+                'accuracy' => 10,
             ]);
 
         $response->assertOk();
@@ -186,6 +187,7 @@ class MobileScanQrFeatureTest extends TestCase
                 'token' => '849201',
                 'latitude' => 14.5995,
                 'longitude' => 120.9842,
+                'accuracy' => 10,
             ]);
 
         $response->assertOk();

@@ -131,6 +131,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         // ==========================================
         $teacherResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $this->subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000,
         ]);
@@ -264,6 +265,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
     {
         $teacherResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $teacherResponse->json('session_id');
         $initialToken = $teacherResponse->json('token');
@@ -314,6 +316,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         // Start an active teacher session
         $teacherResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $this->subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000,
         ]);
@@ -359,6 +362,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'token' => $validToken,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'accuracy' => 10,
         ]);
         $clockIn1->assertOk();
         $this->assertTrue($clockIn1->json('success'));
@@ -369,6 +373,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'token' => $validToken,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'accuracy' => 10,
         ]);
         $duplicateQr->assertOk();
         $this->assertTrue($duplicateQr->json('success'));
@@ -380,6 +385,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'code' => $validCode,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'accuracy' => 10,
         ]);
         $duplicateCode->assertOk();
         $this->assertTrue($duplicateCode->json('already_clocked_in'));
@@ -389,6 +395,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
             'code' => $validCode,
             'latitude' => 14.5000,
             'longitude' => 121.0000,
+            'accuracy' => 10,
         ]);
         $mismatchResponse->assertStatus(422);
         $this->assertFalse($mismatchResponse->json('success'));

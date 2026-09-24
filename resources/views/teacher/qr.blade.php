@@ -878,7 +878,7 @@ startBtn.addEventListener('click', async () => {
                         <div>
                             <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Laptop Location Unavailable</h6>
                             <p class="qr-alert-body mb-0">
-                                Geofencing uses your laptop as the central reference location for the attendance session. Please allow browser location permissions and click <strong>Recalibrate Room GPS</strong>, or click <strong>Disable Geofence</strong> to proceed without location restrictions.
+                                Geofencing uses your laptop as the central reference location for the attendance session. Please allow browser location permissions and click <strong>Retry Laptop GPS</strong>, or click <strong>Disable Geofence</strong> to proceed without location restrictions.
                             </p>
                         </div>
                     </div>
@@ -888,14 +888,14 @@ startBtn.addEventListener('click', async () => {
             return;
         }
 
-        const lat = teacherLocation ? teacherLocation.latitude : null;
-        const lng = teacherLocation ? teacherLocation.longitude : null;
+        const lat = selectedRadius > 0 ? teacherLocation.latitude : null;
+        const lng = selectedRadius > 0 ? teacherLocation.longitude : null;
 
         const bodyPayload = {
             subject_code: '{{ $subject->code }}',
             classroom_lat: lat,
             classroom_lng: lng,
-            teacher_accuracy: teacherLocation ? teacherLocation.accuracy : null,
+            teacher_accuracy: selectedRadius > 0 ? teacherLocation.accuracy : null,
             radius_meters: selectedRadius
         };
 

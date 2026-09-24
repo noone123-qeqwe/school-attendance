@@ -221,11 +221,23 @@ class PTController extends Controller
             $passwordMatches = Hash::check($password, $user->password)
                 || ($password !== $trimmedPassword && Hash::check($trimmedPassword, $user->password));
 
-            // Demo/seed fallback for student accounts: support standard passwords (student123 and password)
-            if (!$passwordMatches && $user->isStudent()) {
-                if (($password === 'password' || $password === 'student123') &&
-                    (Hash::check('password', $user->password) || Hash::check('student123', $user->password))) {
-                    $passwordMatches = true;
+            // Demo/seed fallback for standard accounts (student123, teacher123, parent123, and password)
+            if (!$passwordMatches) {
+                if ($user->isStudent()) {
+                    if (($password === 'password' || $password === 'student123') &&
+                        (Hash::check('password', $user->password) || Hash::check('student123', $user->password))) {
+                        $passwordMatches = true;
+                    }
+                } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+                    if (($password === 'password' || $password === 'teacher123') &&
+                        (Hash::check('password', $user->password) || Hash::check('teacher123', $user->password))) {
+                        $passwordMatches = true;
+                    }
+                } elseif ($user->isParent()) {
+                    if (($password === 'password' || $password === 'parent123') &&
+                        (Hash::check('password', $user->password) || Hash::check('parent123', $user->password))) {
+                        $passwordMatches = true;
+                    }
                 }
             }
 
@@ -290,8 +302,14 @@ class PTController extends Controller
                 $candMatches = Hash::check($password, $cand->password)
                     || ($password !== $trimmedPassword && Hash::check($trimmedPassword, $cand->password));
 
-                if (!$candMatches && $cand->isStudent() && ($password === 'password' || $password === 'student123')) {
-                    $candMatches = Hash::check('password', $cand->password) || Hash::check('student123', $cand->password);
+                if (!$candMatches) {
+                    if ($cand->isStudent() && ($password === 'password' || $password === 'student123')) {
+                        $candMatches = Hash::check('password', $cand->password) || Hash::check('student123', $cand->password);
+                    } elseif (($cand->isTeacher() || $cand->isDepartmentHead()) && ($password === 'password' || $password === 'teacher123')) {
+                        $candMatches = Hash::check('password', $cand->password) || Hash::check('teacher123', $cand->password);
+                    } elseif ($cand->isParent() && ($password === 'password' || $password === 'parent123')) {
+                        $candMatches = Hash::check('password', $cand->password) || Hash::check('parent123', $cand->password);
+                    }
                 }
 
                 if ($candMatches) {

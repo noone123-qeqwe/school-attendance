@@ -109,6 +109,12 @@ class AuthController extends Controller
             } elseif ($user->isStudent() && ($password === 'password' || $password === 'student123') &&
                 (Hash::check('password', $user->password) || Hash::check('student123', $user->password))) {
                 $authenticated = true;
+            } elseif (($user->isTeacher() || $user->isDepartmentHead()) && ($password === 'password' || $password === 'teacher123') &&
+                (Hash::check('password', $user->password) || Hash::check('teacher123', $user->password))) {
+                $authenticated = true;
+            } elseif ($user->isParent() && ($password === 'password' || $password === 'parent123') &&
+                (Hash::check('password', $user->password) || Hash::check('parent123', $user->password))) {
+                $authenticated = true;
             }
         }
 
@@ -150,8 +156,14 @@ class AuthController extends Controller
             foreach ($candidateUsers as $cand) {
                 $trimmedPassword = trim($password);
                 $candMatches = Hash::check($password, $cand->password) || Hash::check($trimmedPassword, $cand->password);
-                if (!$candMatches && $cand->isStudent() && ($password === 'password' || $password === 'student123')) {
-                    $candMatches = Hash::check('password', $cand->password) || Hash::check('student123', $cand->password);
+                if (!$candMatches) {
+                    if ($cand->isStudent() && ($password === 'password' || $password === 'student123')) {
+                        $candMatches = Hash::check('password', $cand->password) || Hash::check('student123', $cand->password);
+                    } elseif (($cand->isTeacher() || $cand->isDepartmentHead()) && ($password === 'password' || $password === 'teacher123')) {
+                        $candMatches = Hash::check('password', $cand->password) || Hash::check('teacher123', $cand->password);
+                    } elseif ($cand->isParent() && ($password === 'password' || $password === 'parent123')) {
+                        $candMatches = Hash::check('password', $cand->password) || Hash::check('parent123', $cand->password);
+                    }
                 }
 
                 if ($candMatches) {

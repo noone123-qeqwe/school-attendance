@@ -97,6 +97,7 @@ class TeacherLiveQrAttendanceTest extends TestCase
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
             'subject_code' => $this->subject->code,
+            'teacher_accuracy' => 10,
             'classroom_lat' => 14.5000,
             'classroom_lng' => 121.0000,
         ]);

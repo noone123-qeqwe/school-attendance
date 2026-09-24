@@ -37,8 +37,8 @@ class AttendanceController extends Controller
 {
    $request->validate([
     'subject_code' => 'required|string',
-    'latitude' => 'required|numeric',
-    'longitude' => 'required|numeric',
+    'latitude' => 'required|numeric|between:-90,90',
+    'longitude' => 'required|numeric|between:-180,180',
     'accuracy' => 'nullable|numeric',
 ]);
     $user = auth()->user();
@@ -60,6 +60,7 @@ class AttendanceController extends Controller
     // CENTRAL LOCATION — The teacher's laptop is the only central device for the geofence
     $activeSession = \App\Models\AttendanceSession::where('subject_code', $subject->code)
         ->where('active', true)
+        ->where('session_ends_at', '>', $now)
         ->latest('id')
         ->first();
 
@@ -80,11 +81,11 @@ class AttendanceController extends Controller
         [$studentLat, $studentLng] = \App\Http\Controllers\QrAttendanceController::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
         $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
-        if ($accuracy !== null && $accuracy <= 0) {
+        if ($accuracy === null || $accuracy <= 0) {
             return redirect()->back()->with('error', 'Invalid GPS accuracy reading detected. Please use a physical mobile device with GPS enabled.');
         }
 
-        if ($accuracy !== null && $accuracy > 150) {
+        if ($accuracy > 50) {
             return redirect()->back()->with('error', "GPS signal accuracy is too low (±" . round($accuracy) . "m) to verify your proximity. Please move near a window, enable High Accuracy GPS, and try again.");
         }
 
@@ -96,10 +97,7 @@ class AttendanceController extends Controller
             $schoolLng
         );
 
-        $accuracyAllowance = ($accuracy !== null && $accuracy > 0) ? min($accuracy, 150.0) : 15.0;
-        $effectiveDistance = max(0.0, $distance - $accuracyAllowance);
-
-        if ($effectiveDistance > $radiusMeters) {
+        if ($distance > $radiusMeters) {
             return redirect()->back()->with('error', "You are outside the attendance boundary (" . round($distance) . "m away, allowed within {$radiusMeters}m). Attendance can only be marked while near the teacher's laptop.");
         }
     }

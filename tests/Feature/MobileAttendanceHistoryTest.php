@@ -61,6 +61,7 @@ class MobileAttendanceHistoryTest extends TestCase
             'expires_at' => $now->copy()->addMinutes(5),
             'session_ends_at' => $now->copy()->addMinutes(30),
             'active' => true,
+            'radius_meters' => 0, // History tests do not exercise geofencing.
         ]);
     }
 

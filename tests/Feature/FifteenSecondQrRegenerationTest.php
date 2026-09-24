@@ -63,7 +63,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_qr_and_session_code_generate_with_15_second_ttl()
     {
         $response = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
 
         $response->assertOk()
@@ -91,7 +92,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_refresh_generates_new_unique_qr_token_and_attendance_code_every_15_seconds()
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId   = $startResponse->json('session_id');
         $firstToken  = $startResponse->json('token');
@@ -127,7 +129,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_student_can_check_in_with_current_qr_or_attendance_code()
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $token = $startResponse->json('token');
         $code  = $startResponse->json('session_code');
@@ -164,7 +167,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_network_delay_grace_period_allows_immediate_previous_code()
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $startResponse->json('session_id');
         $prevToken = $startResponse->json('token');
@@ -195,7 +199,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_server_rejects_expired_codes_past_grace_period()
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $startResponse->json('session_id');
         $code      = $startResponse->json('session_code');
@@ -242,7 +247,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_older_rotation_codes_from_previous_cycles_are_rejected()
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $startResponse->json('session_id');
         $cycle1Code  = $startResponse->json('session_code');
@@ -282,7 +288,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_qr_and_code_are_synchronized_to_same_active_session()
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $startResponse->json('session_id');
         $token     = $startResponse->json('token');
@@ -304,7 +311,8 @@ class FifteenSecondQrRegenerationTest extends TestCase
     public function test_direct_scan_url_validates_15_second_expiration()
     {
         $startResponse = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
-            'subject_code' => $this->subject->code
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
         ]);
         $sessionId = $startResponse->json('session_id');
         $token     = $startResponse->json('token');

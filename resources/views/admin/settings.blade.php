@@ -155,7 +155,7 @@
                             <i class="bi bi-geo-alt-fill" style="color:var(--saas-primary);"></i> Campus Anchor GPS Coordinates
                         </div>
                         <p class="saas-text-muted" style="font-size:0.75rem;margin:2px 0 0 0;">
-                            Default coordinates used as the school campus geofence anchor when sessions are created without a device GPS fix.
+                            Campus reference only. Attendance sessions use a fresh teacher-laptop location and never fall back to these coordinates.
                         </p>
                     </div>
                     <button type="button" class="saas-btn saas-btn-secondary" style="padding:5px 12px;font-size:0.8rem;" onclick="detectCampusGps()">

@@ -114,11 +114,9 @@ class QrDistanceValidationTest extends TestCase
         $this->assertTrue($response->json('success'));
     }
 
-    public function test_student_physically_close_with_gps_inaccuracy_is_accepted_due_to_accuracy_margin()
+    public function test_student_beyond_50_meters_is_rejected_even_with_accuracy_margin()
     {
-        // 14.500580, 121.000000 is ~64.5 meters away (raw distance exceeds 50m radius)
-        // However, phone reports GPS accuracy of 25m (typical indoor reading)
-        // Effective distance is 64.5m - 25m = 39.5m, which is within the 50m radius.
+        // Reported accuracy must never reduce the measured 64.5m distance.
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token'     => $this->session->token,
             'latitude'  => 14.500580,
@@ -126,8 +124,8 @@ class QrDistanceValidationTest extends TestCase
             'accuracy'  => 25,
         ]);
 
-        $response->assertStatus(200);
-        $this->assertTrue($response->json('success'));
+        $response->assertStatus(422)->assertJsonPath('error_type', 'outside_classroom');
+        $this->assertGreaterThan(50, $response->json('distance'));
     }
 
     public function test_student_genuinely_outside_radius_is_rejected_with_outside_classroom()
@@ -235,10 +233,10 @@ class QrDistanceValidationTest extends TestCase
         $mockWebauthn->shouldReceive('verifyAssertion')->andReturn($mockCredential);
         $this->app->instance(WebauthnService::class, $mockWebauthn);
 
-        // Student at 65m away with 25m accuracy should pass (effective 40m <= 50m)
+        // Student at 33m with a reliable fix is inside the session radius.
         $passResponse = $this->actingAs($this->student)->postJson('/qr/verify-complete', [
             'token'      => $this->session->token,
-            'latitude'   => 14.500580,
+            'latitude'   => 14.500300,
             'longitude'  => 121.000000,
             'accuracy'   => 25,
             'credential' => '{"id":"fake","rawId":"fake","response":{},"type":"public-key"}',
@@ -267,9 +265,9 @@ class QrDistanceValidationTest extends TestCase
 
         $outsideResponse = $this->actingAs($student2)->postJson('/qr/verify-complete', [
             'token'      => $this->session->token,
-            'latitude'   => 14.502000, // ~222m away
+            'latitude'   => 14.500580, // ~64.5m: accuracy must not expand the 50m boundary
             'longitude'  => 121.000000,
-            'accuracy'   => 10,
+            'accuracy'   => 25,
             'credential' => '{"id":"fake2","rawId":"fake2","response":{},"type":"public-key"}',
         ]);
 
@@ -292,14 +290,13 @@ class QrDistanceValidationTest extends TestCase
         $this->assertEquals('unreliable_gps', $weakGpsResponse->json('error_type'));
     }
 
-    public function test_system_configured_gps_radius_is_applied_when_larger_than_session_radius()
+    public function test_system_default_does_not_override_session_radius()
     {
-        // System admin configures GPS radius to 85 meters
+        // Changing the default cannot silently expand an already active 50m session.
         Setting::set('gps_radius', 85);
-        $this->assertEquals(85, $this->session->getAllowedRadius());
+        $this->assertEquals(50, $this->session->getAllowedRadius());
 
-        // Student is ~68m away (14.500612, 121.000000) with 5m accuracy
-        // Effective distance is ~63m (would fail if only 50m applied, but passes with configured 85m)
+        // Student is ~68m away, outside this specific session.
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token'     => $this->session->token,
             'latitude'  => 14.500612,
@@ -307,15 +304,13 @@ class QrDistanceValidationTest extends TestCase
             'accuracy'  => 5,
         ]);
 
-        $response->assertStatus(200);
-        $this->assertTrue($response->json('success'));
+        $response->assertStatus(422)->assertJsonPath('error_type', 'outside_classroom');
+        $this->assertEquals(50, $response->json('radius'));
     }
 
-    public function test_indoor_gps_reading_with_larger_inaccuracy_allowance_is_accepted()
+    public function test_indoor_gps_accuracy_does_not_expand_boundary()
     {
-        // Student is indoors, 85m away (14.500765, 121.000000)
-        // Phone reports indoor accuracy of 50m
-        // Effective distance is 85m - 50m = 35m <= 50m radius -> Accepted
+        // Student is 85m away. A 50m accuracy reading does not make that inside.
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
             'token'     => $this->session->token,
             'latitude'  => 14.500765,
@@ -323,11 +318,10 @@ class QrDistanceValidationTest extends TestCase
             'accuracy'  => 50,
         ]);
 
-        $response->assertStatus(200);
-        $this->assertTrue($response->json('success'));
+        $response->assertStatus(422)->assertJsonPath('error_type', 'outside_classroom');
     }
 
-    public function test_presence_verification_applies_accuracy_margin_and_respects_radius()
+    public function test_presence_verification_uses_raw_distance()
     {
         // First clock in
         $this->actingAs($this->student)->postJson('/qr/scan-process', [
@@ -337,7 +331,7 @@ class QrDistanceValidationTest extends TestCase
             'accuracy'  => 10.0,
         ]);
 
-        // Student is ~65m away with 25m accuracy (effective 40m <= 50m)
+        // Student is ~65m away; monitoring must not subtract reported accuracy.
         $response = $this->actingAs($this->student)->postJson('/student/presence-verify', [
             'session_id' => $this->session->id,
             'latitude'   => 14.500580,
@@ -348,13 +342,13 @@ class QrDistanceValidationTest extends TestCase
         $response->assertStatus(200);
         $this->assertTrue($response->json('success'));
         $this->assertEquals('Present', $response->json('status'));
-        $this->assertEquals('active', $response->json('monitoring_status'));
+        $this->assertEquals('warning', $response->json('monitoring_status'));
     }
 
-    public function test_geofence_can_be_disabled_with_zero_or_negative_radius()
+    public function test_geofence_can_be_disabled_with_zero_radius()
     {
-        // Teacher disables geofence for session (radius = -1)
-        $this->session->update(['radius_meters' => -1]);
+        // The radius column is unsigned; zero is the explicit disabled state.
+        $this->session->update(['radius_meters' => 0]);
         $this->assertEquals(0, $this->session->getAllowedRadius());
 
         // Student is 50km away
@@ -397,6 +391,7 @@ class QrDistanceValidationTest extends TestCase
             'session_id'    => $this->session->id,
             'classroom_lat' => 14.509612,
             'classroom_lng' => 121.009045,
+            'teacher_accuracy' => 10,
             'radius_meters' => 100,
         ]);
 
@@ -410,6 +405,74 @@ class QrDistanceValidationTest extends TestCase
         $this->assertEquals(14.509612, (float) $this->session->classroom_lat);
         $this->assertEquals(121.009045, (float) $this->session->classroom_lng);
         $this->assertEquals(100, $this->session->radius_meters);
+    }
+
+    public function test_geofenced_session_requires_a_fresh_accurate_teacher_location()
+    {
+        $missing = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $this->subject->code,
+        ]);
+        $missing->assertStatus(422);
+
+        $poor = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $this->subject->code,
+            'classroom_lat' => 12.371250,
+            'classroom_lng' => 123.619437,
+            'teacher_accuracy' => 250,
+        ]);
+        $poor->assertStatus(422);
+
+        $good = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $this->subject->code,
+            'classroom_lat' => 12.371250,
+            'classroom_lng' => 123.619437,
+            'teacher_accuracy' => 12,
+        ]);
+        $good->assertOk()->assertJsonPath('radius_meters', 50);
+        $this->assertDatabaseHas('attendance_sessions', [
+            'id' => $good->json('session_id'),
+            'classroom_lat' => 12.371250,
+            'classroom_lng' => 123.619437,
+            'radius_meters' => 50,
+        ]);
+    }
+
+    public function test_radius_change_cannot_move_session_center_or_set_zero_zero()
+    {
+        $response = $this->actingAs($this->teacher)->postJson(route('teacher.qr.update-location'), [
+            'session_id' => $this->session->id,
+            'radius_meters' => 100,
+        ]);
+        $response->assertOk();
+        $this->session->refresh();
+        $this->assertEquals($this->classroomLat, (float) $this->session->classroom_lat);
+        $this->assertEquals($this->classroomLng, (float) $this->session->classroom_lng);
+
+        $invalid = $this->actingAs($this->teacher)->postJson(route('teacher.qr.update-location'), [
+            'session_id' => $this->session->id,
+            'classroom_lat' => 0,
+            'classroom_lng' => 0,
+            'teacher_accuracy' => 5,
+        ]);
+        $invalid->assertStatus(422);
+        $this->session->refresh();
+        $this->assertEquals($this->classroomLat, (float) $this->session->classroom_lat);
+        $this->assertEquals($this->classroomLng, (float) $this->session->classroom_lng);
+    }
+
+    public function test_geofenced_scan_requires_student_accuracy_and_coordinates()
+    {
+        $missingAccuracy = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+        ]);
+        $missingAccuracy->assertStatus(422)->assertJsonPath('error_type', 'unreliable_gps');
+
+        $missingLocation = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $this->session->token,
+        ]);
+        $missingLocation->assertStatus(422)->assertJsonPath('error_type', 'location_required');
     }
 
     public function test_masbate_student_physically_beside_teacher_laptop_is_accepted()
@@ -433,7 +496,7 @@ class QrDistanceValidationTest extends TestCase
         $this->assertTrue($response->json('success'));
     }
 
-    public function test_inverted_coordinates_are_automatically_normalized()
+    public function test_inverted_coordinates_are_rejected_at_validation()
     {
         $this->session->update([
             'classroom_lat' => 12.371250,
@@ -449,8 +512,7 @@ class QrDistanceValidationTest extends TestCase
             'accuracy'  => 8,
         ]);
 
-        $response->assertStatus(200);
-        $this->assertTrue($response->json('success'));
+        $response->assertStatus(422)->assertJsonValidationErrors('latitude');
     }
 
     public function test_poor_gps_accuracy_returns_unreliable_gps_message_instead_of_outside_classroom()
@@ -476,4 +538,3 @@ class QrDistanceValidationTest extends TestCase
         $this->assertStringContainsString('High Accuracy GPS', $response->json('message'));
     }
 }
-
