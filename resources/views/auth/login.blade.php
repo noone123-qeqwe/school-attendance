@@ -2471,6 +2471,12 @@ async function handleSetupBiometricsClick() {
 }
 
 async function startBiometricRegistration(identifier, password) {
+    if (window.location.hostname === '127.0.0.1') {
+        const targetUrl = window.location.href.replace('//127.0.0.1', '//localhost');
+        window.location.replace(targetUrl);
+        return;
+    }
+
     openBiometricModal({
         title: 'SETTING UP BIOMETRICS',
         identifier: identifier,
@@ -2538,26 +2544,59 @@ async function startBiometricRegistration(identifier, password) {
             return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
         });
 
-        var credential = await navigator.credentials.create({
-            publicKey: {
-                challenge: challenge,
-                rp: rp,
-                user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-                pubKeyCredParams: opts.pubKeyCredParams || [
-                    { type: 'public-key', alg: -7 },
-                    { type: 'public-key', alg: -257 }
-                ],
-                authenticatorSelection: opts.authenticatorSelection || {
-                    authenticatorAttachment: 'platform',
-                    userVerification: 'preferred',
-                    residentKey: 'preferred',
-                    requireResidentKey: false
-                },
-                timeout: opts.timeout || 60000,
-                attestation: opts.attestation || 'none',
-                excludeCredentials: excludeCredentials
+        var hasPlatformAuth = false;
+        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+            try {
+                hasPlatformAuth = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            } catch(e) {
+                hasPlatformAuth = false;
             }
-        });
+        }
+
+        var basePublicKey = {
+            challenge: challenge,
+            rp: rp,
+            user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
+            pubKeyCredParams: opts.pubKeyCredParams || [
+                { type: 'public-key', alg: -7 },
+                { type: 'public-key', alg: -257 }
+            ],
+            timeout: opts.timeout || 120000,
+            attestation: opts.attestation || 'none',
+            excludeCredentials: excludeCredentials
+        };
+
+        var credential = null;
+        try {
+            var primarySelection = {
+                userVerification: 'preferred',
+                residentKey: 'preferred',
+                requireResidentKey: false
+            };
+            if (hasPlatformAuth) {
+                primarySelection.authenticatorAttachment = 'platform';
+            }
+
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: primarySelection
+                })
+            });
+        } catch (credErr) {
+            if (credErr.name === 'AbortError') {
+                throw credErr;
+            }
+            // Graceful fallback for devices without strict platform authenticator or when platform prompt fails
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: {
+                        userVerification: 'preferred',
+                        residentKey: 'preferred',
+                        requireResidentKey: false
+                    }
+                })
+            });
+        }
 
         if (!credential) {
             throw new Error('Biometric setup was cancelled.');

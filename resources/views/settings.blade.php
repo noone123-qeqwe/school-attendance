@@ -5361,6 +5361,13 @@ async function beginFingerprintRegistration() {
     const successTitle = document.getElementById('bioSuccessTitle');
     const successDesc = document.getElementById('bioSuccessDesc');
 
+    // 1. WebAuthn requires a named domain like localhost or HTTPS (not raw 127.0.0.1 IP)
+    if (window.location.hostname === '127.0.0.1') {
+        const targetUrl = window.location.href.replace('//127.0.0.1', '//localhost');
+        window.location.replace(targetUrl);
+        return;
+    }
+
     if (!window.isSecureContext) {
         if (idleView) idleView.style.display = 'none';
         if (errorView) {
@@ -5402,7 +5409,7 @@ async function beginFingerprintRegistration() {
     const fpStatusSub = document.getElementById('fpStatusSub');
     if (fpScanningTitle) fpScanningTitle.textContent = 'Touch Fingerprint Sensor';
     if (fpStatusSub) fpStatusSub.textContent = 'Place your finger on your device sensor or confirm the prompt';
-    updateProgressiveFeedback(25, 'Sensor ready — place finger on sensor...');
+    updateProgressiveFeedback(25, 'Sensor ready — waiting for biometric prompt...');
     const fpPctLabel = document.getElementById('fpPctLabel');
     if (fpPctLabel) fpPctLabel.textContent = 'Ready';
 
@@ -5418,6 +5425,10 @@ async function beginFingerprintRegistration() {
             signal: bioAbortController.signal
         });
         const opts = await optRes.json();
+
+        if (!optRes.ok || !opts.challenge || !opts.user) {
+            throw new Error(opts.message || 'Failed to initialize biometric registration options from server.');
+        }
 
         const challenge = base64ToUint8Array(opts.challenge);
         const userId    = base64ToUint8Array(opts.user.id);
@@ -5435,11 +5446,15 @@ async function beginFingerprintRegistration() {
             return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
         });
 
-        const timeoutPromise = new Promise((_, reject) => {
-            const err = new Error('Biometric sensor prompt timed out. Please try again.');
-            err.name = 'TimeoutError';
-            setTimeout(() => reject(err), 60000);
-        });
+        // Detect if platform authenticator (Windows Hello, Touch ID, Android fingerprint) is available
+        let hasPlatformAuth = false;
+        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+            try {
+                hasPlatformAuth = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            } catch(e) {
+                hasPlatformAuth = false;
+            }
+        }
 
         const basePublicKey = {
             challenge: challenge,
@@ -5449,36 +5464,50 @@ async function beginFingerprintRegistration() {
                 { type: 'public-key', alg: -7 },
                 { type: 'public-key', alg: -257 }
             ],
-            timeout: opts.timeout || 60000,
+            timeout: opts.timeout || 120000,
             attestation: opts.attestation || 'none',
             excludeCredentials: excludeCredentials
         };
 
-        const createPromise = navigator.credentials.create({
-            publicKey: Object.assign({}, basePublicKey, {
-                authenticatorSelection: opts.authenticatorSelection || {
-                    authenticatorAttachment: 'platform',
-                    userVerification: 'preferred',
-                    requireResidentKey: false
-                }
-            }),
-            signal: bioAbortController.signal
-        }).catch(async (cErr) => {
-            if (cErr.name === 'NotSupportedError' || cErr.name === 'ConstraintError') {
-                return navigator.credentials.create({
-                    publicKey: Object.assign({}, basePublicKey, {
-                        authenticatorSelection: {
-                            userVerification: 'preferred',
-                            requireResidentKey: false
-                        }
-                    }),
-                    signal: bioAbortController.signal
-                });
+        let credential = null;
+        try {
+            // First attempt: use platform if available, otherwise allow any authenticator (USB, phone passkey, etc.)
+            const primarySelection = {
+                userVerification: 'preferred',
+                residentKey: 'preferred',
+                requireResidentKey: false
+            };
+            if (hasPlatformAuth) {
+                primarySelection.authenticatorAttachment = 'platform';
             }
-            throw cErr;
-        });
 
-        const credential = await Promise.race([createPromise, timeoutPromise]);
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: primarySelection
+                }),
+                signal: bioAbortController.signal
+            });
+        } catch (credErr) {
+            if (credErr.name === 'AbortError') {
+                throw credErr;
+            }
+            // If primary platform creation failed (e.g. Windows Hello unconfigured, external USB sensor, or desktop),
+            // gracefully retry without authenticatorAttachment restriction so the browser shows all sensor options (phone / USB / passkey).
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: {
+                        userVerification: 'preferred',
+                        residentKey: 'preferred',
+                        requireResidentKey: false
+                    }
+                }),
+                signal: bioAbortController.signal
+            });
+        }
+
+        if (!credential) {
+            throw new Error('Biometric registration was cancelled.');
+        }
 
         if (fpScanFrame) {
             fpScanFrame.classList.add('bio-detected');

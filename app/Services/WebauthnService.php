@@ -33,7 +33,6 @@ class WebauthnService
                     ['type' => 'public-key', 'alg' => -257],
                 ],
                 'authenticatorSelection' => [
-                    'authenticatorAttachment' => 'platform',
                     'userVerification' => 'preferred',
                     'residentKey' => 'preferred',
                     'requireResidentKey' => false,
@@ -392,7 +391,12 @@ class WebauthnService
             }
         }
 
-        return strtolower(trim($host) ?: 'localhost');
+        $cleanHost = strtolower(trim($host));
+        if ($cleanHost === '127.0.0.1' || $cleanHost === '::1' || $cleanHost === '') {
+            return 'localhost';
+        }
+
+        return $cleanHost;
     }
 
     private function parseAuthenticatorData(string $authData, bool $requireAttestedCredential): array

@@ -674,6 +674,12 @@ async function prefetchWebAuthn() {
 }
 
 async function registerFingerprint() {
+    if (window.location.hostname === '127.0.0.1') {
+        const targetUrl = window.location.href.replace('//127.0.0.1', '//localhost');
+        window.location.replace(targetUrl);
+        return;
+    }
+
     const btn = document.getElementById('registerFpBtn');
     const msg = document.getElementById('fpMessage');
     btn.disabled = true;
@@ -706,51 +712,58 @@ async function registerFingerprint() {
             id: base64ToUint8Array(c.id)
         }));
 
+        let hasPlatformAuth = false;
+        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+            try {
+                hasPlatformAuth = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            } catch(e) {
+                hasPlatformAuth = false;
+            }
+        }
+
+        const basePublicKey = {
+            challenge,
+            rp: rp,
+            user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
+            pubKeyCredParams: opts.pubKeyCredParams || [
+                { type: 'public-key', alg: -7 },
+                { type: 'public-key', alg: -257 }
+            ],
+            timeout: opts.timeout || 120000,
+            attestation: opts.attestation || 'none',
+            excludeCredentials
+        };
+
         let credential = null;
         try {
+            const primarySelection = {
+                userVerification: 'preferred',
+                residentKey: 'preferred',
+                requireResidentKey: false
+            };
+            if (hasPlatformAuth) {
+                primarySelection.authenticatorAttachment = 'platform';
+            }
+
             credential = await navigator.credentials.create({
-                publicKey: {
-                    challenge,
-                    rp: rp,
-                    user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-                    pubKeyCredParams: opts.pubKeyCredParams || [
-                        { type: 'public-key', alg: -7 },
-                        { type: 'public-key', alg: -257 }
-                    ],
-                    authenticatorSelection: opts.authenticatorSelection || {
-                        authenticatorAttachment: 'platform',
-                        userVerification: 'preferred',
-                        requireResidentKey: false
-                    },
-                    timeout: opts.timeout || 60000,
-                    attestation: opts.attestation || 'none',
-                    excludeCredentials
-                }
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: primarySelection
+                })
             });
         } catch (credErr) {
-            // Fallback for devices without strict platform authenticator (e.g. external keys / hybrid)
-            if (credErr.name === 'NotSupportedError' || credErr.name === 'ConstraintError') {
-                credential = await navigator.credentials.create({
-                    publicKey: {
-                        challenge,
-                        rp: rp,
-                        user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-                        pubKeyCredParams: opts.pubKeyCredParams || [
-                            { type: 'public-key', alg: -7 },
-                            { type: 'public-key', alg: -257 }
-                        ],
-                        authenticatorSelection: {
-                            userVerification: 'preferred',
-                            requireResidentKey: false
-                        },
-                        timeout: opts.timeout || 60000,
-                        attestation: 'none',
-                        excludeCredentials
-                    }
-                });
-            } else {
+            if (credErr.name === 'AbortError') {
                 throw credErr;
             }
+            // Fallback for devices without strict platform authenticator (e.g. external keys / hybrid)
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: {
+                        userVerification: 'preferred',
+                        residentKey: 'preferred',
+                        requireResidentKey: false
+                    }
+                })
+            });
         }
 
         if (!credential) {

@@ -795,7 +795,7 @@ function doFingerprint() {
         var pubKey = {
             challenge: challenge,
             allowCredentials: allowCredentials,
-            userVerification: 'required',
+            userVerification: 'preferred',
             timeout: 60000
         };
         if (effectiveRpId) {
