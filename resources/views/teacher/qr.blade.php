@@ -727,6 +727,12 @@ let activeRosterFilter = 'all';
 let knownClockedInIds = new Set();
 let recentCheckInsQueue = [];
 
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[character]);
+}
+
 const startBtn = document.getElementById('startBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const stopBtn = document.getElementById('stopBtn');
@@ -1564,11 +1570,14 @@ function addProjectorTickerItem(item) {
 
     const chip = document.createElement('div');
     chip.className = 'projector-chip';
+    const safeName = escapeHtml(item.student_name || 'Student');
+    const safeTime = escapeHtml(item.time || '');
+    const safeStatus = ['Present', 'Late', 'Absent', 'Escaped'].includes(item.status) ? item.status : 'Present';
     chip.innerHTML = `
-        <span class="avatar-circle" style="width:26px;height:26px;font-size:0.7rem;">${(item.student_name || 'ST').substring(0,2).toUpperCase()}</span>
-        <span class="chip-name">${item.student_name}</span>
-        <span class="chip-time">${item.time || ''}</span>
-        <span class="status-badge status-${(item.status || 'present').toLowerCase()}">${item.status || 'Present'}</span>
+        <span class="avatar-circle" style="width:26px;height:26px;font-size:0.7rem;">${safeName.substring(0,2).toUpperCase()}</span>
+        <span class="chip-name">${safeName}</span>
+        <span class="chip-time">${safeTime}</span>
+        <span class="status-badge status-${safeStatus.toLowerCase()}">${safeStatus}</span>
     `;
 
     ticker.insertBefore(chip, ticker.firstChild);
@@ -1618,7 +1627,17 @@ async function updateClockIns() {
             });
         }
 
-        cachedClockins = incomingClockins;
+        cachedClockins = incomingClockins.map(clockin => ({
+            ...clockin,
+            id: Number.isSafeInteger(Number(clockin.id)) ? Number(clockin.id) : 0,
+            name: escapeHtml(clockin.name || 'Student'),
+            student_number: escapeHtml(clockin.student_number || ''),
+            time: escapeHtml(clockin.time || ''),
+            distance: escapeHtml(clockin.distance || ''),
+            escaped_at: escapeHtml(clockin.escaped_at || ''),
+            outside_since: escapeHtml(clockin.outside_since || ''),
+            last_verified: escapeHtml(clockin.last_verified || ''),
+        }));
         updateStatsCounters(data.stats);
         renderClockinsList();
     } catch (error) {

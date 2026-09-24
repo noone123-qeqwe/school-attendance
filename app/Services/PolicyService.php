@@ -62,7 +62,7 @@ class PolicyService
      */
     public function updatePrivacyPolicy(string $content, string $version, string $effectiveDate): void
     {
-        Setting::updateOrCreate(['key' => 'privacy_policy_content'], ['value' => $content]);
+        Setting::updateOrCreate(['key' => 'privacy_policy_content'], ['value' => $this->sanitizePolicyHtml($content)]);
         Setting::updateOrCreate(['key' => 'privacy_policy_version'], ['value' => $version]);
         Setting::updateOrCreate(['key' => 'privacy_policy_effective_date'], ['value' => $effectiveDate]);
         Setting::updateOrCreate(['key' => 'privacy_policy_updated_at'], ['value' => Carbon::now()->toDateString()]);
@@ -73,7 +73,7 @@ class PolicyService
      */
     public function updateTermsAndConditions(string $content, string $version, string $effectiveDate): void
     {
-        Setting::updateOrCreate(['key' => 'terms_content'], ['value' => $content]);
+        Setting::updateOrCreate(['key' => 'terms_content'], ['value' => $this->sanitizePolicyHtml($content)]);
         Setting::updateOrCreate(['key' => 'terms_version'], ['value' => $version]);
         Setting::updateOrCreate(['key' => 'terms_effective_date'], ['value' => $effectiveDate]);
         Setting::updateOrCreate(['key' => 'terms_updated_at'], ['value' => Carbon::now()->toDateString()]);
@@ -103,6 +103,98 @@ class PolicyService
         }
 
         Setting::flushCache();
+    }
+
+    /**
+     * Keep the limited formatting needed by policy pages while removing active
+     * content, event handlers, CSS injection, and unsafe URL schemes.
+     */
+    public function sanitizePolicyHtml(string $html): string
+    {
+        $allowedTags = [
+            'div', 'section', 'p', 'h2', 'h3', 'h4', 'h5', 'ul', 'ol', 'li',
+            'strong', 'em', 'b', 'i', 'u', 'code', 'blockquote', 'span', 'a',
+            'br', 'hr',
+        ];
+
+        if (!class_exists(\DOMDocument::class)) {
+            $clean = strip_tags($html, '<' . implode('><', $allowedTags) . '>');
+            $clean = preg_replace('/\s+on[a-z]+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean) ?? '';
+            $clean = preg_replace('/\s+style\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)/i', '', $clean) ?? '';
+            return preg_replace('/\s+(?:href|src)\s*=\s*(["\'])\s*(?:javascript|data):.*?\1/i', '', $clean) ?? '';
+        }
+
+        $document = new \DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        $document->loadHTML(
+            '<?xml encoding="UTF-8"><div id="policy-sanitizer-root">' . $html . '</div>',
+            LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD
+        );
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $root = $document->getElementById('policy-sanitizer-root');
+        if (!$root) {
+            return '';
+        }
+
+        $sanitizeNode = function (\DOMNode $node) use (&$sanitizeNode, $allowedTags): void {
+            foreach (iterator_to_array($node->childNodes) as $child) {
+                if (!$child instanceof \DOMElement) {
+                    continue;
+                }
+
+                $tag = strtolower($child->tagName);
+                if (!in_array($tag, $allowedTags, true)) {
+                    if (in_array($tag, ['script', 'style', 'iframe', 'object', 'embed', 'svg', 'math'], true)) {
+                        $child->parentNode?->removeChild($child);
+                        continue;
+                    }
+
+                    $parent = $child->parentNode;
+                    if ($parent) {
+                        while ($child->firstChild) {
+                            $parent->insertBefore($child->firstChild, $child);
+                        }
+                        $parent->removeChild($child);
+                    }
+                    continue;
+                }
+
+                foreach (iterator_to_array($child->attributes) as $attribute) {
+                    $name = strtolower($attribute->name);
+                    $value = trim($attribute->value);
+                    $allowed = in_array($name, ['class', 'id'], true)
+                        && preg_match('/^[a-z0-9 _-]+$/i', $value);
+
+                    if ($tag === 'a' && $name === 'href') {
+                        $allowed = preg_match('/^(?:https?:\/\/|mailto:|\/|#)/i', $value) === 1;
+                    } elseif ($tag === 'a' && $name === 'target') {
+                        $allowed = in_array($value, ['_blank', '_self'], true);
+                    } elseif ($tag === 'a' && $name === 'rel') {
+                        $allowed = preg_match('/^[a-z ]+$/i', $value) === 1;
+                    }
+
+                    if (!$allowed) {
+                        $child->removeAttribute($attribute->name);
+                    }
+                }
+
+                if ($tag === 'a' && $child->getAttribute('target') === '_blank') {
+                    $child->setAttribute('rel', 'noopener noreferrer');
+                }
+
+                $sanitizeNode($child);
+            }
+        };
+        $sanitizeNode($root);
+
+        $clean = '';
+        foreach ($root->childNodes as $child) {
+            $clean .= $document->saveHTML($child);
+        }
+
+        return trim($clean);
     }
 
     /**

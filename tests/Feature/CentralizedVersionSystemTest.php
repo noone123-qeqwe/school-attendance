@@ -215,7 +215,7 @@ class CentralizedVersionSystemTest extends TestCase
         $initial->assertSee('v9.0.0');
 
         // 2. Client applies update to 9.1.0 via /pwa/update
-        $response = $this->postJson('/pwa/update', ['version' => '9.1.0']);
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', ['version' => '9.1.0']);
         $response->assertStatus(200);
         $response->assertJson([
             'success' => true,
@@ -224,6 +224,7 @@ class CentralizedVersionSystemTest extends TestCase
         ]);
 
         // 3. Verify login page renders v9.1.0 immediately
+        auth()->logout();
         $loginRes = $this->get(route('login'));
         $loginRes->assertStatus(200);
         $loginRes->assertSee('v9.1.0');

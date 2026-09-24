@@ -3,9 +3,6 @@
 .env
 .env*
 !.env.example
-!.env.railway
-!.env.production
-!.env.render*
 .phpactor.json
 .phpunit.result.cache
 /.fleet

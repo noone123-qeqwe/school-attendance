@@ -128,7 +128,7 @@ class AutoVersionProgressionTest extends TestCase
                 ]);
 
             // 5. User applies update (clicks "Update Now")
-            $updateRes = $this->postJson('/pwa/update', ['version' => $targetVer]);
+            $updateRes = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', ['version' => $targetVer]);
             $updateRes->assertStatus(200)
                 ->assertJson([
                     'success'           => true,

@@ -3794,6 +3794,10 @@
                                     </div>
                                     <div class="bio-preview-title">Register Fingerprint Authentication</div>
                                     <div class="bio-preview-sub">Click the button below to start the hardware fingerprint enrollment for this account.</div>
+                                    <div class="mt-2 text-start px-2 py-1 rounded" style="font-size: 11.5px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2); color: #bae6fd; max-width: 380px; margin: 8px auto 0;">
+                                        <i class="bi bi-info-circle-fill me-1 text-info"></i>
+                                        <strong>Android Notice:</strong> If prompted <em>"Choose a device for your passkey"</em>, tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> (or <strong>This device</strong>) to scan your fingerprint.
+                                    </div>
                                 </div>
 
                                 <!-- Face Idle Graphic -->
@@ -3854,6 +3858,12 @@
                                             <span class="bio-progress-state" id="fpStateLabel">Waiting for sensor touch...</span>
                                             <span class="bio-progress-pct" id="fpPctLabel">Ready</span>
                                         </div>
+                                    </div>
+                                    <div class="mt-2 text-center" style="max-width: 340px; margin: 8px auto 0;">
+                                        <span class="badge bg-dark-subtle text-secondary border border-secondary-subtle px-2 py-1" style="font-size: 11px; white-space: normal; line-height: 1.4;">
+                                            <i class="bi bi-phone me-1 text-warning"></i>
+                                            If phone asks <em>"Choose a device"</em>: Tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> or <strong>This device</strong>.
+                                        </span>
                                     </div>
                                 </div>
 
@@ -6680,6 +6690,11 @@ async function executeFaceCaptureAndVerificationSequence(video) {
 // navigator.credentials.create() and therefore does NOT trigger any Device
 // Verification / WebAuthn OS dialog. Keep these two flows strictly separate.
 async function beginFaceRegistration() {
+    // Use the device's protected WebAuthn platform authenticator. Camera-only
+    // descriptors can be replayed and are never accepted as authentication proof.
+    selectedBioMethod = 'face';
+    return beginFingerprintRegistration();
+
     // Safety guard: ensure we never accidentally trigger hardware WebAuthn
     // (Device Verification) when the user intended face camera registration.
     selectedBioMethod = 'face';
@@ -6798,6 +6813,7 @@ async function beginFaceRegistration() {
 
 // ── Flow 2: Hardware WebAuthn Fingerprint Registration ──
 async function beginFingerprintRegistration() {
+    const registrationType = selectedBioMethod === 'face' ? 'face' : 'fingerprint';
     const idleView = document.getElementById('bioIdleView');
     const scanningView = document.getElementById('bioScanningView');
     const successView = document.getElementById('bioSuccessView');
@@ -6854,7 +6870,7 @@ async function beginFingerprintRegistration() {
     const fpScanningTitle = document.getElementById('fpScanningTitle');
     const fpStatusSub = document.getElementById('fpStatusSub');
     if (fpScanningTitle) fpScanningTitle.textContent = 'Touch Fingerprint Sensor';
-    if (fpStatusSub) fpStatusSub.textContent = 'Place your finger on your device sensor or confirm the prompt';
+    if (fpStatusSub) fpStatusSub.innerHTML = 'Place your finger on your device sensor or confirm the prompt.<br><span style="font-size:11.5px; opacity:0.85;">If asked where to save passkey: tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> / <strong>This device</strong>.</span>';
     updateProgressiveFeedback(25, 'Sensor ready — waiting for biometric prompt...');
     const fpPctLabel = document.getElementById('fpPctLabel');
     if (fpPctLabel) fpPctLabel.textContent = 'Ready';
@@ -6862,7 +6878,7 @@ async function beginFingerprintRegistration() {
     bioAbortController = new AbortController();
 
     try {
-        const optRes = await fetch('{{ route("webauthn.register.options") }}?biometric_type=fingerprint', {
+        const optRes = await fetch('{{ route("webauthn.register.options") }}?biometric_type=' + registrationType, {
             headers: { 
                 'X-CSRF-TOKEN': '{{ csrf_token() }}', 
                 'Accept': 'application/json',
@@ -6917,15 +6933,15 @@ async function beginFingerprintRegistration() {
 
         let credential = null;
         try {
-            // First attempt: use platform if available, otherwise allow any authenticator (USB, phone passkey, etc.)
+            // First attempt: explicitly request platform authenticator (device fingerprint sensor, Touch ID, Windows Hello, Android lock).
+            // Always try platform first so Android and iOS default to the local fingerprint/biometric sensor directly
+            // rather than opening the roaming security key picker (NFC/USB).
             const primarySelection = {
+                authenticatorAttachment: 'platform',
                 userVerification: 'preferred',
                 residentKey: 'preferred',
                 requireResidentKey: false
             };
-            if (hasPlatformAuth) {
-                primarySelection.authenticatorAttachment = 'platform';
-            }
 
             credential = await navigator.credentials.create({
                 publicKey: Object.assign({}, basePublicKey, {
@@ -6937,7 +6953,8 @@ async function beginFingerprintRegistration() {
             if (credErr.name === 'AbortError') {
                 throw credErr;
             }
-            // If primary platform creation failed (e.g. Windows Hello unconfigured, external USB sensor, or desktop),
+            console.warn('Direct platform biometric registration failed, retrying with flexible authenticator selection:', credErr);
+            // If primary platform creation failed (e.g. desktop PC without Windows Hello, or external USB sensor),
             // gracefully retry without authenticatorAttachment restriction so the browser shows all sensor options (phone / USB / passkey).
             credential = await navigator.credentials.create({
                 publicKey: Object.assign({}, basePublicKey, {
@@ -6972,7 +6989,7 @@ async function beginFingerprintRegistration() {
                          ua.indexOf('Android') !== -1 ? 'Android Device' :
                          ua.indexOf('Windows') !== -1 ? 'Windows PC' :
                          ua.indexOf('Mac') !== -1 ? 'Mac' : 'Biometric Device';
-        const deviceName = `${deviceType} (Fingerprint)`;
+        const deviceName = `${deviceType} (${registrationType === 'face' ? 'Secure Face ID / Passkey' : 'Fingerprint'})`;
 
         const saveRes = await fetch('{{ route("webauthn.register") }}', {
             method: 'POST',
@@ -6992,7 +7009,7 @@ async function beginFingerprintRegistration() {
                         clientDataJSON: clientDataJSON
                     }
                 },
-                biometric_type: 'fingerprint',
+                biometric_type: registrationType,
                 device_name: deviceName
             })
         });

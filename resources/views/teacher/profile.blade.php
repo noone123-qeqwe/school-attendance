@@ -737,13 +737,11 @@ async function registerFingerprint() {
         let credential = null;
         try {
             const primarySelection = {
+                authenticatorAttachment: 'platform',
                 userVerification: 'preferred',
                 residentKey: 'preferred',
                 requireResidentKey: false
             };
-            if (hasPlatformAuth) {
-                primarySelection.authenticatorAttachment = 'platform';
-            }
 
             credential = await navigator.credentials.create({
                 publicKey: Object.assign({}, basePublicKey, {

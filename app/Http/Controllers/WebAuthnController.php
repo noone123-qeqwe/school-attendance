@@ -97,6 +97,13 @@ class WebAuthnController extends Controller
         );
 
         if ($isDirectFace) {
+            return response()->json([
+                'success' => false,
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
+                'message' => 'Camera-only face registration is disabled because it cannot securely verify identity. Use your device passkey, Face ID, Windows Hello, or Android screen lock instead.',
+            ], 422);
+
+            // Legacy camera-descriptor registration is intentionally unreachable.
             $faceData = $request->input('face_descriptor') 
                 ?? $request->input('face_data') 
                 ?? $request->input('public_key');
@@ -262,22 +269,9 @@ class WebAuthnController extends Controller
 
             $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
 
-            if (!$hasWebauthn && $hasFaceCred) {
-                // User has registered camera face biometrics; allow face recognition directly
-                $faceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->latest()->first();
-                return response()->json([
-                    "success" => true,
-                    "biometric_type" => "face",
-                    "user_id" => $user->id,
-                    "identifier" => $user->student_number ?? $user->email ?? $identifier,
-                    "user_name" => $user->name,
-                    "face_credential_id" => $faceCred?->credential_id,
-                    "available_methods" => ['face'],
-                ]);
-            }
-
             if (!$hasWebauthn) {
-                // User has registered camera face biometrics, but hardware WebAuthn is not yet enrolled on this browser
+                // Legacy camera face records are not authentication credentials.
+                // Require password verification and enrollment of a real WebAuthn credential.
                 return response()->json([
                     "success" => true,
                     "requires_device_enrollment" => true,
@@ -628,6 +622,13 @@ class WebAuthnController extends Controller
             || (str_starts_with((string)$request->input('credential_id'), 'face_') && !$request->has('assertion'));
 
         if ($isFaceLogin) {
+            return response()->json([
+                'success' => false,
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
+                'message' => 'Camera-only face login is disabled because it cannot securely verify identity. Use your device passkey, Face ID, Windows Hello, or password instead.',
+            ], 422);
+
+            // Legacy client-generated face descriptors are intentionally unreachable.
             $request->validate(["credential_id" => "required|string"]);
             $credentialId = (string) $request->input('credential_id');
             $faceData = (string) ($request->input('face_descriptor') ?? $request->input('face_data') ?? '');
@@ -984,4 +985,3 @@ class WebAuthnController extends Controller
         return response()->json($devices);
     }
 }
-

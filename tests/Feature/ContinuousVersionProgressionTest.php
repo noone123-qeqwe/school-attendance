@@ -103,7 +103,7 @@ class ContinuousVersionProgressionTest extends TestCase
                 ]);
 
             // 2. User installs Version N
-            $updateRes = $this->postJson('/pwa/update', ['version' => $targetVer]);
+            $updateRes = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', ['version' => $targetVer]);
             $updateRes->assertStatus(200)
                 ->assertJson([
                     'success'           => true,
@@ -162,7 +162,7 @@ class ContinuousVersionProgressionTest extends TestCase
             ]);
 
         // User updates to 2.5.2
-        $updateRes = $this->postJson('/pwa/update', ['version' => '2.5.2']);
+        $updateRes = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', ['version' => '2.5.2']);
         $updateRes->assertStatus(200)
             ->assertJson([
                 'success'           => true,

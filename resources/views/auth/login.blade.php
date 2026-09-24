@@ -2569,13 +2569,11 @@ async function startBiometricRegistration(identifier, password) {
         var credential = null;
         try {
             var primarySelection = {
+                authenticatorAttachment: 'platform',
                 userVerification: 'preferred',
                 residentKey: 'preferred',
                 requireResidentKey: false
             };
-            if (hasPlatformAuth) {
-                primarySelection.authenticatorAttachment = 'platform';
-            }
 
             credential = await navigator.credentials.create({
                 publicKey: Object.assign({}, basePublicKey, {
@@ -3534,6 +3532,16 @@ function stopFaceRecognitionLoginCamera() {
 async function startFaceRecognitionLogin(identifier, opts) {
     identifier = (identifier || (idInput ? idInput.value.trim() : '')).trim();
     opts = opts || lastBiometricOptions || {};
+
+    // Face authentication must be performed by a platform WebAuthn
+    // authenticator (Face ID, Windows Hello, Android screen lock). A browser
+    // camera image alone is not an identity credential.
+    return performBiometricLogin(identifier, {
+        id: 'face',
+        name: 'Secure Face ID / Passkey',
+        icon: 'bi-person-bounding-box',
+        uv: 'required'
+    }, opts);
 
     stopFaceRecognitionLoginCamera();
     if (bioAbortController) {

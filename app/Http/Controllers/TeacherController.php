@@ -554,9 +554,18 @@ class TeacherController extends Controller
             'note' => 'required|string|max:1000',
         ]);
 
+        $student = User::whereKey($request->integer('student_id'))
+            ->where('role', 'student')
+            ->firstOrFail();
+        $teacherSubjects = Subject::where('instructor_id', Auth::id())->get();
+        $hasAccess = $teacherSubjects->contains(
+            fn (Subject $subject) => $subject->getAllStudents()->contains('id', $student->id)
+        );
+        abort_unless($hasAccess, 403, 'You do not have access to this student.');
+
         \App\Models\StudentNote::create([
             'teacher_id' => Auth::id(),
-            'student_id' => $request->student_id,
+            'student_id' => $student->id,
             'note' => $request->note,
         ]);
 
@@ -1928,12 +1937,24 @@ class TeacherController extends Controller
 
         $request->validate([
             'date' => 'required|date',
-            'attendance' => 'required|array', 
+            'attendance' => 'required|array',
+            'attendance.*' => 'required|string|in:Present,Late,Absent,Excused,present,late,absent,excused',
         ]);
 
+        $allowedStudentIds = $subject->getAllStudents()
+            ->where('role', 'student')
+            ->pluck('id')
+            ->map(fn ($id) => (int) $id)
+            ->all();
+        $submittedStudentIds = array_map('intval', array_keys($request->attendance));
+        if (array_diff($submittedStudentIds, $allowedStudentIds)) {
+            abort(403, 'Attendance can only be recorded for students enrolled in this subject.');
+        }
+
         $count = 0;
-        foreach ($request->attendance as $userId => $status) {
-            $statusNormalized = is_string($status) ? ucfirst(strtolower($status)) : $status;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($request, $subjectCode, &$count) {
+            foreach ($request->attendance as $userId => $status) {
+                $statusNormalized = ucfirst(strtolower($status));
 
             // When teacher marks a student as Present/Late, the record should not remain excused.
             $updateData = [
@@ -1945,20 +1966,17 @@ class TeacherController extends Controller
                 $updateData['excuse_note'] = null;
             }
 
-            Attendance::updateOrCreate(
-                [
-                    'user_id' => $userId,
-                    'subject_code' => $subjectCode,
-                    'date' => $request->date,
-                ],
-                [
-                    // Note: we intentionally avoid clearing excused when status is Absent
-                    // (teacher can approve an excuse later).
-                    ...$updateData,
-                ]
-            );
-            $count++;
-        }
+                Attendance::updateOrCreate(
+                    [
+                        'user_id' => (int) $userId,
+                        'subject_code' => $subjectCode,
+                        'date' => $request->date,
+                    ],
+                    $updateData
+                );
+                $count++;
+            }
+        });
 
         return redirect()->route('teacher.classroom.show', $subjectCode)->with('success', "Attendance saved for {$count} student(s) on " . \Carbon\Carbon::parse($request->date)->format('M d, Y') . ".");
     }

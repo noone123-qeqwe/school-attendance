@@ -38,10 +38,10 @@ class OfflineAttendanceController extends Controller
         $records = $request->input('records');
 
         // Pre-fetch subjects owned by this teacher for validation
-        $teacherSubjectCodes = Subject::where('instructor_id', $teacher->id)
-            ->pluck('code')
-            ->map(fn ($c) => strtoupper(trim($c)))
-            ->toArray();
+        $teacherSubjects = Subject::where('instructor_id', $teacher->id)->get()
+            ->keyBy(fn (Subject $subject) => strtoupper(trim($subject->code)));
+        $teacherSubjectCodes = $teacherSubjects->keys()->all();
+        $rosterIdsBySubject = [];
 
         $synced = [];
         $failed = [];
@@ -80,6 +80,23 @@ class OfflineAttendanceController extends Controller
             $userId = (int) $record['user_id'];
             $statusNormalized = ucfirst(strtolower(trim($record['status'])));
 
+            if (!isset($rosterIdsBySubject[$subjectCode])) {
+                $rosterIdsBySubject[$subjectCode] = $teacherSubjects[$subjectCode]
+                    ->getAllStudents()
+                    ->where('role', 'student')
+                    ->pluck('id')
+                    ->map(fn ($id) => (int) $id)
+                    ->all();
+            }
+            if (!in_array($userId, $rosterIdsBySubject[$subjectCode], true)) {
+                $failed[] = [
+                    'index' => $index,
+                    'local_id' => $record['local_id'] ?? null,
+                    'reason' => 'Student is not enrolled in this subject.',
+                ];
+                continue;
+            }
+
             // Check for existing record
             $existing = Attendance::where('user_id', $userId)
                 ->where('subject_code', $subjectCode)
@@ -115,10 +132,7 @@ class OfflineAttendanceController extends Controller
                     $updateData['time_in'] = $record['time'];
                 }
 
-                // Store subject name if available
-                if (!empty($record['subject_name'])) {
-                    $updateData['subject_name'] = $record['subject_name'];
-                }
+                $updateData['subject_name'] = $teacherSubjects[$subjectCode]->name;
 
                 $attendance = Attendance::updateOrCreate(
                     [
@@ -145,7 +159,7 @@ class OfflineAttendanceController extends Controller
                 $failed[] = [
                     'index'    => $index,
                     'local_id' => $record['local_id'] ?? null,
-                    'reason'   => 'Server error: ' . $e->getMessage(),
+                    'reason'   => 'The record could not be synchronized. Please retry.',
                 ];
             }
         }

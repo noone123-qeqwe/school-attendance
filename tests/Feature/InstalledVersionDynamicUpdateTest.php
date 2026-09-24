@@ -96,7 +96,7 @@ class InstalledVersionDynamicUpdateTest extends TestCase
         $res1->assertSee('v2.5.0');
 
         // 2. An update is applied to 2.5.3 via /pwa/update
-        $updateRes = $this->postJson('/pwa/update', [
+        $updateRes = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', [
             'version' => '2.5.3',
         ]);
         $updateRes->assertStatus(200)
@@ -107,6 +107,7 @@ class InstalledVersionDynamicUpdateTest extends TestCase
             ]);
 
         // 3. Login page immediately renders 2.5.3 without manual restart or stale cache
+        auth()->logout();
         $res2 = $this->get(route('login'));
         $res2->assertStatus(200);
         $res2->assertSee('v2.5.3');

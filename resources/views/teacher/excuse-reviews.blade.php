@@ -724,6 +724,20 @@
 const teacherExcuseBaseUrl = "{{ url('teacher/excuse') }}";
 let currentExcuseId = null;
 
+function escapeExcuseHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[character]);
+}
+
+function sanitizeExcuseForDisplay(value) {
+    if (Array.isArray(value)) return value.map(sanitizeExcuseForDisplay);
+    if (value && typeof value === 'object') {
+        return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, sanitizeExcuseForDisplay(child)]));
+    }
+    return typeof value === 'string' ? escapeExcuseHtml(value) : value;
+}
+
 function viewImage(imageUrl, imageName) {
     document.getElementById('modalImage').src = imageUrl;
     document.getElementById('imageTitle').textContent = imageName;
@@ -741,7 +755,7 @@ function viewExcuse(excuseId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const excuse = data.excuse;
+                const excuse = sanitizeExcuseForDisplay(data.excuse);
                 document.getElementById('excuseDetails').innerHTML = `
                     <div style="display: grid; gap: 20px;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">

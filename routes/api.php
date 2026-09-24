@@ -32,11 +32,6 @@ Route::post('/reset-password', [OtpApiController::class, 'resetPassword'])->midd
 Route::post('/email/verify', [OtpApiController::class, 'sendEmailVerification'])->middleware('throttle:email.verify');
 Route::post('/email/resend', [OtpApiController::class, 'sendEmailVerification'])->middleware('throttle:email.verify');
 
-// Lightweight connectivity check for offline-first features
-Route::get('/ping', function () {
-    return response()->json(['pong' => true, 'ts' => now()->toIso8601String()]);
-})->name('api.ping');
-
 // Authenticated API Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
@@ -44,6 +39,13 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Version mutation changes server-side release metadata and is restricted
+    // to authenticated super administrators. Version reads remain public.
+    Route::middleware('admin.super')->group(function () {
+        Route::post('/version/update', [App\Http\Controllers\Api\VersionController::class, 'update']);
+        Route::post('/version/release', [App\Http\Controllers\Api\VersionController::class, 'release']);
+    });
 
     // Parent specific mobile API endpoints
     Route::prefix('parent')->middleware('parent')->group(function () {
@@ -54,8 +56,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Centralized System Version & Build Telemetry
 Route::get('/version', [App\Http\Controllers\Api\VersionController::class, 'index']);
-Route::post('/version/update', [App\Http\Controllers\Api\VersionController::class, 'update']);
-Route::post('/version/release', [App\Http\Controllers\Api\VersionController::class, 'release']);
 
 // API Fallback: Catches any unmatched /api/* requests across all HTTP verbs so global rate limiting applies
 Route::any('/{any}', function () {
@@ -64,4 +64,3 @@ Route::any('/{any}', function () {
         'message' => 'API endpoint not found.'
     ], 404);
 })->where('any', '.*');
-

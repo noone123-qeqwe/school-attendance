@@ -22,24 +22,17 @@ return Application::configure(basePath: dirname(__DIR__))
         // Example .env values:
         //   TRUSTED_PROXIES=*                         (trust all — safe behind managed PaaS)
         //   TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12 (specific CIDR ranges)
-        $middleware->trustProxies(at: '*');
+        $trustedProxies = trim((string) env('TRUSTED_PROXIES', ''));
+        if ($trustedProxies !== '') {
+            $middleware->trustProxies(
+                at: $trustedProxies === '*'
+                    ? '*'
+                    : array_values(array_filter(array_map('trim', explode(',', $trustedProxies))))
+            );
+        }
 
         $middleware->encryptCookies(except: [
             'student_device_key',
-        ]);
-
-        $middleware->validateCsrfTokens(except: [
-            'pwa/update',
-            'pwa/update/*',
-            'webauthn/login-options',
-            'webauthn/available-methods',
-            'webauthn/login',
-            'webauthn/setup-options',
-            'webauthn/setup-register',
-            'webauthn/register-options',
-            'webauthn/register',
-            'webauthn/devices',
-            'webauthn/device',
         ]);
 
         $middleware->alias([

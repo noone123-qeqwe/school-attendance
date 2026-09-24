@@ -111,8 +111,11 @@ Route::get('/.well-known/assetlinks.json', function () {
 
 // Public Storage Fallback (Ensures uploaded media/profile images work seamlessly on PaaS/Render even if storage:link symlink is absent)
 Route::get('/storage/{path}', function (string $path) {
-    $fullPath = storage_path('app/public/' . $path);
-    if (!file_exists($fullPath) || is_dir($fullPath)) {
+    $storageRoot = realpath(storage_path('app/public'));
+    $fullPath = realpath(storage_path('app/public/' . ltrim($path, '/\\')));
+    if ($storageRoot === false || $fullPath === false ||
+        !str_starts_with($fullPath, $storageRoot . DIRECTORY_SEPARATOR) ||
+        !is_file($fullPath)) {
         abort(404);
     }
     return response()->file($fullPath, [
@@ -168,7 +171,7 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
 })->name('pwa.version');
 
 // Client Update Endpoint: installs the target/latest version
-Route::match(['GET', 'POST'], '/pwa/update', function (\Illuminate\Http\Request $request, \App\Services\VersionService $versionService) {
+Route::post('/pwa/update', function (\Illuminate\Http\Request $request, \App\Services\VersionService $versionService) {
     $currentLatest = $versionService->getLatestVersion();
     $targetVer = $request->input('version');
     $clean = $targetVer ? ltrim(trim((string)$targetVer), 'vV ') : $currentLatest;
@@ -198,7 +201,7 @@ Route::match(['GET', 'POST'], '/pwa/update', function (\Illuminate\Http\Request 
         'is_up_to_date'     => $versionService->isUpToDate(),
         'message'           => "Successfully updated to Version {$installed}."
     ], 200, ['Cache-Control' => 'no-cache, no-store, must-revalidate']);
-})->name('pwa.update');
+})->middleware(['auth', 'admin.super'])->name('pwa.update');
 
 // Debug routes — only available in local development
 if (app()->environment('local', 'testing')) {
@@ -802,9 +805,12 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::get('/reports/pdf', [App\Http\Controllers\AdminController::class, 'exportReportsPdf'])->name('reports.pdf');
     Route::get('/reports/csv', [App\Http\Controllers\AdminController::class, 'exportReportsCsv'])->name('reports.csv');
 
-    // Policy & Legal Management
-    Route::get('/policies', [App\Http\Controllers\Admin\PolicyController::class, 'edit'])->name('policies.edit');
-    Route::post('/policies', [App\Http\Controllers\Admin\PolicyController::class, 'update'])->name('policies.update');
-    Route::post('/policies/reset', [App\Http\Controllers\Admin\PolicyController::class, 'reset'])->name('policies.reset');
+    // Policy & Legal Management — public legal content may contain HTML, so
+    // only super administrators may publish or reset it.
+    Route::middleware('admin.super')->group(function () {
+        Route::get('/policies', [App\Http\Controllers\Admin\PolicyController::class, 'edit'])->name('policies.edit');
+        Route::post('/policies', [App\Http\Controllers\Admin\PolicyController::class, 'update'])->name('policies.update');
+        Route::post('/policies/reset', [App\Http\Controllers\Admin\PolicyController::class, 'reset'])->name('policies.reset');
+    });
 
 });
