@@ -1408,6 +1408,7 @@ let torchEnabled = false;
 let studentGeoCoords = null;
 let studentGeoTimestamp = 0;
 let studentGeoPromise = null;
+let studentGeoRequestSerial = 0;
 let studentLocationWatchId = null;
 let currentScannerMode = 'scan'; // 'scan' | 'code'
 let autoCloseTimer = null;
@@ -1467,77 +1468,42 @@ function normalizeCoordinates(lat, lng) {
 function refreshStudentLocation(force = false) {
     if (!navigator.geolocation) return Promise.resolve(null);
     const now = Date.now();
-    // Accept existing fix if not forced, fresh (< 5s), and high accuracy (<= 30m)
-    if (!force && studentGeoCoords && (now - studentGeoTimestamp < 5000) && (studentGeoCoords.acc <= 30)) {
+    if (!force && studentGeoCoords && (now - studentGeoTimestamp < 5000) && (studentGeoCoords.acc <= 50)) {
         return Promise.resolve(studentGeoCoords);
     }
     if (studentGeoPromise && !force) {
         return studentGeoPromise;
     }
 
+    const requestSerial = ++studentGeoRequestSerial;
     studentGeoPromise = new Promise((resolve) => {
         let hasResolved = false;
+        let watchId = null;
         const finish = (coords) => {
             if (hasResolved) return;
             hasResolved = true;
-            studentGeoPromise = null;
-            resolve(coords);
+            clearTimeout(safetyTimer);
+            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+            if (requestSerial === studentGeoRequestSerial) {
+                studentGeoPromise = null;
+                studentGeoCoords = coords;
+                studentGeoTimestamp = coords ? coords.timestamp : 0;
+            }
+            resolve(requestSerial === studentGeoRequestSerial ? coords : null);
         };
 
-        // Safety timeout so user is not blocked
-        const safetyTimer = setTimeout(() => {
-            if (studentGeoCoords && (Date.now() - studentGeoTimestamp < 25000)) {
-                finish(studentGeoCoords);
-            } else {
-                finish(null);
-            }
-        }, 5000);
-
-        navigator.geolocation.getCurrentPosition(
-            pos => {
-                clearTimeout(safetyTimer);
-                if (pos && pos.coords) {
-                    const [normLat, normLng] = normalizeCoordinates(pos.coords.latitude, pos.coords.longitude);
-                    studentGeoCoords = {
-                        lat: normLat,
-                        lng: normLng,
-                        acc: pos.coords.accuracy || 0
-                    };
-                    studentGeoTimestamp = Date.now();
-                }
-                finish(studentGeoCoords);
-            },
-            err => {
-                console.warn('High-accuracy GPS fix failed, trying fallback...', err);
-                navigator.geolocation.getCurrentPosition(
-                    pos => {
-                        clearTimeout(safetyTimer);
-                        if (pos && pos.coords) {
-                            const [normLat, normLng] = normalizeCoordinates(pos.coords.latitude, pos.coords.longitude);
-                            studentGeoCoords = {
-                                lat: normLat,
-                                lng: normLng,
-                                acc: pos.coords.accuracy || 0
-                            };
-                            studentGeoTimestamp = Date.now();
-                        }
-                        finish(studentGeoCoords);
-                    },
-                    err2 => {
-                        clearTimeout(safetyTimer);
-                        console.warn('Fallback GPS fix failed:', err2);
-                        if (studentGeoCoords && (Date.now() - studentGeoTimestamp < 25000)) {
-                            finish(studentGeoCoords);
-                        } else {
-                            studentGeoCoords = null;
-                            finish(null);
-                        }
-                    },
-                    { enableHighAccuracy: false, timeout: 3000, maximumAge: 3000 }
-                );
-            },
-            { enableHighAccuracy: true, timeout: 3500, maximumAge: 0 }
-        );
+        const safetyTimer = setTimeout(() => finish(null), 15000);
+        watchId = navigator.geolocation.watchPosition(pos => {
+            if (!pos || !pos.coords) return;
+            const { latitude, longitude, accuracy } = pos.coords;
+            const age = Date.now() - pos.timestamp;
+            if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
+                !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
+                !Number.isFinite(accuracy) || accuracy <= 0 || accuracy > 50 || age < 0 || age > 10000) return;
+            finish({ lat: latitude, lng: longitude, acc: accuracy, timestamp: pos.timestamp });
+        }, err => {
+            if (err.code === 1) finish(null);
+        }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
     });
 
     return studentGeoPromise;
@@ -2477,13 +2443,20 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
     const parsedData = extractQrToken(decodedText);
     const resolvedMethod = (method === 'code' || currentScannerMode === 'code' || (parsedData.code && !parsedData.token)) ? 'code' : 'qr';
 
-    // Refresh the user's location immediately before performing the geofence check
-    if (navigator.geolocation) {
-        try {
-            await refreshStudentLocation(true);
-        } catch(e) {
-            console.warn('Geolocation refresh warning:', e);
-        }
+    // A scan must use its own fresh, reliable reading, not a background watch fix.
+    const processingText = document.querySelector('#scannerProcessingOverlay .processing-sub');
+    if (processingText) processingText.textContent = 'Getting accurate location...';
+    if (hint) hint.textContent = 'Getting accurate location...';
+    let scanLocation = null;
+    try {
+        scanLocation = await refreshStudentLocation(true);
+    } catch (error) {
+        console.warn('Geolocation refresh warning:', error);
+    }
+    if (!scanLocation) {
+        if (overlay) overlay.style.display = 'none';
+        renderScanError({ error_type: 'unreliable_gps', message: 'Getting accurate location failed. Enable high-accuracy GPS, move near a window, and retry.' });
+        return;
     }
 
     const devKey = (typeof window.getOrCreateDeviceKey === 'function')
@@ -2496,9 +2469,9 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
         method: resolvedMethod,
         device_key: devKey,
         device_fingerprint: devKey,
-        latitude: studentGeoCoords ? studentGeoCoords.lat : null,
-        longitude: studentGeoCoords ? studentGeoCoords.lng : null,
-        accuracy: studentGeoCoords ? studentGeoCoords.acc : null
+        latitude: scanLocation.lat,
+        longitude: scanLocation.lng,
+        accuracy: scanLocation.acc
     };
 
     try {
