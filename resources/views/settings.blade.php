@@ -931,16 +931,24 @@
 .input-icon-prefix {
     position: absolute;
     left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     color: #cfa46f;
     font-size: 1rem;
     pointer-events: none;
     z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
 }
-.si.with-icon {
-    padding-left: 42px;
+.si.with-icon,
+.input-icon-wrap .si {
+    padding-left: 44px !important;
 }
 .pw-wrap { position: relative; }
-.pw-wrap .si { padding-right: 46px; }
+.pw-wrap .si { padding-right: 48px !important; }
 .eye-btn {
     position: absolute;
     right: 14px;
@@ -3015,6 +3023,9 @@
 
         .sl { font-size: 0.72rem !important; }
         .si { font-size: 0.85rem !important; padding: 10px 14px !important; }
+        .si.with-icon,
+        .input-icon-wrap .si { padding-left: 44px !important; }
+        .pw-wrap .si { padding-right: 48px !important; }
 
         .sbtn { padding: 11px 20px !important; font-size: 0.85rem !important; }
 
@@ -3305,6 +3316,7 @@
                                        id="phoneInput"
                                        name="phone"
                                        class="si with-icon"
+                                       style="padding-left: 44px !important;"
                                        value="{{ old('phone', Auth::user()->phone) }}"
                                        placeholder="+63 900 000 0000"
                                        maxlength="20">
