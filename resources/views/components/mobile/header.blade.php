@@ -166,7 +166,13 @@
         if (backBtn && menu && backdrop && menuLinks) {
             const bottomNav = document.getElementById('mobileBottomNav');
             bottomNav?.querySelectorAll('.nav-item').forEach(function(item) {
-                const link = item.cloneNode(true);
+                const link = item.tagName === 'BUTTON' ? document.createElement('a') : item.cloneNode(true);
+                if (item.tagName === 'BUTTON') {
+                    link.href = '{{ route('mobile.scan') }}?open_scanner=1';
+                    link.innerHTML = item.innerHTML;
+                    link.className = item.className;
+                    link.setAttribute('aria-label', item.getAttribute('aria-label') || 'Scan QR code');
+                }
                 link.removeAttribute('id');
                 link.classList.remove('nav-item-primary');
                 link.classList.add('mobile-menu-link');
@@ -188,9 +194,6 @@
             });
             closeButton.addEventListener('click', closeMenu);
             backdrop.addEventListener('click', closeMenu);
-            menuLinks.addEventListener('click', function(event) {
-                if (event.target.closest('button')) closeMenu();
-            });
             document.addEventListener('keydown', function(event) {
                 if (event.key === 'Escape' && !menu.hidden) closeMenu();
                 if (event.key === 'Tab' && !menu.hidden) {
