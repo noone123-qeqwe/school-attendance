@@ -3243,23 +3243,7 @@
 </style>
 
 <script @cspNonce>
-// Tab Switching System with URL Hash & State Sync
-function switchMaintenanceTab(tabName, btnElement) {
-    document.querySelectorAll('.maintenance-tab-btn').forEach(btn => btn.classList.remove('active'));
-    document.querySelectorAll('.maintenance-tab-pane').forEach(pane => pane.classList.remove('active'));
-
-    if (btnElement) {
-        btnElement.classList.add('active');
-    }
-
-    const targetPane = document.getElementById(tabName === 'backups' ? 'paneBackups' : (tabName === 'health' ? 'paneHealth' : 'paneUpdates'));
-    if (targetPane) {
-        targetPane.classList.add('active');
-    }
-
-    // Sync hash/query
-    history.replaceState(null, null, `?tab=${tabName}`);
-}
+// Tab Switching System initialized in header (switchMaintenanceTab)
 
 // Check initial tab on load
 document.addEventListener('DOMContentLoaded', () => {

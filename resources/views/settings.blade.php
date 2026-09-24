@@ -3666,15 +3666,9 @@
                         @endif
                     </p>
 
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
-                        <button type="button" onclick="handleBindCurrentDevice()" id="secQuickBindBtn" class="sec-action-btn sec-btn-emerald" style="flex:1;">
-                            <i class="bi bi-link-45deg me-1"></i><span id="secQuickBindBtnText">{{ $deviceBinding ? 'Switch / Re-bind to This Device' : 'Bind to This Device' }}</span>
-                        </button>
-                        <button type="button" onclick="handleUnbindDevice()" id="secQuickUnbindBtn" class="cancel-btn" style="{{ $deviceBinding ? 'display:inline-flex;' : 'display:none;' }}align-items:center;color:#f87171!important;border-color:rgba(239,68,68,0.3)!important;padding:9px 14px;font-size:0.82rem;">
-                            <i class="bi bi-trash3 me-1"></i>Unbind
-                        </button>
-                        <button type="button" onclick="switchTab('device')" class="cancel-btn" style="padding:9px 14px;font-size:0.82rem;">
-                            <i class="bi bi-gear me-1"></i>Manage
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">
+                        <button type="button" onclick="switchTab('device')" class="sec-action-btn sec-btn-emerald" style="width:100%;">
+                            <i class="bi bi-phone-fill me-2"></i>Manage Device Binding & Hardware Trust
                         </button>
                     </div>
                 </div>
@@ -4832,7 +4826,7 @@ window.updateSettingsBreadcrumbs = function(tabId) {
 
 // ── Attendance Device Binding API Handlers ──
 window.handleBindCurrentDevice = async function(stepUpPassword = null) {
-    const bindBtns = document.querySelectorAll('#secQuickBindBtn, #tabDeviceBindBtn');
+    const bindBtns = document.querySelectorAll('#tabDeviceBindBtn, #secQuickBindBtn');
     bindBtns.forEach(b => {
         b.disabled = true;
         b._origHtml = b.innerHTML;
@@ -5005,7 +4999,7 @@ window.handleUnbindDevice = async function() {
         return;
     }
 
-    const unbindBtns = document.querySelectorAll('#secQuickUnbindBtn, #tabDeviceUnbindBtn');
+    const unbindBtns = document.querySelectorAll('#tabDeviceUnbindBtn, #secQuickUnbindBtn');
     unbindBtns.forEach(b => {
         b.disabled = true;
         b._origHtml = b.innerHTML;
@@ -5227,9 +5221,6 @@ window.checkDeviceBindingStatus = async function() {
     }
 };
 
-document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(window.checkDeviceBindingStatus, 300);
-});
 
 async function toggleWebPush(input) {
     if (input.checked) {
@@ -7550,6 +7541,11 @@ function initSettingsPage() {
     if (targetTab && window.switchTab) {
         localStorage.removeItem('active_settings_tab');
         window.switchTab(targetTab);
+    }
+
+    // Initialize device binding status check
+    if (typeof window.checkDeviceBindingStatus === 'function') {
+        setTimeout(window.checkDeviceBindingStatus, 300);
     }
 }
 

@@ -1164,14 +1164,16 @@
     <script @cspNonce>
         // ── Native Micro-Haptics Engine ──
         window.triggerHaptic = function(type = 'light') {
-            if (!navigator.vibrate) return;
+            if (!('vibrate' in navigator) || !navigator.vibrate) return;
             try {
                 if (type === 'light') navigator.vibrate(8);
                 else if (type === 'medium') navigator.vibrate(18);
-                else if (type === 'success') navigator.vibrate([8, 25, 12]);
+                else if (type === 'heavy') navigator.vibrate(30);
+                else if (type === 'success') navigator.vibrate([12, 30, 20]);
                 else if (type === 'error') navigator.vibrate([25, 40, 25]);
             } catch(e) {}
         };
+
 
         // Auto-bind micro-haptics on taps
         document.addEventListener('click', function(e) {
@@ -1505,18 +1507,6 @@
                 }
             })();
 
-            // Global Native Touch Haptic Helper
-            window.triggerHaptic = function(type = 'light') {
-                if ('vibrate' in navigator) {
-                    try {
-                        if (type === 'light') navigator.vibrate(8);
-                        else if (type === 'medium') navigator.vibrate(18);
-                        else if (type === 'heavy') navigator.vibrate(30);
-                        else if (type === 'success') navigator.vibrate([12, 30, 20]);
-                        else if (type === 'error') navigator.vibrate([25, 40, 25]);
-                    } catch(e) {}
-                }
-            };
         });
     </script>
 
