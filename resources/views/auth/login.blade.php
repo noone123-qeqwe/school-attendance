@@ -2884,10 +2884,12 @@ async function getDeviceBiometricCapabilities() {
     var isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     var isWebAuthnSupported = !!(isSecure && window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.get === 'function');
     var isPlatformAvailable = false;
+    var platformAvailabilityKnown = false;
 
     if (isWebAuthnSupported && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         try {
             isPlatformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            platformAvailabilityKnown = true;
         } catch(e) {
             isPlatformAvailable = false;
         }
@@ -2906,6 +2908,7 @@ async function getDeviceBiometricCapabilities() {
     _deviceBioCapabilitiesCache = {
         isWebAuthnSupported: isWebAuthnSupported,
         isPlatformAvailable: isPlatformAvailable,
+        platformAvailabilityKnown: platformAvailabilityKnown,
         isIOS: isIOS,
         isIosFaceId: isIosFaceId,
         isAndroid: isAndroid,
@@ -2924,7 +2927,9 @@ function filterAvailableBiometricMethods(serverMethods, deviceCaps) {
     var methods = [];
 
     // Method 1: Fingerprint (Touch ID, Fingerprint sensor)
-    var fpSupported = deviceCaps.isPlatformAvailable || !deviceCaps.isIOS || !deviceCaps.isIosFaceId;
+    var canTryLocalAuthenticator = deviceCaps.isPlatformAvailable
+        || (deviceCaps.isWebAuthnSupported && !deviceCaps.platformAvailabilityKnown);
+    var fpSupported = canTryLocalAuthenticator;
     if (serverMethods.includes('fingerprint') && fpSupported) {
         methods.push({
             id: 'fingerprint',
@@ -2936,19 +2941,21 @@ function filterAvailableBiometricMethods(serverMethods, deviceCaps) {
     }
 
     // Method 2: Face Recognition / Face ID
-    var faceSupported = (serverMethods.includes('face') || deviceCaps.isIosFaceId || deviceCaps.isWindows || deviceCaps.isAndroid) && (deviceCaps.isPlatformAvailable || deviceCaps.hasCamera);
+    // A webcam is not an authenticator. Only offer this method when the device
+    // reports a user-verifying platform authenticator (Face ID/Windows Hello).
+    var faceSupported = canTryLocalAuthenticator;
     if (serverMethods.includes('face') && faceSupported) {
         methods.push({
             id: 'face',
-            name: deviceCaps.isIOS ? 'Face ID' : 'Face Recognition',
-            desc: deviceCaps.isIOS ? 'Look at screen to sign in with Face ID' : 'Look at camera to verify your face',
+            name: deviceCaps.isIOS ? 'Face ID' : 'Face ID / Windows Hello',
+            desc: 'Use this device’s protected sign-in prompt; a PIN may be offered by the device',
             icon: 'bi-person-bounding-box',
-            uv: 'preferred'
+            uv: 'required'
         });
     }
 
     // Method 3: Device PIN/password/pattern as a fallback when supported
-    if (serverMethods.includes('device_lock') && deviceCaps.isPlatformAvailable) {
+    if (serverMethods.includes('device_lock') && canTryLocalAuthenticator) {
         methods.push({
             id: 'device_lock',
             name: deviceCaps.isWindows ? 'Windows Hello PIN / Screen Lock' : (deviceCaps.isIOS ? 'Device Passcode / Screen Lock' : 'Device PIN / Pattern / Screen Lock'),
@@ -2956,35 +2963,6 @@ function filterAvailableBiometricMethods(serverMethods, deviceCaps) {
             icon: 'bi-shield-lock-fill',
             uv: 'required'
         });
-    }
-
-    // Fallback if empty
-    if (methods.length === 0) {
-        if (deviceCaps.isWebAuthnSupported || deviceCaps.isPlatformAvailable) {
-            methods.push({
-                id: 'fingerprint',
-                name: deviceCaps.isMac ? 'Touch ID / Fingerprint' : 'Fingerprint / Biometric',
-                desc: 'Touch sensor or scan fingerprint to sign in',
-                icon: 'bi-fingerprint',
-                uv: 'preferred'
-            });
-            methods.push({
-                id: 'device_lock',
-                name: deviceCaps.isWindows ? 'Windows Hello / PIN' : 'Device PIN / Passkey',
-                desc: 'Use device PIN, passkey, or screen lock',
-                icon: 'bi-shield-lock-fill',
-                uv: 'preferred'
-            });
-        }
-        if (deviceCaps.hasCamera) {
-            methods.push({
-                id: 'face',
-                name: deviceCaps.isIOS ? 'Face ID' : 'Face Recognition',
-                desc: 'Look at camera to verify your face',
-                icon: 'bi-person-bounding-box',
-                uv: 'preferred'
-            });
-        }
     }
 
     return methods;
@@ -3697,7 +3675,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
     // camera image alone is not an identity credential.
     return performBiometricLogin(identifier, {
         id: 'face',
-        name: 'Secure Face ID / Passkey',
+        name: 'Face ID / Windows Hello',
         icon: 'bi-person-bounding-box',
         uv: 'required'
     }, opts);
@@ -4061,6 +4039,7 @@ function openBiometricSelectionPrompt(methods, identifier, opts) {
 
 function handleSelectBiometricMethod(selectedMethod, identifier, opts) {
     if (selectedMethod.id === 'face') {
+        closeBiometricModal();
         startFaceRecognitionLogin(identifier, opts);
     } else {
         closeBiometricModal();
@@ -4167,11 +4146,11 @@ async function handleBiometricLogin() {
 
         if (opts.requires_device_enrollment) {
             resetBiometricButton();
-            showFpMessage('info', '<i class="bi bi-shield-check me-2"></i>' + (opts.message || 'Face biometrics enrolled. Enter password to activate device login.'));
+            showFpMessage('info', '<i class="bi bi-shield-check me-2"></i>' + (opts.message || 'Verify your password to enroll secure device sign-in.'));
             openBiometricModal({
                 title: 'ACTIVATE DEVICE BIOMETRICS',
                 identifier: identifier,
-                message: (opts.message || 'Face Recognition is registered for this account.') + '<br><br>Please verify your password to activate seamless 1-touch biometric sign-in on this device.',
+                message: (opts.message || 'This account needs a secure device credential.') + '<br><br>Verify your password to enroll a protected device sign-in method.',
                 badgeType: 'info',
                 showPassword: true,
                 primaryBtnText: '<i class="bi bi-check-circle-fill me-2"></i>ACTIVATE BIOMETRICS',
@@ -4285,6 +4264,7 @@ async function handleBiometricLogin() {
 async function performBiometricLogin(studentNumber, selectedMethod) {
     studentNumber = (studentNumber || '').trim();
     selectedMethod = selectedMethod || { id: 'fingerprint', name: 'Biometric', icon: 'bi-fingerprint', uv: 'required' };
+    var onDeviceMethod = selectedMethod.id === 'fingerprint' || selectedMethod.id === 'face';
 
     // Abort previous prompt if any
     if (bioAbortController) {
@@ -4308,9 +4288,17 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
     var savedIds = savedAccounts.map(function(a) { return a.identifier; }).filter(Boolean);
 
     try {
-        if (selectedMethod.id === 'fingerprint' && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function'
-            && !(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())) {
-            throw new Error('No fingerprint or device verification is set up on this device. Enable fingerprint, Face ID, or Windows Hello in device settings, or sign in with your password.');
+        if (onDeviceMethod && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+            var platformAvailable = null;
+            try {
+                platformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            } catch (availabilityError) {
+                // Some browsers cannot answer the capability query. The local-only
+                // WebAuthn request below remains the definitive check on those devices.
+            }
+            if (platformAvailable === false) {
+                throw new Error('No on-device verification is set up. Enable fingerprint, Face ID, or Windows Hello in device settings, or sign in with your password.');
+            }
         }
         // Every attempt needs a fresh, single-use challenge, including retries from the error dialog.
         var optRes = await fetch('{{ route("webauthn.login.options") }}', {
@@ -4324,6 +4312,7 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
                 body: JSON.stringify({ 
                     student_number: studentNumber, 
                     identifier: studentNumber,
+                    biometric_method: selectedMethod.id,
                     saved_identifiers: savedIds
                 }),
                 signal: bioAbortController.signal
@@ -4337,9 +4326,9 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         var allowCredentials = (opts.allowCredentials || []).map(function(c) {
             var cred = { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
             if (c.transports && Array.isArray(c.transports) && c.transports.length > 0) {
-                cred.transports = selectedMethod.id === 'fingerprint' ? ['internal'] : c.transports;
+                cred.transports = onDeviceMethod ? ['internal'] : c.transports;
             } else {
-                cred.transports = selectedMethod.id === 'fingerprint' ? ['internal'] : ['internal', 'hybrid'];
+                cred.transports = onDeviceMethod ? ['internal'] : ['internal', 'hybrid'];
             }
             return cred;
         });
@@ -4363,7 +4352,7 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         if (allowCredentials.length > 0) {
             getPublicKey.allowCredentials = allowCredentials;
         }
-        if (selectedMethod.id === 'fingerprint') {
+        if (onDeviceMethod) {
             getPublicKey.hints = ['client-device'];
         }
         
@@ -4372,7 +4361,7 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         }
 
         if (selectedMethod.id === 'face') {
-            if (fpLabel) fpLabel.textContent = 'Look at camera or scan Face ID...';
+            if (fpLabel) fpLabel.textContent = 'Confirm with Face ID or Windows Hello...';
         } else if (selectedMethod.id === 'device_lock') {
             if (fpLabel) fpLabel.textContent = 'Enter device PIN or screen lock...';
         } else {
@@ -4393,7 +4382,7 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
 
             // If allowCredentials failed on this device (e.g. user presented another enrolled credential),
             // attempt discoverable passkey before giving up
-            if (selectedMethod.id !== 'fingerprint' && getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
+            if (!onDeviceMethod && getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
                 console.warn('Biometric query with allowCredentials failed, trying discoverable passkey fallback...', firstErr);
                 var fallbackPublicKey = Object.assign({}, getPublicKey);
                 delete fallbackPublicKey.allowCredentials;

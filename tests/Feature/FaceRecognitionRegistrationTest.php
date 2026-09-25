@@ -12,7 +12,7 @@ class FaceRecognitionRegistrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_register_face_recognition_directly_without_device_verification_attestation()
+    public function test_camera_descriptor_cannot_register_face_sign_in_without_device_attestation()
     {
         $user = User::factory()->create([
             'student_number' => 'STU8801',
@@ -27,14 +27,13 @@ class FaceRecognitionRegistrationTest extends TestCase
             'public_key' => 'pub_face_sample_key',
         ]);
 
-        $response->assertOk()
+        $response->assertStatus(422)
             ->assertJson([
-                'success' => true,
-                'message' => 'Face Recognition Registered Successfully ✓',
-                'biometric_type' => 'face',
+                'success' => false,
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
 
-        $this->assertDatabaseHas('webauthn_credentials', [
+        $this->assertDatabaseMissing('webauthn_credentials', [
             'user_id' => $user->id,
             'credential_id' => 'face_direct_123456',
             'biometric_type' => 'face',
@@ -72,7 +71,7 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'No face detected. Please position your face in front of the camera.',
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
     }
 
@@ -90,7 +89,7 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'No face detected. Please position your face in front of the camera.',
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
     }
 
@@ -177,11 +176,11 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'Face recognition confidence does not meet the required security threshold. Please position your face clearly in good lighting and try again.',
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
     }
 
-    public function test_face_registration_succeeds_when_confidence_score_meets_or_exceeds_threshold()
+    public function test_high_camera_confidence_alone_does_not_register_a_face_credential()
     {
         $user = User::factory()->create();
 
@@ -193,14 +192,13 @@ class FaceRecognitionRegistrationTest extends TestCase
             'public_key' => 'pub_face_key_high',
         ]);
 
-        $response->assertOk()
+        $response->assertStatus(422)
             ->assertJson([
-                'success' => true,
-                'message' => 'Face Recognition Registered Successfully ✓',
-                'biometric_type' => 'face',
+                'success' => false,
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
 
-        $this->assertDatabaseHas('webauthn_credentials', [
+        $this->assertDatabaseMissing('webauthn_credentials', [
             'user_id' => $user->id,
             'credential_id' => 'face_high_conf_789',
             'biometric_type' => 'face',
@@ -231,7 +229,7 @@ class FaceRecognitionRegistrationTest extends TestCase
             $response->assertStatus(422)
                 ->assertJson([
                     'success' => false,
-                    'message' => 'No face detected. Please position your face in front of the camera.',
+                    'code' => 'INSECURE_FACE_FLOW_DISABLED',
                 ]);
         }
     }
@@ -260,7 +258,7 @@ class FaceRecognitionRegistrationTest extends TestCase
         WebauthnCredential::create([
             'user_id' => $user->id,
             'credential_id' => 'face_registered_9901',
-            'public_key' => 'pub_sample_face',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nface\n-----END PUBLIC KEY-----',
             'device_name' => 'Device Face',
             'biometric_type' => 'face',
         ]);
@@ -272,13 +270,12 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertOk()
             ->assertJson([
                 'success' => true,
-                'biometric_type' => 'face',
                 'face_credential_id' => 'face_registered_9901',
-                'available_methods' => ['face'],
             ]);
+        $this->assertContains('face', $response->json('available_methods'));
     }
 
-    public function test_user_can_authenticate_via_camera_face_recognition()
+    public function test_camera_face_descriptor_cannot_authenticate()
     {
         $user = User::factory()->create([
             'student_number' => 'STU9902',
@@ -301,13 +298,13 @@ class FaceRecognitionRegistrationTest extends TestCase
             'identifier' => 'STU9902',
         ]);
 
-        $response->assertOk()
+        $response->assertStatus(422)
             ->assertJson([
-                'success' => true,
-                'message' => 'Face recognized successfully! Redirecting...',
+                'success' => false,
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertGuest();
     }
 
     public function test_face_recognition_login_rejects_sub_threshold_confidence()
@@ -335,7 +332,7 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'Face recognition confidence does not meet the required security threshold. Please position your face clearly in good lighting and try again.',
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
 
         $this->assertGuest();
@@ -366,7 +363,7 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertStatus(422)
             ->assertJson([
                 'success' => false,
-                'message' => 'No face detected. Please position your face in front of the camera.',
+                'code' => 'INSECURE_FACE_FLOW_DISABLED',
             ]);
 
         $this->assertGuest();
@@ -399,5 +396,3 @@ class FaceRecognitionRegistrationTest extends TestCase
         $loginResponse->assertSee('face-screen-flash-overlay', false);
     }
 }
-
-

@@ -40,8 +40,9 @@ class BiometricLoginViewTest extends TestCase
         $signIn = substr($source, $start, $end - $start);
 
         $this->assertStringNotContainsString('cachedOpts', $signIn);
-        $this->assertStringContainsString("selectedMethod.id === 'fingerprint' ? ['internal']", $signIn);
-        $this->assertStringContainsString("selectedMethod.id !== 'fingerprint' && getPublicKey.allowCredentials", $signIn);
+        $this->assertStringContainsString("var onDeviceMethod = selectedMethod.id === 'fingerprint' || selectedMethod.id === 'face'", $signIn);
+        $this->assertStringContainsString("cred.transports = onDeviceMethod ? ['internal']", $signIn);
+        $this->assertStringContainsString("!onDeviceMethod && getPublicKey.allowCredentials", $signIn);
         $this->assertStringContainsString("firstErr.name === 'NotAllowedError'", $signIn);
         $this->assertStringContainsString("getPublicKey.hints = ['client-device']", $signIn);
     }
@@ -390,7 +391,7 @@ class BiometricLoginViewTest extends TestCase
         \App\Models\WebauthnCredential::create([
             'user_id' => $user->id,
             'credential_id' => 'test_cred_id_66666_face',
-            'public_key' => 'face_desc_95_mockdata',
+            'public_key' => '-----BEGIN PUBLIC KEY-----\nface\n-----END PUBLIC KEY-----',
             'sign_count' => 0,
             'device_name' => 'Front Camera Face',
             'biometric_type' => 'face',

@@ -267,7 +267,16 @@ class WebAuthnController extends Controller
                 })
                 ->exists();
 
-            $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
+            $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')
+                ->where('public_key', 'LIKE', '%BEGIN PUBLIC KEY%')->exists();
+
+            if ($request->input('biometric_method') === 'face' && !$hasFaceCred) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'FACE_ENROLLMENT_REQUIRED',
+                    'message' => 'Secure face sign-in is not enrolled for this account. Sign in with your password and register Face ID or Windows Hello in Settings.',
+                ], 404);
+            }
 
             if (!$hasWebauthn) {
                 // Legacy camera face records are not authentication credentials.
@@ -279,7 +288,7 @@ class WebAuthnController extends Controller
                     "user_id" => $user->id,
                     "identifier" => $user->student_number ?? $user->email ?? $identifier,
                     "user_name" => $user->name,
-                    "message" => "Face Recognition is registered for your account! Please verify your password to activate seamless device biometric sign-in on this device.",
+                    "message" => "An older camera-only face profile cannot be used for secure sign-in. Verify your password to enroll a device passkey instead.",
                 ]);
             }
             
@@ -326,7 +335,7 @@ class WebAuthnController extends Controller
             foreach ($allCreds as $ac) {
                 $bType = $ac->biometric_type ?: 'fingerprint';
                 if ($bType === 'face') {
-                    $hasFaceCred = true;
+                    $hasFaceCred = $hasFaceCred || str_contains((string) $ac->public_key, 'BEGIN PUBLIC KEY');
                 } else {
                     $hasFingerprintCred = true;
                 }
@@ -342,18 +351,37 @@ class WebAuthnController extends Controller
                 $availableMethods = ['fingerprint', 'device_lock'];
             }
 
+            if ($request->input('biometric_method') === 'face') {
+                $faceIds = $user->webauthnCredentials()->where('biometric_type', 'face')
+                    ->where('public_key', 'LIKE', '%BEGIN PUBLIC KEY%')->pluck('credential_id')->all();
+                $options['publicKey']['allowCredentials'] = array_values(array_filter(
+                    $options['publicKey']['allowCredentials'],
+                    fn ($credential) => in_array($credential['id'], $faceIds, true)
+                ));
+            }
+
             return response()->json(array_merge($options['publicKey'], [
                 "success" => true,
                 "user_id" => $user->id,
                 "identifier" => $user->student_number ?? $user->email ?? $identifier,
                 "user_name" => $user->name,
-                "face_credential_id" => $user->webauthnCredentials()->where('biometric_type', 'face')->latest()->value('credential_id'),
+                "face_credential_id" => $hasFaceCred
+                    ? $user->webauthnCredentials()->where('biometric_type', 'face')->where('public_key', 'LIKE', '%BEGIN PUBLIC KEY%')->latest()->value('credential_id')
+                    : null,
                 "available_methods" => $availableMethods,
             ]));
         }
 
         // Discoverable / Passkey mode: No identifier passed
         session()->forget("webauthn_login_user_id");
+        $faceOnly = $request->input('biometric_method') === 'face';
+        if ($faceOnly && empty($savedIdentifiers)) {
+            return response()->json([
+                'success' => false,
+                'code' => 'IDENTIFIER_REQUIRED',
+                'message' => 'Enter your ID or email before choosing Face ID or Windows Hello.',
+            ], 422);
+        }
         $options = $webauthn->authenticationOptions(null);
 
         $discoverableMethods = [];
@@ -374,6 +402,7 @@ class WebAuthnController extends Controller
                         ->get();
                     foreach ($creds as $c) {
                         $t = $c->biometric_type ?: 'fingerprint';
+                        if ($faceOnly && $t !== 'face') continue;
                         if ($t === 'face' && !in_array('face', $discoverableMethods)) $discoverableMethods[] = 'face';
                         if ($t !== 'face' && !in_array('fingerprint', $discoverableMethods)) $discoverableMethods[] = 'fingerprint';
                         if (!in_array('device_lock', $discoverableMethods)) $discoverableMethods[] = 'device_lock';
@@ -393,8 +422,15 @@ class WebAuthnController extends Controller
                 $options['publicKey']['allowCredentials'] = $allowCredentials;
             }
         }
+        if ($faceOnly && empty($options['publicKey']['allowCredentials'])) {
+            return response()->json([
+                'success' => false,
+                'code' => 'FACE_ENROLLMENT_REQUIRED',
+                'message' => 'No secure face sign-in was found for a saved account. Enter your ID or email, or sign in with your password.',
+            ], 404);
+        }
         if (empty($discoverableMethods)) {
-            $discoverableMethods = ['fingerprint', 'face', 'device_lock'];
+            $discoverableMethods = $faceOnly ? ['face'] : ['fingerprint', 'face', 'device_lock'];
         }
 
         return response()->json(array_merge($options['publicKey'], [
@@ -431,8 +467,11 @@ class WebAuthnController extends Controller
             $hasHw = false;
             foreach ($creds as $c) {
                 $t = $c->biometric_type ?: 'fingerprint';
-                if ($t === 'face') $hasFace = true;
-                else $hasFp = true;
+                if ($t === 'face') {
+                    if (str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY')) $hasFace = true;
+                } else {
+                    $hasFp = true;
+                }
                 if ($t !== 'face' || str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY')) $hasHw = true;
             }
             if ($hasFp) $methods[] = 'fingerprint';
@@ -454,7 +493,8 @@ class WebAuthnController extends Controller
                 if ($savedUser && $savedUser->isActive()) {
                     foreach ($savedUser->webauthnCredentials as $c) {
                         $t = $c->biometric_type ?: 'fingerprint';
-                        if ($t === 'face' && !in_array('face', $methods)) $methods[] = 'face';
+                        if ($t === 'face' && !str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY')) continue;
+                        if ($t === 'face' && str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY') && !in_array('face', $methods)) $methods[] = 'face';
                         if ($t !== 'face' && !in_array('fingerprint', $methods)) $methods[] = 'fingerprint';
                         if (!in_array('device_lock', $methods)) $methods[] = 'device_lock';
                     }
@@ -617,8 +657,8 @@ class WebAuthnController extends Controller
 
     public function login(Request $request, WebauthnService $webauthn)
     {
-        $isFaceLogin = $request->input('biometric_method') === 'face' 
-            || $request->has('face_descriptor') 
+        $isFaceLogin = $request->has('face_descriptor') || $request->has('face_data')
+            || ($request->input('biometric_method') === 'face' && !$request->has('assertion'))
             || (str_starts_with((string)$request->input('credential_id'), 'face_') && !$request->has('assertion'));
 
         if ($isFaceLogin) {
@@ -909,6 +949,15 @@ class WebAuthnController extends Controller
                 "code" => "ACCOUNT_DEACTIVATED",
                 "message" => "Your account has been deactivated. Please contact the school administrator."
             ], 403);
+        }
+
+        if ($request->input('biometric_method') === 'face'
+            && ($dbCredential->biometric_type !== 'face' || !str_contains((string) $dbCredential->public_key, 'BEGIN PUBLIC KEY'))) {
+            return response()->json([
+                'success' => false,
+                'code' => 'FACE_CREDENTIAL_REQUIRED',
+                'message' => 'This account needs a secure Face ID or Windows Hello credential. Sign in with your password and enroll face sign-in in Settings.',
+            ], 422);
         }
 
         try {

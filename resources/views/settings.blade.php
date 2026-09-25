@@ -3758,7 +3758,7 @@
                                         <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
                                     </div>
                                     <p class="bio-method-desc">
-                                        Authenticate hands-free using Face ID, Windows Hello Face recognition camera, or front-facing facial geometry.
+                                        Sign in through your device's protected Face ID or Windows Hello prompt. Your browser never uploads a face image.
                                     </p>
                                     <div class="bio-method-meta">
                                         <span><i class="bi bi-eye-fill me-1" style="color:#38bdf8;"></i>Hands-Free</span>
@@ -3812,7 +3812,7 @@
                                             </div>
                                         </div>
                                         <div class="bio-preview-title">Register Face Recognition</div>
-                                        <div class="bio-preview-sub">Click the button below to start facial biometric enrollment using Face ID or your device camera.</div>
+                                        <div class="bio-preview-sub">Set up secure sign-in through Face ID or Windows Hello on this device. Your device may also offer a PIN.</div>
                                     </div>
                                 </div>
 
@@ -3893,8 +3893,8 @@
                                                 <div class="face-mesh-node n-jaw-r"></div>
                                             </div>
                                         </div>
-                                        <div class="bio-scanning-title" id="faceScanningTitle">Scanning Facial Landmarks...</div>
-                                        <div class="bio-scanning-sub" id="faceStatusSub">Align face within the target frame and follow device prompt</div>
+                                        <div class="bio-scanning-title" id="faceScanningTitle">Waiting for Device Verification...</div>
+                                        <div class="bio-scanning-sub" id="faceStatusSub">Complete the Face ID or Windows Hello prompt on this device</div>
 
                                         <!-- Progressive Scan Feedback -->
                                         <div class="bio-progress-container">
@@ -3902,7 +3902,7 @@
                                                 <div class="bio-progress-fill cyan-fill" id="faceProgressFill" style="width: 0%;"></div>
                                             </div>
                                             <div class="bio-progress-labels">
-                                                <span class="bio-progress-state" id="faceStateLabel">Aligning facial geometry...</span>
+                                                <span class="bio-progress-state" id="faceStateLabel">Waiting for device prompt...</span>
                                                 <span class="bio-progress-pct" id="facePctLabel">0%</span>
                                             </div>
                                         </div>
@@ -5594,14 +5594,14 @@ function startScanProgressAnimation() {
         if (titleEl) titleEl.textContent = 'Touch Fingerprint Sensor';
         if (subEl) subEl.textContent = 'Place your finger on your device sensor or confirm the prompt';
     } else {
-        updateProgressiveFeedback(25, 'Aligning facial geometry...');
+        updateProgressiveFeedback(25, 'Waiting for Face ID or Windows Hello...');
     }
 }
 
 function triggerBiometricDetected() {
     clearInterval(bioScanProgressTimer);
     bioScanProgressTimer = null;
-    updateProgressiveFeedback(100, selectedBioMethod === 'fingerprint' ? 'Fingerprint matched! Finalizing...' : 'Face recognized! Finalizing...');
+    updateProgressiveFeedback(100, selectedBioMethod === 'fingerprint' ? 'Device verified! Finalizing...' : 'Device face sign-in verified! Finalizing...');
     
     const frame = selectedBioMethod === 'fingerprint'
         ? document.querySelector('.fp-scan-frame')
@@ -6847,7 +6847,7 @@ async function beginFingerprintRegistration() {
         if (errorView) {
             errorView.style.display = 'block';
             if (errorTitle) errorTitle.textContent = 'HTTPS Connection Required';
-            if (errorDesc) errorDesc.innerHTML = 'Fingerprint WebAuthn requires a <strong>secure connection (HTTPS or localhost)</strong>. If testing on a mobile device over local Wi-Fi, please access via an HTTPS URL.';
+            if (errorDesc) errorDesc.textContent = 'Device biometric sign-in requires HTTPS or localhost. On mobile Wi-Fi, open the app through its secure HTTPS address.';
         }
         return;
     }
@@ -6871,20 +6871,24 @@ async function beginFingerprintRegistration() {
 
     const fpScan = document.getElementById('fpActiveScanner');
     const faceScan = document.getElementById('faceActiveScanner');
-    if (faceScan) faceScan.classList.remove('active');
-    if (fpScan) fpScan.classList.add('active');
+    if (faceScan) faceScan.classList.toggle('active', registrationType === 'face');
+    if (fpScan) fpScan.classList.toggle('active', registrationType !== 'face');
     stopBioCamera();
+    const faceFlashToggle = document.getElementById('faceFlashToggleBtn');
+    if (faceFlashToggle) faceFlashToggle.style.display = registrationType === 'face' ? 'none' : '';
 
-    const fpScanFrame = document.querySelector('.fp-scan-frame');
+    const fpScanFrame = document.querySelector(registrationType === 'face' ? '.face-scan-frame' : '.fp-scan-frame');
     if (fpScanFrame) {
         fpScanFrame.classList.remove('bio-detected');
     }
-    const fpScanningTitle = document.getElementById('fpScanningTitle');
-    const fpStatusSub = document.getElementById('fpStatusSub');
-    if (fpScanningTitle) fpScanningTitle.textContent = 'Touch Fingerprint Sensor';
-    if (fpStatusSub) fpStatusSub.innerHTML = 'Place your finger on your device sensor or confirm the prompt.<br><span style="font-size:11.5px; opacity:0.85;">If asked where to save passkey: tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> / <strong>This device</strong>.</span>';
-    updateProgressiveFeedback(25, 'Sensor ready — waiting for biometric prompt...');
-    const fpPctLabel = document.getElementById('fpPctLabel');
+    const fpScanningTitle = document.getElementById(registrationType === 'face' ? 'faceScanningTitle' : 'fpScanningTitle');
+    const fpStatusSub = document.getElementById(registrationType === 'face' ? 'faceStatusSub' : 'fpStatusSub');
+    if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Waiting for Face ID / Windows Hello' : 'Touch Fingerprint Sensor';
+    if (fpStatusSub) fpStatusSub.textContent = registrationType === 'face'
+        ? 'Complete the protected device prompt. Your device may offer a PIN instead of face verification.'
+        : 'Place your finger on the sensor or confirm the device prompt.';
+    updateProgressiveFeedback(25, registrationType === 'face' ? 'Waiting for device face sign-in prompt...' : 'Sensor ready — waiting for biometric prompt...');
+    const fpPctLabel = document.getElementById(registrationType === 'face' ? 'facePctLabel' : 'fpPctLabel');
     if (fpPctLabel) fpPctLabel.textContent = 'Ready';
 
     bioAbortController = new AbortController();
@@ -6922,14 +6926,16 @@ async function beginFingerprintRegistration() {
 
         // Detect if platform authenticator (Windows Hello, Touch ID, Android fingerprint) is available
         let hasPlatformAuth = false;
+        let platformAvailabilityKnown = false;
         if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
             try {
                 hasPlatformAuth = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                platformAvailabilityKnown = true;
             } catch(e) {
                 hasPlatformAuth = false;
             }
         }
-        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function' && !hasPlatformAuth) {
+        if (platformAvailabilityKnown && !hasPlatformAuth) {
             throw new Error('No on-device biometric sign-in is available. Set up fingerprint, Face ID, or Windows Hello in your device settings, then try again.');
         }
 
@@ -6966,8 +6972,8 @@ async function beginFingerprintRegistration() {
         if (fpScanFrame) {
             fpScanFrame.classList.add('bio-detected');
         }
-        if (fpScanningTitle) fpScanningTitle.textContent = 'Fingerprint Verified ✓';
-        if (fpStatusSub) fpStatusSub.textContent = 'Sensor touch confirmed. Registering credential...';
+        if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Device Verified ✓' : 'Fingerprint Verified ✓';
+        if (fpStatusSub) fpStatusSub.textContent = 'Device verification complete. Registering credential...';
         triggerBiometricDetected();
 
         const credentialId = bufferToBase64Url(credential.rawId);
@@ -7012,7 +7018,7 @@ async function beginFingerprintRegistration() {
             if (errorView) {
                 errorView.style.display = 'block';
                 if (errorTitle) errorTitle.textContent = 'Biometric Already Registered';
-                if (errorDesc) errorDesc.innerHTML = result.message || 'This fingerprint credential is already registered on your account.';
+                if (errorDesc) errorDesc.textContent = result.message || 'This device credential is already registered on your account.';
             }
             return;
         }
@@ -7021,8 +7027,8 @@ async function beginFingerprintRegistration() {
             if (scanningView) scanningView.style.display = 'none';
             if (successView) {
                 successView.style.display = 'block';
-                if (successTitle) successTitle.textContent = 'Fingerprint Registered Successfully!';
-                if (successDesc) successDesc.innerHTML = result.message || 'Your fingerprint credential has been securely enrolled in your device hardware enclave and linked to your account.';
+                if (successTitle) successTitle.textContent = registrationType === 'face' ? 'Face Sign-in Registered!' : 'Fingerprint Registered Successfully!';
+                if (successDesc) successDesc.textContent = result.message || 'Your device credential is linked to your account.';
             }
             await loadDevices();
         } else {
@@ -7030,7 +7036,7 @@ async function beginFingerprintRegistration() {
             if (errorView) {
                 errorView.style.display = 'block';
                 if (errorTitle) errorTitle.textContent = 'Registration Incomplete';
-                if (errorDesc) errorDesc.innerHTML = result.message || 'The server could not verify and save the biometric enrollment.';
+                if (errorDesc) errorDesc.textContent = result.message || 'The server could not verify and save the biometric enrollment.';
             }
         }
     } catch(err) {
@@ -7049,16 +7055,16 @@ async function beginFingerprintRegistration() {
             errorView.style.display = 'block';
             if (err.name === 'NotAllowedError') {
                 if (errorTitle) errorTitle.textContent = 'Biometric Prompt Dismissed';
-                if (errorDesc) errorDesc.innerHTML = 'The device biometric prompt was cancelled or timed out. Ensure your sensor is clean and try again.';
+                if (errorDesc) errorDesc.textContent = 'The device verification prompt was cancelled or timed out. Try again or use another sign-in method.';
             } else if (err.name === 'InvalidStateError') {
                 if (errorTitle) errorTitle.textContent = 'Already Registered';
-                if (errorDesc) errorDesc.innerHTML = 'This fingerprint credential is already registered on this device for your account.';
+                if (errorDesc) errorDesc.textContent = 'This device credential is already registered for your account.';
             } else if (err.name === 'NotSupportedError') {
-                if (errorTitle) errorTitle.textContent = 'Fingerprint Unsupported';
-                if (errorDesc) errorDesc.innerHTML = 'Your device does not have hardware support for fingerprint scanning. Please switch to Face Recognition.';
+                if (errorTitle) errorTitle.textContent = 'Device Authentication Unsupported';
+                if (errorDesc) errorDesc.textContent = 'Set up Face ID, Windows Hello, or another device sign-in method and try again.';
             } else {
                 if (errorTitle) errorTitle.textContent = 'Registration Failed';
-                if (errorDesc) errorDesc.innerHTML = err.message || 'An error occurred during biometric capture. Please check sensor permissions and try again.';
+                if (errorDesc) errorDesc.textContent = err.message || 'Device verification could not be completed. Check your device sign-in settings and try again.';
             }
         }
         prefetchWebAuthn();

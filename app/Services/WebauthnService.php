@@ -116,8 +116,8 @@ class WebauthnService
             $allowCredentials = $user->webauthnCredentials()
                 ->get()
                 ->filter(function ($credential) {
-                    // Exclude only credentials that are purely camera-based mock descriptors
-                    if ($credential->biometric_type === 'face' && !str_contains($credential->public_key, 'BEGIN PUBLIC KEY') && str_starts_with((string) $credential->credential_id, 'face_')) {
+                    // A camera descriptor is not a WebAuthn public key and cannot authenticate.
+                    if ($credential->biometric_type === 'face' && !str_contains((string) $credential->public_key, 'BEGIN PUBLIC KEY')) {
                         return false;
                     }
                     return true;
