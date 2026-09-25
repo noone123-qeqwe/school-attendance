@@ -82,6 +82,152 @@ class QrDistanceValidationTest extends TestCase
         ]);
     }
 
+    public function test_impossible_recent_location_jump_requires_retry_in_direct_scan()
+    {
+        $this->recordPreviousLocation(14.650000, 121.000000, 10, 20);
+
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ]);
+
+        $response->assertStatus(422)->assertJsonPath('error_type', 'location_jump_review');
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id,
+            'session_id' => $this->session->id,
+        ]);
+    }
+
+    public function test_impossible_recent_location_jump_requires_retry_after_webauthn()
+    {
+        $this->recordPreviousLocation(14.650000, 121.000000, 10, 20);
+        $this->actingAs($this->student)->postJson('/qr/verify-options', ['token' => $this->session->token]);
+
+        $mock = Mockery::mock(WebauthnService::class);
+        $mock->shouldReceive('verifyAssertion')->once()->andReturn(new WebauthnCredential());
+        $this->app->instance(WebauthnService::class, $mock);
+
+        $response = $this->actingAs($this->student)->postJson('/qr/verify-complete', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+            'credential' => ['id' => 'fake', 'response' => []],
+        ]);
+
+        $response->assertStatus(422)->assertJsonPath('error_type', 'location_jump_review');
+    }
+
+    public function test_ordinary_movement_is_not_flagged_as_gps_spoofing()
+    {
+        $this->recordPreviousLocation(14.500500, 121.000000, 15, 20);
+
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 15,
+        ]);
+
+        $response->assertOk()->assertJsonPath('success', true);
+    }
+
+    public function test_vpn_or_proxy_headers_do_not_bypass_gps_geofence()
+    {
+        $response = $this->actingAs($this->student)
+            ->withHeaders(['X-Forwarded-For' => '127.0.0.1', 'Via' => '1.1 proxy'])
+            ->postJson('/qr/scan-process', [
+                'token' => $this->session->token,
+                'latitude' => 14.600000,
+                'longitude' => $this->classroomLng,
+                'accuracy' => 5,
+            ]);
+
+        $response->assertStatus(422)->assertJsonPath('error_type', 'outside_classroom');
+    }
+
+    public function test_started_fingerprint_verification_can_finish_after_qr_rotates()
+    {
+        $originalToken = $this->session->token;
+        $this->actingAs($this->student)->postJson('/qr/verify-options', ['token' => $originalToken])
+            ->assertOk()->assertJsonPath('success', true);
+
+        $this->session->update([
+            'token' => AttendanceSession::generateToken($this->subject->code),
+            'previous_token' => AttendanceSession::generateToken($this->subject->code),
+            'expires_at' => now()->addSeconds(15),
+        ]);
+
+        $mock = Mockery::mock(WebauthnService::class);
+        $mock->shouldReceive('verifyAssertion')->once()->andReturn(new WebauthnCredential());
+        $this->app->instance(WebauthnService::class, $mock);
+
+        $this->actingAs($this->student)->postJson('/qr/verify-complete', [
+            'token' => $originalToken,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+            'credential' => ['id' => 'fake', 'response' => []],
+        ])->assertOk()->assertJsonPath('success', true);
+    }
+
+    public function test_rotated_qr_cannot_start_new_verification()
+    {
+        $originalToken = $this->session->token;
+        $this->session->update([
+            'token' => AttendanceSession::generateToken($this->subject->code),
+            'previous_token' => AttendanceSession::generateToken($this->subject->code),
+        ]);
+
+        $this->actingAs($this->student)->postJson('/qr/verify-options', [
+            'token' => $originalToken,
+        ])->assertStatus(422);
+    }
+
+    public function test_started_qr_completion_window_expires()
+    {
+        $originalToken = $this->session->token;
+        $this->actingAs($this->student)->postJson('/qr/verify-options', ['token' => $originalToken])
+            ->assertOk();
+        $this->session->update([
+            'token' => AttendanceSession::generateToken($this->subject->code),
+            'previous_token' => AttendanceSession::generateToken($this->subject->code),
+        ]);
+
+        $this->travel(91)->seconds();
+        $this->actingAs($this->student)->postJson('/qr/verify-complete', [
+            'token' => $originalToken,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+            'credential' => ['id' => 'fake', 'response' => []],
+        ])->assertStatus(422);
+    }
+
+    private function recordPreviousLocation(float $lat, float $lng, float $accuracy, int $secondsAgo): void
+    {
+        $previousSession = AttendanceSession::factory()->create([
+            'subject_code' => 'OTHER101',
+            'created_by' => $this->teacher->id,
+            'classroom_lat' => $lat,
+            'classroom_lng' => $lng,
+        ]);
+
+        Attendance::create([
+            'user_id' => $this->student->id,
+            'session_id' => $previousSession->id,
+            'subject_code' => 'OTHER101',
+            'date' => today()->toDateString(),
+            'status' => 'Present',
+            'last_latitude' => $lat,
+            'last_longitude' => $lng,
+            'last_accuracy' => $accuracy,
+            'last_location_check_at' => now()->subSeconds($secondsAgo),
+        ]);
+    }
+
     public function test_student_right_at_qr_location_is_accepted()
     {
         $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [

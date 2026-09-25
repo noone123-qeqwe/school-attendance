@@ -640,14 +640,53 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-function submitAttendance(credentialData) {
-    var latitude = document.getElementById('latInput').value;
-    var longitude = document.getElementById('lngInput').value;
+async function submitAttendance(credentialData) {
     var token = QR_TOKEN;
 
-    if (!latitude || !longitude) {
-        showFpError('Location data is missing. Please retry the clock-in process.');
+    // The OS verification prompt can take long enough for the first GPS fix to
+    // become stale. Require a new fix immediately before sending attendance.
+    document.getElementById('vTitle').textContent = 'Confirming current location...';
+    document.getElementById('vSub').textContent = 'Checking a fresh GPS fix after device verification.';
+    var freshPosition = await new Promise(function(resolve) {
+        if (!navigator.geolocation) { resolve(null); return; }
+        try {
+            navigator.geolocation.getCurrentPosition(resolve, function() { resolve(null); }, {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 15000
+            });
+        } catch (error) {
+            resolve(null);
+        }
+    });
+    if (!freshPosition || !freshPosition.coords ||
+        Math.abs(Date.now() - freshPosition.timestamp) > 10000 ||
+        !Number.isFinite(freshPosition.coords.latitude) ||
+        !Number.isFinite(freshPosition.coords.longitude) ||
+        Math.abs(freshPosition.coords.latitude) > 90 ||
+        Math.abs(freshPosition.coords.longitude) > 180 ||
+        !Number.isFinite(freshPosition.coords.accuracy) ||
+        freshPosition.coords.accuracy <= 0 || freshPosition.coords.accuracy > 50) {
+        showWeakGpsError(freshPosition?.coords?.accuracy);
         return;
+    }
+    var latitude = freshPosition.coords.latitude;
+    var longitude = freshPosition.coords.longitude;
+    var accuracy = freshPosition.coords.accuracy;
+    document.getElementById('latInput').value = latitude;
+    document.getElementById('lngInput').value = longitude;
+    document.getElementById('accuracyInput').value = accuracy;
+
+    if (RADIUS_METERS > 0) {
+        if (CLASSROOM_LAT === null || CLASSROOM_LNG === null) {
+            showTeacherLocationMissingError();
+            return;
+        }
+        var currentDistance = calculateDistance(latitude, longitude, CLASSROOM_LAT, CLASSROOM_LNG);
+        if (currentDistance > RADIUS_METERS) {
+            showOutsideClassroomError(currentDistance, RADIUS_METERS);
+            return;
+        }
     }
 
     var devKey = (typeof window.getOrCreateDeviceKey === 'function')
@@ -704,7 +743,6 @@ function submitAttendance(credentialData) {
     xhr2.onerror = function() {
         showFpError('Network error while clocking in. Please try again.');
     };
-    var accuracy = document.getElementById('accuracyInput').value;
     xhr2.send(JSON.stringify({
         token: token,
         latitude: latitude,

@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\WebauthnService;
+use App\Services\LocationIntegrityService;
 use App\Events\TeacherAttendanceUpdated;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -118,7 +119,7 @@ class QrAttendanceController extends Controller
 
         return strtolower($host);
     }
-    private const QR_SCAN_BUFFER_SECONDS = 60; // Students have 60 seconds to complete scan + fingerprint
+    private const QR_SCAN_BUFFER_SECONDS = 90; // Fingerprint prompt (60s), fresh GPS (15s), and network latency
 
     private function buildScanUrl(string $token, Carbon $sessionEndTime): string
     {
@@ -1502,9 +1503,14 @@ class QrAttendanceController extends Controller
         // Generate isolated per-student cryptographic challenge
         $challenge = $this->base64UrlEncode(random_bytes(32));
         
-        // Store challenge in student-scoped cache with 3-minute TTL (avoids cross-student race condition)
+        // Store the challenge only for the bounded biometric + GPS completion window.
         $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
-        Cache::put($cacheKey, $challenge, now()->addMinutes(3));
+        Cache::put($cacheKey, $challenge, now()->addSeconds(self::QR_SCAN_BUFFER_SECONDS));
+        // The visible QR may rotate while this student's device prompt is open.
+        // Bind only this validated scan to the student and session; do not extend
+        // the validity of the QR code for new scans.
+        $scanKey = "webauthn_qr_scan_{$user->id}_" . hash('sha256', $request->token);
+        Cache::put($scanKey, $session->id, now()->addSeconds(self::QR_SCAN_BUFFER_SECONDS));
         
         // Also update session model challenge for fallback/logging
         try {
@@ -1562,16 +1568,24 @@ class QrAttendanceController extends Controller
         }
 
         $user    = $request->user();
+        $scanKey = "webauthn_qr_scan_{$user->id}_" . hash('sha256', $request->token);
+        $startedSessionId = Cache::get($scanKey);
         $session = AttendanceSession::where('token', $request->token)
             ->orWhere('previous_token', $request->token)
             ->first();
+
+        if (!$session && $startedSessionId) {
+            $session = AttendanceSession::find($startedSessionId);
+        }
 
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'This QR code is no longer active.'], 422);
         }
 
         $tokenValidation = $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
-        if (!$tokenValidation['valid']) {
+        $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
+        $startedScanValid = $startedSessionId && (int) $startedSessionId === (int) $session->id && Cache::has($cacheKey);
+        if (!$tokenValidation['valid'] && !$startedScanValid) {
             return response()->json(['success' => false, 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR code displayed by your teacher.'], 422);
         }
 
@@ -1580,7 +1594,6 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'The attendance session has ended. Please get a new QR code.'], 422);
         }
 
-        $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
         $challenge = Cache::get($cacheKey) ?: $session->webauthn_challenge;
 
         Log::debug('QR completeVerification request', [
@@ -1615,6 +1628,7 @@ class QrAttendanceController extends Controller
 
             // Clear student's specific challenge from cache
             Cache::forget($cacheKey);
+            Cache::forget($scanKey);
         } catch (RuntimeException $e) {
             Log::debug('QR completeVerification failure', [
                 'exception' => $e->getMessage(),
@@ -1796,6 +1810,24 @@ class QrAttendanceController extends Controller
                 'sessionId'          => (string) $session->id,
                 'status'             => $existing->status,
             ]);
+        }
+
+        if ($radiusMeters > 0) {
+            $jump = app(LocationIntegrityService::class)->impossibleRecentJump(
+                $user->id, $session->id, $studentLat, $studentLng, $studentAccuracy
+            );
+            if ($jump) {
+                Log::warning('QR verification location jump needs review', [
+                    'user_id' => $user->id,
+                    'session_id' => $session->id,
+                    'jump' => $jump,
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'location_jump_review',
+                    'message' => 'Recent GPS readings changed too quickly to verify your location. Please retry with a fresh GPS fix or ask your instructor for help.',
+                ], 422);
+            }
         }
 
         // Get class start time for late threshold calculation
@@ -2463,6 +2495,24 @@ class QrAttendanceController extends Controller
                         ], 422);
                     }
                 }
+            }
+        }
+
+        if ($radiusMeters > 0) {
+            $jump = app(LocationIntegrityService::class)->impossibleRecentJump(
+                $user->id, $session->id, $studentLat, $studentLng, $accuracy
+            );
+            if ($jump) {
+                Log::warning('QR scan location jump needs review', [
+                    'user_id' => $user->id,
+                    'session_id' => $session->id,
+                    'jump' => $jump,
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'location_jump_review',
+                    'message' => 'Recent GPS readings changed too quickly to verify your location. Please retry with a fresh GPS fix or ask your instructor for help.',
+                ], 422);
             }
         }
 
