@@ -626,6 +626,9 @@ async function registerFingerprint() {
                 hasPlatformAuth = false;
             }
         }
+        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function' && !hasPlatformAuth) {
+            throw new Error('No on-device biometric sign-in is available. Set up fingerprint or your device screen lock, then try again.');
+        }
 
         const basePublicKey = {
             challenge,
@@ -637,38 +640,20 @@ async function registerFingerprint() {
             ],
             timeout: opts.timeout || 120000,
             attestation: opts.attestation || 'none',
-            excludeCredentials
+            excludeCredentials,
+            hints: ['client-device']
         };
 
-        let credential = null;
-        try {
-            const primarySelection = {
-                authenticatorAttachment: 'platform',
-                userVerification: 'preferred',
-                residentKey: 'preferred',
-                requireResidentKey: false
-            };
-
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: primarySelection
-                })
-            });
-        } catch (credErr) {
-            if (credErr.name === 'AbortError') {
-                throw credErr;
-            }
-            // Graceful fallback: retry without platform restriction so USB sensor / phone passkey displays
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: {
-                        userVerification: 'preferred',
-                        residentKey: 'preferred',
-                        requireResidentKey: false
-                    }
-                })
-            });
-        }
+        const credential = await navigator.credentials.create({
+            publicKey: Object.assign({}, basePublicKey, {
+                authenticatorSelection: {
+                    authenticatorAttachment: 'platform',
+                    userVerification: 'required',
+                    residentKey: 'preferred',
+                    requireResidentKey: false
+                }
+            })
+        });
 
         if (!credential) {
             throw new Error('Biometric registration was cancelled.');

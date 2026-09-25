@@ -778,7 +778,7 @@ function doFingerprint() {
             allowCredentials = [];
             for (var i = 0; i < opts.allowCredentials.length; i++) {
                 var cred = opts.allowCredentials[i];
-                allowCredentials.push({ type: cred.type, id: base64ToUint8Array(cred.id) });
+                allowCredentials.push({ type: cred.type, id: base64ToUint8Array(cred.id), transports: ['internal'] });
             }
         } catch(e) { 
             fingerprintInProgress = false;
@@ -795,7 +795,8 @@ function doFingerprint() {
         var pubKey = {
             challenge: challenge,
             allowCredentials: allowCredentials,
-            userVerification: 'preferred',
+            userVerification: 'required',
+            hints: ['client-device'],
             timeout: 60000
         };
         if (effectiveRpId) {

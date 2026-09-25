@@ -6929,6 +6929,9 @@ async function beginFingerprintRegistration() {
                 hasPlatformAuth = false;
             }
         }
+        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function' && !hasPlatformAuth) {
+            throw new Error('No on-device biometric sign-in is available. Set up fingerprint, Face ID, or Windows Hello in your device settings, then try again.');
+        }
 
         const basePublicKey = {
             challenge: challenge,
@@ -6940,45 +6943,21 @@ async function beginFingerprintRegistration() {
             ],
             timeout: opts.timeout || 120000,
             attestation: opts.attestation || 'none',
-            excludeCredentials: excludeCredentials
+            excludeCredentials: excludeCredentials,
+            hints: ['client-device']
         };
 
-        let credential = null;
-        try {
-            // First attempt: explicitly request platform authenticator (device fingerprint sensor, Touch ID, Windows Hello, Android lock).
-            // Always try platform first so Android and iOS default to the local fingerprint/biometric sensor directly
-            // rather than opening the roaming security key picker (NFC/USB).
-            const primarySelection = {
-                authenticatorAttachment: 'platform',
-                userVerification: 'preferred',
-                residentKey: 'preferred',
-                requireResidentKey: false
-            };
-
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: primarySelection
-                }),
-                signal: bioAbortController.signal
-            });
-        } catch (credErr) {
-            if (credErr.name === 'AbortError') {
-                throw credErr;
-            }
-            console.warn('Direct platform biometric registration failed, retrying with flexible authenticator selection:', credErr);
-            // If primary platform creation failed (e.g. desktop PC without Windows Hello, or external USB sensor),
-            // gracefully retry without authenticatorAttachment restriction so the browser shows all sensor options (phone / USB / passkey).
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: {
-                        userVerification: 'preferred',
-                        residentKey: 'preferred',
-                        requireResidentKey: false
-                    }
-                }),
-                signal: bioAbortController.signal
-            });
-        }
+        const credential = await navigator.credentials.create({
+            publicKey: Object.assign({}, basePublicKey, {
+                authenticatorSelection: {
+                    authenticatorAttachment: 'platform',
+                    userVerification: 'required',
+                    residentKey: 'preferred',
+                    requireResidentKey: false
+                }
+            }),
+            signal: bioAbortController.signal
+        });
 
         if (!credential) {
             throw new Error('Biometric registration was cancelled.');

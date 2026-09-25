@@ -2455,7 +2455,8 @@ function openBiometricModal(config) {
         }
     }
 
-    if (primaryBtn) {
+    if (primaryBtn && primaryBtn.dataset.biometricBound !== 'true') {
+        primaryBtn.dataset.biometricBound = 'true';
         if (config.hidePrimaryBtn || config.primaryBtnText === false) {
             primaryBtn.style.display = 'none';
         } else {
@@ -2492,7 +2493,8 @@ function openBiometricModal(config) {
         }
     }
 
-    if (secondaryBtn) {
+    if (secondaryBtn && secondaryBtn.dataset.biometricBound !== 'true') {
+        secondaryBtn.dataset.biometricBound = 'true';
         if (config.secondaryBtnText === '' || config.secondaryBtnText === false) {
             secondaryBtn.style.display = 'none';
         } else {
@@ -2724,6 +2726,9 @@ async function startBiometricRegistration(identifier, password) {
                 hasPlatformAuth = false;
             }
         }
+        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function' && !hasPlatformAuth) {
+            throw new Error('No on-device biometric sign-in is available. Set up fingerprint, Face ID, or Windows Hello in your device settings, then try again.');
+        }
 
         var basePublicKey = {
             challenge: challenge,
@@ -2735,38 +2740,20 @@ async function startBiometricRegistration(identifier, password) {
             ],
             timeout: opts.timeout || 120000,
             attestation: opts.attestation || 'none',
-            excludeCredentials: excludeCredentials
+            excludeCredentials: excludeCredentials,
+            hints: ['client-device']
         };
 
-        var credential = null;
-        try {
-            var primarySelection = {
-                authenticatorAttachment: 'platform',
-                userVerification: 'preferred',
-                residentKey: 'preferred',
-                requireResidentKey: false
-            };
-
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: primarySelection
-                })
-            });
-        } catch (credErr) {
-            if (credErr.name === 'AbortError') {
-                throw credErr;
-            }
-            // Graceful fallback for devices without strict platform authenticator or when platform prompt fails
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: {
-                        userVerification: 'preferred',
-                        residentKey: 'preferred',
-                        requireResidentKey: false
-                    }
-                })
-            });
-        }
+        var credential = await navigator.credentials.create({
+            publicKey: Object.assign({}, basePublicKey, {
+                authenticatorSelection: {
+                    authenticatorAttachment: 'platform',
+                    userVerification: 'required',
+                    residentKey: 'preferred',
+                    requireResidentKey: false
+                }
+            })
+        });
 
         if (!credential) {
             throw new Error('Biometric setup was cancelled.');
@@ -4295,9 +4282,9 @@ async function handleBiometricLogin() {
     }
 }
 
-async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) {
+async function performBiometricLogin(studentNumber, selectedMethod) {
     studentNumber = (studentNumber || '').trim();
-    selectedMethod = selectedMethod || { id: 'fingerprint', name: 'Biometric', icon: 'bi-fingerprint', uv: 'preferred' };
+    selectedMethod = selectedMethod || { id: 'fingerprint', name: 'Biometric', icon: 'bi-fingerprint', uv: 'required' };
 
     // Abort previous prompt if any
     if (bioAbortController) {
@@ -4321,9 +4308,12 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
     var savedIds = savedAccounts.map(function(a) { return a.identifier; }).filter(Boolean);
 
     try {
-        var opts = cachedOpts;
-        if (!opts || !opts.challenge) {
-            var optRes = await fetch('{{ route("webauthn.login.options") }}', {
+        if (selectedMethod.id === 'fingerprint' && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function'
+            && !(await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())) {
+            throw new Error('No fingerprint or device verification is set up on this device. Enable fingerprint, Face ID, or Windows Hello in device settings, or sign in with your password.');
+        }
+        // Every attempt needs a fresh, single-use challenge, including retries from the error dialog.
+        var optRes = await fetch('{{ route("webauthn.login.options") }}', {
                 method: 'POST',
                 credentials: 'same-origin',
                 headers: { 
@@ -4337,9 +4327,8 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
                     saved_identifiers: savedIds
                 }),
                 signal: bioAbortController.signal
-            });
-            opts = await optRes.json();
-        }
+        });
+        var opts = await optRes.json();
 
         if (!opts || !opts.success) {
             throw new Error(opts?.message || 'Biometric login failed to initialize.');
@@ -4348,9 +4337,9 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
         var allowCredentials = (opts.allowCredentials || []).map(function(c) {
             var cred = { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
             if (c.transports && Array.isArray(c.transports) && c.transports.length > 0) {
-                cred.transports = c.transports;
+                cred.transports = selectedMethod.id === 'fingerprint' ? ['internal'] : c.transports;
             } else {
-                cred.transports = ['internal', 'hybrid'];
+                cred.transports = selectedMethod.id === 'fingerprint' ? ['internal'] : ['internal', 'hybrid'];
             }
             return cred;
         });
@@ -4367,12 +4356,15 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
         
         var getPublicKey = {
             challenge: challenge,
-            userVerification: selectedMethod.uv || 'preferred',
+            userVerification: 'required',
             timeout: 45000
         };
         
         if (allowCredentials.length > 0) {
             getPublicKey.allowCredentials = allowCredentials;
+        }
+        if (selectedMethod.id === 'fingerprint') {
+            getPublicKey.hints = ['client-device'];
         }
         
         if (effectiveRpId) {
@@ -4395,13 +4387,13 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
                 signal: bioAbortController ? bioAbortController.signal : undefined
             });
         } catch (firstErr) {
-            if (firstErr.name === 'AbortError') {
+            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
                 throw firstErr;
             }
 
             // If allowCredentials failed on this device (e.g. user presented another enrolled credential),
             // attempt discoverable passkey before giving up
-            if (getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
+            if (selectedMethod.id !== 'fingerprint' && getPublicKey.allowCredentials && getPublicKey.allowCredentials.length > 0) {
                 console.warn('Biometric query with allowCredentials failed, trying discoverable passkey fallback...', firstErr);
                 var fallbackPublicKey = Object.assign({}, getPublicKey);
                 delete fallbackPublicKey.allowCredentials;
@@ -4588,7 +4580,7 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
                 showChooseMethodBtn: true,
                 onPrimaryClick: function() {
                     closeBiometricModal();
-                    performBiometricLogin(studentNumber, selectedMethod, cachedOpts);
+                    performBiometricLogin(studentNumber, selectedMethod);
                 },
                 onChooseMethodClick: function() {
                     closeBiometricModal();
@@ -4645,7 +4637,7 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
                 showChooseMethodBtn: true,
                 onPrimaryClick: function() {
                     closeBiometricModal();
-                    performBiometricLogin(studentNumber, selectedMethod, cachedOpts);
+                    performBiometricLogin(studentNumber, selectedMethod);
                 },
                 onChooseMethodClick: function() {
                     closeBiometricModal();
@@ -4682,7 +4674,7 @@ async function performBiometricLogin(studentNumber, selectedMethod, cachedOpts) 
                 showChooseMethodBtn: true,
                 onPrimaryClick: function() {
                     closeBiometricModal();
-                    performBiometricLogin(studentNumber, selectedMethod, cachedOpts);
+                    performBiometricLogin(studentNumber, selectedMethod);
                 },
                 onChooseMethodClick: function() {
                     closeBiometricModal();
@@ -4745,7 +4737,8 @@ function setupBiometricListeners() {
     }
 
     var chooseMethodBtn = document.getElementById('bioModalChooseMethodBtn');
-    if (chooseMethodBtn) {
+    if (chooseMethodBtn && chooseMethodBtn.dataset.biometricBound !== 'true') {
+        chooseMethodBtn.dataset.biometricBound = 'true';
         chooseMethodBtn.addEventListener('click', function(e) {
             e.preventDefault();
             if (typeof currentChooseMethodCallback === 'function') {
@@ -4759,7 +4752,8 @@ function setupBiometricListeners() {
     }
 
     var bioModalBackdrop = document.getElementById('bioModalBackdrop');
-    if (bioModalBackdrop) {
+    if (bioModalBackdrop && bioModalBackdrop.dataset.biometricBound !== 'true') {
+        bioModalBackdrop.dataset.biometricBound = 'true';
         bioModalBackdrop.addEventListener('click', function(e) {
             e.preventDefault();
             closeBiometricModal();
@@ -4767,7 +4761,8 @@ function setupBiometricListeners() {
     }
 
     var bioModalCloseBtn = document.getElementById('bioModalCloseBtn');
-    if (bioModalCloseBtn) {
+    if (bioModalCloseBtn && bioModalCloseBtn.dataset.biometricBound !== 'true') {
+        bioModalCloseBtn.dataset.biometricBound = 'true';
         bioModalCloseBtn.addEventListener('click', function(e) {
             e.preventDefault();
             closeBiometricModal();
@@ -4775,7 +4770,8 @@ function setupBiometricListeners() {
     }
 
     var bioModalPass = document.getElementById('bioModalPasswordInput');
-    if (bioModalPass) {
+    if (bioModalPass && bioModalPass.dataset.biometricBound !== 'true') {
+        bioModalPass.dataset.biometricBound = 'true';
         bioModalPass.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();

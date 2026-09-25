@@ -33,7 +33,7 @@ class WebauthnService
                     ['type' => 'public-key', 'alg' => -257],
                 ],
                 'authenticatorSelection' => [
-                    'userVerification' => 'preferred',
+                    'userVerification' => 'required',
                     'residentKey' => 'preferred',
                     'requireResidentKey' => false,
                 ],
@@ -64,6 +64,9 @@ class WebauthnService
         }
 
         $parsed = $this->parseAuthenticatorData($authData, true);
+        if (($parsed['flags'] & 0x01) !== 0x01 || ($parsed['flags'] & 0x04) !== 0x04) {
+            throw new RuntimeException('Device verification was not completed. Please use your fingerprint, Face ID, or device PIN and try again.');
+        }
         $credentialId = $this->base64UrlEncode($parsed['credential_id']);
         $publicKey = $this->coseKeyToPem($parsed['credential_public_key']);
 
@@ -133,7 +136,7 @@ class WebauthnService
                 'challenge' => $this->base64UrlEncode($challenge),
                 'rpId' => $this->rpId(),
                 'allowCredentials' => $allowCredentials,
-                'userVerification' => 'preferred',
+                'userVerification' => 'required',
                 'timeout' => 60000,
             ],
         ];
@@ -203,13 +206,15 @@ class WebauthnService
         $authenticatorData = $this->base64UrlDecode($assertion['response']['authenticatorData'] ?? '');
         $parsed = $this->parseAuthenticatorData($authenticatorData, false);
 
-        // Check UP (User Presence) flag - bit 0x01 must always be set
-        // We intentionally do NOT check UV (User Verification) flag (0x04) as many
-        // real-world authenticators (Windows Hello, Android fingerprint, iOS Face ID)
-        // do not set UV=1 even when biometrics were used, especially with userVerification='preferred'
+        // A biometric/passkey sign-in must include local device verification.
+        // Presence alone could be a security-key touch without a fingerprint or PIN.
         if (($parsed['flags'] & 0x01) !== 0x01) {
             Log::warning('WebAuthn UP flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
             throw new RuntimeException('User presence was not confirmed by the authenticator.');
+        }
+        if (($parsed['flags'] & 0x04) !== 0x04) {
+            Log::warning('WebAuthn UV flag not set', ['flags' => $parsed['flags'], 'user_id' => $user->id]);
+            throw new RuntimeException('Device verification was not completed. Please use your fingerprint, Face ID, or device PIN and try again.');
         }
         
         Log::debug('WebAuthn flags OK', ['flags' => $parsed['flags'], 'up' => ($parsed['flags'] & 0x01) === 0x01, 'uv' => ($parsed['flags'] & 0x04) === 0x04]);

@@ -10,6 +10,92 @@ class BiometricLoginViewTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_fingerprint_enrollment_uses_only_the_local_authenticator_on_every_page()
+    {
+        $views = [
+            'auth/login.blade.php',
+            'settings.blade.php',
+            'student/profile.blade.php',
+            'teacher/profile.blade.php',
+            'admin/profile.blade.php',
+            'parent/profile.blade.php',
+        ];
+
+        foreach ($views as $view) {
+            $source = file_get_contents(resource_path('views/' . $view));
+            $this->assertStringContainsString("authenticatorAttachment: 'platform'", $source, $view);
+            $this->assertStringContainsString("hints: ['client-device']", $source, $view);
+            $this->assertStringContainsString("userVerification: 'required'", $source, $view);
+            $this->assertStringNotContainsString('retry without authenticatorAttachment', $source, $view);
+            $this->assertStringNotContainsString('retry without platform restriction', $source, $view);
+            $this->assertStringNotContainsString('retrying with flexible authenticator selection', $source, $view);
+        }
+    }
+
+    public function test_fingerprint_sign_in_does_not_retry_with_another_device_or_old_challenge()
+    {
+        $source = file_get_contents(resource_path('views/auth/login.blade.php'));
+        $start = strpos($source, 'async function performBiometricLogin(');
+        $end = strpos($source, 'function setupBiometricListeners(', $start);
+        $signIn = substr($source, $start, $end - $start);
+
+        $this->assertStringNotContainsString('cachedOpts', $signIn);
+        $this->assertStringContainsString("selectedMethod.id === 'fingerprint' ? ['internal']", $signIn);
+        $this->assertStringContainsString("selectedMethod.id !== 'fingerprint' && getPublicKey.allowCredentials", $signIn);
+        $this->assertStringContainsString("firstErr.name === 'NotAllowedError'", $signIn);
+        $this->assertStringContainsString("getPublicKey.hints = ['client-device']", $signIn);
+    }
+
+    public function test_qr_attendance_fingerprint_stays_on_student_device()
+    {
+        $source = file_get_contents(resource_path('views/qr/verify.blade.php'));
+
+        $this->assertStringContainsString("transports: ['internal']", $source);
+        $this->assertStringContainsString("userVerification: 'required'", $source);
+        $this->assertStringContainsString("hints: ['client-device']", $source);
+    }
+
+    public function test_webauthn_options_require_device_verification()
+    {
+        $user = User::factory()->create();
+        $service = app(\App\Services\WebauthnService::class);
+
+        $this->assertSame('required', $service->registrationOptions($user)['publicKey']['authenticatorSelection']['userVerification']);
+        $this->assertSame('required', $service->authenticationOptions($user)['publicKey']['userVerification']);
+    }
+
+    public function test_webauthn_rejects_assertion_without_verified_user_flag()
+    {
+        $user = User::factory()->create();
+        $credential = \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'unverified-credential',
+            'public_key' => 'not-needed-before-uv-check',
+            'sign_count' => 0,
+            'device_name' => 'Test device',
+        ]);
+        $service = app(\App\Services\WebauthnService::class);
+        $challenge = $service->authenticationOptions($user)['publicKey']['challenge'];
+        $clientData = json_encode([
+            'type' => 'webauthn.get',
+            'challenge' => $challenge,
+            'origin' => 'http://localhost',
+        ]);
+        $authenticatorData = hash('sha256', 'localhost', true) . chr(0x01) . pack('N', 0);
+        $encode = static fn (string $value) => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Device verification was not completed');
+        $service->verifyAssertion($user, [
+            'id' => $credential->credential_id,
+            'response' => [
+                'clientDataJSON' => $encode($clientData),
+                'authenticatorData' => $encode($authenticatorData),
+                'signature' => $encode('invalid'),
+            ],
+        ], $credential);
+    }
+
     public function test_login_page_renders_biometric_button_and_elements_without_inline_onclick()
     {
         $response = $this->get(route('login'));
@@ -327,4 +413,3 @@ class BiometricLoginViewTest extends TestCase
         $this->assertContains('device_lock', $methods);
     }
 }
-
