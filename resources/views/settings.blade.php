@@ -6945,28 +6945,16 @@ async function beginFingerprintRegistration() {
             hints: ['client-device']
         };
 
-        // ── Rebuilt Fingerprint / WebAuthn Registration ──────────────────────
-        // Strategy: for fingerprint, use residentKey: 'discouraged' which skips
-        // the "Choose a device" passkey-manager dialog on Android Chrome and
-        // goes straight to the native biometric sensor. For face/device-lock,
-        // use residentKey: 'preferred' (may trigger passkey dialog, which is
-        // expected for Face ID / Windows Hello flows).
-        // We omit authenticatorAttachment entirely on the first attempt so the
-        // browser can internally pick the platform authenticator without
-        // presenting an external-device picker on Android 14+.
-
-        const isFingerprintMethod = (registrationType === 'fingerprint');
-
+        // ── Direct Platform Biometric Registration ──────────────────────────
+        // Enforce on-device platform biometric attachment so Android Chrome,
+        // iOS Touch ID/Face ID, and Windows Hello invoke the native sensor directly
+        // without prompting with the external security key chooser (NFC/USB).
         const primarySelection = {
+            authenticatorAttachment: 'platform',
             userVerification: 'required',
-            residentKey: isFingerprintMethod ? 'discouraged' : 'preferred',
+            residentKey: 'preferred',
             requireResidentKey: false
         };
-        // Only add authenticatorAttachment for non-fingerprint flows where
-        // passkey-manager selection is acceptable (face, device_lock).
-        if (!isFingerprintMethod) {
-            primarySelection.authenticatorAttachment = 'platform';
-        }
 
         let credential = null;
         try {
@@ -6977,18 +6965,18 @@ async function beginFingerprintRegistration() {
                 signal: bioAbortController.signal
             });
         } catch (firstErr) {
-            // If the first attempt was aborted/cancelled, propagate immediately.
+            // If the first attempt was aborted/cancelled by the user, propagate immediately.
             if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
                 throw firstErr;
             }
-            // Gracefully retry without authenticatorAttachment restriction so
-            // the browser shows all sensor options (phone / USB / passkey).
-            console.warn('Primary biometric registration failed, retrying with relaxed constraints:', firstErr);
-            if (fpStatusSub) fpStatusSub.textContent = 'Retrying with alternative sensor options...';
+            // Fallback attempt: still strictly platform-bound, but with residentKey: 'discouraged'
+            console.warn('Primary platform registration failed, retrying with platform discouraged fallback:', firstErr);
+            if (fpStatusSub) fpStatusSub.textContent = 'Retrying with device sensor...';
             try {
                 credential = await navigator.credentials.create({
                     publicKey: Object.assign({}, basePublicKey, {
                         authenticatorSelection: {
+                            authenticatorAttachment: 'platform',
                             userVerification: 'required',
                             residentKey: 'discouraged',
                             requireResidentKey: false

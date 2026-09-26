@@ -891,14 +891,17 @@ async function registerFingerprint() {
             hints: ['client-device']
         };
 
-        // Rebuilt: use residentKey: 'discouraged' (skips Android "Choose a device" dialog)
+        // Enforce on-device platform biometric attachment so Android Chrome,
+        // iOS Touch ID/Face ID, and Windows Hello invoke the native sensor directly
+        // without prompting with the external security key chooser (NFC/USB).
         let credential = null;
         try {
             credential = await navigator.credentials.create({
                 publicKey: Object.assign({}, basePublicKey, {
                     authenticatorSelection: {
+                        authenticatorAttachment: 'platform',
                         userVerification: 'required',
-                        residentKey: 'discouraged',
+                        residentKey: 'preferred',
                         requireResidentKey: false
                     }
                 })

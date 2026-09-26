@@ -2744,16 +2744,14 @@ async function startBiometricRegistration(identifier, password) {
             hints: ['client-device']
         };
 
-        // ── Rebuilt Fingerprint / WebAuthn Registration (Login Setup Flow) ─────
-        // Same strategy as the Settings page: for fingerprint, use
-        // residentKey: 'discouraged' (skips the Android "Choose a device"
-        // passkey-manager picker). Omit authenticatorAttachment for fingerprint
-        // so Android Chrome uses the native on-device biometric directly.
-        const isFingerprintSetup = true; // login setup always defaults to fingerprint
-
+        // ── Direct Platform Biometric Registration (Login Setup Flow) ─────────
+        // Enforce on-device platform biometric attachment so Android Chrome,
+        // iOS Touch ID/Face ID, and Windows Hello invoke the native sensor directly
+        // without prompting with the external security key chooser (NFC/USB).
         const loginPrimarySelection = {
+            authenticatorAttachment: 'platform',
             userVerification: 'required',
-            residentKey: 'discouraged',
+            residentKey: 'preferred',
             requireResidentKey: false
         };
 
@@ -2768,8 +2766,7 @@ async function startBiometricRegistration(identifier, password) {
             if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
                 throw firstErr;
             }
-            // Gracefully retry without any authenticatorAttachment restriction
-            console.warn('Biometric setup (primary attempt) failed, retrying with relaxed constraints:', firstErr);
+            console.warn('Biometric setup (primary attempt) failed, retrying with platform discouraged fallback:', firstErr);
             try {
                 credential = await navigator.credentials.create({
                     publicKey: Object.assign({}, basePublicKey, {
