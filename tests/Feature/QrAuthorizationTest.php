@@ -97,6 +97,17 @@ class QrAuthorizationTest extends TestCase
         ]))->assertForbidden();
     }
 
+    public function test_teacher_qr_page_has_distinct_navigation_and_live_roster_ids(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $subject = Subject::factory()->create(['instructor_id' => $teacher->id]);
+        $html = $this->actingAs($teacher)->get(route('teacher.qr', $subject->code))
+            ->assertOk()->getContent();
+
+        $this->assertSame(1, substr_count($html, 'id="sidebar"'));
+        $this->assertSame(1, substr_count($html, 'id="qrLiveSidebar"'));
+    }
+
     public function test_teacher_can_extend_an_active_session_and_change_is_audited(): void
     {
         Queue::fake();

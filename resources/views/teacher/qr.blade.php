@@ -441,7 +441,7 @@
 }
 
 @media (max-width: 768px) {
-    #sidebar {
+    #qrLiveSidebar {
         width: 100% !important;
         min-width: auto !important;
         flex-shrink: 1 !important;
@@ -571,7 +571,7 @@
         </div>
         
         <!-- Live Statistics & Roster Sidebar -->
-        <div id="sidebar" style="display: none; width: 370px; flex-shrink: 0; min-width: 320px;">
+        <div id="qrLiveSidebar" style="display: none; width: 370px; flex-shrink: 0; min-width: 320px;">
             <!-- Real-time Stats Card -->
             <div class="stats-card mb-4">
                 <div class="stats-header">
@@ -798,7 +798,7 @@ async function updateSessionTimeline() {
 timelineDetails?.addEventListener('toggle', updateSessionTimeline);
 const stopBtn = document.getElementById('stopBtn');
 const qrContainer = document.getElementById('qrCodeContainer');
-const sidebar = document.getElementById('sidebar');
+const sidebar = document.getElementById('qrLiveSidebar');
 const mainSection = document.getElementById('mainSection');
 const locationStatus = document.getElementById('locationStatus');
 
