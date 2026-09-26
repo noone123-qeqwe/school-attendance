@@ -2744,16 +2744,47 @@ async function startBiometricRegistration(identifier, password) {
             hints: ['client-device']
         };
 
-        var credential = await navigator.credentials.create({
-            publicKey: Object.assign({}, basePublicKey, {
-                authenticatorSelection: {
-                    authenticatorAttachment: 'platform',
-                    userVerification: 'required',
-                    residentKey: 'preferred',
-                    requireResidentKey: false
-                }
-            })
-        });
+        // ── Rebuilt Fingerprint / WebAuthn Registration (Login Setup Flow) ─────
+        // Same strategy as the Settings page: for fingerprint, use
+        // residentKey: 'discouraged' (skips the Android "Choose a device"
+        // passkey-manager picker). Omit authenticatorAttachment for fingerprint
+        // so Android Chrome uses the native on-device biometric directly.
+        const isFingerprintSetup = true; // login setup always defaults to fingerprint
+
+        const loginPrimarySelection = {
+            userVerification: 'required',
+            residentKey: 'discouraged',
+            requireResidentKey: false
+        };
+
+        let credential = null;
+        try {
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: loginPrimarySelection
+                })
+            });
+        } catch (firstErr) {
+            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
+                throw firstErr;
+            }
+            // Gracefully retry without any authenticatorAttachment restriction
+            console.warn('Biometric setup (primary attempt) failed, retrying with relaxed constraints:', firstErr);
+            try {
+                credential = await navigator.credentials.create({
+                    publicKey: Object.assign({}, basePublicKey, {
+                        authenticatorSelection: {
+                            authenticatorAttachment: 'platform',
+                            userVerification: 'required',
+                            residentKey: 'discouraged',
+                            requireResidentKey: false
+                        }
+                    })
+                });
+            } catch (retryErr) {
+                throw retryErr;
+            }
+        }
 
         if (!credential) {
             throw new Error('Biometric setup was cancelled.');

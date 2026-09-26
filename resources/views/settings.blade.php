@@ -3794,10 +3794,7 @@
                                         </div>
                                         <div class="bio-preview-title">Register Fingerprint Authentication</div>
                                         <div class="bio-preview-sub">Click the button below to start the hardware fingerprint enrollment for this account.</div>
-                                        <div class="mt-2 text-start px-2 py-1 rounded" style="font-size: 11.5px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2); color: #bae6fd; max-width: 380px; margin: 8px auto 0;">
-                                            <i class="bi bi-info-circle-fill me-1 text-info"></i>
-                                            <strong>Android Notice:</strong> If prompted <em>"Choose a device for your passkey"</em>, tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> (or <strong>This device</strong>) to scan your fingerprint.
-                                        </div>
+
                                     </div>
 
                                     <!-- Face Idle Graphic -->
@@ -3859,12 +3856,7 @@
                                                 <span class="bio-progress-pct" id="fpPctLabel">Ready</span>
                                             </div>
                                         </div>
-                                        <div class="mt-2 text-center" style="max-width: 340px; margin: 8px auto 0;">
-                                            <span class="badge bg-dark-subtle text-secondary border border-secondary-subtle px-2 py-1" style="font-size: 11px; white-space: normal; line-height: 1.4;">
-                                                <i class="bi bi-phone me-1 text-warning"></i>
-                                                If phone asks <em>"Choose a device"</em>: Tap <strong>More options</strong> &rarr; <strong>Google Password Manager</strong> or <strong>This device</strong>.
-                                            </span>
-                                        </div>
+
                                     </div>
 
                                     <!-- Face Recognition Realistic Scanner -->
@@ -6953,17 +6945,61 @@ async function beginFingerprintRegistration() {
             hints: ['client-device']
         };
 
-        const credential = await navigator.credentials.create({
-            publicKey: Object.assign({}, basePublicKey, {
-                authenticatorSelection: {
-                    authenticatorAttachment: 'platform',
-                    userVerification: 'required',
-                    residentKey: 'preferred',
-                    requireResidentKey: false
-                }
-            }),
-            signal: bioAbortController.signal
-        });
+        // ── Rebuilt Fingerprint / WebAuthn Registration ──────────────────────
+        // Strategy: for fingerprint, use residentKey: 'discouraged' which skips
+        // the "Choose a device" passkey-manager dialog on Android Chrome and
+        // goes straight to the native biometric sensor. For face/device-lock,
+        // use residentKey: 'preferred' (may trigger passkey dialog, which is
+        // expected for Face ID / Windows Hello flows).
+        // We omit authenticatorAttachment entirely on the first attempt so the
+        // browser can internally pick the platform authenticator without
+        // presenting an external-device picker on Android 14+.
+
+        const isFingerprintMethod = (registrationType === 'fingerprint');
+
+        const primarySelection = {
+            userVerification: 'required',
+            residentKey: isFingerprintMethod ? 'discouraged' : 'preferred',
+            requireResidentKey: false
+        };
+        // Only add authenticatorAttachment for non-fingerprint flows where
+        // passkey-manager selection is acceptable (face, device_lock).
+        if (!isFingerprintMethod) {
+            primarySelection.authenticatorAttachment = 'platform';
+        }
+
+        let credential = null;
+        try {
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: primarySelection
+                }),
+                signal: bioAbortController.signal
+            });
+        } catch (firstErr) {
+            // If the first attempt was aborted/cancelled, propagate immediately.
+            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
+                throw firstErr;
+            }
+            // Gracefully retry without authenticatorAttachment restriction so
+            // the browser shows all sensor options (phone / USB / passkey).
+            console.warn('Primary biometric registration failed, retrying with relaxed constraints:', firstErr);
+            if (fpStatusSub) fpStatusSub.textContent = 'Retrying with alternative sensor options...';
+            try {
+                credential = await navigator.credentials.create({
+                    publicKey: Object.assign({}, basePublicKey, {
+                        authenticatorSelection: {
+                            userVerification: 'required',
+                            residentKey: 'discouraged',
+                            requireResidentKey: false
+                        }
+                    }),
+                    signal: bioAbortController.signal
+                });
+            } catch (retryErr) {
+                throw retryErr;
+            }
+        }
 
         if (!credential) {
             throw new Error('Biometric registration was cancelled.');

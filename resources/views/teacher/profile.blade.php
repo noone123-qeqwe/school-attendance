@@ -738,16 +738,31 @@ async function registerFingerprint() {
             hints: ['client-device']
         };
 
-        const credential = await navigator.credentials.create({
-            publicKey: Object.assign({}, basePublicKey, {
-                authenticatorSelection: {
-                    authenticatorAttachment: 'platform',
-                    userVerification: 'required',
-                    residentKey: 'preferred',
-                    requireResidentKey: false
-                }
-            })
-        });
+        // Rebuilt: use residentKey: 'discouraged' (skips Android "Choose a device" dialog)
+        let credential = null;
+        try {
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: {
+                        userVerification: 'required',
+                        residentKey: 'discouraged',
+                        requireResidentKey: false
+                    }
+                })
+            });
+        } catch (firstErr) {
+            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') throw firstErr;
+            credential = await navigator.credentials.create({
+                publicKey: Object.assign({}, basePublicKey, {
+                    authenticatorSelection: {
+                        authenticatorAttachment: 'platform',
+                        userVerification: 'required',
+                        residentKey: 'discouraged',
+                        requireResidentKey: false
+                    }
+                })
+            });
+        }
 
         if (!credential) {
             throw new Error('Biometric registration was cancelled.');
