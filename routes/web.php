@@ -349,6 +349,8 @@ Route::middleware('auth')->prefix('mobile')->name('mobile.')->group(function () 
 
 // Authenticated Routes (Protected) - Student Routes
 Route::middleware(['auth', 'student'])->group(function () {
+    Route::get('/student-assistant/classes', [App\Http\Controllers\StudentAssistantSessionController::class, 'index'])->name('student-assistant.classes');
+    Route::get('/student-assistant/sessions/{session}', [App\Http\Controllers\StudentAssistantSessionController::class, 'show'])->name('student-assistant.sessions.show');
     Route::get('/profile', [PTController::class, 'profile'])->name('profile');
     Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store')->middleware('device.bound');
     Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
