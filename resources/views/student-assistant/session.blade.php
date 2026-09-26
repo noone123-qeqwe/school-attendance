@@ -27,7 +27,7 @@
     const generateUrl = @json(route('student-assistant.qr.generate', $session));
     const rotateUrl = @json(route('student-assistant.qr.rotate', $session));
     const replaceUrl = @json(route('student-assistant.qr.replace', $session));
-    const sessionEndsAt = {{ $session->session_ends_at->timestamp * 1000 }};
+    let sessionEndsAt = {{ $session->session_ends_at->timestamp * 1000 }};
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     const canvas = document.getElementById('assistantQrCanvas');
     const message = document.getElementById('assistantQrMessage');
@@ -50,6 +50,7 @@
     }
 
     function showQr(data) {
+        if (data.session_ends_at) sessionEndsAt = data.session_ends_at * 1000;
         if (data.token_id !== currentId) {
             canvas.replaceChildren();
             new QRCode(canvas, {
@@ -162,7 +163,11 @@
     const echo = window.Echo;
     if (echo) {
         echo.private('assistant-session.{{ $session->id }}')
-            .listen('.attendance.qr.changed', () => sync());
+            .listen('.attendance.qr.changed', () => sync())
+            .listen('.attendance.session.changed', (event) => {
+                if (event.change_type === 'closed') endSession();
+                if (event.change_type === 'extended') sessionEndsAt = event.session_ends_at * 1000;
+            });
         const connection = echo.connector?.pusher?.connection;
         connection?.bind('connected', () => { retryDelay = 1000; sync(); });
         connection?.bind('disconnected', () => {

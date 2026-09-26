@@ -556,6 +556,9 @@
                         <button id="emergencyQrBtn" class="btn modern-btn secondary" style="display:none;">
                             <i class="bi bi-shield-check me-2"></i> Emergency Teacher QR
                         </button>
+                        <button id="extendSessionBtn" class="btn modern-btn secondary" style="display:none;">
+                            <i class="bi bi-clock-history me-2"></i> Extend 10 min
+                        </button>
                         <button id="stopBtn" class="btn modern-btn danger" style="display: none;">
                             <i class="bi bi-stop-fill me-2"></i> Stop Session
                         </button>
@@ -744,6 +747,7 @@ function escapeHtml(value) {
 const startBtn = document.getElementById('startBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const emergencyQrBtn = document.getElementById('emergencyQrBtn');
+const extendSessionBtn = document.getElementById('extendSessionBtn');
 const stopBtn = document.getElementById('stopBtn');
 const qrContainer = document.getElementById('qrCodeContainer');
 const sidebar = document.getElementById('sidebar');
@@ -1064,6 +1068,7 @@ function updateUIForActiveSession() {
     startBtn.style.display = 'none';
     refreshBtn.style.display = currentSession?.signed_qr ? 'none' : 'inline-block';
     emergencyQrBtn.style.display = 'inline-block';
+    extendSessionBtn.style.display = 'inline-block';
     stopBtn.style.display = 'inline-block';
     sidebar.style.display = 'block';
     document.getElementById('sessionTimer').style.display = 'block';
@@ -1181,6 +1186,10 @@ async function performAutoRefresh(isManual = false) {
             currentSession.token = data.token;
             currentSession.scan_url = data.scan_url;
             currentSession.ttl = data.ttl || 15;
+            if (data.session_end && data.session_end !== currentSession.session_end) {
+                currentSession.session_end = data.session_end;
+                startSessionTimer(data.session_end);
+            }
             currentSession.signed_qr = !!data.signed_qr;
             currentSession.generated_by = data.generated_by || null;
             const generatorLabel = document.getElementById('teacherQrGenerator');
@@ -1292,6 +1301,29 @@ emergencyQrBtn.addEventListener('click', async () => {
     }
 });
 
+extendSessionBtn.addEventListener('click', async () => {
+    const sessionId = currentSession?.session_id || currentSession?.id;
+    if (!sessionId) return;
+    extendSessionBtn.disabled = true;
+    try {
+        const template = @json(route('teacher.qr.extend', ['session' => '__SESSION__']));
+        const response = await fetch(template.replace('__SESSION__', encodeURIComponent(sessionId)), {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ minutes: 10 })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || 'Unable to extend attendance.');
+        currentSession.session_end = data.session_end;
+        startSessionTimer(data.session_end);
+        showTeacherToast('Attendance session extended by 10 minutes.', 'success');
+    } catch (error) {
+        showTeacherToast(error.message || 'Unable to extend attendance.', 'error');
+    } finally {
+        extendSessionBtn.disabled = false;
+    }
+});
+
 // Stop session
 stopBtn.addEventListener('click', async () => {
     const sessionId = currentSession?.session_id || currentSession?.id;
@@ -1349,6 +1381,7 @@ function enterGracePeriod() {
     startBtn.style.display = 'none';
     refreshBtn.style.display = 'none';
     emergencyQrBtn.style.display = 'none';
+    extendSessionBtn.style.display = 'none';
     stopBtn.style.display = 'none';
     document.getElementById('sessionTimer').style.display = 'none';
     document.getElementById('qrRefreshCountdown').style.display = 'none';
@@ -1737,6 +1770,14 @@ function subscribeToTeacherAttendanceUpdates() {
                 if (!currentSession || payload.session_id !== (currentSession.session_id || currentSession.id)) return;
                 performAutoRefresh(false);
                 updateClockIns();
+            })
+            .listen('.attendance.session.changed', (payload) => {
+                if (!currentSession || payload.session_id !== (currentSession.session_id || currentSession.id)) return;
+                if (payload.change_type === 'closed') enterGracePeriod();
+                if (payload.change_type === 'extended') {
+                    currentSession.session_end = payload.session_ends_at;
+                    startSessionTimer(payload.session_ends_at);
+                }
             });
 
         echoInstance.connector?.pusher?.connection?.bind('connected', () => {

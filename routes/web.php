@@ -494,6 +494,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::post('/qr/start', [App\Http\Controllers\QrAttendanceController::class, 'startTeacherSession'])->name('qr.start');
     Route::post('/qr/refresh', [App\Http\Controllers\QrAttendanceController::class, 'refreshTeacherToken'])->name('qr.refresh');
     Route::post('/qr/sessions/{session}/emergency', [App\Http\Controllers\AttendanceQrTokenController::class, 'emergency'])->middleware('throttle:6,1')->name('qr.emergency');
+    Route::post('/qr/sessions/{session}/extend', [App\Http\Controllers\AttendanceSessionControlController::class, 'extend'])->middleware('throttle:6,1')->name('qr.extend');
     Route::post('/qr/stop', [App\Http\Controllers\QrAttendanceController::class, 'stopTeacherSession'])->name('qr.stop');
     Route::post('/qr/override', [App\Http\Controllers\QrAttendanceController::class, 'overrideStudentStatus'])->name('qr.override');
     Route::get('/qr/clockins', [App\Http\Controllers\QrAttendanceController::class, 'getTeacherClockIns'])->name('qr.clockins');

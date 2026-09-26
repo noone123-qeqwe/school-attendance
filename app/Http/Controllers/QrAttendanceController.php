@@ -10,6 +10,7 @@ use App\Services\WebauthnService;
 use App\Services\LocationIntegrityService;
 use App\Services\AttendanceQrTokenService;
 use App\Events\TeacherAttendanceUpdated;
+use App\Events\AttendanceSessionChanged;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -342,9 +343,8 @@ class QrAttendanceController extends Controller
 
         $subject = Subject::where('code', $request->subject_code)->first();
         if ($subject) {
-            $isAuthorized = ($subject->instructor_id === $teacherId)
-                || (in_array($user->role, ['admin', 'department_head']))
-                || (!empty($subject->instructor) && strcasecmp(trim($subject->instructor), trim($user->name)) === 0);
+            $isAuthorized = ((int) $subject->instructor_id === (int) $teacherId)
+                || (in_array($user->role, ['admin', 'department_head']));
             if (!$isAuthorized) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
             }
@@ -391,6 +391,17 @@ class QrAttendanceController extends Controller
                     'teacher_longitude' => $session->classroom_lng,
                     'teacher_accuracy_meters' => $request->teacher_accuracy,
                     'allowed_radius_meters' => $session->getAllowedRadius(),
+                ]);
+            }
+
+            try {
+                AttendanceSessionChanged::dispatch(
+                    $session->id, $teacherId, $session->subject_code,
+                    'started', $session->session_ends_at->timestamp
+                );
+            } catch (\Throwable $exception) {
+                Log::warning('Attendance session start broadcast failed', [
+                    'session_id' => $session->id, 'error' => $exception->getMessage(),
                 ]);
             }
 
@@ -521,9 +532,9 @@ class QrAttendanceController extends Controller
         }
 
         $user = Auth::user();
-        $isAuthorized = ($session->created_by === Auth::id())
+        $isAuthorized = ((int) $session->created_by === (int) Auth::id())
             || (in_array($user->role, ['admin', 'department_head']))
-            || ($session->subject && ($session->subject->instructor_id === Auth::id() || (!empty($session->subject->instructor) && strcasecmp(trim($session->subject->instructor), trim($user->name)) === 0)));
+            || ((int) $session->subject?->instructor_id === (int) Auth::id());
         if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
@@ -541,6 +552,7 @@ class QrAttendanceController extends Controller
                 'scan_url' => route('qr.scan', $rawToken),
                 'expires_at' => $signedToken->expires_at->timestamp,
                 'ttl' => (int) config('student_assistants.qr_token_ttl', 60),
+                'session_end' => $session->session_ends_at->timestamp,
                 'signed_qr' => true,
                 'generated_by' => $signedToken->generator?->name,
             ]);
@@ -593,14 +605,39 @@ class QrAttendanceController extends Controller
         }
 
         $user = Auth::user();
-        $isAuthorized = ($session->created_by === Auth::id())
+        $isAuthorized = ((int) $session->created_by === (int) Auth::id())
             || (in_array($user->role, ['admin', 'department_head']))
-            || ($session->subject && ($session->subject->instructor_id === Auth::id() || (!empty($session->subject->instructor) && strcasecmp(trim($session->subject->instructor), trim($user->name)) === 0)));
+            || ((int) $session->subject?->instructor_id === (int) Auth::id());
         if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
-        $session->update(['active' => false]);
+        $session = \Illuminate\Support\Facades\DB::transaction(function () use ($session, $user) {
+            $locked = AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+            $locked->update(['active' => false]);
+            $activeQr = $locked->activeQrToken()->first();
+            if ($activeQr) {
+                $activeQr->update(['active_session_id' => null, 'invalidated_at' => now()]);
+                activity('attendance-qr')->causedBy($user)->performedOn($locked)
+                    ->withProperties([
+                        'attendance_session_id' => $locked->id,
+                        'qr_token_id' => $activeQr->id,
+                        'reason' => 'session_closed',
+                    ])->log('qr_invalidated');
+            }
+            return $locked;
+        });
+        try {
+            AttendanceSessionChanged::dispatch(
+                $session->id, (int) ($session->subject?->instructor_id ?: $session->created_by),
+                $session->subject_code, 'closed', $session->session_ends_at->timestamp,
+                $user->id
+            );
+        } catch (\Throwable $exception) {
+            Log::warning('Attendance session closure broadcast failed', [
+                'session_id' => $session->id, 'error' => $exception->getMessage(),
+            ]);
+        }
 
         // Dispatch notifications for absent/late students safely
         $subject = $session->subject;

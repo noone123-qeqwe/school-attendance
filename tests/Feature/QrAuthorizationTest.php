@@ -5,6 +5,10 @@ namespace Tests\Feature;
 use App\Models\Subject;
 use App\Models\User;
 use App\Models\AttendanceSession;
+use App\Jobs\SendTeacherSessionNotification;
+use App\Models\AttendanceQrToken;
+use App\Services\AttendanceQrTokenService;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -55,6 +59,27 @@ class QrAuthorizationTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_matching_teacher_name_does_not_grant_class_control(): void
+    {
+        $owner = User::factory()->create(['role' => 'teacher', 'name' => 'Same Name']);
+        $other = User::factory()->create(['role' => 'teacher', 'name' => 'Same Name']);
+        $subject = Subject::factory()->create([
+            'instructor_id' => $owner->id,
+            'instructor' => 'Same Name',
+        ]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code,
+            'created_by' => $owner->id,
+            'active' => true,
+        ]);
+
+        $this->actingAs($other)->postJson(route('teacher.qr.stop'), ['session_id' => $session->id])
+            ->assertForbidden();
+        $this->actingAs($other)->postJson(route('teacher.qr.start'), [
+            'subject_code' => $subject->code,
+        ])->assertForbidden();
+    }
+
     public function test_teacher_cannot_read_another_teachers_live_clockins()
     {
         $owner = User::factory()->create(['role' => 'teacher']);
@@ -68,6 +93,82 @@ class QrAuthorizationTest extends TestCase
         $this->actingAs($other)->getJson(route('teacher.qr.clockins', [
             'session_id' => $session->id,
         ]))->assertForbidden();
+    }
+
+    public function test_teacher_can_extend_an_active_session_and_change_is_audited(): void
+    {
+        Queue::fake();
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $subject = Subject::factory()->create(['instructor_id' => $teacher->id]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code,
+            'created_by' => $teacher->id,
+            'active' => true,
+            'session_ends_at' => now()->addMinutes(20),
+        ]);
+        $originalEnd = $session->session_ends_at->timestamp;
+
+        $this->actingAs($teacher)->postJson(route('teacher.qr.extend', $session), [
+            'minutes' => 10,
+        ])->assertOk()->assertJsonPath('session_end', $originalEnd + 600);
+
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => AttendanceSession::class,
+            'subject_id' => $session->id,
+            'description' => 'attendance_session_extended',
+        ]);
+        Queue::assertPushed(SendTeacherSessionNotification::class, fn ($job) =>
+            $job->sessionId === $session->id && $job->changeType === 'extended'
+        );
+    }
+
+    public function test_only_class_teacher_can_extend_and_closed_session_cannot_be_reopened(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $other = User::factory()->create(['role' => 'teacher']);
+        $subject = Subject::factory()->create(['instructor_id' => $teacher->id]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code,
+            'created_by' => $teacher->id,
+            'active' => true,
+            'session_ends_at' => now()->addMinutes(20),
+        ]);
+
+        $this->actingAs($other)->postJson(route('teacher.qr.extend', $session), ['minutes' => 10])
+            ->assertForbidden();
+        $this->actingAs($teacher)->postJson(route('teacher.qr.extend', $session), ['minutes' => 0])
+            ->assertUnprocessable();
+        $session->update(['active' => false]);
+        $this->actingAs($teacher)->postJson(route('teacher.qr.extend', $session), ['minutes' => 10])
+            ->assertUnprocessable();
+    }
+
+    public function test_closing_session_invalidates_signed_qr_and_records_audit(): void
+    {
+        Queue::fake();
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $subject = Subject::factory()->create(['instructor_id' => $teacher->id]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code,
+            'created_by' => $teacher->id,
+            'active' => true,
+            'session_ends_at' => now()->addMinutes(20),
+        ]);
+        $token = $this->actingAs($teacher)->postJson(route('teacher.qr.emergency', $session))
+            ->assertOk()->json('token');
+
+        $this->actingAs($teacher)->postJson(route('teacher.qr.stop'), [
+            'session_id' => $session->id,
+        ])->assertOk();
+
+        $this->assertFalse($session->fresh()->active);
+        $this->assertSame(0, AttendanceQrToken::where('active_session_id', $session->id)->count());
+        $this->assertSame('closed', app(AttendanceQrTokenService::class)->inspect($token)['status']);
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => AttendanceSession::class,
+            'subject_id' => $session->id,
+            'description' => 'attendance_session_closed',
+        ]);
     }
 
     public function test_unauthorized_user_gets_404_for_nonexistent_session()
