@@ -10,6 +10,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\WebauthnCredential;
 use App\Services\WebauthnService;
+use App\Services\AttendanceQrTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -146,6 +147,70 @@ class QrDistanceValidationTest extends TestCase
             ]);
 
         $response->assertStatus(422)->assertJsonPath('error_type', 'outside_classroom');
+    }
+
+    public function test_signed_teacher_qr_uses_existing_student_attendance_checks()
+    {
+        $tokens = app(AttendanceQrTokenService::class);
+        $legacy = $this->session->token;
+        $signed = $tokens->tokenFor($tokens->issue($this->session, $this->teacher, 'emergency'));
+
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $legacy,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ])->assertStatus(422);
+
+        $this->actingAs($this->student)->postJson('/qr/verify-options', ['token' => $signed])
+            ->assertOk()->assertJsonPath('success', true);
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $signed,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ])->assertOk()->assertJsonPath('success', true);
+        $audit = \Spatie\Activitylog\Models\Activity::where('description', 'qr_scanned')->latest('id')->firstOrFail();
+        $this->assertSame($this->session->id, $audit->properties['attendance_session_id']);
+        $this->assertStringNotContainsString($signed, $audit->properties->toJson());
+    }
+
+    public function test_replaced_and_expired_signed_qr_are_rejected_by_scan_endpoint()
+    {
+        $tokens = app(AttendanceQrTokenService::class);
+        $old = $tokens->tokenFor($tokens->issue($this->session, $this->teacher, 'emergency'));
+        $new = $tokens->tokenFor($tokens->issue($this->session, $this->teacher, 'emergency'));
+
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $old,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ])->assertStatus(422)->assertJsonPath('error_detail', 'qr_replaced');
+
+        $this->travel(61)->seconds();
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $new,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ])->assertStatus(422)->assertJsonPath('error_detail', 'qr_expired');
+    }
+
+    public function test_legacy_fingerprint_challenge_cannot_finish_after_signed_qr_takes_over()
+    {
+        $legacy = $this->session->token;
+        $this->actingAs($this->student)->postJson('/qr/verify-options', ['token' => $legacy])
+            ->assertOk();
+        app(AttendanceQrTokenService::class)->issue($this->session, $this->teacher, 'emergency');
+
+        $this->actingAs($this->student)->postJson('/qr/verify-complete', [
+            'token' => $legacy,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+            'credential' => ['id' => 'fake', 'response' => []],
+        ])->assertStatus(422);
     }
 
     public function test_started_fingerprint_verification_can_finish_after_qr_rotates()

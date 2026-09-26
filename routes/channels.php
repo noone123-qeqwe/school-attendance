@@ -27,3 +27,8 @@ Broadcast::channel('admin-dashboard', function ($user) {
 Broadcast::channel('teacher-dashboard.{teacherId}', function ($user, $teacherId) {
     return (int) $user->id === (int) $teacherId && ($user->isTeacher() || $user->isAdmin());
 });
+
+Broadcast::channel('assistant-session.{sessionId}', function ($user, $sessionId) {
+    $session = \App\Models\AttendanceSession::find($sessionId);
+    return $session && $user->can('viewAssistantQr', $session);
+});

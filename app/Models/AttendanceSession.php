@@ -63,6 +63,16 @@ class AttendanceSession extends Model
         return $this->hasMany(Attendance::class, 'session_id');
     }
 
+    public function qrTokens()
+    {
+        return $this->hasMany(AttendanceQrToken::class);
+    }
+
+    public function activeQrToken()
+    {
+        return $this->hasOne(AttendanceQrToken::class, 'active_session_id');
+    }
+
     public function isTokenValid(): bool
     {
         return $this->active && $this->expires_at && $this->expires_at->isFuture();

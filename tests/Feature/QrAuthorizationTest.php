@@ -55,6 +55,21 @@ class QrAuthorizationTest extends TestCase
         $response->assertStatus(403);
     }
 
+    public function test_teacher_cannot_read_another_teachers_live_clockins()
+    {
+        $owner = User::factory()->create(['role' => 'teacher']);
+        $other = User::factory()->create(['role' => 'teacher']);
+        $subject = Subject::factory()->create(['instructor_id' => $owner->id]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code,
+            'created_by' => $owner->id,
+        ]);
+
+        $this->actingAs($other)->getJson(route('teacher.qr.clockins', [
+            'session_id' => $session->id,
+        ]))->assertForbidden();
+    }
+
     public function test_unauthorized_user_gets_404_for_nonexistent_session()
     {
         $teacher = User::factory()->create(['role' => 'teacher']);

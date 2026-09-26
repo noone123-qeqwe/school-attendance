@@ -10,8 +10,11 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Event;
 use App\Models\AttendanceSession;
 use App\Policies\AttendanceSessionPolicy;
+use App\Events\AttendanceQrChanged;
+use App\Listeners\QueueTeacherQrNotification;
 use App\Http\Middleware\SecurityHeaders;
 use App\Services\VersionService;
 
@@ -27,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(AttendanceSession::class, AttendanceSessionPolicy::class);
+        Event::listen(AttendanceQrChanged::class, QueueTeacherQrNotification::class);
         // ── Centralized Application Version Directives & Global View Sharing ───
         Blade::directive('appVersion', function () {
             return '<?php echo e(app(\App\Services\VersionService::class)->getVersion()); ?>';

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AttendanceSession;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class QrSessionService
 {
@@ -73,6 +74,11 @@ class QrSessionService
      */
     public function refreshToken(AttendanceSession $session)
     {
+        return DB::transaction(function () use ($session) {
+        $session = AttendanceSession::whereKey($session->id)->lockForUpdate()->firstOrFail();
+        if ($session->qrTokens()->exists()) {
+            throw new \Exception('Signed QR rotation is active for this session.');
+        }
         $session->markInactiveIfExpired();
 
         if (!$session->isSessionActive()) {
@@ -116,5 +122,6 @@ class QrSessionService
         ]);
         
         return $session;
+        });
     }
 }

@@ -351,6 +351,10 @@ Route::middleware('auth')->prefix('mobile')->name('mobile.')->group(function () 
 Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/student-assistant/classes', [App\Http\Controllers\StudentAssistantSessionController::class, 'index'])->name('student-assistant.classes');
     Route::get('/student-assistant/sessions/{session}', [App\Http\Controllers\StudentAssistantSessionController::class, 'show'])->name('student-assistant.sessions.show');
+    Route::get('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'status'])->name('student-assistant.qr.status');
+    Route::post('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'generate'])->middleware('throttle:12,1')->name('student-assistant.qr.generate');
+    Route::post('/student-assistant/sessions/{session}/qr/rotate', [App\Http\Controllers\AttendanceQrTokenController::class, 'rotate'])->middleware('throttle:12,1')->name('student-assistant.qr.rotate');
+    Route::post('/student-assistant/sessions/{session}/qr/replace', [App\Http\Controllers\AttendanceQrTokenController::class, 'replace'])->middleware('throttle:6,1')->name('student-assistant.qr.replace');
     Route::get('/profile', [PTController::class, 'profile'])->name('profile');
     Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store')->middleware('device.bound');
     Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
@@ -426,7 +430,7 @@ if (app()->environment('local', 'testing')) {
 }
 
 // QR Scan (student) - allow public access so guests can scan and login through the QR flow
-Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->name('qr.scan');
+Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->middleware('audit.attendance.qr')->name('qr.scan');
 
 Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/qr/confirm', [App\Http\Controllers\QrAttendanceController::class, 'confirm'])->name('qr.confirm')->middleware('device.bound');
@@ -435,11 +439,11 @@ Route::middleware(['auth', 'student'])->group(function () {
 
     // WebAuthn QR verification
     Route::post('/qr/verify-options', [App\Http\Controllers\QrAttendanceController::class, 'verificationOptions'])->name('qr.verify.options');
-    Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->name('qr.verify.complete');
+    Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->middleware('audit.attendance.qr')->name('qr.verify.complete');
     
     // Direct QR Scanner Processing
-    Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process')->middleware('device.bound');
-    Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct')->middleware('device.bound');
+    Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process')->middleware(['device.bound', 'audit.attendance.qr']);
+    Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct')->middleware(['device.bound', 'audit.attendance.qr']);
 
     // Continuous Presence Verification
     Route::post('/student/presence-verify', [App\Http\Controllers\QrAttendanceController::class, 'verifyPresence'])->name('student.presence.verify')->middleware('device.bound');
@@ -489,6 +493,7 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/qr/schedule-info', [App\Http\Controllers\QrAttendanceController::class, 'getScheduleInfo'])->name('qr.schedule');
     Route::post('/qr/start', [App\Http\Controllers\QrAttendanceController::class, 'startTeacherSession'])->name('qr.start');
     Route::post('/qr/refresh', [App\Http\Controllers\QrAttendanceController::class, 'refreshTeacherToken'])->name('qr.refresh');
+    Route::post('/qr/sessions/{session}/emergency', [App\Http\Controllers\AttendanceQrTokenController::class, 'emergency'])->middleware('throttle:6,1')->name('qr.emergency');
     Route::post('/qr/stop', [App\Http\Controllers\QrAttendanceController::class, 'stopTeacherSession'])->name('qr.stop');
     Route::post('/qr/override', [App\Http\Controllers\QrAttendanceController::class, 'overrideStudentStatus'])->name('qr.override');
     Route::get('/qr/clockins', [App\Http\Controllers\QrAttendanceController::class, 'getTeacherClockIns'])->name('qr.clockins');

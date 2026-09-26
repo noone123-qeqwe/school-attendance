@@ -8,6 +8,7 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Services\WebauthnService;
 use App\Services\LocationIntegrityService;
+use App\Services\AttendanceQrTokenService;
 use App\Events\TeacherAttendanceUpdated;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -267,6 +268,28 @@ class QrAttendanceController extends Controller
 
         $activeSessionPayload = null;
         if ($activeSession) {
+            $signedHistoryExists = $activeSession->qrTokens()->exists();
+            if ($signedHistoryExists) {
+                $signedToken = app(AttendanceQrTokenService::class)->issue($activeSession, $teacher, 'auto');
+                $rawToken = app(AttendanceQrTokenService::class)->tokenFor($signedToken);
+                $activeSessionPayload = [
+                    'success' => true,
+                    'session_id' => $activeSession->id,
+                    'token' => $rawToken,
+                    'session_code' => null,
+                    'formatted_code' => null,
+                    'scan_url' => route('qr.scan', $rawToken),
+                    'expires_at' => $signedToken->expires_at->timestamp,
+                    'ttl' => (int) config('student_assistants.qr_token_ttl', 60),
+                    'remaining_ttl' => max(1, now()->diffInSeconds($signedToken->expires_at, false)),
+                    'session_end' => $activeSession->session_ends_at->timestamp,
+                    'classroom_lat' => $activeSession->classroom_lat,
+                    'classroom_lng' => $activeSession->classroom_lng,
+                    'radius_meters' => $activeSession->getAllowedRadius(),
+                    'signed_qr' => true,
+                    'generated_by' => $signedToken->generator?->name,
+                ];
+            } else {
             // If the 15-second rotation window has elapsed, refresh to active code
             if ($activeSession->expires_at && now('Asia/Manila')->gt($activeSession->expires_at)) {
                 try {
@@ -291,9 +314,15 @@ class QrAttendanceController extends Controller
                 'classroom_lng'  => $activeSession->classroom_lng,
                 'radius_meters' => $activeSession->getAllowedRadius(),
             ];
+            }
         }
 
-        return view('teacher.qr', compact('subject', 'activeSessionPayload'));
+        $studentAssistants = $subject->studentAssistantAssignments()->with('student')
+            ->whereNotNull('active_slot')->whereNull('revoked_at')
+            ->where('starts_at', '<=', now())->where('expires_at', '>=', now())
+            ->get()->filter(fn ($assignment) => $assignment->isActive());
+
+        return view('teacher.qr', compact('subject', 'activeSessionPayload', 'studentAssistants'));
     }
     // ─────────────────────────────────────────
     // Teacher: Start QR session
@@ -499,6 +528,24 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 
+        if ($session->qrTokens()->exists()) {
+            $tokens = app(AttendanceQrTokenService::class);
+            $signedToken = $tokens->issue($session, $user, $request->boolean('manual') ? 'emergency' : 'auto');
+            $rawToken = $tokens->tokenFor($signedToken);
+
+            return response()->json([
+                'success' => true,
+                'token' => $rawToken,
+                'session_code' => null,
+                'formatted_code' => null,
+                'scan_url' => route('qr.scan', $rawToken),
+                'expires_at' => $signedToken->expires_at->timestamp,
+                'ttl' => (int) config('student_assistants.qr_token_ttl', 60),
+                'signed_qr' => true,
+                'generated_by' => $signedToken->generator?->name,
+            ]);
+        }
+
         try {
             $session = $this->qrSessionService->refreshToken($session);
 
@@ -630,6 +677,13 @@ class QrAttendanceController extends Controller
     public function getTeacherClockIns(Request $request)
     {
         $session = AttendanceSession::find($request->session_id);
+
+        if ($session) {
+            $user = $request->user();
+            $ownerId = $session->subject?->instructor_id;
+            abort_unless($user && ($user->isAdmin() || $user->isDepartmentHead()
+                || (int) $user->id === (int) $ownerId), 403);
+        }
 
         if (!$session) {
             return response()->json([
@@ -1355,7 +1409,8 @@ class QrAttendanceController extends Controller
     public function scan(Request $request, string $token)
     {
         // For now, skip signature validation to ensure QR codes work reliably
-        // The token-based validation provides sufficient security
+        // Signed QR validation is performed on the server; existing device and
+        // location checks still run before attendance can be recorded.
         
         if (!Auth::check()) {
             // Redirect the student to the normal login page, preserving the QR token
@@ -1367,15 +1422,26 @@ class QrAttendanceController extends Controller
         // Temporarily disable device binding check to prevent false rejections
         // Will re-enable once basic functionality is stable
         
-        $session = AttendanceSession::where('token', $token)
-            ->orWhere('previous_token', $token)
-            ->first();
+        $signedQr = str_starts_with($token, 'aqr.')
+            ? app(AttendanceQrTokenService::class)->inspect($token) : null;
+        if ($signedQr && $signedQr['status'] !== 'valid') {
+            return view('qr.result', [
+                'status' => $signedQr['status'] === 'closed' ? 'closed' : 'expired',
+                'message' => $signedQr['status'] === 'closed'
+                    ? 'The attendance session has ended.'
+                    : 'This QR code is expired or no longer active. Please scan the current QR.',
+            ]);
+        }
+
+        $session = $signedQr
+            ? $signedQr['token']->session
+            : AttendanceSession::where('token', $token)->orWhere('previous_token', $token)->first();
 
         if (!$session) {
             return view('qr.result', ['status' => 'expired', 'message' => 'This QR code is no longer active. Please scan the latest QR from your teacher.']);
         }
 
-        $tokenValidation = $session->validateCodeOrToken($token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        $tokenValidation = $signedQr ? ['valid' => true] : $session->validateCodeOrToken($token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
         if (!$tokenValidation['valid']) {
             return view('qr.result', ['status' => 'expired', 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR from your teacher.']);
         }
@@ -1386,6 +1452,9 @@ class QrAttendanceController extends Controller
         }
 
         $subject   = $session->subject;
+        if ($signedQr && (!$subject || !$subject->getAllStudents()->contains('id', $user->id))) {
+            return view('qr.result', ['status' => 'error', 'message' => 'You are not enrolled in this class.']);
+        }
         $now       = now();
         $todayDate = $now->toDateString();
 
@@ -1460,23 +1529,28 @@ class QrAttendanceController extends Controller
         Log::debug('QR verificationOptions request', [
             'session_id' => session()->getId(),
             'cookie' => $request->cookie(config('session.cookie')),
-            'token' => $request->token,
+            'token_hash' => hash('sha256', $request->token),
             'user_id' => optional($request->user())->id,
         ]);
 
-        $session = AttendanceSession::where('token', $request->token)
-            ->orWhere('previous_token', $request->token)
-            ->first();
+        $signedQr = str_starts_with($request->token, 'aqr.')
+            ? app(AttendanceQrTokenService::class)->inspect($request->token) : null;
+        if ($signedQr && $signedQr['status'] !== 'valid') {
+            return response()->json(['success' => false, 'message' => 'This QR is expired or no longer active. Please scan the current QR.'], 422);
+        }
+        $session = $signedQr
+            ? $signedQr['token']->session
+            : AttendanceSession::where('token', $request->token)->orWhere('previous_token', $request->token)->first();
 
         if (!$session) {
             Log::error('QR verificationOptions - attendance session not found', [
-                'token' => $request->token,
+                'token_hash' => hash('sha256', $request->token),
                 'user_id' => optional($request->user())->id,
             ]);
             return response()->json(['success' => false, 'message' => 'QR session not found. Please scan a fresh QR code.'], 422);
         }
 
-        $tokenValidation = $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        $tokenValidation = $signedQr ? ['valid' => true] : $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
         if (!$tokenValidation['valid']) {
             return response()->json(['success' => false, 'message' => 'This QR code has expired (QR codes refresh every 15 seconds). Please scan the latest QR code displayed by your teacher.'], 422);
         }
@@ -1570,9 +1644,14 @@ class QrAttendanceController extends Controller
         $user    = $request->user();
         $scanKey = "webauthn_qr_scan_{$user->id}_" . hash('sha256', $request->token);
         $startedSessionId = Cache::get($scanKey);
-        $session = AttendanceSession::where('token', $request->token)
-            ->orWhere('previous_token', $request->token)
-            ->first();
+        $signedQr = str_starts_with($request->token, 'aqr.')
+            ? app(AttendanceQrTokenService::class)->inspect($request->token) : null;
+        if ($signedQr && $signedQr['status'] !== 'valid') {
+            return response()->json(['success' => false, 'message' => 'This QR is expired or no longer active. Please scan the current QR.'], 422);
+        }
+        $session = $signedQr
+            ? $signedQr['token']->session
+            : AttendanceSession::where('token', $request->token)->orWhere('previous_token', $request->token)->first();
 
         if (!$session && $startedSessionId) {
             $session = AttendanceSession::find($startedSessionId);
@@ -1582,7 +1661,14 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'This QR code is no longer active.'], 422);
         }
 
-        $tokenValidation = $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
+        if (!$signedQr && $session->qrTokens()->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This QR was replaced. Please scan the current QR.',
+            ], 422);
+        }
+
+        $tokenValidation = $signedQr ? ['valid' => true] : $session->validateCodeOrToken($request->token, null, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
         $cacheKey = "webauthn_qr_challenge_{$user->id}_{$session->id}";
         $startedScanValid = $startedSessionId && (int) $startedSessionId === (int) $session->id && Cache::has($cacheKey);
         if (!$tokenValidation['valid'] && !$startedScanValid) {
@@ -1598,7 +1684,7 @@ class QrAttendanceController extends Controller
 
         Log::debug('QR completeVerification request', [
             'session_id' => session()->getId(),
-            'token' => $request->token,
+            'token_hash' => hash('sha256', $request->token),
             'user_id' => optional($user)->id,
             'has_cached_challenge' => !empty(Cache::get($cacheKey)),
         ]);
@@ -1639,6 +1725,9 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
         $subject   = $session->subject;
+        if ($signedQr && (!$subject || !$subject->getAllStudents()->contains('id', $user->id))) {
+            return response()->json(['success' => false, 'error_type' => 'not_enrolled', 'message' => 'You are not enrolled in this class.'], 422);
+        }
         $now       = now();
         $todayDate = $now->toDateString();
 
@@ -1870,7 +1959,10 @@ class QrAttendanceController extends Controller
         $currentAcademicYearId = \App\Models\AcademicYear::where('is_current', true)->value('id');
 
         try {
-            $attendance = Attendance::updateOrCreateRecord(
+            $attendance = app(AttendanceQrTokenService::class)->recordWhileValid(
+                $signedQr ? $request->token : null,
+                $session,
+                fn () => Attendance::updateOrCreateRecord(
                 [
                     'user_id'      => $user->id,
                     'subject_id'   => $subject->id,
@@ -1901,7 +1993,10 @@ class QrAttendanceController extends Controller
                     'method'                    => 'qr',
                     'academic_year_id'          => $currentAcademicYearId,
                 ]
+                )
             );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->errors()['qr'][0]], 422);
         } catch (\Illuminate\Database\QueryException $e) {
             // Check if it's a unique constraint violation (code 23000 or 23505)
             if ($e->getCode() == '23000' || $e->getCode() == '23505') {
@@ -2186,9 +2281,24 @@ class QrAttendanceController extends Controller
 
         $isCodeMethod = ($request->input('method') === 'code') || (!empty($extractedCode) && empty($extractedToken));
 
-        // Step 1: Look for an ACTIVE session matching token, previous_token, session_code, or previous_session_code
-        $session = null;
-        if (!empty($extractedToken) || !empty($extractedCode)) {
+        // Signed assistant/teacher QR values are verified independently of the
+        // legacy 15-second token and code rotation.
+        $signedQr = !empty($extractedToken) && str_starts_with($extractedToken, 'aqr.')
+            ? app(AttendanceQrTokenService::class)->inspect($extractedToken) : null;
+        if ($signedQr && $signedQr['status'] !== 'valid') {
+            return response()->json([
+                'success' => false,
+                'error_type' => $signedQr['status'] === 'closed' ? 'session_closed' : 'invalid_or_expired',
+                'error_detail' => 'qr_' . $signedQr['status'],
+                'message' => $signedQr['status'] === 'closed'
+                    ? 'The attendance session has ended.'
+                    : 'This QR code is expired or no longer active. Please scan the current QR.',
+            ], 422);
+        }
+
+        // Step 1: Look for an ACTIVE legacy session matching token or code.
+        $session = $signedQr ? $signedQr['token']->session : null;
+        if (!$session && (!empty($extractedToken) || !empty($extractedCode))) {
             $session = AttendanceSession::with(['subject.instructor'])
                 ->where('active', true)
                 ->where('session_ends_at', '>', now('Asia/Manila'))
@@ -2233,7 +2343,7 @@ class QrAttendanceController extends Controller
         }
 
         // Step 3: Validate server-side 15-second expiration and network grace tolerance
-        if ($session) {
+        if ($session && !$signedQr) {
             $codeValidation = $session->validateCodeOrToken($extractedToken, $extractedCode, self::QR_TTL_SECONDS, self::NETWORK_GRACE_SECONDS);
             if (!$codeValidation['valid']) {
                 return response()->json([
@@ -2319,6 +2429,14 @@ class QrAttendanceController extends Controller
                 'success' => false,
                 'message' => 'Class subject not found.'
             ], 404);
+        }
+
+        if ($signedQr && !$subject->getAllStudents()->contains('id', $user->id)) {
+            return response()->json([
+                'success' => false,
+                'error_type' => 'not_enrolled',
+                'message' => 'You are not enrolled in this class.',
+            ], 422);
         }
 
         $todayDate = now()->toDateString();
@@ -2542,7 +2660,10 @@ class QrAttendanceController extends Controller
 
         // 5. Record Attendance in Database
         try {
-            $attendance = Attendance::updateOrCreateRecord(
+            $attendance = app(AttendanceQrTokenService::class)->recordWhileValid(
+                $signedQr ? $extractedToken : null,
+                $session,
+                fn () => Attendance::updateOrCreateRecord(
                 [
                     'user_id'      => $user->id,
                     'subject_id'   => $subject->id,
@@ -2573,7 +2694,14 @@ class QrAttendanceController extends Controller
                     'method'                    => $isCodeMethod ? 'code' : 'qr',
                     'academic_year_id'          => $currentAcademicYearId,
                 ]
+                )
             );
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'error_type' => 'invalid_or_expired',
+                'message' => $e->errors()['qr'][0],
+            ], 422);
         } catch (\Exception $e) {
             Log::error('Failed to record attendance in processScan: ' . $e->getMessage(), [
                 'user_id' => $user->id,

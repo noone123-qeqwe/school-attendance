@@ -42,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'student'       => \App\Http\Middleware\StudentMiddleware::class,
             'parent'        => \App\Http\Middleware\ParentMiddleware::class,
             'device.bound'  => \App\Http\Middleware\EnsureStudentDeviceIsBound::class,
+            'audit.attendance.qr' => \App\Http\Middleware\AuditAttendanceQrScan::class,
             'admin.ip'      => \App\Http\Middleware\EnsureAdminIpWhitelisted::class,
             'admin.super'   => \App\Http\Middleware\SuperAdminMiddleware::class,
             'dept_head'     => \App\Http\Middleware\DepartmentHeadMiddleware::class,

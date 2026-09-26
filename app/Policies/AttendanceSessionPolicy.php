@@ -13,7 +13,7 @@ class AttendanceSessionPolicy
     {
         // Admin access to teacher management must not imply student-assistant
         // QR authority, which is intentionally student-only.
-        if (in_array($ability, ['viewAssistantQr', 'generateAssistantQr'], true)) {
+        if (in_array($ability, ['viewAssistantClass', 'viewAssistantQr', 'generateAssistantQr'], true)) {
             return null;
         }
 
@@ -37,7 +37,7 @@ class AttendanceSessionPolicy
 
     public function viewAssistantQr(User $user, AttendanceSession $session): bool
     {
-        if (!$user->isStudent() || !$user->isActive() || !$session->isSessionActive()) {
+        if (!$this->viewAssistantClass($user, $session) || !$session->isSessionActive()) {
             return false;
         }
 
@@ -47,21 +47,6 @@ class AttendanceSessionPolicy
         }
 
         $subject = $session->subject;
-        if (!$subject || !$subject->getAllStudents()->contains('id', $user->id)) {
-            return false;
-        }
-
-        $assignment = ClassStudentAssistant::where('subject_id', $subject->id)
-            ->where('student_id', $user->id)
-            ->whereNotNull('active_slot')
-            ->whereNull('revoked_at')
-            ->where('starts_at', '<=', $now)
-            ->where('expires_at', '>=', $now)
-            ->first();
-        if (!$assignment) {
-            return false;
-        }
-
         // The teacher may explicitly start an ad-hoc class. When a schedule
         // exists today, assistants must wait until its attendance window opens.
         $todaySchedules = $subject->schedules->filter(
@@ -77,6 +62,31 @@ class AttendanceSessionPolicy
                 ->subMinutes($grace);
             return $now->gte($windowOpens);
         });
+    }
+
+    public function viewAssistantClass(User $user, AttendanceSession $session): bool
+    {
+        if (!$user->isStudent() || !$user->isActive()) {
+            return false;
+        }
+
+        $subject = $session->subject;
+        if (!$subject || !$subject->getAllStudents()->contains('id', $user->id)) {
+            return false;
+        }
+
+        $now = now('Asia/Manila');
+        $assignment = ClassStudentAssistant::where('subject_id', $subject->id)
+            ->where('student_id', $user->id)
+            ->whereNotNull('active_slot')
+            ->whereNull('revoked_at')
+            ->where('starts_at', '<=', $now)
+            ->where('expires_at', '>=', $now)
+            ->first();
+        if (!$assignment) {
+            return false;
+        }
+        return true;
     }
 
     public function generateAssistantQr(User $user, AttendanceSession $session): bool
