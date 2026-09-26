@@ -22,8 +22,38 @@
             }
         }
         $isMobileDevice = class_exists(\App\Helpers\DeviceHelper::class) && \App\Helpers\DeviceHelper::isMobile();
-        $mobileVideoUrl = asset('videos/Mobile.mp4');
-        $desktopVideoUrl = asset('videos/Desktop.mp4');
+
+        // Dynamically resolve video assets with cache-busting timestamp (filemtime)
+        $mobilePath  = public_path('videos/Mobile.mp4');
+        $desktopPath = public_path('videos/Desktop.mp4');
+        $introPath   = public_path('videos/intro.mp4');
+
+        $hasMobile  = file_exists($mobilePath);
+        $hasDesktop = file_exists($desktopPath);
+        $hasIntro   = file_exists($introPath);
+
+        // Mobile video selection with fallback: Mobile.mp4 -> intro.mp4 -> Desktop.mp4
+        if ($hasMobile) {
+            $mobileVideoUrl = asset('videos/Mobile.mp4') . '?v=' . filemtime($mobilePath);
+        } elseif ($hasIntro) {
+            $mobileVideoUrl = asset('videos/intro.mp4') . '?v=' . filemtime($introPath);
+        } elseif ($hasDesktop) {
+            $mobileVideoUrl = asset('videos/Desktop.mp4') . '?v=' . filemtime($desktopPath);
+        } else {
+            $mobileVideoUrl = asset('videos/Mobile.mp4') . '?v=' . time();
+        }
+
+        // Desktop video selection with fallback: Desktop.mp4 -> intro.mp4 -> Mobile.mp4
+        if ($hasDesktop) {
+            $desktopVideoUrl = asset('videos/Desktop.mp4') . '?v=' . filemtime($desktopPath);
+        } elseif ($hasIntro) {
+            $desktopVideoUrl = asset('videos/intro.mp4') . '?v=' . filemtime($introPath);
+        } elseif ($hasMobile) {
+            $desktopVideoUrl = asset('videos/Mobile.mp4') . '?v=' . filemtime($mobilePath);
+        } else {
+            $desktopVideoUrl = asset('videos/Desktop.mp4') . '?v=' . time();
+        }
+
         $initialVideoSrc = $isMobileDevice ? $mobileVideoUrl : $desktopVideoUrl;
     @endphp
 
@@ -274,12 +304,8 @@
 
         // Directly bind video.src on the video element for 100% reliable cross-browser source switching
         if (video) {
-            const cur = (video.currentSrc || video.src || '').toLowerCase();
-            const shouldBeMobile = isMobileScreen;
-            const isCurrentlyMobile = cur.includes('mobile.mp4');
-            const isCurrentlyDesktop = cur.includes('desktop.mp4');
-
-            if (!cur || (shouldBeMobile && !isCurrentlyMobile) || (!shouldBeMobile && !isCurrentlyDesktop)) {
+            const cur = video.currentSrc || video.src || '';
+            if (!cur || !cur.includes(targetVideo)) {
                 video.src = targetVideo;
                 const srcEl = document.getElementById('introVideoSrc');
                 if (srcEl) srcEl.src = targetVideo;
@@ -293,11 +319,10 @@
             const nowMobile = window.innerWidth <= 768 || 
                               window.screen.width <= 768 || 
                               (window.matchMedia && window.matchMedia('(orientation: portrait)').matches);
-            const cur = (video.currentSrc || video.src || '').toLowerCase();
             const shouldTarget = nowMobile ? MOBILE_VIDEO : DESKTOP_VIDEO;
-            const isCorrect = nowMobile ? cur.includes('mobile.mp4') : cur.includes('desktop.mp4');
+            const cur = video.currentSrc || video.src || '';
 
-            if (!isCorrect) {
+            if (!cur.includes(shouldTarget)) {
                 const prev = video.currentTime || 0;
                 video.src = shouldTarget;
                 const srcEl = document.getElementById('introVideoSrc');
