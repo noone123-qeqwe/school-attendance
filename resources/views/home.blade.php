@@ -1004,181 +1004,228 @@
         .page-enter {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 20px;
         }
 
-        /* Hero banner compact & clean */
+        /* Hero banner: modern, spacious, luxurious */
         .student-hero-banner {
-            padding: 14px 14px !important;
-            border-radius: 16px !important;
-            margin-bottom: 12px !important;
+            padding: 20px 18px !important;
+            border-radius: 20px !important;
+            margin-bottom: 20px !important;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
         }
         .student-hero-inner {
-            gap: 11px !important;
+            gap: 16px !important;
         }
         .student-greeting-badge {
-            font-size: 0.68rem !important;
-            padding: 2px 8px !important;
+            font-size: 0.76rem !important;
+            padding: 4px 10px !important;
+            border-radius: 8px !important;
         }
         .student-status-badge {
-            font-size: 0.68rem !important;
-            padding: 2px 8px !important;
+            font-size: 0.76rem !important;
+            padding: 4px 10px !important;
+            border-radius: 8px !important;
         }
         .student-hero-profile {
-            gap: 12px !important;
+            gap: 14px !important;
         }
         .student-avatar-box {
-            width: 48px !important;
-            height: 48px !important;
-            min-width: 48px !important;
-            border-radius: 14px !important;
+            width: 56px !important;
+            height: 56px !important;
+            min-width: 56px !important;
+            border-radius: 16px !important;
         }
         .student-avatar-img {
-            border-radius: 12px !important;
+            border-radius: 14px !important;
         }
         .student-hero-name {
-            font-size: 1.2rem !important;
-            margin-bottom: 3px !important;
+            font-size: 1.35rem !important;
+            font-weight: 800 !important;
+            margin-bottom: 4px !important;
         }
         .student-meta-strip {
-            gap: 4px !important;
+            gap: 6px !important;
+            flex-wrap: wrap !important;
         }
         .student-meta-chip {
-            font-size: 0.7rem !important;
-            padding: 2px 6px !important;
-            border-radius: 6px !important;
+            font-size: 0.76rem !important;
+            padding: 3px 8px !important;
+            border-radius: 8px !important;
         }
+
+        /* Hero Deck: Comfortable 2-column + full-width clock layout */
         .student-hero-deck {
-            grid-template-columns: repeat(3, 1fr) !important;
-            gap: 6px !important;
-            padding-top: 10px !important;
-            margin-top: 2px !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 10px !important;
+            padding-top: 14px !important;
+            margin-top: 4px !important;
         }
         .hero-deck-card {
             flex-direction: column !important;
             align-items: center !important;
             text-align: center !important;
-            padding: 8px 4px !important;
-            gap: 4px !important;
-            border-radius: 10px !important;
+            padding: 12px 10px !important;
+            gap: 6px !important;
+            border-radius: 14px !important;
+            background: rgba(255, 255, 255, 0.035) !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            min-height: 82px !important;
+        }
+        /* Campus Clock pill spans both columns on mobile */
+        .hero-deck-card:first-child {
+            grid-column: span 2 !important;
+            flex-direction: row !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
+            padding: 12px 16px !important;
+            gap: 12px !important;
+        }
+        .hero-deck-card:first-child .hero-deck-body {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
         }
         .hero-deck-icon {
-            width: 28px !important;
-            height: 28px !important;
-            min-width: 28px !important;
-            font-size: 0.82rem !important;
-            border-radius: 8px !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            font-size: 1rem !important;
+            border-radius: 10px !important;
         }
         .hero-deck-value {
-            font-size: 0.85rem !important;
+            font-size: 1.05rem !important;
+            font-weight: 800 !important;
         }
         .hero-deck-label {
-            font-size: 0.62rem !important;
+            font-size: 0.74rem !important;
+            font-weight: 600 !important;
+            opacity: 0.8 !important;
         }
 
         /* Quick Stats KPI Grid */
         #realStats, #skelStats {
-            gap: 8px !important;
-            margin-bottom: 10px !important;
+            gap: 12px !important;
+            margin-bottom: 20px !important;
         }
         #realStats .ent-kpi-card {
-            padding: 10px 12px !important;
-            border-radius: 12px !important;
+            padding: 16px !important;
+            border-radius: 16px !important;
+            min-height: 98px !important;
         }
         #realStats .ent-kpi-icon {
-            width: 32px !important;
-            height: 32px !important;
-            font-size: 0.95rem !important;
-            margin-bottom: 6px !important;
-            border-radius: 8px !important;
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 1.15rem !important;
+            margin-bottom: 10px !important;
+            border-radius: 11px !important;
         }
         #realStats .ent-kpi-label {
-            font-size: 0.66rem !important;
-            margin-bottom: 2px !important;
+            font-size: 0.78rem !important;
+            font-weight: 600 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.4px !important;
+            margin-bottom: 4px !important;
+            white-space: normal !important;
         }
         #realStats .ent-kpi-value {
-            font-size: 1.35rem !important;
+            font-size: 1.55rem !important;
+            font-weight: 800 !important;
+            line-height: 1.15 !important;
         }
-
 
         /* Today's Schedule Card */
         #todayScheduleSection {
-            margin-bottom: 8px !important;
+            margin-bottom: 20px !important;
         }
         #todayScheduleSection .adm-card,
         #todayScheduleSection article {
-            border-radius: 16px !important;
+            border-radius: 20px !important;
+            padding: 18px 16px !important;
         }
         #todayScheduleSection .adm-card-head {
-            padding: 12px 14px !important;
+            padding: 0 0 14px 0 !important;
+            margin-bottom: 14px !important;
         }
         #todayScheduleSection .adm-card-title {
-            font-size: 0.95rem !important;
-            gap: 8px !important;
+            font-size: 1.1rem !important;
+            font-weight: 800 !important;
+            gap: 10px !important;
         }
         #todayScheduleSection .adm-card-icon {
-            width: 30px !important;
-            height: 30px !important;
-            border-radius: 8px !important;
-            font-size: 0.85rem !important;
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 10px !important;
+            font-size: 1rem !important;
         }
         #todayScheduleSection div[style*="padding: 22px 24px"],
         #todayScheduleSection div[style*="padding: 28px 32px"] {
-            padding: 12px 14px !important;
+            padding: 16px !important;
         }
         #todayScheduleSection .schedule-items-grid {
-            gap: 8px !important;
+            gap: 12px !important;
         }
         #todayScheduleSection .schedule-modern-card {
-            padding: 12px 14px !important;
-            border-radius: 12px !important;
-            gap: 10px !important;
+            padding: 16px !important;
+            border-radius: 16px !important;
+            gap: 14px !important;
+            background: rgba(255, 255, 255, 0.035) !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
         }
         #todayScheduleSection .schedule-subject-title {
-            font-size: 0.95rem !important;
-            line-height: 1.25 !important;
+            font-size: 1.05rem !important;
+            font-weight: 700 !important;
+            line-height: 1.3 !important;
         }
         #todayScheduleSection .schedule-meta-row {
-            font-size: 0.76rem !important;
-            gap: 6px !important;
-            margin-top: 4px !important;
+            font-size: 0.82rem !important;
+            gap: 8px !important;
+            margin-top: 6px !important;
+            flex-wrap: wrap !important;
         }
         #todayScheduleSection .schedule-time-badge {
-            font-size: 0.76rem !important;
+            font-size: 0.8rem !important;
+            padding: 3px 8px !important;
+            border-radius: 6px !important;
+            background: rgba(207, 164, 111, 0.08) !important;
+            color: #e6c89a !important;
         }
         #todayScheduleSection .schedule-code-badge {
-            font-size: 0.7rem !important;
-            padding: 1px 6px !important;
+            font-size: 0.76rem !important;
+            padding: 3px 8px !important;
+            border-radius: 6px !important;
+            font-weight: 600 !important;
         }
         #todayScheduleSection .schedule-instructor-badge {
-            font-size: 0.74rem !important;
+            font-size: 0.8rem !important;
         }
         #todayScheduleSection .schedule-empty-state {
-            padding: 22px 14px !important;
+            padding: 32px 16px !important;
         }
 
         /* Calendar (when loaded in modals or pages) */
         .scal-card {
-            padding: 14px 12px !important;
-            border-radius: 16px !important;
+            padding: 18px 16px !important;
+            border-radius: 20px !important;
         }
         .scal-legend-strip {
             flex-direction: column !important;
             align-items: flex-start !important;
-            gap: 8px !important;
-            padding: 10px 12px !important;
+            gap: 10px !important;
+            padding: 14px 16px !important;
         }
         .scal-legend-items {
-            gap: 8px 12px !important;
+            gap: 10px 14px !important;
         }
 
         /* Bootstrap utility overrides on mobile */
         .row.g-4 {
-            --bs-gutter-y: 0.75rem !important;
-            --bs-gutter-x: 0.75rem !important;
+            --bs-gutter-y: 1rem !important;
+            --bs-gutter-x: 0.875rem !important;
         }
         .mb-4 {
-            margin-bottom: 0.75rem !important;
+            margin-bottom: 1.25rem !important;
         }
     }
 </style>
