@@ -15,8 +15,10 @@ use App\Models\AttendanceSession;
 use App\Policies\AttendanceSessionPolicy;
 use App\Events\AttendanceQrChanged;
 use App\Events\AttendanceSessionChanged;
+use App\Events\TeacherAttendanceUpdated;
 use App\Listeners\QueueTeacherQrNotification;
 use App\Listeners\AuditAttendanceSessionChange;
+use App\Listeners\QueueTeacherAttendanceNotification;
 use App\Http\Middleware\SecurityHeaders;
 use App\Services\VersionService;
 
@@ -34,6 +36,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AttendanceSession::class, AttendanceSessionPolicy::class);
         Event::listen(AttendanceQrChanged::class, QueueTeacherQrNotification::class);
         Event::listen(AttendanceSessionChanged::class, AuditAttendanceSessionChange::class);
+        Event::listen(TeacherAttendanceUpdated::class, QueueTeacherAttendanceNotification::class);
         // ── Centralized Application Version Directives & Global View Sharing ───
         Blade::directive('appVersion', function () {
             return '<?php echo e(app(\App\Services\VersionService::class)->getVersion()); ?>';

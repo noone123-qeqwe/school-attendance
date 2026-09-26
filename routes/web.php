@@ -442,8 +442,8 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->middleware(['throttle:30,1', 'audit.attendance.qr'])->name('qr.verify.complete');
     
     // Direct QR Scanner Processing
-    Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process')->middleware(['throttle:30,1', 'device.bound', 'audit.attendance.qr']);
-    Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct')->middleware(['throttle:30,1', 'device.bound', 'audit.attendance.qr']);
+    Route::post('/qr/scan-process', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.process')->middleware(['throttle:30,1', 'audit.attendance.qr', 'device.bound']);
+    Route::post('/qr/scan-direct', [App\Http\Controllers\QrAttendanceController::class, 'processScan'])->name('qr.scan.direct')->middleware(['throttle:30,1', 'audit.attendance.qr', 'device.bound']);
 
     // Continuous Presence Verification
     Route::post('/student/presence-verify', [App\Http\Controllers\QrAttendanceController::class, 'verifyPresence'])->name('student.presence.verify')->middleware('device.bound');

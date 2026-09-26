@@ -1832,7 +1832,7 @@ function subscribeToTeacherAttendanceUpdates() {
             })
             .listen('.attendance.scan.alert', (payload) => {
                 if (!currentSession || payload.session_id !== (currentSession.session_id || currentSession.id)) return;
-                showTeacherToast('Suspicious attendance scan detected: ' + payload.reason.replaceAll('_', ' '), 'warning');
+                showTeacherToast('Attendance scan alert: ' + payload.reason.replaceAll('_', ' '), 'warning');
                 updateSessionTimeline();
             });
 

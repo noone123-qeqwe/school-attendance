@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\WebauthnCredential;
 use App\Services\WebauthnService;
 use App\Services\AttendanceQrTokenService;
+use App\Services\DeviceBindingService;
 use App\Jobs\SendTeacherScanAlert;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -126,6 +127,32 @@ class QrDistanceValidationTest extends TestCase
         Queue::assertPushed(SendTeacherScanAlert::class, fn ($job) =>
             $job->teacherId === $this->teacher->id && $job->sessionId === $this->session->id
         );
+    }
+
+    public function test_wrong_device_signed_scan_is_audited_before_device_guard_returns(): void
+    {
+        $token = app(AttendanceQrTokenService::class)->tokenFor(
+            app(AttendanceQrTokenService::class)->issue($this->session, $this->teacher, 'emergency')
+        );
+        Setting::set('enforce_device_binding', 1);
+        $device = Mockery::mock(DeviceBindingService::class);
+        $device->shouldReceive('isCurrentDevice')->andReturn(false);
+        $this->app->instance(DeviceBindingService::class, $device);
+        Queue::fake();
+
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ])->assertForbidden()->assertJsonPath('error_type', 'device_mismatch');
+
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => AttendanceSession::class,
+            'subject_id' => $this->session->id,
+            'description' => 'anomaly_detected',
+        ]);
+        Queue::assertPushed(SendTeacherScanAlert::class);
     }
 
     public function test_impossible_recent_location_jump_requires_retry_after_webauthn()

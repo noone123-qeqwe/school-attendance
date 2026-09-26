@@ -6,6 +6,8 @@ use App\Models\Subject;
 use App\Models\User;
 use App\Models\AttendanceSession;
 use App\Jobs\SendTeacherSessionNotification;
+use App\Jobs\SendTeacherAttendanceNotification;
+use App\Events\TeacherAttendanceUpdated;
 use App\Models\AttendanceQrToken;
 use App\Services\AttendanceQrTokenService;
 use Illuminate\Support\Facades\Queue;
@@ -189,6 +191,20 @@ class QrAuthorizationTest extends TestCase
             ->assertOk()->assertJsonCount(2, 'events')
             ->assertJsonPath('events.0.action', 'qr_generated')
             ->assertJsonPath('events.1.action', 'attendance_session_started');
+    }
+
+    public function test_attendance_check_in_queues_teacher_notification(): void
+    {
+        Queue::fake();
+        $teacher = User::factory()->create(['role' => 'teacher']);
+
+        TeacherAttendanceUpdated::dispatch(
+            $teacher->id, 'Student Name', 'CS101', 'Present', 'clock_in'
+        );
+
+        Queue::assertPushed(SendTeacherAttendanceNotification::class, fn ($job) =>
+            $job->teacherId === $teacher->id && $job->studentName === 'Student Name'
+        );
     }
 
     public function test_unauthorized_user_gets_404_for_nonexistent_session()

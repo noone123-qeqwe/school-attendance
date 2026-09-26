@@ -47,7 +47,8 @@ class AuditAttendanceQrScan
             if ($record?->session) $activity->performedOn($record->session);
             $activity->log($accepted ? 'qr_scanned' : ($opened ? 'qr_opened' : 'scan_rejected'));
 
-            if ($record && in_array($reason, ['proxy_device_detected', 'location_jump_review', 'device_mismatch'], true)) {
+            $suspicious = in_array($reason, ['proxy_device_detected', 'location_jump_review', 'device_mismatch'], true);
+            if ($record && $suspicious) {
                 $anomaly = activity('attendance-qr')->performedOn($record->session)
                     ->withProperties([
                         'attendance_session_id' => $record->attendance_session_id,
@@ -58,12 +59,16 @@ class AuditAttendanceQrScan
                 if ($request->user()) $anomaly->causedBy($request->user());
                 $anomaly->log('anomaly_detected');
 
+            }
+            if ($record && ($suspicious || $reason === 'duplicate')) {
                 $teacherId = (int) ($record->session?->subject?->instructor_id ?: $record->session?->created_by);
                 if ($teacherId) {
-                    SendTeacherScanAlert::dispatch(
-                        $teacherId, $record->attendance_session_id,
-                        $record->session->subject_code, $reason, $request->user()?->id
-                    );
+                    if ($suspicious) {
+                        SendTeacherScanAlert::dispatch(
+                            $teacherId, $record->attendance_session_id,
+                            $record->session->subject_code, $reason, $request->user()?->id
+                        );
+                    }
                     AttendanceScanAlert::dispatch($teacherId, $record->attendance_session_id, $reason);
                 }
             }
