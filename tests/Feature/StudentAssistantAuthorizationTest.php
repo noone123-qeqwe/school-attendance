@@ -237,6 +237,11 @@ class StudentAssistantAuthorizationTest extends TestCase
         $this->actingAs($this->teacher)->postJson(route('teacher.qr.emergency', $this->session))
             ->assertOk()->assertJsonPath('generator_type', 'teacher');
         $this->assertSame(1, AttendanceQrToken::where('active_session_id', $this->session->id)->count());
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => AttendanceSession::class,
+            'subject_id' => $this->session->id,
+            'description' => 'emergency_teacher_qr_generated',
+        ]);
     }
 
     public function test_qr_change_queues_teacher_notification_without_exposing_token(): void

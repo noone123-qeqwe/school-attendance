@@ -171,6 +171,26 @@ class QrAuthorizationTest extends TestCase
         ]);
     }
 
+    public function test_only_owner_can_read_ordered_session_activity(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $other = User::factory()->create(['role' => 'teacher']);
+        $subject = Subject::factory()->create(['instructor_id' => $teacher->id]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code, 'created_by' => $teacher->id,
+        ]);
+        activity('attendance-session')->causedBy($teacher)->performedOn($session)
+            ->log('attendance_session_started');
+        activity('attendance-qr')->causedBy($teacher)->performedOn($session)
+            ->log('qr_generated');
+
+        $this->actingAs($other)->getJson(route('teacher.qr.timeline', $session))->assertForbidden();
+        $this->actingAs($teacher)->getJson(route('teacher.qr.timeline', $session))
+            ->assertOk()->assertJsonCount(2, 'events')
+            ->assertJsonPath('events.0.action', 'qr_generated')
+            ->assertJsonPath('events.1.action', 'attendance_session_started');
+    }
+
     public function test_unauthorized_user_gets_404_for_nonexistent_session()
     {
         $teacher = User::factory()->create(['role' => 'teacher']);

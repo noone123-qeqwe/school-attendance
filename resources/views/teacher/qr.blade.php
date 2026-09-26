@@ -645,6 +645,17 @@
                     </div>
                 </div>
             </div>
+            <div class="stats-card mt-4">
+                <details id="sessionTimelineDetails">
+                    <summary class="stats-header" style="cursor:pointer;color:#f3e7cd;">
+                        <strong><i class="bi bi-clock-history me-2" style="color:#cfa46f;"></i>Session Activity</strong>
+                    </summary>
+                    <div style="padding:0 1.25rem 1rem;">
+                        <small id="sessionTimelineUpdated" style="color:#b39b82;">Open to load recent events.</small>
+                        <ul id="sessionTimelineList" class="list-unstyled mt-2 mb-0" style="max-height:280px;overflow-y:auto;color:#f3e7cd;"></ul>
+                    </div>
+                </details>
+            </div>
         </div>
     </div>
 </div>
@@ -748,6 +759,43 @@ const startBtn = document.getElementById('startBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const emergencyQrBtn = document.getElementById('emergencyQrBtn');
 const extendSessionBtn = document.getElementById('extendSessionBtn');
+const timelineDetails = document.getElementById('sessionTimelineDetails');
+const timelineList = document.getElementById('sessionTimelineList');
+
+async function updateSessionTimeline() {
+    if (!timelineDetails?.open || !currentSession) return;
+    const sessionId = currentSession.session_id || currentSession.id;
+    const template = @json(route('teacher.qr.timeline', ['session' => '__SESSION__']));
+    try {
+        const response = await fetch(template.replace('__SESSION__', encodeURIComponent(sessionId)), {
+            credentials: 'same-origin', headers: { 'Accept': 'application/json' }
+        });
+        if (!response.ok) throw new Error('Activity unavailable');
+        const data = await response.json();
+        timelineList.replaceChildren();
+        if (!data.events.length) {
+            const item = document.createElement('li');
+            item.textContent = 'No activity recorded yet.';
+            timelineList.append(item);
+        }
+        data.events.forEach((event) => {
+            const item = document.createElement('li');
+            item.className = 'border-bottom py-2';
+            item.style.borderColor = 'rgba(207,164,111,.15)';
+            const label = event.action.replaceAll('_', ' ');
+            item.textContent = `${new Date(event.at).toLocaleTimeString()} · ${label}`
+                + (event.actor ? ` · ${event.actor}` : '')
+                + (event.reason ? ` · ${event.reason}` : '');
+            timelineList.append(item);
+        });
+        document.getElementById('sessionTimelineUpdated').textContent =
+            'Last updated ' + new Date(data.updated_at).toLocaleTimeString();
+    } catch (_) {
+        document.getElementById('sessionTimelineUpdated').textContent = 'Activity unavailable. Reopen to retry.';
+    }
+}
+
+timelineDetails?.addEventListener('toggle', updateSessionTimeline);
 const stopBtn = document.getElementById('stopBtn');
 const qrContainer = document.getElementById('qrCodeContainer');
 const sidebar = document.getElementById('sidebar');
@@ -1764,12 +1812,14 @@ function subscribeToTeacherAttendanceUpdates() {
 
                 if (payload.type === 'clock_in') {
                     handleIncomingCheckIn(payload);
+                    updateSessionTimeline();
                 }
             })
             .listen('.attendance.qr.changed', (payload) => {
                 if (!currentSession || payload.session_id !== (currentSession.session_id || currentSession.id)) return;
                 performAutoRefresh(false);
                 updateClockIns();
+                updateSessionTimeline();
             })
             .listen('.attendance.session.changed', (payload) => {
                 if (!currentSession || payload.session_id !== (currentSession.session_id || currentSession.id)) return;
@@ -1778,16 +1828,48 @@ function subscribeToTeacherAttendanceUpdates() {
                     currentSession.session_end = payload.session_ends_at;
                     startSessionTimer(payload.session_ends_at);
                 }
+                updateSessionTimeline();
+            })
+            .listen('.attendance.scan.alert', (payload) => {
+                if (!currentSession || payload.session_id !== (currentSession.session_id || currentSession.id)) return;
+                showTeacherToast('Suspicious attendance scan detected: ' + payload.reason.replaceAll('_', ' '), 'warning');
+                updateSessionTimeline();
             });
 
-        echoInstance.connector?.pusher?.connection?.bind('connected', () => {
+        const connection = echoInstance.connector?.pusher?.connection;
+        const liveBadge = document.getElementById('liveStatusBadge');
+        let reconnectDelay = 1000;
+        let reconnectTimer = null;
+        const scheduleReconnect = () => {
+            if (!connection || reconnectTimer) return;
+            reconnectTimer = setTimeout(() => {
+                reconnectTimer = null;
+                if (connection.state === 'connected') return;
+                try { connection.connect(); } catch (_) { /* Polling remains available. */ }
+                if (currentSession) {
+                    updateClockIns();
+                    updateSessionTimeline();
+                }
+                reconnectDelay = Math.min(reconnectDelay * 2, 8000);
+                scheduleReconnect();
+            }, reconnectDelay);
+        };
+        connection?.bind('connected', () => {
+            if (reconnectTimer) clearTimeout(reconnectTimer);
+            reconnectTimer = null;
+            reconnectDelay = 1000;
             if (currentSession) {
                 performAutoRefresh(false);
                 updateClockIns();
+                updateSessionTimeline();
             }
+            if (liveBadge) liveBadge.innerHTML = '<span class="live-dot"></span><small style="color:#4ade80;font-weight:700;font-size:.75rem;">LIVE STREAM</small>';
         });
-
-        const liveBadge = document.getElementById('liveStatusBadge');
+        connection?.bind('disconnected', () => {
+            if (liveBadge) liveBadge.textContent = 'Reconnecting…';
+            scheduleReconnect();
+        });
+        connection?.bind('unavailable', scheduleReconnect);
         if (liveBadge) {
             liveBadge.innerHTML = '<span class="live-dot"></span><small style="color: #4ade80; font-weight: 700; font-size: 0.75rem;">LIVE STREAM</small>';
         }

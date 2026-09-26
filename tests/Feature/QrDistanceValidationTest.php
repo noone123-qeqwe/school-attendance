@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Models\WebauthnCredential;
 use App\Services\WebauthnService;
 use App\Services\AttendanceQrTokenService;
+use App\Jobs\SendTeacherScanAlert;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -99,6 +101,31 @@ class QrDistanceValidationTest extends TestCase
             'user_id' => $this->student->id,
             'session_id' => $this->session->id,
         ]);
+    }
+
+    public function test_suspicious_signed_scan_is_audited_and_queues_teacher_alert(): void
+    {
+        $this->recordPreviousLocation(14.650000, 121.000000, 10, 20);
+        $token = app(AttendanceQrTokenService::class)->tokenFor(
+            app(AttendanceQrTokenService::class)->issue($this->session, $this->teacher, 'emergency')
+        );
+        Queue::fake();
+
+        $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ])->assertUnprocessable()->assertJsonPath('error_type', 'location_jump_review');
+
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => AttendanceSession::class,
+            'subject_id' => $this->session->id,
+            'description' => 'anomaly_detected',
+        ]);
+        Queue::assertPushed(SendTeacherScanAlert::class, fn ($job) =>
+            $job->teacherId === $this->teacher->id && $job->sessionId === $this->session->id
+        );
     }
 
     public function test_impossible_recent_location_jump_requires_retry_after_webauthn()

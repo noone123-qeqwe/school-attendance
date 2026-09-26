@@ -107,6 +107,15 @@ class AttendanceQrTokenService
                     'replaced_token_id' => $current?->id,
                 ])->log($current ? 'qr_replaced' : 'qr_generated');
 
+            if ($mode === 'emergency') {
+                activity('attendance-qr')->causedBy($operator)->performedOn($session)
+                    ->withProperties([
+                        'attendance_session_id' => $session->id,
+                        'qr_token_id' => $token->id,
+                        'generator_type' => 'teacher',
+                    ])->log('emergency_teacher_qr_generated');
+            }
+
             return $token;
         });
 
