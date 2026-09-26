@@ -6694,11 +6694,6 @@ async function executeFaceCaptureAndVerificationSequence(video) {
 // navigator.credentials.create() and therefore does NOT trigger any Device
 // Verification / WebAuthn OS dialog. Keep these two flows strictly separate.
 async function beginFaceRegistration() {
-    // Use the device's protected WebAuthn platform authenticator. Camera-only
-    // descriptors can be replayed and are never accepted as authentication proof.
-    selectedBioMethod = 'face';
-    return beginFingerprintRegistration();
-
     // Safety guard: ensure we never accidentally trigger hardware WebAuthn
     // (Device Verification) when the user intended face camera registration.
     selectedBioMethod = 'face';

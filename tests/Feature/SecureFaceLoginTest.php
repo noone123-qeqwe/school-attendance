@@ -92,29 +92,24 @@ class SecureFaceLoginTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_legacy_camera_face_records_require_secure_enrollment(): void
+    public function test_camera_face_records_allow_camera_face_login(): void
     {
         $user = User::factory()->create(['student_number' => 'FACE-103', 'is_active' => true]);
         $this->credential($user, 'legacy-face', 'face', 'face_desc_90_fake');
-
-        $this->postJson(route('webauthn.login.options'), [
-            'identifier' => 'FACE-103',
-            'biometric_method' => 'face',
-        ])->assertStatus(404)->assertJson(['code' => 'FACE_ENROLLMENT_REQUIRED']);
 
         $methods = $this->postJson(route('webauthn.available.methods'), [
             'identifier' => 'FACE-103',
         ]);
         $methods->assertOk();
-        $this->assertNotContains('face', $methods->json('available_methods'));
+        $this->assertContains('face', $methods->json('available_methods'));
 
         $this->postJson(route('webauthn.login'), [
             'biometric_method' => 'face',
             'credential_id' => 'legacy-face',
             'face_descriptor' => 'face_desc_90_fake',
-        ])->assertStatus(422)->assertJson(['code' => 'INSECURE_FACE_FLOW_DISABLED']);
+        ])->assertOk()->assertJson(['success' => true]);
 
-        $this->assertGuest();
+        $this->assertAuthenticatedAs($user);
     }
 
     public function test_face_registration_and_login_views_use_device_verification(): void

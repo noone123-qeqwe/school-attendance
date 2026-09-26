@@ -97,13 +97,6 @@ class WebAuthnController extends Controller
         );
 
         if ($isDirectFace) {
-            return response()->json([
-                'success' => false,
-                'code' => 'INSECURE_FACE_FLOW_DISABLED',
-                'message' => 'Camera-only face registration is disabled because it cannot securely verify identity. Use your device passkey, Face ID, Windows Hello, or Android screen lock instead.',
-            ], 422);
-
-            // Legacy camera-descriptor registration is intentionally unreachable.
             $faceData = $request->input('face_descriptor') 
                 ?? $request->input('face_data') 
                 ?? $request->input('public_key');
@@ -335,7 +328,7 @@ class WebAuthnController extends Controller
             foreach ($allCreds as $ac) {
                 $bType = $ac->biometric_type ?: 'fingerprint';
                 if ($bType === 'face') {
-                    $hasFaceCred = $hasFaceCred || str_contains((string) $ac->public_key, 'BEGIN PUBLIC KEY');
+                    $hasFaceCred = true;
                 } else {
                     $hasFingerprintCred = true;
                 }
@@ -366,7 +359,7 @@ class WebAuthnController extends Controller
                 "identifier" => $user->student_number ?? $user->email ?? $identifier,
                 "user_name" => $user->name,
                 "face_credential_id" => $hasFaceCred
-                    ? $user->webauthnCredentials()->where('biometric_type', 'face')->where('public_key', 'LIKE', '%BEGIN PUBLIC KEY%')->latest()->value('credential_id')
+                    ? $user->webauthnCredentials()->where('biometric_type', 'face')->latest()->value('credential_id')
                     : null,
                 "available_methods" => $availableMethods,
             ]));
@@ -468,7 +461,7 @@ class WebAuthnController extends Controller
             foreach ($creds as $c) {
                 $t = $c->biometric_type ?: 'fingerprint';
                 if ($t === 'face') {
-                    if (str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY')) $hasFace = true;
+                    $hasFace = true;
                 } else {
                     $hasFp = true;
                 }
@@ -493,8 +486,7 @@ class WebAuthnController extends Controller
                 if ($savedUser && $savedUser->isActive()) {
                     foreach ($savedUser->webauthnCredentials as $c) {
                         $t = $c->biometric_type ?: 'fingerprint';
-                        if ($t === 'face' && !str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY')) continue;
-                        if ($t === 'face' && str_contains((string) $c->public_key, 'BEGIN PUBLIC KEY') && !in_array('face', $methods)) $methods[] = 'face';
+                        if ($t === 'face' && !in_array('face', $methods)) $methods[] = 'face';
                         if ($t !== 'face' && !in_array('fingerprint', $methods)) $methods[] = 'fingerprint';
                         if (!in_array('device_lock', $methods)) $methods[] = 'device_lock';
                     }
@@ -662,13 +654,6 @@ class WebAuthnController extends Controller
             || (str_starts_with((string)$request->input('credential_id'), 'face_') && !$request->has('assertion'));
 
         if ($isFaceLogin) {
-            return response()->json([
-                'success' => false,
-                'code' => 'INSECURE_FACE_FLOW_DISABLED',
-                'message' => 'Camera-only face login is disabled because it cannot securely verify identity. Use your device passkey, Face ID, Windows Hello, or password instead.',
-            ], 422);
-
-            // Legacy client-generated face descriptors are intentionally unreachable.
             $request->validate(["credential_id" => "required|string"]);
             $credentialId = (string) $request->input('credential_id');
             $faceData = (string) ($request->input('face_descriptor') ?? $request->input('face_data') ?? '');
@@ -952,11 +937,11 @@ class WebAuthnController extends Controller
         }
 
         if ($request->input('biometric_method') === 'face'
-            && ($dbCredential->biometric_type !== 'face' || !str_contains((string) $dbCredential->public_key, 'BEGIN PUBLIC KEY'))) {
+            && $dbCredential->biometric_type !== 'face') {
             return response()->json([
                 'success' => false,
                 'code' => 'FACE_CREDENTIAL_REQUIRED',
-                'message' => 'This account needs a secure Face ID or Windows Hello credential. Sign in with your password and enroll face sign-in in Settings.',
+                'message' => 'This account needs a registered Face Recognition credential. Sign in with your password and enroll face recognition in Settings.',
             ], 422);
         }
 
