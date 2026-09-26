@@ -685,6 +685,11 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
 
+    public function studentAssistantAssignments()
+    {
+        return $this->hasMany(ClassStudentAssistant::class, 'student_id');
+    }
+
     /**
      * Get all subjects for this student (explicitly enrolled + implicitly via year level / semester)
      */

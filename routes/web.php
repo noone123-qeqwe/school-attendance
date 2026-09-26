@@ -463,6 +463,9 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     // Classroom (Unified Interface)
     Route::get('/classroom', [App\Http\Controllers\TeacherController::class, 'classroomIndex'])->name('classroom.index');
     Route::get('/classroom/{subjectCode}', [App\Http\Controllers\TeacherController::class, 'classroomShow'])->name('classroom.show');
+    Route::post('/classroom/{subjectCode}/student-assistants', [App\Http\Controllers\StudentAssistantAssignmentController::class, 'store'])->name('classroom.assistants.store');
+    Route::put('/classroom/{subjectCode}/student-assistants/{assignment}', [App\Http\Controllers\StudentAssistantAssignmentController::class, 'replace'])->name('classroom.assistants.replace');
+    Route::delete('/classroom/{subjectCode}/student-assistants/{assignment}', [App\Http\Controllers\StudentAssistantAssignmentController::class, 'destroy'])->name('classroom.assistants.destroy');
     Route::post('/classroom/{subjectCode}/attendance', [App\Http\Controllers\TeacherController::class, 'classroomStoreAttendance'])->name('classroom.attendance.store');
     Route::post('/classroom/{subjectCode}/mark-all-present', [App\Http\Controllers\TeacherController::class, 'markAllPresent'])->name('classroom.markAllPresent');
 

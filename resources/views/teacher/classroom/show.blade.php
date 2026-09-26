@@ -324,6 +324,8 @@
     </div>
 </div>
 
+@include('teacher.classroom.partials.student-assistants')
+
 @php
     // Calculate statistics
     $totalStudents = $students->count();

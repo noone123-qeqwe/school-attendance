@@ -49,6 +49,11 @@ class Subject extends Model
                     ->withTimestamps();
     }
 
+    public function studentAssistantAssignments()
+    {
+        return $this->hasMany(ClassStudentAssistant::class);
+    }
+
     /**
      * Get all students for this subject (both explicitly enrolled and implicitly via year level / semester)
      */
@@ -123,4 +128,3 @@ class Subject extends Model
         return $this->schedules->max('end_time');
     }
 }
-

@@ -1925,7 +1925,21 @@ class TeacherController extends Controller
             ->limit(100) // Show recent
             ->get();
 
-        return view('teacher.classroom.show', compact('subject', 'students', 'attendanceRecords'));
+        $studentAssistants = $subject->studentAssistantAssignments()
+            ->with('student')->orderByDesc('created_at')->get();
+        $occupiedStudentIds = $studentAssistants
+            ->filter(fn ($assignment) => $assignment->active_slot !== null
+                && $assignment->revoked_at === null
+                && $assignment->expires_at >= now())
+            ->pluck('student_id');
+        $eligibleAssistantStudents = $students
+            ->filter(fn ($student) => $student->isActive() && !$occupiedStudentIds->contains($student->id));
+        $availableAssistantSlots = max(0, 2 - $occupiedStudentIds->count());
+
+        return view('teacher.classroom.show', compact(
+            'subject', 'students', 'attendanceRecords', 'studentAssistants',
+            'eligibleAssistantStudents', 'availableAssistantSlots'
+        ));
     }
 
     public function classroomStoreAttendance(Request $request, $subjectCode)
