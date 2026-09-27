@@ -333,13 +333,14 @@
         /* Fingerprint/Biometric row */
         .fp-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 14px; /* Increased padding */
-            border-radius: 10px;
-            border: 1.5px solid rgba(255,255,255,0.18);
-            background: rgba(255,255,255,0.08);
+            padding: 12px 16px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(255, 255, 255, 0.16);
+            border-top: 1.5px solid rgba(255, 255, 255, 0.22);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
             cursor: pointer;
-            transition: all 0.2s;
-            margin-bottom: 8px; /* Increased margin */
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            margin-bottom: 8px;
             width: 100%;
             font-family: inherit;
             color: inherit;
@@ -348,23 +349,51 @@
             -webkit-tap-highlight-color: transparent;
             user-select: none;
             touch-action: manipulation;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            position: relative;
+            overflow: hidden;
         }
         .fp-row * { pointer-events: none; }
         @media (hover: hover) and (pointer: fine) {
-            .fp-row:hover { background: rgba(212, 175, 55, 0.15); border-color: rgba(212, 175, 55, 0.4); }
+            .fp-row:hover {
+                background: linear-gradient(135deg, rgba(212, 175, 55, 0.18) 0%, rgba(212, 175, 55, 0.06) 100%);
+                border-color: rgba(212, 175, 55, 0.55);
+                transform: translateY(-1px);
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 16px rgba(212, 175, 55, 0.12);
+            }
         }
         .fp-row:active {
             transform: scale(0.98);
-            background: rgba(212, 175, 55, 0.22);
-            border-color: rgba(212, 175, 55, 0.55);
+            background: rgba(212, 175, 55, 0.24);
+            border-color: rgba(212, 175, 55, 0.7);
         }
         .fp-row:focus { outline: none; }
-        .fp-row:focus-visible { outline: 2px solid rgba(212, 175, 55, 0.6); outline-offset: 2px; }
-        .fp-row-left { display: flex; align-items: center; gap: 10px; text-align: left; }
-        .fp-row-left i { font-size: 1.15rem; color: rgba(255,255,255,0.85); transition: all 0.3s; }
-        .fp-row-label { font-size: 0.82rem; font-weight: 600; color: white; transition: all 0.2s; }
-        .fp-row-hint { font-size: 0.68rem; color: rgba(255,255,255,0.5); margin-top: 1px; transition: all 0.2s; }
-        .fp-row-arrow { color: rgba(255,255,255,0.4); font-size: 0.8rem; transition: all 0.2s; }
+        .fp-row:focus-visible { outline: 2px solid rgba(212, 175, 55, 0.7); outline-offset: 2px; }
+        .fp-row-left { display: flex; align-items: center; gap: 12px; text-align: left; }
+        .fp-row-left .fp-icon-wrap {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(14, 165, 233, 0.15) 100%);
+            border: 1px solid rgba(52, 211, 153, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #34d399;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            transition: all 0.25s ease;
+        }
+        .fp-row:hover .fp-icon-wrap {
+            border-color: #34d399;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+            transform: scale(1.05);
+        }
+        .fp-row-left i { font-size: 1.15rem; color: #34d399; transition: all 0.3s; }
+        .fp-row-label { font-size: 0.85rem; font-weight: 700; color: #ffffff; letter-spacing: -0.1px; transition: all 0.2s; }
+        .fp-row-hint { font-size: 0.7rem; color: rgba(255, 255, 255, 0.65); margin-top: 1px; transition: all 0.2s; }
+        .fp-row-arrow { color: rgba(255, 255, 255, 0.45); font-size: 0.85rem; transition: all 0.2s; }
+        .fp-row:hover .fp-row-arrow { color: #f5dfa8; transform: translateX(2px); }
 
         /* Divider */
                 #reEnrollBioLink, [id*='reEnrollBio'] { display: none !important; pointer-events: none !important; opacity: 0 !important; visibility: hidden !important; }
@@ -442,7 +471,7 @@
         /* Fingerprint section */
         #fingerprintSection { display: block; }
 
-        /* ── Biometric Popup Modal ── */
+        /* ── Biometric Popup Modal (Enterprise Design System) ── */
         .bio-modal-overlay {
             position: fixed;
             inset: 0;
@@ -471,14 +500,14 @@
         .bio-modal-backdrop {
             position: absolute;
             inset: 0;
-            background: rgba(10, 4, 4, 0.78);
-            backdrop-filter: blur(14px) saturate(160%);
-            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            background: rgba(10, 15, 29, 0.82);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
         }
         .bio-modal-dialog {
             position: relative;
             width: 100%;
-            max-width: 420px;
+            max-width: 430px;
             z-index: 2;
             transform: scale(0.92) translateY(14px);
             transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
@@ -487,13 +516,13 @@
             transform: scale(1) translateY(0);
         }
         .bio-modal-card {
-            background: linear-gradient(155deg, rgba(38, 18, 20, 0.96) 0%, rgba(20, 9, 11, 0.98) 100%);
-            border: 1px solid rgba(212, 175, 55, 0.38);
-            border-top: 1.5px solid rgba(245, 218, 138, 0.6);
+            background: linear-gradient(165deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1.5px solid rgba(148, 163, 184, 0.2);
+            border-top: 1.5px solid rgba(255, 255, 255, 0.2);
             border-radius: 26px;
-            box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.85), 0 0 45px rgba(212, 175, 55, 0.14), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+            box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.85), 0 0 45px rgba(212, 175, 55, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.2);
             padding: 28px 24px 22px;
-            color: #f5eedb;
+            color: #f8fafc;
             text-align: center;
             position: relative;
             max-height: calc(var(--app-height, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
@@ -514,16 +543,16 @@
             height: 34px;
             border-radius: 50%;
             border: 1px solid rgba(255, 255, 255, 0.16);
-            background: rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.75);
             font-size: 0.85rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.25s ease;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 10;
         }
         .bio-modal-close:hover {
@@ -543,14 +572,14 @@
             width: 72px;
             height: 72px;
             border-radius: 50%;
-            background: radial-gradient(circle at 35% 35%, rgba(212, 175, 55, 0.3) 0%, rgba(139, 0, 0, 0.45) 60%, rgba(26, 9, 11, 0.9) 100%);
-            border: 2px solid rgba(212, 175, 55, 0.6);
+            background: radial-gradient(circle at 35% 35%, rgba(16, 185, 129, 0.25) 0%, rgba(14, 165, 233, 0.2) 50%, rgba(15, 23, 42, 0.95) 100%);
+            border: 2px solid rgba(52, 211, 153, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2.15rem;
-            color: #f5d77f;
-            box-shadow: 0 0 28px rgba(212, 175, 55, 0.28), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+            color: #34d399;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.2);
             animation: glowPulse 2.8s infinite;
         }
         .bio-modal-badge {
@@ -567,16 +596,16 @@
             justify-content: center;
             font-size: 0.75rem;
             box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
-            border: 2.5px solid #1c0a0c;
+            border: 2.5px solid #0f172a;
         }
         .bio-modal-title {
-            font-size: 1.25rem;
+            font-size: 1.22rem;
             font-weight: 800;
             color: #ffffff;
             margin-bottom: 8px;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.4px;
             text-transform: uppercase;
-            background: linear-gradient(135deg, #ffffff 40%, #f6e6bd 100%);
+            background: linear-gradient(135deg, #ffffff 40%, #e2e8f0 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -584,9 +613,9 @@
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.16) 0%, rgba(128, 0, 0, 0.22) 100%);
-            border: 1px solid rgba(212, 175, 55, 0.42);
-            color: #f5dfa8;
+            background: rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            color: #e2e8f0;
             border-radius: 99px;
             padding: 4px 14px;
             font-size: 0.8rem;
@@ -597,17 +626,17 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
         .bio-modal-desc {
             font-size: 0.86rem;
-            line-height: 1.52;
-            color: rgba(255, 255, 255, 0.82);
+            line-height: 1.55;
+            color: #cbd5e1;
             margin-bottom: 16px;
             word-wrap: break-word;
         }
         .bio-modal-desc strong {
-            color: #f7e4b5;
+            color: #ffffff;
             font-weight: 700;
         }
 
@@ -624,7 +653,7 @@
             font-weight: 700;
             letter-spacing: 0.4px;
             text-transform: uppercase;
-            color: rgba(245, 223, 168, 0.9);
+            color: #cbd5e1;
             margin-bottom: 7px;
         }
         .bio-modal-card .glass-input-wrap {
@@ -637,34 +666,34 @@
             height: 48px !important;
             padding: 0 46px 0 44px !important;
             border-radius: 13px !important;
-            border: 1.5px solid rgba(212, 175, 55, 0.32) !important;
-            background: rgba(8, 3, 4, 0.55) !important;
+            border: 1.5px solid rgba(148, 163, 184, 0.28) !important;
+            background: rgba(15, 23, 42, 0.7) !important;
             color: #ffffff !important;
             font-size: 0.92rem !important;
-            font-family: 'Inter', sans-serif !important;
+            font-family: inherit !important;
             outline: none !important;
             transition: all 0.25s ease !important;
             box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5) !important;
         }
         .bio-modal-card .glass-input::placeholder {
-            color: rgba(255, 255, 255, 0.38) !important;
+            color: rgba(255, 255, 255, 0.4) !important;
             font-size: 0.86rem !important;
         }
         .bio-modal-card .glass-input:hover {
             border-color: rgba(212, 175, 55, 0.5) !important;
-            background: rgba(8, 3, 4, 0.65) !important;
+            background: rgba(15, 23, 42, 0.8) !important;
         }
         .bio-modal-card .glass-input:focus {
             border-color: #d4af37 !important;
-            background: rgba(8, 3, 4, 0.8) !important;
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.22), inset 0 1px 3px rgba(0, 0, 0, 0.6) !important;
+            background: rgba(15, 23, 42, 0.95) !important;
+            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25), inset 0 1px 3px rgba(0, 0, 0, 0.6) !important;
         }
         .bio-modal-card .glass-input-wrap .g-icon {
             position: absolute !important;
             left: 15px !important;
             top: 50% !important;
             transform: translateY(-50%) !important;
-            color: rgba(212, 175, 55, 0.75) !important;
+            color: rgba(212, 175, 55, 0.85) !important;
             font-size: 1.05rem !important;
             pointer-events: none !important;
             transition: color 0.2s !important;
@@ -688,7 +717,7 @@
             justify-content: center !important;
             background: transparent !important;
             border: none !important;
-            color: rgba(255, 255, 255, 0.55) !important;
+            color: rgba(255, 255, 255, 0.6) !important;
             cursor: pointer !important;
             border-radius: 9px !important;
             transition: all 0.2s ease !important;
@@ -697,7 +726,7 @@
         }
         .bio-modal-card .eye-toggle:hover {
             color: #f5dfa8 !important;
-            background: rgba(255, 255, 255, 0.08) !important;
+            background: rgba(255, 255, 255, 0.1) !important;
         }
         .bio-modal-card .eye-toggle:active {
             transform: translateY(-50%) scale(0.92) !important;
@@ -708,10 +737,10 @@
         }
 
         .bio-modal-steps {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(148, 163, 184, 0.16);
             border-radius: 14px;
-            padding: 12px 16px;
+            padding: 14px 16px;
             text-align: left;
             margin-bottom: 20px;
         }
@@ -720,7 +749,7 @@
             font-weight: 700;
             color: #d4af37;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
@@ -738,8 +767,8 @@
             align-items: flex-start;
             gap: 10px;
             font-size: 0.78rem;
-            color: rgba(255, 255, 255, 0.85);
-            line-height: 1.35;
+            color: #cbd5e1;
+            line-height: 1.4;
         }
         .bio-modal-steps-list .step-num {
             width: 18px;
@@ -755,6 +784,7 @@
             justify-content: center;
             flex-shrink: 0;
             margin-top: 1px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
 
         /* Modal Action Buttons */
@@ -767,30 +797,30 @@
         .bio-modal-actions #bioModalPrimaryBtn {
             width: 100% !important;
             padding: 14px 20px !important;
-            background: linear-gradient(135deg, #e8c872 0%, #d4af37 50%, #b89122 100%) !important;
-            color: #240a0c !important;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+            color: #ffffff !important;
             font-weight: 800 !important;
             font-size: 0.92rem !important;
             letter-spacing: 0.6px !important;
             text-transform: uppercase !important;
-            border: 1px solid rgba(255, 255, 255, 0.45) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
             border-radius: 14px !important;
-            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.32), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35), 0 2px 6px rgba(0, 0, 0, 0.4) !important;
             cursor: pointer !important;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3) !important;
         }
         .bio-modal-actions #bioModalPrimaryBtn:hover:not(:disabled) {
-            background: linear-gradient(135deg, #f0d588 0%, #dfba42 50%, #c49d2a 100%) !important;
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
             transform: translateY(-2px) !important;
-            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.45), 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.5), 0 3px 8px rgba(0, 0, 0, 0.5) !important;
         }
         .bio-modal-actions #bioModalPrimaryBtn:active:not(:disabled) {
             transform: translateY(0) !important;
-            box-shadow: 0 3px 12px rgba(212, 175, 55, 0.25) !important;
+            box-shadow: 0 3px 12px rgba(16, 185, 129, 0.25) !important;
         }
         .bio-modal-actions #bioModalPrimaryBtn:disabled {
             opacity: 0.65 !important;
@@ -799,10 +829,10 @@
         }
         .bio-modal-secondary-btn {
             width: 100%;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.14);
             border-radius: 12px;
-            color: rgba(255, 255, 255, 0.72);
+            color: #cbd5e1;
             font-size: 0.82rem;
             font-weight: 700;
             letter-spacing: 0.6px;
@@ -815,9 +845,9 @@
             justify-content: center;
         }
         .bio-modal-secondary-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.12);
             color: #ffffff;
-            border-color: rgba(212, 175, 55, 0.35);
+            border-color: rgba(212, 175, 55, 0.4);
             transform: translateY(-1px);
         }
         .bio-modal-secondary-btn:active {
@@ -836,9 +866,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(212, 175, 55, 0.25);
+            padding: 13px 16px;
+            background: linear-gradient(165deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);
+            border: 1px solid rgba(148, 163, 184, 0.2);
             border-radius: 14px;
             color: #ffffff;
             cursor: pointer;
@@ -849,10 +879,10 @@
             text-align: left;
         }
         .bio-method-card:hover {
-            background: rgba(212, 175, 55, 0.12);
+            background: linear-gradient(165deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%);
             border-color: rgba(212, 175, 55, 0.6);
             transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
         .bio-method-card:active {
             transform: translateY(0);
@@ -865,23 +895,23 @@
             min-width: 0;
         }
         .bio-method-icon-box {
-            width: 40px;
-            height: 40px;
+            width: 42px;
+            height: 42px;
             border-radius: 12px;
-            background: rgba(212, 175, 55, 0.14);
-            border: 1px solid rgba(212, 175, 55, 0.35);
+            background: rgba(148, 163, 184, 0.12);
+            border: 1px solid rgba(148, 163, 184, 0.25);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.22rem;
-            color: #d4af37;
+            font-size: 1.25rem;
+            color: #cbd5e1;
             flex-shrink: 0;
             transition: all 0.2s;
         }
         .bio-method-card:hover .bio-method-icon-box {
-            background: rgba(212, 175, 55, 0.25);
+            background: rgba(212, 175, 55, 0.22);
             border-color: #d4af37;
-            color: #f3e7cd;
+            color: #f8fafc;
             transform: scale(1.05);
         }
         .bio-method-info {
@@ -891,15 +921,15 @@
             min-width: 0;
         }
         .bio-method-name {
-            font-size: 0.88rem;
+            font-size: 0.92rem;
             font-weight: 700;
-            color: #f3e7cd;
+            color: #f8fafc;
             letter-spacing: -0.2px;
         }
         .bio-method-desc {
-            font-size: 0.73rem;
-            color: rgba(255, 255, 255, 0.65);
-            line-height: 1.3;
+            font-size: 0.74rem;
+            color: #94a3b8;
+            line-height: 1.35;
         }
         .bio-method-arrow {
             font-size: 0.95rem;
@@ -921,11 +951,11 @@
             height: 360px;
             aspect-ratio: 1 / 1;
             margin: 0 auto;
-            border-radius: 28px;
+            border-radius: 26px;
             overflow: hidden;
-            background: #000000;
-            border: 2.5px solid rgba(6, 182, 212, 0.6);
-            box-shadow: 0 0 35px rgba(6, 182, 212, 0.3), inset 0 0 25px rgba(6, 182, 212, 0.15);
+            background: #020617;
+            border: 2px solid rgba(14, 165, 233, 0.55);
+            box-shadow: 0 0 35px rgba(14, 165, 233, 0.28), inset 0 0 25px rgba(14, 165, 233, 0.12);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -933,46 +963,46 @@
         }
         @media (max-width: 480px) {
             .bio-login-camera-box {
-                max-width: min(340px, 84vw);
-                height: min(340px, 84vw);
+                max-width: min(330px, 84vw);
+                height: min(330px, 84vw);
                 border-radius: 22px;
             }
         }
         /* Face Flash / Fill Light Controls */
         .face-hud-flash-btn {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: 14px;
+            right: 14px;
             z-index: 25;
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 5px 12px;
+            padding: 6px 14px;
             background: rgba(15, 23, 42, 0.85);
-            border: 1.5px solid rgba(255, 255, 255, 0.35);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
             color: #f1f5f9;
             font-size: 0.78rem;
             font-weight: 600;
             border-radius: 20px;
             cursor: pointer;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
             user-select: none;
-            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
         }
         .face-hud-flash-btn:hover {
             background: rgba(30, 41, 59, 0.95);
             border-color: #facc15;
             color: #fef08a;
             transform: scale(1.05);
-            box-shadow: 0 0 16px rgba(250, 204, 21, 0.55);
+            box-shadow: 0 0 18px rgba(250, 204, 21, 0.6);
         }
         .face-hud-flash-btn.active-flash {
             background: linear-gradient(135deg, #facc15, #f59e0b) !important;
             border-color: #ffffff !important;
             color: #0f172a !important;
-            box-shadow: 0 0 20px rgba(250, 204, 21, 0.9), 0 0 8px #ffffff !important;
+            box-shadow: 0 0 24px rgba(250, 204, 21, 0.95), 0 0 10px #ffffff !important;
             font-weight: 700;
             transform: scale(1.04);
         }
@@ -985,7 +1015,7 @@
         }
         @keyframes flashBtnSuggestPulse {
             0%, 100% { border-color: rgba(250, 204, 21, 0.4); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
-            50% { border-color: #facc15; box-shadow: 0 0 16px rgba(250, 204, 21, 0.75); color: #facc15; }
+            50% { border-color: #facc15; box-shadow: 0 0 18px rgba(250, 204, 21, 0.75); color: #facc15; }
         }
 
         /* Face Screen Flash Overlay (Selfie Fill Light) */
@@ -997,7 +1027,7 @@
             opacity: 0;
             transition: opacity 0.25s ease, box-shadow 0.25s ease;
             border-radius: inherit;
-            box-shadow: inset 0 0 60px 20px rgba(255, 255, 255, 0.95), 0 0 80px 25px rgba(255, 255, 255, 0.9);
+            box-shadow: inset 0 0 70px 25px rgba(255, 255, 255, 0.95), 0 0 90px 30px rgba(255, 255, 255, 0.9);
             border: 4px solid #ffffff;
         }
         .face-screen-flash-overlay.active {
@@ -1007,13 +1037,13 @@
         .face-scan-frame.flash-on,
         .bio-login-camera-box.flash-on {
             border-color: #ffffff !important;
-            box-shadow: 0 0 0 12px #ffffff, 0 0 80px 30px rgba(255, 255, 255, 0.95), 0 0 140px 60px rgba(255, 255, 255, 0.8) !important;
+            box-shadow: 0 0 0 12px #ffffff, 0 0 90px 35px rgba(255, 255, 255, 0.95), 0 0 150px 70px rgba(255, 255, 255, 0.85) !important;
         }
 
         /* Modal-wide screen fill light when flash is active */
         .bio-modal-card.face-screen-fill-active {
             background: #ffffff !important;
-            box-shadow: 0 0 140px 60px rgba(255, 255, 255, 0.95), 0 0 0 9999px rgba(255, 255, 255, 0.45) !important;
+            box-shadow: 0 0 150px 70px rgba(255, 255, 255, 0.95), 0 0 0 9999px rgba(255, 255, 255, 0.5) !important;
             color: #0f172a !important;
             border-color: #ffffff !important;
         }
@@ -1021,6 +1051,7 @@
         .bio-modal-card.face-screen-fill-active #bioModalTitle {
             color: #0f172a !important;
             text-shadow: none !important;
+            -webkit-text-fill-color: #0f172a !important;
         }
         .bio-modal-card.face-screen-fill-active .bio-modal-desc,
         .bio-modal-card.face-screen-fill-active #bioModalDesc {
@@ -1064,30 +1095,30 @@
             justify-content: center;
             width: 100%;
             height: 100%;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, rgba(0, 0, 0, 0.9) 80%);
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 0%, rgba(2, 6, 23, 0.95) 80%);
         }
         .bio-login-reticle-corner {
             position: absolute;
             width: 24px;
             height: 24px;
-            border-color: #06b6d4;
+            border-color: #38bdf8;
             border-style: solid;
             pointer-events: none;
             z-index: 10;
         }
-        .bio-login-reticle-corner.tl { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-top-left-radius: 10px; }
-        .bio-login-reticle-corner.tr { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-top-right-radius: 10px; }
-        .bio-login-reticle-corner.bl { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-bottom-left-radius: 10px; }
-        .bio-login-reticle-corner.br { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-bottom-right-radius: 10px; }
+        .bio-login-reticle-corner.tl { top: 14px; left: 14px; border-width: 3px 0 0 3px; border-top-left-radius: 10px; }
+        .bio-login-reticle-corner.tr { top: 14px; right: 14px; border-width: 3px 3px 0 0; border-top-right-radius: 10px; }
+        .bio-login-reticle-corner.bl { bottom: 14px; left: 14px; border-width: 0 0 3px 3px; border-bottom-left-radius: 10px; }
+        .bio-login-reticle-corner.br { bottom: 14px; right: 14px; border-width: 0 3px 3px 0; border-bottom-right-radius: 10px; }
         
         .bio-login-laser-bar {
             position: absolute;
-            left: 5%;
-            width: 90%;
+            left: 4%;
+            width: 92%;
             height: 3px;
             z-index: 4;
-            background: linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%);
-            box-shadow: 0 0 14px #38bdf8;
+            background: linear-gradient(90deg, transparent 0%, #0ea5e9 25%, #38bdf8 50%, #0ea5e9 75%, transparent 100%);
+            box-shadow: 0 0 16px #38bdf8;
             pointer-events: none;
             animation: bioLaserSweep 2.2s ease-in-out infinite;
         }
@@ -1098,31 +1129,33 @@
         }
         .bio-login-hud-badge {
             position: absolute;
-            bottom: 12px;
+            bottom: 14px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.78);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 99px;
-            padding: 4px 14px;
+            padding: 5px 16px;
             font-size: 0.72rem;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
             color: #ffffff;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             z-index: 10;
             white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
         }
         .bio-login-pulse-dot {
             width: 7px;
             height: 7px;
             border-radius: 50%;
-            background: #06b6d4;
-            box-shadow: 0 0 8px #06b6d4;
+            background: #38bdf8;
+            box-shadow: 0 0 8px #38bdf8;
             animation: bioPulseDot 1.4s infinite ease-in-out;
         }
         @keyframes bioPulseDot {
@@ -1136,27 +1169,27 @@
         }
         .bio-login-progress-bar {
             height: 6px;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.08);
             border-radius: 99px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
         .bio-login-progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #06b6d4, #38bdf8);
+            background: linear-gradient(90deg, #0284c7, #38bdf8);
             border-radius: 99px;
             transition: width 0.22s ease;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
         }
         .bio-login-progress-meta {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.72rem;
-            color: rgba(255, 255, 255, 0.75);
+            font-size: 0.74rem;
+            color: #cbd5e1;
             margin-top: 6px;
-            line-height: 1.3;
+            line-height: 1.35;
         }
-
 
         /* Desktop elevation for optical vertical centering */
         @media (min-width: 769px) {
@@ -1595,7 +1628,9 @@ if (document.readyState === 'loading') {
                 <div id="fpMessage" style="display:none; border-radius:10px; padding:10px 14px; font-size:0.8rem; margin-bottom:8px; line-height:1.4;"></div>
                 <button type="button" class="fp-row anim-fade-up anim-d5" id="fpRowBtn" aria-label="Sign in with Biometrics">
                     <div class="fp-row-left">
-                        <i class="bi bi-fingerprint" id="fpIcon"></i>
+                        <div class="fp-icon-wrap">
+                            <i class="bi bi-fingerprint" id="fpIcon"></i>
+                        </div>
                         <div>
                             <div class="fp-row-label" id="fpLabel">Sign in with Biometrics</div>
                             <div class="fp-row-hint" id="fpHint">Fingerprint, Face ID, or device security</div>
@@ -1751,7 +1786,7 @@ if (document.readyState === 'loading') {
                     <div class="bio-login-laser-bar" id="bioLoginLaserBar"></div>
                     <video id="bioLoginFaceVideo" class="bio-login-face-feed" autoplay playsinline muted></video>
                     <div class="bio-login-face-holo" id="bioLoginFaceHolo" style="display:none;">
-                        <i class="bi bi-person-bounding-box" style="font-size:3.5rem; color:#06b6d4; opacity:0.6;"></i>
+                        <i class="bi bi-person-bounding-box" style="font-size:3.5rem; color:#38bdf8; opacity:0.6;"></i>
                     </div>
                     <div class="bio-login-hud-badge" id="bioLoginHudBadge">
                         <span class="bio-login-pulse-dot"></span>

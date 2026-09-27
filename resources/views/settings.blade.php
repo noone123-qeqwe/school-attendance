@@ -1882,9 +1882,9 @@
     transform: translateY(0) scale(0.98) !important;
 }
 
-/* ── Biometric Registration Suite ── */
+/* ── Biometric Registration Suite (Enterprise Design System) ── */
 .bio-flow-section {
-    margin-bottom: 24px;
+    margin-bottom: 26px;
 }
 .bio-section-title-wrap {
     display: flex;
@@ -1898,22 +1898,24 @@
     justify-content: center;
     background: rgba(207, 164, 111, 0.15);
     color: var(--gold, #cfa46f);
-    border: 1px solid rgba(207, 164, 111, 0.3);
-    font-size: 0.7rem;
+    border: 1px solid rgba(207, 164, 111, 0.32);
+    font-size: 0.68rem;
     font-weight: 800;
     padding: 3px 10px;
     border-radius: 99px;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
     text-transform: uppercase;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 .bio-step-title {
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: #f3e7cd;
+    color: #f8fafc;
+    letter-spacing: -0.2px;
 }
 .bio-step-subtitle {
-    font-size: 0.78rem;
-    color: #b39b82;
+    font-size: 0.8rem;
+    color: #94a3b8;
     margin-top: 2px;
 }
 
@@ -1926,35 +1928,42 @@
 }
 .bio-method-card {
     position: relative;
-    background: rgba(255, 235, 190, 0.03);
-    border: 1.5px solid rgba(255, 215, 145, 0.12);
-    border-radius: 16px;
-    padding: 20px 20px 18px 20px;
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.75) 100%);
+    border: 1.5px solid rgba(148, 163, 184, 0.18);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    padding: 22px 20px 20px 20px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     outline: none;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    user-select: none;
 }
 .bio-method-card:hover {
-    border-color: rgba(207, 164, 111, 0.35);
-    background: rgba(255, 235, 190, 0.05);
+    border-color: rgba(207, 164, 111, 0.45);
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.88) 100%);
     transform: translateY(-2px);
+    box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.5), 0 0 20px rgba(207, 164, 111, 0.08);
 }
 .bio-method-card:focus-visible {
-    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.3);
+    box-shadow: 0 0 0 3px rgba(207, 164, 111, 0.4), 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 .bio-method-card.selected#methodCardFingerprint,
 .bio-method-card.selected#methodCardFp {
-    border-color: #22c55e;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.09) 0%, rgba(20, 14, 14, 0.7) 100%);
-    box-shadow: 0 0 28px rgba(34, 197, 94, 0.22), inset 0 0 15px rgba(34, 197, 94, 0.06);
+    border-color: #10b981;
+    background: linear-gradient(165deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.88) 100%);
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.3), 0 16px 36px -10px rgba(16, 185, 129, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
 }
 .bio-method-card.selected#methodCardFace {
-    border-color: #06b6d4;
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.09) 0%, rgba(20, 14, 14, 0.7) 100%);
-    box-shadow: 0 0 28px rgba(6, 182, 212, 0.22), inset 0 0 15px rgba(6, 182, 212, 0.06);
+    border-color: #0ea5e9;
+    background: linear-gradient(165deg, rgba(14, 165, 233, 0.12) 0%, rgba(15, 23, 42, 0.88) 100%);
+    box-shadow: 0 0 0 1px rgba(14, 165, 233, 0.3), 0 16px 36px -10px rgba(14, 165, 233, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
 }
 
 .bio-card-radio {
@@ -1964,11 +1973,12 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    border: 1.5px solid rgba(255, 215, 145, 0.25);
+    border: 1.5px solid rgba(148, 163, 184, 0.3);
+    background: rgba(15, 23, 42, 0.6);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.25s ease;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .bio-radio-inner {
     width: 14px;
@@ -1977,29 +1987,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
-    color: #110a0a;
+    font-size: 0.72rem;
+    color: #ffffff;
     opacity: 0;
-    transform: scale(0.5);
+    transform: scale(0.4);
     transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 .bio-method-card.selected#methodCardFingerprint .bio-card-radio,
 .bio-method-card.selected#methodCardFp .bio-card-radio {
-    border-color: #22c55e;
-    background: rgba(34, 197, 94, 0.2);
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
 }
 .bio-method-card.selected#methodCardFingerprint .bio-radio-inner,
 .bio-method-card.selected#methodCardFp .bio-radio-inner {
-    background: #22c55e;
+    background: #10b981;
     opacity: 1;
     transform: scale(1);
 }
 .bio-method-card.selected#methodCardFace .bio-card-radio {
-    border-color: #06b6d4;
-    background: rgba(6, 182, 212, 0.2);
+    border-color: #0ea5e9;
+    background: rgba(14, 165, 233, 0.2);
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.35);
 }
 .bio-method-card.selected#methodCardFace .bio-radio-inner {
-    background: #06b6d4;
+    background: #0ea5e9;
     opacity: 1;
     transform: scale(1);
 }
@@ -2013,16 +2025,17 @@
     justify-content: center;
     font-size: 1.6rem;
     margin-bottom: 14px;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
 }
 .bio-fp-icon {
-    background: rgba(34, 197, 94, 0.12);
-    border: 1.5px solid rgba(34, 197, 94, 0.3);
-    color: #4ade80;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(5, 150, 105, 0.08) 100%);
+    border: 1.5px solid rgba(16, 185, 129, 0.35);
+    color: #34d399;
 }
 .bio-face-icon {
-    background: rgba(6, 182, 212, 0.12);
-    border: 1.5px solid rgba(6, 182, 212, 0.3);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.16) 0%, rgba(2, 132, 199, 0.08) 100%);
+    border: 1.5px solid rgba(14, 165, 233, 0.35);
     color: #38bdf8;
 }
 .bio-method-card.selected .bio-method-icon-wrap {
@@ -2030,10 +2043,12 @@
 }
 .bio-method-card.selected#methodCardFingerprint .bio-fp-icon,
 .bio-method-card.selected#methodCardFp .bio-fp-icon {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.35);
+    box-shadow: 0 0 24px rgba(16, 185, 129, 0.45);
+    border-color: #34d399;
 }
 .bio-method-card.selected#methodCardFace .bio-face-icon {
-    box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+    box-shadow: 0 0 24px rgba(14, 165, 233, 0.45);
+    border-color: #38bdf8;
 }
 
 .bio-method-header {
@@ -2045,15 +2060,18 @@
 .bio-method-name {
     font-size: 1.05rem;
     font-weight: 700;
-    color: #f3e7cd;
+    color: #f8fafc;
+    letter-spacing: -0.2px;
 }
 .bio-status-pill {
     font-size: 0.68rem;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 99px;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
     transition: all 0.3s ease;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 .bio-status-pill.not-reg {
     background: rgba(245, 158, 11, 0.12);
@@ -2061,54 +2079,69 @@
     border: 1px solid rgba(245, 158, 11, 0.3);
 }
 .bio-status-pill.registered {
-    background: rgba(34, 197, 94, 0.16);
-    color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.35);
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
 }
 .bio-status-pill.registering {
-    background: rgba(59, 130, 246, 0.16);
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.35);
+    background: rgba(14, 165, 233, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(14, 165, 233, 0.35);
 }
 .bio-status-pill.failed {
-    background: rgba(239, 68, 68, 0.16);
+    background: rgba(239, 68, 68, 0.15);
     color: #f87171;
     border: 1px solid rgba(239, 68, 68, 0.35);
 }
 
 .bio-method-desc {
-    font-size: 0.78rem;
-    color: #b39b82;
-    line-height: 1.45;
-    margin-bottom: 12px;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+    margin-bottom: 14px;
 }
 .bio-method-meta {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
     font-size: 0.72rem;
-    color: #a8947f;
+    color: #94a3b8;
+}
+.bio-spec-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(148, 163, 184, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #cbd5e1;
 }
 
-/* Scanner Stage Card */
+/* Scanner Stage Card (Enterprise Central Enclave) */
 .bio-scanner-card {
-    background: linear-gradient(145deg, rgba(255, 235, 190, 0.04) 0%, rgba(20, 14, 14, 0.95) 100%);
-    border: 1.5px solid rgba(212, 175, 55, 0.2);
-    border-radius: 18px;
-    padding: 28px 24px;
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.96) 100%);
+    border: 1.5px solid rgba(148, 163, 184, 0.18);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 22px;
+    padding: 32px 24px 28px;
     text-align: center;
     position: relative;
     overflow: hidden;
-    transition: all 0.35s ease;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 18px 45px -12px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .bio-scanner-card.bio-detected {
-    border-color: #22c55e !important;
-    box-shadow: 0 0 35px rgba(34, 197, 94, 0.35) !important;
-    animation: bioDetectFlash 0.6s ease;
+    border-color: #10b981 !important;
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4), 0 20px 50px -10px rgba(16, 185, 129, 0.45) !important;
+    animation: bioDetectFlash 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes bioDetectFlash {
     0% { transform: scale(1); }
-    50% { transform: scale(1.015); box-shadow: 0 0 50px rgba(34, 197, 94, 0.55); }
+    50% { transform: scale(1.012); box-shadow: 0 0 60px rgba(16, 185, 129, 0.6); }
     100% { transform: scale(1); }
 }
 
@@ -2141,79 +2174,86 @@
 /* Fingerprint Idle Graphic */
 .bio-idle-sensor-ring {
     position: relative;
-    width: 84px;
-    height: 84px;
+    width: 96px;
+    height: 96px;
     border-radius: 50%;
-    margin: 0 auto 16px auto;
+    margin: 0 auto 18px auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0.04) 70%, transparent 100%);
-    border: 1.5px solid rgba(74, 222, 128, 0.35);
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, rgba(16, 185, 129, 0.05) 65%, transparent 100%);
+    border: 2px solid rgba(52, 211, 153, 0.4);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.25), inset 0 0 20px rgba(16, 185, 129, 0.15);
 }
 .bio-radar-ring {
     position: absolute;
     inset: -6px;
     border-radius: 50%;
-    border: 1.5px dashed rgba(74, 222, 128, 0.3);
-    animation: fpRadarSpin 14s linear infinite;
+    border: 1.5px dashed rgba(52, 211, 153, 0.35);
+    animation: fpRadarSpin 16s linear infinite;
 }
 .bio-radar-ring.delay-1 {
     inset: -14px;
-    border: 1px solid rgba(74, 222, 128, 0.15);
+    border: 1px solid rgba(52, 211, 153, 0.18);
     animation: fpRadarPulse 3s ease-out infinite;
 }
 .bio-idle-sensor-icon {
-    font-size: 2.5rem;
+    font-size: 2.8rem;
+    color: #34d399;
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
 }
 
 /* Face Idle Graphic */
 .bio-idle-face-box {
     position: relative;
-    width: 130px;
-    height: 150px;
-    margin: 0 auto 16px auto;
-    border-radius: 22px;
+    width: 140px;
+    height: 160px;
+    margin: 0 auto 18px auto;
+    border-radius: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(6, 182, 212, 0.05);
-    border: 1.5px dashed rgba(6, 182, 212, 0.3);
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.16) 0%, rgba(14, 165, 233, 0.04) 70%, transparent 100%);
+    border: 1.5px dashed rgba(56, 189, 248, 0.35);
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.2), inset 0 0 20px rgba(14, 165, 233, 0.1);
 }
 .hud-corner {
     position: absolute;
-    width: 20px;
-    height: 20px;
-    border-color: #06b6d4;
+    width: 22px;
+    height: 22px;
+    border-color: #38bdf8;
     border-style: solid;
     pointer-events: none;
     z-index: 10;
 }
-.hud-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
-.hud-tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-top-right-radius: 8px; }
-.hud-bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-bottom-left-radius: 8px; }
-.hud-br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-bottom-right-radius: 8px; }
+.hud-tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; border-top-left-radius: 10px; }
+.hud-tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; border-top-right-radius: 10px; }
+.hud-bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; border-bottom-left-radius: 10px; }
+.hud-br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; border-bottom-right-radius: 10px; }
 .hud-face-reticle {
     display: flex;
     align-items: center;
     justify-content: center;
 }
 .bio-idle-face-icon {
-    font-size: 3.4rem;
+    font-size: 3.6rem;
+    color: #38bdf8;
+    filter: drop-shadow(0 0 12px rgba(14, 165, 233, 0.45));
 }
 
 .bio-preview-title {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    color: #f3e7cd;
+    color: #f8fafc;
     margin-bottom: 6px;
+    letter-spacing: -0.2px;
 }
 .bio-preview-sub {
-    font-size: 0.82rem;
-    color: #b39b82;
-    max-width: 440px;
+    font-size: 0.84rem;
+    color: #cbd5e1;
+    max-width: 480px;
     margin: 0 auto 20px auto;
-    line-height: 1.5;
+    line-height: 1.55;
 }
 .bio-action-row {
     display: flex;
@@ -2223,66 +2263,75 @@
     flex-wrap: wrap;
 }
 .bio-primary-cta {
-    padding: 12px 28px;
-    font-size: 0.92rem;
+    padding: 13px 32px;
+    font-size: 0.94rem;
     font-weight: 700;
-    border-radius: 12px;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bio-primary-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 28px rgba(16, 185, 129, 0.48);
 }
 .bio-hardware-note {
     font-size: 0.78rem;
-    color: #b39b82;
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
 }
 
-/* Fingerprint Live Active Scanner */
+/* Fingerprint Live Active Scanner (Realistic Optical Enclave) */
 .fp-scan-frame {
     position: relative;
-    width: 130px;
-    height: 155px;
-    margin: 0 auto 16px auto;
+    width: 140px;
+    height: 170px;
+    margin: 0 auto 18px auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle, rgba(34, 197, 94, 0.16) 0%, rgba(20, 14, 14, 0.8) 80%);
-    border-radius: 20px;
-    border: 1.5px solid rgba(74, 222, 128, 0.4);
-    box-shadow: 0 0 30px rgba(34, 197, 94, 0.25);
+    background: radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.2) 0%, rgba(15, 23, 42, 0.95) 85%);
+    border-radius: 26px;
+    border: 2px solid rgba(52, 211, 153, 0.45);
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.28), inset 0 0 25px rgba(16, 185, 129, 0.15);
     overflow: hidden;
+    transition: all 0.3s ease;
 }
 .fp-svg {
-    width: 85px;
-    height: 105px;
-    stroke: rgba(207, 164, 111, 0.5);
+    width: 96px;
+    height: 122px;
+    stroke: rgba(207, 164, 111, 0.55);
     fill: none;
     stroke-width: 3.5;
     stroke-linecap: round;
+    stroke-linejoin: round;
     transition: all 0.3s ease;
 }
 .fp-ridge {
-    transition: stroke 0.3s ease;
+    transition: stroke 0.3s ease, filter 0.3s ease;
 }
 .bio-scanner-card.bio-detected .fp-svg,
 .fp-scan-frame.bio-detected .fp-svg {
-    stroke: #4ade80 !important;
-    filter: drop-shadow(0 0 12px #22c55e);
-    transform: scale(1.04);
+    stroke: #34d399 !important;
+    filter: drop-shadow(0 0 14px #10b981);
+    transform: scale(1.05);
 }
 .fp-scan-frame.bio-detected {
-    border-color: #22c55e !important;
-    box-shadow: 0 0 35px rgba(34, 197, 94, 0.45) !important;
+    border-color: #10b981 !important;
+    box-shadow: 0 0 45px rgba(16, 185, 129, 0.5) !important;
 }
 .fp-laser-line {
     position: absolute;
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%);
-    box-shadow: 0 0 18px #4ade80, 0 0 8px #22c55e;
+    background: linear-gradient(90deg, transparent 0%, #10b981 25%, #34d399 50%, #10b981 75%, transparent 100%);
+    box-shadow: 0 0 18px #34d399, 0 0 8px #10b981;
     z-index: 5;
     top: 5%;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
-/* Laser line only activates when sensor touch is detected and confirmed */
 .fp-scan-frame.bio-detected .fp-laser-line,
 .bio-scanner-card.bio-detected .fp-laser-line {
     opacity: 1;
@@ -2295,26 +2344,26 @@
 }
 .fp-pulse-wave {
     position: absolute;
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    border: 1.5px solid rgba(74, 222, 128, 0.35);
-    animation: fpTouchWaitPulse 3s ease-in-out infinite;
+    border: 1.5px solid rgba(52, 211, 153, 0.4);
+    animation: fpTouchWaitPulse 2.8s ease-in-out infinite;
 }
 @keyframes fpTouchWaitPulse {
     0%, 100% { transform: scale(0.9); opacity: 0.25; }
-    50%      { transform: scale(1.15); opacity: 0.7; }
+    50%      { transform: scale(1.18); opacity: 0.8; }
 }
 .fp-scan-frame.bio-detected .fp-pulse-wave,
 .bio-scanner-card.bio-detected .fp-pulse-wave {
     animation: fpPulseDetected 0.7s ease-out forwards;
 }
 @keyframes fpPulseDetected {
-    0%   { transform: scale(0.9); opacity: 1; border-color: #4ade80; }
-    100% { transform: scale(3.5); opacity: 0; border-color: #22c55e; }
+    0%   { transform: scale(0.9); opacity: 1; border-color: #34d399; }
+    100% { transform: scale(3.8); opacity: 0; border-color: #10b981; }
 }
 
-/* Face Recognition Live Active Scanner */
+/* Face Recognition Live Active Scanner (Aerospace-Grade Biometric HUD) */
 .face-scan-frame {
     position: relative;
     width: 100%;
@@ -2322,10 +2371,10 @@
     height: 360px;
     aspect-ratio: 1 / 1;
     margin: 0 auto 18px auto;
-    border-radius: 28px;
-    background: rgba(6, 182, 212, 0.05);
-    border: 2.5px solid rgba(6, 182, 212, 0.5);
-    box-shadow: 0 0 35px rgba(6, 182, 212, 0.3), inset 0 0 25px rgba(6, 182, 212, 0.12);
+    border-radius: 26px;
+    background: #020617;
+    border: 2px solid rgba(14, 165, 233, 0.55);
+    box-shadow: 0 0 40px rgba(14, 165, 233, 0.28), inset 0 0 30px rgba(14, 165, 233, 0.12);
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -2334,46 +2383,46 @@
 }
 @media (max-width: 480px) {
     .face-scan-frame {
-        max-width: min(340px, 84vw);
-        height: min(340px, 84vw);
+        max-width: min(330px, 84vw);
+        height: min(330px, 84vw);
         border-radius: 22px;
     }
 }
 /* Face Flash / Fill Light Controls */
 .face-hud-flash-btn {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 14px;
+    right: 14px;
     z-index: 25;
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 5px 12px;
+    padding: 6px 14px;
     background: rgba(15, 23, 42, 0.85);
-    border: 1.5px solid rgba(255, 255, 255, 0.35);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
     color: #f1f5f9;
     font-size: 0.78rem;
     font-weight: 600;
     border-radius: 20px;
     cursor: pointer;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
     user-select: none;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 .face-hud-flash-btn:hover {
     background: rgba(30, 41, 59, 0.95);
     border-color: #facc15;
     color: #fef08a;
     transform: scale(1.05);
-    box-shadow: 0 0 16px rgba(250, 204, 21, 0.55);
+    box-shadow: 0 0 18px rgba(250, 204, 21, 0.6);
 }
 .face-hud-flash-btn.active-flash {
     background: linear-gradient(135deg, #facc15, #f59e0b) !important;
     border-color: #ffffff !important;
     color: #0f172a !important;
-    box-shadow: 0 0 20px rgba(250, 204, 21, 0.9), 0 0 8px #ffffff !important;
+    box-shadow: 0 0 24px rgba(250, 204, 21, 0.95), 0 0 10px #ffffff !important;
     font-weight: 700;
     transform: scale(1.04);
 }
@@ -2386,7 +2435,7 @@
 }
 @keyframes flashBtnSuggestPulse {
     0%, 100% { border-color: rgba(250, 204, 21, 0.4); box-shadow: 0 0 0 rgba(250, 204, 21, 0); }
-    50% { border-color: #facc15; box-shadow: 0 0 16px rgba(250, 204, 21, 0.75); color: #facc15; }
+    50% { border-color: #facc15; box-shadow: 0 0 18px rgba(250, 204, 21, 0.75); color: #facc15; }
 }
 
 /* Face Screen Flash Overlay (Selfie Fill Light) */
@@ -2398,7 +2447,7 @@
     opacity: 0;
     transition: opacity 0.25s ease, box-shadow 0.25s ease;
     border-radius: inherit;
-    box-shadow: inset 0 0 60px 20px rgba(255, 255, 255, 0.95), 0 0 80px 25px rgba(255, 255, 255, 0.9);
+    box-shadow: inset 0 0 70px 25px rgba(255, 255, 255, 0.95), 0 0 90px 30px rgba(255, 255, 255, 0.9);
     border: 4px solid #ffffff;
 }
 .face-screen-flash-overlay.active {
@@ -2408,13 +2457,13 @@
 .face-scan-frame.flash-on,
 .bio-login-camera-box.flash-on {
     border-color: #ffffff !important;
-    box-shadow: 0 0 0 12px #ffffff, 0 0 80px 30px rgba(255, 255, 255, 0.95), 0 0 140px 60px rgba(255, 255, 255, 0.8) !important;
+    box-shadow: 0 0 0 12px #ffffff, 0 0 90px 35px rgba(255, 255, 255, 0.95), 0 0 150px 70px rgba(255, 255, 255, 0.85) !important;
 }
 
 /* Card-wide screen fill light when flash is active */
 .bio-scanner-card.flash-on {
     background: #ffffff !important;
-    box-shadow: 0 0 140px 60px rgba(255, 255, 255, 0.95), 0 0 0 9999px rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 0 150px 70px rgba(255, 255, 255, 0.95), 0 0 0 9999px rgba(255, 255, 255, 0.5) !important;
     color: #0f172a !important;
     border-color: #ffffff !important;
 }
@@ -2447,30 +2496,31 @@
 }
 .face-laser-bar {
     position: absolute;
-    left: 0;
-    right: 0;
+    left: 4%;
+    width: 92%;
     height: 3px;
-    background: linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%);
-    box-shadow: 0 0 20px #06b6d4, 0 0 10px #38bdf8;
+    background: linear-gradient(90deg, transparent 0%, #0ea5e9 25%, #38bdf8 50%, #0ea5e9 75%, transparent 100%);
+    box-shadow: 0 0 18px #38bdf8, 0 0 8px #0ea5e9;
     z-index: 5;
     top: 0;
     animation: faceLaserSweep 2.4s ease-in-out infinite;
 }
 @keyframes faceLaserSweep {
-    0%   { top: 5%; opacity: 0.75; }
-    50%  { top: 92%; opacity: 1; }
-    100% { top: 5%; opacity: 0.75; }
+    0%   { top: 6%; opacity: 0.75; }
+    50%  { top: 90%; opacity: 1; }
+    100% { top: 6%; opacity: 0.75; }
 }
 .face-camera-feed {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transform: scaleX(-1);
+    display: block;
 }
 .face-holo-mesh {
     position: relative;
-    width: 220px;
-    height: 260px;
+    width: 230px;
+    height: 270px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2479,13 +2529,14 @@
     width: 190px;
     height: 240px;
     border-radius: 50% / 60% 60% 40% 40%;
-    border: 2px dashed rgba(6, 182, 212, 0.45);
+    border: 2px dashed rgba(56, 189, 248, 0.5);
     position: relative;
-    animation: faceOvalPulse 2s ease-in-out infinite;
+    box-shadow: inset 0 0 25px rgba(14, 165, 233, 0.15), 0 0 25px rgba(14, 165, 233, 0.12);
+    animation: faceOvalPulse 2.2s ease-in-out infinite;
 }
 @keyframes faceOvalPulse {
-    0%, 100% { border-color: rgba(6, 182, 212, 0.4); transform: scale(1); }
-    50% { border-color: rgba(56, 189, 248, 0.75); transform: scale(1.02); }
+    0%, 100% { border-color: rgba(56, 189, 248, 0.45); transform: scale(1); }
+    50% { border-color: rgba(56, 189, 248, 0.85); transform: scale(1.02); }
 }
 .face-mesh-node {
     position: absolute;
@@ -2493,7 +2544,7 @@
     height: 7px;
     border-radius: 50%;
     background: #38bdf8;
-    box-shadow: 0 0 10px #06b6d4;
+    box-shadow: 0 0 10px #0ea5e9;
     animation: meshNodePulse 1.8s infinite ease-in-out;
 }
 .n-forehead { top: 35px; left: 50%; transform: translateX(-50%); }
@@ -2509,21 +2560,23 @@
 }
 
 .bio-scanning-title {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 700;
-    color: #f3e7cd;
+    color: #f8fafc;
     margin-bottom: 4px;
+    letter-spacing: -0.2px;
 }
 .bio-scanning-sub {
-    font-size: 0.82rem;
-    color: #b39b82;
-    margin-bottom: 16px;
+    font-size: 0.84rem;
+    color: #cbd5e1;
+    margin-bottom: 18px;
+    line-height: 1.5;
 }
 
 /* Progressive Scan Feedback */
 .bio-progress-container {
     width: 100%;
-    max-width: 360px;
+    max-width: 380px;
     margin: 0 auto 16px auto;
 }
 .bio-progress-track {
@@ -2533,47 +2586,62 @@
     border-radius: 99px;
     overflow: hidden;
     margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
 }
 .bio-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #16a34a, #4ade80);
+    background: linear-gradient(90deg, #059669, #34d399);
     border-radius: 99px;
     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
 }
 .bio-progress-fill.cyan-fill {
     background: linear-gradient(90deg, #0284c7, #38bdf8);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
 }
 .bio-progress-labels {
     display: flex;
     justify-content: space-between;
-    font-size: 0.74rem;
-    color: #b39b82;
+    font-size: 0.76rem;
+    color: #94a3b8;
+    line-height: 1.4;
 }
 .bio-progress-pct {
     font-weight: 700;
-    color: #f3e7cd;
+    color: #f8fafc;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .bio-cancel-row {
-    margin-top: 8px;
+    margin-top: 10px;
 }
 .bio-cancel-btn {
-    padding: 8px 18px;
-    font-size: 0.8rem;
-    border-radius: 10px;
+    padding: 8px 20px;
+    font-size: 0.82rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.bio-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
 }
 
 /* Success View */
 .bio-success-wrap {
-    padding: 10px 0;
+    padding: 12px 0;
 }
 .bio-success-icon-ring {
-    width: 80px;
-    height: 80px;
+    width: 84px;
+    height: 84px;
     border-radius: 50%;
-    background: rgba(34, 197, 94, 0.15);
-    border: 2px solid rgba(74, 222, 128, 0.4);
-    box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(16, 185, 129, 0.06) 70%, transparent 100%);
+    border: 2px solid rgba(52, 211, 153, 0.5);
+    box-shadow: 0 0 35px rgba(16, 185, 129, 0.35);
     margin: 0 auto 18px auto;
     display: flex;
     align-items: center;
@@ -2589,14 +2657,14 @@
     height: 52px;
 }
 .bio-success-circle {
-    stroke: #22c55e;
+    stroke: #10b981;
     stroke-width: 3;
     stroke-dasharray: 166;
     stroke-dashoffset: 166;
     animation: circleStroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
 }
 .bio-success-check {
-    stroke: #4ade80;
+    stroke: #34d399;
     stroke-width: 3.5;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -2612,17 +2680,18 @@
 }
 
 .bio-success-title {
-    font-size: 1.25rem;
+    font-size: 1.3rem;
     font-weight: 800;
-    color: #4ade80;
+    color: #34d399;
     margin-bottom: 6px;
+    letter-spacing: -0.2px;
 }
 .bio-success-desc {
-    font-size: 0.84rem;
-    color: #d1fae5;
-    max-width: 440px;
-    margin: 0 auto 20px auto;
-    line-height: 1.5;
+    font-size: 0.86rem;
+    color: #cbd5e1;
+    max-width: 460px;
+    margin: 0 auto 22px auto;
+    line-height: 1.55;
 }
 .bio-success-actions {
     display: flex;
@@ -2634,7 +2703,7 @@
 
 /* Error View */
 .bio-error-wrap {
-    padding: 10px 0;
+    padding: 12px 0;
     animation: bioShake 0.5s ease-in-out;
 }
 @keyframes bioShake {
@@ -2643,31 +2712,32 @@
     40%, 80% { transform: translateX(8px); }
 }
 .bio-error-icon-box {
-    width: 68px;
-    height: 68px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    background: rgba(239, 68, 68, 0.15);
-    border: 1.5px solid rgba(239, 68, 68, 0.4);
-    box-shadow: 0 0 25px rgba(239, 68, 68, 0.25);
+    background: radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.05) 70%, transparent 100%);
+    border: 2px solid rgba(239, 68, 68, 0.45);
+    box-shadow: 0 0 30px rgba(239, 68, 68, 0.3);
     margin: 0 auto 16px auto;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #f87171;
-    font-size: 2rem;
+    font-size: 2.2rem;
 }
 .bio-error-title {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #fca5a5;
+    color: #f87171;
     margin-bottom: 6px;
+    letter-spacing: -0.2px;
 }
 .bio-error-desc {
-    font-size: 0.82rem;
-    color: #fecaca;
-    max-width: 420px;
-    margin: 0 auto 20px auto;
-    line-height: 1.5;
+    font-size: 0.84rem;
+    color: #cbd5e1;
+    max-width: 440px;
+    margin: 0 auto 22px auto;
+    line-height: 1.55;
 }
 .bio-error-actions {
     display: flex;
@@ -2677,23 +2747,25 @@
     flex-wrap: wrap;
 }
 
-/* Device Item Cards */
+/* Device Item Cards (Registered Credentials) */
 .device-item-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    padding: 14px 18px;
-    border-radius: 14px;
-    background: rgba(255, 235, 190, 0.03);
-    border: 1px solid rgba(255, 215, 145, 0.08);
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     margin-bottom: 12px;
-    transition: all 0.25s ease;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .device-item-card:hover {
-    border-color: rgba(255, 215, 145, 0.2);
-    background: rgba(255, 235, 190, 0.06);
+    border-color: rgba(207, 164, 111, 0.35);
+    background: linear-gradient(165deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.75) 100%);
     transform: translateY(-1px);
+    box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.4);
 }
 .device-item-left {
     display: flex;
@@ -2709,17 +2781,18 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.35rem;
     flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 .device-item-icon.fp-type {
-    background: rgba(34, 197, 94, 0.15);
-    border: 1px solid rgba(34, 197, 94, 0.3);
-    color: #4ade80;
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #34d399;
 }
 .device-item-icon.face-type {
-    background: rgba(6, 182, 212, 0.15);
-    border: 1px solid rgba(6, 182, 212, 0.3);
+    background: rgba(14, 165, 233, 0.15);
+    border-color: rgba(14, 165, 233, 0.35);
     color: #38bdf8;
 }
 .device-item-info {
@@ -2733,9 +2806,9 @@
     flex-wrap: wrap;
 }
 .device-item-name {
-    font-size: 0.92rem;
+    font-size: 0.94rem;
     font-weight: 700;
-    color: #f3e7cd;
+    color: #f8fafc;
 }
 .device-type-badge {
     font-size: 0.65rem;
@@ -2743,48 +2816,68 @@
     padding: 2px 7px;
     border-radius: 6px;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 .device-type-badge.fp {
-    background: rgba(34, 197, 94, 0.15);
-    color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 .device-type-badge.face {
-    background: rgba(6, 182, 212, 0.15);
+    background: rgba(14, 165, 233, 0.15);
     color: #38bdf8;
-    border: 1px solid rgba(6, 182, 212, 0.3);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+}
+.bio-device-type-pill {
+    font-size: 0.66rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 99px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.bio-device-type-pill.pill-fp {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+.bio-device-type-pill.pill-face {
+    background: rgba(14, 165, 233, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(14, 165, 233, 0.35);
 }
 .device-item-meta {
     font-size: 0.74rem;
-    color: #b39b82;
+    color: #94a3b8;
     display: flex;
     align-items: center;
     gap: 6px;
-    margin-top: 3px;
+    margin-top: 4px;
     flex-wrap: wrap;
 }
 .device-meta-verified {
-    color: #4ade80;
+    color: #34d399;
     font-weight: 600;
     display: inline-flex;
     align-items: center;
 }
 .device-meta-dot {
-    color: #8f826f;
+    color: #64748b;
 }
 .device-meta-date {
-    color: #b39b82;
+    color: #94a3b8;
     font-weight: 500;
 }
 .device-remove-btn {
     flex-shrink: 0;
-    padding: 7px 14px;
+    padding: 7px 15px;
     border-radius: 10px;
-    background: rgba(248, 113, 113, 0.1);
+    background: rgba(239, 68, 68, 0.1);
     color: #f87171;
-    border: 1px solid rgba(248, 113, 113, 0.25);
-    font-size: 0.76rem;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    font-size: 0.78rem;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -2793,9 +2886,9 @@
     align-items: center;
 }
 .device-remove-btn:hover {
-    background: rgba(248, 113, 113, 0.22);
+    background: rgba(239, 68, 68, 0.22);
     color: #fca5a5;
-    border-color: rgba(248, 113, 113, 0.4);
+    border-color: rgba(239, 68, 68, 0.45);
 }
 
 @keyframes fpRadarSpin {
@@ -3750,29 +3843,29 @@
         <div class="sec-group-panel" id="sec-section-biometrics">
             <div class="sc mb-0" id="tab-fingerprint">
                 <div class="sc-head">
-                    <div class="sc-icon" style="background:rgba(34,197,94,0.14);color:#4ade80;">
-                        <i class="bi bi-fingerprint"></i>
+                    <div class="sc-icon" style="background:rgba(16,185,129,0.15);color:#34d399;border:1px solid rgba(16,185,129,0.3);">
+                        <i class="bi bi-shield-lock-fill"></i>
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
                             <div class="sc-title">Biometrics Verification</div>
                             <span class="sec-badge sec-badge-green"><i class="bi bi-patch-check-fill"></i> FIDO2 / WebAuthn Active</span>
                         </div>
-                        <div class="sc-sub">Manage biometric authentication settings such as fingerprint or face verification for instant passwordless login and QR clock-in</div>
+                        <div class="sc-sub">Manage enterprise biometric authentication such as hardware fingerprint or facial recognition for instant passwordless login and verified clock-in</div>
                     </div>
                 </div>
                 <div class="sc-body">
 
                     <!-- In-app browser & Insecure Context Alert -->
-                    <div id="webauthnUnsupported" style="display:none;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
+                    <div id="webauthnUnsupported" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
                         <div style="display:flex;align-items:flex-start;gap:12px;">
                             <i class="bi bi-exclamation-triangle" style="font-size:1.2rem;flex-shrink:0;margin-top:2px;"></i>
                             <div>
                                 <div style="font-weight:700;margin-bottom:4px;" id="unsupportedTitle">Biometric sensor not available on this browser</div>
-                                <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.85;line-height:1.5;">
+                                <div id="webauthnUnsupportedMsg" style="font-size:.8rem;opacity:.9;line-height:1.5;">
                                     Your current browser or connection does not support hardware biometric sign-in.
                                 </div>
-                                <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:none;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
+                                <a id="openInBrowserBtn" href="#" onclick="openInSystemBrowser()" style="display:none;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;">
                                     <i class="bi bi-box-arrow-up-right"></i> Open in External Browser
                                 </a>
                             </div>
@@ -3809,8 +3902,9 @@
                                         Authenticate in seconds using your device's built-in fingerprint scanner, Touch ID sensor, or USB security key.
                                     </p>
                                     <div class="bio-method-meta">
-                                        <span><i class="bi bi-lightning-charge-fill me-1" style="color:#4ade80;"></i>Ultra-Fast</span>
-                                        <span><i class="bi bi-cpu-fill me-1" style="color:#cfa46f;"></i>Local Enclave</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-shield-check" style="color:#34d399;"></i> FIDO2 L3</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-cpu" style="color:#cfa46f;"></i> Secure Enclave</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-lightning-charge" style="color:#34d399;"></i> Sub-second</span>
                                     </div>
                                 </div>
                             </div>
@@ -3834,8 +3928,9 @@
                                         Sign in through your device's protected Face ID or Windows Hello prompt. Your browser never uploads a face image.
                                     </p>
                                     <div class="bio-method-meta">
-                                        <span><i class="bi bi-eye-fill me-1" style="color:#38bdf8;"></i>Hands-Free</span>
-                                        <span><i class="bi bi-camera-fill me-1" style="color:#cfa46f;"></i>Front Sensor</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-eye" style="color:#38bdf8;"></i> 3D Topology</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-patch-check" style="color:#cfa46f;"></i> Anti-Spoofing</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-lock" style="color:#38bdf8;"></i> Zero-Knowledge</span>
                                     </div>
                                 </div>
                             </div>
@@ -3843,12 +3938,12 @@
                     </div>
 
                     <!-- ── Step 2: Registration & Scanning Stage ── -->
-                    <div class="bio-flow-section" style="margin-top:24px;">
+                    <div class="bio-flow-section" style="margin-top:26px;">
                         <div class="bio-section-title-wrap">
                             <span class="bio-step-badge">Step 2</span>
                             <div>
                                 <div class="bio-step-title" id="bioStep2Title">Biometric Sensor Capture</div>
-                                <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected: <strong id="selectedMethodDisplay" style="color:#4ade80;">Fingerprint</strong> — Ready to register this device</div>
+                                <div class="bio-step-subtitle" id="bioStep2Subtitle">Selected: <strong id="selectedMethodDisplay" style="color:#34d399;">Fingerprint</strong> — Ready to register this device</div>
                             </div>
                         </div>
 
@@ -3863,11 +3958,10 @@
                                         <div class="bio-idle-sensor-ring">
                                             <div class="bio-radar-ring"></div>
                                             <div class="bio-radar-ring delay-1"></div>
-                                            <i class="bi bi-fingerprint bio-idle-sensor-icon" style="color:#4ade80;"></i>
+                                            <i class="bi bi-fingerprint bio-idle-sensor-icon"></i>
                                         </div>
                                         <div class="bio-preview-title">Register Fingerprint Authentication</div>
                                         <div class="bio-preview-sub">Click the button below to start the hardware fingerprint enrollment for this account.</div>
-
                                     </div>
 
                                     <!-- Face Idle Graphic -->
@@ -3878,7 +3972,7 @@
                                             <span class="hud-corner hud-bl"></span>
                                             <span class="hud-corner hud-br"></span>
                                             <div class="hud-face-reticle">
-                                                <i class="bi bi-person-bounding-box bio-idle-face-icon" style="color:#38bdf8;"></i>
+                                                <i class="bi bi-person-bounding-box bio-idle-face-icon"></i>
                                             </div>
                                         </div>
                                         <div class="bio-preview-title">Register Face Recognition</div>
@@ -3905,15 +3999,17 @@
                                         <div class="fp-scan-frame">
                                             <div class="fp-pulse-wave"></div>
                                             <div class="fp-laser-line" id="fpLaserLine"></div>
-                                            <svg class="fp-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">
-                                                <path class="fp-ridge" d="M50 15 C30 15 20 28 20 45 C20 65 25 85 27 105" />
-                                                <path class="fp-ridge" d="M50 25 C36 25 28 35 28 48 C28 68 33 88 35 105" />
-                                                <path class="fp-ridge" d="M50 35 C42 35 36 42 36 52 C36 72 40 92 42 105" />
-                                                <path class="fp-ridge" d="M50 45 C46 45 44 48 44 55 C44 75 48 95 49 105" />
-                                                <path class="fp-ridge" d="M50 55 C52 55 54 58 54 62 C54 78 52 94 51 105" />
-                                                <path class="fp-ridge" d="M50 35 C58 35 64 42 64 52 C64 72 60 92 58 105" />
-                                                <path class="fp-ridge" d="M50 25 C64 25 72 35 72 48 C72 68 67 88 65 105" />
-                                                <path class="fp-ridge" d="M50 15 C70 15 80 28 80 45 C80 65 75 85 73 105" />
+                                            <!-- Concentric Authentic Dermal Ridge Vectors -->
+                                            <svg class="fp-svg" viewBox="0 0 120 140" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path class="fp-ridge" d="M60 46 C53 46 48 52 48 62 C48 72 54 80 60 88 C66 80 72 72 72 62 C72 52 67 46 60 46" />
+                                                <path class="fp-ridge" d="M60 36 C46 36 38 46 38 62 C38 82 48 98 56 110" />
+                                                <path class="fp-ridge" d="M60 36 C74 36 82 46 82 62 C82 82 72 98 64 110" />
+                                                <path class="fp-ridge" d="M60 26 C40 26 30 38 30 62 C30 92 42 110 50 122" />
+                                                <path class="fp-ridge" d="M60 26 C80 26 90 38 90 62 C90 92 78 110 70 122" />
+                                                <path class="fp-ridge" d="M60 16 C34 16 22 32 22 62 C22 98 36 120 46 132" />
+                                                <path class="fp-ridge" d="M60 16 C86 16 98 32 98 62 C98 98 84 120 74 132" />
+                                                <path class="fp-ridge" d="M60 7 C28 7 14 26 14 62 C14 104 30 128 42 138" />
+                                                <path class="fp-ridge" d="M60 7 C92 7 106 26 106 62 C106 104 90 128 78 138" />
                                             </svg>
                                         </div>
                                         <div class="bio-scanning-title" id="fpScanningTitle">Touch Fingerprint Sensor</div>
@@ -3929,7 +4025,6 @@
                                                 <span class="bio-progress-pct" id="fpPctLabel">Ready</span>
                                             </div>
                                         </div>
-
                                     </div>
 
                                     <!-- Face Recognition Realistic Scanner -->
@@ -4032,14 +4127,14 @@
                     <!-- ── Step 3: Registered Hardware Credentials List ── -->
                     <div style="margin-top:28px;">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:12px;">
-                            <div style="font-size:.78rem;font-weight:700;color:#b39b82;text-transform:uppercase;letter-spacing:.5px;">Registered Hardware Credentials</div>
+                            <div style="font-size:.78rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.6px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">Registered Hardware Credentials</div>
                             <span id="deviceCountBadge" style="font-size:.72rem;background:rgba(207,164,111,0.12);color:var(--gold,#cfa46f);padding:3px 10px;border-radius:99px;border:1px solid rgba(207,164,111,0.25);font-weight:700;white-space:nowrap;flex-shrink:0;display:inline-flex;align-items:center;">Loading...</span>
                         </div>
                         <div id="deviceList">
-                            <div style="text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
+                            <div style="text-align:center;padding:32px 20px;color:#94a3b8;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
                                 <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                                <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
-                                <div style="font-size:.78rem;color:#b39b82;">Choose Fingerprint or Face Recognition above to register this device.</div>
+                                <div style="font-weight:700;color:#f8fafc;margin-bottom:4px;">No biometric credentials registered yet</div>
+                                <div style="font-size:.78rem;color:#94a3b8;">Choose Fingerprint or Face Recognition above to register this device.</div>
                             </div>
                         </div>
                     </div>
