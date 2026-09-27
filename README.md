@@ -1,59 +1,42 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Smart Classroom Attendance System
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 12 attendance application for school administrators, teachers, students, and parents. The web application supports class schedules, QR attendance, location and device checks, offline teacher capture, absence warnings, reports, and a PWA. Android and desktop clients live under `apps/`.
 
-## About Laravel
+## Local setup
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Requires PHP 8.2 with the extensions listed in `Dockerfile`, Composer 2, Node.js, and a supported database. Copy `.env.example` to `.env`, configure the database, then run:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+```sh
+composer install
+php artisan key:generate
+php artisan migrate
+npm ci
+npm run build
+php artisan serve
+```
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+For background work, run `php artisan queue:work` and `php artisan schedule:work` in separate terminals. Never use a temporary `APP_KEY` for a persistent installation. Configure the same stable key for every instance and restart.
 
-## Learning Laravel
+## Attendance rule
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+The current data model stores **one attendance result per student, subject, and local calendar date**. A QR session identifies the capture window and verification evidence; it does not create a second attendance result for a repeat meeting of that subject on the same date. The unique database index and `Attendance::updateOrCreateRecord()` enforce this rule. Confirm a policy change with the school before changing the index, reports, auto-absence logic, and tests together.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+The scheduler closes expired QR sessions each minute and checks scheduled classes for absences every 30 minutes. It runs chronic absence checks at 19:00, disciplinary warning processing at 19:15, and overall attendance-rate checks at 20:00 in the configured timezone. See `routes/console.php` for the current schedule.
 
-## Laravel Sponsors
+## Checks
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```sh
+php artisan test
+php scripts/check-release-manifest.php
+npm ci && npm run build
+```
 
-### Premium Partners
+CI runs the test suite against SQLite and MySQL. See `.github/workflows/ci.yml`. Release metadata and the production Docker image can be checked with the commands above and `docker build --tag attendance-check .`.
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Deployment and recovery
 
-## Contributing
+`render.yaml` and `Dockerfile` describe the current Docker deployment. `render-blueprint.yaml` is an older alternative with different database and scheduler settings; do not mix the two configurations. Set `APP_KEY`, database credentials, and a **new** `MAIL_PASSWORD` in the hosting environment. The committed mail credential was removed; it must be revoked at the mail provider because it remains in earlier Git history. Keep all secrets out of commits and build arguments.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+The container entrypoint runs migrations and starts the web server, queue worker, and scheduler. After deployment, verify `/up`, log in as each role, record and reconcile a sample attendance session, and check queue failures and scheduler logs. Review `docs/web-release-process.md` for web and Android version handling.
 
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+The scheduler runs `app:backup-database` daily with 14-day pruning. Store a copy outside the application host and periodically restore it into an isolated test database. A backup is only proven usable after a restore and a sample attendance/report check. Preserve the stable `APP_KEY` along with the recovery procedure; encrypted data may depend on it.

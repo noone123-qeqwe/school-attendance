@@ -25,10 +25,10 @@ touch /var/www/html/version.json 2>/dev/null || true
 chown www-data:www-data /var/www/html/version.json /var/www/html/package.json /var/www/html/public/manifest.json /var/www/html/public/sw.js 2>/dev/null || true
 chmod 664 /var/www/html/version.json /var/www/html/package.json /var/www/html/public/manifest.json /var/www/html/public/sw.js 2>/dev/null || true
 
-# Generate temporary APP_KEY fallback if not provided in environment
+# A stable APP_KEY is required so sessions and encrypted data survive restarts.
 if [ -z "$APP_KEY" ]; then
-    echo "🔑 APP_KEY not provided, generating temporary fallback key..."
-    export APP_KEY=$(php artisan key:generate --show)
+    echo "APP_KEY must be configured in the deployment environment." >&2
+    exit 1
 fi
 
 # Ensure outbound SMTP defaults for production OTP delivery if not explicitly set
@@ -37,7 +37,6 @@ export MAIL_HOST="${MAIL_HOST:-smtp.gmail.com}"
 export MAIL_PORT="${MAIL_PORT:-587}"
 export MAIL_ENCRYPTION="${MAIL_ENCRYPTION:-tls}"
 export MAIL_USERNAME="${MAIL_USERNAME:-osmenacolleges.attendance@gmail.com}"
-export MAIL_PASSWORD="${MAIL_PASSWORD:-zskulbswpldmxqfp}"
 export MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-osmenacolleges.attendance@gmail.com}"
 export MAIL_FROM_NAME="${MAIL_FROM_NAME:-Smart Classroom Attendance System}"
 export BREVO_API_KEY="${BREVO_API_KEY:-}"

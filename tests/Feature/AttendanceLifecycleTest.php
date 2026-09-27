@@ -19,6 +19,14 @@ class AttendanceLifecycleTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_warning_commands_resolve_to_the_intended_implementations()
+    {
+        $commands = Artisan::all();
+
+        $this->assertInstanceOf(\App\Console\Commands\CheckEarlyWarnings::class, $commands['attendance:check-warnings']);
+        $this->assertInstanceOf(\App\Console\Commands\CheckAttendanceRate::class, $commands['attendance:check-rate']);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

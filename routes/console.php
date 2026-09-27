@@ -10,8 +10,8 @@ Schedule::command('attendance:auto-close')->everyMinute();
 // Mark absent students every 30 minutes for reliable coverage
 Schedule::command('attendance:mark-absent')->everyThirtyMinutes();
 
-// Check for excessive absences and issue warnings
-Schedule::command('attendance:check-warnings')->dailyAt('19:00'); // Evening check
+// Flag chronic absence patterns; the separate check-rate command handles low rates.
+Schedule::command('attendance:check-warnings')->dailyAt('19:00');
 
 // Process unexcused absence count warnings
 Schedule::command('attendance:warnings')->dailyAt('19:15');
