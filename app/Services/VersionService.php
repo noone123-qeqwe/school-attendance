@@ -172,14 +172,15 @@ class VersionService
      */
     public function getBuild(): string
     {
-        $configBuild = config('version.build');
-        if (!empty($configBuild)) {
-            return (string)$configBuild;
-        }
-
+        // The file may advance while Laravel still holds old cached config.
         $file = $this->getFileData();
         if (!empty($file['build'])) {
             return (string)$file['build'];
+        }
+
+        $configBuild = config('version.build');
+        if (!empty($configBuild)) {
+            return (string)$configBuild;
         }
 
         return date('Ymd') . '.001';
@@ -735,25 +736,19 @@ class VersionService
     }
 
     /**
-     * Get the service worker cache version (e.g. 'v350') dynamically from sw.js or cache.
+     * Read the deployed service worker before any persisted cache entry.
      */
     public function getSwVersion(): string
     {
-        $cached = Cache::get('pwa_sw_version');
-        if (!empty($cached)) {
-            return (string)$cached;
-        }
-
         $swPath = public_path('sw.js');
         if (File::exists($swPath)) {
             $content = @file_get_contents($swPath);
             if ($content && preg_match('/CACHE_VERSION\s*=\s*[\'"](v?\d+)[\'"]/', $content, $matches)) {
                 $ver = str_starts_with($matches[1], 'v') ? $matches[1] : 'v' . $matches[1];
-                Cache::forever('pwa_sw_version', $ver);
                 return $ver;
             }
         }
 
-        return 'v350';
+        return (string)(Cache::get('pwa_sw_version') ?: 'v350');
     }
 }

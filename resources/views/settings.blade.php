@@ -61,10 +61,17 @@
     gap: 20px;
     flex-wrap: wrap;
     position: relative;
+    z-index: 100;
     overflow: visible;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+}
+.settings-top-navbar:focus-within,
+.settings-command-header:focus-within,
+.settings-top-navbar.search-active,
+.settings-command-header.search-active {
+    z-index: 1000 !important;
 }
 .settings-top-navbar::after,
 .settings-command-header::after {
@@ -220,6 +227,7 @@
 .settings-search-box {
     position: relative;
     width: 290px;
+    z-index: 1001;
 }
 .settings-search-icon {
     position: absolute;
@@ -269,6 +277,29 @@
     font-size: 0.82rem;
     font-weight: 400;
 }
+.settings-search-clear-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #a89885;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.05rem;
+    line-height: 1;
+    z-index: 3;
+    border-radius: 50%;
+    transition: color 0.18s ease, transform 0.18s ease;
+}
+.settings-search-clear-btn:hover {
+    color: #f59e0b;
+    transform: translateY(-50%) scale(1.15);
+}
 .settings-search-kbd {
     position: absolute;
     right: 12px;
@@ -292,46 +323,65 @@
     border-color: rgba(207, 164, 111, 0.55);
     color: #f59e0b;
 }
+.settings-search-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 950;
+    pointer-events: auto;
+    transition: opacity 0.2s ease;
+}
 .settings-search-dropdown {
     position: absolute;
     top: calc(100% + 8px);
     left: 0;
     right: 0;
     min-width: 320px;
-    background: #18130f;
-    border: 1px solid rgba(207, 164, 111, 0.35);
+    background: #140d0a !important;
+    border: 1.5px solid rgba(207, 164, 111, 0.45) !important;
     border-radius: 14px;
-    box-shadow: 0 16px 38px rgba(0,0,0,0.75), 0 0 18px rgba(207,164,111,0.18);
-    z-index: 1050;
-    padding: 6px;
-    max-height: 380px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.95), 0 0 24px rgba(207, 164, 111, 0.22) !important;
+    z-index: 99999 !important;
+    padding: 8px;
+    max-height: min(340px, calc(100dvh - 250px));
     overflow-y: auto;
-    backdrop-filter: blur(25px);
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 .search-item-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.18s ease;
-    border: 1px solid transparent;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.02);
+    margin-bottom: 4px;
+}
+.search-item-row:last-child {
+    margin-bottom: 0;
 }
 .search-item-row:hover, .search-item-row.selected {
-    background: rgba(207, 164, 111, 0.14);
-    border-color: rgba(207, 164, 111, 0.32);
+    background: rgba(207, 164, 111, 0.18);
+    border-color: rgba(207, 164, 111, 0.42);
 }
 .search-item-icon {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 8px;
     background: rgba(207, 164, 111, 0.14);
     color: #f5dfa8;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.95rem;
+    font-size: 1rem;
     flex-shrink: 0;
 }
 .search-item-body {
@@ -340,19 +390,19 @@
 }
 .search-item-title {
     display: block;
-    font-size: 0.84rem;
+    font-size: 0.88rem;
     font-weight: 700;
     color: #fffbeb;
-    line-height: 1.25;
+    line-height: 1.3;
 }
 .search-item-sub {
     display: block;
-    font-size: 0.72rem;
-    color: #a89885;
-    margin-top: 1px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.74rem;
+    color: #b3a18f;
+    margin-top: 2px;
+    line-height: 1.35;
+    white-space: normal;
+    word-break: break-word;
 }
 .search-item-cat {
     font-size: 0.65rem;
@@ -361,16 +411,16 @@
     letter-spacing: 0.5px;
     color: #cfa46f;
     margin-left: auto;
-    padding: 2px 7px;
-    background: rgba(207, 164, 111, 0.1);
+    padding: 3px 8px;
+    background: rgba(207, 164, 111, 0.12);
     border-radius: 6px;
     flex-shrink: 0;
 }
 .search-empty-state {
-    padding: 18px 14px;
+    padding: 20px 14px;
     text-align: center;
-    font-size: 0.8rem;
-    color: #8c7d6d;
+    font-size: 0.82rem;
+    color: #a89885;
 }
 
 .settings-command-telemetry {
@@ -424,6 +474,8 @@
     grid-template-columns: 290px 1fr;
     gap: 26px;
     align-items: start;
+    position: relative;
+    z-index: 1 !important;
 }
 .settings-sidebar {
     background: linear-gradient(145deg, rgba(26, 20, 16, 0.92) 0%, rgba(16, 13, 11, 0.96) 100%);
@@ -650,6 +702,7 @@
 /* ── Modern Segmented Pill Track ── */
 .stabs-wrapper {
     position: relative;
+    z-index: 10 !important;
     margin-bottom: 26px;
     display: flex;
     align-items: center;
@@ -3026,6 +3079,19 @@
             padding-right: 42px !important;
             font-size: 0.85rem !important;
         }
+        .settings-search-kbd {
+            display: none !important;
+        }
+        .settings-search-dropdown {
+            position: absolute !important;
+            top: calc(100% + 6px) !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            max-height: min(280px, calc(100dvh - 260px)) !important;
+            border-radius: 12px !important;
+        }
         .settings-top-right {
             width: 100% !important;
             justify-content: stretch !important;
@@ -3052,6 +3118,8 @@
         }
 
         .stabs-wrapper {
+            position: relative !important;
+            z-index: 10 !important;
             margin-top: 6px !important;
             margin-bottom: 20px !important;
             padding: 4px 6px !important;
@@ -3132,6 +3200,9 @@
 
 <div class="sp">
 
+    <!-- Mobile Search Backdrop Overlay -->
+    <div id="settingsSearchBackdrop" class="settings-search-backdrop" style="display:none;"></div>
+
     <!-- ── EXECUTIVE COMMAND HEADER & BREADCRUMBS ── -->
     <div class="settings-top-navbar settings-command-header">
         <div class="settings-top-left settings-command-left">
@@ -3159,11 +3230,13 @@
                 <input type="text"
                        id="settingsSearchInput"
                        class="settings-search-input"
-                       style="padding-left: 44px !important; padding-right: 42px !important;"
                        placeholder="Search settings..."
                        autocomplete="off"
                        spellcheck="false"
                        aria-label="Search settings">
+                <button type="button" id="settingsSearchClear" class="settings-search-clear-btn" aria-label="Clear search" style="display:none;">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
                 <kbd class="settings-search-kbd" title="Press / to search">/</kbd>
                 <div id="settingsSearchResults" class="settings-search-dropdown" style="display:none;"></div>
             </div>
@@ -7375,15 +7448,43 @@ const SETTINGS_SEARCH_INDEX = [
 function initSettingsSearch() {
     const input = document.getElementById('settingsSearchInput');
     const dropdown = document.getElementById('settingsSearchResults');
+    const clearBtn = document.getElementById('settingsSearchClear');
+    const backdrop = document.getElementById('settingsSearchBackdrop');
+    const header = document.querySelector('.settings-command-header') || document.querySelector('.settings-top-navbar');
+    const kbd = document.querySelector('.settings-search-kbd');
     if (!input || !dropdown) return;
 
     let selectedIndex = -1;
     let currentResults = [];
 
+    function updateClearButton() {
+        if (!clearBtn) return;
+        if (input.value.trim().length > 0) {
+            clearBtn.style.display = 'flex';
+            if (kbd) kbd.style.display = 'none';
+        } else {
+            clearBtn.style.display = 'none';
+            if (kbd && window.innerWidth > 768) kbd.style.display = '';
+        }
+    }
+
+    function showSearchUI() {
+        if (header) header.classList.add('search-active');
+        if (backdrop) backdrop.style.display = 'block';
+    }
+
+    function hideSearchUI() {
+        dropdown.style.display = 'none';
+        if (header) header.classList.remove('search-active');
+        if (backdrop) backdrop.style.display = 'none';
+        selectedIndex = -1;
+    }
+
     function renderResults(query) {
+        updateClearButton();
         const q = (query || '').trim().toLowerCase();
         if (!q) {
-            dropdown.style.display = 'none';
+            hideSearchUI();
             dropdown.innerHTML = '';
             currentResults = [];
             selectedIndex = -1;
@@ -7400,6 +7501,7 @@ function initSettingsSearch() {
         if (currentResults.length === 0) {
             dropdown.innerHTML = `<div class="search-empty-state"><i class="bi bi-search me-2"></i>No settings found matching "${query}".</div>`;
             dropdown.style.display = 'block';
+            showSearchUI();
             selectedIndex = -1;
             return;
         }
@@ -7424,12 +7526,14 @@ function initSettingsSearch() {
         });
 
         dropdown.style.display = 'block';
+        showSearchUI();
     }
 
     function executeSearchJump(item) {
         if (!item) return;
-        dropdown.style.display = 'none';
+        hideSearchUI();
         input.value = '';
+        updateClearButton();
         input.blur();
 
         if (window.switchTab) {
@@ -7448,11 +7552,30 @@ function initSettingsSearch() {
         }
     }
 
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            input.value = '';
+            updateClearButton();
+            hideSearchUI();
+            input.focus();
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener('click', function() {
+            hideSearchUI();
+            input.blur();
+        });
+    }
+
     input.addEventListener('input', function() {
         renderResults(this.value);
     });
 
     input.addEventListener('focus', function() {
+        updateClearButton();
         if (this.value.trim()) {
             renderResults(this.value);
         }
@@ -7477,7 +7600,7 @@ function initSettingsSearch() {
                 executeSearchJump(currentResults[selectedIndex]);
             }
         } else if (e.key === 'Escape') {
-            dropdown.style.display = 'none';
+            hideSearchUI();
             input.blur();
         }
     });
@@ -7507,8 +7630,8 @@ function initSettingsSearch() {
 
     // Close on outside click
     document.addEventListener('click', function(e) {
-        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-            dropdown.style.display = 'none';
+        if (!input.contains(e.target) && !dropdown.contains(e.target) && (!clearBtn || !clearBtn.contains(e.target))) {
+            hideSearchUI();
         }
     });
 }

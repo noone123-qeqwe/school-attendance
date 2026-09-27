@@ -1476,23 +1476,14 @@
     let isCheckingVersion = false;
     let checkVersionPromise = null;
     let lastVersionCheckTime = 0;
-    const VERSION_CHECK_COOLDOWN_MS = 1000;
-    const DISMISS_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes snooze cooldown
+    const VERSION_CHECK_COOLDOWN_MS = 30 * 1000;
 
     // ── Handle URL Version Query Sync & Parameter Cleanup ──
     try {
         const _url = new URL(window.location.href);
         const _vParam = _url.searchParams.get('_v');
         if (_vParam) {
-            const _cleanV = String(_vParam).trim().replace(/^v/i, '');
-            if (/^\d+(\.\d+)*$/.test(_cleanV)) {
-                localStorage.setItem('app_installed_version', _cleanV);
-                localStorage.setItem('pwa_installed_version', _cleanV);
-                localStorage.setItem('pwa_app_version', _cleanV);
-                localStorage.setItem('app_version', _cleanV);
-                sessionStorage.setItem('pwa_updated_ver', _cleanV);
-                sessionStorage.setItem('pwa_just_updated_at', String(Date.now()));
-            }
+            // _v is only a cache-busting hint, never proof of installation.
             _url.searchParams.delete('_v');
             _url.searchParams.delete('_t');
             window.history.replaceState({}, document.title, _url.toString());
@@ -1516,21 +1507,16 @@
         return releaseKey(latestDetectedBuildId || DOC_BUILD_ID, latestDetectedCommitHash || DOC_COMMIT_HASH, latestDetectedSwVersion || DOC_SW_VER);
     }
 
-    function getAppliedReleaseKey() {
-        try {
-            const stored = localStorage.getItem('pwa_applied_release_key');
-            if (stored) return stored;
-            const initial = releaseKey(DOC_BUILD_ID, DOC_COMMIT_HASH, DOC_SW_VER);
-            localStorage.setItem('pwa_applied_release_key', initial);
-            return initial;
-        } catch(e) {
-            return releaseKey(DOC_BUILD_ID, DOC_COMMIT_HASH, DOC_SW_VER);
-        }
-    }
-
     function hasUnappliedRelease() {
         const latest = getLatestReleaseKey();
-        return latest !== '||' && latest !== getAppliedReleaseKey();
+        // The HTML currently on screen is the only trustworthy evidence that a
+        // release actually loaded. A localStorage flag can survive a failed reload.
+        const loaded = releaseKey(DOC_BUILD_ID, DOC_COMMIT_HASH, DOC_SW_VER);
+        if (latest === loaded) {
+            try { localStorage.setItem('pwa_applied_release_key', loaded); } catch(e) {}
+            return false;
+        }
+        return latest !== '||';
     }
 
     // Cross-tab synchronization via BroadcastChannel
@@ -1613,26 +1599,9 @@
     }
 
     function getInstalledVersion() {
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || DOC_INSTALLED_VER;
-        const stored = localStorage.getItem('app_installed_version') || localStorage.getItem('pwa_installed_version') || localStorage.getItem('pwa_app_version');
-
-        if (metaInstalled) {
-            if (!stored || compareSemver(metaInstalled, stored) >= 0) {
-                try {
-                    localStorage.setItem('app_installed_version', metaInstalled);
-                    localStorage.setItem('pwa_installed_version', metaInstalled);
-                    localStorage.setItem('pwa_app_version', metaInstalled);
-                } catch(e) {}
-                return metaInstalled;
-            }
-            return stored;
-        }
-
-        if (stored && !stored.includes('_') && /^\d/.test(stored)) {
-            return stored;
-        }
-
-        return '1.0.0';
+        // Server-rendered HTML identifies the code this tab is actually running.
+        // Storage may be ahead after an interrupted update or another tab's update.
+        return document.querySelector('meta[name="app-installed-version"]')?.content || DOC_INSTALLED_VER;
     }
 
     function getInstalledSwVersion() {
@@ -1649,14 +1618,10 @@
     }
 
     function getLatestVersion(serverData = null) {
-        if (serverData && serverData.latest_version) {
-            return serverData.latest_version;
+        if (serverData && serverData.installed_version) {
+            return serverData.installed_version;
         }
-        if (serverData && serverData.changelog && serverData.changelog.version) {
-            return serverData.changelog.version;
-        }
-        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content;
-        return metaLatest || DOC_LATEST_VER;
+        return DOC_INSTALLED_VER;
     }
 
     // ── 1.2 DOM Health: Ensure PWA Modals & Overlays live in document.body ──
@@ -1727,26 +1692,8 @@
     }
 
     function checkInstantUpdateAvailable() {
-        const installedVer = getInstalledVersion();
-        const latestVer = getLatestVersion();
-
-        // 1. Semantic Version update (e.g. 2.4.1 > 2.4.0)
-        if (compareSemver(latestVer, installedVer) > 0) {
-            try { localStorage.removeItem('pwa_update_dismissed_at'); } catch(e) {}
-            return true;
-        }
-
-        // A deployment can change without a semantic-version bump (for example
-        // while the release workflow is delayed). Keep the PWA update visible.
-        if (hasUnappliedRelease()) return true;
-
-        // 2. Direct document meta comparison
-        const metaInstalled = document.querySelector('meta[name="app-installed-version"]')?.content || DOC_INSTALLED_VER;
-        const metaLatest = document.querySelector('meta[name="app-latest-version"]')?.content || DOC_LATEST_VER;
-        if (metaLatest && metaInstalled && compareSemver(metaLatest, metaInstalled) > 0) {
-            return true;
-        }
-
+        // Never offer an update based only on cached HTML or a published version
+        // number. The server check confirms a deployable build is available.
         return false;
     }
 
@@ -1857,31 +1804,13 @@
             return;
         }
 
-        // Suppress prompt within 60s of an applied update reload ONLY if target matches or is older than the just-updated version
-        const justUpdatedVer = sessionStorage.getItem('pwa_updated_ver');
-        const justUpdatedAt = parseInt(sessionStorage.getItem('pwa_just_updated_at') || '0', 10);
-        const justUpdatedRecent = !hasUnappliedRelease() && ((sessionStorage.getItem('pwa_just_updated') === 'true') ||
-                                  (justUpdatedVer && (compareSemver(targetVersion, justUpdatedVer) <= 0) && (Date.now() - justUpdatedAt < 60000)));
-        if (justUpdatedRecent && !isManualCheck && !force) {
-            hideModalElementsIfUpToDate();
-            return;
-        }
-
         const currentUpdateKey = (targetVersion || '') + '_' + getLatestReleaseKey();
         // Check dismiss state in sessionStorage (within tab) OR localStorage (across navigations)
-        const dismissedVer = sessionStorage.getItem('pwa_update_dismissed_ver') || localStorage.getItem('pwa_update_dismissed_ver') || '';
-        const dismissedAtSession = parseInt(sessionStorage.getItem('pwa_update_dismissed_at') || '0', 10);
-        const dismissedAtLocal   = parseInt(localStorage.getItem('pwa_update_dismissed_at')   || '0', 10);
-        const dismissedAt = Math.max(dismissedAtSession, dismissedAtLocal);
-
-        // If target version is strictly newer than the dismissed version, never suppress!
-        const dismissedTag = sessionStorage.getItem('pwa_update_dismissed_tag') || localStorage.getItem('pwa_update_dismissed_tag') || '';
-        const isNewerThanDismissed = (dismissedVer && compareSemver(targetVersion, dismissedVer) > 0) || (dismissedTag && dismissedTag !== currentUpdateKey);
-        const isSnoozed = !isNewerThanDismissed && (Date.now() - dismissedAt < DISMISS_COOLDOWN_MS);
-
-        if (!isManualCheck && !force && isSnoozed) {
-            // Within snooze cooldown: keep modal and pill closed
+        const dismissedTag = localStorage.getItem('pwa_update_dismissed_tag') || sessionStorage.getItem('pwa_update_dismissed_tag') || '';
+        if (!isManualCheck && !force && dismissedTag === currentUpdateKey) {
+            // "Later" means once per release, not another interruption in 15 minutes.
             hideModalElementsIfUpToDate();
+            showUpdateFallbackPill(targetVersion);
             return;
         }
 
@@ -1964,7 +1893,7 @@
         const targetVersion = version || latestDetectedVersion || getLatestVersion();
         const currentUpdateKey = (targetVersion || '') + '_' + getLatestReleaseKey();
         
-        // Snooze cooldown — persist in BOTH sessionStorage (fast) and localStorage (survives navigation)
+        // Suppress this exact release across reloads and browser restarts.
         const dismissNow = String(Date.now());
         sessionStorage.setItem('pwa_update_dismissed_ver', targetVersion);
         sessionStorage.setItem('pwa_update_dismissed_tag', currentUpdateKey);
@@ -1988,22 +1917,12 @@
         }
 
         const targetVer = latestDetectedVersion || getLatestVersion();
-        const targetTs = latestServerTimestamp || DOC_SW_MTIME;
-        const targetSwVer = latestDetectedSwVersion || DOC_SW_VER;
-
-        localStorage.setItem('app_installed_version', targetVer);
-        localStorage.setItem('pwa_installed_version', targetVer);
-        localStorage.setItem('pwa_app_version', targetVer);
-        localStorage.setItem('app_version', targetVer);
-        if (targetSwVer) {
-            localStorage.setItem('pwa_installed_sw_version', targetSwVer);
-        }
-        localStorage.setItem('pwa_applied_release_key', getLatestReleaseKey());
-        localStorage.setItem('pwa_applied_sw_mtime', String(targetTs));
-        sessionStorage.setItem('pwa_just_updated', 'true');
-        sessionStorage.setItem('pwa_just_updated_at', String(Date.now()));
-        sessionStorage.setItem('pwa_updated_ver', targetVer);
+        const targetKey = getLatestReleaseKey();
+        sessionStorage.setItem('pwa_pending_release_key', targetKey);
+        sessionStorage.setItem('pwa_pending_version', targetVer);
         sessionStorage.setItem('pwa_updating', 'true');
+        // If activation fails, retain a quiet retry pill instead of a modal loop.
+        localStorage.setItem('pwa_update_dismissed_tag', targetVer + '_' + targetKey);
 
         // Cross-tab broadcast
         if (pwaBroadcastChannel) {
@@ -2016,12 +1935,6 @@
 
         // Applying an update is a client/service-worker action. Public clients
         // must never mutate the server's global release metadata.
-
-        // Synchronize all visible version badges immediately on click
-        const liveVerTag = 'v' + String(targetVer).replace(/^v/i, '');
-        document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile, #currentAppReleaseBadge, #pwaCurrentVersionBadge').forEach(el => {
-            el.textContent = liveVerTag;
-        });
 
         // Hide modal and pill
         hideModalElementsIfUpToDate();
@@ -2055,7 +1968,7 @@
 
         if ('caches' in window) {
             caches.keys()
-                .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+                .then(keys => Promise.all(keys.filter(k => k.startsWith('attendance-')).map(k => caches.delete(k))))
                 .then(() => setTimeout(doReload, 300))
                 .catch(() => setTimeout(doReload, 200));
         } else {
@@ -2084,18 +1997,13 @@
                     try { swRegistration.update().catch(() => {}); } catch(e) {}
                 }
 
-                // Suppress prompt within 30s of an applied update reload if on the same updated version
-                const justUpdatedVer = sessionStorage.getItem('pwa_updated_ver');
-                const justUpdatedAt = parseInt(sessionStorage.getItem('pwa_just_updated_at') || '0', 10);
-                const justUpdatedRecent = (sessionStorage.getItem('pwa_just_updated') === 'true') ||
-                                          (justUpdatedVer && (now - justUpdatedAt < 30000));
-
                 const installedVer = getInstalledVersion();
                 let latestVer = getLatestVersion();
 
                 let isUpdateAvailable = false;
                 let updateChangelog = currentChangelogData;
                 let serverData = null;
+                let serverChecked = false;
 
                 // Fetch server version with AbortController timeout (6 seconds)
                 const controller = new AbortController();
@@ -2112,7 +2020,10 @@
                     if (res.ok) {
                         serverData = await res.json();
                         if (serverData) {
-                            latestVer = serverData.latest_version || getLatestVersion(serverData);
+                            serverChecked = true;
+                            // A published future version is not installable by a
+                            // browser refresh. Compare only the deployed build.
+                            latestVer = getLatestVersion(serverData);
                             latestDetectedVersion = latestVer;
                             if (serverData.sw_version) {
                                 latestDetectedSwVersion = serverData.sw_version;
@@ -2122,7 +2033,7 @@
                             if (serverData.timestamp) {
                                 latestServerTimestamp = serverData.timestamp;
                             }
-                            if (serverData.changelog) {
+                            if (serverData.changelog && compareSemver(serverData.changelog.version, latestVer) === 0) {
                                 updateChangelog = serverData.changelog;
                                 updateChangelogUI(updateChangelog);
                             }
@@ -2137,23 +2048,7 @@
                                 });
                             }
 
-                            // Check 1: Semantic version comparison (Latest > Installed)
-                            if (compareSemver(latestVer, installedVer) > 0) {
-                                isUpdateAvailable = true;
-                            }
-
-                            // Check 2: Server explicitly reports not up to date AND latest > installed
-                            if (serverData.is_up_to_date === false && compareSemver(latestVer, installedVer) > 0) {
-                                isUpdateAvailable = true;
-                            }
-
-                            // Check 3: Server's latest_version > server's installed_version AND latest > client installed
-                            if (serverData.latest_version && serverData.installed_version && compareSemver(serverData.latest_version, serverData.installed_version) > 0 && compareSemver(serverData.latest_version, installedVer) > 0) {
-                                isUpdateAvailable = true;
-                            }
-
-                            // Check 4: A new build, commit, or service-worker release.
-                            if (hasUnappliedRelease()) isUpdateAvailable = true;
+                            isUpdateAvailable = compareSemver(latestVer, installedVer) > 0 || hasUnappliedRelease();
                         }
                     }
                 } catch (fetchErr) {
@@ -2166,19 +2061,9 @@
                     isUpdateAvailable = true;
                 }
 
-                // Fallback check if offline or network error: compare local metadata
-                if (!isUpdateAvailable && checkInstantUpdateAvailable()) {
-                    isUpdateAvailable = true;
-                }
-
-                // If recently updated and the latest version is the version we just updated to, don't re-prompt
-                if (justUpdatedRecent && justUpdatedVer && compareSemver(latestVer, justUpdatedVer) <= 0 && !hasUnappliedRelease() && !isManualCheck && !force) {
-                    isUpdateAvailable = false;
-                }
-
-                // Equal version numbers are not enough to dismiss a newer build.
-                if (compareSemver(installedVer, latestVer) >= 0 && !hasUnappliedRelease() && !(swRegistration && swRegistration.waiting) && !isManualCheck) {
-                    isUpdateAvailable = false;
+                if (!serverChecked && !isUpdateAvailable) {
+                    // A failed/offline check is not evidence that the app is current.
+                    return { upToDate: null, checkFailed: true };
                 }
 
                 if (isUpdateAvailable) {
@@ -2197,16 +2082,19 @@
         return checkVersionPromise;
     }
 
-    // ── Check if the page was just refreshed after an update ──
+    // Confirm installation only after the new document has actually loaded.
     try {
-        const justUpdated = sessionStorage.getItem('pwa_just_updated') === 'true';
-        if (justUpdated) {
-            sessionStorage.removeItem('pwa_just_updated');
-            const updatedVer = sessionStorage.getItem('pwa_updated_ver') || getLatestVersion();
-            // Preserve pwa_updated_ver in sessionStorage so 60s suppression window remains active
-            setTimeout(() => {
-                showSystemUpdatedToast(updatedVer);
-            }, 400);
+        const pendingKey = sessionStorage.getItem('pwa_pending_release_key');
+        const pendingVer = sessionStorage.getItem('pwa_pending_version');
+        if (pendingKey) {
+            sessionStorage.removeItem('pwa_pending_release_key');
+            sessionStorage.removeItem('pwa_pending_version');
+            sessionStorage.removeItem('pwa_updating');
+            if (pendingKey === releaseKey(DOC_BUILD_ID, DOC_COMMIT_HASH, DOC_SW_VER)
+                    && compareSemver(getInstalledVersion(), pendingVer) >= 0) {
+                localStorage.setItem('pwa_applied_release_key', pendingKey);
+                setTimeout(() => showSystemUpdatedToast(pendingVer), 400);
+            }
         }
     } catch(e) {}
 
@@ -2234,12 +2122,7 @@
         }
     } catch(e) {}
 
-    // 0. Immediate local/meta check on launch: if metadata indicates update available, display immediately
-    if (checkInstantUpdateAvailable()) {
-        showUpdateReadyPrompt(DOC_LATEST_VER, false, currentChangelogData, false);
-    }
-
-    // 1. Immediate initial server check on script evaluation
+    // Only a fresh server response or a waiting service worker can prompt.
     checkServerVersion(false);
 
     // 2. Initial check when DOM is ready
@@ -2249,10 +2132,10 @@
         checkServerVersion(false);
     }
 
-    // 3. Periodic background check every 15 seconds
+    // Periodic check; focus and reconnect also trigger a debounced check.
     setInterval(() => {
         checkServerVersion(false);
-    }, 15000);
+    }, 5 * 60 * 1000);
 
     // 4. Tab visibility change (e.g. user returns to the app from another tab/app)
     document.addEventListener('visibilitychange', () => {

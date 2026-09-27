@@ -8,11 +8,18 @@
 }
 
 .sp .settings-command-header {
+    position: relative !important;
+    z-index: 100 !important;
     padding: 18px 22px !important;
     margin-bottom: 20px !important;
     border-radius: 16px !important;
     box-shadow: none !important;
     background: rgba(24, 18, 14, 0.88) !important;
+}
+
+.sp .settings-command-header:focus-within,
+.sp .settings-command-header.search-active {
+    z-index: 1000 !important;
 }
 
 .sp .settings-command-header::after,
@@ -58,7 +65,15 @@
 }
 
 .sp .settings-search-box {
+    position: relative !important;
     width: 100% !important;
+    z-index: 1001 !important;
+}
+
+.sp .settings-search-dropdown {
+    position: absolute !important;
+    z-index: 99999 !important;
+    background: #140d0a !important;
 }
 
 .sp .settings-search-input {
@@ -300,6 +315,8 @@
 @media (max-width: 991.98px) {
     .sp .settings-layout-grid {
         display: block !important;
+        position: relative !important;
+        z-index: 1 !important;
     }
 
     .sp .settings-sidebar {
@@ -307,6 +324,8 @@
     }
 
     .sp .stabs-wrapper {
+        position: relative !important;
+        z-index: 10 !important;
         margin: 0 0 16px !important;
         border-radius: 12px !important;
         box-shadow: none !important;
@@ -331,8 +350,22 @@
     }
 
     .sp .settings-command-header {
+        position: relative !important;
+        z-index: 100 !important;
         padding: 16px !important;
         gap: 14px !important;
+    }
+
+    .sp .settings-command-header:focus-within,
+    .sp .settings-command-header.search-active {
+        z-index: 1000 !important;
+    }
+
+    .sp .settings-search-dropdown {
+        position: absolute !important;
+        z-index: 99999 !important;
+        background: #140d0a !important;
+        max-height: min(280px, calc(100dvh - 260px)) !important;
     }
 
     .sp .settings-top-left,
@@ -354,6 +387,8 @@
     }
 
     .sp .stabs-wrapper {
+        position: relative !important;
+        z-index: 10 !important;
         padding: 4px !important;
     }
 
