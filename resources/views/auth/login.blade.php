@@ -3537,6 +3537,31 @@ async function detectAndAnalyzeFaceFrame(video) {
     var faceAvgLuma = 0.299 * faceAvgR + 0.587 * faceAvgG + 0.114 * faceAvgB;
     var gamma = faceAvgLuma < 50 ? 0.76 : (faceAvgLuma > 180 ? 1.24 : 1.0);
 
+    // Bilateral side-lighting disparity detection: measure left half vs right half illumination
+    var leftHalfLumaSum = 0, leftHalfCount = 0;
+    var rightHalfLumaSum = 0, rightHalfCount = 0;
+    var halfW = faceW / 2;
+
+    for (var dy = 0; dy < faceH; dy += 4) {
+        var curY = faceY + dy;
+        for (var dx = 0; dx < faceW; dx += 4) {
+            var curX = faceX + dx;
+            var pIdx = (curY * vw + curX) * 4;
+            var pxLuma = 0.299 * pixels[pIdx] + 0.587 * pixels[pIdx + 1] + 0.114 * pixels[pIdx + 2];
+            if (dx < halfW) {
+                leftHalfLumaSum += pxLuma;
+                leftHalfCount++;
+            } else {
+                rightHalfLumaSum += pxLuma;
+                rightHalfCount++;
+            }
+        }
+    }
+
+    var avgLeftLuma = leftHalfCount > 0 ? (leftHalfLumaSum / leftHalfCount) : faceAvgLuma;
+    var avgRightLuma = rightHalfCount > 0 ? (rightHalfLumaSum / rightHalfCount) : faceAvgLuma;
+    var lumaDisparity = (avgLeftLuma - avgRightLuma) / Math.max(25, (avgLeftLuma + avgRightLuma) / 2);
+
     var getNormLuma = function(px, py) {
         var clX = Math.max(0, Math.min(vw - 1, px));
         var clY = Math.max(0, Math.min(vh - 1, py));
@@ -3544,7 +3569,15 @@ async function detectAndAnalyzeFaceFrame(video) {
         var rNorm = Math.pow(Math.min(255, pixels[idx] * scaleR) / 255, gamma) * 255;
         var gNorm = Math.pow(Math.min(255, pixels[idx + 1] * scaleG) / 255, gamma) * 255;
         var bNorm = Math.pow(Math.min(255, pixels[idx + 2] * scaleB) / 255, gamma) * 255;
-        return 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
+        var baseLuma = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
+
+        // Bilateral side-lighting compensation when window or side-lamp produces harsh shadows
+        if (Math.abs(lumaDisparity) > 0.16) {
+            var relX = (px - faceX) / Math.max(1, faceW) - 0.5;
+            var compensation = Math.max(0.80, Math.min(1.25, 1.0 - relX * lumaDisparity * 0.60));
+            return Math.min(255, baseLuma * compensation);
+        }
+        return baseLuma;
     };
 
     // 8. Topological Feature Analysis & Landmarks (on Illumination-Normalized Luma)
