@@ -4588,7 +4588,7 @@
                         <div style="flex:1;min-width:0;">
                             <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                                 <span>Software Updates & PWA Assets</span>
-                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ app(\App\Services\ChangelogService::class)->getLatestVersion() }}</span>
+                                <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ app(\App\Services\VersionService::class)->getInstalledVersion() }}</span>
                             </div>
                             <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
                         </div>
@@ -4635,8 +4635,9 @@ async function checkForAppUpdates() {
     }
 
     try {
+        let result = null;
         if (typeof checkServerVersion === 'function') {
-            await checkServerVersion(true, true);
+            result = await checkServerVersion(true, true);
         } else if ('serviceWorker' in navigator) {
             const reg = await navigator.serviceWorker.getRegistration();
             if (reg) {
@@ -4652,16 +4653,21 @@ async function checkForAppUpdates() {
         const popup = document.getElementById('pwaSystemUpdatePopup');
         const popupVisible = popup && window.getComputedStyle(popup).display !== 'none';
 
-        if (popupVisible) {
+        if (result && result.checkFailed) {
+            feedback.style.background = 'rgba(239, 68, 68, 0.1)';
+            feedback.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+            feedback.style.color = '#fca5a5';
+            feedback.textContent = 'Unable to check for updates right now. Please try again when connected.';
+        } else if (popupVisible || (result && result.updateAvailable)) {
             feedback.style.background = 'rgba(207, 164, 111, 0.12)';
             feedback.style.border = '1px solid rgba(207, 164, 111, 0.35)';
             feedback.style.color = '#f3e7cd';
-            feedback.innerHTML = '<i class="bi bi-stars me-2"></i>A new software update is ready! Tap "Refresh Now" on the notification to use the latest version.';
+            feedback.innerHTML = '<i class="bi bi-stars me-2"></i>A new software update is ready! Tap "Update Now" on the notification to use it.';
         } else {
             feedback.style.background = 'rgba(16, 185, 129, 0.1)';
             feedback.style.border = '1px solid rgba(16, 185, 129, 0.3)';
             feedback.style.color = '#6ee7b7';
-            feedback.innerHTML = '<div style="display:flex; align-items:flex-start; gap:8px;"><i class="bi bi-check-circle-fill me-1" style="font-size:1.1rem; color:#22c55e;"></i><div><strong>You’re up to date ✓</strong><div style="font-size:0.85em; opacity:0.9; margin-top:2px;">Your system is already running the latest version (v{{ app(\App\Services\ChangelogService::class)->getLatestVersion() }}).</div></div></div>';
+            feedback.innerHTML = '<div style="display:flex; align-items:flex-start; gap:8px;"><i class="bi bi-check-circle-fill me-1" style="font-size:1.1rem; color:#22c55e;"></i><div><strong>You’re up to date ✓</strong><div style="font-size:0.85em; opacity:0.9; margin-top:2px;">Your system is running the deployed version (v{{ app(\App\Services\VersionService::class)->getInstalledVersion() }}).</div></div></div>';
         }
         if (statusText) statusText.textContent = 'Last checked: Just now';
     } catch (e) {

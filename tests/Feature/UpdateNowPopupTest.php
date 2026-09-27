@@ -88,9 +88,10 @@ class UpdateNowPopupTest extends TestCase
         $response->assertStatus(200);
         $content = $response->getContent();
 
-        // 1. App launch and immediate instant check
+        // 1. Cached HTML must not claim that an update is available.
         $this->assertStringContainsString('checkInstantUpdateAvailable()', $content);
-        $this->assertStringContainsString('localStorage.removeItem(\'pwa_update_dismissed_at\')', $content);
+        $this->assertStringContainsString('return false;', $content);
+        $this->assertStringNotContainsString('localStorage.removeItem(\'pwa_update_dismissed_at\')', $content);
 
         // 2. Direct click listener bound to #pwaApplyUpdateBtn
         $this->assertStringContainsString('pwaApplyUpdateBtn', $content);
@@ -106,10 +107,13 @@ class UpdateNowPopupTest extends TestCase
         $this->assertStringContainsString('new URL(window.location.href)', $content);
         $this->assertStringNotContainsString('fetch(\'/pwa/update\'', $content);
 
-        // 5. An unchanged semantic version must not suppress a new deployment.
+        // 5. A same-version deployment must be compared with the loaded page,
+        // and never marked installed before the reload is confirmed.
         $this->assertStringContainsString('function hasUnappliedRelease()', $content);
-        $this->assertStringContainsString("localStorage.setItem('pwa_applied_release_key', getLatestReleaseKey())", $content);
-        $this->assertStringContainsString('if (hasUnappliedRelease()) isUpdateAvailable = true;', $content);
+        $this->assertStringContainsString('latest === loaded', $content);
+        $this->assertStringContainsString("sessionStorage.setItem('pwa_pending_release_key', targetKey)", $content);
+        $this->assertStringContainsString("localStorage.setItem('pwa_applied_release_key', pendingKey)", $content);
+        $this->assertStringContainsString('isUpdateAvailable = compareSemver(latestVer, installedVer) > 0 || hasUnappliedRelease()', $content);
         $this->assertStringNotContainsString("localStorage.setItem('app_installed_version', serverData.installed_version)", $content);
     }
 }

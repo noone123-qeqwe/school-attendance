@@ -4970,29 +4970,14 @@ if (forgotLinkElem) {
 // ── Real-time Login Version Badge Synchronization ──
 (function() {
     function syncLoginVersionBadge() {
-        fetch('/pwa/version?_t=' + Date.now(), { 
-            cache: 'no-store',
-            headers: { 'Accept': 'application/json' }
-        })
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data) {
-                    const ver = data.installed_version || data.current_version || data.version || data.latest_version;
-                    if (ver) {
-                        const tag = 'v' + String(ver).replace(/^v/i, '');
-                        document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(function(el) {
-                            el.textContent = tag;
-                        });
-                        try {
-                            const clean = String(ver).replace(/^v/i, '');
-                            localStorage.setItem('app_installed_version', clean);
-                            localStorage.setItem('pwa_installed_version', clean);
-                            localStorage.setItem('pwa_app_version', clean);
-                        } catch(e) {}
-                    }
-                }
-            })
-            .catch(function() {});
+        // The badge describes this loaded page, not a newer build reported by
+        // /pwa/version. It advances only after the update reload succeeds.
+        const ver = document.querySelector('meta[name="app-installed-version"]')?.content;
+        if (!ver) return;
+        const tag = 'v' + String(ver).replace(/^v/i, '');
+        document.querySelectorAll('[data-app-version-tag], #loginAppVersionDesktop, #loginAppVersionMobile').forEach(function(el) {
+            el.textContent = tag;
+        });
     }
 
     syncLoginVersionBadge();

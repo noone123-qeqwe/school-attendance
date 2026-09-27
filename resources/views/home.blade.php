@@ -450,35 +450,36 @@
     }
 
     @media (max-width: 768px) {
-        /* Hero banner compact */
-        .hero-banner { padding: 14px !important; border-radius: 14px !important; box-shadow: none !important; }
-        .hero-banner h1 { font-size: 1.2rem !important; margin-bottom: 4px !important; }
+        /* Hero banner */
+        .hero-banner { padding: 18px 16px !important; border-radius: 18px !important; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important; }
+        .hero-banner h1 { font-size: 1.25rem !important; margin-bottom: 6px !important; }
 
-        /* Subject stat cards compact */
-        .subject-stat-card { padding: 14px !important; box-shadow: none !important; border-radius: 12px !important; }
-        .subject-stat-card .rate-text { font-size: 1.35rem !important; }
+        /* Subject stat cards */
+        .subject-stat-card { padding: 16px 18px !important; border-radius: 16px !important; }
+        .subject-stat-card .rate-text { font-size: 1.45rem !important; }
         .subject-stat-card .bg-glow { display: none !important; }
 
-        /* Calendar compact */
-        .att-cal-wrap { border-radius: 12px !important; border: 1px solid rgba(255,255,255,0.03) !important; background: rgba(0,0,0,0.08) !important; }
-        .att-cal-grid { padding: 0 6px 10px !important; gap: 2px !important; }
-        .att-cal-cell { border-radius: 6px !important; }
-        .att-cal-stats { padding: 8px 6px !important; }
-        .att-cal-stat { border: none !important; padding: 3px 6px !important; background: transparent !important; }
+        /* Calendar */
+        .att-cal-wrap { border-radius: 16px !important; border: 1px solid rgba(255,255,255,0.06) !important; background: rgba(0,0,0,0.18) !important; }
+        .att-cal-grid { padding: 0 10px 14px !important; gap: 6px !important; }
+        .att-cal-cell { border-radius: 10px !important; }
+        .att-cal-stats { padding: 12px 10px !important; }
+        .att-cal-stat { border: none !important; padding: 6px 10px !important; background: transparent !important; }
 
-        /* Hero card CTA compact */
-        .premium-hero-card .d-md-none.d-flex { flex-direction: column !important; gap: 8px !important; }
+        /* Hero card CTA */
+        .premium-hero-card .d-md-none.d-flex { flex-direction: column !important; gap: 10px !important; }
         .premium-hero-card .d-md-none .btn-modern-primary,
         .premium-hero-card .d-md-none .btn-modern-glass {
             width: 100% !important;
             justify-content: center !important;
-            padding: 10px 14px !important;
-            font-size: 0.82rem !important;
-            min-height: 44px !important;
+            padding: 12px 16px !important;
+            font-size: 0.88rem !important;
+            min-height: 48px !important;
+            border-radius: 14px !important;
         }
 
-        /* Error toast compact */
-        .mobile-error-toast { font-size: 0.78rem !important; padding: 10px 12px !important; margin-bottom: 12px !important; }
+        /* Error toast */
+        .mobile-error-toast { font-size: 0.82rem !important; padding: 12px 16px !important; margin-bottom: 14px !important; border-radius: 12px !important; }
     }
 
     /* Small screens (<= 360px) */

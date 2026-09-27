@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Setting;
 use App\Services\VersionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class UpdatePopupLoopPreventionTest extends TestCase
@@ -48,16 +49,30 @@ class UpdatePopupLoopPreventionTest extends TestCase
         $this->assertStringContainsString("_url.searchParams.delete('_t')", $content);
         $this->assertStringContainsString('window.history.replaceState', $content);
 
-        // 2. Strict checkInstantUpdateAvailable logic ensuring no popup when already installed >= latest
-        $this->assertStringContainsString('compareSemver(installedVer, latestVer) >= 0', $content);
+        // 2. A release already present in the loaded document is not pending.
+        $this->assertStringContainsString('latest === loaded', $content);
 
-        // 3. Extended snooze cooldown (15 minutes)
-        $this->assertStringContainsString('15 * 60 * 1000', $content);
+        // 3. Dismissal is keyed to a release rather than a short timer.
+        $this->assertStringContainsString('dismissedTag === currentUpdateKey', $content);
+        $this->assertStringNotContainsString('DISMISS_COOLDOWN_MS', $content);
 
-        // 4. Background check uses isManualCheck instead of hardcoded true for force flag
+        // 4. Background checks do not force an already dismissed prompt open.
         $this->assertStringContainsString('showUpdateReadyPrompt(latestVer, isManualCheck, updateChangelog, isManualCheck)', $content);
 
         // 5. Silent skipWaiting trigger for waiting service workers when up-to-date
         $this->assertStringContainsString("swRegistration.waiting.postMessage({ action: 'skipWaiting'", $content);
+    }
+
+    public function test_deployed_build_metadata_wins_over_stale_cache_and_config(): void
+    {
+        $versionService = app(VersionService::class);
+        $file = json_decode(file_get_contents(base_path('version.json')), true);
+        preg_match('/CACHE_VERSION\s*=\s*[\'\"](v\d+)[\'\"]/', file_get_contents(public_path('sw.js')), $matches);
+
+        Cache::forever('pwa_sw_version', 'v1');
+        config(['version.build' => 'outdated-build']);
+
+        $this->assertSame($matches[1], $versionService->getSwVersion());
+        $this->assertSame($file['build'], $versionService->getBuild());
     }
 }

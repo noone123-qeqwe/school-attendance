@@ -36,8 +36,8 @@ class FastUpdateDetectionTest extends TestCase
         $this->assertStringContainsString('checkVersionPromise', $content);
         $this->assertStringContainsString('new AbortController()', $content);
 
-        // 2. Cooldown timer for snooze/dismissal (not permanent suppression)
-        $this->assertStringContainsString('DISMISS_COOLDOWN_MS', $content);
+        // 2. A dismissed release is quiet, but remains available from the pill.
+        $this->assertStringContainsString('dismissedTag === currentUpdateKey', $content);
         $this->assertStringContainsString('showUpdateFallbackPill', $content);
         $this->assertStringContainsString('hideUpdateFallbackPill', $content);
 

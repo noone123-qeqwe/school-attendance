@@ -126,15 +126,16 @@ class InstalledVersionDynamicUpdateTest extends TestCase
         $this->assertEquals('v2.6.1', trim($tag));
     }
 
-    public function test_login_page_has_realtime_version_sync_script_listeners(): void
+    public function test_login_badge_uses_loaded_document_version(): void
     {
         $response = $this->get(route('login'));
         $response->assertStatus(200);
 
-        // Verify listeners for visibilitychange, focus, pageshow, and BroadcastChannel
+        // A server-side version announcement must not relabel stale HTML as updated.
         $content = $response->getContent();
         $this->assertStringContainsString('syncLoginVersionBadge', $content);
-        $this->assertStringContainsString('/pwa/version?_t=', $content);
+        $this->assertStringContainsString('meta[name="app-installed-version"]', $content);
+        $this->assertStringNotContainsString("localStorage.setItem('app_installed_version', clean)", $content);
         $this->assertStringContainsString('visibilitychange', $content);
         $this->assertStringContainsString('pageshow', $content);
         $this->assertStringContainsString('BroadcastChannel', $content);

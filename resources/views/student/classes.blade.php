@@ -780,13 +780,13 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         border: 1px solid var(--cor-border-subtle);
-        border-radius: 8px;
+        border-radius: 10px;
         overflow: hidden;
         background: rgba(0, 0, 0, 0.25);
     }
 
     .cor-card-matrix-cell {
-        padding: 7px 9px;
+        padding: 9px 12px;
         border-right: 1px solid var(--cor-border-subtle);
         border-bottom: 1px solid var(--cor-border-subtle);
     }
@@ -800,19 +800,19 @@
     }
 
     .cor-card-matrix-label {
-        font-size: 0.62rem;
+        font-size: 0.72rem;
         font-weight: 800;
         text-transform: uppercase;
         color: var(--cor-gold);
         letter-spacing: 0.5px;
-        margin-bottom: 2px;
+        margin-bottom: 3px;
         display: flex;
         align-items: center;
         gap: 4px;
     }
 
     .cor-card-matrix-value {
-        font-size: 0.78rem;
+        font-size: 0.86rem;
         font-weight: 600;
         color: var(--cor-text-main);
         word-break: break-word;
@@ -935,8 +935,8 @@
             padding-bottom: 110px;
         }
         .cor-sheet {
-            padding: 14px 10px;
-            border-radius: 14px;
+            padding: 20px 16px;
+            border-radius: 20px;
         }
         .cor-college-name {
             font-size: 1.15rem;
@@ -950,7 +950,7 @@
         .cor-actions-bar {
             flex-direction: column;
             align-items: flex-start;
-            gap: 10px;
+            gap: 12px;
         }
         .cor-btn-group {
             width: 100%;
@@ -958,8 +958,10 @@
         .cor-btn-action {
             flex: 1;
             justify-content: center;
-            padding: 8px 14px;
-            font-size: 0.8rem;
+            padding: 10px 16px;
+            font-size: 0.84rem;
+            min-height: 44px;
+            border-radius: 12px;
         }
 
         /* Demographic table stacks cleanly on mobile phones */
@@ -970,14 +972,14 @@
         .cor-info-label {
             border-right: none;
             border-bottom: 1px solid var(--cor-border-gold);
-            padding: 7px 10px;
-            font-size: 0.66rem;
+            padding: 9px 12px;
+            font-size: 0.74rem;
         }
         .cor-info-value {
             border-right: none;
             border-bottom: 1px solid var(--cor-border-subtle);
-            padding: 8px 10px;
-            font-size: 0.84rem;
+            padding: 10px 12px;
+            font-size: 0.9rem;
         }
         .cor-info-row .cor-info-value:last-child {
             border-bottom: none;
@@ -997,12 +999,12 @@
         .cor-assessment-label {
             border-right: none;
             border-bottom: 1px solid var(--cor-border-subtle);
-            padding: 7px 10px;
-            font-size: 0.8rem;
+            padding: 9px 12px;
+            font-size: 0.82rem;
         }
         .cor-assessment-val {
-            padding: 7px 10px;
-            font-size: 0.82rem;
+            padding: 9px 12px;
+            font-size: 0.86rem;
         }
 
         /* Search bar and toolbar improvements */
@@ -1013,8 +1015,10 @@
         }
 
         .cor-search-input {
-            padding: 10px 14px 10px 38px;
-            font-size: 0.85rem;
+            min-height: 46px;
+            border-radius: 12px;
+            padding: 11px 14px 11px 38px;
+            font-size: 0.9rem;
         }
 
         .cor-day-pills-rail {

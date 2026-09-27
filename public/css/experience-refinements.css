@@ -415,7 +415,7 @@ table th {
 
 @media (max-width: 768px) {
     .main-content > .page-enter {
-        padding: 16px max(16px, env(safe-area-inset-right)) 28px max(16px, env(safe-area-inset-left)) !important;
+        padding: 16px max(18px, env(safe-area-inset-right)) 28px max(18px, env(safe-area-inset-left)) !important;
     }
 
     .header-left,
@@ -429,18 +429,18 @@ table th {
     }
 
     .header-right {
-        gap: 4px !important;
+        gap: 8px !important;
     }
 
     .header-right :where(button, .notif-btn),
     .mobile-back-btn,
     .mobile-menu-btn {
-        min-width: 42px !important;
-        min-height: 42px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
     }
 
     :where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head) {
-        padding: 16px !important;
+        padding: 18px 16px !important;
     }
 
     :where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head) > :last-child {
