@@ -3533,9 +3533,17 @@ async function detectAndAnalyzeFaceFrame(video) {
     var scaleG = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgG)));
     var scaleB = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgB)));
 
-    // Adaptive gamma: boost underexposed shadow details, suppress bright specular highlights
+    // Adaptive continuous gamma: boost underexposed shadow details, suppress bright specular highlights
     var faceAvgLuma = 0.299 * faceAvgR + 0.587 * faceAvgG + 0.114 * faceAvgB;
-    var gamma = faceAvgLuma < 50 ? 0.76 : (faceAvgLuma > 180 ? 1.24 : 1.0);
+    var gamma = faceAvgLuma < 75 
+        ? Math.max(0.48, Math.min(0.92, Math.log(0.48) / Math.log(Math.max(0.04, faceAvgLuma / 255.0))))
+        : (faceAvgLuma > 170 ? Math.min(1.38, 1.0 + (faceAvgLuma - 170) / 220.0) : 1.0);
+
+    // Auto-engage fill light assistance if face is severely underexposed
+    if (faceAvgLuma < 30 && !isBioLoginFlashActive) {
+        var flashBtn = document.getElementById('bioLoginFlashToggleBtn');
+        if (flashBtn) flashBtn.classList.add('flash-suggest-pulse');
+    }
 
     // Bilateral side-lighting disparity detection: measure left half vs right half illumination
     var leftHalfLumaSum = 0, leftHalfCount = 0;
@@ -3560,7 +3568,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     var avgLeftLuma = leftHalfCount > 0 ? (leftHalfLumaSum / leftHalfCount) : faceAvgLuma;
     var avgRightLuma = rightHalfCount > 0 ? (rightHalfLumaSum / rightHalfCount) : faceAvgLuma;
-    var lumaDisparity = (avgLeftLuma - avgRightLuma) / Math.max(25, (avgLeftLuma + avgRightLuma) / 2);
+    var lumaDisparity = (avgLeftLuma - avgRightLuma) / Math.max(20, (avgLeftLuma + avgRightLuma) / 2);
 
     var getNormLuma = function(px, py) {
         var clX = Math.max(0, Math.min(vw - 1, px));
@@ -3572,9 +3580,9 @@ async function detectAndAnalyzeFaceFrame(video) {
         var baseLuma = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
 
         // Bilateral side-lighting compensation when window or side-lamp produces harsh shadows
-        if (Math.abs(lumaDisparity) > 0.16) {
+        if (Math.abs(lumaDisparity) > 0.12) {
             var relX = (px - faceX) / Math.max(1, faceW) - 0.5;
-            var compensation = Math.max(0.80, Math.min(1.25, 1.0 - relX * lumaDisparity * 0.60));
+            var compensation = Math.max(0.72, Math.min(1.32, 1.0 - relX * lumaDisparity * 0.70));
             return Math.min(255, baseLuma * compensation);
         }
         return baseLuma;
@@ -3723,8 +3731,8 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    // 11. Extract 24-Dimensional Illumination-Invariant Biometric Feature Vector
-    // 8 Scale & Illumination Invariant Landmark Ratios
+    // 11. Extract 48-Dimensional Illumination-Invariant Biometric Feature Vector
+    // Part 1: 8 Primary Scale & Illumination Invariant Landmark Ratios (Prefix compatible)
     var eyeSpanRatio = 0.42;
     var eyeToNoseRatio = 0.22;
     var noseToMouthRatio = 0.23;
@@ -3734,7 +3742,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     var mouthCavityContrast = Math.min(2.0, avgMouth / Math.max(1, avgCheek));
     var normAspect = Math.min(2.0, aspect / 1.3);
 
-    var landmarkRatios = [
+    var primaryLandmarkRatios = [
         Math.round(eyeSpanRatio * 1000) / 1000,
         Math.round(eyeToNoseRatio * 1000) / 1000,
         Math.round(noseToMouthRatio * 1000) / 1000,
@@ -3745,7 +3753,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         Math.round(normAspect * 1000) / 1000,
     ];
 
-    // 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
+    // Part 2: 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
     var gradientEnergies = [];
     var subGridSize = 4;
     var subCellW = faceW / subGridSize;
@@ -3782,8 +3790,86 @@ async function detectAndAnalyzeFaceFrame(video) {
         return Math.round((val / gradL2Norm) * 1000) / 1000;
     });
 
-    // 24-dimensional combined invariant vector
-    var featureVector = landmarkRatios.concat(normalizedGrads);
+    // Part 3: 8 Enhanced Invariant Structural & Symmetry Quotients
+    var eyeSymmetryRatio = Math.round((1.0 - Math.min(1.0, eyeSymmetryDiff)) * 1000) / 1000;
+    var nasalSlopeRatio = Math.round(Math.min(2.0, avgNoseBridge / Math.max(1, avgMouth)) * 1000) / 1000;
+    var midfaceToJawRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, avgMouth)) * 1000) / 1000;
+    var browToEyeRatio = Math.round(Math.min(2.0, (avgNoseBridge + avgCheek) / Math.max(1, avgLeftEye + avgRightEye)) * 1000) / 1000;
+    var leftCheekRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, faceAvgLuma)) * 1000) / 1000;
+    var rightCheekRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, avgRightEye)) * 1000) / 1000;
+    var foreheadToNoseRatio = Math.round(Math.min(2.0, faceAvgLuma / Math.max(1, avgNoseBridge)) * 1000) / 1000;
+    var lowerFacialProportion = Math.round(Math.min(2.0, (avgMouth + avgCheek) / Math.max(1, 2 * faceAvgLuma)) * 1000) / 1000;
+
+    var enhancedRatios = [
+        eyeSymmetryRatio,
+        nasalSlopeRatio,
+        midfaceToJawRatio,
+        browToEyeRatio,
+        leftCheekRatio,
+        rightCheekRatio,
+        foreheadToNoseRatio,
+        lowerFacialProportion
+    ];
+
+    // Part 4: 16 Uniform Local Binary Pattern (ULBP) Micro-Texture Energy Zones (4x4 sub-grid)
+    var lbpEnergies = [];
+    var totalLbpEnergy = 0;
+
+    for (var gy = 0; gy < subGridSize; gy++) {
+        for (var gx = 0; gx < subGridSize; gx++) {
+            var zoneLbpSum = 0;
+            var zoneLbpSamples = 0;
+            var startX = Math.floor(faceX + gx * subCellW);
+            var startY = Math.floor(faceY + gy * subCellH);
+
+            for (var sy = 2; sy < subCellH - 2; sy += 2) {
+                for (var sx = 2; sx < subCellW - 2; sx += 2) {
+                    var cx = startX + sx;
+                    var cy = startY + sy;
+                    var centerVal = getNormLuma(cx, cy);
+
+                    var p0 = getNormLuma(cx - 1, cy - 1);
+                    var p1 = getNormLuma(cx, cy - 1);
+                    var p2 = getNormLuma(cx + 1, cy - 1);
+                    var p3 = getNormLuma(cx + 1, cy);
+                    var p4 = getNormLuma(cx + 1, cy + 1);
+                    var p5 = getNormLuma(cx, cy + 1);
+                    var p6 = getNormLuma(cx - 1, cy + 1);
+                    var p7 = getNormLuma(cx - 1, cy);
+
+                    var b0 = p0 >= centerVal ? 1 : 0;
+                    var b1 = p1 >= centerVal ? 1 : 0;
+                    var b2 = p2 >= centerVal ? 1 : 0;
+                    var b3 = p3 >= centerVal ? 1 : 0;
+                    var b4 = p4 >= centerVal ? 1 : 0;
+                    var b5 = p5 >= centerVal ? 1 : 0;
+                    var b6 = p6 >= centerVal ? 1 : 0;
+                    var b7 = p7 >= centerVal ? 1 : 0;
+
+                    var transitions = (b0 !== b1 ? 1 : 0) + (b1 !== b2 ? 1 : 0) + (b2 !== b3 ? 1 : 0) +
+                                      (b3 !== b4 ? 1 : 0) + (b4 !== b5 ? 1 : 0) + (b5 !== b6 ? 1 : 0) +
+                                      (b6 !== b7 ? 1 : 0) + (b7 !== b0 ? 1 : 0);
+
+                    var isUniform = transitions <= 2 ? 1 : 0;
+                    var bitSum = b0 + b1 + b2 + b3 + b4 + b5 + b6 + b7;
+                    zoneLbpSum += isUniform * (bitSum / 8.0);
+                    zoneLbpSamples++;
+                }
+            }
+
+            var zoneLbpAvg = zoneLbpSamples > 0 ? (zoneLbpSum / zoneLbpSamples) : 0.5;
+            lbpEnergies.push(zoneLbpAvg);
+            totalLbpEnergy += zoneLbpAvg * zoneLbpAvg;
+        }
+    }
+
+    var lbpL2Norm = Math.sqrt(Math.max(1e-6, totalLbpEnergy));
+    var normalizedLbp = lbpEnergies.map(function(val) {
+        return Math.round((val / lbpL2Norm) * 1000) / 1000;
+    });
+
+    // 48-dimensional combined invariant vector (Prefix order: 8 Primary Ratios + 16 Gradients + 8 Enhanced Ratios + 16 ULBP)
+    var featureVector = primaryLandmarkRatios.concat(normalizedGrads).concat(enhancedRatios).concat(normalizedLbp);
     var vectorJson = JSON.stringify(featureVector);
     var vectorPayload = btoa(vectorJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 

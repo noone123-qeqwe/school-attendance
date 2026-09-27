@@ -51,18 +51,30 @@ class BiometricService
 
         // Mode 1: High-precision v2 invariant vectors present in both
         if (!empty($candidateData['vector']) && !empty($referenceData['vector'])) {
-            $cosSim = $this->cosineSimilarity($candidateData['vector'], $referenceData['vector']);
+            $rawCosSim = $this->cosineSimilarity($candidateData['vector'], $referenceData['vector']);
+            $weightedCosSim = $this->weightedCosineSimilarity($candidateData['vector'], $referenceData['vector']);
+            $cosSim = max($rawCosSim, $weightedCosSim);
             $scorePercent = round($cosSim * 100, 2);
 
             // Cross-validate with illumination-invariant landmark topology
             $landmarkSim = $this->compareLandmarks($candidateData, $referenceData);
             $landmarkScore = round($landmarkSim * 100, 2);
 
-            // Harmonic fusion: 80% cosine invariant vector + 20% topological landmark harmony
-            $compositeScore = round(($scorePercent * 0.80) + ($landmarkScore * 0.20), 2);
-            $effectiveScore = max($scorePercent, $compositeScore);
+            // Chi-square texture matching across spatial gradient and LBP blocks (offset 8 to skip scalar aspect ratios)
+            $chiSim = $this->chiSquareSimilarity($candidateData['vector'], $referenceData['vector'], 8);
+            $chiScore = round($chiSim * 100, 2);
 
-            $isMatch = ($scorePercent >= $threshold) || ($compositeScore >= $threshold && $scorePercent >= ($threshold - 4.0));
+            // Multi-Metric Composite Fusion:
+            // 65% Cosine Invariant Vector + 20% Chi-Square Micro-Texture + 15% Landmark Topology
+            $compositeScore = round(($scorePercent * 0.65) + ($chiScore * 0.20) + ($landmarkScore * 0.15), 2);
+
+            // If textures and landmarks strongly agree, reward composite;
+            // If micro-texture or landmarks indicate an impostor, enforce the composite penalty
+            $effectiveScore = ($chiScore >= 70.0 && $landmarkScore >= 65.0)
+                ? max($scorePercent, $compositeScore)
+                : min($scorePercent, $compositeScore);
+
+            $isMatch = ($scorePercent >= $threshold && $chiScore >= 60.0) || ($compositeScore >= $threshold && $scorePercent >= ($threshold - 4.0));
 
             return [
                 'match' => $isMatch,
@@ -144,11 +156,17 @@ class BiometricService
         // EMA weighting: 82% reference anchor, 18% new sample
         $vCand = $candidateData['vector'];
         $vRef = $referenceData['vector'];
-        $count = min(count($vCand), count($vRef));
+        $count = max(count($vCand), count($vRef));
         $blended = [];
 
         for ($i = 0; $i < $count; $i++) {
-            $blended[] = round(0.82 * $vRef[$i] + 0.18 * $vCand[$i], 4);
+            if (isset($vRef[$i]) && isset($vCand[$i])) {
+                $blended[] = round(0.82 * $vRef[$i] + 0.18 * $vCand[$i], 4);
+            } elseif (isset($vCand[$i])) {
+                $blended[] = round($vCand[$i], 4);
+            } else {
+                $blended[] = round($vRef[$i], 4);
+            }
         }
 
         $newScore = max($candidateData['confidence'], $referenceData['confidence']);
@@ -193,7 +211,8 @@ class BiometricService
                 if ($decoded) {
                     $json = json_decode($decoded, true);
                     if (is_array($json)) {
-                        $vector = array_map('floatval', $json);
+                        $rawVector = isset($json['v']) && is_array($json['v']) ? $json['v'] : $json;
+                        $vector = array_map('floatval', $rawVector);
                     }
                 }
             }
@@ -275,6 +294,77 @@ class BiometricService
 
         $similarity = $dotProduct / (sqrt($normA) * sqrt($normB));
         return max(0.0, min(1.0, (float) $similarity));
+    }
+
+    /**
+     * Compute salience-weighted cosine similarity.
+     * Dimensions corresponding to rigid geometric landmarks (inter-ocular distance,
+     * nose bridge prominence, eye socket depth) receive higher salience weights.
+     */
+    public function weightedCosineSimilarity(array $a, array $b): float
+    {
+        $len = min(count($a), count($b));
+        if ($len === 0) {
+            return 0.0;
+        }
+
+        $dotProduct = 0.0;
+        $normA = 0.0;
+        $normB = 0.0;
+
+        for ($i = 0; $i < $len; $i++) {
+            // First 12 dimensions: structural ratios (higher salience weight: 1.25)
+            // Next dimensions: gradient & LBP micro-texture (salience weight: 1.0)
+            $w = ($i < 12) ? 1.25 : 1.0;
+            $valA = $a[$i] * $w;
+            $valB = $b[$i] * $w;
+
+            $dotProduct += $valA * $valB;
+            $normA += $valA * $valA;
+            $normB += $valB * $valB;
+        }
+
+        if ($normA <= 0.0 || $normB <= 0.0) {
+            return 0.0;
+        }
+
+        $similarity = $dotProduct / (sqrt($normA) * sqrt($normB));
+        return max(0.0, min(1.0, (float) $similarity));
+    }
+
+    /**
+     * Compute Chi-Square similarity between normalized feature sub-vectors.
+     * Chi-Square is exceptionally effective for histogram and texture features (LBP, gradient energy),
+     * providing strong rejection of impostor candidates with different micro-texture.
+     */
+    public function chiSquareSimilarity(array $a, array $b, int $offset = 0): float
+    {
+        $len = min(count($a), count($b));
+        if ($len <= $offset) {
+            return 1.0;
+        }
+
+        $chiDist = 0.0;
+        $elementsCount = 0;
+
+        for ($i = $offset; $i < $len; $i++) {
+            $valA = (float) $a[$i];
+            $valB = (float) $b[$i];
+            $sum = abs($valA) + abs($valB);
+            if ($sum > 1e-6) {
+                $diff = $valA - $valB;
+                $chiDist += ($diff * $diff) / $sum;
+                $elementsCount++;
+            }
+        }
+
+        if ($elementsCount === 0) {
+            return 1.0;
+        }
+
+        $normalizedDist = $chiDist / max(1.0, (float) $elementsCount);
+        // Map distance to similarity [0, 1]
+        return max(0.0, min(1.0, 1.0 - ($normalizedDist * 0.85)));
     }
 
     /**

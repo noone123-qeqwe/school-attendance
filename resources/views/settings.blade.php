@@ -6406,9 +6406,17 @@ async function detectAndAnalyzeFaceFrame(video) {
     const scaleG = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgG)));
     const scaleB = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgB)));
 
-    // Adaptive gamma: boost underexposed shadow details, suppress bright specular highlights
+    // Adaptive continuous gamma: boost underexposed shadow details, suppress bright specular highlights
     const faceAvgLuma = 0.299 * faceAvgR + 0.587 * faceAvgG + 0.114 * faceAvgB;
-    const gamma = faceAvgLuma < 50 ? 0.76 : (faceAvgLuma > 180 ? 1.24 : 1.0);
+    const gamma = faceAvgLuma < 75 
+        ? Math.max(0.48, Math.min(0.92, Math.log(0.48) / Math.log(Math.max(0.04, faceAvgLuma / 255.0))))
+        : (faceAvgLuma > 170 ? Math.min(1.38, 1.0 + (faceAvgLuma - 170) / 220.0) : 1.0);
+
+    // Auto-engage fill light assistance if face is severely underexposed
+    if (faceAvgLuma < 30 && !isFaceFlashActive) {
+        const flashBtn = document.getElementById('faceFlashToggleBtn');
+        if (flashBtn) flashBtn.classList.add('flash-suggest-pulse');
+    }
 
     // Bilateral side-lighting disparity detection: measure left half vs right half illumination
     let leftHalfLumaSum = 0, leftHalfCount = 0;
@@ -6433,7 +6441,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     const avgLeftLuma = leftHalfCount > 0 ? (leftHalfLumaSum / leftHalfCount) : faceAvgLuma;
     const avgRightLuma = rightHalfCount > 0 ? (rightHalfLumaSum / rightHalfCount) : faceAvgLuma;
-    const lumaDisparity = (avgLeftLuma - avgRightLuma) / Math.max(25, (avgLeftLuma + avgRightLuma) / 2);
+    const lumaDisparity = (avgLeftLuma - avgRightLuma) / Math.max(20, (avgLeftLuma + avgRightLuma) / 2);
 
     const getNormLuma = (px, py) => {
         const clX = Math.max(0, Math.min(vw - 1, px));
@@ -6445,9 +6453,9 @@ async function detectAndAnalyzeFaceFrame(video) {
         const baseLuma = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
 
         // Bilateral side-lighting compensation when window or side-lamp produces harsh shadows
-        if (Math.abs(lumaDisparity) > 0.16) {
+        if (Math.abs(lumaDisparity) > 0.12) {
             const relX = (px - faceX) / Math.max(1, faceW) - 0.5;
-            const compensation = Math.max(0.80, Math.min(1.25, 1.0 - relX * lumaDisparity * 0.60));
+            const compensation = Math.max(0.72, Math.min(1.32, 1.0 - relX * lumaDisparity * 0.70));
             return Math.min(255, baseLuma * compensation);
         }
         return baseLuma;
@@ -6599,8 +6607,8 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    // 11. Extract 24-Dimensional Illumination-Invariant Biometric Feature Vector
-    // 8 Scale & Illumination Invariant Landmark Ratios
+    // 11. Extract 48-Dimensional Illumination-Invariant Biometric Feature Vector
+    // Part 1: 8 Primary Scale & Illumination Invariant Landmark Ratios (Prefix compatible)
     const eyeSpanRatio = 0.42;
     const eyeToNoseRatio = 0.22;
     const noseToMouthRatio = 0.23;
@@ -6610,7 +6618,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     const mouthCavityContrast = Math.min(2.0, avgMouth / Math.max(1, avgCheek));
     const normAspect = Math.min(2.0, aspect / 1.3);
 
-    const landmarkRatios = [
+    const primaryLandmarkRatios = [
         Math.round(eyeSpanRatio * 1000) / 1000,
         Math.round(eyeToNoseRatio * 1000) / 1000,
         Math.round(noseToMouthRatio * 1000) / 1000,
@@ -6621,7 +6629,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         Math.round(normAspect * 1000) / 1000,
     ];
 
-    // 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
+    // Part 2: 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
     const gradientEnergies = [];
     const subGridSize = 4;
     const subCellW = faceW / subGridSize;
@@ -6656,8 +6664,84 @@ async function detectAndAnalyzeFaceFrame(video) {
     const gradL2Norm = Math.sqrt(Math.max(1e-6, totalGradEnergy));
     const normalizedGrads = gradientEnergies.map(val => Math.round((val / gradL2Norm) * 1000) / 1000);
 
-    // 24-dimensional combined invariant vector
-    const featureVector = [...landmarkRatios, ...normalizedGrads];
+    // Part 3: 8 Enhanced Invariant Structural & Symmetry Quotients
+    const eyeSymmetryRatio = Math.round((1.0 - Math.min(1.0, eyeSymmetryDiff)) * 1000) / 1000;
+    const nasalSlopeRatio = Math.round(Math.min(2.0, avgNoseBridge / Math.max(1, avgMouth)) * 1000) / 1000;
+    const midfaceToJawRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, avgMouth)) * 1000) / 1000;
+    const browToEyeRatio = Math.round(Math.min(2.0, (avgNoseBridge + avgCheek) / Math.max(1, avgLeftEye + avgRightEye)) * 1000) / 1000;
+    const leftCheekRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, faceAvgLuma)) * 1000) / 1000;
+    const rightCheekRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, avgRightEye)) * 1000) / 1000;
+    const foreheadToNoseRatio = Math.round(Math.min(2.0, faceAvgLuma / Math.max(1, avgNoseBridge)) * 1000) / 1000;
+    const lowerFacialProportion = Math.round(Math.min(2.0, (avgMouth + avgCheek) / Math.max(1, 2 * faceAvgLuma)) * 1000) / 1000;
+
+    const enhancedRatios = [
+        eyeSymmetryRatio,
+        nasalSlopeRatio,
+        midfaceToJawRatio,
+        browToEyeRatio,
+        leftCheekRatio,
+        rightCheekRatio,
+        foreheadToNoseRatio,
+        lowerFacialProportion
+    ];
+
+    // Part 4: 16 Uniform Local Binary Pattern (ULBP) Micro-Texture Energy Zones (4x4 sub-grid)
+    const lbpEnergies = [];
+    let totalLbpEnergy = 0;
+
+    for (let gy = 0; gy < subGridSize; gy++) {
+        for (let gx = 0; gx < subGridSize; gx++) {
+            let zoneLbpSum = 0;
+            let zoneLbpSamples = 0;
+            const startX = Math.floor(faceX + gx * subCellW);
+            const startY = Math.floor(faceY + gy * subCellH);
+
+            for (let sy = 2; sy < subCellH - 2; sy += 2) {
+                for (let sx = 2; sx < subCellW - 2; sx += 2) {
+                    const cx = startX + sx;
+                    const cy = startY + sy;
+                    const centerVal = getNormLuma(cx, cy);
+
+                    const p0 = getNormLuma(cx - 1, cy - 1);
+                    const p1 = getNormLuma(cx, cy - 1);
+                    const p2 = getNormLuma(cx + 1, cy - 1);
+                    const p3 = getNormLuma(cx + 1, cy);
+                    const p4 = getNormLuma(cx + 1, cy + 1);
+                    const p5 = getNormLuma(cx, cy + 1);
+                    const p6 = getNormLuma(cx - 1, cy + 1);
+                    const p7 = getNormLuma(cx - 1, cy);
+
+                    const b0 = p0 >= centerVal ? 1 : 0;
+                    const b1 = p1 >= centerVal ? 1 : 0;
+                    const b2 = p2 >= centerVal ? 1 : 0;
+                    const b3 = p3 >= centerVal ? 1 : 0;
+                    const b4 = p4 >= centerVal ? 1 : 0;
+                    const b5 = p5 >= centerVal ? 1 : 0;
+                    const b6 = p6 >= centerVal ? 1 : 0;
+                    const b7 = p7 >= centerVal ? 1 : 0;
+
+                    const transitions = (b0 !== b1 ? 1 : 0) + (b1 !== b2 ? 1 : 0) + (b2 !== b3 ? 1 : 0) +
+                                      (b3 !== b4 ? 1 : 0) + (b4 !== b5 ? 1 : 0) + (b5 !== b6 ? 1 : 0) +
+                                      (b6 !== b7 ? 1 : 0) + (b7 !== b0 ? 1 : 0);
+
+                    const isUniform = transitions <= 2 ? 1 : 0;
+                    const bitSum = b0 + b1 + b2 + b3 + b4 + b5 + b6 + b7;
+                    zoneLbpSum += isUniform * (bitSum / 8.0);
+                    zoneLbpSamples++;
+                }
+            }
+
+            const zoneLbpAvg = zoneLbpSamples > 0 ? (zoneLbpSum / zoneLbpSamples) : 0.5;
+            lbpEnergies.push(zoneLbpAvg);
+            totalLbpEnergy += zoneLbpAvg * zoneLbpAvg;
+        }
+    }
+
+    const lbpL2Norm = Math.sqrt(Math.max(1e-6, totalLbpEnergy));
+    const normalizedLbp = lbpEnergies.map(val => Math.round((val / lbpL2Norm) * 1000) / 1000);
+
+    // 48-dimensional combined invariant vector (Prefix order: 8 Primary Ratios + 16 Gradients + 8 Enhanced Ratios + 16 ULBP)
+    const featureVector = [...primaryLandmarkRatios, ...normalizedGrads, ...enhancedRatios, ...normalizedLbp];
     const vectorJson = JSON.stringify(featureVector);
     const vectorPayload = btoa(vectorJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
