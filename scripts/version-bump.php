@@ -3,7 +3,7 @@
 /**
  * Automated Application Versioning Script
  *
- * Increments semantic version (MAJOR.MINOR.PATCH) automatically on every Git push / CI build.
+ * Increments the web release version after the release workflow has passed its checks.
  * Single source of truth: version.json
  * Synchronizes:
  *   - version.json
@@ -18,6 +18,7 @@
 $rootDir = dirname(__DIR__);
 $versionJsonPath = $rootDir . DIRECTORY_SEPARATOR . 'version.json';
 $packageJsonPath = $rootDir . DIRECTORY_SEPARATOR . 'package.json';
+$packageLockPath = $rootDir . DIRECTORY_SEPARATOR . 'package-lock.json';
 $manifestJsonPath = $rootDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'manifest.json';
 $swJsPath = $rootDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'sw.js';
 
@@ -178,6 +179,7 @@ if (file_exists($swJsPath)) {
 // 5. Update version.json
 $newVersionData = array_merge($versionData, [
     'version'      => $newVersion,
+    'installed_version' => $newVersion,
     'build'        => $newBuild,
     'commit'       => $gitCommit,
     'release_date' => $releaseDate,
@@ -197,6 +199,25 @@ if (file_exists($packageJsonPath) && !$isDryRun) {
     $pkg = (string)file_get_contents($packageJsonPath);
     $pkg = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$newVersion}\"", $pkg);
     file_put_contents($packageJsonPath, $pkg);
+}
+
+// 7. Update manifest.json
+if (file_exists($packageLockPath) && !$isDryRun) {
+    $lockContents = (string)file_get_contents($packageLockPath);
+    $lock = json_decode($lockContents, true);
+    if (!is_array($lock) || !isset($lock['packages'][''])) {
+        fwrite(STDERR, "Cannot update invalid package-lock.json\n");
+        exit(1);
+    }
+    $updatedLock = preg_replace_callback('/"version"\s*:\s*"[^"]+"/',
+        static fn () => '"version": "' . $newVersion . '"', $lockContents, 2, $replacements);
+    $updatedData = json_decode((string)$updatedLock, true);
+    if ($replacements !== 2 || ($updatedData['version'] ?? null) !== $newVersion
+        || ($updatedData['packages']['']['version'] ?? null) !== $newVersion) {
+        fwrite(STDERR, "Cannot update package-lock.json root versions\n");
+        exit(1);
+    }
+    file_put_contents($packageLockPath, $updatedLock);
 }
 
 // 7. Update manifest.json
@@ -221,6 +242,7 @@ echo "==================================================\n";
 echo "Synchronized files:\n";
 echo "  [✓] " . basename($versionJsonPath) . "\n";
 echo "  [✓] " . basename($packageJsonPath) . "\n";
+echo "  [✓] " . basename($packageLockPath) . "\n";
 echo "  [✓] public/" . basename($manifestJsonPath) . "\n";
 echo "  [✓] public/" . basename($swJsPath) . "\n\n";
 

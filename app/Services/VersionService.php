@@ -75,8 +75,8 @@ class VersionService
             }
         }
 
-        // 1. Environment metadata can be useful, but a stale deployment
-        // variable must not hide a newer version shipped in version.json.
+        // 1. Environment metadata is a fallback only: it cannot prove that a
+        // web release was actually deployed to this installation.
         $envVer = env('APP_VERSION', env('APP_LATEST_VERSION'));
         $cleanEnv = null;
         if (!empty($envVer)) {
@@ -94,7 +94,7 @@ class VersionService
             }
         }
 
-        if ($cleanEnv !== null && ($diskVer === null || version_compare($cleanEnv, $diskVer, '>'))) {
+        if ($diskVer === null && $cleanEnv !== null) {
             $diskVer = $cleanEnv;
         }
 
@@ -122,18 +122,16 @@ class VersionService
         } catch (\Throwable $e) {}
 
 
-        // In production/local: If diskVer is defined, it is the authoritative build version!
+        // The deployed build is authoritative. A persisted value from an older
+        // update mechanism must not advertise an unavailable newer release.
         if ($diskVer !== null) {
-            if ($dbVersion === null || version_compare($diskVer, $dbVersion, '>=')) {
-                if ($dbVersion !== $diskVer) {
-                    try {
-                        Setting::set('latest_version', $diskVer);
-                        Setting::set('system_version', $diskVer);
-                    } catch (\Throwable $e) {}
-                }
-                return $diskVer;
+            if ($dbVersion !== $diskVer) {
+                try {
+                        Setting::set('latest_version', $diskVer, false);
+                        Setting::set('system_version', $diskVer, false);
+                } catch (\Throwable $e) {}
             }
-            return $dbVersion;
+            return $diskVer;
         }
 
         if ($dbVersion !== null) {
@@ -305,7 +303,7 @@ class VersionService
             try {
                 $dbInstalled = Setting::get('installed_version');
                 if ($dbInstalled !== $diskVer) {
-                    Setting::set('installed_version', $diskVer);
+                    Setting::set('installed_version', $diskVer, false);
                     Setting::flushCache();
                 }
             } catch (\Throwable $e) {}

@@ -13,8 +13,10 @@ class AutoVersionProgressionTest extends TestCase
 
     private ?string $originalVersionJson = null;
     private ?string $originalPackageJson = null;
+    private ?string $originalPackageLockJson = null;
     private ?string $originalManifestJson = null;
     private ?string $originalSwJs = null;
+    private ?string $originalAndroidGradle = null;
 
     protected function setUp(): void
     {
@@ -25,11 +27,17 @@ class AutoVersionProgressionTest extends TestCase
         if (file_exists(base_path('package.json'))) {
             $this->originalPackageJson = file_get_contents(base_path('package.json'));
         }
+        if (file_exists(base_path('package-lock.json'))) {
+            $this->originalPackageLockJson = file_get_contents(base_path('package-lock.json'));
+        }
         if (file_exists(public_path('manifest.json'))) {
             $this->originalManifestJson = file_get_contents(public_path('manifest.json'));
         }
         if (file_exists(public_path('sw.js'))) {
             $this->originalSwJs = file_get_contents(public_path('sw.js'));
+        }
+        if (file_exists(base_path('apps/android_app/app/build.gradle'))) {
+            $this->originalAndroidGradle = file_get_contents(base_path('apps/android_app/app/build.gradle'));
         }
     }
 
@@ -41,11 +49,17 @@ class AutoVersionProgressionTest extends TestCase
         if ($this->originalPackageJson !== null) {
             file_put_contents(base_path('package.json'), $this->originalPackageJson);
         }
+        if ($this->originalPackageLockJson !== null) {
+            file_put_contents(base_path('package-lock.json'), $this->originalPackageLockJson);
+        }
         if ($this->originalManifestJson !== null) {
             file_put_contents(public_path('manifest.json'), $this->originalManifestJson);
         }
         if ($this->originalSwJs !== null) {
             file_put_contents(public_path('sw.js'), $this->originalSwJs);
+        }
+        if ($this->originalAndroidGradle !== null) {
+            file_put_contents(base_path('apps/android_app/app/build.gradle'), $this->originalAndroidGradle);
         }
         parent::tearDown();
     }
@@ -57,7 +71,7 @@ class AutoVersionProgressionTest extends TestCase
      *  - Increments patch correctly
      *  - 2.4.9 -> 2.4.10 is semver (NOT decimal 2.4.91)
      *  - All disk files stay synchronized
-     *  - PWA & API detect update available until installed
+     *  - The deployed web release is immediately the installed release
      *  - Never resets to older value on container/service restart
      */
     public function test_full_automated_version_progression_from_2_4_6_to_2_4_10(): void
@@ -97,8 +111,8 @@ class AutoVersionProgressionTest extends TestCase
 
             // 2. Verify single source of truth updated to targetVer
             $this->assertEquals($targetVer, $service->getLatestVersion());
-            $this->assertEquals($prevVer, $service->getInstalledVersion());
-            $this->assertFalse($service->isUpToDate());
+            $this->assertEquals($targetVer, $service->getInstalledVersion());
+            $this->assertTrue($service->isUpToDate());
 
             // 3. Verify disk files are synchronized
             $vJson = json_decode(file_get_contents(base_path('version.json')), true);
@@ -107,24 +121,29 @@ class AutoVersionProgressionTest extends TestCase
             $pkgJson = json_decode(file_get_contents(base_path('package.json')), true);
             $this->assertEquals($targetVer, $pkgJson['version']);
 
+            $lockJson = json_decode(file_get_contents(base_path('package-lock.json')), true);
+            $this->assertEquals($targetVer, $lockJson['version']);
+            $this->assertEquals($targetVer, $lockJson['packages']['']['version']);
+
             $mfJson = json_decode(file_get_contents(public_path('manifest.json')), true);
             $this->assertEquals($targetVer, $mfJson['version']);
 
-            // 4. Verify PWA and API endpoints detect the new update
+            // 4. Server metadata describes the deployable release; each browser
+            // independently detects whether its loaded HTML/service worker is older.
             $pwaCheck = $this->getJson('/pwa/version');
             $pwaCheck->assertStatus(200)
                 ->assertJson([
-                    'installed_version' => $prevVer,
+                    'installed_version' => $targetVer,
                     'latest_version'    => $targetVer,
-                    'is_up_to_date'     => false,
+                    'is_up_to_date'     => true,
                 ]);
 
             $apiCheck = $this->getJson('/api/version');
             $apiCheck->assertStatus(200)
                 ->assertJson([
-                    'installed_version' => $prevVer,
+                    'installed_version' => $targetVer,
                     'latest_version'    => $targetVer,
-                    'is_up_to_date'     => false,
+                    'is_up_to_date'     => true,
                 ]);
 
             // 5. User applies update (clicks "Update Now")

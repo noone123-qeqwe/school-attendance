@@ -75,4 +75,32 @@ class UpdatePopupLoopPreventionTest extends TestCase
         $this->assertSame($matches[1], $versionService->getSwVersion());
         $this->assertSame($file['build'], $versionService->getBuild());
     }
+
+    public function test_stale_database_release_cannot_advertise_a_version_not_deployed(): void
+    {
+        $deployed = json_decode(file_get_contents(base_path('version.json')), true)['version'];
+        Setting::set('latest_version', '99.0.0', false);
+        Setting::set('system_version', '99.0.0', false);
+        Setting::flushCache();
+
+        $response = $this->getJson('/pwa/version');
+        $response->assertOk()->assertJson([
+            'latest_version' => $deployed,
+            'installed_version' => $deployed,
+            'is_up_to_date' => true,
+        ]);
+    }
+
+    public function test_update_application_checks_live_attendance_and_offline_queue_first(): void
+    {
+        $content = $this->get('/login')->assertOk()->getContent();
+        $this->assertStringContainsString('async function updateBlockReason()', $content);
+        $this->assertStringContainsString('OfflineAttendance.getPendingCount()', $content);
+        $this->assertStringContainsString("scanner.style.display === 'flex'", $content);
+        $this->assertStringContainsString('const blocked = await updateBlockReason()', $content);
+        $this->assertLessThan(
+            strpos($content, "sessionStorage.setItem('pwa_pending_release_key'"),
+            strpos($content, 'const blocked = await updateBlockReason()')
+        );
+    }
 }

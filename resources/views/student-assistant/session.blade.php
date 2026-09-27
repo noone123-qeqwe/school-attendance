@@ -28,6 +28,9 @@
     const rotateUrl = @json(route('student-assistant.qr.rotate', $session));
     const replaceUrl = @json(route('student-assistant.qr.replace', $session));
     let sessionEndsAt = {{ $session->session_ends_at->timestamp * 1000 }};
+    window.attendanceUpdateGuard = () => Date.now() < sessionEndsAt
+        ? 'Finish displaying the attendance QR before updating.'
+        : null;
     const csrf = document.querySelector('meta[name="csrf-token"]').content;
     const canvas = document.getElementById('assistantQrCanvas');
     const message = document.getElementById('assistantQrMessage');

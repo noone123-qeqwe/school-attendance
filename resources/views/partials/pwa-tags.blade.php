@@ -1773,6 +1773,35 @@
         }, 300);
     }
 
+    function activeAttendanceUpdateReason() {
+        const scanner = document.getElementById('studentScannerModal');
+        if (scanner && scanner.style.display === 'flex') {
+            return 'Close the attendance scanner before updating.';
+        }
+        if (typeof window.attendanceUpdateGuard === 'function') {
+            try { return window.attendanceUpdateGuard() || null; } catch (e) {
+                return 'Finish the attendance session before updating.';
+            }
+        }
+        return null;
+    }
+
+    async function updateBlockReason() {
+        const activeReason = activeAttendanceUpdateReason();
+        if (activeReason) return activeReason;
+        if (window.OfflineAttendance?.getPendingCount) {
+            try {
+                const pending = await window.OfflineAttendance.getPendingCount();
+                if (pending > 0) {
+                    return pending + ' attendance record' + (pending === 1 ? ' is' : 's are') + ' waiting to sync. Sync them before updating.';
+                }
+            } catch (e) {
+                return 'Unable to verify offline attendance records. Please reconnect and try again.';
+            }
+        }
+        return null;
+    }
+
     // ── Toast/Prompt Helper: "Update Available" (When a newer version exists) ──
     function showUpdateReadyPrompt(version = null, force = false, changelog = null, isManualCheck = false) {
         if (version) latestDetectedVersion = version;
@@ -1810,6 +1839,13 @@
         if (!isManualCheck && !force && dismissedTag === currentUpdateKey) {
             // "Later" means once per release, not another interruption in 15 minutes.
             hideModalElementsIfUpToDate();
+            showUpdateFallbackPill(targetVersion);
+            return;
+        }
+
+        // Do not interrupt a live classroom or QR scan. The unobtrusive pill
+        // remains available, and an explicit check can still explain why apply waits.
+        if (!isManualCheck && !force && activeAttendanceUpdateReason()) {
             showUpdateFallbackPill(targetVersion);
             return;
         }
@@ -1906,6 +1942,12 @@
     }
 
     async function applySystemUpdate() {
+        const blocked = await updateBlockReason();
+        if (blocked) {
+            const subtitle = document.getElementById('pwaUpdateSubtitle');
+            if (subtitle) subtitle.textContent = blocked;
+            return false;
+        }
         const btnText = document.getElementById('pwaApplyUpdateBtnText');
         if (btnText) btnText.textContent = 'Updating...';
         const applyBtn = document.getElementById('pwaApplyUpdateBtn');

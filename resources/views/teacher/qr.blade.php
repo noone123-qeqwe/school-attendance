@@ -731,6 +731,13 @@
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
 <script nonce="{{ csp_nonce() }}">
 let currentSession = @json($activeSessionPayload ?? null);
+window.attendanceUpdateGuard = () => {
+    if (!currentSession || currentSession.active === false) return null;
+    const end = Date.parse(currentSession.session_end || '');
+    return !Number.isFinite(end) || end > Date.now()
+        ? 'End the active attendance session before updating.'
+        : null;
+};
 let refreshInterval = null;
 let clockinInterval = null;
 let timerInterval = null;

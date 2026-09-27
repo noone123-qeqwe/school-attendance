@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="{{ asset('css/design-tokens.css') }}?v={{ filemtime(public_path('css/design-tokens.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/premium.css') }}?v={{ filemtime(public_path('css/premium.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/dashboard-enterprise.css') }}?v={{ filemtime(public_path('css/dashboard-enterprise.css')) }}">
-    <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
     @auth
         @if(Auth::user()->isAdmin())
             <link rel="stylesheet" href="{{ asset('css/admin-saas.css') }}?v={{ filemtime(public_path('css/admin-saas.css')) }}">
@@ -27,6 +26,7 @@
     @if(request()->routeIs('settings', 'admin.settings'))
         <link rel="stylesheet" href="{{ asset('css/settings-polish.css') }}?v={{ filemtime(public_path('css/settings-polish.css')) }}">
     @endif
+    <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
 </head>
 
 <body>
