@@ -1,0 +1,36 @@
+<!doctype html>
+<html><meta charset="utf-8"><title>Offline audit fixture</title>
+<body>
+<button id="save">Save record</button>
+<button id="cache">Cache roster</button>
+<button id="show">Show local data</button>
+<pre id="result">Ready</pre>
+<script>
+const teacher = new URLSearchParams(location.search).get('teacher') || '1';
+const originalFetch = window.fetch.bind(window);
+window.fetch = function(url, options) {
+    if (String(url).includes('/teacher/offline-attendance/roster')) {
+        return Promise.resolve(new Response(JSON.stringify({ success: true, subjects: [{ code: 'AUDIT101', name: 'Audit class for teacher ' + teacher, students: [{ id: 1, name: 'Fixture student' }] }] }), { status: 200, headers: { 'Content-Type': 'application/json' } }));
+    }
+    if (String(url).includes('/api/ping')) return Promise.resolve(new Response('{}', { status: 200 }));
+    return originalFetch(url, options);
+};
+</script>
+<script src="/js/offline-attendance.js"></script>
+<script>
+OfflineAttendance.init({ teacherId: teacher, csrfToken: 'fixture' });
+document.getElementById('save').onclick = async function() {
+    await OfflineAttendance.saveRecord({ subject_code: 'AUDIT101', user_id: 1, status: 'Present', date: '2026-09-27' });
+    document.getElementById('result').textContent = 'Saved for teacher ' + teacher;
+};
+document.getElementById('cache').onclick = async function() {
+    await OfflineAttendance.fetchRoster();
+    document.getElementById('result').textContent = 'Cached for teacher ' + teacher;
+};
+document.getElementById('show').onclick = async function() {
+    const records = await OfflineAttendance.getPendingRecords();
+    const roster = await OfflineAttendance.getCachedRoster();
+    document.getElementById('result').textContent = JSON.stringify({ teacher, pending: records.length, roster: roster.map(s => s.name) });
+};
+</script>
+</body></html>

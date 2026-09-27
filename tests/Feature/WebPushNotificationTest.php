@@ -14,6 +14,7 @@ class WebPushNotificationTest extends TestCase
 
     public function test_can_fetch_vapid_public_key(): void
     {
+        config()->set('webpush.vapid.public_key', 'test-public-key');
         $response = $this->getJson(route('push.public_key'));
 
         $response->assertStatus(200)
@@ -26,6 +27,15 @@ class WebPushNotificationTest extends TestCase
             ]);
 
         $this->assertNotEmpty($response->json('publicKey'));
+    }
+
+    public function test_missing_vapid_key_is_reported_as_unavailable(): void
+    {
+        config()->set('webpush.vapid.public_key', null);
+
+        $this->getJson(route('push.public_key'))
+            ->assertOk()
+            ->assertJson(['success' => false, 'publicKey' => null]);
     }
 
     public function test_can_subscribe_device_to_web_push(): void

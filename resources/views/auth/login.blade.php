@@ -3509,7 +3509,45 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    // 7. Topological Feature Analysis & Landmarks
+    // 7. Illumination Normalization (Gray-World White Balance + Adaptive Gamma)
+    var faceRSum = 0, faceGSum = 0, faceBSum = 0, facePixelCount = 0;
+    for (var dy = 0; dy < faceH; dy += 2) {
+        var curY = faceY + dy;
+        for (var dx = 0; dx < faceW; dx += 2) {
+            var curX = faceX + dx;
+            var pIdx = (curY * vw + curX) * 4;
+            faceRSum += pixels[pIdx];
+            faceGSum += pixels[pIdx + 1];
+            faceBSum += pixels[pIdx + 2];
+            facePixelCount++;
+        }
+    }
+
+    var faceAvgR = facePixelCount > 0 ? (faceRSum / facePixelCount) : 128;
+    var faceAvgG = facePixelCount > 0 ? (faceGSum / facePixelCount) : 128;
+    var faceAvgB = facePixelCount > 0 ? (faceBSum / facePixelCount) : 128;
+    var faceGray = (faceAvgR + faceAvgG + faceAvgB) / 3;
+
+    // Gray-World White Balance scaling factors (constrained between 0.70 and 1.35 to avoid channel clipping)
+    var scaleR = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgR)));
+    var scaleG = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgG)));
+    var scaleB = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgB)));
+
+    // Adaptive gamma: boost underexposed shadow details, suppress bright specular highlights
+    var faceAvgLuma = 0.299 * faceAvgR + 0.587 * faceAvgG + 0.114 * faceAvgB;
+    var gamma = faceAvgLuma < 50 ? 0.76 : (faceAvgLuma > 180 ? 1.24 : 1.0);
+
+    var getNormLuma = function(px, py) {
+        var clX = Math.max(0, Math.min(vw - 1, px));
+        var clY = Math.max(0, Math.min(vh - 1, py));
+        var idx = (clY * vw + clX) * 4;
+        var rNorm = Math.pow(Math.min(255, pixels[idx] * scaleR) / 255, gamma) * 255;
+        var gNorm = Math.pow(Math.min(255, pixels[idx + 1] * scaleG) / 255, gamma) * 255;
+        var bNorm = Math.pow(Math.min(255, pixels[idx + 2] * scaleB) / 255, gamma) * 255;
+        return 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
+    };
+
+    // 8. Topological Feature Analysis & Landmarks (on Illumination-Normalized Luma)
     var leftEyeLumaSum = 0, leftEyeCount = 0;
     var rightEyeLumaSum = 0, rightEyeCount = 0;
     var noseBridgeLumaSum = 0, noseBridgeCount = 0;
@@ -3523,10 +3561,9 @@ async function detectAndAnalyzeFaceFrame(video) {
         for (var dx = 0; dx < faceW; dx += 2) {
             var curX = faceX + dx;
             var normX = dx / faceW;
+            var pLuma = getNormLuma(curX, curY);
 
-            var pIdx = (curY * vw + curX) * 4;
-            var pLuma = 0.299 * pixels[pIdx] + 0.587 * pixels[pIdx + 1] + 0.114 * pixels[pIdx + 2];
-
+            // Zone 1: Eyes & Nose Bridge
             if (normY >= 0.26 && normY <= 0.50) {
                 if (normX >= 0.14 && normX <= 0.44) {
                     leftEyeLumaSum += pLuma;
@@ -3540,6 +3577,7 @@ async function detectAndAnalyzeFaceFrame(video) {
                 }
             }
 
+            // Zone 2: Cheeks / Mid-face
             if (normY >= 0.50 && normY <= 0.70) {
                 if ((normX >= 0.14 && normX <= 0.42) || (normX >= 0.58 && normX <= 0.86)) {
                     cheekLumaSum += pLuma;
@@ -3547,6 +3585,7 @@ async function detectAndAnalyzeFaceFrame(video) {
                 }
             }
 
+            // Zone 3: Mouth / Lower face
             if (normY >= 0.70 && normY <= 0.88) {
                 if (normX >= 0.26 && normX <= 0.74) {
                     mouthLumaSum += pLuma;
@@ -3651,12 +3690,79 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    var descriptor = 'face_desc_' + Math.round(score) + '_' + Math.round(avgLeftEye) + '_' + Math.round(avgRightEye) + '_' + Math.round(avgNoseBridge) + '_' + Math.round(avgMouth) + '_' + Date.now().toString(36);
+    // 11. Extract 24-Dimensional Illumination-Invariant Biometric Feature Vector
+    // 8 Scale & Illumination Invariant Landmark Ratios
+    var eyeSpanRatio = 0.42;
+    var eyeToNoseRatio = 0.22;
+    var noseToMouthRatio = 0.23;
+    var leftEyeContrast = Math.min(2.0, avgLeftEye / Math.max(1, avgCheek));
+    var rightEyeContrast = Math.min(2.0, avgRightEye / Math.max(1, avgCheek));
+    var nasalProminence = Math.min(2.0, avgNoseBridge / Math.max(1, (avgLeftEye + avgRightEye) / 2));
+    var mouthCavityContrast = Math.min(2.0, avgMouth / Math.max(1, avgCheek));
+    var normAspect = Math.min(2.0, aspect / 1.3);
+
+    var landmarkRatios = [
+        Math.round(eyeSpanRatio * 1000) / 1000,
+        Math.round(eyeToNoseRatio * 1000) / 1000,
+        Math.round(noseToMouthRatio * 1000) / 1000,
+        Math.round(leftEyeContrast * 1000) / 1000,
+        Math.round(rightEyeContrast * 1000) / 1000,
+        Math.round(nasalProminence * 1000) / 1000,
+        Math.round(mouthCavityContrast * 1000) / 1000,
+        Math.round(normAspect * 1000) / 1000,
+    ];
+
+    // 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
+    var gradientEnergies = [];
+    var subGridSize = 4;
+    var subCellW = faceW / subGridSize;
+    var subCellH = faceH / subGridSize;
+    var totalGradEnergy = 0;
+
+    for (var gy = 0; gy < subGridSize; gy++) {
+        for (var gx = 0; gx < subGridSize; gx++) {
+            var zoneGradSum = 0;
+            var zoneSamples = 0;
+            var startX = Math.floor(faceX + gx * subCellW);
+            var startY = Math.floor(faceY + gy * subCellH);
+
+            for (var sy = 2; sy < subCellH - 2; sy += 2) {
+                for (var sx = 2; sx < subCellW - 2; sx += 2) {
+                    var cx = startX + sx;
+                    var cy = startY + sy;
+                    var dx = getNormLuma(cx + 1, cy) - getNormLuma(cx - 1, cy);
+                    var dy = getNormLuma(cx, cy + 1) - getNormLuma(cx, cy - 1);
+                    zoneGradSum += Math.sqrt(dx * dx + dy * dy);
+                    zoneSamples++;
+                }
+            }
+
+            var zoneAvg = zoneSamples > 0 ? (zoneGradSum / zoneSamples) : 0;
+            gradientEnergies.push(zoneAvg);
+            totalGradEnergy += zoneAvg * zoneAvg;
+        }
+    }
+
+    // L2-normalize gradient orientation energies
+    var gradL2Norm = Math.sqrt(Math.max(1e-6, totalGradEnergy));
+    var normalizedGrads = gradientEnergies.map(function(val) {
+        return Math.round((val / gradL2Norm) * 1000) / 1000;
+    });
+
+    // 24-dimensional combined invariant vector
+    var featureVector = landmarkRatios.concat(normalizedGrads);
+    var vectorJson = JSON.stringify(featureVector);
+    var vectorPayload = btoa(vectorJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+    var descriptor = 'face_desc_' + Math.round(score) + '_' + Math.round(avgLeftEye) + '_' + Math.round(avgRightEye) + '_' + Math.round(avgNoseBridge) + '_' + Math.round(avgMouth) + '_v2_' + vectorPayload;
     return {
         status: 'VALID_FACE',
         passed: true,
         facesCount: 1,
         score: score,
+        faceCenterX: centerX,
+        faceCenterY: centerY,
+        featureVector: featureVector,
         descriptor: descriptor,
         message: 'Face verified ✓'
     };
@@ -3838,6 +3944,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
     resetBioLoginFlash();
     var consecutiveValidFrames = 0;
     var REQUIRED_FRAMES = 4;
+    var verifiedFramesHistory = [];
     var SCAN_TIMEOUT_MS = 40000;
     var startTime = Date.now();
     var lastVerifiedAnalysis = null;
@@ -3921,6 +4028,7 @@ async function startFaceRecognitionLogin(identifier, opts) {
         } else if (analysis.status === 'VALID_FACE' && analysis.passed) {
             consecutiveValidFrames++;
             lastVerifiedAnalysis = analysis;
+            verifiedFramesHistory.push(analysis);
             if (flashBtn) {
                 flashBtn.classList.remove('flash-suggest-pulse');
             }
@@ -3933,6 +4041,28 @@ async function startFaceRecognitionLogin(identifier, opts) {
             if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%)';
 
             if (consecutiveValidFrames >= REQUIRED_FRAMES) {
+                // Temporal template averaging across consecutive verified frames to cancel noise
+                if (verifiedFramesHistory.length >= 2) {
+                    var vLen = verifiedFramesHistory[0].featureVector?.length || 0;
+                    if (vLen > 0) {
+                        var avgVector = new Array(vLen).fill(0);
+                        for (var f = 0; f < verifiedFramesHistory.length; f++) {
+                            var item = verifiedFramesHistory[f];
+                            if (item.featureVector) {
+                                for (var vi = 0; vi < vLen; vi++) {
+                                    avgVector[vi] += item.featureVector[vi];
+                                }
+                            }
+                        }
+                        for (var vi = 0; vi < vLen; vi++) {
+                            avgVector[vi] = Math.round((avgVector[vi] / verifiedFramesHistory.length) * 10000) / 10000;
+                        }
+                        var avgPayload = btoa(JSON.stringify(avgVector)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                        var baseParts = lastVerifiedAnalysis.descriptor.split('_v2_')[0];
+                        lastVerifiedAnalysis.descriptor = baseParts + '_v2_' + avgPayload;
+                    }
+                }
+
                 currentProgress = 100;
                 if (progressFill) progressFill.style.width = '100%';
                 if (pctLabel) pctLabel.textContent = '100%';

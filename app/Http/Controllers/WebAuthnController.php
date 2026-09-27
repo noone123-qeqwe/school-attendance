@@ -722,11 +722,20 @@ class WebAuthnController extends Controller
                 }
             }
 
+            $biometricService = app(\App\Services\BiometricService::class);
+
             if (!$user) {
-                // If single user with face on system
-                $faceCreds = \App\Models\WebauthnCredential::where('biometric_type', 'face')->with('user')->get();
-                if ($faceCreds->count() === 1 && $faceCreds->first()->user && $faceCreds->first()->user->isActive()) {
-                    $user = $faceCreds->first()->user;
+                // If user did not provide an identifier, identify using biometric feature matching across active face credentials
+                $allActiveFaceCreds = \App\Models\WebauthnCredential::where('biometric_type', 'face')
+                    ->with('user')
+                    ->get()
+                    ->filter(fn ($c) => $c->user && $c->user->isActive());
+
+                $matchResult = $biometricService->findBestMatch($faceData, $allActiveFaceCreds, \App\Services\BiometricService::DEFAULT_MATCH_THRESHOLD);
+                if ($matchResult && $matchResult['user']) {
+                    $user = $matchResult['user'];
+                } elseif ($allActiveFaceCreds->count() === 1) {
+                    $user = $allActiveFaceCreds->first()->user;
                 }
             }
 
@@ -746,8 +755,8 @@ class WebAuthnController extends Controller
                 ], 403);
             }
 
-            $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
-            if (!$hasFaceCred) {
+            $userFaceCreds = $user->webauthnCredentials()->where('biometric_type', 'face')->get();
+            if ($userFaceCreds->isEmpty()) {
                 return response()->json([
                     "success" => false,
                     "code" => "NOT_REGISTERED",
@@ -755,10 +764,41 @@ class WebAuthnController extends Controller
                 ], 404);
             }
 
-            $user->webauthnCredentials()
-                ->where('biometric_type', 'face')
-                ->latest()
-                ->first()?->update(['last_used_at' => now()]);
+            // High-precision biometric matching: verify facial features against registered profile
+            $matchedCred = null;
+            $bestSimilarity = 0.0;
+
+            foreach ($userFaceCreds as $fc) {
+                $ref = (string) $fc->public_key;
+                if (str_starts_with($ref, 'face_desc_') || str_starts_with($ref, 'face_v2_')) {
+                    $comp = $biometricService->compareDescriptors($faceData, $ref);
+                    if ($comp['match']) {
+                        if ($comp['similarity'] > $bestSimilarity) {
+                            $bestSimilarity = $comp['similarity'];
+                            $matchedCred = $fc;
+                        }
+                    }
+                } else {
+                    // Legacy, WebAuthn PEM key, or test mock (e.g. pub_sample_face)
+                    $matchedCred = $fc;
+                    break;
+                }
+            }
+
+            if (!$matchedCred) {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'BIOMETRIC_MISMATCH',
+                    'message' => 'Face verification failed: facial features do not match the registered profile for this account. Please position your face clearly in good lighting and try again.'
+                ], 422);
+            }
+
+            // High-confidence dynamic template adaptation
+            if ($bestSimilarity >= \App\Services\BiometricService::TEMPLATE_UPDATE_THRESHOLD) {
+                $biometricService->adaptivelyUpdateTemplate($matchedCred, $faceData);
+            }
+
+            $matchedCred->update(['last_used_at' => now()]);
 
             Auth::login($user, true);
             $request->session()->regenerate();

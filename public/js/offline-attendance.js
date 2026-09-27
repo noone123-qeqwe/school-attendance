@@ -13,7 +13,7 @@
     'use strict';
 
     const DB_NAME = 'offline_attendance_db';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     const STORE_RECORDS = 'pending_records';
     const STORE_ROSTER = 'roster_cache';
     const SYNC_ENDPOINT = '/teacher/offline-attendance/sync';
@@ -50,9 +50,12 @@
                     store.createIndex('date', 'date', { unique: false });
                     store.createIndex('created_at', 'created_at', { unique: false });
                 }
-                if (!database.objectStoreNames.contains(STORE_ROSTER)) {
-                    database.createObjectStore(STORE_ROSTER, { keyPath: 'code' });
+                // Version 1 cached rosters by subject code alone. Their owner
+                // cannot be recovered, so discard that cache during upgrade.
+                if (database.objectStoreNames.contains(STORE_ROSTER)) {
+                    database.deleteObjectStore(STORE_ROSTER);
                 }
+                database.createObjectStore(STORE_ROSTER, { keyPath: 'cache_key' });
             };
             request.onsuccess = function(e) {
                 db = e.target.result;
@@ -84,11 +87,14 @@
                 var req = store.add(data);
                 req.onsuccess = function() {
                     data.local_id = req.result;
+                };
+                tx.oncomplete = function() {
                     resolve(data);
                     updateUI();
                     dispatchEvent('offline-attendance-saved', data);
                 };
-                req.onerror = function() { reject(req.error); };
+                tx.onerror = function() { reject(tx.error || req.error); };
+                tx.onabort = function() { reject(tx.error || new Error('Offline save was interrupted.')); };
             });
         });
     }
@@ -100,7 +106,11 @@
                 var store = tx.objectStore(STORE_RECORDS);
                 var index = store.index('sync_status');
                 var req = index.getAll('pending');
-                req.onsuccess = function() { resolve(req.result || []); };
+                req.onsuccess = function() {
+                    resolve((req.result || []).filter(function(rec) {
+                        return String(rec.teacher_id) === String(teacherId);
+                    }));
+                };
                 req.onerror = function() { reject(req.error); };
             });
         });
@@ -113,7 +123,11 @@
                 var store = tx.objectStore(STORE_RECORDS);
                 var index = store.index('sync_status');
                 var req = index.getAll('failed');
-                req.onsuccess = function() { resolve(req.result || []); };
+                req.onsuccess = function() {
+                    resolve((req.result || []).filter(function(rec) {
+                        return String(rec.teacher_id) === String(teacherId);
+                    }));
+                };
                 req.onerror = function() { reject(req.error); };
             });
         });
@@ -407,7 +421,10 @@
                 var tx = database.transaction(STORE_ROSTER, 'readwrite');
                 var store = tx.objectStore(STORE_ROSTER);
                 data.subjects.forEach(function(s) {
-                    store.put(s);
+                    store.put(Object.assign({}, s, {
+                        teacher_id: teacherId,
+                        cache_key: String(teacherId) + ':' + s.code.toUpperCase(),
+                    }));
                 });
             });
         })
@@ -422,7 +439,11 @@
                 var tx = database.transaction(STORE_ROSTER, 'readonly');
                 var store = tx.objectStore(STORE_ROSTER);
                 var req = store.getAll();
-                req.onsuccess = function() { resolve(req.result || []); };
+                req.onsuccess = function() {
+                    resolve((req.result || []).filter(function(subject) {
+                        return String(subject.teacher_id) === String(teacherId);
+                    }));
+                };
                 req.onerror = function() { resolve([]); };
             });
         });
@@ -433,7 +454,7 @@
             return new Promise(function(resolve) {
                 var tx = database.transaction(STORE_ROSTER, 'readonly');
                 var store = tx.objectStore(STORE_ROSTER);
-                var req = store.get(code.toUpperCase());
+                var req = store.get(String(teacherId) + ':' + code.toUpperCase());
                 req.onsuccess = function() { resolve(req.result || null); };
                 req.onerror = function() { resolve(null); };
             });

@@ -1634,10 +1634,22 @@ class QrAttendanceController extends Controller
         }
 
         $rpId = $this->getRpId($request);
+        $validCredentials = $user->webauthnCredentials
+            ->filter(function ($credential) {
+                if ($credential->biometric_type === 'face' && !str_contains((string) $credential->public_key, 'BEGIN PUBLIC KEY')) {
+                    return false;
+                }
+                return true;
+            });
+
+        if ($validCredentials->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Hardware biometric authentication (Fingerprint / Touch ID / Face ID) is required to clock in. Please register your biometric device in Settings.'], 422);
+        }
+
         $options = [
             'challenge' => $challenge,
             'rpId' => $rpId,
-            'allowCredentials' => $user->webauthnCredentials
+            'allowCredentials' => $validCredentials
                 ->map(fn ($credential) => [
                     'type' => 'public-key',
                     'id' => $credential->credential_id,

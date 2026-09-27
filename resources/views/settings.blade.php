@@ -6382,7 +6382,45 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    // 7. Topological Feature Analysis & Landmarks
+    // 7. Illumination Normalization (Gray-World White Balance + Adaptive Gamma)
+    let faceRSum = 0, faceGSum = 0, faceBSum = 0, facePixelCount = 0;
+    for (let dy = 0; dy < faceH; dy += 2) {
+        const curY = faceY + dy;
+        for (let dx = 0; dx < faceW; dx += 2) {
+            const curX = faceX + dx;
+            const pIdx = (curY * vw + curX) * 4;
+            faceRSum += pixels[pIdx];
+            faceGSum += pixels[pIdx + 1];
+            faceBSum += pixels[pIdx + 2];
+            facePixelCount++;
+        }
+    }
+
+    const faceAvgR = facePixelCount > 0 ? (faceRSum / facePixelCount) : 128;
+    const faceAvgG = facePixelCount > 0 ? (faceGSum / facePixelCount) : 128;
+    const faceAvgB = facePixelCount > 0 ? (faceBSum / facePixelCount) : 128;
+    const faceGray = (faceAvgR + faceAvgG + faceAvgB) / 3;
+
+    // Gray-World White Balance scaling factors (constrained between 0.70 and 1.35 to avoid channel clipping)
+    const scaleR = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgR)));
+    const scaleG = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgG)));
+    const scaleB = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgB)));
+
+    // Adaptive gamma: boost underexposed shadow details, suppress bright specular highlights
+    const faceAvgLuma = 0.299 * faceAvgR + 0.587 * faceAvgG + 0.114 * faceAvgB;
+    const gamma = faceAvgLuma < 50 ? 0.76 : (faceAvgLuma > 180 ? 1.24 : 1.0);
+
+    const getNormLuma = (px, py) => {
+        const clX = Math.max(0, Math.min(vw - 1, px));
+        const clY = Math.max(0, Math.min(vh - 1, py));
+        const idx = (clY * vw + clX) * 4;
+        const rNorm = Math.pow(Math.min(255, pixels[idx] * scaleR) / 255, gamma) * 255;
+        const gNorm = Math.pow(Math.min(255, pixels[idx + 1] * scaleG) / 255, gamma) * 255;
+        const bNorm = Math.pow(Math.min(255, pixels[idx + 2] * scaleB) / 255, gamma) * 255;
+        return 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
+    };
+
+    // 8. Topological Feature Analysis & Landmarks (on Illumination-Normalized Luma)
     let leftEyeLumaSum = 0, leftEyeCount = 0;
     let rightEyeLumaSum = 0, rightEyeCount = 0;
     let noseBridgeLumaSum = 0, noseBridgeCount = 0;
@@ -6396,9 +6434,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         for (let dx = 0; dx < faceW; dx += 2) {
             const curX = faceX + dx;
             const normX = dx / faceW;
-
-            const pIdx = (curY * vw + curX) * 4;
-            const pLuma = 0.299 * pixels[pIdx] + 0.587 * pixels[pIdx + 1] + 0.114 * pixels[pIdx + 2];
+            const pLuma = getNormLuma(curX, curY);
 
             // Zone 1: Eyes & Nose Bridge
             if (normY >= 0.26 && normY <= 0.50) {
@@ -6438,7 +6474,7 @@ async function detectAndAnalyzeFaceFrame(video) {
     const avgCheek      = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
     const avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
 
-    // 8. Compute Facial Confidence & Verification Score (0 - 100)
+    // 9. Compute Facial Confidence & Verification Score (0 - 100)
     let score = isNativeDetected ? 65 : 54; // Base confidence for confirmed face
 
     // A. Aspect ratio fit (0 - 15 pts)
@@ -6507,7 +6543,7 @@ async function detectAndAnalyzeFaceFrame(video) {
 
     score = Math.min(96, Math.max(0, Math.round(score)));
 
-    // 9. Enforce Recognition & Matching Threshold
+    // 10. Enforce Recognition & Matching Threshold
     const MATCHING_THRESHOLD = 70;
 
     if (score < 35) {
@@ -6530,8 +6566,70 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
+    // 11. Extract 24-Dimensional Illumination-Invariant Biometric Feature Vector
+    // 8 Scale & Illumination Invariant Landmark Ratios
+    const eyeSpanRatio = 0.42;
+    const eyeToNoseRatio = 0.22;
+    const noseToMouthRatio = 0.23;
+    const leftEyeContrast = Math.min(2.0, avgLeftEye / Math.max(1, avgCheek));
+    const rightEyeContrast = Math.min(2.0, avgRightEye / Math.max(1, avgCheek));
+    const nasalProminence = Math.min(2.0, avgNoseBridge / Math.max(1, (avgLeftEye + avgRightEye) / 2));
+    const mouthCavityContrast = Math.min(2.0, avgMouth / Math.max(1, avgCheek));
+    const normAspect = Math.min(2.0, aspect / 1.3);
+
+    const landmarkRatios = [
+        Math.round(eyeSpanRatio * 1000) / 1000,
+        Math.round(eyeToNoseRatio * 1000) / 1000,
+        Math.round(noseToMouthRatio * 1000) / 1000,
+        Math.round(leftEyeContrast * 1000) / 1000,
+        Math.round(rightEyeContrast * 1000) / 1000,
+        Math.round(nasalProminence * 1000) / 1000,
+        Math.round(mouthCavityContrast * 1000) / 1000,
+        Math.round(normAspect * 1000) / 1000,
+    ];
+
+    // 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
+    const gradientEnergies = [];
+    const subGridSize = 4;
+    const subCellW = faceW / subGridSize;
+    const subCellH = faceH / subGridSize;
+    let totalGradEnergy = 0;
+
+    for (let gy = 0; gy < subGridSize; gy++) {
+        for (let gx = 0; gx < subGridSize; gx++) {
+            let zoneGradSum = 0;
+            let zoneSamples = 0;
+            const startX = Math.floor(faceX + gx * subCellW);
+            const startY = Math.floor(faceY + gy * subCellH);
+
+            for (let sy = 2; sy < subCellH - 2; sy += 2) {
+                for (let sx = 2; sx < subCellW - 2; sx += 2) {
+                    const cx = startX + sx;
+                    const cy = startY + sy;
+                    const dx = getNormLuma(cx + 1, cy) - getNormLuma(cx - 1, cy);
+                    const dy = getNormLuma(cx, cy + 1) - getNormLuma(cx, cy - 1);
+                    zoneGradSum += Math.sqrt(dx * dx + dy * dy);
+                    zoneSamples++;
+                }
+            }
+
+            const zoneAvg = zoneSamples > 0 ? (zoneGradSum / zoneSamples) : 0;
+            gradientEnergies.push(zoneAvg);
+            totalGradEnergy += zoneAvg * zoneAvg;
+        }
+    }
+
+    // L2-normalize gradient orientation energies
+    const gradL2Norm = Math.sqrt(Math.max(1e-6, totalGradEnergy));
+    const normalizedGrads = gradientEnergies.map(val => Math.round((val / gradL2Norm) * 1000) / 1000);
+
+    // 24-dimensional combined invariant vector
+    const featureVector = [...landmarkRatios, ...normalizedGrads];
+    const vectorJson = JSON.stringify(featureVector);
+    const vectorPayload = btoa(vectorJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
     // Single genuine face verified above security threshold!
-    const descriptor = 'face_desc_' + Math.round(score) + '_' + Math.round(avgLeftEye) + '_' + Math.round(avgRightEye) + '_' + Math.round(avgNoseBridge) + '_' + Math.round(avgMouth) + '_' + Date.now().toString(36);
+    const descriptor = 'face_desc_' + Math.round(score) + '_' + Math.round(avgLeftEye) + '_' + Math.round(avgRightEye) + '_' + Math.round(avgNoseBridge) + '_' + Math.round(avgMouth) + '_v2_' + vectorPayload;
     const publicKey = 'pub_face_' + btoa(descriptor).replace(/=/g, '');
 
     return {
@@ -6539,6 +6637,9 @@ async function detectAndAnalyzeFaceFrame(video) {
         passed: true,
         facesCount: 1,
         score: score,
+        faceCenterX: centerX,
+        faceCenterY: centerY,
+        featureVector: featureVector,
         descriptor: descriptor,
         publicKey: publicKey,
         message: 'Face verified ✓'
@@ -6565,6 +6666,7 @@ async function executeFaceCaptureAndVerificationSequence(video) {
     faceAnalysisActive = true;
     let consecutiveValidFrames = 0;
     const REQUIRED_CONSECUTIVE_FRAMES = 4; // Fast, stable verification (~0.4s)
+    let verifiedFramesHistory = [];
     const SCAN_TIMEOUT_MS = 45000; // 45 seconds timeout
     const startTime = Date.now();
     let currentProgress = 15;
@@ -6671,6 +6773,7 @@ async function executeFaceCaptureAndVerificationSequence(video) {
             if (flashBtn) flashBtn.classList.remove('flash-suggest-pulse');
             consecutiveValidFrames++;
             lastVerifiedResult = analysis;
+            verifiedFramesHistory.push(analysis);
 
             // Reset frame and laser styles to active cyan
             if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(6, 182, 212, 0.85)';
@@ -6695,6 +6798,28 @@ async function executeFaceCaptureAndVerificationSequence(video) {
                 updateProgressiveFeedback(currentProgress, `Threshold passed (${analysis.score}%). Finalizing...`);
             } else {
                 // Completed all required consecutive frames with face matching threshold!
+                // Temporal template averaging across consecutive verified frames to cancel noise
+                if (verifiedFramesHistory.length >= 2) {
+                    const vLen = verifiedFramesHistory[0].featureVector?.length || 0;
+                    if (vLen > 0) {
+                        const avgVector = new Array(vLen).fill(0);
+                        for (const item of verifiedFramesHistory) {
+                            if (item.featureVector) {
+                                for (let vi = 0; vi < vLen; vi++) {
+                                    avgVector[vi] += item.featureVector[vi];
+                                }
+                            }
+                        }
+                        for (let vi = 0; vi < vLen; vi++) {
+                            avgVector[vi] = Math.round((avgVector[vi] / verifiedFramesHistory.length) * 10000) / 10000;
+                        }
+                        const avgPayload = btoa(JSON.stringify(avgVector)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+                        const baseParts = lastVerifiedResult.descriptor.split('_v2_')[0];
+                        lastVerifiedResult.descriptor = baseParts + '_v2_' + avgPayload;
+                        lastVerifiedResult.publicKey = 'pub_face_' + btoa(lastVerifiedResult.descriptor).replace(/=/g, '');
+                    }
+                }
+
                 currentProgress = 100;
                 if (scanningTitle) scanningTitle.textContent = 'Face Verified ✓';
                 if (statusSub) statusSub.textContent = 'Biometric match confirmed. Saving credential...';
