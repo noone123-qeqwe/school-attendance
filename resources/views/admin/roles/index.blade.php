@@ -30,7 +30,6 @@
                 <option value="teacher" {{ request('role')=='teacher'?'selected':'' }}>Instructor</option>
                 <option value="student" {{ request('role')=='student'?'selected':'' }}>Student</option>
                 <option value="parent" {{ request('role')=='parent'?'selected':'' }}>Parent</option>
-                <option value="department_head" {{ request('role')=='department_head'?'selected':'' }}>Department Head</option>
             </select>
             
             <button type="submit" class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
@@ -90,8 +89,6 @@
                             <span class="saas-badge saas-badge-info"><i class="bi bi-person-workspace" style="margin-right:4px;"></i> Instructor</span>
                         @elseif($user->role === 'student')
                             <span class="saas-badge saas-badge-success"><i class="bi bi-mortarboard" style="margin-right:4px;"></i> Student</span>
-                        @elseif($user->role === 'department_head')
-                            <span class="saas-badge saas-badge-primary" style="background:var(--saas-primary);color:#fff;"><i class="bi bi-briefcase" style="margin-right:4px;"></i> Department Head</span>
                         @else
                             <span class="saas-badge saas-badge-warning"><i class="bi bi-people" style="margin-right:4px;"></i> Parent</span>
                         @endif
@@ -172,7 +169,6 @@
                         <option value="teacher">Instructor</option>
                         <option value="student">Student</option>
                         <option value="parent">Parent</option>
-                        <option value="department_head">Department Head</option>
                     </select>
                 </div>
                 

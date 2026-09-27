@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AdminSeeder extends Seeder
 {
@@ -12,26 +13,35 @@ class AdminSeeder extends Seeder
     {
         $admin = User::withTrashed()->where('email', 'admin@osmena.edu')->first();
 
+        if ($admin) {
+            $this->command?->info('Administrator account already exists; credentials and status preserved.');
+            return;
+        }
+
+        $configuredPassword = config('auth.seed_admin_password');
+        $password = $configuredPassword;
+        if (!$password && app()->environment('production')) {
+            throw new \RuntimeException('Set SEED_ADMIN_PASSWORD before creating the initial administrator.');
+        }
+        $password ??= Str::random(32);
+
         $attributes = [
             'name'              => 'System Administrator',
             'email'             => 'admin@osmena.edu',
             'role'              => 'admin',
+            'admin_sub_role'    => 'super_admin',
             'department'        => 'College of Computer Studies',
             'phone'             => '09171234567',
-            'password'          => Hash::make('Admin@1234'),
+            'password'          => Hash::make($password),
+            'must_change_password' => true,
             'email_verified_at' => now(),
             'is_active'         => true,
         ];
 
-        if ($admin) {
-            if ($admin->trashed()) {
-                $admin->restore();
-            }
-            $admin->update($attributes);
-            $this->command->info('Official Admin account synced: admin@osmena.edu / Admin@1234');
-        } else {
-            User::create($attributes);
-            $this->command->info('Official Admin account created: admin@osmena.edu / Admin@1234');
+        User::create($attributes);
+        $this->command?->info('Initial administrator created: admin@osmena.edu');
+        if (!$configuredPassword) {
+            $this->command?->warn('One-time local administrator password: '.$password);
         }
     }
 }

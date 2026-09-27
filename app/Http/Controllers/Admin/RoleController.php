@@ -37,7 +37,7 @@ class RoleController extends Controller
         $user = $role; // Route model binding uses 'role' as the parameter name
 
         $request->validate([
-            'role' => 'required|in:admin,teacher,student,parent,department_head',
+            'role' => 'required|in:admin,teacher,student,parent',
             'admin_sub_role' => 'required_if:role,admin|nullable|in:super_admin,data_entry,auditor'
         ]);
 

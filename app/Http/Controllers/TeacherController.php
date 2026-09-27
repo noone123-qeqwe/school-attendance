@@ -1698,8 +1698,8 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
 
-        // Only department heads, admins, or authorized faculty can add holidays/no-class events
-        $allowedTypes = ($teacher->isDepartmentHead() || $teacher->isAdmin()) 
+        // Only admins or authorized faculty can add holidays/no-class events
+        $allowedTypes = $teacher->isAdmin() 
             ? 'in:national,local,school,no_class' 
             : 'in:no_class';
 
@@ -1733,11 +1733,11 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
 
-        if ($holiday->created_by !== $teacher->id && !$teacher->isDepartmentHead() && !$teacher->isAdmin()) {
+        if ($holiday->created_by !== $teacher->id && !$teacher->isAdmin()) {
             abort(403, 'You do not have permission to modify this calendar event.');
         }
 
-        $allowedTypes = ($teacher->isDepartmentHead() || $teacher->isAdmin()) 
+        $allowedTypes = $teacher->isAdmin() 
             ? 'in:national,local,school,no_class' 
             : 'in:no_class';
 
@@ -1760,7 +1760,7 @@ class TeacherController extends Controller
     {
         $teacher = Auth::user();
 
-        if ($holiday->created_by !== $teacher->id && !$teacher->isDepartmentHead() && !$teacher->isAdmin()) {
+        if ($holiday->created_by !== $teacher->id && !$teacher->isAdmin()) {
             abort(403, 'You do not have permission to remove this calendar event.');
         }
 

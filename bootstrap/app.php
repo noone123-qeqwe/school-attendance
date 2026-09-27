@@ -46,7 +46,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'audit.attendance.qr' => \App\Http\Middleware\AuditAttendanceQrScan::class,
             'admin.ip'      => \App\Http\Middleware\EnsureAdminIpWhitelisted::class,
             'admin.super'   => \App\Http\Middleware\SuperAdminMiddleware::class,
-            'dept_head'     => \App\Http\Middleware\DepartmentHeadMiddleware::class,
             'admin.auditor' => \App\Http\Middleware\RestrictAuditor::class,
         ]);
 

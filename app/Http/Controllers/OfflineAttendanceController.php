@@ -24,7 +24,7 @@ class OfflineAttendanceController extends Controller
     {
         $teacher = Auth::user();
 
-        if (!$teacher || !$teacher->isTeacher() && !$teacher->isDepartmentHead()) {
+        if (!$teacher || !$teacher->isTeacher()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Only teachers can sync offline attendance records.',
@@ -188,7 +188,7 @@ class OfflineAttendanceController extends Controller
     {
         $teacher = Auth::user();
 
-        if (!$teacher || !$teacher->isTeacher() && !$teacher->isDepartmentHead()) {
+        if (!$teacher || !$teacher->isTeacher()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
         }
 

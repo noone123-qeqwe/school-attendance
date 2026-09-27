@@ -120,7 +120,7 @@ class ActivityLogController extends Controller
                 });
             } elseif ($role === 'teachers' || $role === 'teacher') {
                 $query->whereHas('causer', function($q) {
-                    $q->whereIn('role', ['teacher', 'department_head']);
+                    $q->where('role', 'teacher');
                 });
             } elseif ($role === 'admins' || $role === 'admin') {
                 $query->whereHas('causer', function($q) {

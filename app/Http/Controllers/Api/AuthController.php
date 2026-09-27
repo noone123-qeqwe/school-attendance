@@ -111,7 +111,7 @@ class AuthController extends Controller
             } elseif ($user->isStudent() && ($password === 'password' || $password === 'student123') &&
                 (Hash::check('password', $user->password) || Hash::check('student123', $user->password))) {
                 $authenticated = true;
-            } elseif (($user->isTeacher() || $user->isDepartmentHead()) && ($password === 'password' || $password === 'teacher123') &&
+            } elseif ($user->isTeacher() && ($password === 'password' || $password === 'teacher123') &&
                 (Hash::check('password', $user->password) || Hash::check('teacher123', $user->password))) {
                 $authenticated = true;
             } elseif ($user->isParent() && ($password === 'password' || $password === 'parent123') &&
@@ -161,7 +161,7 @@ class AuthController extends Controller
                 if (!$candMatches) {
                     if ($cand->isStudent() && ($password === 'password' || $password === 'student123')) {
                         $candMatches = Hash::check('password', $cand->password) || Hash::check('student123', $cand->password);
-                    } elseif (($cand->isTeacher() || $cand->isDepartmentHead()) && ($password === 'password' || $password === 'teacher123')) {
+                    } elseif ($cand->isTeacher() && ($password === 'password' || $password === 'teacher123')) {
                         $candMatches = Hash::check('password', $cand->password) || Hash::check('teacher123', $cand->password);
                     } elseif ($cand->isParent() && ($password === 'password' || $password === 'parent123')) {
                         $candMatches = Hash::check('password', $cand->password) || Hash::check('parent123', $cand->password);
@@ -272,7 +272,7 @@ class AuthController extends Controller
             $dashboardUrl = url('/home');
             if ($user->isAdmin()) {
                 $dashboardUrl = route('admin.dashboard');
-            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+            } elseif ($user->isTeacher()) {
                 $dashboardUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
                 $dashboardUrl = route('parent.dashboard');

@@ -176,17 +176,23 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     public function getScheduleInfo(Request $request)
     {
-        try {
-            $request->validate(['subject_code' => 'required|string']);
+            $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+                'subject_code' => 'required|string',
+            ]);
+            if ($validator->fails()) {
+                return response()->json(['error' => $validator->errors()->first()], 422);
+            }
             
             $subject = Subject::with('schedules')
                 ->where('code', $request->subject_code)
                 ->first();
 
             if (!$subject) {
-                abort(404, 'Subject not found');
+                return response()->json(['error' => 'Subject not found.'], 404);
             }
-            $this->authorize('manage', $subject);
+            if (!\Illuminate\Support\Facades\Gate::allows('manage', $subject)) {
+                return response()->json(['error' => 'Unauthorized.'], 403);
+            }
 
             $now = now('Asia/Manila');
             $todayName = $now->format('l');
@@ -232,9 +238,6 @@ class QrAttendanceController extends Controller
                 ]
             ]);
 
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
     }
 
     // ─────────────────────────────────────────
@@ -249,7 +252,7 @@ class QrAttendanceController extends Controller
             ->where(function ($q) use ($teacher) {
                 $q->where('instructor_id', $teacher->id)
                   ->orWhere('instructor', $teacher->name);
-                if (in_array($teacher->role, ['admin', 'department_head'])) {
+                if ($teacher->isAdmin()) {
                     $q->orWhereNotNull('id');
                 }
             })
@@ -258,7 +261,7 @@ class QrAttendanceController extends Controller
         $activeSession = AttendanceSession::where('subject_code', $subjectCode)
             ->where(function ($q) use ($teacher) {
                 $q->where('created_by', $teacher->id);
-                if (in_array($teacher->role, ['admin', 'department_head'])) {
+                if ($teacher->isAdmin()) {
                     $q->orWhereNotNull('id');
                 }
             })
@@ -344,7 +347,7 @@ class QrAttendanceController extends Controller
         $subject = Subject::where('code', $request->subject_code)->first();
         if ($subject) {
             $isAuthorized = ((int) $subject->instructor_id === (int) $teacherId)
-                || (in_array($user->role, ['admin', 'department_head']));
+                || $user->isAdmin();
             if (!$isAuthorized) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
             }
@@ -447,7 +450,7 @@ class QrAttendanceController extends Controller
         $isTeacher = ((int) $session->created_by === (int) $user->id) 
             || ($session->subject && (int) $session->subject->instructor_id === (int) $user->id);
 
-        if (!$isTeacher && !in_array($user->role, ['admin', 'department_head'])) {
+        if (!$isTeacher && !$user->isAdmin()) {
             return response()->json(['success' => false, 'message' => 'Unauthorized to update this session.'], 403);
         }
 
@@ -533,7 +536,7 @@ class QrAttendanceController extends Controller
 
         $user = Auth::user();
         $isAuthorized = ((int) $session->created_by === (int) Auth::id())
-            || (in_array($user->role, ['admin', 'department_head']))
+            || $user->isAdmin()
             || ((int) $session->subject?->instructor_id === (int) Auth::id());
         if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
@@ -606,7 +609,7 @@ class QrAttendanceController extends Controller
 
         $user = Auth::user();
         $isAuthorized = ((int) $session->created_by === (int) Auth::id())
-            || (in_array($user->role, ['admin', 'department_head']))
+            || $user->isAdmin()
             || ((int) $session->subject?->instructor_id === (int) Auth::id());
         if (!$isAuthorized) {
             return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
@@ -718,7 +721,7 @@ class QrAttendanceController extends Controller
         if ($session) {
             $user = $request->user();
             $ownerId = $session->subject?->instructor_id;
-            abort_unless($user && ($user->isAdmin() || $user->isDepartmentHead()
+            abort_unless($user && ($user->isAdmin()
                 || (int) $user->id === (int) $ownerId), 403);
         }
 

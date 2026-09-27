@@ -20,7 +20,7 @@ class MobileController extends Controller
         if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
-        if ($user->isTeacher() || $user->isDepartmentHead()) {
+        if ($user->isTeacher()) {
             return redirect()->route('teacher.dashboard');
         }
         if ($user->isParent()) {

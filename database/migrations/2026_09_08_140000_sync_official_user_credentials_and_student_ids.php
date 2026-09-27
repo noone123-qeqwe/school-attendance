@@ -145,25 +145,29 @@ return new class extends Migration
 
         // 3. Ensure official System Administrator account
         $admin = User::withTrashed()->where('email', 'admin@osmena.edu')->first();
+        if ($admin) {
+            return;
+        }
+
+        $initialPassword = config('auth.seed_admin_password');
+        if (!$initialPassword) {
+            return;
+        }
+
         $adminAttrs = [
             'name'              => 'System Administrator',
             'email'             => 'admin@osmena.edu',
             'role'              => 'admin',
+            'admin_sub_role'    => 'super_admin',
             'department'        => 'College of Computer Studies',
             'phone'             => '09171234567',
-            'password'          => Hash::make('Admin@1234'),
+            'password'          => Hash::make($initialPassword),
+            'must_change_password' => true,
             'email_verified_at' => now(),
             'is_active'         => true,
         ];
 
-        if ($admin) {
-            if ($admin->trashed()) {
-                $admin->restore();
-            }
-            $admin->update($adminAttrs);
-        } else {
-            User::create($adminAttrs);
-        }
+        User::create($adminAttrs);
     }
 
     /**

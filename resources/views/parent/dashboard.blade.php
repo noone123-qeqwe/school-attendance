@@ -553,8 +553,8 @@
             ? (str_starts_with($child->profile_image, 'http') ? $child->profile_image : asset('storage/'.$child->profile_image))
             : 'https://ui-avatars.com/api/?name='.urlencode($child->name).'&background=800000&color=fff&size=96';
         $rateVal = $data->rate;
-        $rateStatus = $rateVal >= 90 ? 'Excellent Standing' : ($rateVal >= 75 ? 'Satisfactory Standing' : 'Needs Attention');
-        $rateColor = $rateVal >= 90 ? '#34d399' : ($rateVal >= 75 ? '#fbbf24' : '#f87171');
+        $rateStatus = $data->total === 0 ? 'No sessions yet' : ($rateVal >= 90 ? 'Excellent Standing' : ($rateVal >= 75 ? 'Satisfactory Standing' : 'Needs Attention'));
+        $rateColor = $data->total === 0 ? '#b39b82' : ($rateVal >= 90 ? '#34d399' : ($rateVal >= 75 ? '#fbbf24' : '#f87171'));
     @endphp
 
     <!-- ── STUDENT PROFILE HERO SHOWCASE ── -->
@@ -624,7 +624,7 @@
                     </div>
                 </div>
                 <div class="kpi-stat-val" style="color: {{ $rateColor }};">
-                    {{ $rateVal }}%
+                    {{ $data->total === 0 ? '—' : $rateVal.'%' }}
                 </div>
                 <div style="font-size: 0.78rem; font-weight: 700; color: {{ $rateColor }}; margin-top: 4px;">
                     {{ $rateStatus }}

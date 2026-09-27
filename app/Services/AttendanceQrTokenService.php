@@ -44,8 +44,8 @@ class AttendanceQrTokenService
             if (!$session->isSessionActive()) {
                 throw ValidationException::withMessages(['session' => 'Attendance session has ended.']);
             }
-            if ($operator->isTeacher() || $operator->isDepartmentHead() || $operator->isAdmin()) {
-                $elevated = $operator->isDepartmentHead() || $operator->isAdmin();
+            if ($operator->isTeacher() || $operator->isAdmin()) {
+                $elevated = $operator->isAdmin();
                 abort_unless($operator->isActive() && ($elevated || (int) $session->subject?->instructor_id === (int) $operator->id), 403);
             } else {
                 abort_unless($mode !== 'emergency' && $operator->can('generateAssistantQr', $session), 403);

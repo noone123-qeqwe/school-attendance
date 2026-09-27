@@ -613,7 +613,7 @@ class WebAuthnController extends Controller
             $redirectUrl = route('home');
             if ($user->isAdmin()) {
                 $redirectUrl = route('admin.dashboard');
-            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+            } elseif ($user->isTeacher()) {
                 $redirectUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
                 $redirectUrl = route('parent.dashboard');
@@ -774,7 +774,7 @@ class WebAuthnController extends Controller
             $redirectUrl = route('home');
             if ($user->isAdmin()) {
                 $redirectUrl = route('admin.dashboard');
-            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+            } elseif ($user->isTeacher()) {
                 $redirectUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
                 $redirectUrl = route('parent.dashboard');
@@ -971,7 +971,7 @@ class WebAuthnController extends Controller
         $redirectUrl = route('home');
         if ($user->isAdmin()) {
             $redirectUrl = route('admin.dashboard');
-        } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+        } elseif ($user->isTeacher()) {
             $redirectUrl = route('teacher.dashboard');
         } elseif ($user->isParent()) {
             $redirectUrl = route('parent.dashboard');

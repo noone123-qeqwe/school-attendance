@@ -82,7 +82,7 @@ class RecoveryCodeController extends Controller
 
         // Redirect based on role
         if ($user->isAdmin()) return redirect()->route('admin.dashboard');
-        if ($user->isTeacher() || $user->isDepartmentHead()) return redirect()->route('teacher.dashboard');
+        if ($user->isTeacher()) return redirect()->route('teacher.dashboard');
         if ($user->isParent()) return redirect()->route('parent.dashboard');
         return redirect()->route('home');
     }

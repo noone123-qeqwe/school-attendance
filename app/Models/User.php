@@ -607,9 +607,12 @@ class User extends Authenticatable
         return $this->role === 'admin' && $this->admin_sub_role === 'super_admin';
     }
 
+    /**
+     * @deprecated Department head role has been decommissioned.
+     */
     public function isDepartmentHead(): bool
     {
-        return $this->role === 'department_head';
+        return false;
     }
 
     public function hasRole(string $role): bool

@@ -13,7 +13,7 @@
             $user = Auth::user();
             if ($user->isAdmin()) {
                 $destUrl = route('admin.dashboard');
-            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+            } elseif ($user->isTeacher()) {
                 $destUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
                 $destUrl = route('parent.dashboard');

@@ -228,7 +228,7 @@ class PTController extends Controller
                         (Hash::check('password', $user->password) || Hash::check('student123', $user->password))) {
                         $passwordMatches = true;
                     }
-                } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+                } elseif ($user->isTeacher()) {
                     if (($password === 'password' || $password === 'teacher123') &&
                         (Hash::check('password', $user->password) || Hash::check('teacher123', $user->password))) {
                         $passwordMatches = true;
@@ -305,7 +305,7 @@ class PTController extends Controller
                 if (!$candMatches) {
                     if ($cand->isStudent() && ($password === 'password' || $password === 'student123')) {
                         $candMatches = Hash::check('password', $cand->password) || Hash::check('student123', $cand->password);
-                    } elseif (($cand->isTeacher() || $cand->isDepartmentHead()) && ($password === 'password' || $password === 'teacher123')) {
+                    } elseif ($cand->isTeacher() && ($password === 'password' || $password === 'teacher123')) {
                         $candMatches = Hash::check('password', $cand->password) || Hash::check('teacher123', $cand->password);
                     } elseif ($cand->isParent() && ($password === 'password' || $password === 'parent123')) {
                         $candMatches = Hash::check('password', $cand->password) || Hash::check('parent123', $cand->password);
@@ -409,7 +409,7 @@ class PTController extends Controller
                 $request->session()->forget('admin_2fa_verified');
                 $request->session()->save();
                 $targetUrl = route('admin.2fa.form');
-            } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
+            } elseif ($user->isTeacher()) {
                 $targetUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {
                 $targetUrl = route('parent.dashboard');
