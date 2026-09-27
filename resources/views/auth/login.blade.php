@@ -3947,13 +3947,33 @@ async function startFaceRecognitionLogin(identifier, opts) {
     }
 
     try {
-        bioFaceLoginStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: 'user',
-                width: { ideal: 640 },
-                height: { ideal: 640 }
+        try {
+            bioFaceLoginStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: 'user',
+                    width: { ideal: 640 },
+                    height: { ideal: 640 }
+                }
+            });
+        } catch (e1) {
+            try {
+                bioFaceLoginStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+            } catch (e2) {
+                try {
+                    bioFaceLoginStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user' }
+                    });
+                } catch (e3) {
+                    bioFaceLoginStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                }
             }
-        });
+        }
         if (video && bioFaceLoginStream) {
             video.srcObject = bioFaceLoginStream;
             video.style.display = 'block';
