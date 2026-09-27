@@ -1195,7 +1195,7 @@ class TeacherController extends Controller
         $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->pluck('code');
 
-        if ($excuseSubmission->attendance && !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
+        if (!$excuseSubmission->attendance || !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
             abort(403, 'Unauthorized access to this excuse submission.');
         }
 
@@ -1314,7 +1314,7 @@ class TeacherController extends Controller
             ->pluck('code');
 
         // Verify teacher has access to this excuse submission
-        if ($excuseSubmission->attendance && !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
+        if (!$excuseSubmission->attendance || !$teacherSubjects->contains($excuseSubmission->attendance->subject_code)) {
             abort(403, 'Unauthorized access to this excuse submission.');
         }
 

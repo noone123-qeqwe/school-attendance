@@ -58,7 +58,7 @@ class StudentDeviceBindingTest extends TestCase
         $this->assertFalse($service->isCurrentDevice($student, $unknownRequest));
     }
 
-    public function test_authenticated_student_on_same_platform_passes_tier_4(): void
+    public function test_matching_user_agent_without_device_key_is_not_enough(): void
     {
         $student = User::factory()->create([
             'role' => 'student',
@@ -82,7 +82,7 @@ class StudentDeviceBindingTest extends TestCase
             'HTTP_USER_AGENT' => $ua,
         ]);
 
-        $this->assertTrue($service->isCurrentDevice($student, $mobileRoamingReq));
+        $this->assertFalse($service->isCurrentDevice($student, $mobileRoamingReq));
     }
 
     public function test_api_login_binds_student_device_automatically(): void
@@ -110,6 +110,24 @@ class StudentDeviceBindingTest extends TestCase
         $binding = DeviceBinding::where('user_id', $student->id)->first();
         $this->assertNotNull($binding);
         $this->assertStringContainsString('Samsung Galaxy S23', (string)$binding->device_name);
+    }
+
+    public function test_second_device_login_keeps_existing_binding(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'student',
+            'student_number' => 'S260014',
+            'password' => bcrypt('Secret123!'),
+        ]);
+
+        $credentials = ['identifier' => 'S260014', 'password' => 'Secret123!'];
+        $this->postJson('/api/login', $credentials + ['device_key' => 'first-device'])
+            ->assertOk()->assertJson(['device_bound' => true]);
+        $originalHash = $student->deviceBinding->fresh()->device_hash;
+
+        $this->postJson('/api/login', $credentials + ['device_key' => 'second-device'])
+            ->assertOk()->assertJson(['device_bound' => false]);
+        $this->assertSame($originalHash, $student->deviceBinding->fresh()->device_hash);
     }
 
     public function test_hardware_fingerprint_verification(): void
@@ -151,7 +169,7 @@ class StudentDeviceBindingTest extends TestCase
 
         $this->assertDatabaseHas('device_bindings', ['user_id' => $student->id]);
 
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs($admin)->withSession(['admin_2fa_verified' => true])
             ->post(route('admin.student.reset_device', $student->id));
 
         $response->assertRedirect();
@@ -199,7 +217,7 @@ class StudentDeviceBindingTest extends TestCase
             'last_seen_at' => now(),
         ]);
 
-        $response = $this->actingAs($admin)
+        $response = $this->actingAs($admin)->withSession(['admin_2fa_verified' => true])
             ->get(route('admin.student', $student->id));
 
         $response->assertStatus(200);
@@ -339,7 +357,7 @@ class StudentDeviceBindingTest extends TestCase
         ]);
 
         // Admin locks
-        $lockRes = $this->actingAs($admin)->post(route('admin.student.lock_device', $student->id), [
+        $lockRes = $this->actingAs($admin)->withSession(['admin_2fa_verified' => true])->post(route('admin.student.lock_device', $student->id), [
             'reason' => 'Administrative inspection',
         ]);
         $lockRes->assertRedirect();
@@ -379,6 +397,10 @@ class StudentDeviceBindingTest extends TestCase
         ]);
         $failRes->assertStatus(422);
 
+        $this->actingAs($student)->postJson(route('device.bind'), [
+            'device_key' => 'new_device_uuid_999',
+        ])->assertStatus(422);
+
         // Attempting with correct password succeeds
         $successRes = $this->actingAs($student)->postJson(route('device.bind'), [
             'device_key'   => 'new_device_uuid_999',
@@ -391,5 +413,22 @@ class StudentDeviceBindingTest extends TestCase
             'is_bound' => true,
         ]);
     }
-}
 
+    public function test_login_cannot_replace_or_unlock_an_existing_device(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $service = app(DeviceBindingService::class);
+
+        $first = Request::create('/login', 'POST', ['device_key' => 'first-device']);
+        $service->bind($student, $first);
+        $second = Request::create('/login', 'POST', ['device_key' => 'second-device']);
+        $service->bind($student, $second);
+
+        $this->assertFalse($service->isCurrentDevice($student, $second));
+        $this->assertTrue($service->isCurrentDevice($student, $first));
+
+        $service->lockBinding($student, 'Lost device');
+        $service->bind($student, $first);
+        $this->assertTrue($student->deviceBinding->fresh()->isLocked());
+    }
+}

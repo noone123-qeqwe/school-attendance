@@ -450,7 +450,10 @@ class OtpApiController extends Controller
 
         Otp::clearFailedVerify($user->id, 'forgot_password');
         $otpRecord->update(['used' => true]);
-        $user->update(['password' => Hash::make($request->password)]);
+        $user->update([
+            'password' => Hash::make($request->password),
+            'email_verified_at' => $user->email_verified_at ?? now(),
+        ]);
 
         // Invalidate any remaining forgot_password OTPs for this user
         Otp::invalidatePrevious($user->email, 'forgot_password');

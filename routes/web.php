@@ -623,8 +623,8 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
 Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->prefix('admin')->name('admin.')->group(function () {
     // 2FA Routes
     Route::get('/2fa', [App\Http\Controllers\AdminController::class, 'twoFactorForm'])->name('2fa.form')->withoutMiddleware('admin.2fa');
-    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware('admin.2fa')->middleware('throttle:otp.verify');
-    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware('admin.2fa')->middleware('throttle:otp.send');
+    Route::post('/2fa', [App\Http\Controllers\AdminController::class, 'verifyTwoFactor'])->name('2fa.verify')->withoutMiddleware(['admin.2fa', 'admin.auditor'])->middleware('throttle:otp.verify');
+    Route::post('/2fa/resend', [App\Http\Controllers\AdminController::class, 'resendTwoFactor'])->name('2fa.resend')->withoutMiddleware(['admin.2fa', 'admin.auditor'])->middleware('throttle:otp.send');
 
     // Reset Password
     Route::post('/user/{user}/reset-password', [App\Http\Controllers\AdminController::class, 'resetPassword'])->name('user.reset_password');

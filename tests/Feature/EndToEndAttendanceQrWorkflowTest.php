@@ -325,6 +325,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $validCode = $teacherResponse->json('session_code');
 
         // 1. Invalid QR code
+        $this->withHeaders(['X-Device-Key' => 'student-qr-device']);
         $invalidQrResponse = $this->actingAs($this->studentQr)->postJson('/qr/scan-process', [
             'token' => 'completely_fake_invalid_qr_token_12345',
         ]);
@@ -334,6 +335,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $this->assertStringContainsString('Invalid or expired', $invalidQrResponse->json('message'));
 
         // 2. Invalid 6-digit code
+        $this->withHeaders(['X-Device-Key' => 'student-code-device']);
         $invalidCodeResponse = $this->actingAs($this->studentCode)->postJson('/qr/scan-process', [
             'code' => '999999',
         ]);
@@ -358,6 +360,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
 
         // 5. Student attempting to record attendance twice (duplicate clock-in)
         // First clock in:
+        $this->withHeaders(['X-Device-Key' => 'student-qr-device']);
         $clockIn1 = $this->actingAs($this->studentQr)->postJson('/qr/scan-process', [
             'token' => $validToken,
             'latitude' => 14.5000,
@@ -391,6 +394,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $this->assertTrue($duplicateCode->json('already_clocked_in'));
 
         // 6. QR / code from another class (student not enrolled / course-year mismatch)
+        $this->withHeaders(['X-Device-Key' => 'student-other-device']);
         $mismatchResponse = $this->actingAs($this->studentOtherClass)->postJson('/qr/scan-process', [
             'code' => $validCode,
             'latitude' => 14.5000,
@@ -403,6 +407,7 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $this->assertStringContainsString('not intended for your class', $mismatchResponse->json('message'));
 
         // 7. Student outside classroom boundary
+        $this->withHeaders(['X-Device-Key' => 'student-code-device']);
         $outsideResponse = $this->actingAs($this->studentCode)->postJson('/qr/scan-process', [
             'token' => $validToken,
             'latitude' => 14.5200, // ~2.2 km away

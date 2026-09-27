@@ -44,9 +44,8 @@ class ParentApiController extends Controller
 
             // Attendance streak
             $streakCount = 0;
-            $streakRecords = Attendance::where('user_id', $child->id)
-                ->orderBy('date', 'desc')
-                ->get()
+            $streakRecords = $allAttendance
+                ->sortByDesc('date')
                 ->groupBy(fn($r) => $r->date->toDateString());
 
             foreach ($streakRecords as $dayRecords) {

@@ -9,6 +9,7 @@ use App\Services\ParentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class ParentManagementController extends Controller
@@ -78,14 +79,14 @@ class ParentManagementController extends Controller
                 },
             ],
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:8',
             'student_id' => 'nullable',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'nullable|exists:users,id',
             'student_number' => 'nullable|string|max:255',
         ]);
 
-        $password = $request->filled('password') ? $request->password : 'Parent@' . date('Y');
+        // Only the email owner can set the initial password through OTP recovery.
+        $password = Str::random(48);
 
         $parent = User::create([
             'name' => trim($request->name),
@@ -94,7 +95,7 @@ class ParentManagementController extends Controller
             'password' => Hash::make($password),
             'role' => 'parent',
             'is_active' => true,
-            'email_verified_at' => now(),
+            'email_verified_at' => null,
         ]);
 
         $studentIdsToLink = [];
@@ -161,7 +162,7 @@ class ParentManagementController extends Controller
             ? " and connected to " . implode(', ', $linkedStudentNames)
             : "";
 
-        return redirect()->route('admin.parents.index')->with('success', "Parent account '{$parent->name}' registered successfully{$linkNotice}. Default password is '{$password}'.");
+        return redirect()->route('admin.parents.index')->with('success', "Parent account '{$parent->name}' registered successfully{$linkNotice}. Ask the parent to use Forgot Password with their registered email to set a password.");
     }
 
     /**

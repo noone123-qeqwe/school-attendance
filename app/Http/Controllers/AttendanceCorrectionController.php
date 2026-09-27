@@ -64,9 +64,9 @@ class AttendanceCorrectionController extends Controller
 
         $teacher = Auth::user();
         $attendance = $correction->attendance;
-        $subject = $attendance->subject;
+        $subject = $attendance?->subject;
 
-        if ($subject && $subject->instructor_id !== $teacher->id && !$teacher->isAdmin()) {
+        if (!$subject || $subject->instructor_id !== $teacher->id) {
             abort(403, 'Unauthorized');
         }
 

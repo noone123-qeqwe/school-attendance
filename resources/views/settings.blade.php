@@ -4918,7 +4918,13 @@ window.updateSettingsBreadcrumbs = function(tabId, secSub) {
 };
 
 // ── Attendance Device Binding API Handlers ──
+window.deviceBindingExists = @json((bool) $deviceBinding);
 window.handleBindCurrentDevice = async function(stepUpPassword = null) {
+    if (window.deviceBindingExists && !stepUpPassword) {
+        stepUpPassword = prompt('Enter your account password to switch or re-verify this device:');
+        if (!stepUpPassword) return;
+    }
+
     const bindBtns = document.querySelectorAll('#tabDeviceBindBtn, #secQuickBindBtn');
     bindBtns.forEach(b => {
         b.disabled = true;
@@ -5092,6 +5098,9 @@ window.handleUnbindDevice = async function() {
         return;
     }
 
+    const password = prompt('Enter your account password to unbind the device:');
+    if (!password) return;
+
     const unbindBtns = document.querySelectorAll('#tabDeviceUnbindBtn, #secQuickUnbindBtn');
     unbindBtns.forEach(b => {
         b.disabled = true;
@@ -5110,6 +5119,7 @@ window.handleUnbindDevice = async function() {
                 'X-CSRF-TOKEN': token,
             },
             body: JSON.stringify({
+                password: password,
                 _token: token,
             }),
         });
@@ -5142,6 +5152,7 @@ window.handleUnbindDevice = async function() {
 
 function updateDeviceBindingUI(data) {
     const isBound = !!data.is_bound;
+    window.deviceBindingExists = isBound;
     const isCurrent = !!data.is_current_device;
     const binding = data.binding;
 

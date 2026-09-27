@@ -55,6 +55,8 @@ class StudentParentBindingTest extends TestCase
             'password'       => Hash::make('password123'),
             'is_active'      => true,
         ]);
+
+        $this->withSession(['admin_2fa_verified' => true]);
     }
 
     public function test_student_can_generate_parent_link_code(): void

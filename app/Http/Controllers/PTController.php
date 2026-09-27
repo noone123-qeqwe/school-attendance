@@ -386,10 +386,15 @@ class PTController extends Controller
                 $request->session()->put('user_role', 'student');
                 $request->session()->put('login_timestamp', now());
 
-                app(DeviceBindingService::class)->bind($user, $request);
+                $bindingService = app(DeviceBindingService::class);
+                $bindingService->bind($user, $request);
+                $needsDeviceRebind = !$bindingService->isCurrentDevice($user, $request);
                 $request->session()->save();
 
-                if ($request->filled('qr_token')) {
+                if ($needsDeviceRebind) {
+                    $targetUrl = route('settings');
+                    $request->session()->flash('error', 'This device is not registered for attendance. Confirm your password in Device Binding to switch devices.');
+                } elseif ($request->filled('qr_token')) {
                     $targetUrl = route('qr.scan', ['token' => $request->qr_token]);
                 } else {
                     $intended = $request->session()->pull('url.intended');
@@ -401,10 +406,9 @@ class PTController extends Controller
                 }
             } elseif ($user->isAdmin()) {
                 Log::info('Admin login successful', ['user_id' => $user->id, 'session_id' => $request->session()->getId()]);
-                // 2FA disabled — go straight to dashboard
-                $request->session()->put('admin_2fa_verified', true);
+                $request->session()->forget('admin_2fa_verified');
                 $request->session()->save();
-                $targetUrl = route('admin.dashboard');
+                $targetUrl = route('admin.2fa.form');
             } elseif ($user->isTeacher() || $user->isDepartmentHead()) {
                 $targetUrl = route('teacher.dashboard');
             } elseif ($user->isParent()) {

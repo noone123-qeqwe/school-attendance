@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Otp;
 use App\Services\AccountLockoutService;
+use App\Services\Email\EmailDeliveryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -206,11 +208,65 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            if ($user->isStudent()) {
-                app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+            if ($user->isAdmin()) {
+                $purpose = 'admin_api_login';
+                $otpInput = trim((string) $request->input('otp', ''));
+
+                if ($otpInput === '') {
+                    $existing = Otp::where('user_id', $user->id)
+                        ->where('purpose', $purpose)->where('used', false)
+                        ->where('expires_at', '>', now())->latest()->first();
+                    if (!$existing && Otp::getCooldownRemaining($user->id, $purpose) > 0) {
+                        return response()->json(['message' => 'Please wait before requesting another code.'], 429);
+                    }
+                    if (!$existing) {
+                        $otp = Otp::generate($user->id, $purpose);
+                        try {
+                            $delivery = app(EmailDeliveryService::class)
+                                ->sendOtp($user->email, $otp->code, $purpose, $user->name);
+                            if (!$delivery->success) {
+                                $otp->update(['used' => true]);
+                                return response()->json(['message' => 'Unable to deliver the admin verification code.'], 503);
+                            }
+                        } catch (\Throwable $e) {
+                            $otp->update(['used' => true]);
+                            return response()->json(['message' => 'Unable to deliver the admin verification code.'], 503);
+                        }
+                    }
+
+                    return response()->json([
+                        'status' => 'verification_required',
+                        'message' => 'Enter the code sent to your email and submit your credentials again.',
+                    ], 202);
+                }
+
+                if (!preg_match('/^\d{6}$/', $otpInput) ||
+                    Otp::recordFailedVerify($user->id, $purpose) > Otp::MAX_VERIFY_ATTEMPTS) {
+                    return response()->json(['message' => 'Invalid or expired verification code.'], 422);
+                }
+
+                $otp = Otp::where('user_id', $user->id)
+                    ->where('purpose', $purpose)->where('code', $otpInput)
+                    ->where('used', false)->where('expires_at', '>', now())
+                    ->latest()->first();
+                if (!$otp) {
+                    return response()->json(['message' => 'Invalid or expired verification code.'], 422);
+                }
+                $otp->update(['used' => true]);
+                Otp::clearFailedVerify($user->id, $purpose);
             }
 
-            $token = $user->createToken('mobile-app')->plainTextToken;
+            $deviceBound = null;
+            if ($user->isStudent()) {
+                $bindingService = app(\App\Services\DeviceBindingService::class);
+                $bindingService->bind($user, $request);
+                $deviceBound = $bindingService->isCurrentDevice($user, $request);
+            }
+
+            $token = $user->createToken(
+                'mobile-app',
+                $user->isAdmin() ? ['admin-2fa-verified'] : ['*']
+            )->plainTextToken;
 
             // Determine dashboard URL
             $dashboardUrl = url('/home');
@@ -228,7 +284,7 @@ class AuthController extends Controller
                 'user' => $user,
                 'token' => $token,
                 'role' => $user->role,
-                'device_bound' => $user->isStudent() ? true : null,
+                'device_bound' => $deviceBound,
                 'device_name' => $user->deviceBinding?->device_name,
                 'dashboard_url' => $dashboardUrl,
             ]);

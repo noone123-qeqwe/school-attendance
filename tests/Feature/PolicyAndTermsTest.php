@@ -136,6 +136,7 @@ class PolicyAndTermsTest extends TestCase
         $admin = User::factory()->create([
             'email'    => 'admin@osmena.edu',
             'role'     => 'admin',
+            'admin_sub_role' => 'super_admin',
             'password' => Hash::make('AdminPass123!'),
         ]);
 
@@ -173,6 +174,7 @@ class PolicyAndTermsTest extends TestCase
         $admin = User::factory()->create([
             'email'    => 'admin@osmena.edu',
             'role'     => 'admin',
+            'admin_sub_role' => 'super_admin',
             'password' => Hash::make('AdminPass123!'),
         ]);
 

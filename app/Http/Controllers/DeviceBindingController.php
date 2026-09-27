@@ -54,8 +54,8 @@ class DeviceBindingController extends Controller
         $user = $request->user();
         $oldBinding = $user->deviceBinding ?: DeviceBinding::where('user_id', $user->id)->first();
 
-        // Optional step-up password verification if re-binding to a different physical device
-        if ($oldBinding && $request->filled('password')) {
+        if ($oldBinding) {
+            $request->validate(['password' => 'required|string']);
             if (!Hash::check($request->input('password'), $user->password)) {
                 if ($request->expectsJson() || $request->ajax()) {
                     return response()->json([
@@ -67,7 +67,13 @@ class DeviceBindingController extends Controller
             }
         }
 
-        $binding = $service->bind($user, $request);
+        if ($oldBinding?->isLocked()) {
+            return $request->expectsJson() || $request->ajax()
+                ? response()->json(['success' => false, 'message' => 'Unlock the device before rebinding.'], 423)
+                : back()->with('error', 'Unlock the device before rebinding.');
+        }
+
+        $binding = $service->bind($user, $request, true);
 
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
@@ -104,6 +110,12 @@ class DeviceBindingController extends Controller
     public function unbind(Request $request, DeviceBindingService $service): JsonResponse|RedirectResponse
     {
         $user = $request->user();
+        $request->validate(['password' => 'required|string']);
+        if (!Hash::check($request->input('password'), $user->password)) {
+            return $request->expectsJson() || $request->ajax()
+                ? response()->json(['success' => false, 'message' => 'Incorrect password.'], 422)
+                : back()->with('error', 'Incorrect password.');
+        }
         $service->resetBinding($user);
 
         if ($request->expectsJson() || $request->ajax()) {
@@ -156,16 +168,15 @@ class DeviceBindingController extends Controller
         $user = $request->user();
 
         // Require password confirmation to unlock
-        if ($request->filled('password')) {
-            if (!Hash::check($request->input('password'), $user->password)) {
-                if ($request->expectsJson() || $request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Incorrect password.',
-                    ], 422);
-                }
-                return back()->with('error', 'Incorrect password.');
+        $request->validate(['password' => 'required|string']);
+        if (!Hash::check($request->input('password'), $user->password)) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Incorrect password.',
+                ], 422);
             }
+            return back()->with('error', 'Incorrect password.');
         }
 
         $success = $service->unlockBinding($user);

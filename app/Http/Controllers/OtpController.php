@@ -763,7 +763,10 @@ class OtpController extends Controller
 
         $user = User::find($userId);
         if ($user) {
-            $user->update(['password' => Hash::make($request->password)]);
+            $user->update([
+                'password' => Hash::make($request->password),
+                'email_verified_at' => $user->email_verified_at ?? now(),
+            ]);
 
             // Invalidate any remaining unused forgot_password OTPs for this user
             Otp::invalidatePrevious($user->email, 'forgot_password');

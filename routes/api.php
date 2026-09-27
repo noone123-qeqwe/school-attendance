@@ -42,7 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Version mutation changes server-side release metadata and is restricted
     // to authenticated super administrators. Version reads remain public.
-    Route::middleware('admin.super')->group(function () {
+    Route::middleware(['admin.super', 'admin.api.2fa'])->group(function () {
         Route::post('/version/update', [App\Http\Controllers\Api\VersionController::class, 'update']);
         Route::post('/version/release', [App\Http\Controllers\Api\VersionController::class, 'release']);
     });

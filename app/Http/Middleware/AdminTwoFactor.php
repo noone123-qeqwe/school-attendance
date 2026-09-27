@@ -15,7 +15,14 @@ class AdminTwoFactor
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // 2FA is disabled — always pass through
+        if (!$request->session()->get('admin_2fa_verified', false)) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json(['message' => 'Admin verification is required.'], 403);
+            }
+
+            return redirect()->route('admin.2fa.form');
+        }
+
         return $next($request);
     }
 }

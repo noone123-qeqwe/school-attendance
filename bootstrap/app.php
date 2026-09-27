@@ -38,6 +38,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin'         => \App\Http\Middleware\AdminMiddleware::class,
             'admin.2fa'     => \App\Http\Middleware\AdminTwoFactor::class,
+            'admin.api.2fa' => \App\Http\Middleware\AdminApiTwoFactor::class,
             'teacher'       => \App\Http\Middleware\TeacherMiddleware::class,
             'student'       => \App\Http\Middleware\StudentMiddleware::class,
             'parent'        => \App\Http\Middleware\ParentMiddleware::class,

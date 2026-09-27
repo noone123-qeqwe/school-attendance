@@ -17,6 +17,16 @@ class MobileController extends Controller
     public function home()
     {
         $user = Auth::user();
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+        if ($user->isTeacher() || $user->isDepartmentHead()) {
+            return redirect()->route('teacher.dashboard');
+        }
+        if ($user->isParent()) {
+            return redirect()->route('parent.dashboard');
+        }
+
         $now = now();
         $todayDate = $now->toDateString();
 
@@ -253,6 +263,8 @@ class MobileController extends Controller
 
     public function settings()
     {
-        return redirect()->route('admin.settings');
+        return Auth::user()->isSuperAdmin()
+            ? redirect()->route('admin.settings')
+            : redirect()->route('admin.dashboard');
     }
 }

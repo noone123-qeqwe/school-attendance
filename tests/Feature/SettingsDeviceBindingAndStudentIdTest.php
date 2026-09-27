@@ -141,7 +141,9 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
         ]);
 
         // 3. Unbind current device
-        $unbindResponse = $this->actingAs($student)->postJson(route('device.unbind'));
+        $unbindResponse = $this->actingAs($student)->postJson(route('device.unbind'), [
+            'password' => 'password',
+        ]);
 
         $unbindResponse->assertStatus(200);
         $unbindResponse->assertJson([

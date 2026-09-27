@@ -38,7 +38,7 @@ class RoleController extends Controller
 
         $request->validate([
             'role' => 'required|in:admin,teacher,student,parent,department_head',
-            'admin_sub_role' => 'nullable|in:super_admin,data_entry,auditor'
+            'admin_sub_role' => 'required_if:role,admin|nullable|in:super_admin,data_entry,auditor'
         ]);
 
         abort_if(

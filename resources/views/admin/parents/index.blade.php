@@ -837,10 +837,7 @@
                     <input type="text" name="phone" class="par-form-control" placeholder="e.g. 09171234567">
                 </div>
 
-                <div style="margin-bottom: 16px;">
-                    <label class="par-form-label">Initial Password (Optional)</label>
-                    <input type="password" name="password" class="par-form-control" placeholder="Leave empty for default (Parent@{{ date('Y') }})">
-                </div>
+                  <p class="par-form-label">The parent sets their password using Forgot Password and an email code.</p>
 
                 <!-- Connect to Student Section -->
                 <div style="margin-top: 18px; padding: 16px; background: rgba(212, 175, 55, 0.06); border: 1px dashed rgba(212, 175, 55, 0.35); border-radius: 12px;">

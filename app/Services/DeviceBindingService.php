@@ -19,11 +19,9 @@ class DeviceBindingService
     /**
      * Bind the current device to the user on successful login or settings action.
      *
-     * A successful password or biometric login is proof of identity, so we ALWAYS
-     * update the binding to the current device. If the device actually
-     * changed (different platform/hardware), we alert admins.
+     * An existing device can only be replaced after an explicit password check.
      */
-    public function bind(User $user, Request $request): ?DeviceBinding
+    public function bind(User $user, Request $request, bool $allowRebind = false): ?DeviceBinding
     {
         // Allow binding for students, or any authenticated user requesting device binding
         if (!$user->isStudent() && !$request->routeIs('device.*') && !$request->is('device/*') && !$request->is('api/*')) {
@@ -51,6 +49,16 @@ class DeviceBindingService
         $deviceKey = $cookieKey ?: $fpKey ?: Str::random(64);
         $deviceHash = $this->hashDeviceKey((string) $deviceKey);
 
+        if ($oldBinding) {
+            if ($oldBinding->isLocked()) {
+                return $oldBinding;
+            }
+
+            if (!$allowRebind && !hash_equals($oldBinding->device_hash, $deviceHash)) {
+                return $oldBinding;
+            }
+        }
+
         // Hardware environment fingerprint
         $rawHwFp = $cleanKey($request->header('X-Device-Fingerprint'))
             ?? $cleanKey($request->input('device_fingerprint'));
@@ -76,37 +84,23 @@ class DeviceBindingService
             $friendlyDeviceName = 'Unknown Device';
         }
 
-        // Check if this is actually a device change (not just a cookie/fingerprint drift)
+        // Explicit rebinds to a different key are security events, even when
+        // both devices report the same browser and operating system.
         $isDeviceChange = false;
         $changeCount = 0;
         if ($oldBinding) {
             $changeCount = (int) ($oldBinding->change_count ?? 0);
-            $oldUA = $oldBinding->user_agent ?? '';
-            $newUA = substr((string) $request->userAgent(), 0, 500);
-
-            // If the hash doesn't match AND the user agent is significantly different,
-            // treat it as a real device change
             if (!hash_equals($oldBinding->device_hash, $deviceHash)) {
-                $oldCore = $this->extractUACore($oldUA);
-                $newCore = $this->extractUACore($newUA);
-
-                if ($oldCore !== $newCore && !empty($oldCore) && !empty($newCore)) {
-                    $isDeviceChange = true;
-                    $changeCount++;
-                    Log::info('Device binding changed for student', [
-                        'user_id' => $user->id,
-                        'student_number' => $user->student_number,
-                        'old_device' => $oldBinding->device_name,
-                        'new_device' => $friendlyDeviceName,
-                        'ip' => $request->ip(),
-                        'change_count' => $changeCount,
-                    ]);
-                } else {
-                    Log::info('Device binding refreshed (fingerprint/cookie drift)', [
-                        'user_id' => $user->id,
-                        'student_number' => $user->student_number,
-                    ]);
-                }
+                $isDeviceChange = true;
+                $changeCount++;
+                Log::info('Device binding changed for student', [
+                    'user_id' => $user->id,
+                    'student_number' => $user->student_number,
+                    'old_device' => $oldBinding->device_name,
+                    'new_device' => $friendlyDeviceName,
+                    'ip' => $request->ip(),
+                    'change_count' => $changeCount,
+                ]);
             }
         }
 
@@ -116,7 +110,7 @@ class DeviceBindingService
         $metadata = $this->extractClientMetadata($request);
         $trustScore = $this->calculateTrustScore($request, $metadata);
 
-        // Always update the binding to the current device
+        // Update only the recognized device or an explicitly authorized rebind.
         $newBinding = DeviceBinding::updateOrCreate(
             ['user_id' => $user->id],
             [
@@ -168,12 +162,10 @@ class DeviceBindingService
     /**
      * Check if the current request is coming from the bound device.
      *
-     * Uses a multi-tier verification strategy with self-healing:
+     * Uses a multi-tier verification strategy:
      * 1. Client-provided device keys (cookie, headers, or body inputs)
      * 2. Direct session ID / session token match
      * 3. Hardware environment fingerprint match
-     * 4. Authenticated student with matching platform / UA core (roaming IP resilience)
-     * 5. Unit test or exact UA match
      */
     public function isCurrentDevice(User $user, Request $request): bool
     {
@@ -244,7 +236,6 @@ class DeviceBindingService
         if ($request->hasSession()) {
             $session = $request->session();
             $sessionHash = $session->get('bound_device_hash');
-            $isBoundSession = $session->get('device_bound_session');
 
             if ($binding->session_id && $binding->session_id === $session->getId()) {
                 $this->touchBinding($binding, $request);
@@ -256,10 +247,6 @@ class DeviceBindingService
                 return true;
             }
 
-            if ($isBoundSession && auth()->check() && auth()->id() === $user->id) {
-                $this->touchBinding($binding, $request);
-                return true;
-            }
         }
 
         // Tier 3: Hardware environment fingerprint match
@@ -271,33 +258,6 @@ class DeviceBindingService
                 $this->touchBinding($binding, $request);
                 return true;
             }
-        }
-
-        // Tier 4: Authenticated student on the same physical platform / User-Agent core
-        // Eliminates false device mismatch errors when cellular roaming changes the client's IP
-        $newUA = substr((string) $request->userAgent(), 0, 500);
-        $bindingCore = $this->extractUACore($binding->user_agent ?? '');
-        $newCore = $this->extractUACore($newUA);
-        if (
-            $binding->user_agent &&
-            auth()->check() &&
-            auth()->id() === $user->id &&
-            !empty($bindingCore) &&
-            !empty($newCore) &&
-            $bindingCore === $newCore
-        ) {
-            $this->touchBinding($binding, $request);
-            return true;
-        }
-
-        // Tier 5: Under automated tests or exact UA match
-        if (
-            auth()->check() &&
-            auth()->id() === $user->id &&
-            (app()->runningUnitTests() || ($binding->user_agent && $binding->user_agent === $newUA))
-        ) {
-            $this->touchBinding($binding, $request);
-            return true;
         }
 
         return false;
@@ -583,22 +543,6 @@ class DeviceBindingService
     public function hashDeviceKey(string $deviceKey): string
     {
         return hash_hmac('sha256', $deviceKey, config('app.key'));
-    }
-
-    /**
-     * Extract the core platform/device part of a user agent string
-     * to compare devices without being affected by minor version bumps.
-     *
-     * e.g. "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)" → "iPhone"
-     *      "Mozilla/5.0 (Linux; Android 14; Pixel 8)" → "Android Pixel 8"
-     */
-    private function extractUACore(string $ua): string
-    {
-        $agent = new Agent();
-        $agent->setUserAgent($ua);
-        $device = $agent->device() ?: '';
-        $platform = $agent->platform() ?: '';
-        return strtolower(trim("$platform $device"));
     }
 
     /**

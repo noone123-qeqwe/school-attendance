@@ -1236,7 +1236,7 @@ class AdminController extends Controller
 
         if (!$validOtp) {
             $validOtp = \App\Models\Otp::generate($user->id, 'admin_login');
-            \Illuminate\Support\Facades\Log::info("Admin 2FA OTP generated for user #{$user->id} ({$user->email}): {$validOtp->code}");
+            \Illuminate\Support\Facades\Log::info('Admin 2FA OTP generated', ['user_id' => $user->id]);
 
             try {
                 $deliveryResult = app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $validOtp->code, 'admin_login', $user->name);
@@ -1279,6 +1279,10 @@ class AdminController extends Controller
 
         $otpClean = trim((string) $request->otp);
 
+        if (\App\Models\Otp::recordFailedVerify($user->id, 'admin_login') > \App\Models\Otp::MAX_VERIFY_ATTEMPTS) {
+            return back()->withErrors(['otp' => 'Too many attempts. Try again later.']);
+        }
+
         $otpRecord = \App\Models\Otp::where('user_id', $user->id)
             ->where('code', $otpClean)
             ->where('purpose', 'admin_login')
@@ -1299,6 +1303,8 @@ class AdminController extends Controller
         }
 
         $otpRecord->update(['used' => true]);
+        \App\Models\Otp::clearFailedVerify($user->id, 'admin_login');
+        $request->session()->regenerate();
         $request->session()->put('admin_2fa_verified', true);
 
         return redirect()->route('admin.dashboard')->with('success', 'Authentication successful.');
@@ -1327,7 +1333,11 @@ class AdminController extends Controller
         \Illuminate\Support\Facades\Log::info("Admin 2FA OTP resent for user #{$user->id}");
 
         try {
-            app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'admin_login', $user->name);
+            $delivery = app(\App\Services\Email\EmailDeliveryService::class)->sendOtp($user->email, $otp->code, 'admin_login', $user->name);
+            if (!$delivery->success) {
+                $otp->update(['used' => true]);
+                return response()->json(['success' => false, 'message' => 'Failed to send OTP.'], 503);
+            }
             $resp = ['success' => true, 'message' => 'OTP has been resent to your email.'];
             if (app()->environment('local', 'testing')) {
                 $resp['dev_otp'] = $otp->code;
@@ -1398,6 +1408,7 @@ class AdminController extends Controller
             'email'       => $request->email,
             'password'    => Hash::make($request->password),
             'role'        => 'admin',
+            'admin_sub_role' => 'data_entry',
             'phone'       => $request->phone,
             'department'  => $request->department,
             'must_change_password' => true,
