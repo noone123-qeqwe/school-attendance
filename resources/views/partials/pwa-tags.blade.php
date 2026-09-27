@@ -1702,7 +1702,7 @@
         // Do not show pill if already up to date
         const installedVer = getInstalledVersion();
         const targetVer = version || latestDetectedVersion || getLatestVersion();
-        if (compareSemver(targetVer, installedVer) <= 0 && !hasUnappliedRelease() && !(swRegistration && swRegistration.waiting)) {
+        if (compareSemver(targetVer, installedVer) <= 0 && !hasUnappliedRelease()) {
             hideUpdateFallbackPill();
             return;
         }
@@ -1810,7 +1810,7 @@
         const installedVer = getInstalledVersion();
 
         // A newer build can need applying even when the display version is unchanged.
-        if (!isManualCheck && compareSemver(targetVersion, installedVer) <= 0 && !hasUnappliedRelease() && !(swRegistration && swRegistration.waiting)) {
+        if (!isManualCheck && compareSemver(targetVersion, installedVer) <= 0 && !hasUnappliedRelease()) {
             hideModalElementsIfUpToDate();
             return;
         }
@@ -2098,10 +2098,8 @@
                     // Network failure or abort — fail gracefully without breaking UI
                 }
 
-                // Check 5: Service worker has a waiting update.
-                if (swRegistration && swRegistration.waiting) {
-                    isUpdateAvailable = true;
-                }
+                // A waiting worker is not proof of a new release. It may be a
+                // previously installed worker for the same server build.
 
                 if (!serverChecked && !isUpdateAvailable) {
                     // A failed/offline check is not evidence that the app is current.

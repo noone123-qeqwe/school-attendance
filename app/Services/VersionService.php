@@ -185,12 +185,17 @@ class VersionService
     }
 
     /**
-     * Get short Git commit hash if in a Git repository or from version.json.
+     * Return the commit recorded for the published web release. Ordinary
+     * source deployments must not masquerade as a new app update.
      */
     public function getCommit(): string
     {
-        // Managed deployments often omit .git and retain an old commit in
-        // version.json. Prefer the platform's current deployment revision.
+        $file = $this->getFileData();
+        if (!empty($file['commit'])) {
+            return (string)$file['commit'];
+        }
+
+        // Fallback for installations without a release manifest.
         foreach (['RENDER_GIT_COMMIT', 'RAILWAY_GIT_COMMIT_SHA', 'VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'] as $variable) {
             $revision = getenv($variable);
             if (is_string($revision) && preg_match('/^[a-f0-9]{7,40}$/i', $revision)) {
@@ -198,8 +203,7 @@ class VersionService
             }
         }
 
-        $file = $this->getFileData();
-        $configCommit = config('version.commit') ?: ($file['commit'] ?? null);
+        $configCommit = config('version.commit');
 
         try {
             $gitHead = base_path('.git/HEAD');

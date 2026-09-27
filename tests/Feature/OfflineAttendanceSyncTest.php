@@ -32,6 +32,8 @@ class OfflineAttendanceSyncTest extends TestCase
             'is_active' => true,
         ]);
 
+        $subject->enrolledStudents()->attach($students->modelKeys());
+
         return [$teacher, $subject, $students];
     }
 
@@ -286,12 +288,12 @@ class OfflineAttendanceSyncTest extends TestCase
             ]);
     }
 
-    public function test_ping_endpoint_returns_pong()
+    public function test_ping_endpoint_reports_server_status()
     {
         $response = $this->getJson('/api/ping');
 
         $response->assertOk()
-            ->assertJson(['pong' => true]);
+            ->assertJson(['status' => 'ok']);
     }
 
     public function test_synced_records_have_method_set_to_offline_sync()

@@ -61,6 +61,10 @@ class UpdatePopupLoopPreventionTest extends TestCase
 
         // 5. Silent skipWaiting trigger for waiting service workers when up-to-date
         $this->assertStringContainsString("swRegistration.waiting.postMessage({ action: 'skipWaiting'", $content);
+        $this->assertDoesNotMatchRegularExpression(
+            '/if \(swRegistration && swRegistration\.waiting\)\s*\{\s*isUpdateAvailable = true;/s',
+            $content
+        );
     }
 
     public function test_deployed_build_metadata_wins_over_stale_cache_and_config(): void
@@ -74,6 +78,7 @@ class UpdatePopupLoopPreventionTest extends TestCase
 
         $this->assertSame($matches[1], $versionService->getSwVersion());
         $this->assertSame($file['build'], $versionService->getBuild());
+        $this->assertSame($file['commit'], $versionService->getCommit());
     }
 
     public function test_stale_database_release_cannot_advertise_a_version_not_deployed(): void
