@@ -733,6 +733,13 @@ class WebAuthnController extends Controller
 
                 $matchResult = $biometricService->findBestMatch($faceData, $allActiveFaceCreds, \App\Services\BiometricService::DEFAULT_MATCH_THRESHOLD);
                 if ($matchResult && $matchResult['user']) {
+                    if (!empty($matchResult['is_ambiguous'])) {
+                        return response()->json([
+                            'success' => false,
+                            'code' => 'AMBIGUOUS_BIOMETRIC_MATCH',
+                            'message' => 'Multiple student profiles closely matched. For your security, please enter your Student ID or Email.'
+                        ], 422);
+                    }
                     $user = $matchResult['user'];
                 } elseif ($allActiveFaceCreds->count() === 1) {
                     $user = $allActiveFaceCreds->first()->user;

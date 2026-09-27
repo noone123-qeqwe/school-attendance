@@ -3545,10 +3545,13 @@ async function detectAndAnalyzeFaceFrame(video) {
         if (flashBtn) flashBtn.classList.add('flash-suggest-pulse');
     }
 
-    // Bilateral side-lighting disparity detection: measure left half vs right half illumination
+    // Dual-axis illumination disparity detection: measure horizontal & vertical illumination balance
     var leftHalfLumaSum = 0, leftHalfCount = 0;
     var rightHalfLumaSum = 0, rightHalfCount = 0;
+    var topHalfLumaSum = 0, topHalfCount = 0;
+    var bottomHalfLumaSum = 0, bottomHalfCount = 0;
     var halfW = faceW / 2;
+    var halfH = faceH / 2;
 
     for (var dy = 0; dy < faceH; dy += 4) {
         var curY = faceY + dy;
@@ -3563,12 +3566,28 @@ async function detectAndAnalyzeFaceFrame(video) {
                 rightHalfLumaSum += pxLuma;
                 rightHalfCount++;
             }
+            if (dy < halfH) {
+                topHalfLumaSum += pxLuma;
+                topHalfCount++;
+            } else {
+                bottomHalfLumaSum += pxLuma;
+                bottomHalfCount++;
+            }
         }
     }
 
     var avgLeftLuma = leftHalfCount > 0 ? (leftHalfLumaSum / leftHalfCount) : faceAvgLuma;
     var avgRightLuma = rightHalfCount > 0 ? (rightHalfLumaSum / rightHalfCount) : faceAvgLuma;
-    var lumaDisparity = (avgLeftLuma - avgRightLuma) / Math.max(20, (avgLeftLuma + avgRightLuma) / 2);
+    var lumaDisparityX = (avgLeftLuma - avgRightLuma) / Math.max(20, (avgLeftLuma + avgRightLuma) / 2);
+
+    var avgTopLuma = topHalfCount > 0 ? (topHalfLumaSum / topHalfCount) : faceAvgLuma;
+    var avgBottomLuma = bottomHalfCount > 0 ? (bottomHalfLumaSum / bottomHalfCount) : faceAvgLuma;
+    var lumaDisparityY = (avgTopLuma - avgBottomLuma) / Math.max(20, (avgTopLuma + avgBottomLuma) / 2);
+
+    // Peripheral background luminance (for backlight silhouette detection)
+    var bgBorderLuma = (avgLuma * 1.5 - faceAvgLuma * 0.5);
+    var isBacklit = bgBorderLuma > 1.35 * faceAvgLuma && faceAvgLuma < 110;
+    var backlightBoost = isBacklit ? Math.min(1.40, 1.0 + (bgBorderLuma - faceAvgLuma) / 180.0) : 1.0;
 
     var getNormLuma = function(px, py) {
         var clX = Math.max(0, Math.min(vw - 1, px));
@@ -3579,13 +3598,24 @@ async function detectAndAnalyzeFaceFrame(video) {
         var bNorm = Math.pow(Math.min(255, pixels[idx + 2] * scaleB) / 255, gamma) * 255;
         var baseLuma = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
 
-        // Bilateral side-lighting compensation when window or side-lamp produces harsh shadows
-        if (Math.abs(lumaDisparity) > 0.12) {
-            var relX = (px - faceX) / Math.max(1, faceW) - 0.5;
-            var compensation = Math.max(0.72, Math.min(1.32, 1.0 - relX * lumaDisparity * 0.70));
-            return Math.min(255, baseLuma * compensation);
+        // Apply backlight recovery boost to facial core pixels
+        if (isBacklit) {
+            baseLuma = Math.min(255, baseLuma * backlightBoost);
         }
-        return baseLuma;
+
+        // Dual-axis lighting compensation for window side-shadows and overhead ceiling lights
+        var compX = 1.0;
+        if (Math.abs(lumaDisparityX) > 0.12) {
+            var relX = (px - faceX) / Math.max(1, faceW) - 0.5;
+            compX = Math.max(0.72, Math.min(1.32, 1.0 - relX * lumaDisparityX * 0.70));
+        }
+        var compY = 1.0;
+        if (Math.abs(lumaDisparityY) > 0.14) {
+            var relY = (py - faceY) / Math.max(1, faceH) - 0.5;
+            compY = Math.max(0.75, Math.min(1.28, 1.0 - relY * lumaDisparityY * 0.55));
+        }
+
+        return Math.min(255, baseLuma * compX * compY);
     };
 
     // 8. Topological Feature Analysis & Landmarks (on Illumination-Normalized Luma)
@@ -3731,8 +3761,8 @@ async function detectAndAnalyzeFaceFrame(video) {
         };
     }
 
-    // 11. Extract 48-Dimensional Illumination-Invariant Biometric Feature Vector
-    // Part 1: 8 Primary Scale & Illumination Invariant Landmark Ratios (Prefix compatible)
+    // 11. Extract 64-Dimensional Multi-Scale Biometric Feature Vector
+    // Part 1: 8 Primary Scale & Illumination Invariant Landmark Ratios (Prefix 1)
     var eyeSpanRatio = 0.42;
     var eyeToNoseRatio = 0.22;
     var noseToMouthRatio = 0.23;
@@ -3753,7 +3783,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         Math.round(normAspect * 1000) / 1000,
     ];
 
-    // Part 2: 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
+    // Part 2: 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region, Prefix 2)
     var gradientEnergies = [];
     var subGridSize = 4;
     var subCellW = faceW / subGridSize;
@@ -3790,7 +3820,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         return Math.round((val / gradL2Norm) * 1000) / 1000;
     });
 
-    // Part 3: 8 Enhanced Invariant Structural & Symmetry Quotients
+    // Part 3: 8 Enhanced Invariant Structural & Symmetry Quotients (Prefix 3)
     var eyeSymmetryRatio = Math.round((1.0 - Math.min(1.0, eyeSymmetryDiff)) * 1000) / 1000;
     var nasalSlopeRatio = Math.round(Math.min(2.0, avgNoseBridge / Math.max(1, avgMouth)) * 1000) / 1000;
     var midfaceToJawRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, avgMouth)) * 1000) / 1000;
@@ -3811,7 +3841,7 @@ async function detectAndAnalyzeFaceFrame(video) {
         lowerFacialProportion
     ];
 
-    // Part 4: 16 Uniform Local Binary Pattern (ULBP) Micro-Texture Energy Zones (4x4 sub-grid)
+    // Part 4: 16 Uniform Local Binary Pattern (ULBP) Micro-Texture Energy Zones (4x4 sub-grid, Prefix 4)
     var lbpEnergies = [];
     var totalLbpEnergy = 0;
 
@@ -3868,8 +3898,71 @@ async function detectAndAnalyzeFaceFrame(video) {
         return Math.round((val / lbpL2Norm) * 1000) / 1000;
     });
 
-    // 48-dimensional combined invariant vector (Prefix order: 8 Primary Ratios + 16 Gradients + 8 Enhanced Ratios + 16 ULBP)
-    var featureVector = primaryLandmarkRatios.concat(normalizedGrads).concat(enhancedRatios).concat(normalizedLbp);
+    // Part 5: 8 Multi-Scale Triangular & Invariant Structural Quotients
+    var interOcularMouthRatio = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye) / Math.max(1, 2 * avgMouth)) * 1000) / 1000;
+    var bilateralNoseDepthRatio = Math.round(Math.min(2.0, Math.abs(avgNoseBridge - avgLeftEye) / Math.max(1, Math.abs(avgNoseBridge - avgRightEye) + 1)) * 1000) / 1000;
+    var verticalContourSymmetry = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye + avgNoseBridge) / Math.max(1, avgCheek + 2 * avgMouth)) * 1000) / 1000;
+    var cheekJawContourGrad = Math.round(Math.min(2.0, avgCheek / Math.max(1, (avgCheek + avgMouth) / 2)) * 1000) / 1000;
+    var philtrumVerticalGrad = Math.round(Math.min(2.0, Math.abs(avgNoseBridge - avgMouth) / Math.max(1, avgCheek)) * 1000) / 1000;
+    var foreheadSpecularDamping = Math.round(Math.min(2.0, faceAvgLuma / Math.max(1, (avgLeftEye + avgRightEye) / 2)) * 1000) / 1000;
+    var skinPoreMicroEnergy = Math.round(Math.min(2.0, avgEdgeGradient / Math.max(0.2, (avgLeftEye + avgRightEye) / 100.0)) * 1000) / 1000;
+    var facialPerimeterCurvature = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye + avgMouth) / Math.max(1, 3 * faceAvgLuma)) * 1000) / 1000;
+
+    var triangularContourRatios = [
+        interOcularMouthRatio,
+        bilateralNoseDepthRatio,
+        verticalContourSymmetry,
+        cheekJawContourGrad,
+        philtrumVerticalGrad,
+        foreheadSpecularDamping,
+        skinPoreMicroEnergy,
+        facialPerimeterCurvature
+    ];
+
+    // Part 6: 8 Multi-Radius Texture Contrast Energy Zones (2x4 upper/lower facial zones evaluating radius r=2 contrast)
+    var multiRadiusEnergies = [];
+    var mrTotalEnergy = 0;
+    var mrRows = 2, mrCols = 4;
+    var mrCellW = faceW / mrCols;
+    var mrCellH = faceH / mrRows;
+
+    for (var mry = 0; mry < mrRows; mry++) {
+        for (var mrx = 0; mrx < mrCols; mrx++) {
+            var zoneMrSum = 0;
+            var zoneMrSamples = 0;
+            var mrStartX = Math.floor(faceX + mrx * mrCellW);
+            var mrStartY = Math.floor(faceY + mry * mrCellH);
+
+            for (var my = 3; my < mrCellH - 3; my += 3) {
+                for (var mx = 3; mx < mrCellW - 3; mx += 3) {
+                    var pxX = mrStartX + mx;
+                    var pxY = mrStartY + my;
+                    var cVal = getNormLuma(pxX, pxY);
+                    var surroundVal = (getNormLuma(pxX - 2, pxY) + getNormLuma(pxX + 2, pxY) + 
+                                       getNormLuma(pxX, pxY - 2) + getNormLuma(pxX, pxY + 2)) / 4.0;
+                    zoneMrSum += Math.abs(cVal - surroundVal);
+                    zoneMrSamples++;
+                }
+            }
+
+            var zoneMrAvg = zoneMrSamples > 0 ? (zoneMrSum / zoneMrSamples) : 0.4;
+            multiRadiusEnergies.push(zoneMrAvg);
+            mrTotalEnergy += zoneMrAvg * zoneMrAvg;
+        }
+    }
+
+    var mrL2Norm = Math.sqrt(Math.max(1e-6, mrTotalEnergy));
+    var normalizedMultiRadiusTexture = multiRadiusEnergies.map(function(val) {
+        return Math.round((val / mrL2Norm) * 1000) / 1000;
+    });
+
+    // 64-dimensional combined invariant vector (Prefix order: 8 Primary Ratios + 16 Gradients + 8 Enhanced Ratios + 16 ULBP + 8 Triangular Invariants + 8 Multi-Radius Texture)
+    var featureVector = primaryLandmarkRatios
+        .concat(normalizedGrads)
+        .concat(enhancedRatios)
+        .concat(normalizedLbp)
+        .concat(triangularContourRatios)
+        .concat(normalizedMultiRadiusTexture);
     var vectorJson = JSON.stringify(featureVector);
     var vectorPayload = btoa(vectorJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
@@ -4180,6 +4273,23 @@ async function startFaceRecognitionLogin(identifier, opts) {
             if (laserBar) laserBar.style.background = 'linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%)';
 
             if (consecutiveValidFrames >= REQUIRED_FRAMES) {
+                // Passive liveness & anti-spoofing verification across frame trajectory
+                var totalCentroidDrift = 0;
+                for (var fi = 1; fi < verifiedFramesHistory.length; fi++) {
+                    var prev = verifiedFramesHistory[fi - 1];
+                    var curr = verifiedFramesHistory[fi];
+                    totalCentroidDrift += Math.hypot((curr.faceCenterX || 0) - (prev.faceCenterX || 0), (curr.faceCenterY || 0) - (prev.faceCenterY || 0));
+                }
+
+                // If perfectly frozen (zero movement across 4 consecutive frames, typical of static 2D photo attack)
+                if (verifiedFramesHistory.length >= 4 && totalCentroidDrift < 0.12) {
+                    if (stateLabel) stateLabel.textContent = 'Natural movement required. Please blink or shift slightly...';
+                    if (hudStatus) { hudStatus.textContent = 'LIVENESS CHECK'; hudStatus.style.color = '#f59e0b'; }
+                    consecutiveValidFrames = Math.max(1, consecutiveValidFrames - 2);
+                    await sleep(120);
+                    continue;
+                }
+
                 // Temporal template averaging across consecutive verified frames to cancel noise
                 if (verifiedFramesHistory.length >= 2) {
                     var vLen = verifiedFramesHistory[0].featureVector?.length || 0;

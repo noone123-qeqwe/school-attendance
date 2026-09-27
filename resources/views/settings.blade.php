@@ -6418,10 +6418,13 @@ async function detectAndAnalyzeFaceFrame(video) {
         if (flashBtn) flashBtn.classList.add('flash-suggest-pulse');
     }
 
-    // Bilateral side-lighting disparity detection: measure left half vs right half illumination
+    // Dual-axis illumination disparity detection: measure horizontal & vertical illumination balance
     let leftHalfLumaSum = 0, leftHalfCount = 0;
     let rightHalfLumaSum = 0, rightHalfCount = 0;
+    let topHalfLumaSum = 0, topHalfCount = 0;
+    let bottomHalfLumaSum = 0, bottomHalfCount = 0;
     const halfW = faceW / 2;
+    const halfH = faceH / 2;
 
     for (let dy = 0; dy < faceH; dy += 4) {
         const curY = faceY + dy;
@@ -6436,12 +6439,28 @@ async function detectAndAnalyzeFaceFrame(video) {
                 rightHalfLumaSum += pxLuma;
                 rightHalfCount++;
             }
+            if (dy < halfH) {
+                topHalfLumaSum += pxLuma;
+                topHalfCount++;
+            } else {
+                bottomHalfLumaSum += pxLuma;
+                bottomHalfCount++;
+            }
         }
     }
 
     const avgLeftLuma = leftHalfCount > 0 ? (leftHalfLumaSum / leftHalfCount) : faceAvgLuma;
     const avgRightLuma = rightHalfCount > 0 ? (rightHalfLumaSum / rightHalfCount) : faceAvgLuma;
-    const lumaDisparity = (avgLeftLuma - avgRightLuma) / Math.max(20, (avgLeftLuma + avgRightLuma) / 2);
+    const lumaDisparityX = (avgLeftLuma - avgRightLuma) / Math.max(20, (avgLeftLuma + avgRightLuma) / 2);
+
+    const avgTopLuma = topHalfCount > 0 ? (topHalfLumaSum / topHalfCount) : faceAvgLuma;
+    const avgBottomLuma = bottomHalfCount > 0 ? (bottomHalfLumaSum / bottomHalfCount) : faceAvgLuma;
+    const lumaDisparityY = (avgTopLuma - avgBottomLuma) / Math.max(20, (avgTopLuma + avgBottomLuma) / 2);
+
+    // Peripheral background luminance (for backlight silhouette detection)
+    const bgBorderLuma = (avgLuma * 1.5 - faceAvgLuma * 0.5);
+    const isBacklit = bgBorderLuma > 1.35 * faceAvgLuma && faceAvgLuma < 110;
+    const backlightBoost = isBacklit ? Math.min(1.40, 1.0 + (bgBorderLuma - faceAvgLuma) / 180.0) : 1.0;
 
     const getNormLuma = (px, py) => {
         const clX = Math.max(0, Math.min(vw - 1, px));
@@ -6450,15 +6469,26 @@ async function detectAndAnalyzeFaceFrame(video) {
         const rNorm = Math.pow(Math.min(255, pixels[idx] * scaleR) / 255, gamma) * 255;
         const gNorm = Math.pow(Math.min(255, pixels[idx + 1] * scaleG) / 255, gamma) * 255;
         const bNorm = Math.pow(Math.min(255, pixels[idx + 2] * scaleB) / 255, gamma) * 255;
-        const baseLuma = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
+        let baseLuma = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
 
-        // Bilateral side-lighting compensation when window or side-lamp produces harsh shadows
-        if (Math.abs(lumaDisparity) > 0.12) {
-            const relX = (px - faceX) / Math.max(1, faceW) - 0.5;
-            const compensation = Math.max(0.72, Math.min(1.32, 1.0 - relX * lumaDisparity * 0.70));
-            return Math.min(255, baseLuma * compensation);
+        // Apply backlight recovery boost to facial core pixels
+        if (isBacklit) {
+            baseLuma = Math.min(255, baseLuma * backlightBoost);
         }
-        return baseLuma;
+
+        // Dual-axis lighting compensation for window side-shadows and overhead ceiling lights
+        let compX = 1.0;
+        if (Math.abs(lumaDisparityX) > 0.12) {
+            const relX = (px - faceX) / Math.max(1, faceW) - 0.5;
+            compX = Math.max(0.72, Math.min(1.32, 1.0 - relX * lumaDisparityX * 0.70));
+        }
+        let compY = 1.0;
+        if (Math.abs(lumaDisparityY) > 0.14) {
+            const relY = (py - faceY) / Math.max(1, faceH) - 0.5;
+            compY = Math.max(0.75, Math.min(1.28, 1.0 - relY * lumaDisparityY * 0.55));
+        }
+
+        return Math.min(255, baseLuma * compX * compY);
     };
 
     // 8. Topological Feature Analysis & Landmarks (on Illumination-Normalized Luma)
@@ -6740,8 +6770,71 @@ async function detectAndAnalyzeFaceFrame(video) {
     const lbpL2Norm = Math.sqrt(Math.max(1e-6, totalLbpEnergy));
     const normalizedLbp = lbpEnergies.map(val => Math.round((val / lbpL2Norm) * 1000) / 1000);
 
-    // 48-dimensional combined invariant vector (Prefix order: 8 Primary Ratios + 16 Gradients + 8 Enhanced Ratios + 16 ULBP)
-    const featureVector = [...primaryLandmarkRatios, ...normalizedGrads, ...enhancedRatios, ...normalizedLbp];
+    // Part 5: 8 Multi-Scale Triangular & Invariant Structural Quotients
+    const interOcularMouthRatio = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye) / Math.max(1, 2 * avgMouth)) * 1000) / 1000;
+    const bilateralNoseDepthRatio = Math.round(Math.min(2.0, Math.abs(avgNoseBridge - avgLeftEye) / Math.max(1, Math.abs(avgNoseBridge - avgRightEye) + 1)) * 1000) / 1000;
+    const verticalContourSymmetry = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye + avgNoseBridge) / Math.max(1, avgCheek + 2 * avgMouth)) * 1000) / 1000;
+    const cheekJawContourGrad = Math.round(Math.min(2.0, avgCheek / Math.max(1, (avgCheek + avgMouth) / 2)) * 1000) / 1000;
+    const philtrumVerticalGrad = Math.round(Math.min(2.0, Math.abs(avgNoseBridge - avgMouth) / Math.max(1, avgCheek)) * 1000) / 1000;
+    const foreheadSpecularDamping = Math.round(Math.min(2.0, faceAvgLuma / Math.max(1, (avgLeftEye + avgRightEye) / 2)) * 1000) / 1000;
+    const skinPoreMicroEnergy = Math.round(Math.min(2.0, avgEdgeGradient / Math.max(0.2, (avgLeftEye + avgRightEye) / 100.0)) * 1000) / 1000;
+    const facialPerimeterCurvature = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye + avgMouth) / Math.max(1, 3 * faceAvgLuma)) * 1000) / 1000;
+
+    const triangularContourRatios = [
+        interOcularMouthRatio,
+        bilateralNoseDepthRatio,
+        verticalContourSymmetry,
+        cheekJawContourGrad,
+        philtrumVerticalGrad,
+        foreheadSpecularDamping,
+        skinPoreMicroEnergy,
+        facialPerimeterCurvature
+    ];
+
+    // Part 6: 8 Multi-Radius Texture Contrast Energy Zones (2x4 upper/lower facial zones evaluating radius r=2 contrast)
+    const multiRadiusEnergies = [];
+    let mrTotalEnergy = 0;
+    const mrRows = 2, mrCols = 4;
+    const mrCellW = faceW / mrCols;
+    const mrCellH = faceH / mrRows;
+
+    for (let mry = 0; mry < mrRows; mry++) {
+        for (let mrx = 0; mrx < mrCols; mrx++) {
+            let zoneMrSum = 0;
+            let zoneMrSamples = 0;
+            const mrStartX = Math.floor(faceX + mrx * mrCellW);
+            const mrStartY = Math.floor(faceY + mry * mrCellH);
+
+            for (let my = 3; my < mrCellH - 3; my += 3) {
+                for (let mx = 3; mx < mrCellW - 3; mx += 3) {
+                    const pxX = mrStartX + mx;
+                    const pxY = mrStartY + my;
+                    const cVal = getNormLuma(pxX, pxY);
+                    const surroundVal = (getNormLuma(pxX - 2, pxY) + getNormLuma(pxX + 2, pxY) + 
+                                         getNormLuma(pxX, pxY - 2) + getNormLuma(pxX, pxY + 2)) / 4.0;
+                    zoneMrSum += Math.abs(cVal - surroundVal);
+                    zoneMrSamples++;
+                }
+            }
+
+            const zoneMrAvg = zoneMrSamples > 0 ? (zoneMrSum / zoneMrSamples) : 0.4;
+            multiRadiusEnergies.push(zoneMrAvg);
+            mrTotalEnergy += zoneMrAvg * zoneMrAvg;
+        }
+    }
+
+    const mrL2Norm = Math.sqrt(Math.max(1e-6, mrTotalEnergy));
+    const normalizedMultiRadiusTexture = multiRadiusEnergies.map(val => Math.round((val / mrL2Norm) * 1000) / 1000);
+
+    // 64-dimensional combined invariant vector (Prefix order: 8 Primary Ratios + 16 Gradients + 8 Enhanced Ratios + 16 ULBP + 8 Triangular Invariants + 8 Multi-Radius Texture)
+    const featureVector = [
+        ...primaryLandmarkRatios,
+        ...normalizedGrads,
+        ...enhancedRatios,
+        ...normalizedLbp,
+        ...triangularContourRatios,
+        ...normalizedMultiRadiusTexture
+    ];
     const vectorJson = JSON.stringify(featureVector);
     const vectorPayload = btoa(vectorJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
@@ -6914,6 +7007,23 @@ async function executeFaceCaptureAndVerificationSequence(video) {
                 if (statusSub) statusSub.textContent = `Confidence score ${analysis.score}%. Confirming biometric stability...`;
                 updateProgressiveFeedback(currentProgress, `Threshold passed (${analysis.score}%). Finalizing...`);
             } else {
+                // Passive liveness & anti-spoofing verification across frame trajectory
+                let totalCentroidDrift = 0;
+                for (let fi = 1; fi < verifiedFramesHistory.length; fi++) {
+                    const prev = verifiedFramesHistory[fi - 1];
+                    const curr = verifiedFramesHistory[fi];
+                    totalCentroidDrift += Math.hypot((curr.faceCenterX || 0) - (prev.faceCenterX || 0), (curr.faceCenterY || 0) - (prev.faceCenterY || 0));
+                }
+
+                // If perfectly frozen (zero movement across 4 consecutive frames, typical of static 2D photo attack)
+                if (verifiedFramesHistory.length >= 4 && totalCentroidDrift < 0.12) {
+                    if (statusSub) statusSub.textContent = 'Natural movement required. Please blink or shift slightly...';
+                    updateProgressiveFeedback(currentProgress, 'Natural movement required...');
+                    consecutiveValidFrames = Math.max(1, consecutiveValidFrames - 2);
+                    await sleep(120);
+                    continue;
+                }
+
                 // Completed all required consecutive frames with face matching threshold!
                 // Temporal template averaging across consecutive verified frames to cancel noise
                 if (verifiedFramesHistory.length >= 2) {

@@ -19,9 +19,19 @@ class BiometricService
     public const TEMPLATE_UPDATE_THRESHOLD = 88.0;
 
     /**
+     * Minimum separation margin (%) required between top candidate and runner-up in 1:N identification.
+     */
+    public const MIN_DISCRIMINATION_MARGIN = 2.5;
+
+    /**
+     * Unambiguous similarity threshold that guarantees match even if runner-up is within margin.
+     */
+    public const UNAMBIGUOUS_CONFIDENCE_THRESHOLD = 84.0;
+
+    /**
      * Compare an incoming candidate face descriptor against a reference face descriptor.
      *
-     * @return array{match: bool, similarity: float, confidence: int, method: string}
+     * @return array{match: bool, similarity: float, confidence: int, method: string, metrics?: array}
      */
     public function compareDescriptors(string $candidateDesc, string $referenceDesc, float $threshold = self::DEFAULT_MATCH_THRESHOLD): array
     {
@@ -64,23 +74,40 @@ class BiometricService
             $chiSim = $this->chiSquareSimilarity($candidateData['vector'], $referenceData['vector'], 8);
             $chiScore = round($chiSim * 100, 2);
 
-            // Multi-Metric Composite Fusion:
-            // 65% Cosine Invariant Vector + 20% Chi-Square Micro-Texture + 15% Landmark Topology
-            $compositeScore = round(($scorePercent * 0.65) + ($chiScore * 0.20) + ($landmarkScore * 0.15), 2);
+            // Canberra metric distance across feature vector (element-normalized divergence)
+            $canberraSim = $this->canberraSimilarity($candidateData['vector'], $referenceData['vector']);
+            $canberraScore = round($canberraSim * 100, 2);
 
-            // If textures and landmarks strongly agree, reward composite;
-            // If micro-texture or landmarks indicate an impostor, enforce the composite penalty
-            $effectiveScore = ($chiScore >= 70.0 && $landmarkScore >= 65.0)
-                ? max($scorePercent, $compositeScore)
-                : min($scorePercent, $compositeScore);
+            // Quad-Metric Composite Fusion:
+            // 55% Invariant Cosine + 15% Canberra Distance + 15% Chi-Square Micro-Texture + 15% Landmark Topology
+            $compositeScore = round(($scorePercent * 0.55) + ($canberraScore * 0.15) + ($chiScore * 0.15) + ($landmarkScore * 0.15), 2);
 
-            $isMatch = ($scorePercent >= $threshold && $chiScore >= 60.0) || ($compositeScore >= $threshold && $scorePercent >= ($threshold - 4.0));
+            // High harmony reward vs impostor penalty:
+            // If textures, Canberra metric, or landmarks indicate an impostor, apply dissonance damping
+            if ($chiScore < 65.0 || $canberraScore < 65.0 || $landmarkScore < 60.0) {
+                $dissonance = min($chiScore, $canberraScore, $landmarkScore) / 100.0;
+                $effectiveScore = round(min($scorePercent, $compositeScore) * $dissonance, 2);
+            } elseif ($chiScore >= 68.0 && $canberraScore >= 68.0 && $landmarkScore >= 65.0) {
+                $effectiveScore = max($scorePercent, $compositeScore);
+            } else {
+                $effectiveScore = min($scorePercent, $compositeScore);
+            }
+
+            // High-security matching decision:
+            $isMatch = ($effectiveScore >= $threshold) && ($canberraScore >= 62.0) && ($chiScore >= 58.0);
 
             return [
                 'match' => $isMatch,
                 'similarity' => $effectiveScore,
                 'confidence' => $candidateData['confidence'],
                 'method' => 'vector_cosine_v2',
+                'metrics' => [
+                    'cosine' => $scorePercent,
+                    'canberra' => $canberraScore,
+                    'chi_square' => $chiScore,
+                    'landmarks' => $landmarkScore,
+                    'composite' => $compositeScore,
+                ],
             ];
         }
 
@@ -97,14 +124,18 @@ class BiometricService
     }
 
     /**
-     * Find the best matching credential from a collection of candidate credentials.
+     * Find the best matching credential from a collection of candidate credentials with 1:N discrimination margin.
      *
      * @param Collection<int, WebauthnCredential> $credentials
      */
     public function findBestMatch(string $candidateDesc, Collection $credentials, float $threshold = self::DEFAULT_MATCH_THRESHOLD): ?array
     {
-        $bestMatch = null;
-        $highestSimilarity = 0.0;
+        $candidateData = $this->parseDescriptor($candidateDesc);
+        if (!$candidateData) {
+            return null;
+        }
+
+        $userBestScores = [];
 
         foreach ($credentials as $cred) {
             $refDesc = (string) $cred->public_key;
@@ -113,18 +144,57 @@ class BiometricService
             }
 
             $comparison = $this->compareDescriptors($candidateDesc, $refDesc, $threshold);
-            if ($comparison['match'] && $comparison['similarity'] > $highestSimilarity) {
-                $highestSimilarity = $comparison['similarity'];
-                $bestMatch = [
+            if (!$comparison['match']) {
+                continue;
+            }
+
+            $userId = $cred->user_id;
+            $sim = $comparison['similarity'];
+
+            if (!isset($userBestScores[$userId]) || $sim > $userBestScores[$userId]['score']) {
+                $userBestScores[$userId] = [
+                    'score' => $sim,
                     'credential' => $cred,
                     'user' => $cred->user,
-                    'similarity' => $comparison['similarity'],
                     'comparison' => $comparison,
                 ];
             }
         }
 
-        return $bestMatch;
+        if (empty($userBestScores)) {
+            return null;
+        }
+
+        // Sort matching users by similarity descending
+        uasort($userBestScores, fn ($a, $b) => $b['score'] <=> $a['score']);
+        $ranked = array_values($userBestScores);
+        $topMatch = $ranked[0];
+
+        $margin = 100.0;
+        $isAmbiguous = false;
+        $runnerUp = null;
+
+        if (count($ranked) > 1) {
+            $runnerUp = $ranked[1];
+            $margin = $topMatch['score'] - $runnerUp['score'];
+            // Ambiguity safeguard: If top 2 candidates are very close and neither has overwhelming confidence
+            if ($margin < self::MIN_DISCRIMINATION_MARGIN && $topMatch['score'] < self::UNAMBIGUOUS_CONFIDENCE_THRESHOLD) {
+                $isAmbiguous = true;
+            }
+        }
+
+        return [
+            'credential' => $topMatch['credential'],
+            'user' => $topMatch['user'],
+            'similarity' => $topMatch['score'],
+            'comparison' => $topMatch['comparison'],
+            'margin' => round($margin, 2),
+            'is_ambiguous' => $isAmbiguous,
+            'runner_up' => $runnerUp ? [
+                'user' => $runnerUp['user'],
+                'similarity' => $runnerUp['score'],
+            ] : null,
+        ];
     }
 
     /**
@@ -299,7 +369,7 @@ class BiometricService
     /**
      * Compute salience-weighted cosine similarity.
      * Dimensions corresponding to rigid geometric landmarks (inter-ocular distance,
-     * nose bridge prominence, eye socket depth) receive higher salience weights.
+     * nose bridge prominence, eye socket depth, triangular invariants) receive higher salience weights.
      */
     public function weightedCosineSimilarity(array $a, array $b): float
     {
@@ -313,9 +383,20 @@ class BiometricService
         $normB = 0.0;
 
         for ($i = 0; $i < $len; $i++) {
-            // First 12 dimensions: structural ratios (higher salience weight: 1.25)
-            // Next dimensions: gradient & LBP micro-texture (salience weight: 1.0)
-            $w = ($i < 12) ? 1.25 : 1.0;
+            // Dims 0..15: Core facial structural quotients and primary landmark ratios (weight: 1.30)
+            // Dims 16..31: Spatial gradient orientation zones (weight: 1.05)
+            // Dims 32..47: Uniform LBP micro-texture histograms (weight: 1.10)
+            // Dims 48..63: High-frequency texture frequency & multi-scale triangular invariants (weight: 1.15)
+            if ($i < 16) {
+                $w = 1.30;
+            } elseif ($i < 32) {
+                $w = 1.05;
+            } elseif ($i < 48) {
+                $w = 1.10;
+            } else {
+                $w = 1.15;
+            }
+
             $valA = $a[$i] * $w;
             $valB = $b[$i] * $w;
 
@@ -330,6 +411,60 @@ class BiometricService
 
         $similarity = $dotProduct / (sqrt($normA) * sqrt($normB));
         return max(0.0, min(1.0, (float) $similarity));
+    }
+
+    /**
+     * Compute Canberra metric similarity between two feature vectors.
+     * Canberra distance normalizes element-wise absolute differences by the sum of their absolute values.
+     * It is exceptionally sensitive to subtle impostor discrepancies across low-energy and high-frequency
+     * micro-texture descriptors, effectively preventing false acceptance.
+     */
+    public function canberraSimilarity(array $a, array $b): float
+    {
+        $len = min(count($a), count($b));
+        if ($len === 0) {
+            return 1.0;
+        }
+
+        $canberraSum = 0.0;
+        $count = 0;
+
+        for ($i = 0; $i < $len; $i++) {
+            $valA = (float) $a[$i];
+            $valB = (float) $b[$i];
+            $denom = abs($valA) + abs($valB);
+            if ($denom > 1e-6) {
+                $canberraSum += abs($valA - $valB) / $denom;
+                $count++;
+            }
+        }
+
+        if ($count === 0) {
+            return 1.0;
+        }
+
+        $avgDist = $canberraSum / $count;
+        return max(0.0, min(1.0, 1.0 - ($avgDist * 0.95)));
+    }
+
+    /**
+     * Compute normalized Euclidean similarity between two feature vectors.
+     */
+    public function euclideanSimilarity(array $a, array $b): float
+    {
+        $len = min(count($a), count($b));
+        if ($len === 0) {
+            return 1.0;
+        }
+
+        $sumSqDiff = 0.0;
+        for ($i = 0; $i < $len; $i++) {
+            $diff = (float) $a[$i] - (float) $b[$i];
+            $sumSqDiff += $diff * $diff;
+        }
+
+        $dist = sqrt($sumSqDiff / $len);
+        return max(0.0, min(1.0, 1.0 - ($dist * 0.70)));
     }
 
     /**
