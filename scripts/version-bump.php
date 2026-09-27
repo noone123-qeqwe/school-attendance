@@ -12,7 +12,7 @@
  *   - public/sw.js (Service Worker cache version)
  *
  * Usage:
- *   php scripts/version-bump.php [--type=patch|minor|major] [--set=2.4.7] [--ci] [--dry-run]
+ *   php scripts/version-bump.php [--type=patch|minor|major] [--set=2.4.7] [--ci --release] [--dry-run]
  */
 
 $rootDir = dirname(__DIR__);
@@ -23,7 +23,7 @@ $manifestJsonPath = $rootDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARA
 $swJsPath = $rootDir . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'sw.js';
 
 // Parse CLI arguments
-$options = getopt('', ['type:', 'set:', 'ci', 'dry-run', 'help']);
+$options = getopt('', ['type:', 'set:', 'ci', 'release', 'dry-run', 'help']);
 
 if (isset($options['help'])) {
     echo "Smart Attendance - Automated Application Versioning\n";
@@ -32,7 +32,8 @@ if (isset($options['help'])) {
     echo "Options:\n";
     echo "  --type=patch|minor|major  Increment type (default: patch)\n";
     echo "  --set=<version>           Explicitly set semantic version (e.g. 2.4.7)\n";
-    echo "  --ci                      Run in CI mode and populate GitHub Actions \$GITHUB_OUTPUT\n";
+    echo "  --ci                      Populate GitHub Actions \$GITHUB_OUTPUT\n";
+    echo "  --release                 Authorize a version bump from a release workflow\n";
     echo "  --dry-run                 Compute version changes without writing to disk\n";
     echo "  --help                    Show this help message\n";
     exit(0);
@@ -41,7 +42,20 @@ if (isset($options['help'])) {
 $type = isset($options['type']) ? strtolower(trim((string)$options['type'])) : 'patch';
 $explicitVersion = isset($options['set']) ? trim((string)$options['set']) : null;
 $isCi = isset($options['ci']);
+$isRelease = isset($options['release']);
 $isDryRun = isset($options['dry-run']);
+
+// The legacy workflow invokes --ci for every push. Until it is replaced,
+// refuse to publish a release unless the tested release workflow explicitly
+// supplies --release. Local CLI/test usage is unaffected.
+if ($isCi && getenv('GITHUB_ACTIONS') === 'true' && !$isRelease) {
+    echo "Skipping version bump: an explicit --release flag is required in GitHub Actions.\n";
+    $githubOutput = getenv('GITHUB_OUTPUT');
+    if ($githubOutput) {
+        file_put_contents($githubOutput, "bumped=false\n", FILE_APPEND);
+    }
+    exit(0);
+}
 
 // 1. Read current version from version.json (Single Source of Truth)
 $versionData = [];

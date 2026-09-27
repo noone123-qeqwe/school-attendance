@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Setting;
 use App\Services\VersionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
 class AutoVersionProgressionTest extends TestCase
@@ -193,6 +194,28 @@ class AutoVersionProgressionTest extends TestCase
 
         $this->assertEquals($vJsonBefore, file_get_contents(base_path('version.json')));
         $this->assertEquals($pkgBefore, file_get_contents(base_path('package.json')));
+    }
+
+    public function test_legacy_push_workflow_cannot_bump_without_release_flag(): void
+    {
+        $before = file_get_contents(base_path('version.json'));
+        $output = tempnam(sys_get_temp_dir(), 'web-release-output-');
+
+        try {
+            $process = new Process(
+                [PHP_BINARY, base_path('scripts/version-bump.php'), '--ci'],
+                base_path(),
+                ['GITHUB_ACTIONS' => 'true', 'GITHUB_OUTPUT' => $output]
+            );
+            $process->run();
+
+            $this->assertTrue($process->isSuccessful(), $process->getErrorOutput());
+            $this->assertStringContainsString('explicit --release flag is required', $process->getOutput());
+            $this->assertStringContainsString('bumped=false', file_get_contents($output));
+            $this->assertSame($before, file_get_contents(base_path('version.json')));
+        } finally {
+            unlink($output);
+        }
     }
 
     /**
