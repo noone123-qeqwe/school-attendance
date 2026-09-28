@@ -429,7 +429,7 @@ class BiometricServiceTest extends TestCase
         $this->assertCount(64, $parsed['vector']);
     }
 
-    public function test_compare_live_face_with_profile_photo_matches_consistently(): void
+    public function test_client_descriptor_alone_cannot_verify_profile_photo(): void
     {
         $user = User::factory()->create();
 
@@ -459,9 +459,8 @@ class BiometricServiceTest extends TestCase
 
         $result = $this->service->compareLiveFaceWithProfilePhoto($user, $liveDescriptor);
 
-        $this->assertTrue($result['match']);
-        $this->assertGreaterThanOrEqual(95.0, $result['similarity']);
-        $this->assertEquals('profile_photo_quad_fusion', $result['method']);
+        $this->assertFalse($result['match']);
+        $this->assertSame('INVALID_LIVE_FRAME', $result['code']);
     }
 
     public function test_compare_live_face_with_profile_photo_rejects_different_face(): void
@@ -503,7 +502,7 @@ class BiometricServiceTest extends TestCase
         $result = $this->service->compareLiveFaceWithProfilePhoto($user, $liveDescriptorB, null, 75.0);
 
         $this->assertFalse($result['match']);
-        $this->assertSame('BIOMETRIC_MISMATCH', $result['code']);
+        $this->assertSame('INVALID_LIVE_FRAME', $result['code']);
     }
 
     public function test_compare_live_face_with_no_profile_photo_returns_graceful_error(): void

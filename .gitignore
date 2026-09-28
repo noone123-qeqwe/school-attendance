@@ -2,7 +2,7 @@
 .DS_Store
 .env
 .env*
-!.env.example
+render-env-variables.txt
 .phpactor.json
 .phpunit.result.cache
 /.fleet

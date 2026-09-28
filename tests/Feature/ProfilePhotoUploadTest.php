@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\ProfileFacePhotoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -31,6 +32,14 @@ class ProfilePhotoUploadTest extends TestCase
         $student->refresh();
         $this->assertNotNull($student->profile_image);
         Storage::disk('public')->assertExists($student->profile_image);
+        $this->assertDatabaseHas('profile_face_photos', [
+            'user_id' => $student->id,
+            'source_path' => $student->profile_image,
+        ]);
+        $saved = \App\Models\ProfileFacePhoto::findOrFail($student->id);
+        $this->assertStringNotContainsString(base64_encode(Storage::disk('public')->get($student->profile_image)), $saved->image_ciphertext);
+        Storage::disk('public')->delete($student->profile_image);
+        $this->assertNotNull(app(ProfileFacePhotoService::class)->bytes($student));
     }
 
     public function test_student_ajax_upload_returns_json_and_versioned_url(): void

@@ -973,7 +973,6 @@ async function submitAttendance(payload) {
     if (isFace) {
         reqData.biometric_method = 'face';
         reqData.live_frame = payload.live_frame;
-        if (payload.face_descriptor) reqData.face_descriptor = payload.face_descriptor;
     } else {
         reqData.credential = payload;
     }

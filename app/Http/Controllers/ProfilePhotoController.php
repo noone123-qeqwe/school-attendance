@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -16,11 +17,11 @@ class ProfilePhotoController extends Controller
     public function update(Request $request)
     {
         $request->validate([
-            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif,heic,heif|max:5120|dimensions:min_width=100,min_height=100,max_width=5000,max_height=5000',
+            'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:5120|dimensions:min_width=100,min_height=100,max_width=5000,max_height=5000',
         ], [
             'profile_image.required' => 'Please select an image file to upload.',
             'profile_image.image' => 'The selected file must be a valid image.',
-            'profile_image.mimes' => 'Unsupported image format. Allowed formats: JPG, PNG, WEBP, HEIC.',
+            'profile_image.mimes' => 'Unsupported image format. Use JPG, PNG, WEBP, or GIF for face matching.',
             'profile_image.max' => 'Image is too large. Maximum size is 5 MB.',
             'profile_image.dimensions' => 'Image dimensions must be between 100×100 and 5000×5000 pixels.',
         ]);
@@ -45,7 +46,7 @@ class ProfilePhotoController extends Controller
         try {
             // Secure internal filename generation
             $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
-            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif'])) {
+            if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) {
                 $extension = 'jpg';
             }
             $safeFilename = Str::uuid()->toString() . '.' . $extension;
@@ -58,22 +59,15 @@ class ProfilePhotoController extends Controller
                 $storedPath = $file->storeAs('profile_images', $safeFilename, 'public');
             }
 
-            // Remove previous local photo if one existed
-            if ($user->profile_image && !str_starts_with($user->profile_image, 'http')) {
-                Storage::disk('public')->delete($user->profile_image);
-            }
+            $previousPath = $user->profile_image;
+            DB::transaction(function () use ($user, $file, $storedPath) {
+                app(\App\Services\ProfileFacePhotoService::class)->save($user, $file->get(), $storedPath);
+                $user->profile_image = $storedPath;
+                $user->save();
+            });
 
-            // Save new path to user model
-            $user->profile_image = $storedPath;
-            $user->save();
-
-            // Clear and pre-warm biometric face descriptor cache for reliable live matching
-            try {
-                $bioService = app(\App\Services\BiometricService::class);
-                $bioService->clearProfilePhotoCache($user);
-                $bioService->getOrCreateProfilePhotoDescriptor($user);
-            } catch (\Throwable $e) {
-                Log::warning('Biometric profile photo descriptor pre-warming skipped: ' . $e->getMessage());
+            if ($previousPath && !str_starts_with($previousPath, 'http')) {
+                Storage::disk('public')->delete($previousPath);
             }
 
             // Safe debug log without sensitive information
@@ -126,12 +120,16 @@ class ProfilePhotoController extends Controller
 
         try {
             if ($user->profile_image) {
-                if (!str_starts_with($user->profile_image, 'http')) {
-                    Storage::disk('public')->delete($user->profile_image);
+                $previousPath = $user->profile_image;
+                DB::transaction(function () use ($user) {
+                    app(\App\Services\ProfileFacePhotoService::class)->delete($user);
+                    $user->profile_image = null;
+                    $user->save();
+                });
+
+                if (!str_starts_with($previousPath, 'http')) {
+                    Storage::disk('public')->delete($previousPath);
                 }
-                app(\App\Services\BiometricService::class)->clearProfilePhotoCache($user);
-                $user->profile_image = null;
-                $user->save();
 
                 Log::info('Profile photo removed', [
                     'user_id' => $user->id,

@@ -4,7 +4,7 @@ Laravel 12 attendance application for school administrators, teachers, students,
 
 ## Local setup
 
-Requires PHP 8.2 with the extensions listed in `Dockerfile`, Composer 2, Node.js, and a supported database. Copy `.env.example` to `.env`, configure the database, then run:
+Requires PHP 8.2 with the extensions listed in `Dockerfile`, Composer 2, Node.js, and a supported database. Configure `.env` with your database and environment settings, then run:
 
 ```sh
 composer install

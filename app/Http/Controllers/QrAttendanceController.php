@@ -1530,7 +1530,7 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        $hasCustomPhoto = !empty($user->profile_image) || $user->has_custom_profile_image;
+        $hasCustomPhoto = app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
         $hasCredentials = $user->webauthnCredentials()->exists();
 
         if (!$hasCredentials && !$hasCustomPhoto) {
@@ -1570,7 +1570,6 @@ class QrAttendanceController extends Controller
         $classroomLng = $coords['schoolLng'];
         $radiusMeters = (int) $session->getAllowedRadius();
 
-        $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
         $hasHardwareFp = $user->webauthnCredentials()->where(function ($q) {
             $q->whereNull('biometric_type')->orWhere('biometric_type', '!=', 'face');
         })->exists();
@@ -1586,9 +1585,9 @@ class QrAttendanceController extends Controller
             'user'            => $user,
             'hasProfilePhoto' => $hasCustomPhoto,
             'profilePhotoUrl' => $user->profile_photo_url,
-            'hasFaceMethod'   => $hasCustomPhoto || $hasFaceCred,
+            'hasFaceMethod'   => $hasCustomPhoto,
             'hasFingerprint'  => $hasHardwareFp,
-            'defaultMethod'   => ($hasCustomPhoto || $hasFaceCred) ? 'face' : 'fingerprint',
+            'defaultMethod'   => $hasCustomPhoto ? 'face' : 'fingerprint',
         ]);
     }
     public function verificationOptions(Request $request, WebauthnService $webauthn)
@@ -1639,9 +1638,8 @@ class QrAttendanceController extends Controller
         // $session->cleanupExpiredChallenge();
 
         $user = $request->user();
-        $hasCustomPhoto = !empty($user->profile_image) || $user->has_custom_profile_image;
-        $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
-        if (!$user->webauthnCredentials()->exists() && !$hasCustomPhoto && !$hasFaceCred) {
+        $hasCustomPhoto = app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
+        if (!$user->webauthnCredentials()->exists() && !$hasCustomPhoto) {
             return response()->json(['success' => false, 'message' => 'Biometric verification is not set up on this account. Please upload a profile photo or register your biometric device.'], 422);
         }
 
@@ -1665,8 +1663,6 @@ class QrAttendanceController extends Controller
         }
 
         $rpId = $this->getRpId($request);
-        $hasCustomPhoto = !empty($user->profile_image) || $user->has_custom_profile_image;
-        $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')->exists();
         $validCredentials = $user->webauthnCredentials
             ->filter(function ($credential) {
                 if ($credential->biometric_type === 'face' && !str_contains((string) $credential->public_key, 'BEGIN PUBLIC KEY')) {
@@ -1675,7 +1671,7 @@ class QrAttendanceController extends Controller
                 return true;
             });
 
-        if ($validCredentials->isEmpty() && !$hasCustomPhoto && !$hasFaceCred) {
+        if ($validCredentials->isEmpty() && !$hasCustomPhoto) {
             return response()->json([
                 'success' => false,
                 'message' => 'No biometric credentials or registered profile photo found. Please upload a profile photo or register your biometric device in Settings.'
@@ -1683,7 +1679,7 @@ class QrAttendanceController extends Controller
         }
 
         $availableMethods = [];
-        if ($hasCustomPhoto || $hasFaceCred) {
+        if ($hasCustomPhoto) {
             $availableMethods[] = 'face';
         }
         if ($validCredentials->isNotEmpty()) {
@@ -1732,8 +1728,8 @@ class QrAttendanceController extends Controller
             'longitude'        => 'required|numeric|between:-180,180',
             'accuracy'         => 'nullable|numeric',
             'credential'       => 'nullable',
-            'face_descriptor'  => 'nullable|string',
-            'live_frame'       => 'nullable|string',
+            'face_descriptor'  => 'nullable|string|max:4096',
+            'live_frame'       => 'nullable|string|max:4194304',
             'biometric_method' => 'nullable|string',
         ]);
 
@@ -1800,27 +1796,18 @@ class QrAttendanceController extends Controller
         $faceMatchResult = null;
 
         if ($isFaceMethod) {
-            $faceDescriptor = $request->input('face_descriptor')
-                ?? (is_array($credential) ? ($credential['face_descriptor'] ?? $credential['descriptor'] ?? null) : null)
-                ?? (is_string($rawCredential) && str_starts_with($rawCredential, 'face_desc_') ? $rawCredential : null);
-
             $liveFrame = $request->input('live_frame')
-                ?? $request->input('face_image')
-                ?? (is_array($credential) ? ($credential['live_frame'] ?? $credential['face_image'] ?? null) : null);
+                ?? (is_array($credential) ? ($credential['live_frame'] ?? null) : null);
 
-            if (empty($faceDescriptor) && empty($liveFrame)) {
+            if (!is_string($liveFrame) || $liveFrame === '') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No face recognition data received. Please position your face clearly in front of the camera.'
+                    'code' => 'INVALID_LIVE_FRAME',
+                    'message' => 'No camera image received. Please position your face clearly in front of the camera.'
                 ], 422);
             }
 
-            $biometricService = app(\App\Services\BiometricService::class);
-            $faceMatchResult = $biometricService->compareLiveFaceWithProfilePhoto(
-                $user,
-                (string) ($faceDescriptor ?: ''),
-                $liveFrame ? (string) $liveFrame : null
-            );
+            $faceMatchResult = app(\App\Services\LiveProfileFaceMatcher::class)->compare($user, $liveFrame);
 
             if (!$faceMatchResult['match']) {
                 Log::warning('QR Face verification against profile photo failed', [
@@ -1833,7 +1820,7 @@ class QrAttendanceController extends Controller
                     'success' => false,
                     'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
                     'message' => $faceMatchResult['message'] ?? 'Face verification failed: Live face does not match your registered profile photo.'
-                ], 422);
+                ], ($faceMatchResult['code'] ?? null) === 'MATCHER_UNAVAILABLE' ? 503 : 422);
             }
 
             $recordedMethod = 'qr_face';
