@@ -29,9 +29,9 @@ services:
         fromService:
           type: web
           name: attendance-system
-          property: host
+          envVarKey: RENDER_EXTERNAL_URL
       - key: APP_KEY
-        generateValue: true
+        sync: false
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL

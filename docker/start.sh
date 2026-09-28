@@ -59,8 +59,12 @@ if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ] || [ -n "$DB_URL" ] || [ -n "$MYS
     echo "🗄️ Database configured, running migrations..."
     RETRY_COUNT=0
     MAX_RETRIES=6
-    until php artisan migrate --force || [ $RETRY_COUNT -eq $MAX_RETRIES ]; do
+    until php artisan migrate --force; do
         RETRY_COUNT=$((RETRY_COUNT+1))
+        if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
+            echo "Database migrations failed after $MAX_RETRIES attempts." >&2
+            exit 1
+        fi
         echo "Database not ready yet... retry $RETRY_COUNT/$MAX_RETRIES in 5 seconds..."
         sleep 5
     done

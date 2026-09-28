@@ -35,7 +35,7 @@ CI runs the test suite against SQLite and MySQL. See `.github/workflows/ci.yml`.
 
 ## Deployment and recovery
 
-`render.yaml` and `Dockerfile` describe the current Docker deployment. `render-blueprint.yaml` is an older alternative with different database and scheduler settings; do not mix the two configurations. Set `APP_KEY`, database credentials, and a **new** `MAIL_PASSWORD` in the hosting environment. The committed mail credential was removed; it must be revoked at the mail provider because it remains in earlier Git history. Keep all secrets out of commits and build arguments.
+`render.yaml` and `Dockerfile` describe the current Docker deployment. `render-blueprint.yaml` is an older alternative with different database and scheduler settings; do not mix the two configurations. Set a stable Laravel `APP_KEY` (for example, from `php artisan key:generate --show`) and database credentials in the hosting environment. For mail delivery on Render Free, configure an HTTP provider key such as `BREVO_API_KEY`; Render Free blocks outbound SMTP ports 25, 465, and 587. The committed mail credential was removed; it must be revoked at the mail provider because it remains in earlier Git history. Keep all secrets out of commits and build arguments.
 
 The container entrypoint runs migrations and starts the web server, queue worker, and scheduler. After deployment, verify `/up`, log in as each role, record and reconcile a sample attendance session, and check queue failures and scheduler logs. Review `docs/web-release-process.md` for web and Android version handling.
 
