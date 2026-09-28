@@ -1526,10 +1526,10 @@ function showTeacherLocationMissingError() {
 function showWeakGpsError(acc) {
     fingerprintInProgress = false;
     setIcon('#fef2f2', 'bi bi-geo', '#dc2626');
-    document.getElementById('vTitle').textContent = 'Weak GPS Signal';
+    document.getElementById('vTitle').textContent = 'Location Signal Unreliable';
     var accMsg = (acc && acc > 0) ? ' (±' + Math.round(acc) + 'm)' : '';
-    document.getElementById('vSub').textContent = 'GPS accuracy is too low' + accMsg + ' to verify your location.';
-    showMsg('err', '<i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Weak Signal:</strong> Please move near a window, enable High Accuracy GPS, and try again.');
+    document.getElementById('vSub').textContent = 'Location readings are weak or unstable' + accMsg + '.';
+    showMsg('err', '<i class="bi bi-exclamation-triangle-fill me-1"></i> Keep Wi-Fi and precise location enabled, wait for a better fix, then retry. If it remains unreliable indoors, ask your instructor for help.');
     var btn = document.getElementById('retryFpBtn');
     btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
     btn.onclick = function() { startGPS(); };
