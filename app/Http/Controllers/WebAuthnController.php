@@ -606,7 +606,7 @@ class WebAuthnController extends Controller
             $request->session()->put('login_timestamp', now()->toString());
 
             if ($user->isStudent()) {
-                app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+                app(\App\Services\DeviceBindingService::class)->bind($user, $request, true);
                 $request->session()->save();
             }
 
@@ -1066,7 +1066,7 @@ class WebAuthnController extends Controller
             return response()->json([
                 'success' => false,
                 'code' => 'USER_NOT_FOUND',
-                'message' => 'Please enter your Student ID or Email before signing in with biometrics.'
+                'message' => 'Please enter your Student ID or Email before signing in with fingerprint.'
             ], 404);
         }
 
@@ -1100,7 +1100,7 @@ class WebAuthnController extends Controller
         $request->session()->put('login_timestamp', now()->toString());
 
         if ($user->isStudent()) {
-            app(\App\Services\DeviceBindingService::class)->bind($user, $request);
+            app(\App\Services\DeviceBindingService::class)->bind($user, $request, true);
             $request->session()->save();
         }
 

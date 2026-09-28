@@ -374,6 +374,26 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @android.webkit.JavascriptInterface
+        public String getLastIdentifier() {
+            try {
+                android.content.SharedPreferences prefs = mContext.getSharedPreferences("app_device_binding", android.content.Context.MODE_PRIVATE);
+                return prefs.getString("last_user_identifier", "");
+            } catch (Exception e) {
+                return "";
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void setLastIdentifier(String identifier) {
+            try {
+                if (identifier != null && !identifier.trim().isEmpty()) {
+                    android.content.SharedPreferences prefs = mContext.getSharedPreferences("app_device_binding", android.content.Context.MODE_PRIVATE);
+                    prefs.edit().putString("last_user_identifier", identifier.trim()).apply();
+                }
+            } catch (Exception e) {}
+        }
+
+        @android.webkit.JavascriptInterface
         public boolean isBiometricAvailable() {
             try {
                 BiometricManager bm = BiometricManager.from(MainActivity.this);
@@ -421,6 +441,7 @@ public class MainActivity extends AppCompatActivity {
                     BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
                             .setTitle(promptTitle)
                             .setSubtitle(promptSub)
+                            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG | BiometricManager.Authenticators.BIOMETRIC_WEAK)
                             .setNegativeButtonText("Cancel")
                             .build();
 

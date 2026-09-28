@@ -2074,6 +2074,9 @@ function saveAccount(acc) {
         }
         localStorage.setItem('attendance_saved_accounts', JSON.stringify(accounts));
         localStorage.setItem('attendance_saved_identifier', id);
+        if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.setLastIdentifier === 'function') {
+            window.AndroidDeviceBridge.setLastIdentifier(id);
+        }
     } catch (e) {}
     updateAccountBanner();
 }
@@ -2110,6 +2113,9 @@ function clearAllSavedAccounts() {
     try {
         localStorage.removeItem('attendance_saved_accounts');
         localStorage.removeItem('attendance_saved_identifier');
+        if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.setLastIdentifier === 'function') {
+            window.AndroidDeviceBridge.setLastIdentifier('');
+        }
     } catch (e) {}
     if (idInput) idInput.value = '';
     var pass = document.getElementById('loginPassword');
@@ -2175,6 +2181,9 @@ try {
     if ((!savedId || !savedId.trim()) && savedAccounts.length > 0) {
         savedId = savedAccounts[0].identifier;
     }
+    if ((!savedId || !savedId.trim()) && window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getLastIdentifier === 'function') {
+        savedId = window.AndroidDeviceBridge.getLastIdentifier();
+    }
     if (savedId && idInput && !idInput.value) {
         idInput.value = savedId;
         if (rememberCheckbox) rememberCheckbox.checked = true;
@@ -2219,12 +2228,17 @@ if (loginForm) {
 
         if (idInput && idInput.value) {
             idInput.value = idInput.value.trim();
+            if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.setLastIdentifier === 'function') {
+                window.AndroidDeviceBridge.setLastIdentifier(idInput.value);
+            }
         }
 
         try {
-            var devKey = (typeof window.getOrCreateDeviceKey === 'function')
-                ? window.getOrCreateDeviceKey()
-                : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
+            var devKey = (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getNativeDeviceId === 'function')
+                ? window.AndroidDeviceBridge.getNativeDeviceId()
+                : ((typeof window.getOrCreateDeviceKey === 'function')
+                    ? window.getOrCreateDeviceKey()
+                    : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || ''));
             var fpInput = document.getElementById('deviceFingerprint');
             var keyInput = document.getElementById('deviceKey');
             if (fpInput && devKey) fpInput.value = devKey;
@@ -4569,10 +4583,27 @@ async function handleBiometricLogin() {
             if (idInput) idInput.value = identifier;
         }
     }
+    if (!identifier && window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getLastIdentifier === 'function') {
+        var lastNativeId = window.AndroidDeviceBridge.getLastIdentifier();
+        if (lastNativeId && lastNativeId.trim()) {
+            identifier = lastNativeId.trim();
+            if (idInput) idInput.value = identifier;
+        }
+    }
 
-    if (hasNativeBio && identifier) {
-        performNativeAndroidBiometricLogin(identifier);
-        return;
+    if (hasNativeBio) {
+        if (identifier) {
+            performNativeAndroidBiometricLogin(identifier);
+            return;
+        } else {
+            if (typeof window.showStudentIdRequiredModal === 'function') {
+                window.showStudentIdRequiredModal();
+            } else if (idInput) {
+                idInput.focus();
+                showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
+            }
+            return;
+        }
     }
 
     // Modal helper for when identifier is required during targeted setup
@@ -4744,6 +4775,18 @@ async function handleBiometricLogin() {
 
 function performNativeAndroidBiometricLogin(studentNumber) {
     studentNumber = (studentNumber || (idInput ? idInput.value : '')).trim();
+    if (!studentNumber && window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getLastIdentifier === 'function') {
+        studentNumber = (window.AndroidDeviceBridge.getLastIdentifier() || '').trim();
+    }
+    if (!studentNumber) {
+        if (typeof window.showStudentIdRequiredModal === 'function') {
+            window.showStudentIdRequiredModal();
+        } else if (idInput) {
+            idInput.focus();
+            showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
+        }
+        return;
+    }
     var nativeDeviceId = (window.AndroidDeviceBridge && window.AndroidDeviceBridge.getNativeDeviceId) ? window.AndroidDeviceBridge.getNativeDeviceId() : '';
     var nativeModel = (window.AndroidDeviceBridge && window.AndroidDeviceBridge.getNativeDeviceModel) ? window.AndroidDeviceBridge.getNativeDeviceModel() : '';
 
@@ -4765,12 +4808,15 @@ function performNativeAndroidBiometricLogin(studentNumber) {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-Device-Id': nativeDeviceId
+                    'X-Device-Id': nativeDeviceId,
+                    'X-Device-Key': nativeDeviceId,
+                    'X-Device-Fingerprint': nativeDeviceId
                 },
                 body: JSON.stringify({
                     student_number: studentNumber,
                     identifier: studentNumber,
                     device_id: nativeDeviceId,
+                    device_key: nativeDeviceId,
                     device_model: nativeModel,
                     device_fingerprint: nativeDeviceId
                 })
@@ -4788,14 +4834,24 @@ function performNativeAndroidBiometricLogin(studentNumber) {
                             name: result.user.name,
                             role: result.user.role
                         });
+                        if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.setLastIdentifier === 'function') {
+                            window.AndroidDeviceBridge.setLastIdentifier(result.user.identifier);
+                        }
                     } catch(e) {}
                 }
                 window.location.replace(result.redirect || '{{ route("home") }}');
             } else {
                 resetBiometricButton();
-                if (result.code === 'SETUP_REQUIRED' || result.code === 'USER_NOT_FOUND') {
+                if (result.code === 'SETUP_REQUIRED') {
                     showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>' + result.message);
                     openBiometricSetupModal(studentNumber);
+                } else if (result.code === 'USER_NOT_FOUND') {
+                    showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>' + result.message);
+                    if (typeof window.showStudentIdRequiredModal === 'function') {
+                        window.showStudentIdRequiredModal();
+                    } else if (idInput) {
+                        idInput.focus();
+                    }
                 } else {
                     showFpMessage('error', '<i class="bi bi-x-circle me-2"></i>' + (result.message || 'Login failed.'));
                     openBiometricModal({
