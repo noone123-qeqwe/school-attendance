@@ -120,12 +120,14 @@ class CalculateMissedAttendanceAction
                 continue;
             }
 
-            // Subject-specific enrollment date if explicitly enrolled via pivot
+            // Explicit-only subjects begin at enrollment; profile-matched subjects
+            // were already available to the student before an optional pivot was added.
             $subjStartDate = $startDate->copy();
-            if ($pivotEnrollments->has($subj->id) && $pivotEnrollments->get($subj->id)) {
-                $pivotDate = Carbon::parse($pivotEnrollments->get($subj->id))->timezone('Asia/Manila')->startOfDay();
-                if ($pivotDate->gt($subjStartDate)) {
-                    $subjStartDate = $pivotDate;
+            $enrolledAt = null;
+            if (!$subj->matchesStudentProfile($student) && $pivotEnrollments->get($subj->id)) {
+                $enrolledAt = Carbon::parse($pivotEnrollments->get($subj->id))->timezone('Asia/Manila');
+                if ($enrolledAt->copy()->startOfDay()->gt($subjStartDate)) {
+                    $subjStartDate = $enrolledAt->copy()->startOfDay();
                 }
             }
 
@@ -147,6 +149,10 @@ class CalculateMissedAttendanceAction
                             }
                             // If the date is the student's registration date, skip sessions that started before registration!
                             if ($cursorDateStr === $studentRegisteredAt->toDateString() && $sched->start_time <= $studentRegisteredAt->format('H:i:s')) {
+                                continue;
+                            }
+                            // Joining after a session began cannot create a retroactive absence.
+                            if ($enrolledAt && $cursorDateStr === $enrolledAt->toDateString() && $sched->start_time <= $enrolledAt->format('H:i:s')) {
                                 continue;
                             }
                             $expectedSessions++;

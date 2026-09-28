@@ -157,6 +157,7 @@ class HomeController extends Controller
     // 6. Subjects
     $subjects = clone $user->getAllSubjects();
     $subjects->load('schedules');
+    $subjectsById = $subjects->keyBy('id');
 
     // 7. Fetch Attendance History
     $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction']) 
@@ -184,6 +185,7 @@ class HomeController extends Controller
 
     // Build today's schedule before calculating attendance totals.
     $todaySchedule = collect();
+    $userCreated = $user->created_at ? Carbon::parse($user->created_at)->timezone('Asia/Manila') : null;
     if ($todaySubjects->isNotEmpty()) {
         foreach ($todaySubjects as $subject) {
             $sched = $subject->schedules->first();
@@ -194,17 +196,25 @@ class HomeController extends Controller
 
             $existing = $todayAttendances->get($subject->code);
 
-            // Check if student registered after this class session started
-            $userCreated = $user->created_at ? Carbon::parse($user->created_at)->timezone('Asia/Manila') : null;
-            $registeredAfterSessionStarted = $userCreated && $userCreated->greaterThan($classStart);
+            $joinedAt = $userCreated;
+            if (!$subject->matchesStudentProfile($user)) {
+                $pivotCreatedAt = $subjectsById->get($subject->id)?->pivot?->created_at;
+                if ($pivotCreatedAt) {
+                    $enrolledAt = Carbon::parse($pivotCreatedAt)->timezone('Asia/Manila');
+                    if (!$joinedAt || $enrolledAt->greaterThan($joinedAt)) {
+                        $joinedAt = $enrolledAt;
+                    }
+                }
+            }
+            $joinedAfterSessionStarted = $joinedAt && $joinedAt->greaterThanOrEqualTo($classStart);
 
             $status = 'upcoming';
             if ($existing && in_array($existing->status, ['Present', 'Late'])) {
                 $status = 'completed';
             } elseif ($existing && $existing->status === 'Absent') {
                 $status = 'missed';
-            } elseif ($registeredAfterSessionStarted) {
-                // Class started before account registration; not missed by this student
+            } elseif ($joinedAfterSessionStarted) {
+                // Class started before account registration or explicit enrollment.
                 $status = 'past';
             } elseif ($now->greaterThan($classEnd)) {
                 $status = 'missed';

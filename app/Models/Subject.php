@@ -54,6 +54,14 @@ class Subject extends Model
         return $this->hasMany(ClassStudentAssistant::class);
     }
 
+    public function matchesStudentProfile(User $student): bool
+    {
+        return (string) $this->year_level === (string) $student->year_level
+            && (string) $this->semester === (string) $student->semester
+            && (empty($this->course) || $this->course === $student->course)
+            && (empty($student->section) || empty($this->section) || $this->section === $student->section);
+    }
+
     /**
      * Get all students for this subject (both explicitly enrolled and implicitly via year level / semester)
      */

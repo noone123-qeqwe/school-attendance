@@ -15,6 +15,129 @@ class MissedAttendanceStatsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_class_before_explicit_enrollment_is_not_marked_absent_on_either_dashboard(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-20 11:00:00', 'Asia/Manila'));
+
+        try {
+            $student = User::factory()->create([
+                'role' => 'student',
+                'year_level' => 2,
+                'semester' => 1,
+                'course' => 'BSCS',
+                'section' => 'A',
+                'created_at' => Carbon::parse('2026-08-19 07:00:00', 'Asia/Manila'),
+            ]);
+            $subject = Subject::create([
+                'code' => 'LATE-ENROLL',
+                'name' => 'Late Enrollment Seminar',
+                'year_level' => 3,
+                'semester' => 1,
+                'course' => 'BSED',
+                'section' => 'B',
+            ]);
+            Schedule::create([
+                'subject_id' => $subject->id,
+                'day' => 'Thursday',
+                'start_time' => '08:00:00',
+                'end_time' => '10:00:00',
+            ]);
+            $student->enrolledSubjects()->attach($subject->id);
+
+            $this->assertSame(0, app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->execute($student));
+
+            $desktop = $this->actingAs($student)->get('/home');
+            $desktop->assertOk()->assertViewHas('totalAbsent', 0);
+            $desktop->assertViewHas('todaySchedule', fn ($schedule) => $schedule->first()?->status === 'past');
+
+            $mobile = $this->get(route('mobile.home'));
+            $mobile->assertOk()->assertViewHas('todayStatus', 'pending');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_class_after_explicit_enrollment_is_counted_when_missed(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-20 07:00:00', 'Asia/Manila'));
+
+        try {
+            $student = User::factory()->create([
+                'role' => 'student',
+                'year_level' => 2,
+                'semester' => 1,
+                'course' => 'BSCS',
+                'section' => 'A',
+                'created_at' => Carbon::parse('2026-08-19 07:00:00', 'Asia/Manila'),
+            ]);
+            $subject = Subject::create([
+                'code' => 'EARLY-ENROLL',
+                'name' => 'Early Enrollment Seminar',
+                'year_level' => 3,
+                'semester' => 1,
+                'course' => 'BSED',
+                'section' => 'B',
+            ]);
+            Schedule::create([
+                'subject_id' => $subject->id,
+                'day' => 'Thursday',
+                'start_time' => '08:00:00',
+                'end_time' => '10:00:00',
+            ]);
+            $student->enrolledSubjects()->attach($subject->id);
+
+            Carbon::setTestNow(Carbon::parse('2026-08-20 11:00:00', 'Asia/Manila'));
+
+            $this->assertSame(1, app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->execute($student));
+
+            $desktop = $this->actingAs($student)->get('/home');
+            $desktop->assertOk()->assertViewHas('totalAbsent', 1);
+            $desktop->assertViewHas('todaySchedule', fn ($schedule) => $schedule->first()?->status === 'missed');
+
+            $mobile = $this->get(route('mobile.home'));
+            $mobile->assertOk()->assertViewHas('todayStatus', 'absent');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_optional_explicit_enrollment_does_not_reset_implicit_subject_attendance(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-20 11:00:00', 'Asia/Manila'));
+
+        try {
+            $student = User::factory()->create([
+                'role' => 'student',
+                'year_level' => 2,
+                'semester' => 1,
+                'course' => 'BSCS',
+                'section' => 'A',
+                'created_at' => Carbon::parse('2026-08-19 07:00:00', 'Asia/Manila'),
+            ]);
+            $subject = Subject::create([
+                'code' => 'IMPLICIT-ENROLL',
+                'name' => 'Implicit Enrollment Seminar',
+                'year_level' => 2,
+                'semester' => 1,
+                'course' => 'BSCS',
+                'section' => 'A',
+            ]);
+            Schedule::create([
+                'subject_id' => $subject->id,
+                'day' => 'Thursday',
+                'start_time' => '08:00:00',
+                'end_time' => '10:00:00',
+            ]);
+            $student->enrolledSubjects()->attach($subject->id);
+
+            $this->assertSame(1, app(\App\Actions\Attendance\CalculateMissedAttendanceAction::class)->execute($student));
+            $this->actingAs($student)->get('/home')->assertOk()->assertViewHas('totalAbsent', 1);
+            $this->get(route('mobile.home'))->assertOk()->assertViewHas('todayStatus', 'absent');
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
     public function test_student_dashboard_calculates_absent_for_unrecorded_scheduled_classes(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-08-20 18:00:00', 'Asia/Manila')); // Thursday evening

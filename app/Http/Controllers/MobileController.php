@@ -43,6 +43,14 @@ class MobileController extends Controller
                 });
         };
 
+        $todaySubjects = Subject::where($memberOfSubject)
+            ->whereHas('schedules', fn ($query) => $query->where('day', $now->format('l')))
+            ->with([
+                'schedules' => fn ($query) => $query->where('day', $now->format('l')),
+                'instructorUser',
+            ])
+            ->get();
+
         // Greeting based on time
         $hour = $now->hour;
         $greeting = $hour < 12 ? 'morning' : ($hour < 18 ? 'afternoon' : 'evening');
@@ -66,19 +74,33 @@ class MobileController extends Controller
                 ? Carbon::parse($todayAttendance->time_in)->format('g:i A') : null;
             $todayStatusSubtext = $checkInTime ? '' : 'Checked in today';
         } else {
-            // Check if any class has ended today (only considering classes that started after user registered)
+            // Only a session that began after registration or enrollment can be missed.
             $userCreated = $user->created_at ? Carbon::parse($user->created_at)->timezone('Asia/Manila') : null;
-            $anyClassEnded = Subject::where($memberOfSubject)
-                ->whereHas('schedules', function($query) use ($now, $userCreated) {
-                    $query->where('day', $now->format('l'))
-                          ->whereTime('end_time', '<', $now->format('H:i:s'));
-                    if ($userCreated && $userCreated->isToday()) {
-                        $query->whereTime('start_time', '>=', $userCreated->format('H:i:s'));
+            $explicitEnrollments = $todaySubjects->isEmpty()
+                ? collect()
+                : $user->enrolledSubjects()->whereIn('subjects.id', $todaySubjects->pluck('id'))->get()->keyBy('id');
+            $anyClassEnded = $todaySubjects->contains(function ($subject) use ($user, $now, $todayDate, $userCreated, $explicitEnrollments) {
+                $joinedAt = $userCreated;
+                if (!$subject->matchesStudentProfile($user)) {
+                    $pivotCreatedAt = $explicitEnrollments->get($subject->id)?->pivot?->created_at;
+                    if ($pivotCreatedAt) {
+                        $enrolledAt = Carbon::parse($pivotCreatedAt)->timezone('Asia/Manila');
+                        if (!$joinedAt || $enrolledAt->greaterThan($joinedAt)) {
+                            $joinedAt = $enrolledAt;
+                        }
                     }
-                })
-                ->exists();
+                }
 
-            if ($anyClassEnded && (!$userCreated || !$userCreated->isFuture())) {
+                return $subject->schedules->contains(function ($schedule) use ($now, $todayDate, $joinedAt) {
+                    $classStart = Carbon::parse($todayDate.' '.$schedule->start_time);
+                    $classEnd = Carbon::parse($todayDate.' '.$schedule->end_time);
+
+                    return $classEnd->lessThan($now)
+                        && (!$joinedAt || $classStart->greaterThan($joinedAt));
+                });
+            });
+
+            if ($anyClassEnded) {
                 $todayStatus = 'absent';
                 $todayStatusText = 'Absent';
                 $todayStatusSubtext = 'No attendance recorded today';
@@ -99,17 +121,7 @@ class MobileController extends Controller
 
         // Upcoming classes today
         $upcomingClasses = [];
-        $currentDayName = $now->format('l');
         
-        $todaySubjects = Subject::where($memberOfSubject)
-            ->whereHas('schedules', function($query) use ($currentDayName) {
-                $query->where('day', $currentDayName);
-            })
-            ->with(['schedules' => function($query) use ($currentDayName) {
-                $query->where('day', $currentDayName);
-            }, 'instructorUser'])
-            ->get();
-
         foreach ($todaySubjects as $subject) {
             foreach ($subject->schedules as $schedule) {
                 $startTime = Carbon::parse($schedule->start_time);
