@@ -217,9 +217,9 @@
         .glass-logo {
             width: 52px; height: 52px;
             border-radius: 50%;
-            background: white;
-            border: 2px solid rgba(212, 175, 55, 0.7);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            background: #4A121C;
+            border: 2px solid rgba(212, 175, 55, 0.75);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.4), 0 0 12px rgba(212, 175, 55, 0.25);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
             margin: 0 auto 8px;
@@ -227,7 +227,7 @@
             animation: floatLogo 4s ease-in-out infinite, glowPulse 2s infinite;
         }
         .glass-logo:hover { transform: scale(1.08); animation-play-state: paused; }
-        .glass-logo img { width: 85%; height: 85%; object-fit: contain; }
+        .glass-logo img { width: 100%; height: 100%; object-fit: cover; }
 
         /* Badge */
         .glass-badge {
