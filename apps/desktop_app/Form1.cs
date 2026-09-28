@@ -11,7 +11,7 @@ namespace SmartAttendance;
 
 public partial class Form1 : Form
 {
-    private const string AppUrl = "https://school-attendance-o0pm.onrender.com";
+    private const string AppUrl = "https://school-attendance-cj18.onrender.com";
     private WebView2? webView;
     private Panel? splashPanel;
     private Label? statusLabel;

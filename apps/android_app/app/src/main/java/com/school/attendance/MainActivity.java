@@ -38,7 +38,7 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String APP_URL = "https://school-attendance-o0pm.onrender.com";
+    private static final String APP_URL = "https://school-attendance-cj18.onrender.com";
     private static final int PERMISSION_REQUEST_CODE = 1001;
     private static final int CAMERA_PERMISSION_REQUEST_CODE = 1002;
     private static final int FILE_CHOOSER_REQUEST_CODE = 1003;
