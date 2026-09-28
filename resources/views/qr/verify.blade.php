@@ -7,10 +7,174 @@
         background: linear-gradient(135deg, #f8f0f0 0%, #f1f5f9 50%, #f0f4ff 100%);
     }
     .verify-card {
-        max-width: 380px; width: 100%; border-radius: 24px;
-        padding: 32px 28px; background: white;
+        max-width: 410px; width: 100%; border-radius: 24px;
+        padding: 28px 24px; background: white;
         box-shadow: 0 20px 60px rgba(0,0,0,0.1); text-align: center;
     }
+
+    /* Biometric Method Selector */
+    .method-selector {
+        display: flex; background: #f1f5f9; border-radius: 14px;
+        padding: 4px; margin-bottom: 20px; gap: 4px;
+    }
+    .method-btn {
+        flex: 1; padding: 10px 14px; border: none; border-radius: 10px;
+        font-size: 0.82rem; font-weight: 700; color: #64748b;
+        background: transparent; cursor: pointer; transition: all 0.25s ease;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .method-btn.active {
+        background: white; color: #800000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    /* Profile Photo Reference Card */
+    .profile-match-header {
+        background: linear-gradient(135deg, #fffbf0 0%, #fef3c7 100%);
+        border: 1.5px solid #fde68a; border-radius: 16px;
+        padding: 12px 14px; margin-bottom: 18px;
+        display: flex; align-items: center; gap: 12px; text-align: left;
+    }
+    .profile-match-avatar-wrap {
+        position: relative; width: 48px; height: 48px; flex-shrink: 0;
+    }
+    .profile-match-avatar {
+        width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
+        border: 2px solid #b45309; box-shadow: 0 3px 10px rgba(180,83,9,0.2);
+    }
+    .profile-match-badge {
+        position: absolute; bottom: -2px; right: -2px;
+        width: 18px; height: 18px; border-radius: 50%;
+        background: #16a34a; color: white;
+        font-size: 0.65rem; display: flex; align-items: center; justify-content: center;
+        border: 2px solid white;
+    }
+    .profile-match-info { flex: 1; min-width: 0; }
+    .profile-match-label {
+        font-size: 0.68rem; font-weight: 700; color: #b45309;
+        text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .profile-match-name {
+        font-size: 0.92rem; font-weight: 800; color: #78350f;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .profile-match-sub {
+        font-size: 0.72rem; color: #92400e; font-weight: 500;
+    }
+
+    /* Camera Viewport & HUD */
+    .camera-viewport-card {
+        position: relative; width: 100%; height: 280px;
+        border-radius: 20px; overflow: hidden;
+        background: #090d16; box-shadow: 0 12px 36px rgba(0,0,0,0.25);
+        margin-bottom: 14px; display: flex; align-items: center; justify-content: center;
+    }
+    .camera-video {
+        width: 100%; height: 100%; object-fit: cover;
+        transform: scaleX(-1);
+    }
+    .face-reticle-overlay {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        pointer-events: none;
+    }
+    .face-oval-guide {
+        position: relative; width: 180px; height: 230px;
+        border: 2.5px dashed rgba(255, 255, 255, 0.7);
+        border-radius: 50% / 55%;
+        box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.45);
+        transition: all 0.3s ease;
+    }
+    .face-oval-guide.matched {
+        border-color: #10b981 !important;
+        border-style: solid !important;
+        box-shadow: 0 0 0 9999px rgba(16, 185, 129, 0.2), 0 0 25px rgba(16, 185, 129, 0.8) !important;
+    }
+    .face-oval-guide.mismatch {
+        border-color: #ef4444 !important;
+        border-style: solid !important;
+        box-shadow: 0 0 0 9999px rgba(239, 68, 68, 0.25), 0 0 25px rgba(239, 68, 68, 0.8) !important;
+    }
+    .face-laser-line {
+        position: absolute; left: 10%; right: 10%; height: 2.5px;
+        background: linear-gradient(90deg, transparent, #38bdf8, #818cf8, transparent);
+        box-shadow: 0 0 12px #38bdf8;
+        border-radius: 50%;
+        animation: laserScan 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes laserScan {
+        0% { top: 8%; opacity: 0; }
+        15% { opacity: 1; }
+        85% { opacity: 1; }
+        100% { top: 92%; opacity: 0; }
+    }
+    .face-corner {
+        position: absolute; width: 14px; height: 14px;
+        border-color: #cfa46f; border-style: solid;
+    }
+    .face-corner.tl { top: 12px; left: 18px; border-width: 3px 0 0 3px; border-top-left-radius: 8px; }
+    .face-corner.tr { top: 12px; right: 18px; border-width: 3px 3px 0 0; border-top-right-radius: 8px; }
+    .face-corner.bl { bottom: 12px; left: 18px; border-width: 0 0 3px 3px; border-bottom-left-radius: 8px; }
+    .face-corner.br { bottom: 12px; right: 18px; border-width: 0 3px 3px 0; border-bottom-right-radius: 8px; }
+
+    /* Camera Floating Tools */
+    .camera-floating-controls {
+        position: absolute; top: 12px; right: 12px;
+        display: flex; gap: 8px; z-index: 5;
+    }
+    .cam-tool-btn {
+        width: 34px; height: 34px; border-radius: 50%;
+        background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white; font-size: 0.85rem;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: all 0.2s;
+    }
+    .cam-tool-btn:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
+
+    /* Live status badge on camera */
+    .camera-status-pill {
+        position: absolute; bottom: 12px;
+        background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white; border-radius: 999px;
+        padding: 5px 14px; font-size: 0.76rem; font-weight: 700;
+        display: flex; align-items: center; gap: 6px; z-index: 5;
+    }
+    .status-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: #22c55e;
+    }
+    .status-dot.pulsing {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        animation: pulseGreen 1.5s infinite;
+    }
+    .status-dot.err {
+        background: #ef4444;
+        box-shadow: 0 0 8px #ef4444;
+    }
+
+    /* Buttons */
+    .btn-verify-face {
+        width: 100%; padding: 13px;
+        background: linear-gradient(135deg, #800000, #a31d1d);
+        color: white; font-weight: 800; font-size: 0.92rem;
+        border: none; border-radius: 14px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        box-shadow: 0 8px 24px rgba(128, 0, 0, 0.25);
+        transition: all 0.25s ease;
+    }
+    .btn-verify-face:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(128, 0, 0, 0.35); }
+    .btn-verify-face:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
+    .btn-retry-face {
+        width: 100%; padding: 11px;
+        background: #f1f5f9; color: #475569;
+        font-weight: 700; font-size: 0.88rem;
+        border: 1px solid #cbd5e1; border-radius: 12px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        transition: all 0.2s;
+    }
+    .btn-retry-face:hover { background: #e2e8f0; }
     .subject-pill {
         background: #fff5f5; border: 1.5px solid #fecaca;
         border-radius: 12px; padding: 12px 16px; margin-bottom: 24px; text-align: left;
@@ -197,17 +361,88 @@
         @if(isset($status) && $status === 'setup')
         <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:18px;padding:22px 18px;margin-bottom:18px;text-align:center;">
             <div style="width:56px;height:56px;border-radius:50%;background:rgba(245,158,11,0.15);color:#d97706;display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 12px;">
-                <i class="bi bi-fingerprint"></i>
+                <i class="bi bi-person-bounding-box"></i>
             </div>
-            <div style="font-size:1.1rem;font-weight:800;color:#92400e;margin-bottom:6px;">Fingerprint Setup Required</div>
+            <div style="font-size:1.1rem;font-weight:800;color:#92400e;margin-bottom:6px;">Biometric Verification Required</div>
             <p style="font-size:0.85rem;color:#b45309;line-height:1.45;margin-bottom:16px;">
-                {{ $message ?? 'You must register your fingerprint on this device before clocking in with QR attendance.' }}
+                {{ $message ?? 'You must have a registered profile photo or fingerprint on this device before clocking in with QR attendance.' }}
             </p>
-            <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" class="btn w-100" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:white;font-weight:700;padding:12px;border-radius:12px;text-decoration:none;display:block;">
-                <i class="bi bi-fingerprint me-1"></i> Register Fingerprint Now
-            </a>
+            <div class="d-flex flex-column gap-2">
+                <a href="{{ route('settings') }}#tab-profile" class="btn w-100" style="background:linear-gradient(135deg,#cfa46f,#a07a4a);color:white;font-weight:700;padding:12px;border-radius:12px;text-decoration:none;display:block;">
+                    <i class="bi bi-camera me-1"></i> Upload Profile Photo
+                </a>
+                <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" class="btn w-100" style="background:#f1f5f9;color:#334155;font-weight:700;padding:10px;border-radius:12px;text-decoration:none;display:block;">
+                    <i class="bi bi-fingerprint me-1"></i> Or Register Fingerprint
+                </a>
+            </div>
         </div>
         @endif
+
+        {{-- Method Selector (when both face and fingerprint available) --}}
+        @if(!empty($hasFaceMethod) && !empty($hasFingerprint))
+        <div class="method-selector" id="methodSelector" style="display: none;">
+            <button type="button" class="method-btn @if($defaultMethod === 'face') active @endif" id="btnMethodFace" onclick="switchMethod('face')">
+                <i class="bi bi-person-bounding-box"></i> Live Face Match
+            </button>
+            <button type="button" class="method-btn @if($defaultMethod === 'fingerprint') active @endif" id="btnMethodFp" onclick="switchMethod('fingerprint')">
+                <i class="bi bi-fingerprint"></i> Fingerprint
+            </button>
+        </div>
+        @endif
+
+        {{-- Registered Profile Photo Banner --}}
+        @if(!empty($hasFaceMethod))
+        <div class="profile-match-header" id="profileMatchHeader" style="display: none;">
+            <div class="profile-match-avatar-wrap">
+                <img src="{{ $profilePhotoUrl ?? asset('images/default-avatar.png') }}" alt="{{ optional($user)->name ?? 'Student' }}" class="profile-match-avatar" id="refAvatarImg" onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode(optional($user)->name ?? 'Student') }}&background=800000&color=fff';">
+                <div class="profile-match-badge" title="Registered Reference Photo"><i class="bi bi-check-lg"></i></div>
+            </div>
+            <div class="profile-match-info">
+                <div class="profile-match-label">Comparing against registered photo</div>
+                <div class="profile-match-name">{{ optional($user)->name ?? 'Student' }}</div>
+                <div class="profile-match-sub">Live camera biometric match</div>
+            </div>
+        </div>
+        @endif
+
+        {{-- Live Face Camera HUD --}}
+        <div id="faceScanArea" style="display: none;">
+            <div class="camera-viewport-card">
+                <video id="faceCameraVideo" class="camera-video" autoplay playsinline muted></video>
+                <canvas id="faceCaptureCanvas" style="display: none;"></canvas>
+
+                <div class="face-reticle-overlay">
+                    <div class="face-oval-guide" id="faceOvalGuide">
+                        <div class="face-laser-line" id="faceLaserLine"></div>
+                        <div class="face-corner tl"></div>
+                        <div class="face-corner tr"></div>
+                        <div class="face-corner bl"></div>
+                        <div class="face-corner br"></div>
+                        <div id="faceSuccessCheck" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;font-size:3.5rem;color:#10b981;animation:popIn 0.3s ease;">
+                            <i class="bi bi-check-circle-fill"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="camera-floating-controls">
+                    <button type="button" class="cam-tool-btn" id="flipCamBtn" onclick="toggleCameraFacing()" title="Flip Camera">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </div>
+
+                <div class="camera-status-pill" id="cameraStatusPill">
+                    <span class="status-dot pulsing" id="cameraStatusDot"></span>
+                    <span id="cameraStatusText">Align face within oval</span>
+                </div>
+            </div>
+
+            <button type="button" class="btn-verify-face" id="btnCaptureFace" onclick="captureAndVerifyFace()">
+                <i class="bi bi-person-check-fill"></i> Verify My Face
+            </button>
+            <button type="button" class="btn-retry-face mt-2" id="btnRetryFace" onclick="startFaceScan()" style="display: none;">
+                <i class="bi bi-arrow-clockwise"></i> Scan Face Again
+            </button>
+        </div>
 
         {{-- Dynamic content area --}}
         <div id="vIcon"  class="v-icon" style="background:#eff6ff; @if(isset($status) && $status === 'setup') display:none; @endif">
@@ -305,6 +540,13 @@ var CLASSROOM_LNG = {{ isset($classroomLng) && $classroomLng !== null ? (float) 
 var RADIUS_METERS = {{ isset($radiusMeters) && $radiusMeters !== null ? (int) $radiusMeters : (int) \App\Models\Setting::get('gps_radius', 50) }};
 
 var fingerprintInProgress = false; // Add guard against multiple simultaneous calls
+var HAS_FACE_METHOD = {{ !empty($hasFaceMethod) ? 'true' : 'false' }};
+var HAS_FINGERPRINT = {{ !empty($hasFingerprint) ? 'true' : 'false' }};
+var ACTIVE_METHOD = '{{ $defaultMethod ?? (!empty($hasFaceMethod) ? "face" : "fingerprint") }}';
+var currentFacingMode = 'user';
+var activeStream = null;
+var autoCaptureTimer = null;
+var faceVerificationInProgress = false;
 
 function normalizeCoordinates(lat, lng) {
     let latitude = Number(lat);
@@ -489,9 +731,9 @@ function requestLocation(options) {
         setIcon('#f0fdf4', 'bi bi-geo-alt-fill', '#16a34a');
         setStep(3);
         document.getElementById('vTitle').textContent = 'Inside Classroom';
-        document.getElementById('vSub').textContent = 'Location verified. Verifying fingerprint...';
+        document.getElementById('vSub').textContent = 'Location verified. Verifying identity...';
         showMsg('ok', '<i class="bi bi-check-circle me-1"></i> You are inside the classroom (' + accuracyLabel + ').');
-        setTimeout(function() { doFingerprint(); }, 800);
+        setTimeout(function() { startBiometric(); }, 800);
     };
 
     var onSuccess = function(pos) {
@@ -640,13 +882,17 @@ function bufferToBase64Url(buffer) {
     return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-async function submitAttendance(credentialData) {
+async function submitAttendance(payload) {
     var token = QR_TOKEN;
+    var isFace = (payload && payload.biometric_method === 'face');
 
-    // The OS verification prompt can take long enough for the first GPS fix to
-    // become stale. Require a new fix immediately before sending attendance.
-    document.getElementById('vTitle').textContent = 'Confirming current location...';
-    document.getElementById('vSub').textContent = 'Checking a fresh GPS fix after device verification.';
+    if (!isFace) {
+        document.getElementById('vTitle').textContent = 'Confirming current location...';
+        document.getElementById('vSub').textContent = 'Checking a fresh GPS fix after device verification.';
+    } else {
+        setCameraStatus('Confirming location & face...', 'pulsing');
+    }
+
     var freshPosition = await new Promise(function(resolve) {
         if (!navigator.geolocation) { resolve(null); return; }
         try {
@@ -659,6 +905,7 @@ async function submitAttendance(credentialData) {
             resolve(null);
         }
     });
+
     if (!freshPosition || !freshPosition.coords ||
         Math.abs(Date.now() - freshPosition.timestamp) > 10000 ||
         !Number.isFinite(freshPosition.coords.latitude) ||
@@ -667,9 +914,15 @@ async function submitAttendance(credentialData) {
         Math.abs(freshPosition.coords.longitude) > 180 ||
         !Number.isFinite(freshPosition.coords.accuracy) ||
         freshPosition.coords.accuracy <= 0 || freshPosition.coords.accuracy > 50) {
+        if (isFace) {
+            faceVerificationInProgress = false;
+            var cBtn = document.getElementById('btnCaptureFace');
+            if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
+        }
         showWeakGpsError(freshPosition?.coords?.accuracy);
         return;
     }
+
     var latitude = freshPosition.coords.latitude;
     var longitude = freshPosition.coords.longitude;
     var accuracy = freshPosition.coords.accuracy;
@@ -679,11 +932,21 @@ async function submitAttendance(credentialData) {
 
     if (RADIUS_METERS > 0) {
         if (CLASSROOM_LAT === null || CLASSROOM_LNG === null) {
+            if (isFace) {
+                faceVerificationInProgress = false;
+                var cBtn = document.getElementById('btnCaptureFace');
+                if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
+            }
             showTeacherLocationMissingError();
             return;
         }
         var currentDistance = calculateDistance(latitude, longitude, CLASSROOM_LAT, CLASSROOM_LNG);
         if (currentDistance > RADIUS_METERS) {
+            if (isFace) {
+                faceVerificationInProgress = false;
+                var cBtn = document.getElementById('btnCaptureFace');
+                if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
+            }
             showOutsideClassroomError(currentDistance, RADIUS_METERS);
             return;
         }
@@ -697,6 +960,23 @@ async function submitAttendance(credentialData) {
     var dFpEl = document.getElementById('deviceFingerprintInput');
     if (dKeyEl && devKey) dKeyEl.value = devKey;
     if (dFpEl && devKey) dFpEl.value = devKey;
+
+    var reqData = {
+        token: token,
+        latitude: latitude,
+        longitude: longitude,
+        accuracy: accuracy,
+        device_key: devKey,
+        device_fingerprint: devKey
+    };
+
+    if (isFace) {
+        reqData.biometric_method = 'face';
+        reqData.live_frame = payload.live_frame;
+        if (payload.face_descriptor) reqData.face_descriptor = payload.face_descriptor;
+    } else {
+        reqData.credential = payload;
+    }
 
     var xhr2 = new XMLHttpRequest();
     xhr2.open('POST', '{{ route("qr.verify.complete") }}', true);
@@ -713,48 +993,318 @@ async function submitAttendance(credentialData) {
         try {
             response = JSON.parse(xhr2.responseText);
         } catch (e) {
-            showFpError('Unable to read server response. Please try again.');
+            if (isFace) handleFaceError('Unable to read server response. Please try again.');
+            else showFpError('Unable to read server response. Please try again.');
             return;
         }
 
         if (xhr2.status === 200 && response.success) {
-            fingerprintInProgress = false; // Reset flag on success
-            window.location.href = response.redirect || '/home';
+            fingerprintInProgress = false;
+            faceVerificationInProgress = false;
+            setStep(4);
+
+            if (isFace) {
+                var oval = document.getElementById('faceOvalGuide');
+                if (oval) oval.className = 'face-oval-guide matched';
+                var checkEl = document.getElementById('faceSuccessCheck');
+                if (checkEl) checkEl.style.display = 'flex';
+                var laser = document.getElementById('faceLaserLine');
+                if (laser) laser.style.display = 'none';
+
+                setCameraStatus('Identity Confirmed! Clocking in...', 'pulsing');
+                showMsg('ok', '<i class="bi bi-check-circle-fill me-1"></i> Live face verified against registered profile photo!');
+
+                setTimeout(function() {
+                    stopCamera();
+                    window.location.href = response.redirect || '/home';
+                }, 800);
+            } else {
+                setIcon('#f0fdf4', 'bi bi-fingerprint', '#16a34a');
+                document.getElementById('vTitle').textContent = 'Identity Verified';
+                document.getElementById('vSub').textContent = 'Clocking you in now...';
+                showMsg('ok', '<i class="bi bi-check-circle me-1"></i> Fingerprint confirmed.');
+                window.location.href = response.redirect || '/home';
+            }
             return;
         }
 
         if (response.error_type === 'teacher_location_unavailable') {
+            if (isFace) {
+                faceVerificationInProgress = false;
+                var cBtn = document.getElementById('btnCaptureFace');
+                if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
+            }
             showTeacherLocationMissingError();
             return;
         }
 
         if (response.error_type === 'unreliable_gps') {
+            if (isFace) {
+                faceVerificationInProgress = false;
+                var cBtn = document.getElementById('btnCaptureFace');
+                if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
+            }
             showWeakGpsError(response.accuracy || accuracy);
             return;
         }
 
         if (response.error_type === 'outside_classroom') {
+            if (isFace) {
+                faceVerificationInProgress = false;
+                var cBtn = document.getElementById('btnCaptureFace');
+                if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
+            }
             showOutsideClassroomError(response.distance || 0, response.radius || RADIUS_METERS);
             return;
         }
 
-        showFpError(response.message || 'Clock-in failed. Please try again.');
+        if (isFace) {
+            handleFaceError(response.message || 'Face matching failed. Please try again.', response.similarity);
+        } else {
+            showFpError(response.message || 'Clock-in failed. Please try again.');
+        }
     };
     xhr2.onerror = function() {
-        showFpError('Network error while clocking in. Please try again.');
+        if (isFace) handleFaceError('Network error while clocking in. Please try again.');
+        else showFpError('Network error while clocking in. Please try again.');
     };
-    xhr2.send(JSON.stringify({
-        token: token,
-        latitude: latitude,
-        longitude: longitude,
-        accuracy: accuracy,
-        credential: credentialData,
-        device_key: devKey,
-        device_fingerprint: devKey
-    }));
+    xhr2.send(JSON.stringify(reqData));
 }
 
+function startBiometric() {
+    var selector = document.getElementById('methodSelector');
+    if (selector && HAS_FACE_METHOD && HAS_FINGERPRINT) {
+        selector.style.display = 'flex';
+    }
+
+    if (ACTIVE_METHOD === 'face' && HAS_FACE_METHOD) {
+        startFaceScan();
+    } else if (HAS_FINGERPRINT) {
+        doFingerprint();
+    } else if (HAS_FACE_METHOD) {
+        startFaceScan();
+    } else {
+        showMsg('err', 'No biometric method available.');
+    }
+}
+
+function switchMethod(method) {
+    ACTIVE_METHOD = method;
+
+    var btnFace = document.getElementById('btnMethodFace');
+    var btnFp = document.getElementById('btnMethodFp');
+    if (btnFace) btnFace.classList.toggle('active', method === 'face');
+    if (btnFp) btnFp.classList.toggle('active', method === 'fingerprint');
+
+    hideMsg();
+    if (method === 'face') {
+        document.getElementById('retryFpBtn').style.display = 'none';
+        document.getElementById('vIcon').style.display = 'none';
+        document.getElementById('vTitle').style.display = 'none';
+        document.getElementById('vSub').style.display = 'none';
+        startFaceScan();
+    } else {
+        stopCamera();
+        document.getElementById('faceScanArea').style.display = 'none';
+        var pHeader = document.getElementById('profileMatchHeader');
+        if (pHeader) pHeader.style.display = 'none';
+
+        document.getElementById('vIcon').style.display = 'flex';
+        document.getElementById('vTitle').style.display = 'block';
+        document.getElementById('vSub').style.display = 'block';
+        doFingerprint();
+    }
+}
+
+function startFaceScan() {
+    stopCamera();
+    faceVerificationInProgress = false;
+
+    var scanArea = document.getElementById('faceScanArea');
+    if (scanArea) scanArea.style.display = 'block';
+
+    var pHeader = document.getElementById('profileMatchHeader');
+    if (pHeader) pHeader.style.display = 'flex';
+
+    document.getElementById('vIcon').style.display = 'none';
+    document.getElementById('vTitle').style.display = 'none';
+    document.getElementById('vSub').style.display = 'none';
+    document.getElementById('retryFpBtn').style.display = 'none';
+    hideMsg();
+
+    var oval = document.getElementById('faceOvalGuide');
+    if (oval) oval.className = 'face-oval-guide';
+    var checkEl = document.getElementById('faceSuccessCheck');
+    if (checkEl) checkEl.style.display = 'none';
+    var laser = document.getElementById('faceLaserLine');
+    if (laser) laser.style.display = 'block';
+    var retryBtn = document.getElementById('btnRetryFace');
+    if (retryBtn) retryBtn.style.display = 'none';
+    var captureBtn = document.getElementById('btnCaptureFace');
+    if (captureBtn) {
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face';
+    }
+
+    setCameraStatus('Starting camera...', 'pulsing');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setCameraStatus('Camera not supported', 'err');
+        showMsg('err', 'Camera access is not supported by your browser. Please switch to Fingerprint or use a supported browser.');
+        return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+        video: {
+            facingMode: currentFacingMode,
+            width: { ideal: 640 },
+            height: { ideal: 640 }
+        },
+        audio: false
+    }).then(function(stream) {
+        activeStream = stream;
+        var video = document.getElementById('faceCameraVideo');
+        video.srcObject = stream;
+        video.onloadedmetadata = function() {
+            video.play();
+            setCameraStatus('Align face within oval', 'pulsing');
+
+            if (autoCaptureTimer) clearTimeout(autoCaptureTimer);
+            autoCaptureTimer = setTimeout(function() {
+                if (!faceVerificationInProgress && activeStream) {
+                    captureAndVerifyFace();
+                }
+            }, 1800);
+        };
+    }).catch(function(err) {
+        console.error('Camera error:', err);
+        setCameraStatus('Camera access denied', 'err');
+        showMsg('err', 'Unable to access device camera. Please allow camera permissions to verify your face.');
+        if (HAS_FINGERPRINT) {
+            var btn = document.getElementById('retryFpBtn');
+            btn.innerHTML = '<i class="bi bi-fingerprint"></i> Use Fingerprint Instead';
+            btn.onclick = function() { switchMethod('fingerprint'); };
+            btn.style.display = 'flex';
+        }
+    });
+}
+
+function toggleCameraFacing() {
+    currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+    var video = document.getElementById('faceCameraVideo');
+    if (video) {
+        video.style.transform = (currentFacingMode === 'user') ? 'scaleX(-1)' : 'none';
+    }
+    startFaceScan();
+}
+
+function stopCamera() {
+    if (autoCaptureTimer) {
+        clearTimeout(autoCaptureTimer);
+        autoCaptureTimer = null;
+    }
+    if (activeStream) {
+        activeStream.getTracks().forEach(function(track) {
+            track.stop();
+        });
+        activeStream = null;
+    }
+    var video = document.getElementById('faceCameraVideo');
+    if (video) {
+        video.srcObject = null;
+    }
+}
+
+function captureAndVerifyFace() {
+    if (faceVerificationInProgress) return;
+    if (autoCaptureTimer) {
+        clearTimeout(autoCaptureTimer);
+        autoCaptureTimer = null;
+    }
+
+    var video = document.getElementById('faceCameraVideo');
+    if (!video || !activeStream || video.readyState < 2) {
+        setCameraStatus('Waiting for camera feed...', 'pulsing');
+        return;
+    }
+
+    faceVerificationInProgress = true;
+    var captureBtn = document.getElementById('btnCaptureFace');
+    if (captureBtn) {
+        captureBtn.disabled = true;
+        captureBtn.innerHTML = '<span class="spin me-1"></span> Analyzing Face...';
+    }
+    setCameraStatus('Comparing with profile photo...', 'pulsing');
+
+    var canvas = document.getElementById('faceCaptureCanvas');
+    var vw = video.videoWidth || 320;
+    var vh = video.videoHeight || 320;
+    var size = Math.min(vw, vh, 480);
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    var sx = (vw - size) / 2;
+    var sy = (vh - size) / 2;
+    ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+
+    var liveFrameBase64 = canvas.toDataURL('image/jpeg', 0.88);
+
+    submitAttendance({
+        biometric_method: 'face',
+        live_frame: liveFrameBase64
+    });
+}
+
+function setCameraStatus(text, dotClass) {
+    var txtEl = document.getElementById('cameraStatusText');
+    if (txtEl) txtEl.textContent = text;
+    var dotEl = document.getElementById('cameraStatusDot');
+    if (dotEl) dotEl.className = 'status-dot ' + (dotClass || '');
+}
+
+function handleFaceError(msg, similarity) {
+    faceVerificationInProgress = false;
+    var oval = document.getElementById('faceOvalGuide');
+    if (oval) oval.className = 'face-oval-guide mismatch';
+
+    var simText = similarity ? ' (' + Math.round(similarity) + '% match)' : '';
+    setCameraStatus('Match failed' + simText, 'err');
+    showMsg('err', '<i class="bi bi-exclamation-triangle-fill me-1"></i> ' + msg);
+
+    var captureBtn = document.getElementById('btnCaptureFace');
+    if (captureBtn) {
+        captureBtn.disabled = false;
+        captureBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Retry Face Verification';
+    }
+
+    var retryBtn = document.getElementById('btnRetryFace');
+    if (retryBtn) retryBtn.style.display = 'block';
+
+    if (HAS_FINGERPRINT) {
+        var fpBtn = document.getElementById('retryFpBtn');
+        if (fpBtn) {
+            fpBtn.innerHTML = '<i class="bi bi-fingerprint"></i> Switch to Fingerprint';
+            fpBtn.onclick = function() { switchMethod('fingerprint'); };
+            fpBtn.style.display = 'flex';
+        }
+    }
+}
+
+window.addEventListener('beforeunload', function() {
+    stopCamera();
+});
+
 function doFingerprint() {
+    stopCamera();
+    var scanArea = document.getElementById('faceScanArea');
+    if (scanArea) scanArea.style.display = 'none';
+    var pHeader = document.getElementById('profileMatchHeader');
+    if (pHeader) pHeader.style.display = 'none';
+
+    document.getElementById('vIcon').style.display = 'flex';
+    document.getElementById('vTitle').style.display = 'block';
+    document.getElementById('vSub').style.display = 'block';
+
     // Prevent multiple simultaneous fingerprint attempts
     if (fingerprintInProgress) {
         console.log('Fingerprint verification already in progress');

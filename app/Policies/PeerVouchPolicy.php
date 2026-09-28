@@ -24,7 +24,7 @@ class PeerVouchPolicy
         $presence = Attendance::where('session_id', $session->id)
             ->where('user_id', $host->id)
             ->whereIn('status', ['Present', 'Late'])
-            ->whereIn('method', ['qr', 'webauthn'])
+            ->whereIn('method', ['qr', 'webauthn', 'qr_face'])
             ->where('monitoring_status', 'active')
             ->where('last_location_check_at', '>=', now()->subSeconds(config('peer_snap.presence_fresh_seconds')))
             ->where('last_location_check_at', '<=', now())

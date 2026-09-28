@@ -67,6 +67,15 @@ class ProfilePhotoController extends Controller
             $user->profile_image = $storedPath;
             $user->save();
 
+            // Clear and pre-warm biometric face descriptor cache for reliable live matching
+            try {
+                $bioService = app(\App\Services\BiometricService::class);
+                $bioService->clearProfilePhotoCache($user);
+                $bioService->getOrCreateProfilePhotoDescriptor($user);
+            } catch (\Throwable $e) {
+                Log::warning('Biometric profile photo descriptor pre-warming skipped: ' . $e->getMessage());
+            }
+
             // Safe debug log without sensitive information
             Log::info('Profile photo updated', [
                 'user_id' => $user->id,
@@ -120,6 +129,7 @@ class ProfilePhotoController extends Controller
                 if (!str_starts_with($user->profile_image, 'http')) {
                     Storage::disk('public')->delete($user->profile_image);
                 }
+                app(\App\Services\BiometricService::class)->clearProfilePhotoCache($user);
                 $user->profile_image = null;
                 $user->save();
 

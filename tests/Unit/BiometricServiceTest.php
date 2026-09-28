@@ -391,4 +391,130 @@ class BiometricServiceTest extends TestCase
         $this->assertTrue($res64_24['match']);
         $this->assertGreaterThanOrEqual(95.0, $res64_24['similarity']);
     }
+
+    public function test_extract_descriptor_from_image_generates_valid_v2_descriptor(): void
+    {
+        // Create a 200x200 dummy test image with simple facial patterns
+        $img = imagecreatetruecolor(200, 200);
+        $skin = imagecolorallocate($img, 220, 180, 150);
+        imagefilledrectangle($img, 0, 0, 200, 200, $skin);
+
+        // Eyes
+        $eyeColor = imagecolorallocate($img, 40, 30, 20);
+        imagefilledellipse($img, 70, 70, 20, 12, $eyeColor);
+        imagefilledellipse($img, 130, 70, 20, 12, $eyeColor);
+
+        // Nose
+        $noseColor = imagecolorallocate($img, 180, 130, 100);
+        imagefilledrectangle($img, 95, 85, 105, 115, $noseColor);
+
+        // Mouth
+        $mouthColor = imagecolorallocate($img, 160, 50, 50);
+        imagefilledrectangle($img, 80, 135, 120, 145, $mouthColor);
+
+        ob_start();
+        imagejpeg($img);
+        $jpegData = ob_get_clean();
+        imagedestroy($img);
+
+        $descriptor = $this->service->extractDescriptorFromImage($jpegData);
+
+        $this->assertNotNull($descriptor);
+        $this->assertStringStartsWith('face_desc_', $descriptor);
+        $this->assertStringContainsString('_v2_', $descriptor);
+
+        $parsed = $this->service->parseDescriptor($descriptor);
+        $this->assertNotNull($parsed);
+        $this->assertNotNull($parsed['vector']);
+        $this->assertCount(64, $parsed['vector']);
+    }
+
+    public function test_compare_live_face_with_profile_photo_matches_consistently(): void
+    {
+        $user = User::factory()->create();
+
+        // Generate profile photo
+        $img = imagecreatetruecolor(180, 180);
+        $bg = imagecolorallocate($img, 210, 175, 140);
+        imagefilledrectangle($img, 0, 0, 180, 180, $bg);
+        $dark = imagecolorallocate($img, 30, 20, 15);
+        imagefilledellipse($img, 60, 60, 16, 10, $dark);
+        imagefilledellipse($img, 120, 60, 16, 10, $dark);
+        imagefilledrectangle($img, 85, 80, 95, 105, $dark);
+        imagefilledrectangle($img, 70, 125, 110, 135, $dark);
+
+        ob_start();
+        imagejpeg($img);
+        $profileJpeg = ob_get_clean();
+        imagedestroy($img);
+
+        // Save to public storage disk
+        \Illuminate\Support\Facades\Storage::disk('public')->put('profile_images/test_student.jpg', $profileJpeg);
+        $user->profile_image = 'profile_images/test_student.jpg';
+        $user->save();
+
+        // Extract descriptor for candidate from similar image (simulating live camera frame of same student)
+        $liveDescriptor = $this->service->extractDescriptorFromImage($profileJpeg);
+        $this->assertNotNull($liveDescriptor);
+
+        $result = $this->service->compareLiveFaceWithProfilePhoto($user, $liveDescriptor);
+
+        $this->assertTrue($result['match']);
+        $this->assertGreaterThanOrEqual(95.0, $result['similarity']);
+        $this->assertEquals('profile_photo_quad_fusion', $result['method']);
+    }
+
+    public function test_compare_live_face_with_profile_photo_rejects_different_face(): void
+    {
+        $user = User::factory()->create();
+
+        // Profile photo 1: Student A
+        $imgA = imagecreatetruecolor(180, 180);
+        $bgA = imagecolorallocate($imgA, 240, 210, 190);
+        imagefilledrectangle($imgA, 0, 0, 180, 180, $bgA);
+        $darkA = imagecolorallocate($imgA, 20, 20, 20);
+        imagefilledellipse($imgA, 55, 60, 25, 15, $darkA);
+        imagefilledellipse($imgA, 125, 60, 25, 15, $darkA);
+        ob_start();
+        imagejpeg($imgA);
+        $photoA = ob_get_clean();
+        imagedestroy($imgA);
+
+        \Illuminate\Support\Facades\Storage::disk('public')->put('profile_images/student_a.jpg', $photoA);
+        $user->profile_image = 'profile_images/student_a.jpg';
+        $user->save();
+
+        // Live camera: Student B (different skin tone, structure, facial dimensions)
+        $imgB = imagecreatetruecolor(180, 180);
+        $bgB = imagecolorallocate($imgB, 80, 60, 45);
+        imagefilledrectangle($imgB, 0, 0, 180, 180, $bgB);
+        $darkB = imagecolorallocate($imgB, 250, 250, 250);
+        imagefilledellipse($imgB, 75, 80, 10, 6, $darkB);
+        imagefilledellipse($imgB, 105, 80, 10, 6, $darkB);
+        imagefilledrectangle($imgB, 70, 140, 110, 150, $darkB);
+        ob_start();
+        imagejpeg($imgB);
+        $photoB = ob_get_clean();
+        imagedestroy($imgB);
+
+        $liveDescriptorB = $this->service->extractDescriptorFromImage($photoB);
+        $this->assertNotNull($liveDescriptorB);
+
+        $result = $this->service->compareLiveFaceWithProfilePhoto($user, $liveDescriptorB, null, 75.0);
+
+        $this->assertFalse($result['match']);
+        $this->assertSame('BIOMETRIC_MISMATCH', $result['code']);
+    }
+
+    public function test_compare_live_face_with_no_profile_photo_returns_graceful_error(): void
+    {
+        $user = User::factory()->create(['profile_image' => null]);
+
+        $candDesc = $this->service->assembleDescriptor(90, array_fill(0, 64, 0.5), ['eyeL' => 120, 'eyeR' => 120, 'nose' => 135, 'mouth' => 110]);
+        $result = $this->service->compareLiveFaceWithProfilePhoto($user, $candDesc);
+
+        $this->assertFalse($result['match']);
+        $this->assertSame('NO_PROFILE_PHOTO', $result['code']);
+    }
 }
+

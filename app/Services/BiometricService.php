@@ -2,9 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\User;
 use App\Models\WebauthnCredential;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class BiometricService
 {
@@ -84,17 +88,17 @@ class BiometricService
 
             // High harmony reward vs impostor penalty:
             // If textures, Canberra metric, or landmarks indicate an impostor, apply dissonance damping
-            if ($chiScore < 65.0 || $canberraScore < 65.0 || $landmarkScore < 60.0) {
+            if ($chiScore < 72.0 || $canberraScore < 75.0 || $landmarkScore < 65.0) {
                 $dissonance = min($chiScore, $canberraScore, $landmarkScore) / 100.0;
                 $effectiveScore = round(min($scorePercent, $compositeScore) * $dissonance, 2);
-            } elseif ($chiScore >= 68.0 && $canberraScore >= 68.0 && $landmarkScore >= 65.0) {
+            } elseif ($chiScore >= 82.0 && $canberraScore >= 80.0 && $landmarkScore >= 75.0) {
                 $effectiveScore = max($scorePercent, $compositeScore);
             } else {
                 $effectiveScore = min($scorePercent, $compositeScore);
             }
 
             // High-security matching decision:
-            $isMatch = ($effectiveScore >= $threshold) && ($canberraScore >= 62.0) && ($chiScore >= 58.0);
+            $isMatch = ($effectiveScore >= $threshold) && ($canberraScore >= 75.0) && ($chiScore >= 68.0);
 
             return [
                 'match' => $isMatch,
@@ -547,4 +551,540 @@ class BiometricService
             $vectorPayload
         );
     }
+
+    /**
+     * Extract a 64-dimensional invariant face descriptor from a binary image string, base64 data URI, or file path.
+     */
+    public function extractDescriptorFromImage(string $imageContentOrPath): ?string
+    {
+        if (!extension_loaded('gd') || !function_exists('imagecreatefromstring')) {
+            Log::warning('GD extension is required for server-side face descriptor extraction.');
+            return null;
+        }
+
+        $data = null;
+        if (str_starts_with($imageContentOrPath, 'data:image/') && str_contains($imageContentOrPath, ';base64,')) {
+            $parts = explode(';base64,', $imageContentOrPath);
+            $data = base64_decode($parts[1] ?? '', true);
+        } elseif (preg_match('/^[A-Za-z0-9+\/=\-_]{100,}$/', trim($imageContentOrPath))) {
+            $data = base64_decode(strtr(trim($imageContentOrPath), '-_', '+/'), true);
+        } elseif (file_exists($imageContentOrPath) && is_file($imageContentOrPath)) {
+            $data = @file_get_contents($imageContentOrPath);
+        } else {
+            $data = $imageContentOrPath;
+        }
+
+        if (empty($data) || strlen($data) < 16) {
+            return null;
+        }
+
+        $srcImg = @imagecreatefromstring($data);
+        if (!$srcImg) {
+            return null;
+        }
+
+        $srcW = imagesx($srcImg);
+        $srcH = imagesy($srcImg);
+        if ($srcW < 24 || $srcH < 24) {
+            imagedestroy($srcImg);
+            return null;
+        }
+
+        // Center-crop to square 160x160 aligned frame to prevent distortion
+        $minDim = min($srcW, $srcH);
+        $srcX = (int) max(0, ($srcW - $minDim) / 2);
+        $srcY = (int) max(0, ($srcH - $minDim) / 2);
+
+        $targetW = 160;
+        $targetH = 160;
+        $destImg = imagecreatetruecolor($targetW, $targetH);
+        imagecopyresampled($destImg, $srcImg, 0, 0, $srcX, $srcY, $targetW, $targetH, $minDim, $minDim);
+        imagedestroy($srcImg);
+
+        // Compute 160x160 luma grid and global contrast metrics
+        $luma = [];
+        $totalLuma = 0.0;
+        $minLuma = 255.0;
+        $maxLuma = 0.0;
+        $totalEdgeEnergy = 0.0;
+        $edgeSamples = 0;
+
+        for ($y = 0; $y < $targetH; $y++) {
+            $luma[$y] = [];
+            for ($x = 0; $x < $targetW; $x++) {
+                $rgb = imagecolorat($destImg, $x, $y);
+                $r = ($rgb >> 16) & 0xFF;
+                $g = ($rgb >> 8) & 0xFF;
+                $b = $rgb & 0xFF;
+                $lum = 0.299 * $r + 0.587 * $g + 0.114 * $b;
+                $luma[$y][$x] = $lum;
+                $totalLuma += $lum;
+                if ($lum < $minLuma) $minLuma = $lum;
+                if ($lum > $maxLuma) $maxLuma = $lum;
+            }
+        }
+        imagedestroy($destImg);
+
+        $contrast = $maxLuma - $minLuma;
+
+        // Sample edge gradients in central facial zone
+        for ($y = 24; $y <= 134; $y += 2) {
+            for ($x = 24; $x <= 134; $x += 2) {
+                $lum = $luma[$y][$x];
+                $rightLuma = $luma[$y][$x + 2];
+                $downLuma = $luma[$y + 2][$x];
+                $totalEdgeEnergy += abs($lum - $rightLuma) + abs($lum - $downLuma);
+                $edgeSamples++;
+            }
+        }
+        $avgEdgeGradient = $edgeSamples > 0 ? ($totalEdgeEnergy / $edgeSamples) : 1.0;
+
+        $getNormLuma = function (int $x, int $y) use (&$luma, $targetW, $targetH): float {
+            $cx = max(0, min($targetW - 1, $x));
+            $cy = max(0, min($targetH - 1, $y));
+            return $luma[$cy][$cx];
+        };
+
+        $sampleRegion = function (int $x1, int $x2, int $y1, int $y2) use ($getNormLuma): float {
+            $sum = 0.0;
+            $count = 0;
+            for ($y = $y1; $y <= $y2; $y += 2) {
+                for ($x = $x1; $x <= $x2; $x += 2) {
+                    $sum += $getNormLuma($x, $y);
+                    $count++;
+                }
+            }
+            return $count > 0 ? ($sum / $count) : 100.0;
+        };
+
+        // Dynamically detect facial feature centroids (dark regions for eyes, nose, mouth)
+        $findCentroid = function (int $x1, int $x2, int $y1, int $y2) use (&$luma): array {
+            $minVal = 255.0;
+            for ($y = $y1; $y <= $y2; $y++) {
+                for ($x = $x1; $x <= $x2; $x++) {
+                    if ($luma[$y][$x] < $minVal) {
+                        $minVal = $luma[$y][$x];
+                    }
+                }
+            }
+            $thresh = $minVal + 30.0;
+            $sumX = 0.0;
+            $sumY = 0.0;
+            $count = 0.0;
+            for ($y = $y1; $y <= $y2; $y++) {
+                for ($x = $x1; $x <= $x2; $x++) {
+                    if ($luma[$y][$x] <= $thresh) {
+                        $w = ($thresh - $luma[$y][$x] + 1.0);
+                        $sumX += $x * $w;
+                        $sumY += $y * $w;
+                        $count += $w;
+                    }
+                }
+            }
+            return $count > 0.0 ? [$sumX / $count, $sumY / $count] : [($x1 + $x2) / 2.0, ($y1 + $y2) / 2.0];
+        };
+
+        $leftEye = $findCentroid(20, 75, 35, 90);
+        $rightEye = $findCentroid(85, 140, 35, 90);
+        $nose = $findCentroid(55, 105, 65, 120);
+        $mouth = $findCentroid(40, 120, 100, 155);
+
+        $eyeSpan = abs($rightEye[0] - $leftEye[0]);
+        $midEyeY = ($leftEye[1] + $rightEye[1]) / 2.0;
+        $eyeToNose = abs($nose[1] - $midEyeY);
+        $noseToMouth = abs($mouth[1] - $nose[1]);
+        $faceVertSpan = abs($mouth[1] - $midEyeY);
+
+        $avgLeftEye = $sampleRegion((int) max(0, $leftEye[0] - 12), (int) min($targetW - 1, $leftEye[0] + 12), (int) max(0, $leftEye[1] - 10), (int) min($targetH - 1, $leftEye[1] + 10));
+        $avgRightEye = $sampleRegion((int) max(0, $rightEye[0] - 12), (int) min($targetW - 1, $rightEye[0] + 12), (int) max(0, $rightEye[1] - 10), (int) min($targetH - 1, $rightEye[1] + 10));
+        $avgNoseBridge = $sampleRegion((int) max(0, $nose[0] - 12), (int) min($targetW - 1, $nose[0] + 12), (int) max(0, $nose[1] - 12), (int) min($targetH - 1, $nose[1] + 12));
+        $avgMouth = $sampleRegion((int) max(0, $mouth[0] - 20), (int) min($targetW - 1, $mouth[0] + 20), (int) max(0, $mouth[1] - 10), (int) min($targetH - 1, $mouth[1] + 10));
+        $avgLeftCheek = $sampleRegion(25, 50, 75, 110);
+        $avgRightCheek = $sampleRegion(110, 135, 75, 110);
+        $avgCheek = ($avgLeftCheek + $avgRightCheek) / 2.0;
+        $faceAvgLuma = $sampleRegion(24, 136, 24, 136);
+
+        // 1. 8 Primary Scale & Illumination Invariant Landmark Ratios
+        $eyeSpanRatio = $eyeSpan / 160.0;
+        $eyeToNoseRatio = $eyeToNose / 160.0;
+        $noseToMouthRatio = $noseToMouth / 160.0;
+        $leftEyeContrast = min(2.0, $avgLeftEye / max(1.0, $avgCheek));
+        $rightEyeContrast = min(2.0, $avgRightEye / max(1.0, $avgCheek));
+        $nasalProminence = min(2.0, $avgNoseBridge / max(1.0, ($avgLeftEye + $avgRightEye) / 2.0));
+        $mouthCavityContrast = min(2.0, $avgMouth / max(1.0, $avgCheek));
+        $normAspect = $eyeSpan / max(1.0, $faceVertSpan);
+
+        $primaryLandmarkRatios = [
+            round($eyeSpanRatio, 3),
+            round($eyeToNoseRatio, 3),
+            round($noseToMouthRatio, 3),
+            round($leftEyeContrast, 3),
+            round($rightEyeContrast, 3),
+            round($nasalProminence, 3),
+            round($mouthCavityContrast, 3),
+            round($normAspect, 3),
+        ];
+
+        // 2. 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid)
+        $gradientEnergies = [];
+        $subGridSize = 4;
+        $faceX = 20; $faceY = 20;
+        $faceW = 120; $faceH = 120;
+        $subCellW = $faceW / $subGridSize;
+        $subCellH = $faceH / $subGridSize;
+        $totalGradEnergy = 0.0;
+
+        for ($gy = 0; $gy < $subGridSize; $gy++) {
+            for ($gx = 0; $gx < $subGridSize; $gx++) {
+                $zoneGradSum = 0.0;
+                $zoneSamples = 0;
+                $startX = (int) floor($faceX + $gx * $subCellW);
+                $startY = (int) floor($faceY + $gy * $subCellH);
+
+                for ($sy = 2; $sy < $subCellH - 2; $sy += 2) {
+                    for ($sx = 2; $sx < $subCellW - 2; $sx += 2) {
+                        $cx = $startX + $sx;
+                        $cy = $startY + $sy;
+                        $dx = $getNormLuma($cx + 1, $cy) - $getNormLuma($cx - 1, $cy);
+                        $dy = $getNormLuma($cx, $cy + 1) - $getNormLuma($cx, $cy - 1);
+                        $zoneGradSum += sqrt($dx * $dx + $dy * $dy);
+                        $zoneSamples++;
+                    }
+                }
+
+                $zoneAvg = $zoneSamples > 0 ? ($zoneGradSum / $zoneSamples) : 0.0;
+                $gradientEnergies[] = $zoneAvg;
+                $totalGradEnergy += $zoneAvg * $zoneAvg;
+            }
+        }
+
+        $gradL2Norm = sqrt(max(1e-6, $totalGradEnergy));
+        $normalizedGrads = array_map(fn ($val) => round($val / $gradL2Norm, 3), $gradientEnergies);
+
+        // 3. 8 Enhanced Structural & Symmetry Quotients
+        $eyeSymmetryDiff = abs($avgLeftEye - $avgRightEye) / max(1.0, ($avgLeftEye + $avgRightEye) / 2.0);
+        $eyeSymmetryRatio = round(1.0 - min(1.0, $eyeSymmetryDiff), 3);
+        $nasalSlopeRatio = round(min(2.0, $avgNoseBridge / max(1.0, $avgMouth)), 3);
+        $midfaceToJawRatio = round(min(2.0, $avgCheek / max(1.0, $avgMouth)), 3);
+        $browToEyeRatio = round(min(2.0, ($avgNoseBridge + $avgCheek) / max(1.0, $avgLeftEye + $avgRightEye)), 3);
+        $leftCheekRatio = round(min(2.0, $avgLeftCheek / max(1.0, $faceAvgLuma)), 3);
+        $rightCheekRatio = round(min(2.0, $avgRightCheek / max(1.0, $avgRightEye)), 3);
+        $foreheadToNoseRatio = round(min(2.0, $faceAvgLuma / max(1.0, $avgNoseBridge)), 3);
+        $lowerFacialProportion = round(min(2.0, ($avgMouth + $avgCheek) / max(1.0, 2 * $faceAvgLuma)), 3);
+
+        $enhancedRatios = [
+            $eyeSymmetryRatio,
+            $nasalSlopeRatio,
+            $midfaceToJawRatio,
+            $browToEyeRatio,
+            $leftCheekRatio,
+            $rightCheekRatio,
+            $foreheadToNoseRatio,
+            $lowerFacialProportion,
+        ];
+
+        // 4. 16 Uniform Local Binary Patterns (ULBP 4x4 sub-grid)
+        $lbpEnergies = [];
+        $totalLbpEnergy = 0.0;
+
+        for ($gy = 0; $gy < $subGridSize; $gy++) {
+            for ($gx = 0; $gx < $subGridSize; $gx++) {
+                $zoneLbpSum = 0.0;
+                $zoneLbpSamples = 0;
+                $startX = (int) floor($faceX + $gx * $subCellW);
+                $startY = (int) floor($faceY + $gy * $subCellH);
+
+                for ($sy = 2; $sy < $subCellH - 2; $sy += 2) {
+                    for ($sx = 2; $sx < $subCellW - 2; $sx += 2) {
+                        $cx = $startX + $sx;
+                        $cy = $startY + $sy;
+                        $centerVal = $getNormLuma($cx, $cy);
+
+                        $b0 = $getNormLuma($cx - 1, $cy - 1) >= $centerVal ? 1 : 0;
+                        $b1 = $getNormLuma($cx, $cy - 1)     >= $centerVal ? 1 : 0;
+                        $b2 = $getNormLuma($cx + 1, $cy - 1) >= $centerVal ? 1 : 0;
+                        $b3 = $getNormLuma($cx + 1, $cy)     >= $centerVal ? 1 : 0;
+                        $b4 = $getNormLuma($cx + 1, $cy + 1) >= $centerVal ? 1 : 0;
+                        $b5 = $getNormLuma($cx, $cy + 1)     >= $centerVal ? 1 : 0;
+                        $b6 = $getNormLuma($cx - 1, $cy + 1) >= $centerVal ? 1 : 0;
+                        $b7 = $getNormLuma($cx - 1, $cy)     >= $centerVal ? 1 : 0;
+
+                        $transitions = ($b0 !== $b1 ? 1 : 0) + ($b1 !== $b2 ? 1 : 0) + ($b2 !== $b3 ? 1 : 0) +
+                                       ($b3 !== $b4 ? 1 : 0) + ($b4 !== $b5 ? 1 : 0) + ($b5 !== $b6 ? 1 : 0) +
+                                       ($b6 !== $b7 ? 1 : 0) + ($b7 !== $b0 ? 1 : 0);
+
+                        $isUniform = $transitions <= 2 ? 1 : 0;
+                        $bitSum = $b0 + $b1 + $b2 + $b3 + $b4 + $b5 + $b6 + $b7;
+                        $zoneLbpSum += $isUniform * ($bitSum / 8.0);
+                        $zoneLbpSamples++;
+                    }
+                }
+
+                $zoneLbpAvg = $zoneLbpSamples > 0 ? ($zoneLbpSum / $zoneLbpSamples) : 0.5;
+                $lbpEnergies[] = $zoneLbpAvg;
+                $totalLbpEnergy += $zoneLbpAvg * $zoneLbpAvg;
+            }
+        }
+
+        $lbpL2Norm = sqrt(max(1e-6, $totalLbpEnergy));
+        $normalizedLbp = array_map(fn ($val) => round($val / $lbpL2Norm, 3), $lbpEnergies);
+
+        // 5. 8 Multi-Scale Triangular & Invariant Quotients
+        $interOcularMouthRatio = round(min(2.0, ($avgLeftEye + $avgRightEye) / max(1.0, 2 * $avgMouth)), 3);
+        $bilateralNoseDepthRatio = round(min(2.0, abs($avgNoseBridge - $avgLeftEye) / max(1.0, abs($avgNoseBridge - $avgRightEye) + 1.0)), 3);
+        $verticalContourSymmetry = round(min(2.0, ($avgLeftEye + $avgRightEye + $avgNoseBridge) / max(1.0, $avgCheek + 2 * $avgMouth)), 3);
+        $cheekJawContourGrad = round(min(2.0, $avgCheek / max(1.0, ($avgCheek + $avgMouth) / 2.0)), 3);
+        $philtrumVerticalGrad = round(min(2.0, abs($avgNoseBridge - $avgMouth) / max(1.0, $avgCheek)), 3);
+        $foreheadSpecularDamping = round(min(2.0, $faceAvgLuma / max(1.0, ($avgLeftEye + $avgRightEye) / 2.0)), 3);
+        $skinPoreMicroEnergy = round(min(2.0, $avgEdgeGradient / max(0.2, ($avgLeftEye + $avgRightEye) / 100.0)), 3);
+        $facialPerimeterCurvature = round(min(2.0, ($avgLeftEye + $avgRightEye + $avgMouth) / max(1.0, 3 * $faceAvgLuma)), 3);
+
+        $triangularContourRatios = [
+            $interOcularMouthRatio,
+            $bilateralNoseDepthRatio,
+            $verticalContourSymmetry,
+            $cheekJawContourGrad,
+            $philtrumVerticalGrad,
+            $foreheadSpecularDamping,
+            $skinPoreMicroEnergy,
+            $facialPerimeterCurvature,
+        ];
+
+        // 6. 8 Multi-Radius Texture Contrast Energy Zones (2x4 upper/lower facial zones)
+        $multiRadiusEnergies = [];
+        $mrTotalEnergy = 0.0;
+        $mrRows = 2; $mrCols = 4;
+        $mrCellW = $faceW / $mrCols;
+        $mrCellH = $faceH / $mrRows;
+
+        for ($mry = 0; $mry < $mrRows; $mry++) {
+            for ($mrx = 0; $mrx < $mrCols; $mrx++) {
+                $zoneMrSum = 0.0;
+                $zoneMrSamples = 0;
+                $mrStartX = (int) floor($faceX + $mrx * $mrCellW);
+                $mrStartY = (int) floor($faceY + $mry * $mrCellH);
+
+                for ($my = 3; $my < $mrCellH - 3; $my += 3) {
+                    for ($mx = 3; $mx < $mrCellW - 3; $mx += 3) {
+                        $pxX = $mrStartX + $mx;
+                        $pxY = $mrStartY + $my;
+                        $cVal = $getNormLuma($pxX, $pxY);
+                        $surroundVal = ($getNormLuma($pxX - 2, $pxY) + $getNormLuma($pxX + 2, $pxY) +
+                                        $getNormLuma($pxX, $pxY - 2) + $getNormLuma($pxX, $pxY + 2)) / 4.0;
+                        $zoneMrSum += abs($cVal - $surroundVal);
+                        $zoneMrSamples++;
+                    }
+                }
+
+                $zoneMrAvg = $zoneMrSamples > 0 ? ($zoneMrSum / $zoneMrSamples) : 0.4;
+                $multiRadiusEnergies[] = $zoneMrAvg;
+                $mrTotalEnergy += $zoneMrAvg * $zoneMrAvg;
+            }
+        }
+
+        $mrL2Norm = sqrt(max(1e-6, $mrTotalEnergy));
+        $normalizedMultiRadiusTexture = array_map(fn ($val) => round($val / $mrL2Norm, 3), $multiRadiusEnergies);
+
+        // Assemble 64-dimensional combined vector
+        $featureVector = array_merge(
+            $primaryLandmarkRatios,
+            $normalizedGrads,
+            $enhancedRatios,
+            $normalizedLbp,
+            $triangularContourRatios,
+            $normalizedMultiRadiusTexture
+        );
+
+        $confidence = min(98, max(75, (int) round(72 + ($contrast / 255.0) * 14 + min(12.0, $avgEdgeGradient * 4))));
+        $landmarks = [
+            'eyeL' => (int) round($avgLeftEye),
+            'eyeR' => (int) round($avgRightEye),
+            'nose' => (int) round($avgNoseBridge),
+            'mouth' => (int) round($avgMouth),
+        ];
+
+        return $this->assembleDescriptor($confidence, $featureVector, $landmarks);
+    }
+
+    /**
+     * Retrieve or dynamically compute the reference face descriptor for a student's registered profile photo.
+     */
+    public function getOrCreateProfilePhotoDescriptor(User $user): ?string
+    {
+        $cacheKey = "user_face_profile_desc_{$user->id}_" . md5((string) $user->profile_image);
+
+        return Cache::remember($cacheKey, now()->addDays(30), function () use ($user) {
+            // 1. Check user profile_image path
+            if (!empty($user->profile_image)) {
+                $imageData = null;
+
+                if (str_starts_with($user->profile_image, 'http://') || str_starts_with($user->profile_image, 'https://')) {
+                    try {
+                        $response = Http::timeout(5)->get($user->profile_image);
+                        if ($response->successful()) {
+                            $imageData = $response->body();
+                        }
+                    } catch (\Throwable $e) {
+                        Log::warning("Could not fetch remote profile image for user {$user->id}: " . $e->getMessage());
+                    }
+                } elseif (Storage::disk('public')->exists($user->profile_image)) {
+                    $imageData = Storage::disk('public')->get($user->profile_image);
+                } elseif (file_exists(storage_path('app/public/' . $user->profile_image))) {
+                    $imageData = @file_get_contents(storage_path('app/public/' . $user->profile_image));
+                } elseif (file_exists(public_path('storage/' . $user->profile_image))) {
+                    $imageData = @file_get_contents(public_path('storage/' . $user->profile_image));
+                }
+
+                if ($imageData) {
+                    $descriptor = $this->extractDescriptorFromImage($imageData);
+                    if ($descriptor) {
+                        return $descriptor;
+                    }
+                }
+            }
+
+            // 2. Fallback to existing enrolled face credential if one exists
+            $faceCred = $user->webauthnCredentials()
+                ->where('biometric_type', 'face')
+                ->where('public_key', 'LIKE', 'face_desc_%')
+                ->latest()
+                ->first();
+
+            if ($faceCred && !empty($faceCred->public_key)) {
+                return (string) $faceCred->public_key;
+            }
+
+            return null;
+        });
+    }
+
+    /**
+     * Clear cached profile photo descriptor when photo changes.
+     */
+    public function clearProfilePhotoCache(User $user): void
+    {
+        Cache::forget("user_face_profile_desc_{$user->id}_" . md5((string) $user->profile_image));
+    }
+
+    /**
+     * Compare a live face captured from device camera against the student's registered profile photo stored in database.
+     *
+     * @return array{match: bool, similarity: float, confidence: int, method: string, message: string, code?: string, metrics?: array}
+     */
+    public function compareLiveFaceWithProfilePhoto(
+        User $user,
+        string $candidateFaceData,
+        ?string $liveImageBase64 = null,
+        float $threshold = 70.0
+    ): array {
+        $refDesc = $this->getOrCreateProfilePhotoDescriptor($user);
+
+        if (empty($refDesc)) {
+            return [
+                'match' => false,
+                'code' => 'NO_PROFILE_PHOTO',
+                'similarity' => 0.0,
+                'confidence' => 0,
+                'method' => 'profile_photo_quad_fusion',
+                'message' => 'No registered student profile photo found. Please upload a clear photo in Settings to use Live Face Verification.',
+            ];
+        }
+
+        // Verify candidate descriptor format, or extract server-side from live image frame
+        $candidateDesc = trim($candidateFaceData);
+        if ($candidateDesc === '' && !empty($liveImageBase64)) {
+            $extracted = $this->extractDescriptorFromImage($liveImageBase64);
+            if ($extracted) {
+                $candidateDesc = $extracted;
+            }
+        }
+
+        if ($candidateDesc === '' || strlen($candidateDesc) < 8) {
+            return [
+                'match' => false,
+                'code' => 'NO_FACE_DETECTED',
+                'similarity' => 0.0,
+                'confidence' => 0,
+                'method' => 'profile_photo_quad_fusion',
+                'message' => 'No live face detected. Please position your face in front of the camera in good lighting.',
+            ];
+        }
+
+        $invalidTokens = ['no_face', 'unusable', 'fallback', 'blurry', 'multiple_faces', 'too_far', 'too_close', 'off_center'];
+        foreach ($invalidTokens as $token) {
+            if (str_contains(strtolower($candidateDesc), $token)) {
+                return [
+                    'match' => false,
+                    'code' => 'QUALITY_FAILURE',
+                    'similarity' => 0.0,
+                    'confidence' => 0,
+                    'method' => 'profile_photo_quad_fusion',
+                    'message' => 'Camera frame quality is too low or face is not centered. Please hold steady in front of the camera.',
+                ];
+            }
+        }
+
+        // If client supplied both descriptor and live image frame, cross-validate server-side
+        if (!empty($liveImageBase64) && $candidateDesc !== '') {
+            $serverExtracted = $this->extractDescriptorFromImage($liveImageBase64);
+            if ($serverExtracted) {
+                $serverComp = $this->compareDescriptors($serverExtracted, $refDesc, $threshold);
+                if ($serverComp['match']) {
+                    return [
+                        'match' => true,
+                        'similarity' => $serverComp['similarity'],
+                        'confidence' => $serverComp['confidence'],
+                        'method' => 'server_live_frame_fusion',
+                        'message' => 'Live face matched with registered student profile photo ✓',
+                        'metrics' => $serverComp['metrics'] ?? null,
+                    ];
+                }
+            }
+        }
+
+        // Perform Quad-Metric Composite comparison between candidate face descriptor and profile photo descriptor
+        $comparison = $this->compareDescriptors($candidateDesc, $refDesc, $threshold);
+
+        if ($comparison['match']) {
+            return [
+                'match' => true,
+                'similarity' => $comparison['similarity'],
+                'confidence' => $comparison['confidence'],
+                'method' => 'profile_photo_quad_fusion',
+                'message' => 'Live face matched with registered student profile photo ✓',
+                'metrics' => $comparison['metrics'] ?? null,
+            ];
+        }
+
+        // If primary profile photo match is borderline, also cross-check against enrolled face templates
+        $enrolledFaceCreds = $user->webauthnCredentials()
+            ->where('biometric_type', 'face')
+            ->where('public_key', 'LIKE', 'face_desc_%')
+            ->get();
+
+        foreach ($enrolledFaceCreds as $fc) {
+            $altComp = $this->compareDescriptors($candidateDesc, (string) $fc->public_key, $threshold);
+            if ($altComp['match']) {
+                return [
+                    'match' => true,
+                    'similarity' => $altComp['similarity'],
+                    'confidence' => $altComp['confidence'],
+                    'method' => 'enrolled_face_template_fusion',
+                    'message' => 'Live face matched with enrolled student face template ✓',
+                    'metrics' => $altComp['metrics'] ?? null,
+                ];
+            }
+        }
+
+        return [
+            'match' => false,
+            'code' => 'BIOMETRIC_MISMATCH',
+            'similarity' => $comparison['similarity'],
+            'confidence' => $comparison['confidence'],
+            'method' => 'profile_photo_quad_fusion',
+            'message' => 'Face verification failed: Live face does not match the student\'s registered profile photo. Please face the camera clearly in good lighting and try again.',
+            'metrics' => $comparison['metrics'] ?? null,
+        ];
+    }
 }
+
