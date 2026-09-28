@@ -35,6 +35,7 @@ class StudentDeviceBindingTest extends TestCase
         $binding = DeviceBinding::where('user_id', $student->id)->first();
         $this->assertNotNull($binding);
         $this->assertNotEmpty($binding->device_hash);
+        $this->assertNull($binding->device_uuid);
 
         // Verification via matching header
         $checkRequest = Request::create('/qr/scan-process', 'POST');
@@ -130,7 +131,7 @@ class StudentDeviceBindingTest extends TestCase
         $this->assertSame($originalHash, $student->deviceBinding->fresh()->device_hash);
     }
 
-    public function test_hardware_fingerprint_verification(): void
+    public function test_hardware_fingerprint_alone_does_not_verify_a_device(): void
     {
         $student = User::factory()->create([
             'role' => 'student',
@@ -149,11 +150,63 @@ class StudentDeviceBindingTest extends TestCase
         $binding = DeviceBinding::where('user_id', $student->id)->first();
         $this->assertNotNull($binding->hardware_fingerprint);
 
-        // Even if cookie is absent, presenting the matching hardware fingerprint verifies
+        // Browser fingerprints are reproducible telemetry, not bearer keys.
         $fpReq = Request::create('/qr/scan-process', 'POST', [
             'device_fingerprint' => $hwFp,
         ]);
-        $this->assertTrue($service->isCurrentDevice($student, $fpReq));
+        $this->assertFalse($service->isCurrentDevice($student, $fpReq));
+    }
+
+    public function test_explicit_wrong_key_cannot_use_matching_cookie_session_or_fingerprint(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $service = app(DeviceBindingService::class);
+        $bound = Request::create('/login', 'POST', [
+            'device_key' => 'bound-device',
+            'device_fingerprint' => 'same-browser-fingerprint',
+        ]);
+        $binding = $service->bind($student, $bound);
+
+        $request = Request::create('/qr/scan-process', 'POST', [
+            'device_key' => 'other-device',
+            'device_fingerprint' => 'same-browser-fingerprint',
+        ]);
+        $request->cookies->set(DeviceBindingService::COOKIE_NAME, 'bound-device');
+        $session = $this->app['session.store'];
+        $session->start();
+        $session->put('bound_device_hash', $binding->device_hash);
+        $request->setLaravelSession($session);
+
+        $this->assertFalse($service->isCurrentDevice($student, $request));
+        $this->assertSame($binding->device_hash, $student->deviceBinding->fresh()->device_hash);
+    }
+
+    public function test_password_authorized_rebind_prefers_new_key_over_stale_cookie(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $service = app(DeviceBindingService::class);
+        $service->bind($student, Request::create('/login', 'POST', ['device_key' => 'old-device']));
+
+        $request = Request::create('/device/bind', 'POST', ['device_key' => 'new-device']);
+        $request->cookies->set(DeviceBindingService::COOKIE_NAME, 'old-device');
+        $binding = $service->bind($student, $request, true);
+
+        $this->assertSame($service->hashDeviceKey('new-device'), $binding->device_hash);
+        $this->assertSame(1, $binding->change_count);
+        $this->assertNull($binding->device_uuid);
+        $this->assertTrue($service->isCurrentDevice($student, $request));
+    }
+
+    public function test_conflicting_header_and_body_keys_are_rejected(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $service = app(DeviceBindingService::class);
+        $request = Request::create('/login', 'POST', ['device_key' => 'body-device']);
+        $request->headers->set('X-Device-Key', 'header-device');
+
+        $this->assertNull($service->bind($student, $request));
+        $this->assertFalse($service->isCurrentDevice($student, $request));
+        $this->assertDatabaseMissing('device_bindings', ['user_id' => $student->id]);
     }
 
     public function test_admin_can_reset_student_device_binding(): void

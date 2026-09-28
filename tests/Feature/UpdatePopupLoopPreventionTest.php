@@ -108,4 +108,30 @@ class UpdatePopupLoopPreventionTest extends TestCase
             strpos($content, 'const blocked = await updateBlockReason()')
         );
     }
+
+    public function test_render_git_commit_environment_variable_takes_precedence(): void
+    {
+        $versionService = app(VersionService::class);
+        $fullSha = '796cdb3815e985b463255ffcfecf1e29e0132338';
+        $shortSha = '796cdb3';
+
+        putenv("RENDER_GIT_COMMIT={$fullSha}");
+        $_ENV['RENDER_GIT_COMMIT'] = $fullSha;
+
+        try {
+            $this->assertSame($shortSha, $versionService->getCommit());
+            $metadata = $versionService->getFullMetadata();
+            $this->assertSame($shortSha, $metadata['commit']);
+        } finally {
+            putenv('RENDER_GIT_COMMIT');
+            unset($_ENV['RENDER_GIT_COMMIT']);
+        }
+    }
+
+    public function test_security_headers_emits_x_app_commit_header(): void
+    {
+        $response = $this->get('/login');
+        $response->assertOk();
+        $this->assertNotEmpty($response->headers->get('X-App-Commit'));
+    }
 }

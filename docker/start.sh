@@ -25,6 +25,14 @@ touch /var/www/html/version.json 2>/dev/null || true
 chown www-data:www-data /var/www/html/version.json /var/www/html/package.json /var/www/html/public/manifest.json /var/www/html/public/sw.js 2>/dev/null || true
 chmod 664 /var/www/html/version.json /var/www/html/package.json /var/www/html/public/manifest.json /var/www/html/public/sw.js 2>/dev/null || true
 
+# Synchronize live deployed git commit into version.json if provided by cloud environment
+DEPLOY_COMMIT="${RENDER_GIT_COMMIT:-${RAILWAY_GIT_COMMIT_SHA:-${VERCEL_GIT_COMMIT_SHA:-${GITHUB_SHA:-${APP_COMMIT:-}}}}}"
+if [ -n "$DEPLOY_COMMIT" ] && [ -f /var/www/html/version.json ]; then
+    SHORT_COMMIT=$(echo "$DEPLOY_COMMIT" | cut -c1-7)
+    echo "📌 Synchronizing deployed commit ($SHORT_COMMIT) into version.json..."
+    sed -i "s/\"commit\": *\"[^\"]*\"/\"commit\": \"${SHORT_COMMIT}\"/g" /var/www/html/version.json || true
+fi
+
 # A stable APP_KEY is required so sessions and encrypted data survive restarts.
 if [ -z "$APP_KEY" ]; then
     echo "APP_KEY must be configured in the deployment environment." >&2

@@ -103,7 +103,15 @@ class SecurityHeaders
             $response->headers->set('Strict-Transport-Security', 'max-age=0');
         }
 
-        // ── 5. Remove server-fingerprinting headers ───────────────────────────
+        // ── 5. Attach deployed git commit header for automated deployment verification ──
+        try {
+            $commit = app(\App\Services\VersionService::class)->getCommit();
+            if (!empty($commit) && $commit !== 'prod') {
+                $response->headers->set('X-App-Commit', $commit);
+            }
+        } catch (\Throwable $e) {}
+
+        // ── 6. Remove server-fingerprinting headers ───────────────────────────
         $response->headers->remove('X-Powered-By');
         $response->headers->remove('Server');
 

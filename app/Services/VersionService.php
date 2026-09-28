@@ -190,21 +190,31 @@ class VersionService
      */
     public function getCommit(): string
     {
+        // 1. Cloud deployment environment variables take highest priority because they reflect
+        // the exact git revision built and deployed by the host platform (Render, Railway, Vercel, etc.).
+        foreach (['RENDER_GIT_COMMIT', 'RAILWAY_GIT_COMMIT_SHA', 'VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'] as $variable) {
+            $revision = env($variable) ?: getenv($variable);
+            if (is_string($revision) && preg_match('/^[a-f0-9]{7,40}$/i', trim($revision))) {
+                return substr(trim($revision), 0, 7);
+            }
+        }
+
+        // 2. Explicit configuration override if set (e.g. APP_COMMIT)
+        $configCommit = config('version.commit');
+        if (!empty($configCommit) && $configCommit !== 'prod' && is_string($configCommit)) {
+            $candidate = trim($configCommit);
+            if (preg_match('/^[a-f0-9]{7,40}$/i', $candidate)) {
+                return substr($candidate, 0, 7);
+            }
+        }
+
+        // 3. Fallback to release manifest file (version.json)
         $file = $this->getFileData();
         if (!empty($file['commit'])) {
             return (string)$file['commit'];
         }
 
-        // Fallback for installations without a release manifest.
-        foreach (['RENDER_GIT_COMMIT', 'RAILWAY_GIT_COMMIT_SHA', 'VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'] as $variable) {
-            $revision = getenv($variable);
-            if (is_string($revision) && preg_match('/^[a-f0-9]{7,40}$/i', $revision)) {
-                return substr($revision, 0, 7);
-            }
-        }
-
-        $configCommit = config('version.commit');
-
+        // 4. Local git repository checkout if available
         try {
             $gitHead = base_path('.git/HEAD');
             if (File::exists($gitHead)) {

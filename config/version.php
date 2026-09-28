@@ -26,7 +26,11 @@ return [
     'version' => env('APP_VERSION', $versionData['version'] ?? '1.0.0'),
     'installed_version' => env('APP_INSTALLED_VERSION', $versionData['installed_version'] ?? ($versionData['version'] ?? '1.0.0')),
     'build' => env('APP_BUILD', $versionData['build'] ?? date('Ymd') . '.001'),
-    'commit' => env('APP_COMMIT', $versionData['commit'] ?? null),
+    'commit' => env('RENDER_GIT_COMMIT')
+        ? substr(env('RENDER_GIT_COMMIT'), 0, 7)
+        : (env('RAILWAY_GIT_COMMIT_SHA')
+            ? substr(env('RAILWAY_GIT_COMMIT_SHA'), 0, 7)
+            : env('APP_COMMIT', $versionData['commit'] ?? null)),
     'release_date' => env('APP_RELEASE_DATE', $versionData['release_date'] ?? date('Y-m-d')),
     'channel' => env('APP_CHANNEL', $versionData['channel'] ?? 'stable'),
     'name' => env('APP_DISPLAY_NAME', $versionData['name'] ?? 'Smart Classroom Attendance System'),

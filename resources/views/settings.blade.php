@@ -5028,12 +5028,16 @@ window.handleBindCurrentDevice = async function(stepUpPassword = null) {
     });
 
     try {
-        let devKey = localStorage.getItem('saas_device_key') || '';
+        let devKey = (typeof window.getOrCreateDeviceKey === 'function')
+            ? window.getOrCreateDeviceKey()
+            : (localStorage.getItem('student_device_key') || localStorage.getItem('attendance_device_uuid') || '');
         let devFp = localStorage.getItem('saas_device_fp') || '';
         let devModel = '';
         let devMeta = (typeof window.getDeviceTelemetry === 'function') ? window.getDeviceTelemetry() : {};
 
-        if (window.AndroidBridge && typeof window.AndroidBridge.getNativeDeviceId === 'function') {
+        if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.getNativeDeviceId === 'function') {
+            devKey = window.AndroidDeviceBridge.getNativeDeviceId();
+        } else if (window.AndroidBridge && typeof window.AndroidBridge.getNativeDeviceId === 'function') {
             devKey = window.AndroidBridge.getNativeDeviceId();
         }
         if (window.AndroidBridge && typeof window.AndroidBridge.getNativeDeviceModel === 'function') {

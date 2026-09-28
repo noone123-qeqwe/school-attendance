@@ -75,6 +75,13 @@ class DeviceBindingController extends Controller
 
         $binding = $service->bind($user, $request, true);
 
+        if (!$binding || !$service->isCurrentDevice($user, $request)) {
+            $message = 'The device key could not be verified. Refresh the page and try again.';
+            return $request->expectsJson() || $request->ajax()
+                ? response()->json(['success' => false, 'message' => $message], 422)
+                : back()->with('error', $message);
+        }
+
         if ($request->expectsJson() || $request->ajax()) {
             return response()->json([
                 'success'           => true,

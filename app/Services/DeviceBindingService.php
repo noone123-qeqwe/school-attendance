@@ -28,25 +28,15 @@ class DeviceBindingService
             return null;
         }
 
-        $cleanKey = function ($val): ?string {
-            if (!$val || !is_string($val)) return null;
-            $trimmed = trim($val);
-            if ($trimmed === '' || strtolower($trimmed) === 'undefined' || strtolower($trimmed) === 'null') {
-                return null;
-            }
-            return $trimmed;
-        };
-
         $oldBinding = $user->deviceBinding ?: DeviceBinding::where('user_id', $user->id)->first();
 
-        // Build a stable device key: prefer cookie (persists across browser updates),
-        // fall back to headers, request payload, or generate a new random key.
-        $cookieKey = $cleanKey($request->cookie(self::COOKIE_NAME));
-        $fpKey = $cleanKey($request->header('X-Device-Key'))
-            ?? $cleanKey($request->input('device_key'))
-            ?? $cleanKey($request->input('device_fingerprint'))
-            ?? $cleanKey($request->header('X-Device-Fingerprint'));
-        $deviceKey = $cookieKey ?: $fpKey ?: Str::random(64);
+        // An explicit key must take priority over a stale cookie during rebind.
+        // Reject conflicting header/body keys instead of choosing one silently.
+        $presented = $this->presentedDeviceKey($request);
+        if ($presented['conflict']) {
+            return null;
+        }
+        $deviceKey = $presented['key'] ?? Str::random(64);
         $deviceHash = $this->hashDeviceKey((string) $deviceKey);
 
         if ($oldBinding) {
@@ -60,16 +50,17 @@ class DeviceBindingService
         }
 
         // Hardware environment fingerprint
-        $rawHwFp = $cleanKey($request->header('X-Device-Fingerprint'))
-            ?? $cleanKey($request->input('device_fingerprint'));
-        $hwFpHash = $rawHwFp ? $this->hashDeviceKey((string) $rawHwFp) : null;
+        $rawHwFp = $this->cleanKey($request->header('X-Device-Fingerprint'))
+            ?? $this->cleanKey($request->input('device_fingerprint'));
+        $hwFpHash = $rawHwFp ? $this->hashDeviceKey((string) $rawHwFp) :
+            (($oldBinding && hash_equals($oldBinding->device_hash, $deviceHash)) ? $oldBinding->hardware_fingerprint : null);
 
         // Detect device model & friendly name
         $agent = new Agent();
         $agent->setUserAgent((string) $request->userAgent());
 
-        $clientModel = $cleanKey($request->header('X-Device-Model'))
-            ?? $cleanKey($request->input('device_model'));
+        $clientModel = $this->cleanKey($request->header('X-Device-Model'))
+            ?? $this->cleanKey($request->input('device_model'));
 
         if (!empty($clientModel)) {
             $browserStr = $agent->browser() ?: 'App';
@@ -116,7 +107,8 @@ class DeviceBindingService
             [
                 'device_hash'           => $deviceHash,
                 'hardware_fingerprint'  => $hwFpHash,
-                'device_uuid'           => substr((string) $deviceKey, 0, 64),
+                // The raw key is a bearer secret. Only its HMAC belongs in the DB.
+                'device_uuid'           => null,
                 'device_name'           => $friendlyDeviceName,
                 'session_id'            => $sessionId,
                 'user_agent'            => substr((string) $request->userAgent(), 0, 500),
@@ -138,18 +130,7 @@ class DeviceBindingService
             $request->session()->put('bound_device_hash', $deviceHash);
         }
 
-        // Set/refresh the device cookie (httpOnly=false so JS can synchronize with localStorage)
-        Cookie::queue(cookie(
-            self::COOKIE_NAME,
-            $deviceKey,
-            self::COOKIE_MINUTES,
-            null,
-            null,
-            $request->isSecure(),
-            false,  // httpOnly: false so client JS can read and sync
-            false,  // raw
-            'Lax'   // sameSite
-        ));
+        $this->queueDeviceCookie($deviceKey, $request);
 
         // Alert admins only on real device changes
         if ($isDeviceChange) {
@@ -162,10 +143,8 @@ class DeviceBindingService
     /**
      * Check if the current request is coming from the bound device.
      *
-     * Uses a multi-tier verification strategy:
-     * 1. Client-provided device keys (cookie, headers, or body inputs)
-     * 2. Direct session ID / session token match
-     * 3. Hardware environment fingerprint match
+     * An explicit device key mismatch must never be rescued by a session or
+     * browser fingerprint. Fingerprints are client-controlled telemetry.
      */
     public function isCurrentDevice(User $user, Request $request): bool
     {
@@ -190,49 +169,27 @@ class DeviceBindingService
 
         // No binding exists yet — first-time user, allow through and bind on action
         if (!$binding) {
-            $this->bind($user, $request);
+            return $this->bind($user, $request) !== null;
+        }
+
+        $presented = $this->presentedDeviceKey($request);
+        if ($presented['conflict']) {
+            return false;
+        }
+
+        if ($presented['key'] !== null) {
+            if (!hash_equals($binding->device_hash, $this->hashDeviceKey($presented['key']))) {
+                return false;
+            }
+            if ($this->cleanKey($request->cookie(self::COOKIE_NAME)) !== $presented['key']) {
+                $this->queueDeviceCookie($presented['key'], $request);
+            }
+            $this->touchBinding($binding, $request);
             return true;
         }
 
-        $cleanKey = function ($val): ?string {
-            if (!$val || !is_string($val)) return null;
-            $trimmed = trim($val);
-            if ($trimmed === '' || strtolower($trimmed) === 'undefined' || strtolower($trimmed) === 'null') {
-                return null;
-            }
-            return $trimmed;
-        };
-
-        // Tier 1: Client-provided device keys (cookie, headers, or body inputs)
-        $incomingKeys = array_unique(array_filter([
-            $cleanKey($request->cookie(self::COOKIE_NAME)),
-            $cleanKey($request->header('X-Device-Key')),
-            $cleanKey($request->header('X-Device-Fingerprint')),
-            $cleanKey($request->input('device_key')),
-            $cleanKey($request->input('device_fingerprint')),
-        ]));
-
-        foreach ($incomingKeys as $clientKey) {
-            if ($clientKey && hash_equals($binding->device_hash, $this->hashDeviceKey((string) $clientKey))) {
-                if (!$request->cookie(self::COOKIE_NAME)) {
-                    Cookie::queue(cookie(
-                        self::COOKIE_NAME,
-                        (string) $clientKey,
-                        self::COOKIE_MINUTES,
-                        null,
-                        null,
-                        $request->isSecure(),
-                        false,
-                        false,
-                        'Lax'
-                    ));
-                }
-                $this->touchBinding($binding, $request);
-                return true;
-            }
-        }
-
-        // Tier 2: Direct session ID or session flag match (valid authenticated session)
+        // A legacy authenticated web session may survive cleared browser storage.
+        // It is only used when no device key is presented at all.
         if ($request->hasSession()) {
             $session = $request->session();
             $sessionHash = $session->get('bound_device_hash');
@@ -246,18 +203,6 @@ class DeviceBindingService
                 $this->touchBinding($binding, $request);
                 return true;
             }
-
-        }
-
-        // Tier 3: Hardware environment fingerprint match
-        $rawHwFp = $cleanKey($request->header('X-Device-Fingerprint'))
-            ?? $cleanKey($request->input('device_fingerprint'));
-        if ($rawHwFp && !empty($binding->hardware_fingerprint)) {
-            $incomingHwHash = $this->hashDeviceKey((string) $rawHwFp);
-            if (hash_equals($binding->hardware_fingerprint, $incomingHwHash)) {
-                $this->touchBinding($binding, $request);
-                return true;
-            }
         }
 
         return false;
@@ -268,22 +213,78 @@ class DeviceBindingService
      */
     public function getDeviceHashFromRequest(Request $request): ?string
     {
-        $cleanKey = function ($val): ?string {
-            if (!$val || !is_string($val)) return null;
-            $trimmed = trim($val);
-            if ($trimmed === '' || strtolower($trimmed) === 'undefined' || strtolower($trimmed) === 'null') {
-                return null;
-            }
-            return $trimmed;
-        };
-
-        $deviceKey = $cleanKey($request->cookie(self::COOKIE_NAME))
-            ?? $cleanKey($request->header('X-Device-Key'))
-            ?? $cleanKey($request->input('device_key'))
-            ?? $cleanKey($request->input('device_fingerprint'))
-            ?? $cleanKey($request->header('X-Device-Fingerprint'));
+        $presented = $this->presentedDeviceKey($request);
+        $deviceKey = $presented['conflict'] ? null : $presented['key'];
 
         return $deviceKey ? $this->hashDeviceKey((string) $deviceKey) : null;
+    }
+
+    private function cleanKey(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $key = trim($value);
+        if ($key === '' || strlen($key) > 256 || preg_match('/[\x00-\x1f\x7f]/', $key) ||
+            in_array(strtolower($key), ['undefined', 'null'], true)) {
+            return null;
+        }
+
+        return $key;
+    }
+
+    private function hasSuppliedKey(mixed $value): bool
+    {
+        if ($value === null) {
+            return false;
+        }
+        if (!is_string($value)) {
+            return true;
+        }
+
+        $key = strtolower(trim($value));
+
+        return $key !== '' && $key !== 'undefined' && $key !== 'null';
+    }
+
+    /** @return array{key: ?string, conflict: bool} */
+    private function presentedDeviceKey(Request $request): array
+    {
+        $headerRaw = $request->header('X-Device-Key');
+        $bodyRaw = $request->input('device_key');
+        $header = $this->cleanKey($headerRaw);
+        $body = $this->cleanKey($bodyRaw);
+
+        if (($this->hasSuppliedKey($headerRaw) && $header === null) ||
+            ($this->hasSuppliedKey($bodyRaw) && $body === null) ||
+            ($header !== null && $body !== null && !hash_equals($header, $body))) {
+            return ['key' => null, 'conflict' => true];
+        }
+
+        $fallbackFp = $this->cleanKey($request->input('device_fingerprint'))
+            ?? $this->cleanKey($request->header('X-Device-Fingerprint'));
+
+        return [
+            'key' => $header ?? $body ?? $this->cleanKey($request->cookie(self::COOKIE_NAME)) ?? $fallbackFp,
+            'conflict' => false,
+        ];
+    }
+
+    private function queueDeviceCookie(string $deviceKey, Request $request): void
+    {
+        // JavaScript currently synchronizes this cookie with local storage.
+        Cookie::queue(cookie(
+            self::COOKIE_NAME,
+            $deviceKey,
+            self::COOKIE_MINUTES,
+            null,
+            null,
+            $request->isSecure(),
+            false,
+            false,
+            'Lax'
+        ));
     }
 
     /**
