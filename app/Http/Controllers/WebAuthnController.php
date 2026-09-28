@@ -260,10 +260,10 @@ class WebAuthnController extends Controller
                 })
                 ->exists();
 
-            $hasFaceCred = $user->webauthnCredentials()->where('biometric_type', 'face')
+            $hasSecureFaceCredential = $user->webauthnCredentials()->where('biometric_type', 'face')
                 ->where('public_key', 'LIKE', '%BEGIN PUBLIC KEY%')->exists();
 
-            if ($request->input('biometric_method') === 'face' && !$hasFaceCred) {
+            if ($request->input('biometric_method') === 'face' && !$hasSecureFaceCredential) {
                 return response()->json([
                     'success' => false,
                     'code' => 'FACE_ENROLLMENT_REQUIRED',
@@ -358,6 +358,7 @@ class WebAuthnController extends Controller
                 "user_id" => $user->id,
                 "identifier" => $user->student_number ?? $user->email ?? $identifier,
                 "user_name" => $user->name,
+                "has_secure_face_credential" => $hasSecureFaceCredential,
                 "face_credential_id" => $hasFaceCred
                     ? $user->webauthnCredentials()->where('biometric_type', 'face')->latest()->value('credential_id')
                     : null,
@@ -785,10 +786,6 @@ class WebAuthnController extends Controller
                             $matchedCred = $fc;
                         }
                     }
-                } else {
-                    // Legacy, WebAuthn PEM key, or test mock (e.g. pub_sample_face)
-                    $matchedCred = $fc;
-                    break;
                 }
             }
 

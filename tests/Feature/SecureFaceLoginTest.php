@@ -25,9 +25,24 @@ class SecureFaceLoginTest extends TestCase
             'biometric_method' => 'face',
         ]);
 
-        $response->assertOk()->assertJson(['success' => true]);
+        $response->assertOk()->assertJson(['success' => true, 'has_secure_face_credential' => true]);
         $this->assertSame([$face->credential_id], array_column($response->json('allowCredentials'), 'id'));
         $this->assertContains('face', $response->json('available_methods'));
+    }
+
+    public function test_camera_face_payload_cannot_log_in_with_a_face_passkey(): void
+    {
+        $user = User::factory()->create(['student_number' => 'FACE-105', 'is_active' => true]);
+        $this->credential($user, 'face-passkey', 'face', '-----BEGIN PUBLIC KEY-----\nface\n-----END PUBLIC KEY-----');
+
+        $this->postJson(route('webauthn.login'), [
+            'biometric_method' => 'face',
+            'credential_id' => 'face-passkey',
+            'identifier' => 'FACE-105',
+            'face_descriptor' => 'face_desc_90_115_112_130_105_123456',
+        ])->assertStatus(422)->assertJsonPath('code', 'BIOMETRIC_MISMATCH');
+
+        $this->assertGuest();
     }
 
     public function test_face_sign_in_without_identifier_uses_only_saved_face_credentials(): void

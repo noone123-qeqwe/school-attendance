@@ -296,12 +296,13 @@ class FaceRecognitionRegistrationTest extends TestCase
             'identifier' => 'STU9902',
         ]);
 
-        $response->assertOk()
+        $response->assertStatus(422)
             ->assertJson([
-                'success' => true,
+                'success' => false,
+                'code' => 'BIOMETRIC_MISMATCH',
             ]);
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertGuest();
     }
 
     public function test_face_recognition_login_rejects_sub_threshold_confidence()

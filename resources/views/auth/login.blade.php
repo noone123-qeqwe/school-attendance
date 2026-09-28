@@ -4516,7 +4516,11 @@ function openBiometricSelectionPrompt(methods, identifier, opts) {
 function handleSelectBiometricMethod(selectedMethod, identifier, opts) {
     if (selectedMethod.id === 'face') {
         closeBiometricModal();
-        startFaceRecognitionLogin(identifier, opts);
+        if (opts && opts.has_secure_face_credential) {
+            performBiometricLogin(identifier, selectedMethod);
+        } else {
+            startFaceRecognitionLogin(identifier, opts);
+        }
     } else {
         closeBiometricModal();
         if (fpLabel) fpLabel.textContent = selectedMethod.name + '...';
