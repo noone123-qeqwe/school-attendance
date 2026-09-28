@@ -71,7 +71,7 @@ class AttendanceSessionPolicy
         }
 
         $subject = $session->subject;
-        if (!$subject || !$subject->getAllStudents()->contains('id', $user->id)) {
+        if (!$subject || !$subject->hasStudent($user)) {
             return false;
         }
 

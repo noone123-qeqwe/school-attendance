@@ -8100,11 +8100,56 @@ function initSettingsSearch() {
     });
 }
 
+function initMobileSearchToggle() {
+    if (window.innerWidth > 768) return;
+    var box = document.querySelector('.sp .settings-search-box');
+    var icon = document.querySelector('.sp .settings-search-icon');
+    var input = document.getElementById('settingsSearchInput');
+    if (!box || !icon || !input) return;
+
+    function expand() {
+        box.classList.add('search-expanded');
+        setTimeout(function() { input.focus(); }, 60);
+    }
+    function collapse() {
+        if (!input.value.trim()) {
+            box.classList.remove('search-expanded');
+        }
+    }
+
+    icon.addEventListener('click', function(e) {
+        if (!box.classList.contains('search-expanded')) {
+            e.preventDefault();
+            e.stopPropagation();
+            expand();
+        }
+    });
+    input.addEventListener('blur', function() {
+        setTimeout(collapse, 200);
+    });
+    // Keyboard shortcut still works
+    document.addEventListener('keydown', function(e) {
+        if (window.innerWidth > 768) return;
+        var activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') return;
+        if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
+            e.preventDefault();
+            expand();
+        }
+    });
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            box.classList.remove('search-expanded');
+        }
+    }, { passive: true });
+}
+
 function initSettingsPage() {
     if (typeof loadDevices === 'function') loadDevices();
     if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
     if (typeof updateStabsScrollArrows === 'function') updateStabsScrollArrows();
     if (typeof initSettingsSearch === 'function') initSettingsSearch();
+    initMobileSearchToggle();
 
     // Attach direct click event listeners to all mobile stab buttons
     document.querySelectorAll('.stab').forEach(btn => {

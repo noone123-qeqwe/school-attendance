@@ -443,7 +443,7 @@ Route::middleware(['auth', 'student'])->group(function () {
 
 
     // WebAuthn QR verification
-    Route::post('/qr/verify-options', [App\Http\Controllers\QrAttendanceController::class, 'verificationOptions'])->name('qr.verify.options');
+    Route::post('/qr/verify-options', [App\Http\Controllers\QrAttendanceController::class, 'verificationOptions'])->middleware('throttle:30,1')->name('qr.verify.options');
     Route::post('/qr/verify-complete', [App\Http\Controllers\QrAttendanceController::class, 'completeVerification'])->middleware(['throttle:30,1', 'audit.attendance.qr'])->name('qr.verify.complete');
     
     // Direct QR Scanner Processing

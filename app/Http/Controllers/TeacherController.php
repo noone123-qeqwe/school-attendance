@@ -559,7 +559,7 @@ class TeacherController extends Controller
             ->firstOrFail();
         $teacherSubjects = Subject::where('instructor_id', Auth::id())->get();
         $hasAccess = $teacherSubjects->contains(
-            fn (Subject $subject) => $subject->getAllStudents()->contains('id', $student->id)
+            fn (Subject $subject) => $subject->hasStudent($student)
         );
         abort_unless($hasAccess, 403, 'You do not have access to this student.');
 
@@ -592,7 +592,7 @@ class TeacherController extends Controller
         
         // Verify teacher has access to this student (student must match cohort criteria or be explicitly enrolled in one of the teacher's subjects)
         $hasAccess = $teacherSubjects->contains(function ($subject) use ($student) {
-            return $subject->getAllStudents()->contains('id', $student->id);
+            return $subject->hasStudent($student);
         });
             
         if (!$hasAccess) {

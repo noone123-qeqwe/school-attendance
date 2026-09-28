@@ -19,7 +19,7 @@ class StudentAssistantAssignmentService
 
             $student = User::whereKey($data['student_id'])->where('role', 'student')
                 ->where('is_active', true)->first();
-            if (!$student || !$subject->getAllStudents()->contains('id', $student->id)) {
+            if (!$student || !$subject->hasStudent($student)) {
                 throw ValidationException::withMessages(['student_id' => 'Select an active student enrolled in this class.']);
             }
 

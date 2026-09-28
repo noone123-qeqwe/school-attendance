@@ -1599,8 +1599,6 @@ class QrAttendanceController extends Controller
         $request->validate(['token' => 'required|string']);
 
         Log::debug('QR verificationOptions request', [
-            'session_id' => session()->getId(),
-            'cookie' => $request->cookie(config('session.cookie')),
             'token_hash' => hash('sha256', $request->token),
             'user_id' => optional($request->user())->id,
         ]);
@@ -1637,11 +1635,19 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'The attendance session has ended. Please get a new QR code.'], 422);
         }
 
+        $user = $request->user();
+        $subject = $session->subject;
+        if (!$subject) {
+            return response()->json(['success' => false, 'message' => 'Class subject not found.'], 404);
+        }
+        if ($this->scheduleMismatchReason($subject, $user) || !$subject->hasStudent($user)) {
+            return response()->json(['success' => false, 'error_type' => 'not_enrolled', 'message' => 'You are not enrolled in this class.'], 422);
+        }
+
         // Don't clean up expired challenges here - that was causing the issue!
         // The challenge should persist until the user completes verification or it's very old
         // $session->cleanupExpiredChallenge();
 
-        $user = $request->user();
         $hasCustomPhoto = app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
         if (!$user->webauthnCredentials()->exists() && !$hasCustomPhoto) {
             return response()->json(['success' => false, 'message' => 'Biometric verification is not set up on this account. Please upload a profile photo or register your biometric device.'], 422);
@@ -1705,7 +1711,6 @@ class QrAttendanceController extends Controller
             'user_id' => $user->id,
             'session_id' => $session->id,
             'cache_key' => $cacheKey,
-            'challenge_preview' => substr($challenge, 0, 8) . '...',
             'available_methods' => $availableMethods,
         ]);
 
@@ -1780,7 +1785,6 @@ class QrAttendanceController extends Controller
         $challenge = Cache::get($cacheKey);
 
         Log::debug('QR completeVerification request', [
-            'session_id' => session()->getId(),
             'token_hash' => hash('sha256', $request->token),
             'user_id' => optional($user)->id,
             'has_cached_challenge' => !empty($challenge),
