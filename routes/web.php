@@ -13,6 +13,7 @@ Route::post('/webauthn/available-methods', [App\Http\Controllers\WebAuthnControl
 Route::post('/webauthn/login', [App\Http\Controllers\WebAuthnController::class, 'login'])->middleware('throttle:login')->name('webauthn.login');
 Route::post('/webauthn/setup-options', [App\Http\Controllers\WebAuthnController::class, 'setupOptions'])->middleware('throttle:webauthn.options')->name('webauthn.setup.options');
 Route::post('/webauthn/setup-register', [App\Http\Controllers\WebAuthnController::class, 'setupRegister'])->middleware('throttle:login')->name('webauthn.setup.register');
+Route::post('/webauthn/native-biometric-login', [App\Http\Controllers\WebAuthnController::class, 'nativeBiometricLogin'])->middleware('throttle:login')->name('webauthn.native.login');
 
 // Web Push Notification Subscriptions & Testing
 Route::get('/push/public-key', [App\Http\Controllers\PushSubscriptionController::class, 'getPublicKey'])->name('push.public_key');

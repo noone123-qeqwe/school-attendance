@@ -30,11 +30,14 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
 import androidx.webkit.WebSettingsCompat;
 import androidx.webkit.WebViewFeature;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -368,6 +371,67 @@ public class MainActivity extends AppCompatActivity {
         @android.webkit.JavascriptInterface
         public boolean isNativeApp() {
             return true;
+        }
+
+        @android.webkit.JavascriptInterface
+        public boolean isBiometricAvailable() {
+            try {
+                BiometricManager bm = BiometricManager.from(MainActivity.this);
+                int canAuth = bm.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG | BiometricManager.Authenticators.BIOMETRIC_WEAK);
+                return canAuth == BiometricManager.BIOMETRIC_SUCCESS;
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void authenticateBiometric(final String title, final String subtitle, final String successJsCallback, final String errorJsCallback) {
+            runOnUiThread(() -> {
+                try {
+                    Executor executor = ContextCompat.getMainExecutor(MainActivity.this);
+                    BiometricPrompt bp = new BiometricPrompt(MainActivity.this, executor, new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                            super.onAuthenticationSucceeded(result);
+                            if (webView != null && successJsCallback != null && !successJsCallback.trim().isEmpty()) {
+                                webView.evaluateJavascript("if (typeof " + successJsCallback + " === 'function') { " + successJsCallback + "(); }", null);
+                            }
+                        }
+
+                        @Override
+                        public void onAuthenticationError(int errorCode, @NonNull CharSequence errString) {
+                            super.onAuthenticationError(errorCode, errString);
+                            boolean isUserCancelled = (errorCode == BiometricPrompt.ERROR_USER_CANCELED || errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON);
+                            if (webView != null && errorJsCallback != null && !errorJsCallback.trim().isEmpty()) {
+                                String safeErr = errString.toString().replace("'", "\\'");
+                                webView.evaluateJavascript("if (typeof " + errorJsCallback + " === 'function') { " + errorJsCallback + "('" + safeErr + "', " + errorCode + ", " + isUserCancelled + "); }", null);
+                            }
+                        }
+
+                        @Override
+                        public void onAuthenticationFailed() {
+                            super.onAuthenticationFailed();
+                            // Transient recognition failure: BiometricPrompt keeps listening on sensor
+                        }
+                    });
+
+                    String promptTitle = (title != null && !title.trim().isEmpty()) ? title : "Sign In with Fingerprint";
+                    String promptSub = (subtitle != null && !subtitle.trim().isEmpty()) ? subtitle : "Touch fingerprint sensor or verify identity to continue";
+
+                    BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                            .setTitle(promptTitle)
+                            .setSubtitle(promptSub)
+                            .setNegativeButtonText("Cancel")
+                            .build();
+
+                    bp.authenticate(promptInfo);
+                } catch (Exception e) {
+                    if (webView != null && errorJsCallback != null && !errorJsCallback.trim().isEmpty()) {
+                        String safeErr = (e.getMessage() != null ? e.getMessage() : "Biometric error").replace("'", "\\'");
+                        webView.evaluateJavascript("if (typeof " + errorJsCallback + " === 'function') { " + errorJsCallback + "('" + safeErr + "', -1, false); }", null);
+                    }
+                }
+            });
         }
     }
 }

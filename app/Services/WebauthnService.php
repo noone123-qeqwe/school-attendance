@@ -342,7 +342,7 @@ class WebauthnService
         // Check if origin matches rpId, request host, loopback alias, or is an allowed subdomain
         $isLoopback = in_array($originHost, ['localhost', '127.0.0.1', '::1']) && in_array($rpId, ['localhost', '127.0.0.1', '::1']);
         $matchesHost = ($originHost !== '' && ($originHost === $rpId || $originHost === $requestHost || str_ends_with($originHost, '.' . $rpId)));
-        $isAndroidApp = str_starts_with($origin, 'android-app://');
+        $isAndroidApp = str_starts_with($origin, 'android-app://') || str_starts_with($origin, 'android:apk-key-hash:');
 
         if (!$matchesHost && !$isLoopback && !$isAndroidApp) {
             Log::warning('WebAuthn origin mismatch', [
