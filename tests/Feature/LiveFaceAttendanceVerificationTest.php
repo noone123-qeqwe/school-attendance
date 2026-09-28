@@ -278,10 +278,7 @@ class LiveFaceAttendanceVerificationTest extends TestCase
 
         $matchingLiveFrame = $this->toDataUrl($photoBytes);
         $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
-        $matcher->shouldReceive('compare')->once()->with($student, $matchingLiveFrame)->andReturn([
-            'match' => true, 'code' => 'MATCH', 'similarity' => 0.8,
-            'message' => 'Live face matched the registered profile photo.',
-        ]);
+        $matcher->shouldNotReceive('compare');
         $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
 
         // Student is far outside classroom (e.g. 15.5 lat vs 14.5 lat ~ 111 km away)

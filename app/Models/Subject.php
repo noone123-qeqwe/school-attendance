@@ -62,6 +62,23 @@ class Subject extends Model
             && (empty($student->section) || empty($this->section) || $this->section === $student->section);
     }
 
+    /** Match the explicit and profile-based roster without loading every student. */
+    public function hasStudent(User $student): bool
+    {
+        if ($student->role !== 'student') {
+            return false;
+        }
+
+        if ($this->enrolledStudents()->whereKey($student->id)->exists()) {
+            return true;
+        }
+
+        return (string) $this->year_level === (string) $student->year_level
+            && (string) $this->semester === (string) $student->semester
+            && (empty($this->course) || $this->course === $student->course)
+            && (empty($this->section) || $this->section === $student->section);
+    }
+
     /**
      * Get all students for this subject (both explicitly enrolled and implicitly via year level / semester)
      */

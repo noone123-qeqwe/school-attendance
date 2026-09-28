@@ -62,9 +62,11 @@ public class MainActivity extends AppCompatActivity {
         webView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progressBar);
 
-        // Ensure system overlays (status bar, notification shade, system navigation)
-        // do not inject unexpected layout paddings into the WebView container.
+        // Adjust container padding for soft keyboard (IME) so inputs and modals are not covered
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(android.R.id.content), (view, insets) -> {
+            int imeHeight = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            int navHeight = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+            view.setPadding(0, 0, 0, Math.max(imeHeight, navHeight));
             return insets;
         });
 

@@ -100,9 +100,18 @@
             z-index: 0;
             pointer-events: none;
         }
-        @media (max-width: 768px) {
+        /* On narrow/tall portrait phones the landscape photo appeared very zoomed-in
+           when anchored to center. Anchor to top-center so more of the scene is visible. */
+        @media (max-width: 768px) and (orientation: portrait) {
             .bg-scene {
-                background-image: url('/images/815973132_28114561508245819_4078090034639789685_n.jpg');
+                background-position: top center;
+                background-size: cover;
+            }
+        }
+        @media (max-width: 768px) and (orientation: landscape) {
+            .bg-scene {
+                background-position: center center;
+                background-size: cover;
             }
         }
         .bg-scene::after {
@@ -5551,6 +5560,13 @@ if (forgotLinkElem) {
         var rawHeight = vv ? vv.height : window.innerHeight;
         var isKeyboard = isTextEntryFocused() && rawHeight < (lockedHeight - 150);
         document.body.classList.toggle('keyboard-open', isKeyboard);
+
+        // When keyboard opens, nudge the active input into the visible viewport
+        if (isKeyboard && document.activeElement) {
+            setTimeout(function() {
+                try { document.activeElement.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch(e) {}
+            }, 80);
+        }
     }
 
     // Preserve scroll position when notification panel / overlays are opened or dismissed
@@ -5562,6 +5578,22 @@ if (forgotLinkElem) {
     if (authScene) {
         authScene.addEventListener('scroll', trackScroll, { passive: true });
     }
+
+    // Scroll focused input into view when keyboard pops up (works in WebView)
+    function onInputFocus(e) {
+        setTimeout(function() {
+            try { e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch(ex) {}
+        }, 320);
+    }
+    document.querySelectorAll('input, textarea, select').forEach(function(el) {
+        el.addEventListener('focus', onInputFocus, { passive: true });
+    });
+    // Re-apply to any inputs added after DOM ready (e.g. inside modals)
+    document.addEventListener('focusin', function(e) {
+        if (e.target && e.target.matches && e.target.matches('input, textarea, select')) {
+            onInputFocus(e);
+        }
+    }, { passive: true });
 
     window.addEventListener('orientationchange', onOrientationChange, { passive: true });
     if (window.visualViewport) {

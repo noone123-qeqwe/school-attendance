@@ -171,8 +171,7 @@ class QrAttendanceFlowTest extends TestCase
         $this->actingAs($student)->postJson('/qr/verify-options', ['token' => $token]);
 
         $mockWebauthn = Mockery::mock(WebauthnService::class);
-        $mockCredential = new \App\Models\WebauthnCredential();
-        $mockWebauthn->shouldReceive('verifyAssertion')->once()->andReturn($mockCredential);
+        $mockWebauthn->shouldNotReceive('verifyAssertion');
         $this->app->instance(WebauthnService::class, $mockWebauthn);
 
         // Student submits from 14.6000, 121.1000 (~15km away - far outside classroom)

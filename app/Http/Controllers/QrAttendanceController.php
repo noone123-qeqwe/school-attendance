@@ -1502,8 +1502,8 @@ class QrAttendanceController extends Controller
         }
 
         $subject   = $session->subject;
-        if ($signedQr && (!$subject || !$subject->getAllStudents()->contains('id', $user->id))) {
-            return view('qr.result', ['status' => 'error', 'message' => 'You are not enrolled in this class.']);
+        if (!$subject) {
+            return view('qr.result', ['status' => 'error', 'message' => 'Class subject not found.']);
         }
         $now       = now();
         $todayDate = $now->toDateString();
@@ -1528,6 +1528,10 @@ class QrAttendanceController extends Controller
                 'status' => 'error',
                 'message' => 'This class is not in your schedule. ' . $mismatchReason,
             ]);
+        }
+
+        if (!$subject->hasStudent($user)) {
+            return view('qr.result', ['status' => 'error', 'message' => 'You are not enrolled in this class.']);
         }
 
         $hasCustomPhoto = app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
@@ -1655,13 +1659,6 @@ class QrAttendanceController extends Controller
         $scanKey = "webauthn_qr_scan_{$user->id}_" . hash('sha256', $request->token);
         Cache::put($scanKey, $session->id, now()->addSeconds(self::QR_SCAN_BUFFER_SECONDS));
         
-        // Also update session model challenge for fallback/logging
-        try {
-            $session->update(['webauthn_challenge' => $challenge]);
-        } catch (\Throwable $e) {
-            // Non-critical if DB write fails; cache is primary
-        }
-
         $rpId = $this->getRpId($request);
         $validCredentials = $user->webauthnCredentials
             ->filter(function ($credential) {
@@ -1778,98 +1775,20 @@ class QrAttendanceController extends Controller
             return response()->json(['success' => false, 'message' => 'The attendance session has ended. Please get a new QR code.'], 422);
         }
 
-        $challenge = Cache::get($cacheKey) ?: $session->webauthn_challenge;
+        // The per-student cached challenge has a bounded lifetime. A session
+        // column may contain an older student's challenge and must not extend it.
+        $challenge = Cache::get($cacheKey);
 
         Log::debug('QR completeVerification request', [
             'session_id' => session()->getId(),
             'token_hash' => hash('sha256', $request->token),
             'user_id' => optional($user)->id,
-            'has_cached_challenge' => !empty(Cache::get($cacheKey)),
+            'has_cached_challenge' => !empty($challenge),
         ]);
 
-        $isFaceMethod = ($request->input('biometric_method') === 'face')
-            || $request->filled('face_descriptor')
-            || (is_array($credential) && (($credential['type'] ?? '') === 'face' || isset($credential['face_descriptor'])))
-            || (is_string($rawCredential) && str_starts_with($rawCredential, 'face_desc_'));
-
-        $recordedMethod = 'qr';
-        $faceMatchResult = null;
-
-        if ($isFaceMethod) {
-            $liveFrame = $request->input('live_frame')
-                ?? (is_array($credential) ? ($credential['live_frame'] ?? null) : null);
-
-            if (!is_string($liveFrame) || $liveFrame === '') {
-                return response()->json([
-                    'success' => false,
-                    'code' => 'INVALID_LIVE_FRAME',
-                    'message' => 'No camera image received. Please position your face clearly in front of the camera.'
-                ], 422);
-            }
-
-            $faceMatchResult = app(\App\Services\LiveProfileFaceMatcher::class)->compare($user, $liveFrame);
-
-            if (!$faceMatchResult['match']) {
-                Log::warning('QR Face verification against profile photo failed', [
-                    'user_id' => $user->id,
-                    'similarity' => $faceMatchResult['similarity'] ?? 0,
-                    'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
-                    'message' => $faceMatchResult['message'] ?? 'Face verification failed: Live face does not match your registered profile photo.'
-                ], ($faceMatchResult['code'] ?? null) === 'MATCHER_UNAVAILABLE' ? 503 : 422);
-            }
-
-            $recordedMethod = 'qr_face';
-            Cache::forget($cacheKey);
-            Cache::forget($scanKey);
-        } else {
-            if (!is_array($credential)) {
-                return response()->json(['success' => false, 'message' => 'Invalid biometric assertion data.'], 422);
-            }
-
-            try {
-                if (!$challenge) {
-                    Log::error('QR completeVerification - no challenge in cache or session', [
-                        'attendance_session_id' => $session->id,
-                        'user_id' => $user->id,
-                        'cache_key' => $cacheKey,
-                    ]);
-                    throw new RuntimeException('WebAuthn biometric challenge expired or not found. Please try scanning again.');
-                }
-
-                // Store challenge in session for WebauthnService verification
-                session(['webauthn.auth_challenge' => $challenge]);
-
-                try {
-                    $webauthn->verifyAssertion($user, $credential);
-                    Log::debug('QR completeVerification - verification successful', [
-                        'user_id' => $user->id,
-                        'attendance_session_id' => $session->id,
-                    ]);
-                } finally {
-                    session()->forget('webauthn.auth_challenge');
-                }
-
-                // Clear student's specific challenge from cache
-                Cache::forget($cacheKey);
-                Cache::forget($scanKey);
-            } catch (RuntimeException $e) {
-                Log::debug('QR completeVerification failure', [
-                    'exception' => $e->getMessage(),
-                    'attendance_session_id' => $session->id,
-                    'user_id' => $user->id,
-                    'credential' => $credential['id'] ?? null,
-                ]);
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
-            }
-        }
         $subject   = $session->subject;
-        if ($signedQr && (!$subject || !$subject->getAllStudents()->contains('id', $user->id))) {
-            return response()->json(['success' => false, 'error_type' => 'not_enrolled', 'message' => 'You are not enrolled in this class.'], 422);
+        if (!$subject) {
+            return response()->json(['success' => false, 'message' => 'Class subject not found.'], 404);
         }
         $now       = now();
         $todayDate = $now->toDateString();
@@ -1894,6 +1813,10 @@ class QrAttendanceController extends Controller
                 'success' => false,
                 'message' => 'This class is not in your schedule. ' . $mismatchReason,
             ], 422);
+        }
+
+        if (!$subject->hasStudent($user)) {
+            return response()->json(['success' => false, 'error_type' => 'not_enrolled', 'message' => 'You are not enrolled in this class.'], 422);
         }
 
         // Proxy Attendance Check (Prevent one physical device from clocking in multiple students for the same session)
@@ -2062,6 +1985,81 @@ class QrAttendanceController extends Controller
             }
         }
 
+        $isFaceMethod = ($request->input('biometric_method') === 'face')
+            || $request->filled('face_descriptor')
+            || (is_array($credential) && (($credential['type'] ?? '') === 'face' || isset($credential['face_descriptor'])))
+            || (is_string($rawCredential) && str_starts_with($rawCredential, 'face_desc_'));
+
+        $recordedMethod = 'qr';
+        $faceMatchResult = null;
+
+        if ($isFaceMethod) {
+            $liveFrame = $request->input('live_frame')
+                ?? (is_array($credential) ? ($credential['live_frame'] ?? null) : null);
+
+            if (!is_string($liveFrame) || $liveFrame === '') {
+                return response()->json([
+                    'success' => false,
+                    'code' => 'INVALID_LIVE_FRAME',
+                    'message' => 'No camera image received. Please position your face clearly in front of the camera.'
+                ], 422);
+            }
+
+            $faceMatchResult = app(\App\Services\LiveProfileFaceMatcher::class)->compare($user, $liveFrame);
+
+            if (!$faceMatchResult['match']) {
+                Log::warning('QR Face verification against profile photo failed', [
+                    'user_id' => $user->id,
+                    'similarity' => $faceMatchResult['similarity'] ?? 0,
+                    'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
+                    'message' => $faceMatchResult['message'] ?? 'Face verification failed: Live face does not match your registered profile photo.'
+                ], ($faceMatchResult['code'] ?? null) === 'MATCHER_UNAVAILABLE' ? 503 : 422);
+            }
+
+            $recordedMethod = 'qr_face';
+        } else {
+            if (!is_array($credential)) {
+                return response()->json(['success' => false, 'message' => 'Invalid biometric assertion data.'], 422);
+            }
+
+            try {
+                if (!$challenge) {
+                    Log::warning('QR completeVerification - cached challenge expired', [
+                        'attendance_session_id' => $session->id,
+                        'user_id' => $user->id,
+                        'cache_key' => $cacheKey,
+                    ]);
+                    throw new RuntimeException('WebAuthn biometric challenge expired or not found. Please try scanning again.');
+                }
+
+                // Store challenge in session for WebauthnService verification
+                session(['webauthn.auth_challenge' => $challenge]);
+
+                try {
+                    $webauthn->verifyAssertion($user, $credential);
+                    Log::debug('QR completeVerification - verification successful', [
+                        'user_id' => $user->id,
+                        'attendance_session_id' => $session->id,
+                    ]);
+                } finally {
+                    session()->forget('webauthn.auth_challenge');
+                }
+
+            } catch (RuntimeException $e) {
+                Log::debug('QR completeVerification failure', [
+                    'exception' => $e->getMessage(),
+                    'attendance_session_id' => $session->id,
+                    'user_id' => $user->id,
+                    'credential' => $credential['id'] ?? null,
+                ]);
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+            }
+        }
         // Get class start time for late threshold calculation
         $subject = $session->subject;
         $startTime = null;
@@ -2191,6 +2189,11 @@ class QrAttendanceController extends Controller
                 'message' => 'Unable to save attendance record. Please try again or notify your instructor.'
             ], 500);
         }
+
+        // Keep the scan usable through validation and persistence failures, then
+        // consume its challenge only after attendance has been saved.
+        Cache::forget($cacheKey);
+        Cache::forget($scanKey);
 
         event(new \App\Events\AttendanceMarked($attendance));
 
@@ -2574,14 +2577,6 @@ class QrAttendanceController extends Controller
             ], 404);
         }
 
-        if ($signedQr && !$subject->getAllStudents()->contains('id', $user->id)) {
-            return response()->json([
-                'success' => false,
-                'error_type' => 'not_enrolled',
-                'message' => 'You are not enrolled in this class.',
-            ], 422);
-        }
-
         $todayDate = now()->toDateString();
         $now = now('Asia/Manila');
 
@@ -2592,6 +2587,14 @@ class QrAttendanceController extends Controller
                 'success' => false,
                 'error_type' => 'schedule_mismatch',
                 'message' => 'This QR code is not intended for your class: ' . $mismatchReason
+            ], 422);
+        }
+
+        if (!$subject->hasStudent($user)) {
+            return response()->json([
+                'success' => false,
+                'error_type' => 'not_enrolled',
+                'message' => 'You are not enrolled in this class.',
             ], 422);
         }
 

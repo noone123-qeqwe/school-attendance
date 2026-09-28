@@ -14,6 +14,7 @@ use App\Services\AttendanceQrTokenService;
 use App\Services\DeviceBindingService;
 use App\Jobs\SendTeacherScanAlert;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
@@ -161,7 +162,7 @@ class QrDistanceValidationTest extends TestCase
         $this->actingAs($this->student)->postJson('/qr/verify-options', ['token' => $this->session->token]);
 
         $mock = Mockery::mock(WebauthnService::class);
-        $mock->shouldReceive('verifyAssertion')->once()->andReturn(new WebauthnCredential());
+        $mock->shouldNotReceive('verifyAssertion');
         $this->app->instance(WebauthnService::class, $mock);
 
         $response = $this->actingAs($this->student)->postJson('/qr/verify-complete', [
@@ -173,6 +174,24 @@ class QrDistanceValidationTest extends TestCase
         ]);
 
         $response->assertStatus(422)->assertJsonPath('error_type', 'location_jump_review');
+        $this->assertTrue(Cache::has("webauthn_qr_challenge_{$this->student->id}_{$this->session->id}"));
+    }
+
+    public function test_expired_cached_challenge_cannot_fall_back_to_session_column()
+    {
+        $this->session->update(['webauthn_challenge' => 'old-shared-challenge']);
+
+        $mock = Mockery::mock(WebauthnService::class);
+        $mock->shouldNotReceive('verifyAssertion');
+        $this->app->instance(WebauthnService::class, $mock);
+
+        $this->actingAs($this->student)->postJson('/qr/verify-complete', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+            'credential' => ['id' => 'fake', 'response' => []],
+        ])->assertStatus(422)->assertSeeText('challenge expired or not found');
     }
 
     public function test_ordinary_movement_is_not_flagged_as_gps_spoofing()
