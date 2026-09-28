@@ -9,6 +9,7 @@ use App\Models\PeerFaceEnrollment;
 use App\Models\PeerVouchRequest;
 use App\Models\User;
 use App\Policies\PeerVouchPolicy;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -152,59 +153,64 @@ class PeerBiometricAttendanceService
             });
         }
 
-        $result = DB::transaction(function () use ($attempt, $host, $enrollment) {
-            $session = AttendanceSession::whereKey($attempt->session_id)->lockForUpdate()->first();
-            $lockedAttempt = PeerVouchRequest::whereKey($attempt->id)->lockForUpdate()->first();
-            $subject = User::whereKey($attempt->subject_student_id)->lockForUpdate()->first();
-            if (!$lockedAttempt || $lockedAttempt->status !== 'processing') abort(409, 'Verification request already used.');
-            if ($lockedAttempt->expires_at->isPast() || !$session || !$this->policy->create($host, $session)
-                || !$subject || !$subject->isActive()
-                || !$session->subject || !$this->policy->isClassMember($subject, $session->subject)
-                || $this->locked($host->id, $subject->id)
-                || !PeerFaceEnrollment::where('user_id', $subject->id)
-                    ->where('verifier_subject_ref', $enrollment->verifier_subject_ref)
-                    ->where('model_version', config('peer_snap.model_version'))->whereNull('revoked_at')->exists()
-                || $this->successfulVouches($session->id, $host->id) >= config('peer_snap.max_vouches')) {
-                $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'eligibility_changed', 'consumed_at' => now()]);
-                return ['error' => 409, 'message' => 'Session eligibility changed. Please try again.'];
-            }
-            $today = now('Asia/Manila')->toDateString();
-            $attendance = Attendance::withTrashed()->where('user_id', $subject->id)
-                ->where('subject_code', $session->subject_code)->whereDate('date', $today)
-                ->lockForUpdate()->first();
-            if ($attendance && ($attendance->status !== 'Absent' || $attendance->excused)) {
-                $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'duplicate_attendance', 'consumed_at' => now()]);
-                return ['error' => 409, 'message' => 'Attendance has already been recorded.'];
-            }
-            $previousStatus = $attendance?->status;
-            $data = [
-                'user_id' => $subject->id, 'subject_id' => $session->subject->id,
-                'subject_code' => $session->subject_code, 'subject_name' => $session->subject->name,
-                'class' => $session->subject->section ?? $subject->section ?? 'Regular',
-                'session_id' => $session->id, 'date' => $today, 'status' => 'Present',
-                'time_in' => now('Asia/Manila')->format('H:i:s'), 'checked_in_at' => now(),
-                'method' => 'peer_biometric', 'verification_channel' => 'peer_biometric',
-                'is_provisional' => false, 'monitoring_status' => 'peer_verified',
-            ];
-            if ($attendance) {
-                if ($attendance->trashed()) $attendance->restore();
-                $attendance->fill($data)->save();
-            } else {
-                $attendance = Attendance::create($data);
-            }
-            $verifiedAt = now();
-            $lockedAttempt->update([
-                'status' => 'verified', 'consumed_at' => $verifiedAt,
-                'failure_reason' => null, 'attendance_id' => $attendance->id,
-                'decision_mac' => PeerVouchRequest::decisionMac(
-                    $lockedAttempt->verification_id, $session->id, $subject->id,
-                    $host->id, $attendance->id, $verifiedAt->toIso8601String(),
-                ),
-            ]);
-            Log::info('peer_snap.verified', $this->audit($lockedAttempt) + ['attendance_id' => $attendance->id]);
-            return ['attendance' => $attendance, 'session' => $session,
-                'subject' => $subject, 'previous_status' => $previousStatus];
-        });
+        try {
+            $result = DB::transaction(function () use ($attempt, $host, $enrollment) {
+                $session = AttendanceSession::whereKey($attempt->session_id)->lockForUpdate()->first();
+                $lockedAttempt = PeerVouchRequest::whereKey($attempt->id)->lockForUpdate()->first();
+                $subject = User::whereKey($attempt->subject_student_id)->lockForUpdate()->first();
+                if (!$lockedAttempt || $lockedAttempt->status !== 'processing') abort(409, 'Verification request already used.');
+                if ($lockedAttempt->expires_at->isPast() || !$session || !$this->policy->create($host, $session)
+                    || !$subject || !$subject->isActive()
+                    || !$session->subject || !$this->policy->isClassMember($subject, $session->subject)
+                    || $this->locked($host->id, $subject->id)
+                    || !PeerFaceEnrollment::where('user_id', $subject->id)
+                        ->where('verifier_subject_ref', $enrollment->verifier_subject_ref)
+                        ->where('model_version', config('peer_snap.model_version'))->whereNull('revoked_at')->exists()
+                    || $this->successfulVouches($session->id, $host->id) >= config('peer_snap.max_vouches')) {
+                    $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'eligibility_changed', 'consumed_at' => now()]);
+                    return ['error' => 409, 'message' => 'Session eligibility changed. Please try again.'];
+                }
+                $today = now('Asia/Manila')->toDateString();
+                $attendance = Attendance::withTrashed()->where('user_id', $subject->id)
+                    ->where('subject_code', $session->subject_code)->whereDate('date', $today)
+                    ->lockForUpdate()->first();
+                if ($attendance && ($attendance->status !== 'Absent' || $attendance->excused)) {
+                    $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'duplicate_attendance', 'consumed_at' => now()]);
+                    return ['error' => 409, 'message' => 'Attendance has already been recorded.'];
+                }
+                $previousStatus = $attendance?->status;
+                $data = [
+                    'user_id' => $subject->id, 'subject_id' => $session->subject->id,
+                    'subject_code' => $session->subject_code, 'subject_name' => $session->subject->name,
+                    'class' => $session->subject->section ?? $subject->section ?? 'Regular',
+                    'session_id' => $session->id, 'date' => $today, 'status' => 'Present',
+                    'time_in' => now('Asia/Manila')->format('H:i:s'), 'checked_in_at' => now(),
+                    'method' => 'peer_biometric', 'verification_channel' => 'peer_biometric',
+                    'is_provisional' => false, 'monitoring_status' => 'peer_verified',
+                ];
+                if ($attendance) {
+                    if ($attendance->trashed()) $attendance->restore();
+                    $attendance->fill($data)->save();
+                } else {
+                    $attendance = Attendance::create($data);
+                }
+                $verifiedAt = now();
+                $lockedAttempt->update([
+                    'status' => 'verified', 'consumed_at' => $verifiedAt,
+                    'failure_reason' => null, 'attendance_id' => $attendance->id,
+                    'decision_mac' => PeerVouchRequest::decisionMac(
+                        $lockedAttempt->verification_id, $session->id, $subject->id,
+                        $host->id, $attendance->id, $verifiedAt->toIso8601String(),
+                    ),
+                ]);
+                Log::info('peer_snap.verified', $this->audit($lockedAttempt) + ['attendance_id' => $attendance->id]);
+                return ['attendance' => $attendance, 'session' => $session,
+                    'subject' => $subject, 'previous_status' => $previousStatus];
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            $this->reject($attempt, 'duplicate_attendance');
+            abort(409, 'Attendance has already been recorded.');
+        }
         if (isset($result['error'])) abort($result['error'], $result['message']);
 
         try {

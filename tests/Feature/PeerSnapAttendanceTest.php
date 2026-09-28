@@ -14,6 +14,7 @@ use App\Services\DeviceBindingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -127,6 +128,23 @@ class PeerSnapAttendanceTest extends TestCase
         $this->postJson(route('peer-snap.start'), ['session_id' => $this->session->id, 'student_number' => $this->student->student_number])->assertForbidden();
     }
 
+    public function test_zero_radius_and_future_presence_timestamps_are_denied(): void
+    {
+        $this->session->update(['radius_meters' => 0]);
+        Attendance::where('user_id', $this->host->id)->update(['last_distance_meters' => 0]);
+        $this->postJson(route('peer-snap.start'), [
+            'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
+        ])->assertForbidden();
+
+        $this->session->update(['radius_meters' => 50]);
+        Attendance::where('user_id', $this->host->id)->update([
+            'last_distance_meters' => 5, 'last_location_check_at' => now()->addMinute(),
+        ]);
+        $this->postJson(route('peer-snap.start'), [
+            'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
+        ])->assertForbidden();
+    }
+
     public function test_peer_requests_from_a_different_device_are_denied(): void
     {
         $this->withHeader('X-Device-Key', 'other-phone');
@@ -175,6 +193,27 @@ class PeerSnapAttendanceTest extends TestCase
         Attendance::create(['user_id' => $this->student->id, 'subject_id' => $this->subject->id,
             'subject_code' => $this->subject->code, 'date' => now('Asia/Manila')->toDateString(), 'status' => 'Present']);
         $this->confirm($ticket)->assertConflict();
+    }
+
+    public function test_unique_constraint_race_rejects_the_request_instead_of_leaving_it_processing(): void
+    {
+        $ticket = $this->start(); $this->fakeVerifier($ticket);
+        Attendance::creating(function (Attendance $attendance) {
+            if ($attendance->user_id !== $this->student->id) return;
+            DB::table('attendances')->insert([
+                'user_id' => $this->student->id,
+                'subject_code' => $this->subject->code,
+                'date' => now('Asia/Manila')->toDateString(),
+                'status' => 'Present',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        });
+
+        $this->confirm($ticket)->assertConflict();
+        $this->assertDatabaseHas('peer_vouch_requests', [
+            'verification_id' => $ticket['verification_id'],
+            'status' => 'rejected', 'failure_reason' => 'duplicate_attendance',
+        ]);
     }
 
     public function test_escaped_or_excused_attendance_cannot_be_overwritten(): void

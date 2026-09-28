@@ -54,12 +54,13 @@
     const confirmUrl = @json(route('peer-snap.confirm'));
     const sessionsUrl = @json(route('peer-snap.sessions'));
     const transitions = {
-        IDLE:['IDENTIFYING'], IDENTIFYING:['CAMERA_STARTING','FAILED','LOCKED'],
+        IDLE:['IDENTIFYING'], IDENTIFYING:['CAMERA_STARTING','FAILED','LOCKED','EXPIRED','IDLE'],
         CAMERA_STARTING:['FACE_SEARCH','FAILED','EXPIRED','IDLE'], FACE_SEARCH:['LIVENESS_CHECK','FAILED','EXPIRED','IDLE'],
         LIVENESS_CHECK:['MATCHING','FAILED','EXPIRED','IDLE'], MATCHING:['SUCCESS','FAILED','LOCKED','EXPIRED','IDLE'],
         SUCCESS:['IDLE'], FAILED:['IDLE'], LOCKED:['IDLE'], EXPIRED:['IDLE']
     };
-    let state = 'IDLE', stream = null, ticket = null, timer = null, detector = null;
+    let state = 'IDLE', stream = null, ticket = null, timer = null, detector = null, flowId = 0;
+    const isCurrent = id => id === flowId && !document.hidden;
     function setState(next) { if (!transitions[state]?.includes(next)) throw new Error('Invalid verification state'); state = next; }
     function stopCamera() { if (stream) stream.getTracks().forEach(track => track.stop()); stream = null; video.srcObject = null; clearInterval(timer); timer = null; }
     function showResult(title, message, type) {
@@ -68,8 +69,8 @@
         const h = document.createElement('h2'), p = document.createElement('p');
         h.textContent = title; p.textContent = message; result.append(h, p); result.hidden = false;
     }
-    function reset() { stopCamera(); ticket = null; cameraCard.hidden = true; formCard.hidden = false; captureButton.disabled = false; challengeBox.hidden = true; countdown.textContent = ''; if (state !== 'IDLE') setState('IDLE'); }
-    function fail(message, status) { if (state !== 'FAILED' && state !== 'LOCKED' && state !== 'EXPIRED') setState(status === 429 ? 'LOCKED' : status === 410 ? 'EXPIRED' : 'FAILED'); reset(); showResult(status === 429 ? 'Temporarily locked' : status === 410 ? 'Session expired' : 'Verification could not finish', message, 'error'); }
+    function reset() { flowId++; stopCamera(); ticket = null; cameraCard.hidden = true; formCard.hidden = false; $('peerStart').disabled = false; captureButton.disabled = false; challengeBox.hidden = true; countdown.textContent = ''; if (state !== 'IDLE') setState('IDLE'); }
+    function fail(message, status) { if (state === 'IDLE') return; if (state !== 'FAILED' && state !== 'LOCKED' && state !== 'EXPIRED') setState(status === 429 ? 'LOCKED' : status === 410 ? 'EXPIRED' : 'FAILED'); reset(); showResult(status === 429 ? 'Temporarily locked' : status === 410 ? 'Session expired' : 'Verification could not finish', message, 'error'); }
     async function jsonResponse(response) {
         const body = await response.json().catch(() => ({}));
         if (!response.ok) { const error = new Error(body.message || 'Request failed. Please try again.'); error.status = response.status; throw error; }
@@ -87,21 +88,27 @@
     }
     async function start() {
         if (state !== 'IDLE' || !sessionSelect.value || !studentInput.value.trim()) return;
+        const id = ++flowId;
         result.hidden = true; setState('IDENTIFYING'); $('peerStart').disabled = true;
         try {
-            ticket = await jsonResponse(await fetch(startUrl, {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,Accept:'application/json'}, body:JSON.stringify({session_id:Number(sessionSelect.value),student_number:studentInput.value.trim()})}));
+            const newTicket = await jsonResponse(await fetch(startUrl, {method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,Accept:'application/json'}, body:JSON.stringify({session_id:Number(sessionSelect.value),student_number:studentInput.value.trim()})}));
+            if (!isCurrent(id)) return;
+            ticket = newTicket;
             setState('CAMERA_STARTING');
             if (!navigator.mediaDevices?.getUserMedia) throw new Error('This browser does not support a live camera. Use an updated browser over HTTPS.');
-            stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+            const newStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
+            if (!isCurrent(id)) { newStream.getTracks().forEach(track => track.stop()); return; }
+            stream = newStream;
             formCard.hidden = true; cameraCard.hidden = false;
             video.srcObject = stream; await video.play();
+            if (!isCurrent(id)) return;
             try { detector = 'FaceDetector' in window ? new FaceDetector({fastMode:true,maxDetectedFaces:3}) : null; }
             catch { detector = null; }
             challengeBox.textContent = {blink_twice:'Blink twice while looking at the camera',turn_left:'Turn your head slightly left, then face forward',turn_right:'Turn your head slightly right, then face forward'}[ticket.challenge] || 'Follow the on-screen challenge';
             challengeBox.hidden = false; captureButton.disabled = false; setState('FACE_SEARCH');
-            timer = setInterval(() => { const secs = Math.max(0, Math.ceil((Date.parse(ticket.expires_at)-Date.now())/1000)); countdown.textContent = `${secs}s left`; if (!secs && ['CAMERA_STARTING','FACE_SEARCH','LIVENESS_CHECK','MATCHING'].includes(state)) fail('Start a new verification session.',410); },500);
-        } catch (error) { const message = error.name === 'NotAllowedError' ? 'Camera permission was denied. Allow camera access and try again.' : error.name === 'NotFoundError' ? 'No camera is available on this device.' : error.message; fail(message,error.status); }
-        finally { $('peerStart').disabled = false; }
+            timer = setInterval(() => { if (!isCurrent(id) || !ticket) return; const secs = Math.max(0, Math.ceil((Date.parse(ticket.expires_at)-Date.now())/1000)); countdown.textContent = `${secs}s left`; if (!secs && ['CAMERA_STARTING','FACE_SEARCH','LIVENESS_CHECK','MATCHING'].includes(state)) fail('Start a new verification session.',410); },500);
+        } catch (error) { if (!isCurrent(id)) return; const message = error.name === 'NotAllowedError' ? 'Camera permission was denied. Allow camera access and try again.' : error.name === 'NotFoundError' ? 'No camera is available on this device.' : error.message; fail(message,error.status); }
+        finally { if (isCurrent(id)) $('peerStart').disabled = false; }
     }
     async function captureFrame() {
         if (!video.videoWidth || !video.videoHeight) throw new Error('Camera is still starting. Wait a moment and try again.');
@@ -114,10 +121,12 @@
     }
     async function capture() {
         if (state !== 'FACE_SEARCH' || !ticket) return;
+        const id = flowId;
         captureButton.disabled = true;
         try {
             if (detector) {
                 const faces = await detector.detect(video);
+                if (!isCurrent(id)) return;
                 if (faces.length !== 1) throw new Error(faces.length ? 'Multiple faces detected. Keep only one person in view.' : 'No face detected. Move into the oval.');
                 const box = faces[0].boundingBox;
                 const ratio = box.width / video.videoWidth;
@@ -127,19 +136,19 @@
             }
             setState('LIVENESS_CHECK'); guidance.textContent = 'Perform the challenge now. Hold the phone still while five live frames are captured.';
             const data = new FormData(); data.append('verification_id',ticket.verification_id); data.append('nonce',ticket.nonce);
-            for (let i=0;i<5;i++) { guidance.textContent = `Live challenge running · frame ${i+1} of 5`; data.append(`frames[${i}]`,await captureFrame(),`frame-${i}.jpg`); if (i<4) await new Promise(resolve => setTimeout(resolve,650)); }
-            if (!ticket) return;
+            for (let i=0;i<5;i++) { if (!isCurrent(id)) return; guidance.textContent = `Live challenge running · frame ${i+1} of 5`; const frame = await captureFrame(); if (!isCurrent(id)) return; data.append(`frames[${i}]`,frame,`frame-${i}.jpg`); if (i<4) await new Promise(resolve => setTimeout(resolve,650)); }
+            if (!isCurrent(id)) return;
             setState('MATCHING'); guidance.textContent = 'Verifying identity securely…';
             const body = await jsonResponse(await fetch(confirmUrl,{method:'POST',credentials:'same-origin',headers:{'X-CSRF-TOKEN':csrf,Accept:'application/json'},body:data}));
-            if (!ticket) return;
+            if (!isCurrent(id)) return;
             setState('SUCCESS'); reset(); showResult('Identity verified', `Attendance recorded for ${body.student_name}.`, 'success'); studentInput.value = ''; await loadSessions();
-        } catch (error) { if (!ticket) return; if (state === 'FACE_SEARCH' && !error.status) { guidance.textContent = error.message; captureButton.disabled = false; return; } fail(error.message || 'Network or verification failure. Please try again.',error.status); }
+        } catch (error) { if (!isCurrent(id)) return; if (state === 'FACE_SEARCH' && !error.status) { guidance.textContent = error.message; captureButton.disabled = false; return; } fail(error.message || 'Network or verification failure. Please try again.',error.status); }
     }
     $('peerStart').addEventListener('click',start);
     captureButton.addEventListener('click',capture);
     $('peerCancel').addEventListener('click',() => { reset(); result.hidden = true; });
-    window.addEventListener('pagehide',stopCamera);
-    document.addEventListener('visibilitychange',() => { if (document.hidden && stream) { reset(); showResult('Camera paused', 'The camera was released when you left this page. Start again to continue.', 'error'); } });
+    window.addEventListener('pagehide',reset);
+    document.addEventListener('visibilitychange',() => { if (document.hidden && state !== 'IDLE') { reset(); showResult('Verification paused', 'The camera was released when you left this page. Start again to continue.', 'error'); } });
     loadSessions();
 })();
 </script>

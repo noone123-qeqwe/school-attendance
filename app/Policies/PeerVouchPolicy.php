@@ -11,7 +11,8 @@ class PeerVouchPolicy
 {
     public function create(User $host, AttendanceSession $session): bool
     {
-        if ($host->role !== 'student' || !$host->isActive() || !$session->isSessionActive()) {
+        if ($host->role !== 'student' || !$host->isActive() || !$session->isSessionActive()
+            || $session->getAllowedRadius() <= 0) {
             return false;
         }
 
@@ -26,6 +27,7 @@ class PeerVouchPolicy
             ->whereIn('method', ['qr', 'webauthn'])
             ->where('monitoring_status', 'active')
             ->where('last_location_check_at', '>=', now()->subSeconds(config('peer_snap.presence_fresh_seconds')))
+            ->where('last_location_check_at', '<=', now())
             ->latest('id')->first();
 
         return $presence !== null
