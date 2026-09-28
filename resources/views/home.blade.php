@@ -728,6 +728,12 @@
         color: #f87171;
     }
 
+    .hero-deck-icon.icon-rate-empty {
+        background: rgba(148, 163, 184, 0.12);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        color: #cbd5e1;
+    }
+
     .hero-deck-icon.icon-streak {
         background: rgba(249, 115, 22, 0.12);
         border: 1px solid rgba(249, 115, 22, 0.28);
@@ -761,6 +767,7 @@
     .hero-deck-value.val-rate-good { color: #4ade80; }
     .hero-deck-value.val-rate-warning { color: #fbbf24; }
     .hero-deck-value.val-rate-danger { color: #f87171; }
+    .hero-deck-value.val-rate-empty { color: #cbd5e1; }
 
     .hero-deck-label {
         color: #9c8b78;
@@ -1286,9 +1293,9 @@
 
         <!-- Bottom: Symmetrical Metrics Deck -->
         @php
-            $rateVal = isset($attendanceRate) ? (float) $attendanceRate : 0;
-            $rateTone = $rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger');
-            $rateIcon = $rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill');
+            $rateVal = $attendanceRate;
+            $rateTone = $rateVal === null ? 'rate-empty' : ($rateVal >= 85 ? 'rate-good' : ($rateVal >= 75 ? 'rate-warning' : 'rate-danger'));
+            $rateIcon = $rateVal === null ? 'bi-dash-circle' : ($rateVal >= 85 ? 'bi-shield-check' : ($rateVal >= 75 ? 'bi-shield-exclamation' : 'bi-exclamation-triangle-fill'));
         @endphp
         <div class="student-hero-deck">
             <!-- Metric 1: Campus Time -->
@@ -1303,13 +1310,13 @@
             </div>
 
             <!-- Metric 2: Attendance Rate -->
-            <div class="hero-deck-card" title="Overall Attendance Rate: {{ $attendanceRate ?? 0 }}%">
+            <div class="hero-deck-card" title="{{ $attendanceRate === null ? 'Attendance rate available after your first recorded class' : 'Overall Attendance Rate: '.$attendanceRate.'%' }}">
                 <div class="hero-deck-icon icon-{{ $rateTone }}">
                     <i class="bi {{ $rateIcon }}"></i>
                 </div>
                 <div class="hero-deck-body">
-                    <div class="hero-deck-value val-{{ $rateTone }}">{{ $attendanceRate ?? 0 }}%</div>
-                    <div class="hero-deck-label">Attendance</div>
+                    <div class="hero-deck-value val-{{ $rateTone }}">{{ $attendanceRate === null ? '—' : $attendanceRate.'%' }}</div>
+                    <div class="hero-deck-label">{{ $attendanceRate === null ? 'No records yet' : 'Attendance' }}</div>
                 </div>
             </div>
 

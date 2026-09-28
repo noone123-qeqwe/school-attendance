@@ -86,19 +86,25 @@ class HomeController extends Controller
     ];
     $currentDayLetter = $dayMap[$now->format('l')] ?? null;
     $currentDayName   = $now->format('l');
+    $memberOfSubject = function ($query) use ($user) {
+        $query->whereHas('enrolledStudents', fn ($students) => $students->whereKey($user->id))
+            ->orWhere(function ($subjects) use ($user) {
+                $subjects->where('year_level', $user->year_level)
+                    ->where('semester', $user->semester)
+                    ->where(function ($scope) use ($user) {
+                        $scope->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
+                    })
+                    ->where(function ($scope) use ($user) {
+                        $scope->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
+                    });
+            });
+    };
 
     // 2. Today's subjects (auto-absent marking is handled by scheduled command: attendance:mark-absent)
     $todaySubjects = collect();
 
     if ($currentDayLetter) {
-        $todaySubjects = Subject::where('year_level', $user->year_level)
-            ->where('semester', $user->semester)
-            ->where(function ($q) use ($user) {
-                $q->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
-            })
-            ->where(function ($q) use ($user) {
-                $q->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
-            })
+        $todaySubjects = Subject::where($memberOfSubject)
             ->whereHas('schedules', function ($query) use ($currentDayName) {
                 $query->where('day', $currentDayName);
             })
@@ -111,14 +117,7 @@ class HomeController extends Controller
     // 3. Fetch Active Class for "Today's Clock In"
     $currentClass = null;
     if ($currentDayLetter) {
-        $currentClass = Subject::where('year_level', $user->year_level)
-            ->where('semester', $user->semester)
-            ->where(function ($q) use ($user) {
-                $q->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
-            })
-            ->where(function ($q) use ($user) {
-                $q->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
-            })
+        $currentClass = Subject::where($memberOfSubject)
             ->whereHas('schedules', function ($query) use ($currentTime, $currentDayName) {
                 $query->whereTime('start_time', '<=', $currentTime)
                       ->whereTime('end_time', '>=', $currentTime)
@@ -183,10 +182,7 @@ class HomeController extends Controller
     $totalLate    = $stats['Late'] ?? 0;
     $totalAbsent  = $stats['Absent'] ?? 0;
 
-    // Determine dynamically missed classes today that have no database record yet
-    $dynamicMissesTotal = 0;
-    
-    // First, build today's schedule if it isn't built yet
+    // Build today's schedule before calculating attendance totals.
     $todaySchedule = collect();
     if ($todaySubjects->isNotEmpty()) {
         foreach ($todaySubjects as $subject) {
@@ -212,9 +208,6 @@ class HomeController extends Controller
                 $status = 'past';
             } elseif ($now->greaterThan($classEnd)) {
                 $status = 'missed';
-                if (!$existing) {
-                    $dynamicMissesTotal++;
-                }
             } elseif ($now->greaterThanOrEqualTo($classStart) && $now->lessThanOrEqualTo($classEnd)) {
                 $status = 'ongoing';
             }
@@ -240,7 +233,7 @@ class HomeController extends Controller
 
     $attendanceRate = $totalRecords > 0
         ? round(($presentRecords / $totalRecords) * 100)
-        : 100; // If they have 0 total classes, attendance is 100% (clean initial standing)
+        : null;
 
     // 8b. Detailed stats for dashboard donut chart
     // (Already captured above)
