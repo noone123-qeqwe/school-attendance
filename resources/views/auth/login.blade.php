@@ -65,6 +65,10 @@
             --app-height: 100dvh;
         }
 
+        html {
+            zoom: 1 !important;
+        }
+
         html, body {
             height: 100%;
             height: 100dvh;
@@ -141,24 +145,24 @@
         /* ── BOTTOM BAR ── */
         .bottom-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
-            z-index: 5;
+            z-index: 25;
             display: flex; align-items: center; justify-content: space-between;
             padding-top: 10px;
-            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 10px);
+            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 12px);
             padding-left: calc(var(--sal, env(safe-area-inset-left, 0px)) + 24px);
             padding-right: calc(var(--sar, env(safe-area-inset-right, 0px)) + 24px);
-            font-size: 0.72rem; color: rgba(255,255,255,0.45);
+            font-size: 0.74rem; color: rgba(255,255,255,0.45);
             pointer-events: none;
-            background: linear-gradient(0deg, rgba(17, 10, 10, 0.85) 0%, transparent 100%);
+            background: linear-gradient(0deg, rgba(17, 10, 10, 0.92) 0%, rgba(17, 10, 10, 0.5) 70%, transparent 100%);
             transition: opacity 0.2s ease;
         }
         .bottom-bar a {
-            color: rgba(255,255,255,0.45); text-decoration: none;
+            color: rgba(255,255,255,0.55); text-decoration: none;
             transition: color 0.2s; pointer-events: all;
         }
-        .bottom-bar a:hover { color: rgba(255,255,255,0.8); }
+        .bottom-bar a:hover { color: #d4af37; }
         .bottom-bar span { pointer-events: none; }
-        .bottom-links { display: flex; gap: 20px; }
+        .bottom-links { display: flex; align-items: center; gap: 20px; }
 
         body.keyboard-open .bottom-bar {
             display: none !important;
@@ -174,10 +178,11 @@
             height: var(--app-height, 100%);
             max-height: var(--app-height, 100%);
             display: flex; 
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding-top: calc(var(--sat, env(safe-area-inset-top, 0px)) + 64px);
-            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 48px);
+            padding-top: calc(var(--sat, env(safe-area-inset-top, 0px)) + 52px);
+            padding-bottom: calc(var(--sab, env(safe-area-inset-bottom, 0px)) + 50px);
             padding-left: calc(var(--sal, env(safe-area-inset-left, 0px)) + 16px);
             padding-right: calc(var(--sar, env(safe-area-inset-right, 0px)) + 16px);
             box-sizing: border-box;
@@ -192,15 +197,15 @@
         /* ── GLASS CARD ── */
         .glass-card {
             width: 100%; 
-            max-width: 500px;
+            max-width: 440px;
             min-width: 280px;
-            background: rgba(30, 21, 21, 0.82);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border-radius: 22px;
-            border: 1px solid rgba(212, 175, 55, 0.25);
-            box-shadow: 0 16px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(212, 175, 55, 0.12);
-            padding: 30px 28px 24px;
+            background: rgba(28, 18, 18, 0.88);
+            backdrop-filter: blur(28px) saturate(190%);
+            -webkit-backdrop-filter: blur(28px) saturate(190%);
+            border-radius: 20px;
+            border: 1px solid rgba(212, 175, 55, 0.26);
+            box-shadow: 0 16px 44px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(212, 175, 55, 0.16);
+            padding: 22px 24px 18px;
             color: white;
             position: relative;
             z-index: 20;
@@ -209,16 +214,16 @@
             overflow-y: visible;
         }
 
-        /* Logo  -  larger */
+        /* Logo */
         .glass-logo {
-            width: 64px; height: 64px; /* Increased from 56px */
+            width: 52px; height: 52px;
             border-radius: 50%;
             background: white;
-            border: 2.5px solid rgba(255,220,100,0.6);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            border: 2px solid rgba(212, 175, 55, 0.7);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
             display: flex; align-items: center; justify-content: center;
             overflow: hidden;
-            margin: 0 auto 14px; /* Increased margin */
+            margin: 0 auto 8px;
             transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
             animation: floatLogo 4s ease-in-out infinite, glowPulse 2s infinite;
         }
@@ -228,22 +233,22 @@
         /* Badge */
         .glass-badge {
             display: inline-block;
-            background: rgba(255,255,255,0.18);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.25);
+            color: rgba(255,255,255,0.9);
             font-size: 0.62rem; font-weight: 800;
-            letter-spacing: 2px; text-transform: uppercase;
-            padding: 2.5px 12px; border-radius: 99px;
-            margin-bottom: 4px;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 2px 10px; border-radius: 99px;
+            margin-bottom: 3px;
         }
         .glass-title {
-            font-size: 1.58rem; font-weight: 800; /* Increased from 1.48rem */
-            color: white; letter-spacing: -0.5px;
-            margin-bottom: 6px; /* Increased spacing */
+            font-size: 1.42rem; font-weight: 800;
+            color: white; letter-spacing: -0.4px;
+            margin-bottom: 2px;
         }
         .glass-sub {
-            font-size: 0.88rem; color: rgba(255,255,255,0.65); /* Increased from 0.82rem */
-            margin-bottom: 20px; /* Increased spacing */
+            font-size: 0.8rem; color: rgba(255,255,255,0.65);
+            margin-bottom: 12px;
         }
 
         /* Role toggle */
@@ -273,22 +278,22 @@
         .role-btn:hover:not(.active) { color: white; background: rgba(255,255,255,0.1); }
 
         /* Inputs */
-        .glass-input-wrap { position: relative; margin-bottom: 14px; width: 100%; }
+        .glass-input-wrap { position: relative; margin-bottom: 10px; width: 100%; }
         .glass-input-wrap .g-icon {
-            position: absolute; left: 16px !important; top: 50%;
+            position: absolute; left: 14px !important; top: 50%;
             transform: translateY(-50%);
-            color: rgba(255,255,255,0.5); font-size: 1.05rem !important;
+            color: rgba(255,255,255,0.5); font-size: 0.95rem !important;
             pointer-events: none; transition: color 0.2s;
             z-index: 2;
         }
         .glass-input {
             width: 100%;
-            padding: 14px 16px 14px 50px;
+            padding: 11px 14px 11px 42px;
             border-radius: 11px;
             border: 1.5px solid rgba(212, 175, 55, 0.25);
             background: rgba(0,0,0,0.3);
             color: white;
-            font-size: 0.92rem;
+            font-size: 0.88rem;
             font-family: 'Inter', sans-serif;
             outline: none;
             transition: all 0.2s;
@@ -301,25 +306,25 @@
             box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.15);
         }
         .glass-input-wrap:focus-within .g-icon { color: rgba(255,255,255,0.85); }
-        .glass-input.has-eye { padding-right: 50px !important; }
+        .glass-input.has-eye { padding-right: 46px !important; }
         .eye-toggle {
-            position: absolute; right: 8px; top: 50%;
+            position: absolute; right: 6px; top: 50%;
             transform: translateY(-50%);
-            color: rgba(255,255,255,0.65); font-size: 1.05rem;
+            color: rgba(255,255,255,0.65); font-size: 1rem;
             cursor: pointer; background: none; border: none; padding: 0;
             transition: color 0.2s; line-height: 1;
             z-index: 10 !important;
-            min-width: 44px !important;
-            min-height: 44px !important;
-            width: 44px !important;
-            height: 44px !important;
+            min-width: 38px !important;
+            min-height: 38px !important;
+            width: 38px !important;
+            height: 38px !important;
             display: inline-flex; align-items: center; justify-content: center;
             user-select: none !important;
             -webkit-user-select: none !important;
             -webkit-touch-callout: none !important;
             -webkit-tap-highlight-color: transparent !important;
             touch-action: manipulation !important;
-            border-radius: 10px;
+            border-radius: 9px;
         }
         .eye-toggle:hover { color: white; }
         .eye-toggle:focus-visible {
@@ -327,20 +332,20 @@
             outline-offset: 2px !important;
             color: #ffffff !important;
         }
-        .eye-toggle i { pointer-events: none !important; font-size: 1.15rem !important; }
+        .eye-toggle i { pointer-events: none !important; font-size: 1.05rem !important; }
 
 
         /* Fingerprint/Biometric row */
         .fp-row {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 16px;
-            border-radius: 14px;
+            padding: 8px 12px;
+            border-radius: 12px;
             border: 1.5px solid rgba(255, 255, 255, 0.16);
             border-top: 1.5px solid rgba(255, 255, 255, 0.22);
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            margin-bottom: 8px;
+            margin-bottom: 5px;
             width: 100%;
             font-family: inherit;
             color: inherit;
@@ -369,18 +374,18 @@
         }
         .fp-row:focus { outline: none; }
         .fp-row:focus-visible { outline: 2px solid rgba(212, 175, 55, 0.7); outline-offset: 2px; }
-        .fp-row-left { display: flex; align-items: center; gap: 12px; text-align: left; }
+        .fp-row-left { display: flex; align-items: center; gap: 10px; text-align: left; }
         .fp-row-left .fp-icon-wrap {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(14, 165, 233, 0.15) 100%);
             border: 1px solid rgba(52, 211, 153, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #34d399;
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             flex-shrink: 0;
             transition: all 0.25s ease;
         }
@@ -389,18 +394,18 @@
             box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
             transform: scale(1.05);
         }
-        .fp-row-left i { font-size: 1.15rem; color: #34d399; transition: all 0.3s; }
-        .fp-row-label { font-size: 0.85rem; font-weight: 700; color: #ffffff; letter-spacing: -0.1px; transition: all 0.2s; }
-        .fp-row-hint { font-size: 0.7rem; color: rgba(255, 255, 255, 0.65); margin-top: 1px; transition: all 0.2s; }
-        .fp-row-arrow { color: rgba(255, 255, 255, 0.45); font-size: 0.85rem; transition: all 0.2s; }
+        .fp-row-left i { font-size: 1.05rem; color: #34d399; transition: all 0.3s; }
+        .fp-row-label { font-size: 0.82rem; font-weight: 700; color: #ffffff; letter-spacing: -0.1px; transition: all 0.2s; }
+        .fp-row-hint { font-size: 0.67rem; color: rgba(255, 255, 255, 0.65); margin-top: 1px; transition: all 0.2s; }
+        .fp-row-arrow { color: rgba(255, 255, 255, 0.45); font-size: 0.8rem; transition: all 0.2s; }
         .fp-row:hover .fp-row-arrow { color: #f5dfa8; transform: translateX(2px); }
 
         /* Divider */
                 #reEnrollBioLink, [id*='reEnrollBio'] { display: none !important; pointer-events: none !important; opacity: 0 !important; visibility: hidden !important; }
 
 .glass-divider {
-            display: flex; align-items: center; gap: 10px;
-            margin: 10px 0; color: rgba(255,255,255,0.35); font-size: 0.72rem; /* Increased margin */
+            display: flex; align-items: center; gap: 8px;
+            margin: 6px 0; color: rgba(255,255,255,0.35); font-size: 0.68rem;
         }
         .glass-divider::before, .glass-divider::after {
             content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.18);
@@ -408,18 +413,21 @@
 
         /* Submit button */
         .glass-btn {
-            width: 100%; padding: 15px; /* Increased padding */
-            background: rgba(255,255,255,0.95);
+            width: 100%; padding: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
             color: #800000;
-            font-weight: 800; font-size: 0.95rem; /* Increased font size */
+            font-weight: 800; font-size: 0.92rem;
             letter-spacing: 0.5px;
             border: none; border-radius: 11px;
-            cursor: pointer; transition: all 0.25s ease;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-            margin-top: 6px; /* Increased spacing */
+            cursor: pointer; transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+            margin-top: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .glass-btn-primary {
-            background: rgba(255,255,255,0.95);
+            background: linear-gradient(135deg, #ffffff 0%, #f7f7f7 100%);
             color: #800000;
         }
         .glass-btn-secondary {
@@ -427,26 +435,30 @@
             color: rgba(255,255,255,0.9);
             border: 1.5px solid rgba(255,255,255,0.2);
         }
-        .glass-btn:hover { background: white; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .glass-btn:hover {
+            background: #ffffff;
+            transform: translateY(-1.5px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 16px rgba(255,255,255,0.15);
+        }
         .glass-btn:active { transform: translateY(0); }
         .glass-btn.admin-variant { background: rgba(107,0,32,0.9); color: white; border: 1px solid rgba(255,255,255,0.2); }
         .glass-btn.admin-variant:hover { background: rgba(107,0,32,1); }
 
         .glass-note-link {
             display: inline-flex; align-items: center; justify-content: center;
-            font-size: 0.76rem; color: rgba(255,255,255,0.65);
+            font-size: 0.74rem; color: rgba(255,255,255,0.65);
             text-decoration: none; transition: all 0.2s ease;
-            padding: 4px 0;
+            padding: 2px 0;
         }
         .glass-note-link:hover {
-            color: rgba(255,255,255,0.95);
+            color: #d4af37;
             text-decoration: underline;
         }
 
         /* Links */
-        .glass-link-row { text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 8px; }
-        .glass-link-row a { color: rgba(255,255,255,0.85); font-weight: 700; text-decoration: none; transition: color 0.2s; }
-        .glass-link-row a:hover { color: white; text-decoration: underline; }
+        .glass-link-row { text-align: center; font-size: 0.76rem; color: rgba(255,255,255,0.5); margin-top: 5px; }
+        .glass-link-row a { color: rgba(212,175,55,0.95); font-weight: 700; text-decoration: none; transition: color 0.2s; }
+        .glass-link-row a:hover { color: #f9e596; text-decoration: underline; }
 
         /* Error alert */
         .glass-alert {
@@ -1194,26 +1206,26 @@
         /* Desktop elevation for optical vertical centering */
         @media (min-width: 769px) {
             .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 68px);
-                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 48px);
+                padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 50px);
             }
             .glass-card {
-                max-width: 520px;
-                padding: 32px 30px 26px;
+                max-width: 440px;
+                padding: 24px 26px 18px;
             }
         }
 
         /* Mobile and Responsive */
         @media (max-width: 768px) {
             .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 56px);
+                padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
                 padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 32px);
                 padding-left: calc(env(safe-area-inset-left, 0px) + 16px);
                 padding-right: calc(env(safe-area-inset-right, 0px) + 16px);
             }
             .glass-card { 
                 max-width: 100%;
-                padding: 24px 22px 20px; 
+                padding: 20px 20px 16px; 
                 border-radius: 20px; 
                 transform: none;
             }
@@ -1233,7 +1245,7 @@
 
         @media (max-width: 480px) {
             .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 50px);
+                padding-top: calc(env(safe-area-inset-top, 0px) + 48px);
                 padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
                 padding-left: calc(env(safe-area-inset-left, 0px) + 12px);
                 padding-right: calc(env(safe-area-inset-right, 0px) + 12px);
@@ -1241,12 +1253,12 @@
             .glass-card { 
                 max-width: 100%;
                 min-width: 260px;
-                padding: 22px 18px 18px; 
+                padding: 20px 16px 16px; 
                 border-radius: 18px; 
                 margin: auto 0;
             }
             .glass-title { font-size: 1.35rem; }
-            .glass-sub { font-size: 0.82rem; margin-bottom: 16px; }
+            .glass-sub { font-size: 0.8rem; margin-bottom: 14px; }
             .bottom-bar { display: none; }
             .top-bar {
                 padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
@@ -1259,27 +1271,47 @@
 
         @media (max-width: 360px) {
             .glass-card { 
-                padding: 18px 14px 16px; 
+                padding: 16px 12px 14px; 
                 border-radius: 16px;
             }
-            .glass-title { font-size: 1.2rem; }
-            .glass-sub { font-size: 0.75rem; }
-            .glass-input { font-size: 0.82rem; padding: 11px 12px 11px 40px; }
-            .glass-btn { font-size: 0.85rem; padding: 12px; }
+            .glass-title { font-size: 1.18rem; }
+            .glass-sub { font-size: 0.74rem; }
+            .glass-input { font-size: 0.82rem; padding: 9px 10px 9px 36px; }
+            .glass-btn { font-size: 0.84rem; padding: 10px; }
+        }
+
+        /* Medium/short desktop heights (e.g. 768p laptops or non-maximized windows) */
+        @media (max-height: 760px) {
+            .auth-scene {
+                padding-top: calc(env(safe-area-inset-top, 0px) + 44px);
+                padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 44px);
+            }
+            .glass-card {
+                max-width: 420px;
+                padding: 18px 22px 14px;
+            }
+            .glass-logo { width: 44px; height: 44px; margin-bottom: 6px; }
+            .glass-title { font-size: 1.28rem; margin-bottom: 2px; }
+            .glass-sub { font-size: 0.76rem; margin-bottom: 8px; }
+            .glass-input-wrap { margin-bottom: 7px; }
+            .glass-input { padding: 9px 12px 9px 38px; font-size: 0.84rem; }
+            .fp-row { padding: 6px 10px; margin-bottom: 4px; }
+            .glass-divider { margin: 4px 0; }
+            .glass-btn { padding: 10px; font-size: 0.86rem; }
         }
 
         /* Landscape orientation adjustments & short screen heights */
         @media (max-height: 620px) {
             .auth-scene {
-                padding-top: calc(env(safe-area-inset-top, 0px) + 40px);
+                padding-top: calc(env(safe-area-inset-top, 0px) + 36px);
                 padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
             }
-            .glass-card { padding: 18px 20px 16px; }
-            .glass-logo { width: 46px; height: 46px; margin-bottom: 8px; }
-            .glass-title { font-size: 1.25rem; margin-bottom: 3px; }
-            .glass-sub { font-size: 0.76rem; margin-bottom: 12px; }
-            .role-toggle { margin-bottom: 12px; padding: 3px; }
-            .role-btn { padding: 7px 10px; font-size: 0.8rem; }
+            .glass-card { padding: 14px 18px 12px; }
+            .glass-logo { width: 40px; height: 40px; margin-bottom: 4px; }
+            .glass-title { font-size: 1.2rem; margin-bottom: 2px; }
+            .glass-sub { font-size: 0.72rem; margin-bottom: 6px; }
+            .role-toggle { margin-bottom: 6px; padding: 2px; }
+            .role-btn { padding: 5px 8px; font-size: 0.76rem; }
             .top-bar { display: none; }
             .bottom-bar { display: none; }
         }
@@ -1690,12 +1722,12 @@ if (document.readyState === 'loading') {
             </button>
         </form>
 
-        <div style="text-align:center;margin-top:8px;" class="anim-fade-up anim-d7">
+        <div style="text-align:center;margin-top:6px;" class="anim-fade-up anim-d7">
             <a href="#" id="useRecoveryCodeLink" class="glass-note-link">
                 <i class="bi bi-key me-1"></i>Use Recovery Code
             </a>
         </div>
-        <div class="glass-link-row anim-fade-up anim-d7">
+        <div class="glass-link-row anim-fade-up anim-d7" style="margin-top:4px;">
             Don't have an account? <a href="{{ route('register') }}">Register here</a>
         </div>
         
