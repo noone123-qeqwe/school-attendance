@@ -1038,94 +1038,16 @@ class WebAuthnController extends Controller
         ]);
     }
 
-    /**
-     * Native Android Biometric Login
-     * Authenticates user via on-device BiometricPrompt hardware verification
-     */
+    /** Reject legacy native biometric requests that cannot prove device verification. */
     public function nativeBiometricLogin(Request $request)
     {
-        $rawIdentifier = $request->input('student_number') ?? $request->input('identifier') ?? $request->input('email');
-        $deviceId = $request->input('device_id') ?? $request->header('X-Device-Id');
-
-        $user = null;
-        if ($rawIdentifier && is_string($rawIdentifier) && trim($rawIdentifier) !== '') {
-            $user = $this->findUserByIdentifier(trim($rawIdentifier));
-        }
-
-        if (!$user && $deviceId) {
-            $cleanId = trim((string)$deviceId);
-            $binding = \App\Models\DeviceBinding::where('device_uuid', $cleanId)
-                ->orWhere('hardware_fingerprint', hash('sha256', $cleanId))
-                ->first();
-            if ($binding && $binding->user && $binding->user->isActive()) {
-                $user = $binding->user;
-            }
-        }
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'code' => 'USER_NOT_FOUND',
-                'message' => 'Please enter your Student ID or Email before signing in with fingerprint.'
-            ], 404);
-        }
-
-        if (!$user->isActive()) {
-            return response()->json([
-                'success' => false,
-                'code' => 'ACCOUNT_DEACTIVATED',
-                'message' => 'Your account has been deactivated. Please contact the school administrator.'
-            ], 403);
-        }
-
-        // Verify that the user has an active device binding or registered biometric credential
-        $isBoundToUser = $user->deviceBinding && (
-            $user->deviceBinding->device_uuid === $deviceId ||
-            $user->deviceBinding->hardware_fingerprint === hash('sha256', (string)$deviceId)
-        );
-        $hasWebauthn = $user->webauthnCredentials()->exists();
-
-        // If the account has neither a bound device nor a registered biometric credential
-        if (!$isBoundToUser && !$hasWebauthn) {
-            return response()->json([
-                'success' => false,
-                'code' => 'SETUP_REQUIRED',
-                'message' => 'Biometric sign-in is not set up for this account on this device yet. Please sign in with your password to set it up.'
-            ], 401);
-        }
-
-        Auth::login($user, true);
-        $request->session()->regenerate();
-        $request->session()->put('user_role', $user->role);
-        $request->session()->put('login_timestamp', now()->toString());
-
-        if ($user->isStudent()) {
-            app(\App\Services\DeviceBindingService::class)->bind($user, $request, true);
-            $request->session()->save();
-        }
-
-        $redirectUrl = route('home');
-        if ($user->isAdmin()) {
-            $redirectUrl = route('admin.dashboard');
-        } elseif ($user->isTeacher()) {
-            $redirectUrl = route('teacher.dashboard');
-        } elseif ($user->isParent()) {
-            $redirectUrl = route('parent.dashboard');
-        }
-
+        // A browser-supplied device ID does not prove that Android's biometric
+        // prompt succeeded. Only a signed WebAuthn assertion can authenticate.
         return response()->json([
-            'success' => true,
-            'message' => 'Fingerprint verified successfully! Redirecting...',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'role' => $user->role,
-                'identifier' => $user->student_number ?? $user->email,
-            ],
-            'role' => $user->role,
-            'redirect' => $redirectUrl,
-            'dashboard_url' => $redirectUrl,
-        ]);
+            'success' => false,
+            'code' => 'PASSKEY_REQUIRED',
+            'message' => 'Please sign in with a passkey or your password. After signing in, add a passkey for this site in Settings.',
+        ], 403);
     }
 
     public function removeDevice(Request $request)

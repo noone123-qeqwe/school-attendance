@@ -183,6 +183,29 @@ class BiometricLoginViewTest extends TestCase
         ]);
     }
 
+    public function test_native_device_id_cannot_log_in_without_a_signed_passkey_assertion(): void
+    {
+        $user = User::factory()->create([
+            'student_number' => '2024-77777',
+            'role' => 'student',
+            'is_active' => true,
+        ]);
+        \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'enrolled-credential',
+            'public_key' => 'test-key',
+            'sign_count' => 0,
+            'device_name' => 'Test device',
+        ]);
+
+        $this->postJson(route('webauthn.native.login'), [
+            'student_number' => $user->student_number,
+            'device_id' => 'attacker-controlled-id',
+        ])->assertStatus(403)->assertJsonPath('code', 'PASSKEY_REQUIRED');
+
+        $this->assertGuest();
+    }
+
     public function test_login_page_has_no_premature_script_close_and_all_biometric_scripts_are_inside_script_tags()
     {
         $response = $this->get(route('login'));

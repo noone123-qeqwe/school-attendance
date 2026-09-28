@@ -2991,11 +2991,9 @@ async function getDeviceBiometricCapabilities() {
 
     var isSecure = window.isSecureContext || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     var isWebAuthnSupported = !!(isSecure && window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.get === 'function');
-    var isNativeBio = !!(window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isBiometricAvailable === 'function' && window.AndroidDeviceBridge.isBiometricAvailable());
-    if (isNativeBio) {
-        isPlatformAvailable = true;
-        platformAvailabilityKnown = true;
-    } else if (isWebAuthnSupported && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+    var isPlatformAvailable = false;
+    var platformAvailabilityKnown = false;
+    if (isWebAuthnSupported && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         try {
             isPlatformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
             platformAvailabilityKnown = true;
@@ -4521,10 +4519,6 @@ function handleSelectBiometricMethod(selectedMethod, identifier, opts) {
         startFaceRecognitionLogin(identifier, opts);
     } else {
         closeBiometricModal();
-        if (window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isBiometricAvailable === 'function' && window.AndroidDeviceBridge.isBiometricAvailable()) {
-            performNativeAndroidBiometricLogin(identifier);
-            return;
-        }
         if (fpLabel) fpLabel.textContent = selectedMethod.name + '...';
         if (fpHint) fpHint.textContent = 'Tap here to cancel (or verify)';
         if (fpIcon) fpIcon.className = 'bi ' + selectedMethod.icon;
@@ -4564,11 +4558,10 @@ async function handleBiometricLogin() {
         return;
     }
 
-    var hasNativeBio = !!(window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isBiometricAvailable === 'function' && window.AndroidDeviceBridge.isBiometricAvailable());
     var hasWebAuthn = window.PublicKeyCredential && navigator.credentials && typeof navigator.credentials.get === 'function';
     var hasCamera = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
 
-    if (!hasNativeBio && !hasWebAuthn && !hasCamera) {
+    if (!hasWebAuthn && !hasCamera) {
         resetBiometricButton();
         showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Biometric authentication is not supported on this browser. Please sign in with your password.');
         focusPasswordField();
@@ -4588,21 +4581,6 @@ async function handleBiometricLogin() {
         if (lastNativeId && lastNativeId.trim()) {
             identifier = lastNativeId.trim();
             if (idInput) idInput.value = identifier;
-        }
-    }
-
-    if (hasNativeBio) {
-        if (identifier) {
-            performNativeAndroidBiometricLogin(identifier);
-            return;
-        } else {
-            if (typeof window.showStudentIdRequiredModal === 'function') {
-                window.showStudentIdRequiredModal();
-            } else if (idInput) {
-                idInput.focus();
-                showFpMessage('warning', '<i class="bi bi-person-fill me-2"></i>Please enter your Student ID or Email first.');
-            }
-            return;
         }
     }
 
@@ -4903,11 +4881,6 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
     studentNumber = (studentNumber || '').trim();
     selectedMethod = selectedMethod || { id: 'fingerprint', name: 'Biometric', icon: 'bi-fingerprint', uv: 'required' };
     var onDeviceMethod = selectedMethod.id === 'fingerprint' || selectedMethod.id === 'face';
-
-    if (selectedMethod.id !== 'face' && window.AndroidDeviceBridge && typeof window.AndroidDeviceBridge.isBiometricAvailable === 'function' && window.AndroidDeviceBridge.isBiometricAvailable()) {
-        performNativeAndroidBiometricLogin(studentNumber);
-        return;
-    }
 
     // Abort previous prompt if any
     if (bioAbortController) {
@@ -5267,11 +5240,11 @@ async function performBiometricLogin(studentNumber, selectedMethod) {
         }
 
         if (err.name === 'CredentialNotFoundError') {
-            showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>Fingerprint not found on this device or server address.');
+            showFpMessage('warning', '<i class="bi bi-shield-exclamation me-2"></i>No passkey found for this site on this device.');
             openBiometricModal({
                 title: 'FINGERPRINT SETUP NEEDED',
                 identifier: studentNumber,
-                message: 'Your fingerprint was not found for this server address. This occurs when the server address is updated or you are using a new device.<br><br>Would you like to verify your password and enable fingerprint sign-in in 1 tap?',
+                message: 'No passkey was found for this site on this device. A passkey saved for the previous server address cannot be used here.<br><br>Verify your account password to add a new passkey for this address.',
                 badgeType: 'warning',
                 primaryBtnText: '<i class="bi bi-shield-plus me-2"></i>ACTIVATE FINGERPRINT',
                 secondaryBtnText: 'SIGN IN WITH PASSWORD',
