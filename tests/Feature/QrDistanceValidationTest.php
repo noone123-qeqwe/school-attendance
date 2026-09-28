@@ -412,6 +412,42 @@ class QrDistanceValidationTest extends TestCase
         $this->assertGreaterThan(50, $response->json('distance'));
     }
 
+    public function test_close_outside_indoor_fix_requests_retry_without_recording_attendance(): void
+    {
+        // Roughly 55m from the teacher: do not call this definitely outside,
+        // but never expand the 50m boundary to admit the student.
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $this->session->token,
+            'latitude' => 14.500495,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 20,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
+        ]);
+
+        $response->assertUnprocessable()->assertJsonPath('error_type', 'location_uncertain');
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id,
+            'session_id' => $this->session->id,
+        ]);
+    }
+
+    public function test_stale_reported_fix_cannot_record_attendance(): void
+    {
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000) - 30000,
+        ]);
+
+        $response->assertUnprocessable()->assertJsonPath('error_type', 'stale_location');
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id,
+            'session_id' => $this->session->id,
+        ]);
+    }
+
     public function test_student_genuinely_outside_radius_is_rejected_with_outside_classroom()
     {
         // 14.501800, 121.000000 is ~200 meters away
@@ -572,6 +608,30 @@ class QrDistanceValidationTest extends TestCase
 
         $weakGpsResponse->assertStatus(422);
         $this->assertEquals('unreliable_gps', $weakGpsResponse->json('error_type'));
+    }
+
+    public function test_webauthn_completion_defers_close_boundary_fix_before_identity_verification(): void
+    {
+        $this->actingAs($this->student)->postJson('/qr/verify-options', ['token' => $this->session->token]);
+
+        $webauthn = Mockery::mock(WebauthnService::class);
+        $webauthn->shouldNotReceive('verifyAssertion');
+        $this->app->instance(WebauthnService::class, $webauthn);
+
+        $response = $this->actingAs($this->student)->postJson('/qr/verify-complete', [
+            'token' => $this->session->token,
+            'latitude' => 14.500495,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 20,
+            'location_timestamp_ms' => (int) round(microtime(true) * 1000),
+            'credential' => ['id' => 'fake', 'response' => []],
+        ]);
+
+        $response->assertUnprocessable()->assertJsonPath('error_type', 'location_uncertain');
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id,
+            'session_id' => $this->session->id,
+        ]);
     }
 
     public function test_system_default_does_not_override_session_radius()

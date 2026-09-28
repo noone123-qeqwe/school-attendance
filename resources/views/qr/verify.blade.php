@@ -627,6 +627,73 @@ const GPS_QUICK_ACCEPT = 30;
 const GPS_MAX_FAST_ACCEPT = 50;
 const GPS_MAX_ACCEPTABLE_ACCURACY = 50;
 
+function isNearBoundary(distance, accuracy) {
+    return distance > RADIUS_METERS && distance <= RADIUS_METERS + Math.min(10, accuracy / 2);
+}
+
+function validFreshPosition(pos) {
+    if (!pos || !pos.coords) return false;
+    var c = pos.coords;
+    var age = Date.now() - pos.timestamp;
+    return age >= -5000 && age <= 10000 && Number.isFinite(c.latitude) &&
+        Math.abs(c.latitude) <= 90 && Number.isFinite(c.longitude) &&
+        Math.abs(c.longitude) <= 180 && Number.isFinite(c.accuracy) && c.accuracy > 0;
+}
+
+// Wait briefly for a second independent fix. Widely separated fixes indicate indoor drift.
+function getFreshStablePosition() {
+    return new Promise(function(resolve) {
+        if (!navigator.geolocation) { resolve(null); return; }
+        var readings = [];
+        var watchId = null;
+        var finished = false;
+        var timer = null;
+        var finish = function(result) {
+            if (finished) return;
+            finished = true;
+            clearTimeout(timer);
+            if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+            resolve(result);
+        };
+        timer = setTimeout(function() {
+            if (!readings.length) { finish(null); return; }
+            if (readings.length > 1) {
+                // Do not send a single favorable outlier when fresh fixes disagree.
+                var stable = readings.some(function(a, i) {
+                    return readings.some(function(b, j) {
+                        return i !== j && calculateDistance(a.coords.latitude, a.coords.longitude,
+                            b.coords.latitude, b.coords.longitude) <= Math.max(12, a.coords.accuracy, b.coords.accuracy);
+                    });
+                });
+                if (!stable) { finish(null); return; }
+            }
+            readings.sort(function(a, b) { return a.coords.accuracy - b.coords.accuracy; });
+            finish(readings[0]);
+        }, 12000);
+        try {
+            watchId = navigator.geolocation.watchPosition(function(pos) {
+                if (!validFreshPosition(pos) || pos.coords.accuracy > GPS_MAX_ACCEPTABLE_ACCURACY) return;
+                if (readings.some(function(previous) { return previous.timestamp === pos.timestamp; })) return;
+                readings.push(pos);
+                if (readings.length > 5) readings.shift();
+                for (var i = 0; i < readings.length; i++) {
+                    for (var j = i + 1; j < readings.length; j++) {
+                        var a = readings[i], b = readings[j];
+                        var separation = calculateDistance(a.coords.latitude, a.coords.longitude,
+                            b.coords.latitude, b.coords.longitude);
+                        if (separation <= Math.max(12, a.coords.accuracy, b.coords.accuracy)) {
+                            finish(a.coords.accuracy <= b.coords.accuracy ? a : b);
+                            return;
+                        }
+                    }
+                }
+            }, function(err) {
+                if (err.code === 1) finish(null);
+            }, { enableHighAccuracy: true, maximumAge: 0, timeout: 12000 });
+        } catch (error) { finish(null); }
+    });
+}
+
 var PAGE_STATUS = '{{ $status ?? "ready" }}';
 window.addEventListener('load', function() { 
     if (PAGE_STATUS !== 'setup') {
@@ -723,7 +790,8 @@ function requestLocation(options) {
             console.debug('Teacher laptop proximity check:', { rawDistanceMeters: dist, finalDistanceMeters: dist, allowedRadiusMeters: RADIUS_METERS });
 
             if (dist > RADIUS_METERS) {
-                showOutsideClassroomError(dist, RADIUS_METERS);
+                if (isNearBoundary(dist, accuracy)) showLocationUncertainError(dist, accuracy);
+                else showOutsideClassroomError(dist, RADIUS_METERS);
                 return;
             }
         }
@@ -739,7 +807,7 @@ function requestLocation(options) {
     var onSuccess = function(pos) {
         console.log('GPS Success:', pos.coords.latitude, pos.coords.longitude, 'Accuracy:', pos.coords.accuracy + 'm');
 
-        if (Date.now() - pos.timestamp > 10000 || !Number.isFinite(pos.coords.accuracy) || pos.coords.accuracy <= 0) return;
+        if (!validFreshPosition(pos)) return;
         if (pos.coords.accuracy < bestAccuracy) {
             bestAccuracy = pos.coords.accuracy;
             bestLocation = pos;
@@ -758,7 +826,7 @@ function requestLocation(options) {
             return;
         }
 
-        if (pos.coords.accuracy <= 20) {
+        if (pos.coords.accuracy <= 20 && isWithinBounds) {
             acceptBestLocation(pos, 'Location confirmed');
             return;
         }
@@ -893,21 +961,10 @@ async function submitAttendance(payload) {
         setCameraStatus('Confirming location & face...', 'pulsing');
     }
 
-    var freshPosition = await new Promise(function(resolve) {
-        if (!navigator.geolocation) { resolve(null); return; }
-        try {
-            navigator.geolocation.getCurrentPosition(resolve, function() { resolve(null); }, {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 15000
-            });
-        } catch (error) {
-            resolve(null);
-        }
-    });
+    var freshPosition = await getFreshStablePosition();
 
     if (!freshPosition || !freshPosition.coords ||
-        Math.abs(Date.now() - freshPosition.timestamp) > 10000 ||
+        !validFreshPosition(freshPosition) ||
         !Number.isFinite(freshPosition.coords.latitude) ||
         !Number.isFinite(freshPosition.coords.longitude) ||
         Math.abs(freshPosition.coords.latitude) > 90 ||
@@ -947,7 +1004,8 @@ async function submitAttendance(payload) {
                 var cBtn = document.getElementById('btnCaptureFace');
                 if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
             }
-            showOutsideClassroomError(currentDistance, RADIUS_METERS);
+            if (isNearBoundary(currentDistance, accuracy)) showLocationUncertainError(currentDistance, accuracy);
+            else showOutsideClassroomError(currentDistance, RADIUS_METERS);
             return;
         }
     }
@@ -966,6 +1024,7 @@ async function submitAttendance(payload) {
         latitude: latitude,
         longitude: longitude,
         accuracy: accuracy,
+        location_timestamp_ms: freshPosition.timestamp,
         device_key: devKey,
         device_fingerprint: devKey
     };
@@ -1044,6 +1103,16 @@ async function submitAttendance(payload) {
                 if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
             }
             showWeakGpsError(response.accuracy || accuracy);
+            return;
+        }
+
+        if (response.error_type === 'location_uncertain' || response.error_type === 'stale_location') {
+            if (isFace) {
+                faceVerificationInProgress = false;
+                var cBtn = document.getElementById('btnCaptureFace');
+                if (cBtn) { cBtn.disabled = false; cBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face'; }
+            }
+            showLocationUncertainError(response.distance, accuracy);
             return;
         }
 
@@ -1461,6 +1530,18 @@ function showWeakGpsError(acc) {
     var accMsg = (acc && acc > 0) ? ' (±' + Math.round(acc) + 'm)' : '';
     document.getElementById('vSub').textContent = 'GPS accuracy is too low' + accMsg + ' to verify your location.';
     showMsg('err', '<i class="bi bi-exclamation-triangle-fill me-1"></i> <strong>Weak Signal:</strong> Please move near a window, enable High Accuracy GPS, and try again.');
+    var btn = document.getElementById('retryFpBtn');
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
+    btn.onclick = function() { startGPS(); };
+    btn.style.display = 'flex';
+}
+
+function showLocationUncertainError(dist, accuracy) {
+    fingerprintInProgress = false;
+    setIcon('#fef3c7', 'bi bi-geo-alt-fill', '#d97706');
+    document.getElementById('vTitle').textContent = 'Location Needs Another Check';
+    document.getElementById('vSub').textContent = 'The indoor location reading is too close to the boundary to decide.';
+    showMsg('err', '<i class="bi bi-exclamation-triangle-fill me-1"></i> Try again with location services on and Wi-Fi enabled. If GPS stays uncertain while you are in class, ask your instructor for an approved attendance fallback.');
     var btn = document.getElementById('retryFpBtn');
     btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
     btn.onclick = function() { startGPS(); };

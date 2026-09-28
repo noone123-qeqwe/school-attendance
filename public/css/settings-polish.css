@@ -1,4 +1,4 @@
-﻿/* ══════════════════════════════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════
    SETTINGS PAGE - DESKTOP REFINEMENTS
    ══════════════════════════════════════════════════════════════ */
 
@@ -421,13 +421,465 @@
     .admin-settings-footer { padding-top: 18px !important; }
 }
 
+@media (max-width: 768px) {
+    /* ── PREFERENCES TILES - MOBILE REFINEMENT ── */
+    .pref-tile {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        padding: 16px !important;
+        border-radius: 16px !important;
+        gap: 12px !important;
+        margin-bottom: 12px !important;
+        border: 1px solid rgba(207,164,111,0.12) !important;
+        background: rgba(255,235,190,0.025) !important;
+        transition: background 0.2s ease, border-color 0.2s ease !important;
+    }
+    .pref-tile:active {
+        background: rgba(255,235,190,0.06) !important;
+        border-color: rgba(207,164,111,0.25) !important;
+    }
+    .pref-tile-icon {
+        width: 42px !important;
+        height: 42px !important;
+        border-radius: 12px !important;
+        font-size: 1.15rem !important;
+    }
+    .pref-tile .tlabel {
+        font-size: 0.90rem !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+    }
+    .pref-tile .tsub {
+        font-size: 0.74rem !important;
+        line-height: 1.4 !important;
+        color: #9d8e7d !important;
+    }
+
+    /* Language select: stack vertically on mobile */
+    .pref-tile > select.si,
+    .pref-lang-select.si {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: 0 0 100% !important;
+        padding: 12px 16px !important;
+        font-size: 0.88rem !important;
+        min-height: 48px !important;
+        border-radius: 13px !important;
+        margin-top: 4px !important;
+    }
+
+    /* Toggle switches - larger touch targets */
+    .pref-tile .form-check.form-switch {
+        padding-left: 0 !important;
+        margin-top: 2px !important;
+    }
+    .pref-tile .form-check-input {
+        width: 2.6em !important;
+        height: 1.4em !important;
+        margin-top: 0 !important;
+        cursor: pointer !important;
+    }
+
+    /* Preference section group headers */
+    .sc-body > div[style*="text-transform:uppercase"] {
+        font-size: 0.72rem !important;
+        padding: 10px 14px !important;
+        margin: 20px -18px 14px !important;
+        background: rgba(207,164,111,0.04) !important;
+        border-top: 1px solid rgba(207,164,111,0.1) !important;
+        border-bottom: 1px solid rgba(207,164,111,0.1) !important;
+        color: #cfa46f !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.7px !important;
+    }
+    .sc-body > div[style*="text-transform:uppercase"]:first-child {
+        margin-top: 0 !important;
+        border-top: none !important;
+    }
+
+    /* Preference save button area */
+    .sc-body > form > div[style*="text-align: right"] {
+        text-align: center !important;
+        margin-top: 22px !important;
+    }
+    .sc-body > form > div[style*="text-align: right"] .sbtn {
+        width: 100% !important;
+        padding: 14px 20px !important;
+        min-height: 52px !important;
+    }
+
+    /* Update tile refinement */
+    .pref-tile.pref-tile-update {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 14px !important;
+        padding: 18px 16px !important;
+    }
+    .pref-tile.pref-tile-update .pref-tile-btn-wrap {
+        width: 100% !important;
+    }
+    .pref-tile.pref-tile-update .pref-tile-btn-wrap .sbtn,
+    .pref-tile.pref-tile-update #checkUpdateBtn {
+        width: 100% !important;
+        min-height: 48px !important;
+        justify-content: center !important;
+    }
+
+    /* Push notification badge inline */
+    .push-status-badge {
+        font-size: 0.65rem !important;
+        padding: 2px 8px !important;
+    }
+    .push-test-btn {
+        width: 100% !important;
+        min-height: 42px !important;
+        justify-content: center !important;
+        font-size: 0.78rem !important;
+        padding: 10px 14px !important;
+    }
+
+    /* Update feedback area */
+    #updateFeedbackArea {
+        border-radius: 14px !important;
+        padding: 14px 16px !important;
+        font-size: 0.82rem !important;
+    }
+
+    /* ── SEPARATOR LINE POLISH ── */
+    .sc-body hr {
+        border-color: rgba(207,164,111,0.1) !important;
+        margin: 22px -18px 18px !important;
+    }
+
+    /* ── SECURITY CARD BADGES ON MOBILE ── */
+    .sec-card-header-line {
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    .sec-badge {
+        font-size: 0.64rem !important;
+        padding: 3px 7px !important;
+    }
+    .sec-card-top {
+        gap: 10px !important;
+    }
+    .sec-card-icon {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+        font-size: 1.05rem !important;
+    }
+    .sec-card-name {
+        font-size: 0.90rem !important;
+    }
+    .sec-card-subtitle {
+        font-size: 0.72rem !important;
+    }
+    .sec-card-content {
+        margin-top: 12px !important;
+        padding-top: 12px !important;
+    }
+    .sec-card-hint {
+        font-size: 0.76rem !important;
+    }
+
+    /* ── FAMILY / GUARDIAN MOBILE POLISH ── */
+    #parentCodeDisplayCard {
+        border-radius: 14px !important;
+        padding: 18px 14px !important;
+    }
+    #parentCodeValue {
+        font-size: 1.8rem !important;
+        letter-spacing: 6px !important;
+    }
+    #parentCodeQrBox {
+        width: 150px !important;
+        height: 150px !important;
+    }
+
+    /* Guardian items compact */
+    .sec-card-content .info-row[id^="guardian-item"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        padding: 14px !important;
+    }
+
+    /* ── FORM LAYOUT IMPROVEMENTS ── */
+    .d-flex.justify-content-end.gap-2 {
+        justify-content: stretch !important;
+        flex-direction: column !important;
+    }
+    .d-flex.justify-content-end.gap-2 .sbtn {
+        width: 100% !important;
+    }
+
+    /* ── TAB BAR MICRO-ANIMATIONS ── */
+    .stabs-wrapper::before {
+        content: '' !important;
+        display: block !important;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 18px !important;
+        right: 18px !important;
+        height: 1px !important;
+        background: linear-gradient(90deg, transparent, rgba(207,164,111,0.2), transparent) !important;
+        pointer-events: none !important;
+        z-index: 1 !important;
+    }
+
+    /* ── CARD ENTRANCE ANIMATION ── */
+    .spanel.active .sc {
+        animation: mobileCardSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+    }
+    .spanel.active .sc:nth-child(2) { animation-delay: 0.04s !important; }
+    .spanel.active .sc:nth-child(3) { animation-delay: 0.08s !important; }
+    .spanel.active .sc:nth-child(4) { animation-delay: 0.12s !important; }
+
+    /* ── DEVICE LOCK ALERT & ACTIONS ── */
+    #deviceLockedAlert {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 12px !important;
+        padding: 14px 16px !important;
+    }
+    #deviceLockedAlert > div {
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    #tabDeviceUnlockBtn {
+        width: 100% !important;
+        min-height: 44px !important;
+        justify-content: center !important;
+    }
+    #deviceTabBoundTile > div[style*="display:flex;gap:10px"],
+    #deviceTabBoundTile > div:has(#tabDeviceLockBtn) {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    #tabDeviceLockBtn,
+    #tabDeviceUnbindBtn {
+        width: 100% !important;
+        min-height: 44px !important;
+        justify-content: center !important;
+    }
+
+    /* ── OTP 6-DIGIT VERIFICATION & SUBMIT BUTTONS ── */
+    .sec-card-content form > div[style*="display:flex;gap:8px"] {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+    .sec-card-content form > div[style*="display:flex;gap:8px"] .cancel-btn,
+    .sec-card-content form > div[style*="display:flex;gap:8px"] .sec-action-btn {
+        width: 100% !important;
+        min-height: 46px !important;
+        justify-content: center !important;
+    }
+    .email-otp-digit,
+    .otp-digit-s {
+        max-width: 42px !important;
+        height: 44px !important;
+        font-size: 1.15rem !important;
+        -webkit-user-select: auto !important;
+        user-select: auto !important;
+    }
+
+    /* ── BIOMETRIC SCANNER STAGE ACTIONS & HUD ── */
+    .bio-success-actions,
+    .bio-error-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+    .bio-success-actions .sbtn,
+    .bio-success-actions .cancel-btn,
+    .bio-error-actions .sbtn,
+    .bio-error-actions .cancel-btn {
+        width: 100% !important;
+        min-height: 46px !important;
+        justify-content: center !important;
+    }
+    .face-hud-flash-btn {
+        top: 10px !important;
+        right: 10px !important;
+        padding: 5px 12px !important;
+        font-size: 0.74rem !important;
+    }
+    .bio-cancel-row .cancel-btn {
+        width: 100% !important;
+        min-height: 44px !important;
+        justify-content: center !important;
+    }
+
+    /* ── RECOVERY CODES VAULT ON MOBILE ── */
+    #codesContainer {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+    #recoveryCodesList > div[style*="display:flex;gap:6px"] {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+    #recoveryCodesList > div[style*="display:flex;gap:6px"] .sec-action-btn,
+    #recoveryCodesList > div[style*="display:flex;gap:6px"] .cancel-btn {
+        width: 100% !important;
+        min-height: 42px !important;
+        justify-content: center !important;
+    }
+
+    /* ── SMOOTH TOUCH MOMENTUM & SAFE AREA INSETS ── */
+    .stabs {
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+    .stabs::-webkit-scrollbar {
+        display: none !important;
+    }
+    .sp {
+        padding-bottom: max(36px, calc(env(safe-area-inset-bottom) + 24px)) !important;
+    }
+}
+
+@keyframes mobileCardSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* EXTRA SMALL (400px and below) */
 @media (max-width: 400px) {
     .sp .pg-title { font-size: 1rem !important; }
     .stab { padding: 8px 10px !important; font-size: 0.75rem !important; }
     .stab i { display: none !important; }
-    .sc-head { padding: 13px 15px !important; }
+    .sc-head { padding: 13px 15px !important; gap: 10px !important; }
     .sc-body { padding: 15px !important; }
+    .sc-icon { width: 34px !important; height: 34px !important; font-size: 0.95rem !important; border-radius: 9px !important; }
+    .sc-title { font-size: 0.90rem !important; }
+    .sc-sub { font-size: 0.70rem !important; }
     .stat-val { font-size: 1.35rem !important; }
     .sbtn { min-height: 46px !important; font-size: 0.86rem !important; }
+
+    /* Preference tiles extra compact */
+    .pref-tile {
+        padding: 14px 13px !important;
+        gap: 10px !important;
+        border-radius: 14px !important;
+    }
+    .pref-tile-icon {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 10px !important;
+        font-size: 1rem !important;
+    }
+    .pref-tile .tlabel { font-size: 0.84rem !important; }
+    .pref-tile .tsub { font-size: 0.70rem !important; }
+
+    /* Profile compact */
+    .profile-avatar-holder { width: 80px !important; height: 80px !important; }
+    .profile-user-name { font-size: 1.15rem !important; }
+    .profile-user-id { font-size: 0.74rem !important; }
+    .profile-badge-course, .profile-badge-year { font-size: 0.68rem !important; padding: 4px 10px !important; }
+
+    /* Security hero compact */
+    .sec-health-hero { padding: 14px !important; gap: 10px !important; }
+    .sec-health-icon { width: 36px !important; height: 36px !important; font-size: 1.05rem !important; }
+    .sec-health-title { font-size: 0.88rem !important; }
+    .sec-health-sub { font-size: 0.70rem !important; }
+    .sec-health-pill { font-size: 0.68rem !important; padding: 4px 9px !important; }
+
+    /* Security sub-nav extra compact */
+    .sec-subnav-pill { padding: 7px 10px !important; font-size: 0.74rem !important; min-height: 36px !important; }
+
+    /* Cards grid compact */
+    .sec-card { padding: 14px !important; border-radius: 13px !important; }
+    .sec-card-icon { width: 34px !important; height: 34px !important; font-size: 0.95rem !important; }
+    .sec-card-name { font-size: 0.86rem !important; }
+    .sec-card-subtitle { font-size: 0.70rem !important; }
+
+    /* Biometric compact */
+    .bio-method-card { padding: 14px !important; border-radius: 13px !important; }
+    .bio-scanner-card { padding: 20px 14px 18px !important; border-radius: 16px !important; }
+
+    /* Parent code compact */
+    #parentCodeValue { font-size: 1.5rem !important; letter-spacing: 5px !important; }
+
+    /* Separator adjustments */
+    .sc-body hr { margin: 18px -15px 16px !important; }
+    .sc-body > div[style*="text-transform:uppercase"] { margin-inline: -15px !important; }
+
+    /* OTP inputs compact */
+    .email-otp-digit,
+    .otp-digit-s {
+        max-width: 38px !important;
+        height: 40px !important;
+        font-size: 1.05rem !important;
+    }
+    #codesContainer {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ULTRA SMALL (360px and below - tall narrow phones) */
+@media (max-width: 360px) {
+    .sp .settings-command-header,
+    .sp .settings-top-navbar {
+        padding: 12px 14px !important;
+        gap: 10px !important;
+        border-radius: 14px !important;
+    }
+    .sp .settings-avatar-chip,
+    .settings-avatar-chip {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+    }
+    .sp .pg-title { font-size: 0.92rem !important; }
+    .sp .pg-sub { font-size: 0.66rem !important; }
+
+    .stab { padding: 7px 9px !important; font-size: 0.72rem !important; min-height: 36px !important; }
+    .stabs-wrapper { padding: 4px 5px !important; }
+    .stabs-arrow { width: 26px !important; height: 26px !important; font-size: 0.72rem !important; }
+
+    .sc { border-radius: 14px !important; margin-bottom: 12px !important; }
+    .sc-head { padding: 12px 13px !important; }
+    .sc-body { padding: 13px !important; }
+    .sc-icon { width: 32px !important; height: 32px !important; font-size: 0.9rem !important; }
+    .sc-title { font-size: 0.86rem !important; }
+
+    .si { min-height: 44px !important; font-size: 0.84rem !important; padding: 10px 13px !important; }
+    .sbtn { min-height: 44px !important; font-size: 0.82rem !important; padding: 11px 16px !important; }
+
+    .pref-tile { padding: 12px !important; gap: 8px !important; }
+    .pref-tile-icon { width: 34px !important; height: 34px !important; font-size: 0.92rem !important; }
+    .pref-tile .tlabel { font-size: 0.80rem !important; }
+    .pref-tile .tsub { font-size: 0.68rem !important; }
+
+    .stat-grid { gap: 7px !important; }
+    .stat-box { padding: 11px 10px !important; }
+    .stat-val { font-size: 1.2rem !important; }
+    .stat-lbl { font-size: 0.60rem !important; }
+
+    .flash-ok, .flash-err { padding: 11px 13px !important; font-size: 0.80rem !important; gap: 8px !important; border-radius: 12px !important; }
+
+    .academic-spec-card { padding: 11px 13px !important; }
+    .academic-spec-icon { width: 32px !important; height: 32px !important; }
+    .academic-spec-value { font-size: 0.84rem !important; }
+
+    .email-otp-digit,
+    .otp-digit-s {
+        max-width: 33px !important;
+        height: 38px !important;
+        font-size: 0.95rem !important;
+    }
+    #parentCodeValue {
+        font-size: 1.35rem !important;
+        letter-spacing: 3px !important;
+        padding: 4px 8px !important;
+    }
+    #parentCodeQrBox {
+        width: 130px !important;
+        height: 130px !important;
+    }
 }

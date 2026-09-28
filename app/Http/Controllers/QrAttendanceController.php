@@ -1729,6 +1729,7 @@ class QrAttendanceController extends Controller
             'latitude'         => 'required|numeric|between:-90,90',
             'longitude'        => 'required|numeric|between:-180,180',
             'accuracy'         => 'nullable|numeric',
+            'location_timestamp_ms' => 'nullable|integer',
             'credential'       => 'nullable',
             'face_descriptor'  => 'nullable|string|max:4096',
             'live_frame'       => 'nullable|string|max:4194304',
@@ -1862,6 +1863,14 @@ class QrAttendanceController extends Controller
         if ($radiusMeters > 0) {
             $studentAccuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
+            if (app(LocationIntegrityService::class)->isStaleClientFix($request->filled('location_timestamp_ms') ? (int) $request->location_timestamp_ms : null)) {
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'stale_location',
+                    'message' => 'Your location reading is no longer fresh. Please retry the location check.',
+                ], 422);
+            }
+
             if ($studentAccuracy === null || $studentAccuracy <= 0) {
                 return response()->json([
                     'success'    => false,
@@ -1918,6 +1927,15 @@ class QrAttendanceController extends Controller
                 }
 
                 if ($distance > $radiusMeters) {
+                    if (app(LocationIntegrityService::class)->isUncertainBoundary($distance, $radiusMeters, $studentAccuracy)) {
+                        return response()->json([
+                            'success' => false,
+                            'error_type' => 'location_uncertain',
+                            'distance' => round($distance),
+                            'radius' => $radiusMeters,
+                            'message' => 'Your GPS fix is close to the classroom boundary. Please retry for a clearer reading or ask your instructor for help.',
+                        ], 422);
+                    }
                     Log::warning('QR distance validation failed: student outside classroom', [
                         'session_id'                    => $session->id,
                         'student_id'                    => $user->id,
@@ -2269,6 +2287,7 @@ class QrAttendanceController extends Controller
             'latitude'  => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'accuracy'  => 'nullable|numeric',
+            'location_timestamp_ms' => 'nullable|integer',
         ]);
 
         if (!Auth::check()) {
@@ -2687,6 +2706,13 @@ class QrAttendanceController extends Controller
         $hasCoordinates = $request->filled('latitude') && $request->filled('longitude');
 
         if ($radiusMeters > 0) {
+            if (app(LocationIntegrityService::class)->isStaleClientFix($request->filled('location_timestamp_ms') ? (int) $request->location_timestamp_ms : null)) {
+                return response()->json([
+                    'success' => false,
+                    'error_type' => 'stale_location',
+                    'message' => 'Your location reading is no longer fresh. Please retry the location check.',
+                ], 422);
+            }
             if ($session->classroom_lat === null || $session->classroom_lng === null) {
                 return response()->json([
                     'success' => false,
@@ -2753,6 +2779,15 @@ class QrAttendanceController extends Controller
                         ]);
                     }
                     if ($distance > $radiusMeters) {
+                        if (app(LocationIntegrityService::class)->isUncertainBoundary($distance, $radiusMeters, $accuracy)) {
+                            return response()->json([
+                                'success' => false,
+                                'error_type' => 'location_uncertain',
+                                'distance' => round($distance),
+                                'radius' => $radiusMeters,
+                                'message' => 'Your GPS fix is close to the classroom boundary. Please retry for a clearer reading or ask your instructor for help.',
+                            ], 422);
+                        }
                         return response()->json([
                             'success'            => false,
                             'error_type'         => 'outside_classroom',

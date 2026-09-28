@@ -6,6 +6,25 @@ use App\Models\Attendance;
 
 class LocationIntegrityService
 {
+    /** A close outside fix is inconclusive, but it must never count as inside. */
+    public function isUncertainBoundary(float $distance, int $radius, float $accuracy): bool
+    {
+        return $distance > $radius
+            && $distance <= $radius + min(10.0, $accuracy / 2);
+    }
+
+    /** Browser timestamps help reject accidental stale fixes; they are not attestation. */
+    public function isStaleClientFix(?int $timestampMs): bool
+    {
+        if ($timestampMs === null) {
+            return false; // Older clients do not send a timestamp.
+        }
+
+        $ageMs = (int) round(microtime(true) * 1000) - $timestampMs;
+
+        return $ageMs < -5000 || $ageMs > 15000;
+    }
+
     /**
      * Flag only an extreme jump between two reasonably accurate, server-timed
      * attendance fixes. Browser GPS alone cannot prove that a location is genuine.

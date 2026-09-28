@@ -1465,6 +1465,15 @@ function normalizeCoordinates(lat, lng) {
     return [latitude, longitude];
 }
 
+function distanceBetweenFixes(lat1, lng1, lat2, lng2) {
+    const toRadians = degrees => degrees * Math.PI / 180;
+    const deltaLat = toRadians(lat2 - lat1);
+    const deltaLng = toRadians(lng2 - lng1);
+    const haversine = Math.sin(deltaLat / 2) ** 2 +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(deltaLng / 2) ** 2;
+    return 6371000 * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(Math.max(0, 1 - haversine)));
+}
+
 function refreshStudentLocation(force = false) {
     if (!navigator.geolocation) return Promise.resolve(null);
     const now = Date.now();
@@ -1479,10 +1488,13 @@ function refreshStudentLocation(force = false) {
     studentGeoPromise = new Promise((resolve) => {
         let hasResolved = false;
         let watchId = null;
+        let firstFixTimer = null;
+        const readings = [];
         const finish = (coords) => {
             if (hasResolved) return;
             hasResolved = true;
             clearTimeout(safetyTimer);
+            clearTimeout(firstFixTimer);
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
             if (requestSerial === studentGeoRequestSerial) {
                 studentGeoPromise = null;
@@ -1492,7 +1504,7 @@ function refreshStudentLocation(force = false) {
             resolve(requestSerial === studentGeoRequestSerial ? coords : null);
         };
 
-        const safetyTimer = setTimeout(() => finish(null), 15000);
+        const safetyTimer = setTimeout(() => finish(readings.length === 1 ? readings[0] : null), 15000);
         watchId = navigator.geolocation.watchPosition(pos => {
             if (!pos || !pos.coords) return;
             const { latitude, longitude, accuracy } = pos.coords;
@@ -1500,7 +1512,25 @@ function refreshStudentLocation(force = false) {
             if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
                 !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
                 !Number.isFinite(accuracy) || accuracy <= 0 || accuracy > 50 || age < 0 || age > 10000) return;
-            finish({ lat: latitude, lng: longitude, acc: accuracy, timestamp: pos.timestamp });
+            if (readings.some(previous => previous.timestamp === pos.timestamp)) return;
+            const current = { lat: latitude, lng: longitude, acc: accuracy, timestamp: pos.timestamp };
+            readings.push(current);
+            if (readings.length === 1) {
+                // Give indoor Wi-Fi/GNSS a short window to correct an initial drifted fix.
+                firstFixTimer = setTimeout(() => {
+                    if (readings.length === 1) finish(readings[0]);
+                }, 4000);
+            }
+            for (let i = 0; i < readings.length; i++) {
+                for (let j = i + 1; j < readings.length; j++) {
+                    const a = readings[i], b = readings[j];
+                    const separation = distanceBetweenFixes(a.lat, a.lng, b.lat, b.lng);
+                    if (separation <= Math.max(12, a.acc, b.acc)) {
+                        finish(a.acc <= b.acc ? a : b);
+                        return;
+                    }
+                }
+            }
         }, err => {
             if (err.code === 1) finish(null);
         }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
@@ -2471,7 +2501,8 @@ async function onQrScanSuccess(decodedText, method = 'qr') {
         device_fingerprint: devKey,
         latitude: scanLocation.lat,
         longitude: scanLocation.lng,
-        accuracy: scanLocation.acc
+        accuracy: scanLocation.acc,
+        location_timestamp_ms: scanLocation.timestamp
     };
 
     try {
@@ -2663,6 +2694,12 @@ function renderScanError(data) {
         iconBox.innerHTML = '<i class="bi bi-broadcast" style="color: #fbbf24;"></i>';
         title.textContent = 'Weak GPS Signal';
         if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry with High Accuracy';
+    } else if (errType === 'location_uncertain' || errType === 'stale_location') {
+        iconBox.style.background = 'rgba(234, 179, 8, 0.15)';
+        iconBox.style.border = '2px solid rgba(234, 179, 8, 0.4)';
+        iconBox.innerHTML = '<i class="bi bi-geo-alt-fill" style="color: #fbbf24;"></i>';
+        title.textContent = 'Location Needs Another Check';
+        if (retryBtn) retryBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i> Retry Location Check';
     } else if (errType === 'outside_classroom') {
         title.textContent = 'Outside Classroom Range';
         showOutsideRangePopup(data);

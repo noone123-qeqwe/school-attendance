@@ -4571,7 +4571,7 @@
                             <div class="tsub">Choose your portal language</div>
                         </div>
                     </div>
-                    <select class="si" style="width:auto;min-width:160px;padding:9px 16px;font-size:0.85rem;border-radius:12px;cursor:pointer;flex-shrink:0;">
+                    <select class="si pref-lang-select" style="width:auto;min-width:160px;padding:9px 16px;font-size:0.85rem;border-radius:12px;cursor:pointer;flex-shrink:0;">
                         <option>English (US)</option>
                         <option>Filipino</option>
                         <option>Bikolano</option>
