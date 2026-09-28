@@ -40,7 +40,7 @@
 </div>
 
 {{-- ─── QUICK ACTIONS PANEL ─── --}}
-<div class="modern-qa-grid dash-animate">
+<div class="modern-qa-grid admin-dashboard-actions dash-animate" aria-label="Quick actions">
     <a href="{{ route('admin.students') }}" class="modern-qa-tile">
         <div class="qa-icon-wrap" style="background: rgba(34, 197, 94, 0.14); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.25);">
             <i class="bi bi-people-fill"></i>
@@ -94,7 +94,7 @@
 </div>
 
 {{-- ─── KPI METRICS ─── --}}
-<div class="dash-animate" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 28px;">
+<div class="admin-dashboard-kpis dash-animate">
     <x-kpi-card 
         label="Total Students" 
         :value="$totalStudents" 
@@ -147,7 +147,8 @@
 
 
 {{-- ─── LIVE ATTENDANCE QR SESSIONS ─── --}}
-<div class="dash-animate" style="margin-bottom: 28px;">
+<div class="admin-dashboard-panels">
+<div class="dash-animate admin-dashboard-panel">
     <x-card type="section" class="adm-card" style="min-width:0;" aria-live="polite">
         <x-slot:title>
             <div class="ent-section-title-icon" style="background:rgba(74,222,128,0.12);color:var(--ent-success);">
@@ -204,7 +205,7 @@
 </div>
 
 {{-- ─── AT-RISK STUDENTS ─── --}}
-<div class="dash-animate" style="margin-bottom: 28px;">
+<div class="dash-animate admin-dashboard-panel">
     <x-card type="section" class="adm-card" style="min-width:0;">
         <x-slot:title>
             <div class="ent-section-title-icon" style="background:rgba(248,113,113,0.12);color:var(--ent-danger);">
@@ -263,6 +264,7 @@
             </table>
         </div>
     </x-card>
+</div>
 </div>
 
 @endsection

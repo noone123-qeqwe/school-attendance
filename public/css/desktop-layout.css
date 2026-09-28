@@ -1,0 +1,110 @@
+/* Desktop portal layout. Mobile styles remain in mobile-enterprise.css. */
+@media (min-width: 1024px) {
+    .main-content > .page-enter {
+        width: min(100%, 1840px);
+        padding: clamp(28px, 2.6vw, 44px) clamp(28px, 3.2vw, 56px) 64px !important;
+    }
+
+    .top-header {
+        padding-inline: clamp(24px, 2.8vw, 44px);
+    }
+
+    .header-left,
+    .header-title-container,
+    .header-right {
+        min-width: 0;
+    }
+
+    .header-left {
+        gap: 18px;
+    }
+
+    .header-page-title {
+        font-size: 1.15rem;
+        letter-spacing: -0.025em;
+    }
+
+    .header-page-sub {
+        font-size: 0.78rem;
+    }
+
+    .header-search-bar {
+        width: clamp(220px, 23vw, 360px);
+        flex-shrink: 1;
+    }
+
+    .sidebar-nav {
+        padding-bottom: 28px !important;
+    }
+
+    .sidebar .nav-link:not(.sub-nav-link) {
+        min-height: 44px;
+    }
+
+    .content-pad {
+        max-width: 1840px;
+        padding: clamp(28px, 2.6vw, 44px) clamp(28px, 3.2vw, 56px);
+    }
+
+    .premium-hero-card {
+        padding: 28px 32px;
+        margin-bottom: 28px;
+    }
+
+    .admin-dashboard-actions {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+
+    .admin-dashboard-actions .modern-qa-tile {
+        min-height: 76px;
+        padding: 14px 16px;
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: left;
+        gap: 14px;
+    }
+
+    .admin-dashboard-actions .qa-icon-wrap {
+        flex: none;
+    }
+
+    .admin-dashboard-actions .qa-label {
+        font-size: 0.88rem;
+        line-height: 1.35;
+    }
+}
+
+.admin-dashboard-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.admin-dashboard-panels {
+    display: grid;
+    gap: 24px;
+}
+
+.admin-dashboard-panel {
+    min-width: 0;
+}
+
+.admin-dashboard-panel > .adm-card,
+.admin-dashboard-panel > .ent-section {
+    height: 100%;
+}
+
+@media (min-width: 1600px) {
+    .admin-dashboard-panels {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        align-items: stretch;
+    }
+
+    .admin-dashboard-panel .adm-table thead th,
+    .admin-dashboard-panel .adm-table tbody td {
+        padding-inline: 10px !important;
+    }
+}
