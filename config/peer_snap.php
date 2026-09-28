@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'enabled' => (bool) env('PEER_SNAP_ENABLED', false),
     'max_vouches' => (int) env('MAX_PEER_VOUCHES_PER_HOST_PER_SESSION', 2),
     'max_failed_attempts' => (int) env('PEER_MAX_FAILED_ATTEMPTS', 3),
     'lockout_minutes' => (int) env('PEER_LOCKOUT_MINUTES', 30),

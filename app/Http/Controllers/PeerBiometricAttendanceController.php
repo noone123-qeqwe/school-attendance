@@ -15,7 +15,10 @@ class PeerBiometricAttendanceController extends Controller
 
     public function sessions(Request $request, PeerBiometricAttendanceService $service)
     {
-        return response()->json(['sessions' => $service->eligibleSessions($request->user())]);
+        return response()->json([
+            'available' => $service->isAvailable(),
+            'sessions' => $service->eligibleSessions($request->user()),
+        ]);
     }
 
     public function start(Request $request, PeerBiometricAttendanceService $service)

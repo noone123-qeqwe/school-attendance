@@ -17,11 +17,14 @@ class PeerAttendanceVerified implements ShouldBroadcastNow
         public string $studentName,
         public string $voucherName,
         public int $attendanceId,
+        public ?string $previousStatus = null,
+        public ?int $instructorId = null,
     ) {}
 
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('teacher-dashboard.'.$this->teacherId)];
+        $ids = array_unique(array_filter([$this->teacherId, $this->instructorId]));
+        return array_map(fn ($id) => new PrivateChannel('teacher-dashboard.'.$id), $ids);
     }
 
     public function broadcastAs(): string
@@ -38,6 +41,7 @@ class PeerAttendanceVerified implements ShouldBroadcastNow
             'voucher_student_name' => $this->voucherName,
             'attendance_id' => $this->attendanceId,
             'status' => 'Present',
+            'previous_status' => $this->previousStatus,
             'verification_channel' => 'peer_biometric',
             'timestamp' => now()->toIso8601String(),
         ];

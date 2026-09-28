@@ -5,10 +5,12 @@ namespace Tests\Feature;
 use App\Events\PeerAttendanceVerified;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\DeviceBinding;
 use App\Models\PeerFaceEnrollment;
 use App\Models\PeerVouchRequest;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\DeviceBindingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
@@ -36,6 +38,7 @@ class PeerSnapAttendanceTest extends TestCase
         }]);
         $this->travelTo(now('Asia/Manila')->startOfDay()->addHours(10));
         config([
+            'peer_snap.enabled' => true,
             'peer_snap.verifier_url' => 'https://verifier.example/verify',
             'peer_snap.verifier_token' => 'test-secret',
             'peer_snap.model_version' => 'validated-v1',
@@ -63,11 +66,16 @@ class PeerSnapAttendanceTest extends TestCase
             'monitoring_status' => 'active', 'last_location_check_at' => now(),
             'last_distance_meters' => 10,
         ]);
+        DeviceBinding::create([
+            'user_id' => $this->host->id,
+            'device_hash' => app(DeviceBindingService::class)->hashDeviceKey('test-host-device'),
+            'device_name' => 'Test host phone',
+        ]);
         PeerFaceEnrollment::create([
             'user_id' => $this->student->id, 'verifier_subject_ref' => 'enrolled-'.$this->student->id,
             'model_version' => 'validated-v1', 'consented_at' => now(),
         ]);
-        $this->actingAs($this->host)->withHeaders(['Accept' => 'application/json']);
+        $this->actingAs($this->host)->withHeaders(['Accept' => 'application/json', 'X-Device-Key' => 'test-host-device']);
     }
 
     private function start(?User $student = null): array
@@ -119,6 +127,16 @@ class PeerSnapAttendanceTest extends TestCase
         $this->postJson(route('peer-snap.start'), ['session_id' => $this->session->id, 'student_number' => $this->student->student_number])->assertForbidden();
     }
 
+    public function test_peer_requests_from_a_different_device_are_denied(): void
+    {
+        $this->withHeader('X-Device-Key', 'other-phone');
+        $this->getJson(route('peer-snap.sessions'))->assertForbidden();
+        $this->postJson(route('peer-snap.start'), [
+            'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
+        ])->assertForbidden();
+        $this->assertDatabaseCount('peer_vouch_requests', 0);
+    }
+
     public function test_voucher_quota_and_class_membership_are_enforced(): void
     {
         for ($i = 0; $i < 2; $i++) {
@@ -133,6 +151,13 @@ class PeerSnapAttendanceTest extends TestCase
         PeerVouchRequest::query()->delete();
         $this->student->update(['section' => 'B']);
         $this->postJson(route('peer-snap.start'), ['session_id' => $this->session->id, 'student_number' => $this->student->student_number])->assertUnprocessable();
+    }
+
+    public function test_explicit_enrollment_allows_student_outside_implicit_section(): void
+    {
+        $this->student->update(['section' => 'B']);
+        $this->subject->enrolledStudents()->attach($this->student->id);
+        $this->start();
     }
 
     public function test_expired_and_replayed_requests_never_create_attendance(): void
@@ -150,6 +175,36 @@ class PeerSnapAttendanceTest extends TestCase
         Attendance::create(['user_id' => $this->student->id, 'subject_id' => $this->subject->id,
             'subject_code' => $this->subject->code, 'date' => now('Asia/Manila')->toDateString(), 'status' => 'Present']);
         $this->confirm($ticket)->assertConflict();
+    }
+
+    public function test_escaped_or_excused_attendance_cannot_be_overwritten(): void
+    {
+        $record = Attendance::create([
+            'user_id' => $this->student->id, 'subject_id' => $this->subject->id,
+            'subject_code' => $this->subject->code, 'date' => now('Asia/Manila')->toDateString(),
+            'status' => 'Escaped',
+        ]);
+        $this->postJson(route('peer-snap.start'), [
+            'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
+        ])->assertUnprocessable();
+        $record->update(['status' => 'Absent', 'excused' => true]);
+        $this->postJson(route('peer-snap.start'), [
+            'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
+        ])->assertUnprocessable();
+    }
+
+    public function test_status_changed_during_verification_is_not_overwritten(): void
+    {
+        $ticket = $this->start(); $this->fakeVerifier($ticket);
+        Attendance::create([
+            'user_id' => $this->student->id, 'subject_id' => $this->subject->id,
+            'subject_code' => $this->subject->code, 'date' => now('Asia/Manila')->toDateString(),
+            'status' => 'Escaped',
+        ]);
+        $this->confirm($ticket)->assertConflict();
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $this->student->id, 'status' => 'Escaped',
+        ]);
     }
 
     public function test_three_failed_attempts_lock_host_and_subject_across_new_sessions(): void
@@ -199,7 +254,8 @@ class PeerSnapAttendanceTest extends TestCase
             'status' => 'Present', 'verification_channel' => 'peer_biometric', 'is_provisional' => 0]);
         $this->assertDatabaseHas('peer_vouch_requests', ['verification_id' => $ticket['verification_id'], 'status' => 'verified']);
         $this->assertTrue(PeerVouchRequest::where('verification_id', $ticket['verification_id'])->first()->hasValidDecisionMac());
-        Event::assertDispatched(PeerAttendanceVerified::class, fn ($event) => $event->teacherId === $this->teacher->id && $event->voucherName === $this->host->name);
+        Event::assertDispatched(PeerAttendanceVerified::class, fn ($event) => $event->teacherId === $this->teacher->id
+            && $event->instructorId === $this->teacher->id && $event->voucherName === $this->host->name);
         $this->confirm($ticket)->assertConflict();
         $this->travel(6)->minutes();
         $this->actingAs($this->teacher)->getJson(route('teacher.qr.clockins', ['session_id' => $this->session->id]))
@@ -212,6 +268,16 @@ class PeerSnapAttendanceTest extends TestCase
         config(['peer_snap.verifier_url' => '']);
         $this->postJson(route('peer-snap.start'), ['session_id' => $this->session->id, 'student_number' => $this->student->student_number])->assertStatus(503);
         $this->assertDatabaseCount('peer_vouch_requests', 0);
+    }
+
+    public function test_disabled_feature_shows_no_sessions_and_cannot_start(): void
+    {
+        config(['peer_snap.enabled' => false]);
+        $this->getJson(route('peer-snap.sessions'))->assertOk()
+            ->assertJsonPath('available', false)->assertJsonPath('sessions', []);
+        $this->postJson(route('peer-snap.start'), [
+            'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
+        ])->assertStatus(503);
     }
 
     public function test_unknown_student_is_generic_and_counts_toward_host_lockout(): void
@@ -266,5 +332,25 @@ class PeerSnapAttendanceTest extends TestCase
             ->assertSee('Check in for a Classmate')
             ->assertSee('peerVideo')
             ->assertSee('Begin live challenge');
+    }
+
+    public function test_instructor_dashboard_listens_for_peer_attendance(): void
+    {
+        $this->actingAs($this->teacher)->get(route('teacher.dashboard'))
+            ->assertOk()->assertSee('attendance.peer.verified')->assertSee('peerLiveNotice');
+    }
+
+    public function test_admin_owned_session_also_notifies_subject_instructor(): void
+    {
+        Event::fake([PeerAttendanceVerified::class]);
+        $admin = User::factory()->admin()->create();
+        $this->session->update(['created_by' => $admin->id]);
+        $ticket = $this->start(); $this->fakeVerifier($ticket);
+        $this->confirm($ticket)->assertOk();
+        Event::assertDispatched(PeerAttendanceVerified::class, function ($event) use ($admin) {
+            return $event->teacherId === $admin->id
+                && $event->instructorId === $this->teacher->id
+                && count($event->broadcastOn()) === 2;
+        });
     }
 }

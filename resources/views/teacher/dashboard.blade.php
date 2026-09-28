@@ -185,6 +185,9 @@
     <x-card type="kpi" accent="danger" label="Absent Today" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
 </div>
 
+<div id="peerLiveNotice" role="status" aria-live="polite" hidden style="margin-bottom:20px;padding:14px 18px;border:1px solid rgba(74,222,128,.35);border-radius:12px;background:rgba(74,222,128,.09);color:#d6f8df;"></div>
+<div id="peerLiveConnection" role="status" hidden style="margin-bottom:14px;color:#b39b82;font-size:.8rem;"></div>
+
 <div class="row g-4 mb-4">
     <!-- Left Column -->
     <div class="col-lg-8">
@@ -231,7 +234,7 @@
                         onkeyup="filterRecentLogs()">
                 </div>
                 
-                <div class="d-flex flex-column gap-3" style="max-height: 300px; overflow-y: auto;">
+                <div id="recentAttendanceRows" class="d-flex flex-column gap-3" style="max-height: 300px; overflow-y: auto;">
                     @forelse($recentAttendance->take(8) as $record)
                         <div class="attendance-row" style="background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
                             <div class="d-flex align-items-center gap-3">
@@ -511,6 +514,55 @@ function filterRecentLogs() {
         row.style.display = text.includes(input) ? 'flex' : 'none';
     });
 }
+
+// Peer verification events update this dashboard without a page reload.
+(function subscribeToPeerAttendance() {
+    let attempts = 0;
+    const status = document.getElementById('peerLiveConnection');
+    const seen = new Set();
+    function setConnectionMessage(message) { status.textContent = message; status.hidden = !message; }
+    function connect() {
+        const echo = window.teacherEcho || window.Echo;
+        if (!echo) {
+            if (++attempts < 20) setTimeout(connect, 500);
+            else setConnectionMessage('Live attendance updates are unavailable. Reload to refresh the dashboard.');
+            return;
+        }
+        try {
+            echo.private('teacher-dashboard.{{ Auth::id() }}').listen('.attendance.peer.verified', payload => {
+                if (!payload || !Number.isSafeInteger(Number(payload.attendance_id)) || seen.has(payload.attendance_id)) return;
+                seen.add(payload.attendance_id);
+                const notice = document.getElementById('peerLiveNotice');
+                notice.textContent = `${payload.student_name} checked in by Peer Biometric for ${payload.subject_code}. Vouched by ${payload.voucher_student_name}.`;
+                notice.hidden = false;
+
+                const list = document.getElementById('recentAttendanceRows');
+                const empty = list.querySelector('.empty-state');
+                if (empty) empty.remove();
+                const row = document.createElement('div');
+                row.className = 'attendance-row';
+                row.style.cssText = 'background:rgba(0,0,0,.2);border:1px solid rgba(74,222,128,.3);border-radius:12px;padding:12px 16px;color:#f3e7cd;';
+                const name = document.createElement('strong');
+                name.textContent = payload.student_name;
+                const detail = document.createElement('div');
+                detail.style.cssText = 'color:#b39b82;font-size:.8rem;margin-top:4px;';
+                detail.textContent = `${payload.subject_code} · Peer Biometric · Vouched by ${payload.voucher_student_name}`;
+                row.append(name, detail); list.prepend(row);
+                while (list.children.length > 8) list.lastElementChild.remove();
+
+                const present = document.querySelector('#realStats [data-accent="success"] .ent-kpi-value');
+                if (present && /^\d+$/.test(present.textContent.trim())) present.textContent = String(Number(present.textContent.trim()) + 1);
+                const absent = document.querySelector('#realStats [data-accent="danger"] .ent-kpi-value');
+                if (payload.previous_status === 'Absent' && absent && /^\d+$/.test(absent.textContent.trim()))
+                    absent.textContent = String(Math.max(0, Number(absent.textContent.trim()) - 1));
+            });
+            const connection = echo.connector?.pusher?.connection;
+            connection?.bind('state_change', state => setConnectionMessage(state.current === 'connected' ? '' : 'Live updates disconnected. Reload if this persists.'));
+            setConnectionMessage(connection && connection.state !== 'connected' ? 'Connecting to live attendance updates…' : '');
+        } catch { setConnectionMessage('Live attendance updates are unavailable. Reload to refresh the dashboard.'); }
+    }
+    connect();
+})();
 
 // School Calendar Initialization
 let schoolCalendar;

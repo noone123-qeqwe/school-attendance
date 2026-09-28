@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\Subject;
 use App\Models\User;
 
 class PeerVouchPolicy
@@ -15,7 +16,7 @@ class PeerVouchPolicy
         }
 
         $subject = $session->subject;
-        if (!$subject || !$subject->getAllStudents()->contains('id', $host->id)) {
+        if (!$subject || !$this->isClassMember($host, $subject)) {
             return false;
         }
 
@@ -33,5 +34,21 @@ class PeerVouchPolicy
             && $presence->last_distance_meters <= $session->getAllowedRadius()
             && $session->classroom_lat !== null
             && $session->classroom_lng !== null;
+    }
+
+    /** Match Subject::getAllStudents without loading the whole roster. */
+    public function isClassMember(User $student, Subject $subject): bool
+    {
+        if ($student->role !== 'student') return false;
+
+        if ($subject->enrolledStudents()->whereKey($student->id)->exists()) return true;
+
+        return User::whereKey($student->id)
+            ->where('role', 'student')
+            ->where('year_level', $subject->year_level)
+            ->where('semester', $subject->semester)
+            ->when(!empty($subject->course), fn ($query) => $query->where('course', $subject->course))
+            ->when(!empty($subject->section), fn ($query) => $query->where('section', $subject->section))
+            ->exists();
     }
 }

@@ -350,9 +350,9 @@ Route::middleware('auth')->prefix('mobile')->name('mobile.')->group(function () 
 // Authenticated Routes (Protected) - Student Routes
 Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/peer-snap', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'index'])->name('peer-snap.index');
-    Route::get('/peer-snap/sessions', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'sessions'])->middleware('throttle:30,1')->name('peer-snap.sessions');
-    Route::post('/peer-snap/session', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'start'])->middleware('throttle:10,1')->name('peer-snap.start');
-    Route::post('/peer-snap/confirm', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'confirm'])->middleware('throttle:5,1')->name('peer-snap.confirm');
+    Route::get('/peer-snap/sessions', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'sessions'])->middleware(['device.bound', 'throttle:30,1'])->name('peer-snap.sessions');
+    Route::post('/peer-snap/session', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'start'])->middleware(['device.bound', 'throttle:10,1'])->name('peer-snap.start');
+    Route::post('/peer-snap/confirm', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'confirm'])->middleware(['device.bound', 'throttle:5,1'])->name('peer-snap.confirm');
     Route::get('/student-assistant/classes', [App\Http\Controllers\StudentAssistantSessionController::class, 'index'])->name('student-assistant.classes');
     Route::get('/student-assistant/sessions/{session}', [App\Http\Controllers\StudentAssistantSessionController::class, 'show'])->name('student-assistant.sessions.show');
     Route::get('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'status'])->name('student-assistant.qr.status');

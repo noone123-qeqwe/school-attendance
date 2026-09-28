@@ -79,6 +79,7 @@
         try {
             const body = await jsonResponse(await fetch(sessionsUrl, {headers:{Accept:'application/json'}, credentials:'same-origin'}));
             sessionSelect.replaceChildren();
+            if (!body.available) { sessionSelect.add(new Option('Peer verification is not available yet', '')); $('peerStart').disabled = true; return; }
             if (!body.sessions.length) { sessionSelect.add(new Option('No eligible active class sessions', '')); $('peerStart').disabled = true; return; }
             sessionSelect.add(new Option('Choose a session', ''));
             body.sessions.forEach(s => sessionSelect.add(new Option(`${s.subject_code} · ${s.subject_name || 'Class'} · ${s.remaining_vouches} remaining`, s.id)));
@@ -92,9 +93,10 @@
             setState('CAMERA_STARTING');
             if (!navigator.mediaDevices?.getUserMedia) throw new Error('This browser does not support a live camera. Use an updated browser over HTTPS.');
             stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
-            video.srcObject = stream; await video.play();
-            detector = 'FaceDetector' in window ? new FaceDetector({fastMode:true,maxDetectedFaces:3}) : null;
             formCard.hidden = true; cameraCard.hidden = false;
+            video.srcObject = stream; await video.play();
+            try { detector = 'FaceDetector' in window ? new FaceDetector({fastMode:true,maxDetectedFaces:3}) : null; }
+            catch { detector = null; }
             challengeBox.textContent = {blink_twice:'Blink twice while looking at the camera',turn_left:'Turn your head slightly left, then face forward',turn_right:'Turn your head slightly right, then face forward'}[ticket.challenge] || 'Follow the on-screen challenge';
             challengeBox.hidden = false; captureButton.disabled = false; setState('FACE_SEARCH');
             timer = setInterval(() => { const secs = Math.max(0, Math.ceil((Date.parse(ticket.expires_at)-Date.now())/1000)); countdown.textContent = `${secs}s left`; if (!secs && ['CAMERA_STARTING','FACE_SEARCH','LIVENESS_CHECK','MATCHING'].includes(state)) fail('Start a new verification session.',410); },500);
@@ -102,6 +104,7 @@
         finally { $('peerStart').disabled = false; }
     }
     async function captureFrame() {
+        if (!video.videoWidth || !video.videoHeight) throw new Error('Camera is still starting. Wait a moment and try again.');
         const canvas = document.createElement('canvas'); canvas.width = 480; canvas.height = Math.round(480 * video.videoHeight / video.videoWidth);
         const ctx = canvas.getContext('2d'); ctx.drawImage(video,0,0,canvas.width,canvas.height);
         const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/jpeg',.72));

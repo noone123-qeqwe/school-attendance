@@ -20,6 +20,7 @@ class PeerBiometricAttendanceService
 
     public function eligibleSessions(User $host): array
     {
+        if (!$this->isAvailable()) return [];
         return AttendanceSession::where('active', true)
             ->where('session_ends_at', '>', now())
             ->get()->filter(fn ($session) => $this->policy->create($host, $session)
@@ -35,7 +36,7 @@ class PeerBiometricAttendanceService
 
     public function start(User $host, int $sessionId, string $studentNumber): array
     {
-        if (!$this->verifierConfigured()) {
+        if (!$this->isAvailable()) {
             abort(503, 'Peer verification is not available yet.');
         }
 
@@ -65,8 +66,8 @@ class PeerBiometricAttendanceService
                 ->where('subject_code', $session->subject_code)->whereDate('date', now('Asia/Manila')->toDateString())
                 ->first() : null;
             $eligible = $subject && $subject->isActive() && $subject->id !== $host->id
-                && $session->subject?->getAllStudents()->contains('id', $subject->id)
-                && $enrollment && !($existing && in_array($existing->status, ['Present', 'Late'], true));
+                && $this->policy->isClassMember($subject, $session->subject)
+                && $enrollment && (!$existing || ($existing->status === 'Absent' && !$existing->excused));
 
             $nonce = bin2hex(random_bytes(32));
             $attempt = PeerVouchRequest::create([
@@ -158,7 +159,7 @@ class PeerBiometricAttendanceService
             if (!$lockedAttempt || $lockedAttempt->status !== 'processing') abort(409, 'Verification request already used.');
             if ($lockedAttempt->expires_at->isPast() || !$session || !$this->policy->create($host, $session)
                 || !$subject || !$subject->isActive()
-                || !$session->subject?->getAllStudents()->contains('id', $subject->id)
+                || !$session->subject || !$this->policy->isClassMember($subject, $session->subject)
                 || $this->locked($host->id, $subject->id)
                 || !PeerFaceEnrollment::where('user_id', $subject->id)
                     ->where('verifier_subject_ref', $enrollment->verifier_subject_ref)
@@ -171,10 +172,11 @@ class PeerBiometricAttendanceService
             $attendance = Attendance::withTrashed()->where('user_id', $subject->id)
                 ->where('subject_code', $session->subject_code)->whereDate('date', $today)
                 ->lockForUpdate()->first();
-            if ($attendance && in_array($attendance->status, ['Present', 'Late'], true)) {
+            if ($attendance && ($attendance->status !== 'Absent' || $attendance->excused)) {
                 $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'duplicate_attendance', 'consumed_at' => now()]);
                 return ['error' => 409, 'message' => 'Attendance has already been recorded.'];
             }
+            $previousStatus = $attendance?->status;
             $data = [
                 'user_id' => $subject->id, 'subject_id' => $session->subject->id,
                 'subject_code' => $session->subject_code, 'subject_name' => $session->subject->name,
@@ -200,7 +202,8 @@ class PeerBiometricAttendanceService
                 ),
             ]);
             Log::info('peer_snap.verified', $this->audit($lockedAttempt) + ['attendance_id' => $attendance->id]);
-            return ['attendance' => $attendance, 'session' => $session, 'subject' => $subject];
+            return ['attendance' => $attendance, 'session' => $session,
+                'subject' => $subject, 'previous_status' => $previousStatus];
         });
         if (isset($result['error'])) abort($result['error'], $result['message']);
 
@@ -209,6 +212,7 @@ class PeerBiometricAttendanceService
                 (int) $result['session']->created_by, (int) $result['session']->id,
                 $result['session']->subject_code, $result['subject']->name,
                 $host->name, (int) $result['attendance']->id,
+                $result['previous_status'], $result['session']->subject?->instructor_id,
             ));
         } catch (Throwable $e) {
             Log::warning('peer_snap.broadcast_failed', ['verification_id' => $verificationId, 'error_class' => get_class($e)]);
@@ -243,9 +247,10 @@ class PeerBiometricAttendanceService
             ->where('status', 'verified')->count();
     }
 
-    private function verifierConfigured(): bool
+    public function isAvailable(): bool
     {
-        return str_starts_with((string) config('peer_snap.verifier_url'), 'https://')
+        return (bool) config('peer_snap.enabled')
+            && str_starts_with((string) config('peer_snap.verifier_url'), 'https://')
             && (bool) config('peer_snap.verifier_token') && (bool) config('peer_snap.model_version')
             && config('peer_snap.match_threshold') > 0 && config('peer_snap.match_threshold') <= 1
             && config('peer_snap.pad_threshold') > 0 && config('peer_snap.pad_threshold') <= 1;

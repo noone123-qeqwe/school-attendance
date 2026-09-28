@@ -57,6 +57,8 @@ stateDiagram-v2
 | Student number enumeration | Eligibility checked first; generic student response; per-host and per-subject failed limits | Timing and side-channel review still required |
 | False GPS or absent host | Recent verified QR presence and server-recorded geofence result required | Browser GPS is spoofable; approved network/device attestation would strengthen deployment |
 
+The session list, challenge creation, and confirmation routes also enforce the application's bound-device middleware. A verified host must continue using their registered phone while vouching.
+
 ## API
 
 All endpoints are same-origin web routes with authenticated student session and CSRF. JSON requests use `Accept: application/json`. `429` means lockout/throttle, `403` ineligible host or subject, `409` duplicate/consumed, `410` expired, `422` bad input or failed verification, `503` missing verifier. Failure responses omit whether a student number exists.
@@ -64,9 +66,9 @@ All endpoints are same-origin web routes with authenticated student session and 
 | Route | Input | Output | Limit |
 | --- | --- | --- | --- |
 | `GET /peer-snap` | none | Mobile camera page | Authenticated student |
-| `GET /peer-snap/sessions` | none | Eligible active sessions and remaining vouchers | Authenticated student |
-| `POST /peer-snap/session` | `session_id`, `student_number` | Opaque `verification_id`, expiry, challenge | 10/minute plus DB lockout |
-| `POST /peer-snap/confirm` | `verification_id`, three JPEG frames | Attendance ID, status | 5/minute plus one-use claim |
+| `GET /peer-snap/sessions` | none | `available`, eligible active sessions, remaining vouchers | Authenticated, bound student device |
+| `POST /peer-snap/session` | `session_id`, `student_number` | Opaque `verification_id`, expiry, challenge | Bound device; 10/minute plus DB lockout |
+| `POST /peer-snap/confirm` | `verification_id`, `nonce`, five JPEG frames | Attendance ID, status | Bound device; 5/minute plus one-use claim |
 
 The voucher quota counts successful peer attendance only. Failed verification and unknown IDs count toward host lockout. Known subjects also have a per-subject lockout across hosts. Both default to three failures over 30 minutes. A request expires after 2 minutes; the scheduler marks unused requests expired each minute. The server stores attempt metadata and failure codes, never frames. Verified requests include an HMAC over the bound identifiers, attendance ID, and verification time. `PeerVouchRequest::hasValidDecisionMac()` detects edits to those fields or the attendance link while `APP_KEY` remains secret. This is application-level tamper evidence, not protection from a compromised server or an actor with `APP_KEY`; forward structured logs to an append-only external audit sink for stronger evidence. PHP upload temporaries and verifier request buffers are ephemeral; deployments must ensure the verifier does not retain images or log request bodies. No diagnostic image capture exists, so no deletion job is necessary.
 
@@ -80,9 +82,9 @@ Client-side matching would improve offline operation and reduce server compute, 
 
 ## Rollout checklist
 
-1. Run `php artisan migrate --force`; set a strong `APP_KEY`, HTTPS app URL, and private Reverb channel credentials.
+1. Run `php artisan migrate --force`; set a strong `APP_KEY`, HTTPS app URL, and private Reverb channel credentials. The feature is disabled by default (`PEER_SNAP_ENABLED=false`).
 2. Deploy a separately validated verifier behind a restricted HTTPS endpoint. Verify its no-retention behavior, authentication, timeout handling, challenge interpretation, PAD test results, and exact response contract with real devices.
 3. Supervise student enrollment in the verifier, record consent, and provision only the opaque verifier reference, model version, and consent timestamp in `peer_face_enrollments`. Never import the existing browser-provided face descriptors.
 4. Calibrate match and PAD thresholds against representative student and attack sets, including printed photos, screens, replay videos, lighting, and camera variation. Set `PEER_FACE_MODEL_VERSION`, `FACE_MATCH_THRESHOLD`, `PEER_PAD_THRESHOLD`, and verifier credentials in the secret store.
 5. Keep `php artisan schedule:run` running every minute so expired requests are marked; forward structured logs to an append-only sink and monitor failures and voucher patterns.
-6. Complete privacy/legal review, student notice and consent, template deletion/revocation procedure, access controls, incident response, and periodic bias and false-acceptance assessment. Run a real mobile browser and teacher WebSocket end-to-end test before enabling the feature for students.
+6. Complete privacy/legal review, student notice and consent, template deletion/revocation procedure, access controls, incident response, and periodic bias and false-acceptance assessment. The current published privacy notice says biometric samples never leave the device, and the terms prohibit logging attendance for another student. Both statements conflict with this specific fallback and must be formally revised before use. Run a real mobile browser and teacher WebSocket end-to-end test, then set `PEER_SNAP_ENABLED=true` only after all rollout requirements are met.
