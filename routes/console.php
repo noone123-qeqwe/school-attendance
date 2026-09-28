@@ -4,6 +4,13 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
+// Bound verification requests become unusable at expiry even if the browser closes.
+Schedule::call(function () {
+    \App\Models\PeerVouchRequest::whereIn('status', ['pending', 'processing'])
+        ->where('expires_at', '<=', now())
+        ->update(['status' => 'expired', 'failure_reason' => 'expired', 'consumed_at' => now()]);
+})->everyMinute()->name('peer-snap-expire')->withoutOverlapping();
+
 // Auto-close expired QR sessions and mark absent students (every minute)
 Schedule::command('attendance:auto-close')->everyMinute();
 

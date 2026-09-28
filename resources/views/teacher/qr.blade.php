@@ -1621,7 +1621,9 @@ function renderClockinsList() {
         }
 
         let metaHtml = `<div style="font-size: 0.7rem; color: #b39b82; margin-top: 2px;">In: ${clockin.time}</div>`;
-        if (clockin.status === 'Escaped') {
+        if (clockin.verification_channel === 'peer_biometric') {
+            metaHtml = `<div style="font-size: 0.68rem; color: #cfa46f; font-weight: 700; margin-top: 2px;">Peer Biometric · Vouched by ${clockin.voucher_student_name || 'classmate'}</div>`;
+        } else if (clockin.status === 'Escaped') {
             metaHtml = `<div style="font-size: 0.68rem; color: #f87171; font-weight: 600; margin-top: 2px;">Left area: ${clockin.escaped_at || clockin.outside_since || 'Active'}</div>`;
         } else if (clockin.status === 'Outside Area') {
             metaHtml = `<div style="font-size: 0.68rem; color: #fbbf24; font-weight: 600; margin-top: 2px;">Outside: ${clockin.outside_since || clockin.last_verified || 'Warning'}</div>`;
@@ -1781,6 +1783,7 @@ async function updateClockIns() {
             escaped_at: escapeHtml(clockin.escaped_at || ''),
             outside_since: escapeHtml(clockin.outside_since || ''),
             last_verified: escapeHtml(clockin.last_verified || ''),
+            voucher_student_name: escapeHtml(clockin.voucher_student_name || ''),
         }));
         updateStatsCounters(data.stats);
         renderClockinsList();
@@ -1821,6 +1824,14 @@ function subscribeToTeacherAttendanceUpdates() {
                     handleIncomingCheckIn(payload);
                     updateSessionTimeline();
                 }
+            })
+            .listen('.attendance.peer.verified', (payload) => {
+                if (!currentSession || !payload || payload.session_id !== (currentSession.session_id || currentSession.id)) return;
+                playClockInChime();
+                showTeacherToast(`${payload.student_name} checked in by Peer Biometric (vouched by ${payload.voucher_student_name})`, 'success');
+                addProjectorTickerItem({student_name: payload.student_name, status: 'Present', time: new Date(payload.timestamp).toLocaleTimeString()});
+                updateClockIns();
+                updateSessionTimeline();
             })
             .listen('.attendance.qr.changed', (payload) => {
                 if (!currentSession || payload.session_id !== (currentSession.session_id || currentSession.id)) return;

@@ -62,6 +62,11 @@
                 </div>
                 <span class="quick-action-label">History</span>
             </a>
+
+            <a href="{{ route('peer-snap.index') }}" class="quick-action-btn quick-action-peer" aria-label="Check in for a Classmate">
+                <div class="quick-action-icon"><i class="bi bi-person-bounding-box"></i></div>
+                <span class="quick-action-label">Check in for a Classmate</span>
+            </a>
             
             <a href="{{ route('mobile.attendance') }}" class="quick-action-btn">
                 <div class="quick-action-icon">
@@ -277,6 +282,13 @@
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 12px;
+    }
+
+    .quick-action-peer {
+        grid-column: 1 / -1;
+        flex-direction: row !important;
+        justify-content: center;
+        padding: 18px 24px !important;
     }
 
     .quick-action-btn {

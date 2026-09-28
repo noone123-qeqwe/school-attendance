@@ -765,6 +765,9 @@ class QrAttendanceController extends Controller
             ->where('subject_code', $session->subject_code)
             ->whereDate('date', today())
             ->get();
+        $peerVouchers = \App\Models\PeerVouchRequest::with('voucher')
+            ->where('session_id', $session->id)->where('status', 'verified')
+            ->get()->keyBy('subject_student_id');
 
         $now = now();
         $graceMinutes = $session->getGracePeriodMinutes();
@@ -772,6 +775,10 @@ class QrAttendanceController extends Controller
         // Staleness audit: Detect students who closed their tab, killed GPS, or abandoned presence monitoring
         if ($session->active && $now->lte($session->session_ends_at)) {
             foreach ($todayRecords as $record) {
+                // The peer subject has no phone to send continuous location heartbeats.
+                if ($record->verification_channel === 'peer_biometric') {
+                    continue;
+                }
                 if (!in_array($record->status, ['Present', 'Late'])) {
                     continue;
                 }
@@ -827,7 +834,7 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $clockins = $students->map(function ($student) use ($todayRecords) {
+        $clockins = $students->map(function ($student) use ($todayRecords, $peerVouchers) {
             $record = $todayRecords->firstWhere('user_id', $student->id);
             $rawStatus = $record ? $record->status : 'Missing';
             $monitoringStatus = $record ? ($record->monitoring_status ?? 'active') : null;
@@ -860,6 +867,9 @@ class QrAttendanceController extends Controller
                 'monitoring_status' => $monitoringStatus,
                 'time'              => ($record && $record->time_in) ? Carbon::parse($record->time_in)->format('h:i A') : '—',
                 'last_verified'     => $lastVerifiedText,
+                'verification_channel' => $record?->verification_channel,
+                'voucher_student_name' => $record?->verification_channel === 'peer_biometric'
+                    ? $peerVouchers->get($student->id)?->voucher?->name : null,
                 'distance'          => $distanceText,
                 'outside_since'     => ($record && $record->outside_since) ? Carbon::parse($record->outside_since)->format('h:i A') : null,
                 'escaped_at'        => ($record && $record->escaped_at) ? Carbon::parse($record->escaped_at)->format('h:i A') : null,

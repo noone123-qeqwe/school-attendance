@@ -29,6 +29,8 @@ class Attendance extends Model
         'longitude',
         'gps_accuracy',
         'method',
+        'verification_channel',
+        'is_provisional',
         'device_id',
         'academic_year_id',
         'checked_in_at',
@@ -46,6 +48,7 @@ class Attendance extends Model
     protected $casts = [
         'date' => 'date:Y-m-d',
         'excused' => 'boolean',
+        'is_provisional' => 'boolean',
         'checked_in_at' => 'datetime',
         'last_location_check_at' => 'datetime',
         'outside_since' => 'datetime',
