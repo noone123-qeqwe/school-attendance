@@ -58,11 +58,23 @@ class AppServiceProvider extends ServiceProvider
         });
 
         View::composer('*', function ($view) {
+            // A page renders many nested Blade views. Build this shared data once
+            // per HTTP request instead of repeating file and database reads for
+            // every component. Console jobs and tests can render views after
+            // changing settings, so they continue to read fresh values.
+            $request = request();
+            $cacheKey = 'shared_version_view_data';
+            $cacheForRequest = !app()->runningUnitTests() && $request->route() !== null;
+            if ($cacheForRequest && $request->attributes->has($cacheKey)) {
+                $view->with($request->attributes->get($cacheKey));
+                return;
+            }
+
             $versionService = app(VersionService::class);
             $latestVer = $versionService->getLatestVersion();
             $installedVer = $versionService->getInstalledVersion();
-            
-            $view->with([
+
+            $data = [
                 'appVersion'             => $latestVer,
                 'appVersionTag'          => $versionService->getVersionTag(),
                 'appCurrentVersion'      => $installedVer,
@@ -75,7 +87,11 @@ class AppServiceProvider extends ServiceProvider
                 'appInstalledVersionTag' => $versionService->getInstalledVersionTag(),
                 'appIsUpToDate'          => $versionService->isUpToDate(),
                 'appMetadata'            => $versionService->getFullMetadata(),
-            ]);
+            ];
+            if ($cacheForRequest) {
+                $request->attributes->set($cacheKey, $data);
+            }
+            $view->with($data);
         });
 
         // ── CSP nonce Blade directive ─────────────────────────────────────────

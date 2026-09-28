@@ -28,9 +28,9 @@ class AdminController extends Controller
     // ─────────────────────────────────────────
     // DASHBOARD
     // ─────────────────────────────────────────
-    public function index(Request $request, AnalyticsService $analyticsService)
+    public function index(AnalyticsService $analyticsService)
     {
-        $data = $analyticsService->getAdminDashboardData($request);
+        $data = $analyticsService->getAdminDashboardData();
         return view('admin.dashboard', $data);
     }
 

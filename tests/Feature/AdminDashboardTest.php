@@ -89,6 +89,23 @@ class AdminDashboardTest extends TestCase
         $response->assertStatus(200);
     }
 
+    public function test_dashboard_only_lists_students_with_low_attendance(): void
+    {
+        $atRisk = User::factory()->create(['role' => 'student', 'name' => 'At Risk Student']);
+        $healthy = User::factory()->create(['role' => 'student', 'name' => 'Healthy Student']);
+
+        Attendance::insert([
+            ['user_id' => $atRisk->id, 'subject_code' => 'PERF101', 'date' => today()->toDateString(), 'status' => 'Absent', 'created_at' => now(), 'updated_at' => now()],
+            ['user_id' => $healthy->id, 'subject_code' => 'PERF101', 'date' => today()->toDateString(), 'status' => 'Present', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $response = $this->actingAs($this->admin)->get('/admin/dashboard');
+
+        $response->assertOk();
+        $response->assertSee('At Risk Student');
+        $response->assertDontSee('Healthy Student');
+    }
+
     // ─────────────────────────────────────────
     // STUDENT MANAGEMENT
     // ─────────────────────────────────────────

@@ -16,32 +16,22 @@ class AnalyticsService
     /**
      * Get all data required for the Admin Dashboard.
      */
-    public function getAdminDashboardData(Request $request)
+    public function getAdminDashboardData(): array
     {
         // ── Core counts ──
         $coreCounts = \Illuminate\Support\Facades\Cache::remember('admin_core_counts', 300, function () {
             return [
                 'students' => User::where('role', 'student')->count(),
                 'teachers' => User::where('role', 'teacher')->count(),
-                'subjects' => Subject::count(),
-                'parents'  => User::where('role', 'parent')->count(),
-                'departments' => \App\Models\Department::count(),
-                'courses'  => \App\Models\Course::count(),
-                'sections' => \App\Models\Section::count(),
             ];
         });
 
         $totalStudents = $coreCounts['students'];
         $totalTeachers = $coreCounts['teachers'];
-        $totalSubjects = $coreCounts['subjects'];
-        $totalParents  = $coreCounts['parents'];
-        $totalDepartments = $coreCounts['departments'];
-        $totalCourses  = $coreCounts['courses'];
-        $totalSections = $coreCounts['sections'];
 
         // ── Today's stats ──
         $todayStats = Attendance::selectRaw("status, COUNT(*) as total")
-            ->whereDate('date', today())
+            ->where('date', today()->toDateString())
             ->groupBy('status')
             ->pluck('total', 'status');
 
@@ -53,7 +43,7 @@ class AnalyticsService
 
         // ── Yesterday's stats (for trend comparison) ──
         $yesterdayStats = Attendance::selectRaw("status, COUNT(*) as total")
-            ->whereDate('date', today()->subDay())
+            ->where('date', today()->subDay()->toDateString())
             ->groupBy('status')
             ->pluck('total', 'status');
 
@@ -69,14 +59,14 @@ class AnalyticsService
             ->where(function($q) {
                 $q->whereNull('session_ends_at')->orWhere('session_ends_at', '>', now());
             })
-            ->with(['creator', 'subject.schedules'])
+            ->with(['creator', 'subject'])
             ->orderBy('created_at', 'desc')
             ->get();
 
         if ($activeSessions->isNotEmpty()) {
             $sessionSubjectCodes = $activeSessions->pluck('subject_code')->unique()->filter();
             $checkInCounts = Attendance::whereIn('subject_code', $sessionSubjectCodes)
-                ->whereDate('date', $todayStr)
+                ->where('date', $todayStr)
                 ->selectRaw('subject_code, count(*) as count')
                 ->groupBy('subject_code')
                 ->pluck('count', 'subject_code');
@@ -84,74 +74,23 @@ class AnalyticsService
             $activeSessions->each(function ($session) use ($checkInCounts) {
                 $session->checked_in_count = $checkInCounts->get($session->subject_code, 0);
                 $session->qr_status = $session->isTokenValid() ? 'Active' : 'Expired';
-                $session->session_status = $session->isSessionActive() ? 'Active' : ($session->active ? 'Waiting' : 'Finished');
             });
         }
 
         $activeSessionCount = $activeSessions->count();
 
-        // ── Classes completed / pending today ──
-        $todayDayName = now()->format('l');
-        $scheduledToday = \App\Models\Schedule::where('day', $todayDayName)->count();
-        $sessionsToday = \App\Models\AttendanceSession::whereDate('created_at', today())->count();
-        $classesCompleted = min($sessionsToday, $scheduledToday);
-        $classesPending = max(0, $scheduledToday - $classesCompleted);
-
-        // ── Weekly chart data (last 7 days) ──
-        $weeklyRaw = Attendance::selectRaw("DATE(date) as day, status, COUNT(*) as total")
-            ->whereBetween('date', [Carbon::today()->subDays(6)->toDateString(), Carbon::today()->toDateString()])
-            ->groupBy('day', 'status')
-            ->get()
-            ->groupBy('day');
-
-        $weeklyLabels  = [];
-        $weeklyPresent = [];
-        $weeklyLate    = [];
-        $weeklyAbsent  = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $day = Carbon::today()->subDays($i);
-            $dayKey = $day->toDateString();
-            $weeklyLabels[]  = $day->format('D');
-            $dayData = $weeklyRaw->get($dayKey, collect());
-            $weeklyPresent[] = $dayData->firstWhere('status', 'Present')->total ?? 0;
-            $weeklyLate[]    = $dayData->firstWhere('status', 'Late')->total ?? 0;
-            $weeklyAbsent[]  = $dayData->firstWhere('status', 'Absent')->total ?? 0;
-        }
-
-        // ── Teacher activity monitor ──
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $teacherIds = $teachers->pluck('id');
-        $todaySessions = \App\Models\AttendanceSession::whereIn('created_by', $teacherIds)
-            ->whereDate('created_at', today())
-            ->with('subject')
-            ->orderBy('created_at', 'desc')
-            ->get()
-            ->groupBy('created_by');
-
-        $teacherActivity = $teachers->map(function ($teacher) use ($todaySessions) {
-            $session = $todaySessions->get($teacher->id)?->first();
-
-            $teacher->current_subject = $session?->subject?->name ?? '—';
-            $teacher->current_subject_code = $session?->subject_code ?? null;
-            if ($session && $session->active && $session->isSessionActive()) {
-                $teacher->attendance_status = 'Attendance Open';
-            } elseif ($session && !$session->active) {
-                $teacher->attendance_status = 'Attendance Closed';
-            } else {
-                $teacher->attendance_status = 'No Session';
-            }
-            $teacher->last_activity = $session?->updated_at?->diffForHumans() ?? '—';
-            $teacher->session_started = $session?->created_at?->format('h:i A') ?? '—';
-            return $teacher;
-        });
-
         // ── At-risk students (optimized eager loading) ──
+        $attendanceRateSql = "ROUND(100.0 * SUM(CASE WHEN status IN ('Present', 'Late', 'Excused') THEN 1 ELSE 0 END) / COUNT(*))";
         $studentStats = Attendance::select('user_id',
             \Illuminate\Support\Facades\DB::raw('count(*) as total_sessions'),
             \Illuminate\Support\Facades\DB::raw("sum(case when status in ('Present', 'Late', 'Excused') then 1 else 0 end) as present_sessions"),
             \Illuminate\Support\Facades\DB::raw('max(date) as last_attendance')
         )
+        ->whereHas('user', fn($query) => $query->where('role', 'student'))
         ->groupBy('user_id')
+        ->havingRaw($attendanceRateSql . ' < ?', [80])
+        ->orderByRaw($attendanceRateSql . ' ASC')
+        ->limit(15)
         ->with(['user' => function($q) {
             $q->select('id', 'name', 'student_number', 'role', 'course', 'year_level', 'section');
         }])
@@ -171,40 +110,7 @@ class AnalyticsService
                 return $student;
             }
             return null;
-        })->filter()->sortBy('attendance_rate')->take(15);
-
-        // ── Class performance (batch-optimized) ──
-        $subjectNames = Subject::pluck('name', 'code');
-        $classPerformance = Attendance::selectRaw("subject_code, status, COUNT(*) as total")
-            ->groupBy('subject_code', 'status')
-            ->get()
-            ->groupBy('subject_code')
-            ->map(function ($group, $code) use ($subjectNames) {
-                $present = $group->where('status', 'Present')->sum('total') + $group->where('status', 'Late')->sum('total');
-                $total = $group->sum('total');
-                $absent = $group->where('status', 'Absent')->sum('total');
-                $name = $subjectNames->get($code, $code);
-                return (object)[
-                    'code' => $code,
-                    'name' => $name,
-                    'present' => $present,
-                    'absent' => $absent,
-                    'total' => $total,
-                    'rate' => $total > 0 ? round(($present / $total) * 100) : 0,
-                ];
-            })->values();
-
-        $topClasses = $classPerformance->sortByDesc('rate')->take(5)->values();
-        $bottomClasses = $classPerformance->sortBy('rate')->take(5)->values();
-
-        // ── Recent activity feed ──
-        $recentActivity = collect();
-        try {
-            $recentActivity = \Spatie\Activitylog\Models\Activity::with('causer')
-                ->latest()
-                ->take(15)
-                ->get();
-        } catch (\Exception $e) {}
+        })->filter();
 
         // ── System alerts ──
         $pendingExcuses = \App\Models\ExcuseSubmission::where('status', 'pending')->count();
@@ -227,31 +133,11 @@ class AnalyticsService
             $systemAlerts->push((object)['severity' => 'info', 'icon' => 'bi-info-circle-fill', 'message' => "No students registered yet. Add students to get started.", 'action' => route('admin.student.create')]);
         }
 
-        // ── Recently added students ──
-        $recentStudents = User::where('role', 'student')
-            ->latest()
-            ->take(5)
-            ->get();
-
-        // ── Holiday Calendar Data ──
-        $calYear = (int) $request->get('hcal_year', now()->year);
-        $calMonth = (int) $request->get('hcal_month', now()->month);
-        $hcalData = $this->getHolidayCalendarData($calYear, $calMonth);
-        $hcalEventsMap = $hcalData['hcalEventsMap'];
-        $hcalUpcoming = $hcalData['hcalUpcoming'];
-
         return compact(
-            'totalStudents', 'totalTeachers', 'totalSubjects', 'totalParents',
-            'totalDepartments', 'totalCourses', 'totalSections',
-            'totalPresent', 'totalLate', 'totalAbsent', 'attendanceRate', 'totalToday',
-            'yesterdayPresent', 'yesterdayLate', 'yesterdayAbsent', 'yesterdayRate', 'yesterdayTotal',
-            'activeSessions', 'activeSessionCount', 'classesCompleted', 'classesPending',
-            'weeklyLabels', 'weeklyPresent', 'weeklyLate', 'weeklyAbsent',
-            'teacherActivity', 'atRiskStudents',
-            'topClasses', 'bottomClasses',
-            'recentActivity', 'systemAlerts', 'pendingExcuses',
-            'recentStudents',
-            'calYear', 'calMonth', 'hcalEventsMap', 'hcalUpcoming'
+            'totalStudents', 'totalTeachers',
+            'totalPresent', 'totalLate', 'totalAbsent', 'attendanceRate',
+            'yesterdayPresent', 'yesterdayLate', 'yesterdayAbsent', 'yesterdayRate',
+            'activeSessions', 'activeSessionCount', 'atRiskStudents', 'systemAlerts'
         );
     }
 
