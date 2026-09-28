@@ -7,7 +7,7 @@
         <i class="bi bi-journal-bookmark-fill"></i>
         <span>Classes</span>
     </a>
-    <button type="button" class="mbn-item mbn-item-featured" id="mbnStudentScanBtn" data-action="open-scanner" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('scan')}else{window.location.href='{{ route('home') }}?open_scanner=1'}" aria-label="Scan Attendance QR" style="background:transparent;border:none;outline:none;cursor:pointer;">
+    <button type="button" class="mbn-item mbn-item-featured" id="mbnStudentScanBtn" data-action="open-scanner" aria-label="Scan Attendance QR" style="background:transparent;border:none;outline:none;cursor:pointer;">
         <div class="mbn-featured-btn">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="mbn-scan-icon-svg">
                 <path d="M3.5 8.5V5.5C3.5 4.4 4.4 3.5 5.5 3.5H8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btn) {
         const handler = function(e) {
             if (e) { e.preventDefault(); e.stopPropagation(); }
-            if (typeof triggerHaptic === 'function') triggerHaptic('medium');
             if (typeof openStudentScanner === 'function') {
                 openStudentScanner('scan');
             } else {
@@ -46,12 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
         btn.addEventListener('click', handler);
-        btn.addEventListener('touchend', function(e) {
-            const now = Date.now();
-            if (btn._lastT && now - btn._lastT < 400) return;
-            btn._lastT = now;
-            handler(e);
-        }, { passive: false });
     }
 });
 </script>

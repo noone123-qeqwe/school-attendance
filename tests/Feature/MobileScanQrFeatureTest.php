@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Subject;
+use App\Models\Schedule;
 use App\Models\QrSession;
 use App\Models\AcademicYear;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -83,6 +84,42 @@ class MobileScanQrFeatureTest extends TestCase
         $response->assertSee('Cancel & Return to Dashboard', false);
     }
 
+    public function test_mobile_home_shows_only_relevant_upcoming_classes_and_usable_actions(): void
+    {
+        $this->travelTo(now()->startOfDay()->addHours(8));
+        $this->student->update(['section' => 'A']);
+        $this->subject->update(['section' => 'A']);
+        Schedule::create([
+            'subject_id' => $this->subject->id, 'day' => now()->format('l'),
+            'start_time' => '11:00:00', 'end_time' => '12:00:00', 'room' => 'Room 11',
+        ]);
+        Schedule::create([
+            'subject_id' => $this->subject->id, 'day' => now()->format('l'),
+            'start_time' => '10:00:00', 'end_time' => '10:30:00', 'room' => 'Room 10',
+        ]);
+        $otherSection = Subject::create([
+            'code' => 'CS302', 'name' => 'Other Section Class', 'units' => 3,
+            'year_level' => 3, 'semester' => 1, 'course' => 'BSCS',
+            'section' => 'B', 'instructor_id' => $this->teacher->id,
+        ]);
+        Schedule::create([
+            'subject_id' => $otherSection->id, 'day' => now()->format('l'),
+            'start_time' => '09:00:00', 'end_time' => '10:00:00', 'room' => 'Room B',
+        ]);
+        config(['peer_snap.enabled' => false]);
+
+        $response = $this->actingAs($this->student)->get(route('mobile.home'));
+        $response->assertOk()
+            ->assertSeeInOrder(['Room 10', 'Room 11'])
+            ->assertSee('View schedule for Mobile Systems')
+            ->assertSee($this->teacher->name)
+            ->assertDontSee('Other Section Class')
+            ->assertDontSee('Check in for a Classmate');
+
+        $otherSection->enrolledStudents()->attach($this->student->id);
+        $this->get(route('mobile.home'))->assertOk()->assertSee('Other Section Class');
+    }
+
     public function test_dedicated_mobile_scan_page_renders_cleanly(): void
     {
         $response = $this->actingAs($this->student)
@@ -92,6 +129,7 @@ class MobileScanQrFeatureTest extends TestCase
         $response->assertSee('Scan Attendance QR');
         $response->assertSee('id="openScannerBtn"', false);
         $response->assertSee('data-action="open-scanner"', false);
+        $response->assertSee('id="scanUnavailable"', false);
         $response->assertSee('id="studentScannerModal"', false);
     }
 

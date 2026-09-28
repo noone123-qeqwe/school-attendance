@@ -50,7 +50,6 @@
                     class="nav-item nav-item-primary {{ $currentRoute === $item['route'] ? 'active' : '' }}"
                     id="mobileNavScanBtn"
                     data-action="open-scanner"
-                    onclick="if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}"
                     aria-label="Scan QR Code">
                 <i class="bi bi-{{ $item['icon'] }}"></i>
                 <span>{{ $item['label'] }}</span>
@@ -199,39 +198,8 @@
 </style>
 
 <script @cspNonce>
-    // Direct binding for Scan button and touch feedback
+    // Scan actions are handled once by the mobile layout's delegated click listener.
     document.addEventListener('DOMContentLoaded', function() {
-        const scanBtn = document.getElementById('mobileNavScanBtn');
-        if (scanBtn) {
-            const triggerScan = function(e) {
-                if (e) {
-                    if (typeof e.preventDefault === 'function') e.preventDefault();
-                    if (typeof e.stopPropagation === 'function') e.stopPropagation();
-                }
-                if (typeof window.triggerHaptic === 'function') {
-                    window.triggerHaptic('medium');
-                } else if ('vibrate' in navigator) {
-                    navigator.vibrate(15);
-                }
-
-                if (typeof window.openStudentScanner === 'function') {
-                    window.openStudentScanner('scan');
-                } else if (typeof window.mobileScanButtonTapped === 'function') {
-                    window.mobileScanButtonTapped(e);
-                } else {
-                    window.location.href = "{{ route('mobile.scan') }}";
-                }
-            };
-
-            scanBtn.addEventListener('click', triggerScan);
-            scanBtn.addEventListener('touchend', function(e) {
-                const now = Date.now();
-                if (scanBtn._lastTouch && now - scanBtn._lastTouch < 400) return;
-                scanBtn._lastTouch = now;
-                triggerScan(e);
-            }, { passive: false });
-        }
-
         document.querySelectorAll('.nav-item:not(#mobileNavScanBtn)').forEach(function(el) {
             el.addEventListener('touchstart', function() {
                 if ('vibrate' in navigator) { navigator.vibrate(10); }

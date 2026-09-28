@@ -7,7 +7,7 @@
         @endif
     </button>
     
-    <h1 class="header-title">{{ $title ?? config('app.name', 'Smart Attendance') }}</h1>
+    <h1 class="header-title">{{ $title ?? 'Smart Attendance' }}</h1>
     
     <div class="header-actions">
         @if(isset($showNotifications) && $showNotifications)
@@ -129,26 +129,29 @@
     // Auto-hide header on scroll down, show on scroll up
     (function() {
         let lastScroll = 0;
+        let scrollQueued = false;
         const header = document.getElementById('mobileHeader');
         
-        window.addEventListener('scroll', function() {
-            const currentScroll = window.pageYOffset;
-            
-            if (currentScroll <= 0) {
+        function updateHeader() {
+            scrollQueued = false;
+            const currentScroll = Math.max(0, window.pageYOffset);
+            if (currentScroll <= 100 || document.body.classList.contains('mobile-menu-open') || header.contains(document.activeElement)) {
                 header.classList.remove('hidden');
-                return;
-            }
-            
-            if (currentScroll > lastScroll && currentScroll > 100) {
-                // Scrolling down
+                lastScroll = currentScroll;
+            } else if (currentScroll > lastScroll + 6) {
                 header.classList.add('hidden');
-            } else {
-                // Scrolling up
+                lastScroll = currentScroll;
+            } else if (currentScroll < lastScroll - 6) {
                 header.classList.remove('hidden');
+                lastScroll = currentScroll;
             }
-            
-            lastScroll = currentScroll;
-        });
+        }
+
+        window.addEventListener('scroll', function() {
+            if (scrollQueued) return;
+            scrollQueued = true;
+            requestAnimationFrame(updateHeader);
+        }, { passive: true });
 
         // Back button handler
         const backBtn = document.getElementById('headerBtnLeft');
@@ -186,6 +189,7 @@
                 backBtn.focus();
             };
             backBtn.addEventListener('click', function() {
+                header.classList.remove('hidden');
                 menu.hidden = false;
                 backdrop.hidden = false;
                 backBtn.setAttribute('aria-expanded', 'true');

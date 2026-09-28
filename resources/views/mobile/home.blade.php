@@ -41,7 +41,13 @@
             <div class="status-progress">
                 <div class="progress-bar" style="width: {{ $attendanceRate }}%"></div>
             </div>
-            <p class="status-summary">This week: {{ $weekPresent }}/{{ $weekTotal }} days present ({{ $attendanceRate }}%)</p>
+            <p class="status-summary">
+                @if($weekTotal > 0)
+                    This week: {{ $weekPresent }}/{{ $weekTotal }} attendance records marked present ({{ $attendanceRate }}%)
+                @else
+                    No attendance records yet this week
+                @endif
+            </p>
         </div>
     </div>
 
@@ -49,7 +55,7 @@
     <section class="quick-actions-section">
         <h3 class="section-title">QUICK ACTIONS</h3>
         <div class="quick-actions-grid">
-            <button type="button" id="quickActionScanBtn" data-action="open-scanner" onclick="if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}" class="quick-action-btn quick-action-primary" aria-label="Scan QR Code">
+            <button type="button" id="quickActionScanBtn" data-action="open-scanner" class="quick-action-btn quick-action-primary" aria-label="Scan QR Code">
                 <div class="quick-action-icon">
                     <i class="bi bi-qr-code-scan"></i>
                 </div>
@@ -63,10 +69,12 @@
                 <span class="quick-action-label">History</span>
             </a>
 
+            @if(app(\App\Services\PeerBiometricAttendanceService::class)->isAvailable())
             <a href="{{ route('peer-snap.index') }}" class="quick-action-btn quick-action-peer" aria-label="Check in for a Classmate">
                 <div class="quick-action-icon"><i class="bi bi-person-bounding-box"></i></div>
                 <span class="quick-action-label">Check in for a Classmate</span>
             </a>
+            @endif
             
             <a href="{{ route('mobile.attendance') }}" class="quick-action-btn">
                 <div class="quick-action-icon">
@@ -90,7 +98,7 @@
         <h3 class="section-title">UPCOMING CLASSES</h3>
         <div class="upcoming-list">
             @foreach($upcomingClasses as $class)
-            <div class="class-card">
+            <a href="{{ route('student.schedule') }}" class="class-card" aria-label="View schedule for {{ $class['name'] }} at {{ $class['time'] }}">
                 <div class="class-time">
                     <i class="bi bi-clock"></i>
                     <span>{{ $class['time'] }}</span>
@@ -99,10 +107,10 @@
                     <h4>{{ $class['name'] }}</h4>
                     <p>{{ $class['room'] }} • {{ $class['teacher'] }}</p>
                 </div>
-                <button class="class-action touchable">
+                <span class="class-action" aria-hidden="true">
                     <i class="bi bi-chevron-right"></i>
-                </button>
-            </div>
+                </span>
+            </a>
             @endforeach
         </div>
     </section>
@@ -358,7 +366,12 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        color: inherit;
+        text-decoration: none;
     }
+
+    .class-card:hover { border-color: rgba(207, 164, 111, 0.55); color: inherit; }
+    .class-card:focus-visible { outline: 2px solid var(--gold-primary); outline-offset: 3px; }
 
     .class-time {
         display: flex;
@@ -494,6 +507,21 @@
         color: var(--text-muted);
         padding: 40px 20px;
         font-size: 14px;
+    }
+
+    @media (min-width: 900px) {
+        .mobile-home { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+        .welcome-card { grid-column: 1 / -1; margin-bottom: 0; }
+        .status-card, .quick-actions-section, .upcoming-section, .activity-section { min-width: 0; margin-bottom: 0; }
+        .quick-actions-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .quick-action-btn { min-height: 112px; }
+    }
+
+    @media (max-width: 380px) {
+        .status-card { padding: 18px; }
+        .quick-action-btn { padding: 18px 10px; }
+        .activity-item { align-items: flex-start; }
+        .activity-time { white-space: normal; text-align: right; }
     }
 </style>
 @endpush

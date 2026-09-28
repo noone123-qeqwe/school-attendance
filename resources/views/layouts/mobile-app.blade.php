@@ -133,6 +133,16 @@
             padding-right: max(16px, var(--safe-right));
         }
 
+        @media (min-width: 768px) {
+            .mobile-app {
+                width: min(100%, 1180px);
+                margin-inline: auto;
+                padding-top: calc(var(--header-height) + var(--safe-top) + 28px);
+                padding-bottom: 64px;
+                padding-inline: clamp(24px, 4vw, 48px);
+            }
+        }
+
         /* Smooth scrolling */
         html {
             scroll-behavior: smooth;
@@ -254,13 +264,19 @@
             if (typeof openStudentScanner === 'function') {
                 openStudentScanner('scan');
             } else {
-                window.location.href = '{{ route("mobile.scan") }}';
+                const scanUrl = @json(route('mobile.scan'));
+                if (window.location.pathname === new URL(scanUrl, window.location.origin).pathname) {
+                    const unavailable = document.getElementById('scanUnavailable');
+                    if (unavailable) unavailable.hidden = false;
+                } else {
+                    window.location.href = scanUrl;
+                }
             }
         };
 
         // Delegated touch/click handler for scanner triggers (CSP-safe, works across all dynamic content)
         function triggerScanAction(e) {
-            const scanTrigger = e.target.closest('#mobileNavScanBtn, [data-action="open-scanner"], .scan-open-btn, .quick-action-primary');
+            const scanTrigger = e.target.closest('[data-action="open-scanner"]');
             if (scanTrigger) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -273,6 +289,7 @@
         // Haptic feedback for interactive elements
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('button, .touchable, .nav-item').forEach(el => {
+                if (el.matches('[data-action="open-scanner"]')) return;
                 el.addEventListener('touchstart', () => haptic('light'), { passive: true });
             });
 

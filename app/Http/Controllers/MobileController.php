@@ -29,6 +29,19 @@ class MobileController extends Controller
 
         $now = now();
         $todayDate = $now->toDateString();
+        $memberOfSubject = function ($query) use ($user) {
+            $query->whereHas('enrolledStudents', fn ($students) => $students->whereKey($user->id))
+                ->orWhere(function ($subjects) use ($user) {
+                    $subjects->where('year_level', $user->year_level)
+                        ->where('semester', $user->semester)
+                        ->where(function ($scope) use ($user) {
+                            $scope->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
+                        })
+                        ->where(function ($scope) use ($user) {
+                            $scope->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
+                        });
+                });
+        };
 
         // Greeting based on time
         $hour = $now->hour;
@@ -38,6 +51,7 @@ class MobileController extends Controller
         $todayAttendance = Attendance::where('user_id', $user->id)
             ->whereDate('date', $todayDate)
             ->whereIn('status', ['Present', 'Late'])
+            ->latest('checked_in_at')
             ->first();
 
         $todayStatus = 'pending';
@@ -48,19 +62,13 @@ class MobileController extends Controller
         if ($todayAttendance) {
             $todayStatus = 'present';
             $todayStatusText = $todayAttendance->status;
-            $checkInTime = Carbon::parse($todayAttendance->time_in)->format('g:i A');
-            $todayStatusSubtext = '';
+            $checkInTime = $todayAttendance->time_in
+                ? Carbon::parse($todayAttendance->time_in)->format('g:i A') : null;
+            $todayStatusSubtext = $checkInTime ? '' : 'Checked in today';
         } else {
             // Check if any class has ended today (only considering classes that started after user registered)
             $userCreated = $user->created_at ? Carbon::parse($user->created_at)->timezone('Asia/Manila') : null;
-            $anyClassEnded = Subject::where('year_level', $user->year_level)
-                ->where('semester', $user->semester)
-                ->where(function ($q) use ($user) {
-                    $q->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
-                })
-                ->where(function ($q) use ($user) {
-                    $q->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
-                })
+            $anyClassEnded = Subject::where($memberOfSubject)
                 ->whereHas('schedules', function($query) use ($now, $userCreated) {
                     $query->where('day', $now->format('l'))
                           ->whereTime('end_time', '<', $now->format('H:i:s'));
@@ -93,33 +101,33 @@ class MobileController extends Controller
         $upcomingClasses = [];
         $currentDayName = $now->format('l');
         
-        $todaySubjects = Subject::where('year_level', $user->year_level)
-            ->where('semester', $user->semester)
+        $todaySubjects = Subject::where($memberOfSubject)
             ->whereHas('schedules', function($query) use ($currentDayName) {
                 $query->where('day', $currentDayName);
             })
             ->with(['schedules' => function($query) use ($currentDayName) {
                 $query->where('day', $currentDayName);
-            }])
+            }, 'instructorUser'])
             ->get();
 
         foreach ($todaySubjects as $subject) {
-            $schedule = $subject->schedules->first();
-            if ($schedule) {
+            foreach ($subject->schedules as $schedule) {
                 $startTime = Carbon::parse($schedule->start_time);
                 if ($startTime->greaterThan($now)) {
                     $upcomingClasses[] = [
+                        'sort_time' => $startTime->format('H:i:s'),
                         'time' => $startTime->format('g:i A'),
                         'name' => $subject->name ?? $subject->code,
                         'room' => $schedule->room ?? 'TBA',
-                        'teacher' => $subject->instructor->name ?? 'TBA',
+                        'teacher' => $subject->instructorUser?->name ?? 'TBA',
                     ];
                 }
             }
         }
+        usort($upcomingClasses, fn ($a, $b) => strcmp($a['sort_time'], $b['sort_time']));
 
         // Recent activity
-        $recentAttendances = Attendance::with('subject')
+        $recentAttendances = Attendance::with('subject.schedules')
             ->where('user_id', $user->id)
             ->orderBy('date', 'desc')
             ->orderBy('time_in', 'desc')

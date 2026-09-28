@@ -13,23 +13,27 @@
     </div>
 
     <div class="scan-action-area">
-        <button type="button" class="scan-open-btn touchable" data-action="open-scanner" id="openScannerBtn" onclick="if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}">
+        <button type="button" class="scan-open-btn touchable" data-action="open-scanner" id="openScannerBtn">
             <i class="bi bi-camera-fill"></i>
             <span>Open QR Scanner</span>
         </button>
 
         <p class="scan-divider-text">or</p>
 
-        <button type="button" class="scan-code-btn touchable" id="openCodeBtn" data-action="open-code" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('code')}else if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}">
+        <button type="button" class="scan-code-btn touchable" id="openCodeBtn" data-action="open-code">
             <i class="bi bi-key-fill"></i>
             <span>Enter 6-Digit Code Instead</span>
         </button>
 
-        <button type="button" class="scan-paste-btn touchable" id="openPasteBtn" data-action="paste-copied-code" onclick="if(typeof openStudentScanner==='function'){openStudentScanner('code', true)}else if(typeof mobileScanButtonTapped==='function'){mobileScanButtonTapped(event)}">
+        <button type="button" class="scan-paste-btn touchable" id="openPasteBtn" data-action="paste-copied-code">
             <i class="bi bi-clipboard-check"></i>
             <span>Paste Copied Code</span>
         </button>
     </div>
+
+    <p id="scanUnavailable" class="scan-unavailable" role="alert" hidden>
+        The scanner is unavailable right now. Refresh this page or ask your instructor for help.
+    </p>
 
     <div class="scan-info-card">
         <div class="scan-info-row">
@@ -196,6 +200,17 @@
         gap: 14px;
     }
 
+    .scan-unavailable {
+        width: 100%;
+        padding: 14px 16px;
+        margin-bottom: 20px;
+        border: 1px solid rgba(239, 68, 68, 0.45);
+        border-radius: 12px;
+        background: rgba(239, 68, 68, 0.12);
+        color: #fecaca;
+        line-height: 1.5;
+    }
+
     .scan-info-row {
         display: flex;
         align-items: flex-start;
@@ -216,29 +231,20 @@
 @push('scripts')
 <script @cspNonce>
     document.addEventListener('DOMContentLoaded', function() {
-        const openScanBtn = document.getElementById('openScannerBtn');
         const openCodeBtn = document.getElementById('openCodeBtn');
         const openPasteBtn = document.getElementById('openPasteBtn');
+        const showUnavailable = () => { document.getElementById('scanUnavailable').hidden = false; };
 
         const urlParams = new URLSearchParams(window.location.search);
         const preferredMode = urlParams.get('open_code') === '1' ? 'code' : 'scan';
-
-        if (openScanBtn) {
-            openScanBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                if (typeof openStudentScanner === 'function') {
-                    openStudentScanner('scan');
-                } else if (typeof mobileScanButtonTapped === 'function') {
-                    mobileScanButtonTapped(e);
-                }
-            });
-        }
 
         if (openCodeBtn) {
             openCodeBtn.addEventListener('click', function(e) {
                 e.preventDefault();
                 if (typeof openStudentScanner === 'function') {
                     openStudentScanner('code');
+                } else {
+                    showUnavailable();
                 }
             });
         }
@@ -248,6 +254,8 @@
                 e.preventDefault();
                 if (typeof openStudentScanner === 'function') {
                     openStudentScanner('code', true);
+                } else {
+                    showUnavailable();
                 }
             });
         }

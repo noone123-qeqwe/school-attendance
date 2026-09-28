@@ -70,7 +70,7 @@
             @auth
                 <div class="header-left">
                     <!-- Burger -->
-                    <button class="burger-btn d-none d-md-flex" id="burgerBtn" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                    <button type="button" class="burger-btn d-none d-md-flex" id="burgerBtn" onclick="toggleSidebar()" aria-controls="sidebar" aria-expanded="true" aria-label="Collapse sidebar">
                         <i class="bi bi-layout-sidebar-inset"></i>
                     </button>
                     @php
@@ -421,14 +421,15 @@
         @if(session('info')) showToast(@json(session('info')), 'info'); @endif
         @if(session('status')) showToast(@json(session('status')), 'info'); @endif
 
-        // Check if mobile
-        const isMobile = window.innerWidth <= 768;
+        const isMobileViewport = () => window.matchMedia('(max-width: 767.98px)').matches;
 
         // Restore saved state (only for desktop)
-        if (!isMobile && localStorage.getItem('sidebarMini') === 'true') applyMini(true, false);
+        try {
+            if (!isMobileViewport() && localStorage.getItem('sidebarMini') === 'true') applyMini(true, false);
+        } catch (error) { /* Storage can be unavailable in private browsing. */ }
 
         function toggleSidebar() {
-            if (isMobile) {
+            if (isMobileViewport()) {
                 const isOpen = sidebar.classList.contains('open');
                 if (isOpen) {
                     closeSidebar();
@@ -438,7 +439,7 @@
             } else {
                 const isMini = sidebar.classList.contains('collapsed');
                 applyMini(!isMini, true);
-                localStorage.setItem('sidebarMini', !isMini);
+                try { localStorage.setItem('sidebarMini', String(!isMini)); } catch (error) {}
             }
         }
 
@@ -453,6 +454,13 @@
             sidebarOverlay.classList.remove('show');
             document.body.style.overflow = '';
         }
+
+        window.addEventListener('resize', () => {
+            if (!isMobileViewport() && sidebar.classList.contains('open')) closeSidebar();
+        }, { passive: true });
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && sidebar.classList.contains('open')) closeSidebar();
+        });
 
         function applyMini(mini, animate) {
             if (!animate) {
@@ -473,6 +481,8 @@
                 mainContent.classList.remove('mini');
                 burgerBtn.classList.remove('open');
             }
+            burgerBtn.setAttribute('aria-expanded', String(!mini));
+            burgerBtn.setAttribute('aria-label', mini ? 'Expand sidebar' : 'Collapse sidebar');
 
             if (!animate) {
                 requestAnimationFrame(() => {
