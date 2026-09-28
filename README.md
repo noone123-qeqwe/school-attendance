@@ -37,6 +37,12 @@ CI runs the test suite against SQLite and MySQL. See `.github/workflows/ci.yml`.
 
 `render.yaml` and `Dockerfile` describe the current Docker deployment. `render-blueprint.yaml` is an older alternative with different database and scheduler settings; do not mix the two configurations. Set a stable Laravel `APP_KEY` (for example, from `php artisan key:generate --show`) and database credentials in the hosting environment. For mail delivery on Render Free, configure an HTTP provider key such as `BREVO_API_KEY`; Render Free blocks outbound SMTP ports 25, 465, and 587. The committed mail credential was removed; it must be revoked at the mail provider because it remains in earlier Git history. Keep all secrets out of commits and build arguments.
 
+### QR live face verification
+
+The Docker image installs OpenCV and pinned YuNet/SFace models. QR face attendance sends a camera JPEG to the server, where the face is detected and compared with the student's profile photo. Uploaded photos are normalized and stored encrypted in `profile_face_photos`, so the comparison reference survives Render's ephemeral local filesystem. Existing photos are copied into that table the first time a readable image is available. If an older local photo has already disappeared, the student must upload it again. A clear photo with one front-facing person and good lighting is required; fingerprint remains available as a separate method. A single camera image does not provide presentation attack or liveness detection.
+
+For local development outside Docker, install Python 3 with OpenCV and point `FACE_MATCH_PYTHON`, `FACE_MATCH_DETECTOR_MODEL`, and `FACE_MATCH_RECOGNIZER_MODEL` to the executable and official model files. These variables are optional in the Docker deployment.
+
 The container entrypoint runs migrations and starts the web server, queue worker, and scheduler. After deployment, verify `/up`, log in as each role, record and reconcile a sample attendance session, and check queue failures and scheduler logs. Review `docs/web-release-process.md` for web and Android version handling.
 
 The scheduler runs `app:backup-database` daily with 14-day pruning. Store a copy outside the application host and periodically restore it into an isolated test database. A backup is only proven usable after a restore and a sample attendance/report check. Preserve the stable `APP_KEY` along with the recovery procedure; encrypted data may depend on it.

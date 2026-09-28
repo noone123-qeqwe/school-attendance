@@ -43,6 +43,7 @@ class ProfilePhotoController extends Controller
             ], 422);
         }
 
+        $storedPath = null;
         try {
             // Secure internal filename generation
             $extension = strtolower($file->getClientOriginalExtension() ?: $file->guessExtension() ?: 'jpg');
@@ -52,11 +53,13 @@ class ProfilePhotoController extends Controller
             $safeFilename = Str::uuid()->toString() . '.' . $extension;
 
             // Handle cloud storage if Cloudinary is explicitly configured, otherwise store to public disk
-            $storedPath = null;
             if (config('filesystems.default') === 'cloudinary' && config('filesystems.disks.cloudinary.url')) {
                 $storedPath = $file->storeOnCloudinary('profile_images')->getSecurePath();
             } else {
                 $storedPath = $file->storeAs('profile_images', $safeFilename, 'public');
+            }
+            if (!is_string($storedPath) || $storedPath === '') {
+                throw new \RuntimeException('Profile photo storage failed.');
             }
 
             $previousPath = $user->profile_image;
@@ -89,6 +92,9 @@ class ProfilePhotoController extends Controller
 
             return back()->with('success', 'Profile picture updated successfully!');
         } catch (\Throwable $e) {
+            if ($storedPath && !str_starts_with($storedPath, 'http') && $user->profile_image !== $storedPath) {
+                Storage::disk('public')->delete($storedPath);
+            }
             Log::error('Profile photo upload error: ' . $e->getMessage(), [
                 'user_id' => $user->id ?? null,
             ]);

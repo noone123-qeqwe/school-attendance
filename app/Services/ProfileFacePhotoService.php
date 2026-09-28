@@ -114,6 +114,17 @@ class ProfileFacePhotoService
             return null;
         }
 
+        // Phone JPEGs often store camera rotation in EXIF rather than pixels.
+        $orientation = $this->jpegOrientation($bytes);
+        $degrees = match ($orientation) { 3 => 180, 6 => 270, 8 => 90, default => 0 };
+        if ($degrees !== 0) {
+            $rotated = imagerotate($image, $degrees, 0);
+            if ($rotated !== false) {
+                imagedestroy($image);
+                $image = $rotated;
+            }
+        }
+
         $width = imagesx($image);
         $height = imagesy($image);
         if ($width < 100 || $height < 100 || $width > 5000 || $height > 5000) {
@@ -135,5 +146,27 @@ class ProfileFacePhotoService
         imagedestroy($normalized);
 
         return is_string($jpeg) && $jpeg !== '' ? $jpeg : null;
+    }
+
+    private function jpegOrientation(string $bytes): int
+    {
+        if (!function_exists('exif_read_data') || !str_starts_with($bytes, "\xFF\xD8")) {
+            return 1;
+        }
+
+        $path = tempnam(sys_get_temp_dir(), 'profile_exif_');
+        if ($path === false) {
+            return 1;
+        }
+
+        try {
+            if (file_put_contents($path, $bytes) !== strlen($bytes)) {
+                return 1;
+            }
+            $exif = @exif_read_data($path, 'IFD0', true, false);
+            return is_array($exif) ? (int) ($exif['IFD0']['Orientation'] ?? $exif['Orientation'] ?? 1) : 1;
+        } finally {
+            @unlink($path);
+        }
     }
 }
