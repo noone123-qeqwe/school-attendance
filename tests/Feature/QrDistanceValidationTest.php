@@ -156,6 +156,30 @@ class QrDistanceValidationTest extends TestCase
         Queue::assertPushed(SendTeacherScanAlert::class);
     }
 
+    public function test_wrong_device_cannot_complete_biometric_qr_attendance(): void
+    {
+        Setting::set('enforce_device_binding', 1);
+        $service = app(DeviceBindingService::class);
+        $service->bind($this->student, \Illuminate\Http\Request::create('/login', 'POST', [
+            'device_key' => 'registered-phone',
+        ]));
+
+        $response = $this->actingAs($this->student)->postJson('/qr/verify-complete', [
+            'token' => $this->session->token,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+            'device_key' => 'other-phone',
+            'credential' => ['id' => 'fake', 'response' => []],
+        ]);
+
+        $response->assertForbidden()->assertJsonPath('error_type', 'device_mismatch');
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id,
+            'session_id' => $this->session->id,
+        ]);
+    }
+
     public function test_impossible_recent_location_jump_requires_retry_after_webauthn()
     {
         $this->recordPreviousLocation(14.650000, 121.000000, 10, 20);

@@ -209,6 +209,23 @@ class StudentDeviceBindingTest extends TestCase
         $this->assertDatabaseMissing('device_bindings', ['user_id' => $student->id]);
     }
 
+    public function test_raw_device_keys_from_older_bindings_are_scrubbed_without_losing_hash(): void
+    {
+        $student = User::factory()->create(['role' => 'student']);
+        $hash = app(DeviceBindingService::class)->hashDeviceKey('old-raw-key');
+        $binding = DeviceBinding::create([
+            'user_id' => $student->id,
+            'device_hash' => $hash,
+            'device_uuid' => 'old-raw-key',
+        ]);
+
+        $migration = require database_path('migrations/2026_09_29_000001_clear_raw_device_keys.php');
+        $migration->up();
+
+        $this->assertNull($binding->fresh()->device_uuid);
+        $this->assertSame($hash, $binding->fresh()->device_hash);
+    }
+
     public function test_admin_can_reset_student_device_binding(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
