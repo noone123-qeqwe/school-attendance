@@ -28,6 +28,7 @@
     @endif
     <link rel="stylesheet" href="{{ asset('css/mobile-enterprise.css') }}?v={{ filemtime(public_path('css/mobile-enterprise.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/desktop-layout.css') }}?v={{ filemtime(public_path('css/desktop-layout.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/portal-layout-refinements.css') }}?v={{ filemtime(public_path('css/portal-layout-refinements.css')) }}">
 </head>
 
 <body>

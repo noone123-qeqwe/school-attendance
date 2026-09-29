@@ -140,7 +140,7 @@
 @endif
 
 <!-- Hero Banner -->
-<div class="premium-hero-card mb-4">
+<div class="premium-hero-card dashboard-hero mb-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
         <div class="d-flex align-items-center gap-3">
             <div>

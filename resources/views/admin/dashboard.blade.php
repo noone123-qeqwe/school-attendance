@@ -16,7 +16,7 @@
 @endphp
 
 {{-- ─── MODERNIZED DASHBOARD HEADER ─── --}}
-<div class="premium-hero-card dash-animate">
+<div class="premium-hero-card dashboard-hero dash-animate">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
         <div>
             <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -0.5px;">Command Center</h1>
