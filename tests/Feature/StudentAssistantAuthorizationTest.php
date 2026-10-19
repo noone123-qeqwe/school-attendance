@@ -27,6 +27,7 @@ class StudentAssistantAuthorizationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->travelTo(now('Asia/Manila')->setHour(10)->setMinute(0)->setSecond(0));
         $this->teacher = User::factory()->create(['role' => 'teacher']);
         $this->assistant = User::factory()->create([
             'role' => 'student', 'is_active' => true,
