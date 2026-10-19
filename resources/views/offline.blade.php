@@ -4,1314 +4,688 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#110A0A">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Offline Mode | {{ config('app.name', 'School Attendance System') }}</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/images/icons/icon-180x180.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/images/icons/favicon-32x32.png">
     <style>
-        :root {
-            --bg-color: #110A0A;
-            --card-bg: rgba(26, 17, 16, 0.95);
-            --gold: #CFA46F;
-            --gold-light: #F3E7CD;
-            --gold-glow: rgba(207, 164, 111, 0.25);
-            --text-muted: #B39B82;
-            --danger: #EF4444;
-            --success: #22C55E;
-            --warning: #F59E0B;
-            --info: #3B82F6;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: var(--bg-color);
-            background-image: 
-                radial-gradient(circle at 50% 15%, rgba(207, 164, 111, 0.08) 0%, transparent 60%),
-                radial-gradient(circle at 85% 85%, rgba(139, 90, 43, 0.06) 0%, transparent 50%);
-            color: var(--gold-light);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            overflow-x: hidden;
-        }
-
-        .offline-container {
-            width: 100%;
-            max-width: 480px;
-            background: var(--card-bg);
-            border: 1px solid rgba(207, 164, 111, 0.25);
-            border-radius: 24px;
-            padding: 40px 32px;
-            text-align: center;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px var(--gold-glow);
-            position: relative;
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            animation: fadeIn 0.6s ease-out;
-            transition: max-width 0.3s ease;
-        }
-
-        .offline-container.is-teacher-mode {
-            max-width: 760px;
-            text-align: left;
-            padding: 32px 28px;
-        }
-
-        .offline-container::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 20%;
-            right: 20%;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .icon-wrapper {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .offline-container.is-teacher-mode .icon-wrapper {
-            width: 56px;
-            height: 56px;
-            margin: 0 0 16px 0;
-        }
-
-        .icon-circle {
-            width: 74px;
-            height: 74px;
-            border-radius: 50%;
-            background: rgba(207, 164, 111, 0.1);
-            border: 1px solid rgba(207, 164, 111, 0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            z-index: 2;
-        }
-
-        .offline-container.is-teacher-mode .icon-circle {
-            width: 52px;
-            height: 52px;
-        }
-
-        .icon-pulse {
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            border: 2px solid var(--gold);
-            opacity: 0.4;
-            animation: ripple 2.5s cubic-bezier(0.1, 0.8, 0.3, 1) infinite;
-        }
-
-        @keyframes ripple {
-            0% { transform: scale(0.85); opacity: 0.8; }
-            100% { transform: scale(1.45); opacity: 0; }
-        }
-
-        .wifi-icon {
-            width: 38px;
-            height: 38px;
-            fill: none;
-            stroke: var(--gold);
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-
-        .offline-container.is-teacher-mode .wifi-icon {
-            width: 26px;
-            height: 26px;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 14px;
-            border-radius: 99px;
-            background: rgba(239, 68, 68, 0.15);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #F87171;
-            font-size: 0.78rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            margin-bottom: 16px;
-            transition: all 0.3s ease;
-        }
-
-        .status-badge.server-mode {
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.35);
-            color: #FBBF24;
-        }
-
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #EF4444;
-            animation: blink 1.5s infinite ease-in-out;
-        }
-
-        .status-badge.server-mode .status-dot {
-            background: #F59E0B;
-            box-shadow: 0 0 8px #F59E0B;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--gold-light);
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
-        }
-
-        p.offline-desc {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            line-height: 1.55;
-            margin-bottom: 20px;
-        }
-
-        .cached-profile-box {
-            display: none;
-            background: rgba(17, 10, 10, 0.8);
-            border: 1px solid rgba(207, 164, 111, 0.2);
-            border-radius: 14px;
-            padding: 14px 16px;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .cached-profile-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--gold);
-            font-weight: 700;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .cached-profile-name {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #FFFFFF;
-        }
-
-        .cached-profile-meta {
-            font-size: 0.82rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-
-        /* ── Teacher Offline Workspace ── */
-        .teacher-workspace {
-            display: none;
-            margin-top: 10px;
-        }
-
-        .oa-nav-tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 18px;
-            border-bottom: 1px solid rgba(207, 164, 111, 0.2);
-            padding-bottom: 10px;
-        }
-
-        .oa-tab-btn {
-            background: transparent;
-            border: 1px solid rgba(207, 164, 111, 0.25);
-            color: var(--text-muted);
-            padding: 8px 16px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 700;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .oa-tab-btn:hover {
-            color: var(--gold-light);
-            border-color: rgba(207, 164, 111, 0.5);
-        }
-
-        .oa-tab-btn.active {
-            background: linear-gradient(135deg, rgba(207, 164, 111, 0.22), rgba(207, 164, 111, 0.08));
-            border-color: var(--gold);
-            color: #FFFFFF;
-            box-shadow: 0 0 14px var(--gold-glow);
-        }
-
-        .oa-badge {
-            background: #EF4444;
-            color: #FFFFFF;
-            font-size: 0.7rem;
-            font-weight: 800;
-            padding: 2px 7px;
-            border-radius: 99px;
-        }
-
-        .oa-controls-grid {
-            display: grid;
-            grid-template-columns: 1fr 180px;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        @media (max-width: 580px) {
-            .oa-controls-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .oa-label {
-            display: block;
-            font-size: 0.76rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--gold);
-            margin-bottom: 6px;
-        }
-
-        .oa-select, .oa-input {
-            width: 100%;
-            background: rgba(17, 10, 10, 0.9);
-            border: 1px solid rgba(207, 164, 111, 0.35);
-            border-radius: 10px;
-            color: #FFFFFF;
-            padding: 10px 14px;
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .oa-select:focus, .oa-input:focus {
-            border-color: var(--gold);
-            box-shadow: 0 0 10px var(--gold-glow);
-        }
-
-        .oa-quick-actions {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
-            padding: 10px 14px;
-            background: rgba(207, 164, 111, 0.08);
-            border: 1px solid rgba(207, 164, 111, 0.2);
-            border-radius: 12px;
-            margin-bottom: 14px;
-        }
-
-        .oa-quick-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--gold-light);
-        }
-
-        .oa-quick-buttons {
-            display: flex;
-            gap: 6px;
-        }
-
-        .oa-quick-btn {
-            background: rgba(17, 10, 10, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: var(--text-muted);
-            padding: 4px 10px;
-            border-radius: 8px;
-            font-size: 0.74rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .oa-quick-btn.present:hover { background: rgba(34, 197, 94, 0.2); color: #4ade80; border-color: #22c55e; }
-        .oa-quick-btn.late:hover { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: #f59e0b; }
-        .oa-quick-btn.absent:hover { background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: #ef4444; }
-
-        .oa-search-bar {
-            margin-bottom: 12px;
-        }
-
-        .oa-search-input {
-            width: 100%;
-            background: rgba(17, 10, 10, 0.7);
-            border: 1px solid rgba(207, 164, 111, 0.25);
-            border-radius: 10px;
-            color: #FFFFFF;
-            padding: 8px 12px;
-            font-size: 0.84rem;
-        }
-
-        .oa-students-list {
-            max-height: 380px;
-            overflow-y: auto;
-            padding-right: 4px;
-            margin-bottom: 16px;
-        }
-
-        .oa-students-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        .oa-students-list::-webkit-scrollbar-thumb {
-            background: rgba(207, 164, 111, 0.3);
-            border-radius: 6px;
-        }
-
-        .oa-student-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            background: rgba(17, 10, 10, 0.7);
-            border: 1px solid rgba(207, 164, 111, 0.16);
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .oa-student-row:hover {
-            border-color: rgba(207, 164, 111, 0.35);
-            background: rgba(207, 164, 111, 0.04);
-        }
-
-        .oa-student-info {
-            min-width: 0;
-            flex: 1;
-        }
-
-        .oa-student-name {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #FFFFFF;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .oa-student-num {
-            font-size: 0.76rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-
-        .oa-status-pills {
-            display: flex;
-            gap: 4px;
-            flex-shrink: 0;
-        }
-
-        .oa-pill {
-            padding: 5px 9px;
-            border-radius: 8px;
-            font-size: 0.74rem;
-            font-weight: 700;
-            cursor: pointer;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--text-muted);
-            transition: all 0.15s ease;
-            user-select: none;
-        }
-
-        .oa-pill[data-val="Present"].active {
-            background: rgba(34, 197, 94, 0.25);
-            border-color: #22C55E;
-            color: #4ADE80;
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
-        }
-
-        .oa-pill[data-val="Late"].active {
-            background: rgba(245, 158, 11, 0.25);
-            border-color: #F59E0B;
-            color: #FBBF24;
-            box-shadow: 0 0 10px rgba(245, 158, 11, 0.35);
-        }
-
-        .oa-pill[data-val="Absent"].active {
-            background: rgba(239, 68, 68, 0.25);
-            border-color: #EF4444;
-            color: #F87171;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
-        }
-
-        .oa-pill[data-val="Excused"].active {
-            background: rgba(168, 85, 247, 0.25);
-            border-color: #A855F7;
-            color: #C084FC;
-            box-shadow: 0 0 10px rgba(168, 85, 247, 0.35);
-        }
-
-        .btn-save-oa {
-            width: 100%;
-            padding: 13px 20px;
-            border-radius: 12px;
-            border: none;
-            background: linear-gradient(135deg, var(--gold) 0%, #8F6E4A 100%);
-            color: #110A0A;
-            font-size: 0.95rem;
-            font-weight: 800;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 18px rgba(207, 164, 111, 0.35);
-        }
-
-        .btn-save-oa:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(207, 164, 111, 0.5);
-            background: linear-gradient(135deg, #dfb783 0%, #9e7b54 100%);
-        }
-
-        .oa-banner-alert {
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 0.84rem;
-            font-weight: 600;
-            margin-bottom: 14px;
-            display: none;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .oa-banner-alert.success {
-            display: flex;
-            background: rgba(34, 197, 94, 0.15);
-            border: 1px solid rgba(34, 197, 94, 0.4);
-            color: #4ADE80;
-        }
-
-        .oa-banner-alert.warning {
-            display: flex;
-            background: rgba(245, 158, 11, 0.15);
-            border: 1px solid rgba(245, 158, 11, 0.4);
-            color: #FBBF24;
-        }
-
-        /* ── Queue Table / List ── */
-        .oa-queue-list {
-            max-height: 380px;
-            overflow-y: auto;
-            margin-bottom: 16px;
-        }
-
-        .oa-queue-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            background: rgba(17, 10, 10, 0.7);
-            border: 1px solid rgba(207, 164, 111, 0.18);
-            border-radius: 12px;
-            padding: 10px 14px;
-            margin-bottom: 8px;
-        }
-
-        .oa-empty-state {
-            padding: 30px 16px;
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 0.88rem;
-        }
-
-        .btn-retry {
-            width: 100%;
-            padding: 13px 20px;
-            border-radius: 12px;
-            border: none;
-            background: rgba(207, 164, 111, 0.15);
-            border: 1px solid rgba(207, 164, 111, 0.35);
-            color: var(--gold-light);
-            font-size: 0.92rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.25s ease;
-            margin-top: 14px;
-        }
-
-        .btn-retry:hover {
-            background: rgba(207, 164, 111, 0.25);
-            border-color: var(--gold);
-        }
-
-        .reconnect-notice {
-            display: none;
-            background: rgba(34, 197, 94, 0.15);
-            border: 1px solid rgba(34, 197, 94, 0.35);
-            color: #4ADE80;
-            padding: 10px 16px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+        :root{
+            --bg:#110A0A;--card:rgba(26,17,16,.97);--gold:#CFA46F;--gold-lt:#F3E7CD;
+            --gold-glow:rgba(207,164,111,.22);--muted:#B39B82;--danger:#EF4444;
+            --success:#22C55E;--warn:#F59E0B;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+            background:var(--bg);
+            background-image:radial-gradient(circle at 50% 15%,rgba(207,164,111,.08) 0%,transparent 60%),
+                             radial-gradient(circle at 85% 85%,rgba(139,90,43,.06) 0%,transparent 50%);
+            color:var(--gold-lt);min-height:100vh;
+            display:flex;flex-direction:column;align-items:center;
+            padding:20px 16px 60px;overflow-x:hidden;
+        }
+
+        /* ── status bar ─────────────────────── */
+        .top-bar{width:100%;max-width:560px;display:flex;align-items:center;
+            justify-content:space-between;margin-bottom:18px;gap:8px;flex-wrap:wrap;}
+        .status-badge{
+            display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:99px;
+            background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);
+            color:#F87171;font-size:.77rem;font-weight:700;letter-spacing:.4px;
+            text-transform:uppercase;transition:all .3s;
+        }
+        .status-badge.server{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.35);color:#FBBF24;}
+        .status-badge.online {background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.35);color:#4ADE80;}
+        .status-dot{width:6px;height:6px;border-radius:50%;background:#EF4444;animation:blink 1.5s infinite ease-in-out;}
+        .status-badge.server .status-dot{background:var(--warn);box-shadow:0 0 7px var(--warn);}
+        .status-badge.online  .status-dot{background:var(--success);box-shadow:0 0 7px var(--success);animation:none;}
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+        .pending-info{font-size:.76rem;color:var(--muted);display:none;align-items:center;gap:5px;}
+
+        /* ── main card ──────────────────────── */
+        .card{
+            width:100%;max-width:560px;background:var(--card);
+            border:1px solid rgba(207,164,111,.25);border-radius:24px;padding:30px 26px;
+            box-shadow:0 20px 50px rgba(0,0,0,.55),0 0 28px var(--gold-glow);
+            position:relative;animation:fadeIn .6s ease-out;
+        }
+        .card::before{content:'';position:absolute;top:0;left:20%;right:20%;height:2px;
+            background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+        .reconnect-notice{
+            display:none;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.35);
+            color:#4ADE80;padding:10px 14px;border-radius:10px;font-size:.84rem;font-weight:600;
+            margin-bottom:16px;align-items:center;justify-content:center;gap:8px;
+        }
+        .isp-tip{
+            display:none;background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.35);
+            border-radius:12px;padding:14px;margin-bottom:18px;
+            font-size:.82rem;color:#FDE047;text-align:left;line-height:1.55;
+        }
+
+        /* icon + heading */
+        .icon-wrap{display:flex;justify-content:center;margin-bottom:16px;}
+        .icon-circle{width:76px;height:76px;border-radius:50%;
+            background:rgba(207,164,111,.1);border:1px solid rgba(207,164,111,.3);
+            display:flex;align-items:center;justify-content:center;position:relative;}
+        .icon-pulse{position:absolute;inset:0;border-radius:50%;border:2px solid var(--gold);
+            opacity:.4;animation:ripple 2.5s cubic-bezier(.1,.8,.3,1) infinite;}
+        @keyframes ripple{0%{transform:scale(.85);opacity:.8}100%{transform:scale(1.45);opacity:0}}
+        .wifi-icon{width:36px;height:36px;fill:none;stroke:var(--gold);stroke-width:2;
+            stroke-linecap:round;stroke-linejoin:round;}
+        h1{font-size:1.42rem;font-weight:800;color:var(--gold-lt);margin-bottom:8px;
+            letter-spacing:-.02em;text-align:center;}
+        .subtitle{font-size:.88rem;color:var(--muted);line-height:1.6;margin-bottom:20px;text-align:center;}
+
+        /* retry btn */
+        .btn-retry{
+            width:100%;padding:13px 20px;border-radius:12px;border:none;
+            background:linear-gradient(135deg,var(--gold) 0%,#8F6E4A 100%);color:#110A0A;
+            font-size:.92rem;font-weight:700;cursor:pointer;
+            display:inline-flex;align-items:center;justify-content:center;gap:8px;
+            transition:all .25s;box-shadow:0 4px 18px rgba(207,164,111,.35);
+        }
+        .btn-retry:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(207,164,111,.5);}
+        .btn-retry:active{transform:translateY(0);}
+
+        /* profile box */
+        .profile-box{background:rgba(17,10,10,.8);border:1px solid rgba(207,164,111,.2);
+            border-radius:12px;padding:14px;margin-bottom:18px;display:none;}
+        .profile-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;
+            color:var(--gold);font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+        .profile-name{font-size:.96rem;font-weight:700;color:#fff;}
+        .profile-meta{font-size:.79rem;color:var(--muted);margin-top:3px;}
+
+        /* separator */
+        .sep{display:flex;align-items:center;gap:10px;margin:22px 0 16px;color:var(--muted);font-size:.79rem;}
+        .sep::before,.sep::after{content:'';flex:1;border-top:1px solid rgba(207,164,111,.18);}
+
+        /* ── OFFLINE ATTENDANCE ──────────────── */
+        #oaSection{display:none;}
+
+        .pending-strip{
+            display:none;padding:10px 14px;margin-bottom:14px;
+            background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);
+            border-radius:10px;font-size:.81rem;color:#93C5FD;font-weight:600;
+            align-items:center;gap:8px;
+        }
 
-        .student-offline-box {
-            display: none;
-            background: rgba(17, 10, 10, 0.85);
-            border: 1px solid rgba(207, 164, 111, 0.25);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 20px;
-            text-align: left;
-            line-height: 1.55;
-            font-size: 0.86rem;
-            color: var(--text-muted);
-        }
-
-        .student-offline-box strong {
-            color: var(--gold-light);
-        }
-
-        .app-footer {
-            margin-top: 24px;
-            font-size: 0.74rem;
-            color: rgba(179, 155, 130, 0.6);
-            letter-spacing: 0.5px;
-            text-align: center;
-        }
-
-        .spin {
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
+        .oa-card{background:rgba(17,10,10,.7);border:1px solid rgba(207,164,111,.2);border-radius:16px;overflow:hidden;}
+        .oa-card-hdr{padding:13px 17px;display:flex;align-items:center;justify-content:space-between;
+            border-bottom:1px solid rgba(207,164,111,.14);background:rgba(207,164,111,.06);}
+        .oa-title{font-size:.86rem;font-weight:700;color:var(--gold);display:flex;align-items:center;gap:7px;}
+        .oa-offline-badge{font-size:.69rem;font-weight:700;background:rgba(245,158,11,.18);
+            color:#FBBF24;border:1px solid rgba(245,158,11,.35);padding:2px 9px;border-radius:99px;}
+
+        /* select */
+        .oa-row{padding:13px 17px;border-bottom:1px solid rgba(207,164,111,.08);}
+        .oa-lbl{font-size:.73rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;margin-bottom:6px;}
+        .oa-select{
+            width:100%;background:rgba(15,10,8,.85);border:1px solid rgba(207,164,111,.25);
+            border-radius:10px;padding:10px 36px 10px 13px;color:var(--gold-lt);font-size:.88rem;
+            outline:none;cursor:pointer;transition:border .2s;appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23CFA46F' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat:no-repeat;background-position:right 13px center;
+        }
+        .oa-select:focus{border-color:var(--gold);}
+        .oa-select option{background:#1c1008;}
+
+        /* date row */
+        .oa-date-row{padding:12px 17px;border-bottom:1px solid rgba(207,164,111,.08);
+            display:flex;align-items:flex-end;gap:10px;}
+        .oa-date-wrap{flex:1;}
+        .oa-date-input{
+            width:100%;background:rgba(15,10,8,.85);border:1px solid rgba(207,164,111,.25);
+            border-radius:10px;padding:9px 12px;color:var(--gold-lt);font-size:.87rem;
+            outline:none;transition:border .2s;
+        }
+        .oa-date-input:focus{border-color:var(--gold);}
+        input[type='date']::-webkit-calendar-picker-indicator{filter:invert(.7) sepia(1) saturate(2) hue-rotate(10deg);}
+        .oa-all-btn{
+            padding:9px 13px;border-radius:10px;border:1px solid rgba(34,197,94,.35);
+            background:rgba(34,197,94,.1);color:#4ADE80;font-size:.76rem;font-weight:700;
+            cursor:pointer;white-space:nowrap;transition:all .2s;display:none;
+        }
+        .oa-all-btn:hover{background:rgba(34,197,94,.2);}
+
+        /* student list */
+        .oa-list{max-height:320px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(207,164,111,.3) transparent;}
+        .oa-list::-webkit-scrollbar{width:4px;}
+        .oa-list::-webkit-scrollbar-thumb{background:rgba(207,164,111,.3);border-radius:4px;}
+
+        .oa-student{
+            display:flex;align-items:center;gap:8px;padding:10px 17px;
+            border-bottom:1px solid rgba(255,255,255,.03);transition:background .15s;
+        }
+        .oa-student:last-child{border-bottom:none;}
+        .oa-student:hover{background:rgba(207,164,111,.04);}
+        .oa-snum{font-size:.73rem;color:var(--muted);min-width:76px;font-family:monospace;}
+        .oa-sname{flex:1;font-size:.86rem;color:var(--gold-lt);font-weight:500;}
+        .oa-rgroup{display:flex;gap:4px;flex-shrink:0;}
+        .oa-rbtn{
+            padding:4px 8px;border-radius:7px;border:1px solid rgba(207,164,111,.18);
+            font-size:.7rem;font-weight:700;cursor:pointer;
+            background:transparent;color:var(--muted);transition:all .15s;white-space:nowrap;
+        }
+        .oa-rbtn.p{border-color:rgba(34,197,94,.3);color:rgba(34,197,94,.65);}
+        .oa-rbtn.p.on{background:rgba(34,197,94,.2);color:#4ADE80;border-color:rgba(34,197,94,.6);}
+        .oa-rbtn.l{border-color:rgba(245,158,11,.3);color:rgba(245,158,11,.65);}
+        .oa-rbtn.l.on{background:rgba(245,158,11,.2);color:#FCD34D;border-color:rgba(245,158,11,.6);}
+        .oa-rbtn.a{border-color:rgba(239,68,68,.3);color:rgba(239,68,68,.65);}
+        .oa-rbtn.a.on{background:rgba(239,68,68,.2);color:#F87171;border-color:rgba(239,68,68,.6);}
+
+        /* footer */
+        .oa-footer{padding:13px 17px;display:flex;gap:10px;
+            border-top:1px solid rgba(207,164,111,.14);background:rgba(207,164,111,.04);}
+        .oa-save-btn{
+            flex:1;padding:11px;border-radius:10px;border:none;
+            background:linear-gradient(135deg,var(--gold) 0%,#8F6E4A 100%);
+            color:#110A0A;font-size:.88rem;font-weight:700;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;gap:6px;
+            transition:all .25s;box-shadow:0 3px 14px rgba(207,164,111,.3);
+        }
+        .oa-save-btn:hover{transform:translateY(-1px);box-shadow:0 5px 20px rgba(207,164,111,.45);}
+        .oa-save-btn:disabled{opacity:.5;cursor:default;transform:none;}
+
+        /* empty / hint states */
+        .oa-empty{padding:30px 16px;text-align:center;color:var(--muted);font-size:.84rem;line-height:1.6;}
+        .oa-empty svg{display:block;margin:0 auto 12px;opacity:.4;}
+
+        /* toast */
+        .oa-toast{
+            position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-70px);
+            padding:11px 22px;border-radius:14px;font-size:.83rem;font-weight:700;
+            z-index:99999;display:flex;align-items:center;gap:9px;
+            border:1px solid rgba(255,255,255,.15);box-shadow:0 10px 30px rgba(0,0,0,.5);
+            transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .3s;
+            opacity:0;pointer-events:none;white-space:nowrap;
+        }
+        .oa-toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+        .oa-toast.success{background:rgba(22,163,74,.94);color:#fff;}
+        .oa-toast.error  {background:rgba(185,28,28,.94);color:#fff;}
+        .oa-toast.info   {background:rgba(29,78,216,.94);color:#fff;}
+
+        .app-footer{margin-top:20px;font-size:.72rem;color:rgba(179,155,130,.5);
+            letter-spacing:.4px;text-align:center;}
+        .spin{animation:spin .8s linear infinite;}
+        @keyframes spin{100%{transform:rotate(360deg)}}
     </style>
 </head>
-<body data-is-offline-page="true">
+<body>
 
-    <div class="offline-container" id="offlineContainer">
-        <!-- Reconnect alert -->
-        <div class="reconnect-notice" id="reconnectNotice">
-            <span>⚡ Connection restored! Reloading page...</span>
+<div class="top-bar">
+    <div class="status-badge" id="statusBadge">
+        <span class="status-dot"></span>
+        <span id="statusBadgeText">No Connection</span>
+    </div>
+    <div class="pending-info" id="pendingInfo">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span id="pendingCount">0</span> record(s) pending sync
+    </div>
+</div>
+
+<div class="card">
+    <!-- reconnect notice -->
+    <div class="reconnect-notice" id="reconnectNotice">
+        <span>⚡ Connection restored! Reloading...</span>
+    </div>
+
+    <!-- ISP tip -->
+    <div class="isp-tip" id="ispTipBox">
+        <div style="font-weight:700;margin-bottom:5px;display:flex;align-items:center;gap:6px;">
+            🌐 Internet Active &bull; Host Connection Blocked
         </div>
-
-        <div class="status-badge" id="statusBadge">
-            <span class="status-dot"></span> <span id="statusBadgeText">No Connection</span>
-        </div>
-
-        <div class="icon-wrapper">
-            <div class="icon-pulse"></div>
-            <div class="icon-circle">
-                <svg class="wifi-icon" viewBox="0 0 24 24">
-                    <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
-                </svg>
-            </div>
-        </div>
-
-        <h1 id="offlineHeading">You're Offline</h1>
-        <p class="offline-desc" id="offlineMsg">
-            We can't connect to the School Attendance server right now.
-        </p>
-
-        <!-- Cached Profile Details -->
-        <div class="cached-profile-box" id="cachedProfileBox">
-            <div class="cached-profile-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                </svg>
-                <span id="cachedProfileLabel">Cached Profile</span>
-            </div>
-            <div class="cached-profile-name" id="cachedName">User</div>
-            <div class="cached-profile-meta" id="cachedMeta">ID: --</div>
-        </div>
-
-        <!-- Student Offline Advisory Box -->
-        <div class="student-offline-box" id="studentOfflineBox">
-            <div style="font-weight: 700; color: var(--gold); margin-bottom: 6px;">📱 Student Offline Notice</div>
-            QR Code scanning and attendance check-ins require an active internet connection to securely sign QR tokens and verify your physical classroom presence. When your connection returns, this screen will automatically reconnect.
-        </div>
-
-        <!-- ── Teacher Offline Attendance Workspace ── -->
-        <div class="teacher-workspace" id="teacherWorkspace">
-            <!-- Tabs Navigation -->
-            <div class="oa-nav-tabs">
-                <button type="button" class="oa-tab-btn active" id="tabMarkBtn" onclick="switchOaTab('mark')">
-                    <span>📝 Mark Attendance</span>
-                </button>
-                <button type="button" class="oa-tab-btn" id="tabQueueBtn" onclick="switchOaTab('queue')">
-                    <span>⏳ Pending Queue</span>
-                    <span class="oa-badge" id="oaQueueBadge" style="display:none;">0</span>
-                </button>
-            </div>
-
-            <!-- Tab 1: Mark Attendance Form -->
-            <div id="viewMarkTab">
-                <div id="oaSaveBanner" class="oa-banner-alert success"></div>
-
-                <div class="oa-controls-grid">
-                    <div>
-                        <label class="oa-label" for="oaSubjectSelect">Select Class / Subject</label>
-                        <select id="oaSubjectSelect" class="oa-select" onchange="handleSubjectChange()">
-                            <option value="">-- Choose Subject --</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="oa-label" for="oaDateInput">Attendance Date</label>
-                        <input type="date" id="oaDateInput" class="oa-input">
-                    </div>
-                </div>
-
-                <div id="oaRosterContainer" style="display:none;">
-                    <div class="oa-quick-actions">
-                        <div class="oa-quick-title" id="oaRosterHeaderTitle">Enrolled Students (0)</div>
-                        <div class="oa-quick-buttons">
-                            <button type="button" class="oa-quick-btn present" onclick="setBulkStatus('Present')">✓ All Present</button>
-                            <button type="button" class="oa-quick-btn late" onclick="setBulkStatus('Late')">⏱ All Late</button>
-                            <button type="button" class="oa-quick-btn absent" onclick="setBulkStatus('Absent')">✗ All Absent</button>
-                        </div>
-                    </div>
-
-                    <div class="oa-search-bar">
-                        <input type="text" id="oaStudentSearch" class="oa-search-input" placeholder="Search student name or number..." oninput="filterStudents()">
-                    </div>
-
-                    <div class="oa-students-list" id="oaStudentsList">
-                        <!-- Populated by JavaScript -->
-                    </div>
-
-                    <button type="button" class="btn-save-oa" id="btnSaveAttendance" onclick="saveOfflineAttendance()">
-                        <span>💾 Save Attendance Locally</span>
-                    </button>
-                </div>
-
-                <div id="oaNoRosterAlert" class="oa-banner-alert warning" style="display:none;">
-                    <span>⚠️ No class roster cached on this device yet. When you are next online, open your subject once to cache student lists for offline use.</span>
-                </div>
-            </div>
-
-            <!-- Tab 2: Pending Sync Queue -->
-            <div id="viewQueueTab" style="display:none;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                    <div style="font-size:0.85rem; font-weight:700; color:var(--gold-light);" id="queueSummaryText">
-                        0 records awaiting sync
-                    </div>
-                    <button type="button" class="oa-quick-btn" id="btnQueueSyncNow" onclick="handleQueueSync()" style="display:flex; align-items:center; gap:6px;">
-                        <span id="queueSyncIcon">🔄</span> <span>Sync Now</span>
-                    </button>
-                </div>
-
-                <div class="oa-queue-list" id="oaQueueList">
-                    <!-- Populated by JavaScript -->
-                </div>
-            </div>
-        </div>
-
-        <!-- ISP / Network Route Notice Box -->
-        <div class="isp-tip-box" id="ispTipBox" style="display: none; background: rgba(234, 179, 8, 0.12); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 0.84rem; color: #FDE047; text-align: left; line-height: 1.55;">
-            <div style="font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;">
-                <span>🌐 Internet Active &bull; Host Connection Blocked</span>
-            </div>
-            <div>Your device has active internet, but your network provider cannot route to the school attendance server.</div>
-        </div>
-
-        <button class="btn-retry" id="btnRetry" onclick="handleRetry()">
-            <svg id="retryIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-            </svg>
-            <span id="retryText">Retry Connection</span>
-        </button>
-
-        <div class="app-footer">
-            {{ config('app.name', 'School Attendance System') }} &bull; PWA Offline Mode
+        <div>Your device has active internet, but your network provider cannot route to the school server.</div>
+        <div style="margin-top:8px;font-size:.79rem;color:rgba(254,240,138,.85);">
+            &bull; Try <strong>Cloudflare WARP (1.1.1.1)</strong><br>
+            &bull; Or switch between Wi-Fi and Mobile Data.
         </div>
     </div>
 
-    <!-- Offline Attendance Engine -->
-    <script src="/js/offline-attendance.js"></script>
+    <!-- icon -->
+    <div class="icon-wrap" id="offlineIcon">
+        <div class="icon-circle">
+            <div class="icon-pulse"></div>
+            <svg class="wifi-icon" viewBox="0 0 24 24">
+                <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/>
+            </svg>
+        </div>
+    </div>
+    <h1 id="offlineHeading">You're Offline</h1>
+    <p class="subtitle" id="offlineMsg">
+        We can't connect to the School Attendance server right now. Please check your Wi-Fi or mobile data connection.
+    </p>
 
-    <script>
-        // ── State Variables ──
-        let currentUser = null;
-        let cachedSubjects = [];
-        let currentSubjectStudents = [];
-        let studentStatusMap = {};
-        let currentState = 'no-internet';
-        let isReconnecting = false;
-        let probeInFlight = false;
+    <!-- cached profile -->
+    <div class="profile-box" id="cachedProfileBox">
+        <div class="profile-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span id="cachedProfileLabel">Cached Profile</span>
+        </div>
+        <div class="profile-name" id="cachedName">User</div>
+        <div class="profile-meta" id="cachedMeta"></div>
+    </div>
 
-        // ── Initialize Date Picker to Today ──
-        const dateInput = document.getElementById('oaDateInput');
-        if (dateInput) {
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const dd = String(today.getDate()).padStart(2, '0');
-            dateInput.value = `${yyyy}-${mm}-${dd}`;
-        }
+    <!-- retry -->
+    <button class="btn-retry" id="btnRetry" onclick="handleRetry()">
+        <svg id="retryIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+        </svg>
+        <span id="retryText">Retry Connection</span>
+    </button>
 
-        // ── Load Cached Profile & Initialize Mode ──
+    <!-- ════════════ OFFLINE ATTENDANCE (teachers) ════════════ -->
+    <div id="oaSection">
+        <div class="sep">Offline Attendance Taking</div>
+
+        <!-- pending strip -->
+        <div class="pending-strip" id="pendingStrip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span id="pendingStripText">0 records saved offline — will sync when connected.</span>
+        </div>
+
+        <div class="oa-card">
+            <!-- header -->
+            <div class="oa-card-hdr">
+                <div class="oa-title">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    Take Attendance Offline
+                </div>
+                <span class="oa-offline-badge">Offline Mode</span>
+            </div>
+
+            <!-- subject selector -->
+            <div class="oa-row">
+                <div class="oa-lbl">Select Subject</div>
+                <select id="oaSubjectSelect" class="oa-select" onchange="oaLoadStudents()">
+                    <option value="">— choose a subject —</option>
+                </select>
+            </div>
+
+            <!-- date + mark-all row -->
+            <div class="oa-date-row">
+                <div class="oa-date-wrap">
+                    <div class="oa-lbl">Date</div>
+                    <input type="date" id="oaDateInput" class="oa-date-input">
+                </div>
+                <button class="oa-all-btn" id="oaAllBtn" onclick="oaMarkAll('Present')">
+                    ✓ All Present
+                </button>
+            </div>
+
+            <!-- student list area -->
+            <div id="oaStudentArea">
+                <div class="oa-empty">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                    </svg>
+                    Select a subject above to load the class list.
+                </div>
+            </div>
+
+            <!-- save button -->
+            <div class="oa-footer" id="oaFooter" style="display:none;">
+                <button class="oa-save-btn" id="oaSaveBtn" onclick="oaSave()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Offline
+                </button>
+            </div>
+        </div>
+
+        <p style="font-size:.75rem;color:var(--muted);margin-top:10px;text-align:center;">
+            Records sync automatically when internet is restored.
+        </p>
+    </div>
+    <!-- ════════════ end offline attendance ════════════ -->
+
+    <div class="app-footer" style="margin-top:18px;">
+        {{ config('app.name', 'School Attendance System') }} &bull; PWA Offline Mode
+    </div>
+</div>
+
+<div class="oa-toast" id="oaToast"></div>
+
+<!-- offline-attendance.js is pre-cached by the service worker -->
+<script src="/js/offline-attendance.js"></script>
+
+<script>
+// ── Connectivity management ────────────────────────────────────────────
+var currentState = 'no-internet';
+var isReconnecting = false;
+var probeInFlight = false;
+
+function setStatus(state) {
+    currentState = state;
+    var badge = document.getElementById('statusBadge');
+    var text  = document.getElementById('statusBadgeText');
+    var head  = document.getElementById('offlineHeading');
+    var msg   = document.getElementById('offlineMsg');
+    var rt    = document.getElementById('retryText');
+    var isp   = document.getElementById('ispTipBox');
+    if (state === 'server-unreachable') {
+        badge.className = 'status-badge server';
+        text.textContent = 'Server Unreachable';
+        head.textContent = 'Server Unreachable';
+        msg.textContent  = 'Your internet is active, but your network provider cannot route to the school server.';
+        if (isp) isp.style.display = 'block';
+        if (!rt.textContent.includes('…')) rt.textContent = 'Retry Connecting to Server';
+    } else {
+        badge.className = 'status-badge';
+        text.textContent = 'No Connection';
+        head.textContent = "You're Offline";
+        msg.textContent  = "We can't connect to the School Attendance server right now. Check your Wi-Fi or mobile data.";
+        if (isp) isp.style.display = 'none';
+        if (!rt.textContent.includes('…')) rt.textContent = 'Retry Connection';
+    }
+}
+
+async function probeExternal() {
+    if (!navigator.onLine) return false;
+    for (var url of ['https://www.google.com/generate_204','https://1.1.1.1/cdn-cgi/trace']) {
         try {
-            const raw = localStorage.getItem('cached_user_profile') || localStorage.getItem('cached_student_profile');
-            if (raw) {
-                currentUser = JSON.parse(raw);
-                if (currentUser && currentUser.name) {
-                    const role = (currentUser.role || 'User').toLowerCase();
-                    const roleName = role.charAt(0).toUpperCase() + role.slice(1);
-                    const labelEl = document.getElementById('cachedProfileLabel');
-                    if (labelEl) labelEl.textContent = `Cached ${roleName} Profile`;
+            var ctrl = new AbortController();
+            setTimeout(function(){ctrl.abort();}, 3500);
+            await fetch(url, {method:'HEAD',mode:'no-cors',cache:'no-store',signal:ctrl.signal});
+            return true;
+        } catch(e){}
+    }
+    return false;
+}
 
-                    document.getElementById('cachedName').textContent = currentUser.name;
-                    let metaText = (currentUser.role ? currentUser.role.toUpperCase() : 'USER');
-                    if (currentUser.student_number) metaText += ` &bull; ID: ${currentUser.student_number}`;
-                    if (currentUser.course) metaText += ` &bull; ${currentUser.course}`;
-                    if (currentUser.email && !currentUser.student_number) metaText += ` &bull; ${currentUser.email}`;
-                    document.getElementById('cachedMeta').innerHTML = metaText;
-                    document.getElementById('cachedProfileBox').style.display = 'block';
+async function probeServer() {
+    var urls = ['/api/ping?_t='+Date.now(), '/up?_t='+Date.now(), '/manifest.json?_t='+Date.now()];
+    for (var url of urls) {
+        try {
+            var ctrl = new AbortController();
+            setTimeout(function(){ctrl.abort();}, 6000);
+            var res = await fetch(url, {method:'GET',cache:'no-store',signal:ctrl.signal,headers:{'Accept':'application/json,*/*'}});
+            if (res.ok || res.status < 500) return 'connected';
+            return 'server-unreachable';
+        } catch(e){}
+    }
+    var hasNet = await probeExternal();
+    return hasNet ? 'server-unreachable' : 'no-internet';
+}
 
-                    if (role === 'teacher') {
-                        setupTeacherMode();
-                    } else if (role === 'student') {
-                        document.getElementById('studentOfflineBox').style.display = 'block';
-                    }
-                }
-            }
-        } catch (e) {
-            console.warn('[OfflineView] Profile parse error:', e);
+function onConnected() {
+    if (isReconnecting) return;
+    isReconnecting = true;
+    var n = document.getElementById('reconnectNotice');
+    var t = document.getElementById('retryText');
+    var b = document.getElementById('statusBadge');
+    if (n) n.style.display = 'flex';
+    if (t) t.textContent = 'Connected! Reloading…';
+    if (b) { b.className = 'status-badge online'; document.getElementById('statusBadgeText').textContent = 'Online'; }
+    setTimeout(function() {
+        var url = sessionStorage.getItem('pwa_intended_url');
+        if (url) { sessionStorage.removeItem('pwa_intended_url'); window.location.href = url; }
+        else { window.location.reload(); }
+    }, 900);
+}
+
+async function handleRetry() {
+    if (isReconnecting || probeInFlight) return;
+    probeInFlight = true;
+    var btn  = document.getElementById('btnRetry');
+    var icon = document.getElementById('retryIcon');
+    var text = document.getElementById('retryText');
+    icon.classList.add('spin'); text.textContent = 'Checking…'; btn.disabled = true;
+    try {
+        var state = await probeServer();
+        if (state === 'connected') { onConnected(); return; }
+        setStatus(state);
+    } catch(e) { setStatus('no-internet'); }
+    finally {
+        probeInFlight = false;
+        setTimeout(function(){ icon.classList.remove('spin'); btn.disabled = false; }, 400);
+    }
+}
+
+var autoPing = setInterval(async function() {
+    if (isReconnecting || probeInFlight) return;
+    probeInFlight = true;
+    try {
+        var s = await probeServer();
+        if (s === 'connected') { clearInterval(autoPing); onConnected(); }
+        else if (s !== currentState) setStatus(s);
+    } catch(e){}
+    finally { probeInFlight = false; }
+}, 3000);
+
+window.addEventListener('online',  function(){ setStatus('server-unreachable'); handleRetry(); });
+window.addEventListener('offline', function(){ setStatus('no-internet'); });
+
+(async function() {
+    var s = await probeServer();
+    if (s === 'connected') { onConnected(); return; }
+    setStatus(s);
+})();
+
+
+// ── Cached profile ─────────────────────────────────────────────────────
+try {
+    var raw = localStorage.getItem('cached_user_profile') || localStorage.getItem('cached_student_profile');
+    if (raw) {
+        var prof = JSON.parse(raw);
+        if (prof && prof.name) {
+            var r = (prof.role || 'user').toLowerCase();
+            document.getElementById('cachedProfileLabel').textContent = r.charAt(0).toUpperCase()+r.slice(1)+' (cached)';
+            document.getElementById('cachedName').textContent = prof.name;
+            var m = r.toUpperCase();
+            if (prof.student_number) m += ' · ID: '+prof.student_number;
+            if (prof.email) m += ' · '+prof.email;
+            document.getElementById('cachedMeta').innerHTML = m;
+            document.getElementById('cachedProfileBox').style.display = 'block';
         }
+    }
+} catch(e){}
 
-        // Check if there are cached subjects regardless of cached profile
-        if (!currentUser || currentUser.role !== 'teacher') {
-            if (window.OfflineAttendance) {
-                OfflineAttendance.init();
-                OfflineAttendance.getCachedRoster().then(function(roster) {
-                    if (roster && roster.length > 0) {
-                        setupTeacherMode();
-                    }
-                });
-            }
+
+// ── Offline Attendance (teachers only) ────────────────────────────────
+var oaStudents = [];
+var oaStatus   = {};  // { id: 'Present'|'Late'|'Absent' }
+
+function oaToast(msg, type, dur) {
+    var el = document.getElementById('oaToast');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'oa-toast show '+(type||'info');
+    clearTimeout(el._tid);
+    el._tid = setTimeout(function(){ el.classList.remove('show'); }, dur||3500);
+}
+
+function oaRefreshPending() {
+    if (!window.OfflineAttendance) return;
+    OfflineAttendance.getPendingCount().then(function(n) {
+        var strip = document.getElementById('pendingStrip');
+        var info  = document.getElementById('pendingInfo');
+        var st    = document.getElementById('pendingStripText');
+        var cnt   = document.getElementById('pendingCount');
+        if (n > 0) {
+            if (strip) strip.style.display = 'flex';
+            if (info)  info.style.display  = 'flex';
+            if (st)    st.textContent  = n+' record'+(n!==1?'s':'')+' saved offline — will sync when connected.';
+            if (cnt)   cnt.textContent = n;
+        } else {
+            if (strip) strip.style.display = 'none';
+            if (info)  info.style.display  = 'none';
         }
+    });
+}
 
-        function setupTeacherMode() {
-            const container = document.getElementById('offlineContainer');
-            const workspace = document.getElementById('teacherWorkspace');
-            const heading = document.getElementById('offlineHeading');
-            const desc = document.getElementById('offlineMsg');
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-            if (container) container.classList.add('is-teacher-mode');
-            if (workspace) workspace.style.display = 'block';
-            if (heading) heading.textContent = 'Offline Attendance';
-            if (desc) desc.textContent = 'You are currently offline. You can record classroom attendance locally; all records will automatically synchronize when connection is restored.';
+function oaRenderRow(s) {
+    var cur = oaStatus[s.id] || 'Absent';
+    var btn = function(st, cls) {
+        return '<button class="oa-rbtn '+cls+(cur===st?' on':'')+'" data-uid="'+s.id+'" data-st="'+st+'">'+st+'</button>';
+    };
+    return '<div class="oa-student" data-uid="'+s.id+'">' +
+        '<span class="oa-snum">'+esc(s.student_number||'—')+'</span>' +
+        '<span class="oa-sname">'+esc(s.name)+'</span>' +
+        '<div class="oa-rgroup">'+btn('Present','p')+btn('Late','l')+btn('Absent','a')+'</div>' +
+        '</div>';
+}
 
-            if (window.OfflineAttendance) {
-                OfflineAttendance.init({
-                    teacherId: currentUser ? currentUser.id : null,
-                    csrfToken: localStorage.getItem('cached_csrf_token') || '',
-                });
+function oaRenderList() {
+    var area = document.getElementById('oaStudentArea');
+    if (!oaStudents.length) {
+        area.innerHTML = '<div class="oa-empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>No students found in this subject.</div>';
+        return;
+    }
+    var html = '<div class="oa-list">';
+    oaStudents.forEach(function(s){ html += oaRenderRow(s); });
+    html += '</div>';
+    area.innerHTML = html;
 
-                loadCachedSubjects();
-                refreshQueueCount();
-            }
-        }
-
-        function loadCachedSubjects() {
-            if (!window.OfflineAttendance) return;
-            OfflineAttendance.getCachedRoster(currentUser ? currentUser.id : null).then(function(subjects) {
-                cachedSubjects = subjects || [];
-                const select = document.getElementById('oaSubjectSelect');
-                const noRosterAlert = document.getElementById('oaNoRosterAlert');
-
-                if (!select) return;
-                select.innerHTML = '<option value="">-- Choose Subject --</option>';
-
-                if (cachedSubjects.length === 0) {
-                    if (noRosterAlert) noRosterAlert.style.display = 'flex';
-                    return;
-                }
-
-                if (noRosterAlert) noRosterAlert.style.display = 'none';
-                cachedSubjects.forEach(function(s) {
-                    const opt = document.createElement('option');
-                    opt.value = s.code;
-                    opt.textContent = `${s.code} - ${s.name} ${s.section ? '(' + s.section + ')' : ''}`;
-                    select.appendChild(opt);
-                });
-
-                // Preselect first subject if only 1
-                if (cachedSubjects.length === 1) {
-                    select.value = cachedSubjects[0].code;
-                    handleSubjectChange();
-                }
-            });
-        }
-
-        function handleSubjectChange() {
-            const select = document.getElementById('oaSubjectSelect');
-            const rosterContainer = document.getElementById('oaRosterContainer');
-            const headerTitle = document.getElementById('oaRosterHeaderTitle');
-            const list = document.getElementById('oaStudentsList');
-
-            if (!select || !select.value) {
-                if (rosterContainer) rosterContainer.style.display = 'none';
-                return;
-            }
-
-            const code = select.value.toUpperCase();
-            const subject = cachedSubjects.find(s => String(s.code).toUpperCase() === code);
-
-            if (!subject || !subject.students || subject.students.length === 0) {
-                if (headerTitle) headerTitle.textContent = `${code} (0 students)`;
-                if (list) list.innerHTML = '<div class="oa-empty-state">No students found in cached roster.</div>';
-                if (rosterContainer) rosterContainer.style.display = 'block';
-                currentSubjectStudents = [];
-                studentStatusMap = {};
-                return;
-            }
-
-            currentSubjectStudents = subject.students;
-            studentStatusMap = {};
-            currentSubjectStudents.forEach(st => {
-                studentStatusMap[st.id] = 'Present';
-            });
-
-            if (headerTitle) headerTitle.textContent = `${subject.code} (${currentSubjectStudents.length} students)`;
-            renderStudentList(currentSubjectStudents);
-            if (rosterContainer) rosterContainer.style.display = 'block';
-        }
-
-        function renderStudentList(students) {
-            const list = document.getElementById('oaStudentsList');
-            if (!list) return;
-
-            if (students.length === 0) {
-                list.innerHTML = '<div class="oa-empty-state">No matching students found.</div>';
-                return;
-            }
-
-            let html = '';
-            students.forEach(st => {
-                const currentStatus = studentStatusMap[st.id] || 'Present';
-                html += `
-                    <div class="oa-student-row" data-student-id="${st.id}">
-                        <div class="oa-student-info">
-                            <div class="oa-student-name">${escapeHtml(st.name || 'Student')}</div>
-                            <div class="oa-student-num">ID: ${escapeHtml(st.student_number || '--')}</div>
-                        </div>
-                        <div class="oa-status-pills">
-                            <span class="oa-pill ${currentStatus === 'Present' ? 'active' : ''}" data-val="Present" onclick="setStudentStatus(${st.id}, 'Present')">Present</span>
-                            <span class="oa-pill ${currentStatus === 'Late' ? 'active' : ''}" data-val="Late" onclick="setStudentStatus(${st.id}, 'Late')">Late</span>
-                            <span class="oa-pill ${currentStatus === 'Absent' ? 'active' : ''}" data-val="Absent" onclick="setStudentStatus(${st.id}, 'Absent')">Absent</span>
-                            <span class="oa-pill ${currentStatus === 'Excused' ? 'active' : ''}" data-val="Excused" onclick="setStudentStatus(${st.id}, 'Excused')">Excused</span>
-                        </div>
-                    </div>
-                `;
-            });
-            list.innerHTML = html;
-        }
-
-        function setStudentStatus(studentId, status) {
-            studentStatusMap[studentId] = status;
-            const row = document.querySelector(`.oa-student-row[data-student-id="${studentId}"]`);
+    area.querySelectorAll('.oa-rbtn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var uid = parseInt(this.dataset.uid);
+            var st  = this.dataset.st;
+            oaStatus[uid] = st;
+            var row = area.querySelector('.oa-student[data-uid="'+uid+'"]');
             if (row) {
-                row.querySelectorAll('.oa-pill').forEach(pill => {
-                    pill.classList.toggle('active', pill.dataset.val === status);
-                });
+                row.querySelectorAll('.oa-rbtn').forEach(function(b){ b.classList.remove('on'); });
+                this.classList.add('on');
             }
-        }
-
-        function setBulkStatus(status) {
-            currentSubjectStudents.forEach(st => {
-                studentStatusMap[st.id] = status;
-            });
-            renderStudentList(currentSubjectStudents);
-        }
-
-        function filterStudents() {
-            const query = (document.getElementById('oaStudentSearch')?.value || '').toLowerCase().trim();
-            if (!query) {
-                renderStudentList(currentSubjectStudents);
-                return;
-            }
-            const filtered = currentSubjectStudents.filter(st => {
-                const nameMatch = (st.name || '').toLowerCase().includes(query);
-                const numMatch = (st.student_number || '').toLowerCase().includes(query);
-                return nameMatch || numMatch;
-            });
-            renderStudentList(filtered);
-        }
-
-        function saveOfflineAttendance() {
-            const select = document.getElementById('oaSubjectSelect');
-            const date = document.getElementById('oaDateInput')?.value;
-            const banner = document.getElementById('oaSaveBanner');
-
-            if (!select || !select.value) {
-                alert('Please select a subject.');
-                return;
-            }
-            if (!date) {
-                alert('Please select an attendance date.');
-                return;
-            }
-            if (currentSubjectStudents.length === 0) {
-                alert('No students to save.');
-                return;
-            }
-
-            const code = select.value.toUpperCase();
-            const subject = cachedSubjects.find(s => String(s.code).toUpperCase() === code);
-            const subjectName = subject ? subject.name : '';
-            const nowTime = new Date().toTimeString().substring(0, 8);
-
-            const recordsToSave = currentSubjectStudents.map(st => ({
-                subject_code: code,
-                subject_name: subjectName,
-                user_id: parseInt(st.id),
-                student_name: st.name || '',
-                student_number: st.student_number || '',
-                status: studentStatusMap[st.id] || 'Present',
-                date: date,
-                time: nowTime,
-            }));
-
-            if (window.OfflineAttendance) {
-                OfflineAttendance.saveBatch(recordsToSave).then(function(saved) {
-                    if (banner) {
-                        banner.className = 'oa-banner-alert success';
-                        banner.innerHTML = `<span>✓ Saved ${saved.length} attendance records offline for ${code} on ${date}. Will sync when online.</span>`;
-                        banner.style.display = 'flex';
-                        setTimeout(() => { banner.style.display = 'none'; }, 7000);
-                    }
-                    refreshQueueCount();
-                }).catch(function(err) {
-                    console.error('[OfflineView] Save failed:', err);
-                    alert('Failed to save records: ' + (err.message || err));
-                });
-            }
-        }
-
-        function switchOaTab(tabName) {
-            const tabMarkBtn = document.getElementById('tabMarkBtn');
-            const tabQueueBtn = document.getElementById('tabQueueBtn');
-            const viewMarkTab = document.getElementById('viewMarkTab');
-            const viewQueueTab = document.getElementById('viewQueueTab');
-
-            if (tabName === 'mark') {
-                tabMarkBtn.classList.add('active');
-                tabQueueBtn.classList.remove('active');
-                viewMarkTab.style.display = 'block';
-                viewQueueTab.style.display = 'none';
-            } else {
-                tabMarkBtn.classList.remove('active');
-                tabQueueBtn.classList.add('active');
-                viewMarkTab.style.display = 'none';
-                viewQueueTab.style.display = 'block';
-                renderQueueList();
-            }
-        }
-
-        function refreshQueueCount() {
-            if (!window.OfflineAttendance) return;
-            OfflineAttendance.getPendingCount().then(function(count) {
-                const badge = document.getElementById('oaQueueBadge');
-                if (badge) {
-                    badge.textContent = count;
-                    badge.style.display = count > 0 ? 'inline-block' : 'none';
-                }
-            });
-        }
-
-        function renderQueueList() {
-            const container = document.getElementById('oaQueueList');
-            const summaryText = document.getElementById('queueSummaryText');
-            if (!container || !window.OfflineAttendance) return;
-
-            Promise.all([
-                OfflineAttendance.getPendingRecords(),
-                OfflineAttendance.getFailedRecords()
-            ]).then(function(results) {
-                const pending = results[0] || [];
-                const failed = results[1] || [];
-                const all = pending.concat(failed);
-
-                if (summaryText) {
-                    summaryText.textContent = `${all.length} record${all.length !== 1 ? 's' : ''} awaiting sync`;
-                }
-
-                if (all.length === 0) {
-                    container.innerHTML = '<div class="oa-empty-state">✓ All records have been synchronized with the server.</div>';
-                    return;
-                }
-
-                let html = '';
-                all.forEach(rec => {
-                    const isFailed = rec.sync_status === 'failed';
-                    html += `
-                        <div class="oa-queue-row">
-                            <div>
-                                <div style="font-weight:700; color:#fff; font-size:0.88rem;">
-                                    ${escapeHtml(rec.student_name || 'Student #' + rec.user_id)}
-                                </div>
-                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">
-                                    ${escapeHtml(rec.subject_code)} &bull; Date: ${escapeHtml(rec.date)} ${rec.time ? '&bull; ' + rec.time : ''}
-                                </div>
-                            </div>
-                            <div style="text-align:right;">
-                                <span class="oa-pill active" data-val="${rec.status}">${rec.status}</span>
-                                <div style="font-size:0.7rem; color:${isFailed ? '#f87171' : 'var(--gold)'}; margin-top:4px;">
-                                    ${isFailed ? '⚠️ Retry needed' : '⏳ Pending'}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-            });
-        }
-
-        function handleQueueSync() {
-            const icon = document.getElementById('queueSyncIcon');
-            if (icon) icon.classList.add('spin');
-
-            if (window.OfflineAttendance) {
-                OfflineAttendance.syncNow();
-                setTimeout(() => {
-                    if (icon) icon.classList.remove('spin');
-                    renderQueueList();
-                    refreshQueueCount();
-                }, 1500);
-            }
-        }
-
-        window.addEventListener('offline-attendance-synced', function(e) {
-            refreshQueueCount();
-            renderQueueList();
         });
+    });
+}
 
-        function escapeHtml(str) {
-            return String(str || '').replace(/[&<>"']/g, function(m) {
-                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
-            });
-        }
+function oaMarkAll(status) {
+    oaStudents.forEach(function(s){ oaStatus[s.id] = status; });
+    oaRenderList();
+}
 
-        // ── Connection Probing & Reconnect Handlers ──
-        function updateUI(state) {
-            currentState = state;
-            const badge = document.getElementById('statusBadge');
-            const badgeText = document.getElementById('statusBadgeText');
-            const heading = document.getElementById('offlineHeading');
-            const msg = document.getElementById('offlineMsg');
-            const retryText = document.getElementById('retryText');
-            const ispTip = document.getElementById('ispTipBox');
+function oaLoadStudents() {
+    var sel = document.getElementById('oaSubjectSelect');
+    var opt = sel.options[sel.selectedIndex];
+    oaStudents = [];
+    oaStatus   = {};
 
-            if (state === 'server-unreachable') {
-                if (badge) badge.classList.add('server-mode');
-                if (badgeText) badgeText.textContent = 'Server Unreachable';
-                if (heading && !document.getElementById('offlineContainer').classList.contains('is-teacher-mode')) {
-                    heading.textContent = 'Server Unreachable';
-                }
-                if (msg && !document.getElementById('offlineContainer').classList.contains('is-teacher-mode')) {
-                    msg.innerHTML = 'Your internet is active, but your network provider cannot route to the school server.';
-                }
-                if (ispTip) ispTip.style.display = 'block';
-                if (retryText && !retryText.textContent.includes('...')) retryText.textContent = 'Retry Connecting to Server';
-            } else {
-                if (badge) badge.classList.remove('server-mode');
-                if (badgeText) badgeText.textContent = 'No Connection';
-                if (heading && !document.getElementById('offlineContainer').classList.contains('is-teacher-mode')) {
-                    heading.textContent = "You're Offline";
-                }
-                if (msg && !document.getElementById('offlineContainer').classList.contains('is-teacher-mode')) {
-                    msg.textContent = "We can't connect to the School Attendance server right now. Please check your Wi-Fi or mobile data.";
-                }
-                if (ispTip) ispTip.style.display = 'none';
-                if (retryText && !retryText.textContent.includes('...')) retryText.textContent = 'Retry Connection';
-            }
-        }
+    document.getElementById('oaFooter').style.display  = 'none';
+    document.getElementById('oaAllBtn').style.display  = 'none';
 
-        async function probeExternalInternet() {
-            if (!navigator.onLine) return false;
-            try {
-                const c1 = new AbortController();
-                const t1 = setTimeout(() => c1.abort(), 3500);
-                await fetch('https://www.google.com/generate_204', { method: 'HEAD', mode: 'no-cors', cache: 'no-store', signal: c1.signal });
-                clearTimeout(t1);
-                return true;
-            } catch (e) {}
+    if (!opt || !opt.dataset.students) {
+        document.getElementById('oaStudentArea').innerHTML =
+            '<div class="oa-empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Select a subject above.</div>';
+        return;
+    }
 
-            try {
-                const c2 = new AbortController();
-                const t2 = setTimeout(() => c2.abort(), 3500);
-                await fetch('https://1.1.1.1/cdn-cgi/trace', { method: 'HEAD', mode: 'no-cors', cache: 'no-store', signal: c2.signal });
-                clearTimeout(t2);
-                return true;
-            } catch (e) {}
+    try { oaStudents = JSON.parse(opt.dataset.students); } catch(e) { oaStudents = []; }
+    oaStudents.forEach(function(s){ oaStatus[s.id] = 'Absent'; });
 
-            return false;
-        }
+    oaRenderList();
+    if (oaStudents.length) {
+        document.getElementById('oaFooter').style.display = 'flex';
+        document.getElementById('oaAllBtn').style.display = 'flex';
+    }
+}
 
-        async function probeConnectivity() {
-            const probeUrls = [
-                '/api/ping?_t=' + Date.now(),
-                '/up?_t=' + Date.now(),
-                '/manifest.json?_t=' + Date.now()
-            ];
+function oaSave() {
+    if (!window.OfflineAttendance) { oaToast('Offline module unavailable.','error'); return; }
+    var sel  = document.getElementById('oaSubjectSelect');
+    var date = document.getElementById('oaDateInput').value;
+    if (!sel.value) { oaToast('Please select a subject.','error'); return; }
+    if (!date)      { oaToast('Please choose a date.','error'); return; }
+    if (!oaStudents.length) { oaToast('No students to save.','error'); return; }
 
-            for (const url of probeUrls) {
-                try {
-                    const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 6000);
-                    const res = await fetch(url, {
-                        method: 'GET',
-                        cache: 'no-store',
-                        signal: controller.signal,
-                        headers: { 'Accept': 'application/json, */*' }
-                    });
-                    clearTimeout(timer);
-                    if (res.ok || res.status < 500) {
-                        return 'connected';
-                    }
-                    return 'server-unreachable';
-                } catch (err) {
-                    continue;
-                }
-            }
+    var opt  = sel.options[sel.selectedIndex];
+    var code = sel.value;
+    var name = opt ? opt.textContent.replace(/^[^–]+ – /,'').replace(/ \(.*$/,'') : code;
 
-            const hasInternet = await probeExternalInternet();
-            return hasInternet ? 'server-unreachable' : 'no-internet';
-        }
+    var btn = document.getElementById('oaSaveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Saving…';
 
-        function handleConnected() {
-            if (isReconnecting) return;
-            isReconnecting = true;
-            const notice = document.getElementById('reconnectNotice');
-            const retryText = document.getElementById('retryText');
-            if (notice) notice.style.display = 'flex';
-            if (retryText) retryText.textContent = 'Connected! Reloading...';
-
-            // Trigger sync if teacher has pending records before reloading
-            if (window.OfflineAttendance) {
-                OfflineAttendance.syncNow();
-            }
-
-            setTimeout(() => {
-                const intended = sessionStorage.getItem('pwa_intended_url');
-                if (intended) {
-                    sessionStorage.removeItem('pwa_intended_url');
-                    window.location.href = intended;
-                } else {
-                    window.location.reload();
-                }
-            }, 1000);
-        }
-
-        async function handleRetry() {
-            if (isReconnecting || probeInFlight) return;
-            probeInFlight = true;
-            const btn = document.getElementById('btnRetry');
-            const icon = document.getElementById('retryIcon');
-            const text = document.getElementById('retryText');
-
-            if (icon) icon.classList.add('spin');
-            if (text) text.textContent = 'Checking connection...';
-            if (btn) btn.disabled = true;
-
-            try {
-                const state = await probeConnectivity();
-                if (state === 'connected') {
-                    handleConnected();
-                    return;
-                }
-                updateUI(state);
-                setTimeout(() => {
-                    if (icon) icon.classList.remove('spin');
-                    if (btn) btn.disabled = false;
-                }, 400);
-            } catch (err) {
-                updateUI('no-internet');
-                if (icon) icon.classList.remove('spin');
-                if (btn) btn.disabled = false;
-            } finally {
-                probeInFlight = false;
-            }
-        }
-
-        // Automatic background ping every 4 seconds
-        let autoPingInterval = null;
-        function startAutoProbe() {
-            if (autoPingInterval) clearInterval(autoPingInterval);
-            autoPingInterval = setInterval(async () => {
-                if (isReconnecting || probeInFlight) return;
-                probeInFlight = true;
-                try {
-                    const state = await probeConnectivity();
-                    if (state === 'connected') {
-                        handleConnected();
-                    } else if (state !== currentState) {
-                        updateUI(state);
-                    }
-                } catch (e) {} finally {
-                    probeInFlight = false;
-                }
-            }, 4000);
-        }
-
-        window.addEventListener('online', () => {
-            updateUI('server-unreachable');
-            handleRetry();
+    var promises = oaStudents.map(function(s) {
+        return OfflineAttendance.saveRecord({
+            subject_code:   code,
+            subject_name:   name,
+            user_id:        s.id,
+            student_name:   s.name,
+            student_number: s.student_number || '',
+            status:         oaStatus[s.id] || 'Absent',
+            date:           date,
+            time:           new Date().toTimeString().substring(0, 8),
         });
-        window.addEventListener('offline', () => {
-            updateUI('no-internet');
-        });
+    });
 
-        (async () => {
-            const state = await probeConnectivity();
-            if (state === 'connected') {
-                handleConnected();
-            } else {
-                updateUI(state);
-            }
-            startAutoProbe();
-        })();
-    </script>
+    Promise.all(promises).then(function(recs) {
+        oaToast('✓ '+recs.length+' record'+(recs.length!==1?'s':'')+' saved. Will sync when online.','success',4500);
+        oaRefreshPending();
+        oaStudents.forEach(function(s){ oaStatus[s.id] = 'Absent'; });
+        oaRenderList();
+    }).catch(function(err) {
+        oaToast('Save failed: '+err.message,'error');
+    }).finally(function() {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Offline';
+    });
+}
+
+function oaInit() {
+    if (!window.OfflineAttendance) return;
+    try {
+        var p = JSON.parse(localStorage.getItem('cached_user_profile') || '{}');
+        if (!p || p.role !== 'teacher') return;
+        OfflineAttendance.init({ csrfToken: '', teacherId: p.id || null });
+    } catch(e) { return; }
+
+    // Set today as default date
+    var now = new Date();
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    document.getElementById('oaDateInput').value =
+        now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+
+    OfflineAttendance.getCachedRoster().then(function(subjects) {
+        document.getElementById('oaSection').style.display = 'block';
+        var sel = document.getElementById('oaSubjectSelect');
+
+        if (!subjects || !subjects.length) {
+            document.getElementById('oaStudentArea').innerHTML =
+                '<div class="oa-empty">'+
+                '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>'+
+                'No class lists are saved on this device.<br>'+
+                'Open at least one class page while online to enable offline attendance.'+
+                '</div>';
+            oaRefreshPending();
+            return;
+        }
+
+        subjects.forEach(function(s) {
+            var o = document.createElement('option');
+            o.value = s.code;
+            o.textContent = s.code+' – '+s.name+(s.section?' ('+s.section+')':'');
+            o.dataset.students = JSON.stringify(s.students || []);
+            sel.appendChild(o);
+        });
+        oaRefreshPending();
+    }).catch(function(){
+        document.getElementById('oaSection').style.display = 'block';
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', oaInit);
+} else {
+    oaInit();
+}
+
+setInterval(oaRefreshPending, 12000);
+</script>
 </body>
 </html>

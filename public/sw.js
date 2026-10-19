@@ -1,4 +1,4 @@
-/* BUMP_TIMESTAMP: 2026-10-19T17:38:59+02:00 */
+/* BUMP_TIMESTAMP: 2026-10-19T17:56:39+02:00 */
 const CACHE_VERSION = 'v375';
 const CACHE_NAME = `attendance-v375`;
 const STATIC_CACHE_NAME = CACHE_NAME;
@@ -19,7 +19,7 @@ const PRECACHE_ASSETS = [
     '/css/mobile-enterprise.css',
     '/js/html5-qrcode.min.js',
     '/js/password-toggle.js',
-    '/js/offline-attendance.js'
+    '/js/offline-attendance.js',
 ];
 
 
