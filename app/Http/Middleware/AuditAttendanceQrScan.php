@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Attendance;
 use App\Services\AttendanceQrTokenService;
 use App\Jobs\SendTeacherScanAlert;
 use App\Events\AttendanceScanAlert;
@@ -27,9 +28,15 @@ class AuditAttendanceQrScan
             $already = is_array($body) && !empty($body['already_clocked_in']);
             $opened = $request->isMethod('GET') && $response->isSuccessful()
                 && $inspection['status'] === 'valid';
-            $accepted = $request->isMethod('POST') && $response->isSuccessful()
-                && $inspection['status'] === 'valid' && is_array($body)
-                && !empty($body['success']) && !$already;
+            $reportedAttendanceId = is_array($body) ? ($body['attendance_id'] ?? null) : null;
+            $attendance = $request->isMethod('POST') && $response->isSuccessful()
+                && !empty($body['success']) && !$already && ctype_digit((string) $reportedAttendanceId)
+                ? Attendance::find((int) $reportedAttendanceId) : null;
+            // Audit the saved row, not only a successful HTTP response. Revocation
+            // may occur after the write but before this response middleware runs.
+            $accepted = $attendance && $record
+                && (int) $attendance->session_id === (int) $record->attendance_session_id
+                && (int) $attendance->user_id === (int) $request->user()?->id;
             $reason = $accepted || $opened ? null : ($body['error_type'] ?? ($already ? 'duplicate' : $inspection['status']));
             $deviceKey = (string) $request->header('X-Device-Key', '');
 
@@ -37,6 +44,13 @@ class AuditAttendanceQrScan
                 'attendance_session_id' => $record?->attendance_session_id,
                 'qr_token_id' => $record?->id,
                 'user_id' => $request->user()?->id,
+                'student_id' => $accepted ? $attendance->user_id : null,
+                'attendance_id' => $accepted ? $attendance->id : null,
+                'attendance_status' => $accepted ? $attendance->status : null,
+                'verification_method' => $accepted ? $attendance->method : null,
+                'verified_at' => $accepted ? $attendance->checked_in_at?->toIso8601String() : null,
+                'qr_issuer_id' => $record?->generated_by,
+                'qr_issuer_type' => $record?->generator_type,
                 'device_id_hash' => $deviceKey !== '' ? hash('sha256', $deviceKey) : null,
                 'ip' => $request->ip(),
                 'user_agent' => substr((string) $request->userAgent(), 0, 200),

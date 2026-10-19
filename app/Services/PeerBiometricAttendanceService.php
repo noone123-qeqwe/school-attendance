@@ -116,6 +116,10 @@ class PeerBiometricAttendanceService
                 $attempt->update(['status' => 'expired', 'failure_reason' => 'expired', 'consumed_at' => now()]);
                 return ['error' => 410, 'message' => 'Verification session expired.'];
             }
+            if (!$this->isAvailable()) {
+                $attempt->update(['status' => 'rejected', 'failure_reason' => 'feature_unavailable', 'consumed_at' => now()]);
+                return ['error' => 503, 'message' => 'Peer verification is not available yet.'];
+            }
             if (!hash_equals($attempt->nonce_hash, hash('sha256', $nonce))) {
                 $attempt->update(['status' => 'rejected', 'failure_reason' => 'invalid_nonce', 'consumed_at' => now()]);
                 Log::warning('peer_snap.invalid_nonce', $this->audit($attempt));
@@ -159,6 +163,10 @@ class PeerBiometricAttendanceService
                 $lockedAttempt = PeerVouchRequest::whereKey($attempt->id)->lockForUpdate()->first();
                 $subject = User::whereKey($attempt->subject_student_id)->lockForUpdate()->first();
                 if (!$lockedAttempt || $lockedAttempt->status !== 'processing') abort(409, 'Verification request already used.');
+                if (!$this->isAvailable()) {
+                    $lockedAttempt->update(['status' => 'rejected', 'failure_reason' => 'feature_unavailable', 'consumed_at' => now()]);
+                    return ['error' => 503, 'message' => 'Peer verification is not available yet.'];
+                }
                 if ($lockedAttempt->expires_at->isPast() || !$session || !$this->policy->create($host, $session)
                     || !$subject || !$subject->isActive()
                     || !$session->subject || !$this->policy->isClassMember($subject, $session->subject)

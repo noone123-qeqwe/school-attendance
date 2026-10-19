@@ -230,6 +230,61 @@ class LiveFaceAttendanceVerificationTest extends TestCase
         ]);
     }
 
+    public function test_attendance_recorded_during_face_matching_is_not_overwritten(): void
+    {
+        [$teacher, $student, $subject, $token, $sessionId] = $this->createTestEnvironment();
+        $frame = $this->toDataUrl($this->createSyntheticFaceImage());
+        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
+        $matcher->shouldReceive('compare')->once()->andReturnUsing(function () use ($student, $subject, $sessionId) {
+            Attendance::create([
+                'user_id' => $student->id, 'subject_id' => $subject->id,
+                'subject_code' => $subject->code, 'date' => today()->toDateString(),
+                'session_id' => $sessionId, 'status' => 'Present',
+                'method' => 'teacher_manual', 'time_in' => '09:00:00',
+            ]);
+            return ['match' => true, 'code' => 'MATCH', 'similarity' => 0.9];
+        });
+        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
+
+        $this->actingAs($student)->postJson('/qr/verify-complete', [
+            'token' => $token, 'latitude' => 14.5001, 'longitude' => 121.0001,
+            'accuracy' => 10, 'biometric_method' => 'face', 'live_frame' => $frame,
+        ])->assertOk()->assertJsonPath('already_clocked_in', true);
+
+        $this->assertDatabaseCount('attendances', 1);
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id, 'subject_code' => $subject->code,
+            'status' => 'Present', 'method' => 'teacher_manual', 'time_in' => '09:00:00',
+        ]);
+    }
+
+    public function test_concurrent_finalized_attendance_is_not_replaced_by_face_match(): void
+    {
+        [$teacher, $student, $subject, $token, $sessionId] = $this->createTestEnvironment();
+        $frame = $this->toDataUrl($this->createSyntheticFaceImage());
+        $matcher = Mockery::mock(LiveProfileFaceMatcher::class);
+        $matcher->shouldReceive('compare')->once()->andReturnUsing(function () use ($student, $subject, $sessionId) {
+            Attendance::create([
+                'user_id' => $student->id, 'subject_id' => $subject->id,
+                'subject_code' => $subject->code, 'date' => today()->toDateString(),
+                'session_id' => $sessionId, 'status' => 'Escaped', 'method' => 'teacher_manual',
+            ]);
+            return ['match' => true, 'code' => 'MATCH', 'similarity' => 0.9];
+        });
+        $this->app->instance(LiveProfileFaceMatcher::class, $matcher);
+
+        $this->actingAs($student)->postJson('/qr/verify-complete', [
+            'token' => $token, 'latitude' => 14.5001, 'longitude' => 121.0001,
+            'accuracy' => 10, 'biometric_method' => 'face', 'live_frame' => $frame,
+        ])->assertConflict()->assertJsonPath('already_clocked_in', true);
+
+        $this->assertDatabaseCount('attendances', 1);
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id, 'subject_code' => $subject->code,
+            'status' => 'Escaped', 'method' => 'teacher_manual',
+        ]);
+    }
+
     public function test_student_face_verification_fails_when_live_face_is_impostor()
     {
         [$teacher, $student, $subject, $token] = $this->createTestEnvironment();

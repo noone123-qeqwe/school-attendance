@@ -21,7 +21,7 @@ class AttendanceQrTokenController extends Controller
         $this->authorize('viewAssistantQr', $session);
         $token = $session->activeQrToken;
 
-        return response()->json($token && $token->expires_at->isFuture()
+        return response()->json($token && $tokens->inspect($tokens->tokenFor($token))['status'] === 'valid'
             ? $this->payload($token, $tokens)
             : ['success' => true, 'active' => false, 'session_ends_at' => $session->session_ends_at->timestamp]);
     }

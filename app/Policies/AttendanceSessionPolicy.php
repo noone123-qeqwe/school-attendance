@@ -58,9 +58,13 @@ class AttendanceSessionPolicy
 
         $grace = max(0, (int) config('student_assistants.attendance_start_grace_minutes', 10));
         return $todaySchedules->contains(function ($schedule) use ($now, $grace) {
-            $windowOpens = Carbon::parse($now->toDateString() . ' ' . $schedule->start_time, 'Asia/Manila')
-                ->subMinutes($grace);
-            return $now->gte($windowOpens);
+            $startsAt = Carbon::parse($now->toDateString() . ' ' . $schedule->start_time, 'Asia/Manila');
+            $endsAt = Carbon::parse($now->toDateString() . ' ' . $schedule->end_time, 'Asia/Manila');
+            if ($endsAt->lte($startsAt)) {
+                $endsAt->addDay();
+            }
+
+            return $now->betweenIncluded($startsAt->copy()->subMinutes($grace), $endsAt);
         });
     }
 

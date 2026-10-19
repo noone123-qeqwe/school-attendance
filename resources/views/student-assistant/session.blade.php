@@ -21,7 +21,7 @@
 
 @push('scripts')
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
-<script>
+<script @cspNonce>
 (() => {
     const baseUrl = @json(route('student-assistant.qr.status', $session));
     const generateUrl = @json(route('student-assistant.qr.generate', $session));
@@ -41,6 +41,8 @@
     let currentId = null;
     let expiresAt = 0;
     let busy = false;
+    let requestEpoch = 0;
+    let stopped = false;
     let retryDelay = 1000;
 
     function clearQr(text) {
@@ -54,6 +56,10 @@
 
     function showQr(data) {
         if (data.session_ends_at) sessionEndsAt = data.session_ends_at * 1000;
+        if (Date.now() >= data.expires_at * 1000 || Date.now() >= sessionEndsAt) {
+            clearQr('Expired');
+            return;
+        }
         if (data.token_id !== currentId) {
             canvas.replaceChildren();
             new QRCode(canvas, {
@@ -77,20 +83,23 @@
         if (!expiresAt) return;
         const seconds = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
         countdown.textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
-        if (seconds === 0 && !busy && navigator.onLine) {
+        if (seconds === 0) {
             clearQr('Expired');
-            requestQr(rotateUrl);
+            if (!busy && navigator.onLine) requestQr(rotateUrl);
         }
     }
 
     function endSession() {
+        stopped = true;
+        requestEpoch++;
         clearQr('Ended');
         message.textContent = 'Attendance session has ended.';
         replaceButton.hidden = true;
     }
 
     async function requestQr(url) {
-        if (busy) return;
+        if (busy || stopped) return;
+        const epoch = ++requestEpoch;
         busy = true;
         replaceButton.disabled = true;
         status.textContent = 'Updating';
@@ -100,6 +109,7 @@
                 headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' }
             });
             const data = await response.json();
+            if (epoch !== requestEpoch || stopped) return;
             if (response.status === 410) {
                 endSession();
                 return;
@@ -113,6 +123,7 @@
                 }
                 if (ended) endSession();
                 else {
+                    stopped = true;
                     clearQr('Unauthorized');
                     message.textContent = 'You are no longer authorized to operate attendance for this class.';
                 }
@@ -127,9 +138,10 @@
             retryDelay = 1000;
             showQr(data);
         } catch (error) {
+            if (epoch !== requestEpoch || stopped) return;
+            clearQr('Disconnected');
             message.textContent = 'Connection lost. Reconnect to the server before generating a new QR.';
-            status.textContent = 'Disconnected';
-            setTimeout(sync, retryDelay);
+            if (!stopped) setTimeout(sync, retryDelay);
             retryDelay = Math.min(retryDelay * 2, 8000);
         } finally {
             busy = false;
@@ -138,14 +150,17 @@
     }
 
     async function sync() {
-        if (busy || !navigator.onLine) return;
+        if (busy || stopped || !navigator.onLine) return;
+        const epoch = ++requestEpoch;
         try {
             const response = await fetch(baseUrl, { credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+            if (epoch !== requestEpoch || busy || stopped) return;
             if (response.status === 410) {
                 endSession();
                 return;
             }
             if (response.status === 403) {
+                stopped = true;
                 clearQr('Unauthorized');
                 message.textContent = 'You are no longer authorized to operate attendance for this class.';
                 replaceButton.hidden = true;
@@ -156,6 +171,8 @@
             if (data.active) showQr(data);
             else if (!busy) requestQr(generateUrl);
         } catch (error) {
+            if (epoch !== requestEpoch || stopped) return;
+            clearQr('Disconnected');
             message.textContent = 'Connection lost. Reconnect to the server before generating a new QR.';
             setTimeout(sync, retryDelay);
             retryDelay = Math.min(retryDelay * 2, 8000);
@@ -181,7 +198,7 @@
         });
     }
     window.addEventListener('online', sync);
-    window.addEventListener('offline', () => { status.textContent = 'Disconnected'; message.textContent = 'Connection lost. Reconnect to the server before generating a new QR.'; });
+    window.addEventListener('offline', () => { requestEpoch++; clearQr('Disconnected'); message.textContent = 'Connection lost. Reconnect to the server before generating a new QR.'; });
     setInterval(tick, 1000);
     setInterval(sync, 5000);
     sync();

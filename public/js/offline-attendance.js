@@ -71,31 +71,74 @@
     // ──────────────────────────────────────────────
     //  Record CRUD
     // ──────────────────────────────────────────────
-    function saveRecord(record) {
+    function saveBatch(recordsList) {
         return openDB().then(function(database) {
             return new Promise(function(resolve, reject) {
+                if (!recordsList || recordsList.length === 0) {
+                    resolve([]);
+                    return;
+                }
                 var tx = database.transaction(STORE_RECORDS, 'readwrite');
                 var store = tx.objectStore(STORE_RECORDS);
-                var data = Object.assign({}, record, {
-                    teacher_id: teacherId,
-                    sync_status: 'pending',
-                    sync_attempts: 0,
-                    sync_error: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                });
-                var req = store.add(data);
-                req.onsuccess = function() {
-                    data.local_id = req.result;
+                var reqAll = store.getAll();
+                reqAll.onsuccess = function() {
+                    var existingRecords = reqAll.result || [];
+                    var saved = [];
+
+                    recordsList.forEach(function(record) {
+                        var targetSubject = String(record.subject_code || '').toUpperCase();
+                        var targetDate = String(record.date || '');
+                        var targetUserId = String(record.user_id || '');
+                        var tid = record.teacher_id || teacherId;
+
+                        var existing = existingRecords.find(function(r) {
+                            return (r.sync_status === 'pending' || r.sync_status === 'failed') &&
+                                String(r.user_id) === targetUserId &&
+                                String(r.subject_code || '').toUpperCase() === targetSubject &&
+                                String(r.date) === targetDate;
+                        });
+
+                        var data;
+                        if (existing) {
+                            data = Object.assign({}, existing, record, {
+                                teacher_id: tid || existing.teacher_id,
+                                sync_status: 'pending',
+                                updated_at: new Date().toISOString(),
+                            });
+                            store.put(data);
+                        } else {
+                            data = Object.assign({}, record, {
+                                teacher_id: tid,
+                                sync_status: 'pending',
+                                sync_attempts: 0,
+                                sync_error: null,
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString(),
+                            });
+                            var addReq = store.add(data);
+                            addReq.onsuccess = function(e) {
+                                data.local_id = e.target.result;
+                            };
+                        }
+                        saved.push(data);
+                    });
+
+                    tx.oncomplete = function() {
+                        resolve(saved);
+                        updateUI();
+                        dispatchEvent('offline-attendance-saved', saved);
+                    };
+                    tx.onerror = function() { reject(tx.error); };
+                    tx.onabort = function() { reject(tx.error || new Error('Offline batch save interrupted.')); };
                 };
-                tx.oncomplete = function() {
-                    resolve(data);
-                    updateUI();
-                    dispatchEvent('offline-attendance-saved', data);
-                };
-                tx.onerror = function() { reject(tx.error || req.error); };
-                tx.onabort = function() { reject(tx.error || new Error('Offline save was interrupted.')); };
+                reqAll.onerror = function() { reject(reqAll.error); };
             });
+        });
+    }
+
+    function saveRecord(record) {
+        return saveBatch([record]).then(function(savedList) {
+            return savedList[0];
         });
     }
 
@@ -107,9 +150,14 @@
                 var index = store.index('sync_status');
                 var req = index.getAll('pending');
                 req.onsuccess = function() {
-                    resolve((req.result || []).filter(function(rec) {
-                        return String(rec.teacher_id) === String(teacherId);
-                    }));
+                    var list = req.result || [];
+                    if (teacherId) {
+                        resolve(list.filter(function(rec) {
+                            return String(rec.teacher_id) === String(teacherId);
+                        }));
+                    } else {
+                        resolve(list);
+                    }
                 };
                 req.onerror = function() { reject(req.error); };
             });
@@ -124,9 +172,14 @@
                 var index = store.index('sync_status');
                 var req = index.getAll('failed');
                 req.onsuccess = function() {
-                    resolve((req.result || []).filter(function(rec) {
-                        return String(rec.teacher_id) === String(teacherId);
-                    }));
+                    var list = req.result || [];
+                    if (teacherId) {
+                        resolve(list.filter(function(rec) {
+                            return String(rec.teacher_id) === String(teacherId);
+                        }));
+                    } else {
+                        resolve(list);
+                    }
                 };
                 req.onerror = function() { reject(req.error); };
             });
@@ -433,29 +486,51 @@
         });
     }
 
-    function getCachedRoster() {
+    function getCachedRoster(overrideTeacherId) {
+        var tid = overrideTeacherId || teacherId;
         return openDB().then(function(database) {
             return new Promise(function(resolve) {
                 var tx = database.transaction(STORE_ROSTER, 'readonly');
                 var store = tx.objectStore(STORE_ROSTER);
                 var req = store.getAll();
                 req.onsuccess = function() {
-                    resolve((req.result || []).filter(function(subject) {
-                        return String(subject.teacher_id) === String(teacherId);
-                    }));
+                    var list = req.result || [];
+                    if (tid) {
+                        var filtered = list.filter(function(subject) {
+                            return String(subject.teacher_id) === String(tid);
+                        });
+                        resolve(filtered.length > 0 ? filtered : list);
+                    } else {
+                        resolve(list);
+                    }
                 };
                 req.onerror = function() { resolve([]); };
             });
         });
     }
 
-    function getCachedSubject(code) {
+    function getCachedSubject(code, overrideTeacherId) {
+        var tid = overrideTeacherId || teacherId;
         return openDB().then(function(database) {
             return new Promise(function(resolve) {
                 var tx = database.transaction(STORE_ROSTER, 'readonly');
                 var store = tx.objectStore(STORE_ROSTER);
-                var req = store.get(String(teacherId) + ':' + code.toUpperCase());
-                req.onsuccess = function() { resolve(req.result || null); };
+                var key = (tid ? String(tid) : '') + ':' + code.toUpperCase();
+                var req = store.get(key);
+                req.onsuccess = function() {
+                    if (req.result) {
+                        resolve(req.result);
+                    } else {
+                        var allReq = store.getAll();
+                        allReq.onsuccess = function() {
+                            var match = (allReq.result || []).find(function(s) {
+                                return String(s.code).toUpperCase() === String(code).toUpperCase();
+                            });
+                            resolve(match || null);
+                        };
+                        allReq.onerror = function() { resolve(null); };
+                    }
+                };
                 req.onerror = function() { resolve(null); };
             });
         });
@@ -465,6 +540,9 @@
     //  UI: Floating Status Indicator
     // ──────────────────────────────────────────────
     function injectStatusUI() {
+        if (document.body && document.body.dataset && document.body.dataset.isOfflinePage === 'true') {
+            return;
+        }
         if (document.getElementById('offlineAttendanceStatus')) return;
 
         var html = '' +
@@ -693,18 +771,37 @@
     //  Public API
     // ──────────────────────────────────────────────
     function init(config) {
-        if (initialized) return;
+        config = config || {};
+        if (initialized) {
+            if (config.teacherId && !teacherId) teacherId = config.teacherId;
+            if (config.csrfToken && !csrfToken) csrfToken = config.csrfToken;
+            return;
+        }
         initialized = true;
 
         csrfToken = config.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content || '';
+        if (!csrfToken) {
+            try {
+                csrfToken = localStorage.getItem('cached_csrf_token') || '';
+            } catch(e) {}
+        }
         teacherId = config.teacherId || null;
+        if (!teacherId) {
+            try {
+                var rawUser = localStorage.getItem('cached_user_profile');
+                if (rawUser) {
+                    var u = JSON.parse(rawUser);
+                    if (u && u.id) teacherId = u.id;
+                }
+            } catch(e) {}
+        }
 
         openDB().then(function() {
             injectStatusUI();
             startConnectivityMonitor();
 
             // Cache roster when online
-            if (navigator.onLine) {
+            if (navigator.onLine && teacherId) {
                 fetchAndCacheRoster();
             }
 
@@ -727,7 +824,9 @@
     window.OfflineAttendance = {
         init: init,
         saveRecord: saveRecord,
+        saveBatch: saveBatch,
         getPendingRecords: getPendingRecords,
+        getFailedRecords: getFailedRecords,
         getPendingCount: getPendingCount,
         syncNow: triggerSync,
         getConnectionState: function() { return connectionState; },

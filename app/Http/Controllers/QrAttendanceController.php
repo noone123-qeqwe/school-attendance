@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use App\Services\QrSessionService;
 
@@ -2121,43 +2122,61 @@ class QrAttendanceController extends Controller
 
         $currentAcademicYearId = \App\Models\AcademicYear::where('is_current', true)->value('id');
 
+        $attendanceData = [
+            'user_id'                  => $user->id,
+            'subject_id'               => $subject->id,
+            'subject_code'             => $session->subject_code,
+            'date'                     => $todayDate,
+            'subject_name'             => $subject->name,
+            'class'                    => $subject->section ?? $user->section ?? 'Regular',
+            'session_id'               => $session->id,
+            'status'                   => $status,
+            'excused'                  => false,
+            'excuse_note'              => null,
+            'time_in'                  => $now->format('H:i:s'),
+            'checked_in_at'            => $now,
+            'last_location_check_at'   => $now,
+            'last_latitude'            => $request->latitude,
+            'last_longitude'           => $request->longitude,
+            'last_accuracy'            => $request->filled('accuracy') ? $request->accuracy : null,
+            'last_distance_meters'     => isset($distance) ? $distance : 0,
+            'outside_since'            => null,
+            'consecutive_outside_count'=> 0,
+            'escaped_at'               => null,
+            'monitoring_status'        => 'active',
+            'latitude'                 => $request->latitude,
+            'longitude'                => $request->longitude,
+            'gps_accuracy'             => $request->filled('accuracy') ? $request->accuracy : null,
+            'method'                   => $recordedMethod,
+            'academic_year_id'         => $currentAcademicYearId,
+        ];
+        $alreadyRecorded = false;
         try {
-            $attendance = app(AttendanceQrTokenService::class)->recordWhileValid(
-                $signedQr ? $request->token : null,
-                $session,
-                fn () => Attendance::updateOrCreateRecord(
-                [
-                    'user_id'      => $user->id,
-                    'subject_id'   => $subject->id,
-                    'subject_code' => $session->subject_code,
-                    'date'         => $todayDate,
-                ],
-                [
-                    'subject_name'              => $subject->name,
-                    'class'                     => $subject->section ?? $user->section ?? 'Regular',
-                    'session_id'                => $session->id,
-                    'status'                    => $status,
-                    'excused'                   => false,
-                    'excuse_note'               => null,
-                    'time_in'                   => $now->format('H:i:s'),
-                    'checked_in_at'             => $now,
-                    'last_location_check_at'    => $now,
-                    'last_latitude'             => $request->latitude,
-                    'last_longitude'            => $request->longitude,
-                    'last_accuracy'             => $request->filled('accuracy') ? $request->accuracy : null,
-                    'last_distance_meters'      => isset($distance) ? $distance : 0,
-                    'outside_since'             => null,
-                    'consecutive_outside_count' => 0,
-                    'escaped_at'                => null,
-                    'monitoring_status'         => 'active',
-                    'latitude'                  => $request->latitude,
-                    'longitude'                 => $request->longitude,
-                    'gps_accuracy'              => $request->filled('accuracy') ? $request->accuracy : null,
-                    'method'                    => $recordedMethod,
-                    'academic_year_id'          => $currentAcademicYearId,
-                ]
-                )
-            );
+            $attendance = DB::transaction(function () use ($signedQr, $request, $session, $user, $todayDate, $attendanceData, &$alreadyRecorded) {
+                return app(AttendanceQrTokenService::class)->recordWhileValid(
+                    $signedQr ? $request->token : null,
+                    $session,
+                    function () use ($user, $session, $todayDate, $attendanceData, &$alreadyRecorded) {
+                        // Face matching and passkey verification happen before this write.
+                        // Recheck inside the transaction so an intervening attendance
+                        // decision cannot be silently replaced by a late response.
+                        $current = Attendance::withTrashed()->where('user_id', $user->id)
+                            ->where('subject_code', $session->subject_code)
+                            ->whereDate('date', $todayDate)->lockForUpdate()->first();
+                        if ($current && ($current->status !== 'Absent' || $current->excused)) {
+                            $alreadyRecorded = true;
+                            return $current;
+                        }
+                        if ($current) {
+                            if ($current->trashed()) $current->restore();
+                            $current->fill($attendanceData)->save();
+                            return $current;
+                        }
+
+                        return Attendance::create($attendanceData);
+                    }
+                );
+            });
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json(['success' => false, 'message' => $e->errors()['qr'][0]], 422);
         } catch (\Illuminate\Database\QueryException $e) {
@@ -2168,38 +2187,10 @@ class QrAttendanceController extends Controller
                     'subject_code' => $session->subject_code,
                     'date'         => $todayDate,
                 ]);
-                $attendance = Attendance::where('user_id', $user->id)
-                    ->where('date', $todayDate)
-                    ->where(function ($q) use ($subject, $session) {
-                        $q->where('subject_id', $subject->id)
-                          ->orWhere('subject_code', $session->subject_code);
-                    })
-                    ->first();
-                
-                // If it exists but is absent, we can update it safely
-                if ($attendance && $attendance->status === 'Absent') {
-                    $attendance->update([
-                        'status'                    => $status,
-                        'time_in'                   => $now->format('H:i:s'),
-                        'checked_in_at'             => $now,
-                        'last_location_check_at'    => $now,
-                        'last_latitude'             => $request->latitude,
-                        'last_longitude'            => $request->longitude,
-                        'last_accuracy'             => $request->filled('accuracy') ? $request->accuracy : null,
-                        'last_distance_meters'      => isset($distance) ? $distance : 0,
-                        'outside_since'             => null,
-                        'consecutive_outside_count' => 0,
-                        'escaped_at'                => null,
-                        'monitoring_status'         => 'active',
-                        'latitude'                  => $request->latitude,
-                        'longitude'                 => $request->longitude,
-                        'method'                    => $recordedMethod,
-                        'excused'                   => false,
-                        'session_id'                => $session->id,
-                        'subject_id'                => $subject->id,
-                        'subject_name'              => $subject->name,
-                    ]);
-                }
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attendance changed during verification. Please refresh and try again.',
+                ], 409);
             } else {
                 throw $e;
             }
@@ -2210,6 +2201,21 @@ class QrAttendanceController extends Controller
                 'success' => false,
                 'message' => 'Unable to save attendance record. Please try again or notify your instructor.'
             ], 500);
+        }
+
+        if ($alreadyRecorded) {
+            $checkedIn = in_array($attendance->status, ['Present', 'Late'], true);
+            return response()->json([
+                'success' => $checkedIn,
+                'already_clocked_in' => true,
+                'message' => $checkedIn
+                    ? 'Attendance already recorded for this session. You have already clocked in.'
+                    : 'Attendance has already been finalized. Ask your instructor for help.',
+                'attendance_id' => (string) $attendance->id,
+                'student_id' => (string) $user->id,
+                'session_id' => (string) $session->id,
+                'status' => $attendance->status,
+            ], $checkedIn ? 200 : 409);
         }
 
         // Keep the scan usable through validation and persistence failures, then

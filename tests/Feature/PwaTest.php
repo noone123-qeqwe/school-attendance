@@ -90,6 +90,12 @@ class PwaTest extends TestCase
         $response->assertSee("You're Offline", false);
         $response->assertSee('Retry Connection');
         $response->assertSee('cachedProfileBox', false);
+        $response->assertSee('offline-attendance.js', false);
+        $response->assertSee('teacherWorkspace', false);
+        $response->assertSee('oaSubjectSelect', false);
+        $response->assertSee('oaDateInput', false);
+        $response->assertSee('btnSaveAttendance', false);
+        $response->assertSee('studentOfflineBox', false);
     }
 
     public function test_login_page_includes_pwa_elements(): void

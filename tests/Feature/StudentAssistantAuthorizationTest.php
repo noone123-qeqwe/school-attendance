@@ -119,6 +119,19 @@ class StudentAssistantAuthorizationTest extends TestCase
         $this->actingAs($this->assistant)->get($this->sessionUrl())->assertForbidden();
     }
 
+    public function test_after_attendance_window_is_denied_even_when_session_remains_open(): void
+    {
+        Schedule::where('subject_id', $this->subject->id)->update([
+            'start_time' => now('Asia/Manila')->subHour()->format('H:i:s'),
+            'end_time' => now('Asia/Manila')->subMinutes(30)->format('H:i:s'),
+        ]);
+
+        $this->actingAs($this->assistant)->get($this->sessionUrl())->assertForbidden();
+        $this->actingAs($this->assistant)->postJson(
+            route('student-assistant.qr.generate', $this->session)
+        )->assertForbidden();
+    }
+
     public function test_assistant_cannot_use_teacher_attendance_management_routes(): void
     {
         $this->actingAs($this->assistant)->postJson(route('teacher.qr.stop'), [
@@ -178,6 +191,47 @@ class StudentAssistantAuthorizationTest extends TestCase
         $this->actingAs($this->assistant)->postJson(
             route('student-assistant.qr.generate', $this->session)
         )->assertForbidden();
+    }
+
+    public function test_teacher_revocation_retires_active_assistant_qr_before_another_scan(): void
+    {
+        $issued = $this->actingAs($this->assistant)->postJson(
+            route('student-assistant.qr.generate', $this->session)
+        )->assertOk()->json();
+
+        $this->actingAs($this->teacher)->delete(
+            route('teacher.classroom.assistants.destroy', [$this->subject->code, $this->assignment->id])
+        )->assertSessionHasNoErrors();
+
+        $token = AttendanceQrToken::findOrFail($issued['token_id']);
+        $this->assertNull($token->active_session_id);
+        $this->assertNotNull($token->invalidated_at);
+        $this->assertSame('replaced', app(AttendanceQrTokenService::class)->inspect($issued['token'])['status']);
+        $this->actingAs($this->assistant)->postJson(
+            route('student-assistant.qr.generate', $this->session)
+        )->assertForbidden();
+        $this->actingAs($this->assistant)->postJson('/qr/scan-process', [
+            'token' => $issued['token'],
+        ])->assertUnprocessable()->assertJsonPath('error_detail', 'qr_replaced');
+        $this->assertDatabaseHas('activity_log', [
+            'subject_type' => AttendanceSession::class,
+            'subject_id' => $this->session->id,
+            'description' => 'qr_invalidated',
+        ]);
+    }
+
+    public function test_scan_rechecks_issuer_authority_when_assignment_changes_outside_service(): void
+    {
+        $issued = $this->actingAs($this->assistant)->postJson(
+            route('student-assistant.qr.generate', $this->session)
+        )->assertOk()->json();
+
+        $this->assignment->update(['revoked_at' => now(), 'active_slot' => null]);
+
+        $this->assertSame('revoked', app(AttendanceQrTokenService::class)->inspect($issued['token'])['status']);
+        $this->actingAs($this->assistant)->postJson('/qr/scan-process', [
+            'token' => $issued['token'],
+        ])->assertUnprocessable()->assertJsonPath('error_detail', 'qr_revoked');
     }
 
     public function test_two_assistants_share_one_qr_and_second_can_replace_it(): void

@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use App\Events\AttendanceQrChanged;
+use App\Models\AttendanceQrToken;
+use App\Models\AttendanceSession;
 use App\Models\ClassStudentAssistant;
 use App\Models\Subject;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class StudentAssistantAssignmentService
@@ -55,6 +59,7 @@ class StudentAssistantAssignmentService
 
             if ($oldAssignment) {
                 $oldAssignment->update(['active_slot' => null, 'revoked_at' => now()]);
+                $this->invalidateAssistantQrTokens($subject, $oldAssignment->student_id, $teacher);
             }
 
             $assignment = $existing ?: new ClassStudentAssistant([
@@ -95,6 +100,7 @@ class StudentAssistantAssignmentService
                 throw ValidationException::withMessages(['assistant' => 'This assignment has already ended.']);
             }
             $assignment->update(['active_slot' => null, 'revoked_at' => now()]);
+            $this->invalidateAssistantQrTokens($subject, $assignment->student_id, $teacher);
 
             activity('student-assistants')->causedBy($teacher)->performedOn($assignment)
                 ->withProperties(['subject_id' => $subject->id, 'student_id' => $assignment->student_id])
@@ -108,5 +114,49 @@ class StudentAssistantAssignmentService
             ->whereNotNull('active_slot')
             ->where('expires_at', '<', now())
             ->update(['active_slot' => null]);
+    }
+
+    private function invalidateAssistantQrTokens(Subject $subject, int $studentId, User $teacher): void
+    {
+        // QR issuance also locks the session. Whichever operation wins that lock
+        // finishes first; a revocation can then retire a QR issued in flight.
+        $sessions = AttendanceSession::where('subject_code', $subject->code)
+            ->where('active', true)->where('session_ends_at', '>', now())
+            ->orderBy('id')->lockForUpdate()->get();
+
+        foreach ($sessions as $session) {
+            $token = AttendanceQrToken::where('active_session_id', $session->id)
+                ->where('generated_by', $studentId)
+                ->where('generator_type', 'student_assistant')
+                ->lockForUpdate()->first();
+            if (!$token) {
+                continue;
+            }
+
+            $token->update(['active_session_id' => null, 'invalidated_at' => now()]);
+            activity('attendance-qr')->causedBy($teacher)->performedOn($session)
+                ->withProperties([
+                    'attendance_session_id' => $session->id,
+                    'qr_token_id' => $token->id,
+                    'generator_id' => $studentId,
+                    'reason' => 'assistant_permission_revoked',
+                ])->log('qr_invalidated');
+
+            DB::afterCommit(function () use ($session, $token, $teacher, $studentId) {
+                try {
+                    AttendanceQrChanged::dispatch(
+                        $session->id, $teacher->id, $session->subject_code,
+                        $token->id, $teacher->name, $studentId,
+                        'revoked', now()->timestamp,
+                    );
+                } catch (\Throwable $exception) {
+                    Log::warning('Assistant QR revocation broadcast failed', [
+                        'attendance_session_id' => $session->id,
+                        'qr_token_id' => $token->id,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
+            });
+        }
     }
 }

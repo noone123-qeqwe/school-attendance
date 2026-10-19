@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Attendance;
+use App\Models\ClassStudentAssistant;
 use App\Models\AttendanceSession;
 use App\Models\Schedule;
 use App\Models\Setting;
@@ -269,6 +270,42 @@ class QrDistanceValidationTest extends TestCase
         ])->assertOk()->assertJsonPath('success', true);
         $audit = \Spatie\Activitylog\Models\Activity::where('description', 'qr_scanned')->latest('id')->firstOrFail();
         $this->assertSame($this->session->id, $audit->properties['attendance_session_id']);
+        $this->assertStringNotContainsString($signed, $audit->properties->toJson());
+    }
+
+    public function test_assistant_qr_scan_audit_identifies_student_issuer_and_saved_attendance(): void
+    {
+        $assistant = User::factory()->create([
+            'role' => 'student', 'is_active' => true,
+            'year_level' => 1, 'semester' => 1, 'course' => 'BSCS', 'section' => '1A',
+        ]);
+        $assistant->enrolledSubjects()->attach($this->subject->id);
+        ClassStudentAssistant::create([
+            'subject_id' => $this->subject->id,
+            'student_id' => $assistant->id,
+            'assigned_by_teacher_id' => $this->teacher->id,
+            'active_slot' => 1,
+            'starts_at' => now()->subDay(),
+            'expires_at' => now()->addDay(),
+        ]);
+        $tokens = app(AttendanceQrTokenService::class);
+        $signed = $tokens->tokenFor($tokens->issue($this->session, $assistant));
+
+        $response = $this->actingAs($this->student)->postJson('/qr/scan-process', [
+            'token' => $signed,
+            'latitude' => $this->classroomLat,
+            'longitude' => $this->classroomLng,
+            'accuracy' => 10,
+        ])->assertOk()->assertJsonPath('success', true);
+
+        $audit = \Spatie\Activitylog\Models\Activity::where('description', 'qr_scanned')->latest('id')->firstOrFail();
+        $this->assertSame($this->session->id, $audit->properties['attendance_session_id']);
+        $this->assertSame($this->student->id, $audit->properties['student_id']);
+        $this->assertSame((int) $response->json('attendance_id'), $audit->properties['attendance_id']);
+        $this->assertSame($response->json('status'), $audit->properties['attendance_status']);
+        $this->assertSame($assistant->id, $audit->properties['qr_issuer_id']);
+        $this->assertSame('student_assistant', $audit->properties['qr_issuer_type']);
+        $this->assertNotEmpty($audit->properties['verified_at']);
         $this->assertStringNotContainsString($signed, $audit->properties->toJson());
     }
 

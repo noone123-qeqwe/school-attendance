@@ -3118,6 +3118,7 @@
     @auth
         try {
             const userProfile = {
+                id: {{ auth()->id() }},
                 name: "{{ addslashes(auth()->user()->name) }}",
                 role: "{{ auth()->user()->role }}",
                 email: "{{ auth()->user()->email }}",
@@ -3128,6 +3129,10 @@
             };
             localStorage.setItem('cached_user_profile', JSON.stringify(userProfile));
             localStorage.setItem('cached_student_profile', JSON.stringify(userProfile));
+            const metaCsrf = document.querySelector('meta[name="csrf-token"]')?.content;
+            if (metaCsrf) {
+                localStorage.setItem('cached_csrf_token', metaCsrf);
+            }
         } catch(e) {}
     @endauth
 </script>

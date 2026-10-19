@@ -11,6 +11,7 @@ use App\Models\PeerVouchRequest;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\DeviceBindingService;
+use App\Services\PeerFaceVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
@@ -302,6 +303,52 @@ class PeerSnapAttendanceTest extends TestCase
         $this->assertDatabaseHas('attendances', ['user_id' => $this->student->id, 'status' => 'Present']);
     }
 
+    public function test_consecutive_students_keep_separate_verifier_identity_and_attendance(): void
+    {
+        $firstStudent = $this->student;
+        $firstTicket = $this->start();
+        $this->fakeVerifier($firstTicket);
+        $firstAttendance = $this->confirm($firstTicket)->assertOk()->json('attendance_id');
+
+        $this->student = User::factory()->create([
+            'year_level' => 1, 'semester' => 1, 'course' => 'BSCS', 'section' => 'A',
+        ]);
+        PeerFaceEnrollment::create([
+            'user_id' => $this->student->id,
+            'verifier_subject_ref' => 'enrolled-'.$this->student->id,
+            'model_version' => 'validated-v1', 'consented_at' => now(),
+        ]);
+
+        $staleTicket = $this->start();
+        $this->fakeVerifier($staleTicket, ['subject_ref' => 'enrolled-'.$firstStudent->id]);
+        $this->confirm($staleTicket)->assertStatus(503);
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id, 'method' => 'peer_biometric',
+        ]);
+
+        $secondTicket = $this->start();
+        $this->fakeVerifier($secondTicket);
+        $secondAttendance = $this->confirm($secondTicket)->assertOk()->json('attendance_id');
+
+        $this->assertNotEquals($firstAttendance, $secondAttendance);
+        $this->assertDatabaseHas('peer_vouch_requests', [
+            'verification_id' => $firstTicket['verification_id'],
+            'subject_student_id' => $firstStudent->id, 'attendance_id' => $firstAttendance,
+        ]);
+        $this->assertDatabaseHas('peer_vouch_requests', [
+            'verification_id' => $secondTicket['verification_id'],
+            'subject_student_id' => $this->student->id, 'attendance_id' => $secondAttendance,
+        ]);
+        $this->assertDatabaseHas('attendances', [
+            'id' => $firstAttendance, 'user_id' => $firstStudent->id,
+            'session_id' => $this->session->id, 'verification_channel' => 'peer_biometric',
+        ]);
+        $this->assertDatabaseHas('attendances', [
+            'id' => $secondAttendance, 'user_id' => $this->student->id,
+            'session_id' => $this->session->id, 'verification_channel' => 'peer_biometric',
+        ]);
+    }
+
     public function test_missing_verifier_fails_closed(): void
     {
         config(['peer_snap.verifier_url' => '']);
@@ -317,6 +364,43 @@ class PeerSnapAttendanceTest extends TestCase
         $this->postJson(route('peer-snap.start'), [
             'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
         ])->assertStatus(503);
+    }
+
+    public function test_disabling_feature_consumes_pending_verification_without_calling_verifier(): void
+    {
+        $ticket = $this->start();
+        config(['peer_snap.enabled' => false]);
+
+        $this->confirm($ticket)->assertStatus(503);
+        Http::assertNothingSent();
+        $this->assertDatabaseHas('peer_vouch_requests', [
+            'verification_id' => $ticket['verification_id'],
+            'status' => 'rejected', 'failure_reason' => 'feature_unavailable',
+        ]);
+        $this->confirm($ticket)->assertConflict();
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id, 'method' => 'peer_biometric',
+        ]);
+    }
+
+    public function test_disabling_feature_while_verifier_runs_prevents_attendance_write(): void
+    {
+        $ticket = $this->start();
+        $verifier = \Mockery::mock(PeerFaceVerifier::class);
+        $verifier->shouldReceive('verify')->once()->andReturnUsing(function () {
+            config(['peer_snap.enabled' => false]);
+            return ['accepted' => true, 'reason' => null];
+        });
+        $this->app->instance(PeerFaceVerifier::class, $verifier);
+
+        $this->confirm($ticket)->assertStatus(503);
+        $this->assertDatabaseHas('peer_vouch_requests', [
+            'verification_id' => $ticket['verification_id'],
+            'status' => 'rejected', 'failure_reason' => 'feature_unavailable',
+        ]);
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $this->student->id, 'method' => 'peer_biometric',
+        ]);
     }
 
     public function test_unknown_student_is_generic_and_counts_toward_host_lockout(): void

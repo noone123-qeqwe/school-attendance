@@ -53,6 +53,10 @@ class AttendanceQrTokenService
 
             $current = AttendanceQrToken::where('active_session_id', $session->id)
                 ->lockForUpdate()->first();
+            if ($current && !$this->hasAuthorizedIssuer($current)) {
+                $current->update(['active_session_id' => null, 'invalidated_at' => now()]);
+                $current = null;
+            }
             if ($current && $current->expires_at->isFuture() && in_array($mode, ['show', 'auto'], true)) {
                 return $current;
             }
@@ -179,8 +183,20 @@ class AttendanceQrTokenService
         if ($token->expires_at->isPast()) {
             return ['status' => 'expired', 'token' => $token];
         }
+        if (!$this->hasAuthorizedIssuer($token)) {
+            return ['status' => 'revoked', 'token' => $token];
+        }
 
         return ['status' => 'valid', 'token' => $token];
+    }
+
+    private function hasAuthorizedIssuer(AttendanceQrToken $token): bool
+    {
+        if ($token->generator_type !== 'student_assistant') {
+            return true;
+        }
+
+        return (bool) $token->generator?->can('generateAssistantQr', $token->session);
     }
 
     private function signingKey(): string
