@@ -201,14 +201,20 @@ class OfflineAttendanceController extends Controller
                         'id'             => $s->id,
                         'name'           => $s->name,
                         'student_number' => $s->student_number,
+                        'section'        => $s->section,
+                        'year_level'     => $s->year_level,
+                        'course'         => $s->course,
                     ];
                 })->values();
 
                 return [
-                    'code'      => $subject->code,
-                    'name'      => $subject->name,
-                    'section'   => $subject->section,
-                    'students'  => $students,
+                    'code'       => $subject->code,
+                    'name'       => $subject->name,
+                    'section'    => $subject->section,
+                    'year_level' => $subject->year_level,
+                    'course'     => $subject->course,
+                    'semester'   => $subject->semester,
+                    'students'   => $students,
                 ];
             });
 

@@ -3125,6 +3125,7 @@
                 student_number: "{{ auth()->user()->student_number ?? '' }}",
                 course: "{{ auth()->user()->course ?? '' }}",
                 year_level: "{{ auth()->user()->year_level ?? '' }}",
+                section: "{{ auth()->user()->section ?? '' }}",
                 timestamp: new Date().toISOString()
             };
             localStorage.setItem('cached_user_profile', JSON.stringify(userProfile));

@@ -161,7 +161,13 @@
         .oa-student:last-child{border-bottom:none;}
         .oa-student:hover{background:rgba(207,164,111,.04);}
         .oa-snum{font-size:.73rem;color:var(--muted);min-width:76px;font-family:monospace;}
-        .oa-sname{flex:1;font-size:.86rem;color:var(--gold-lt);font-weight:500;}
+        .oa-sinfo{flex:1;display:flex;align-items:center;flex-wrap:wrap;gap:4px;min-width:0;}
+        .oa-sname{font-size:.86rem;color:var(--gold-lt);font-weight:600;}
+        .oa-stag{
+            font-size:.65rem;font-weight:700;color:var(--gold);
+            background:rgba(207,164,111,.12);border:1px solid rgba(207,164,111,.28);
+            padding:1px 6px;border-radius:4px;letter-spacing:.3px;white-space:nowrap;
+        }
         .oa-rgroup{display:flex;gap:4px;flex-shrink:0;}
         .oa-rbtn{
             padding:4px 8px;border-radius:7px;border:1px solid rgba(207,164,111,.18);
@@ -486,6 +492,9 @@ try {
             document.getElementById('cachedName').textContent = prof.name;
             var m = r.toUpperCase();
             if (prof.student_number) m += ' · ID: '+prof.student_number;
+            if (prof.course) m += ' · '+prof.course;
+            if (prof.year_level) m += ' · Year '+prof.year_level;
+            if (prof.section) m += ' (Sec '+prof.section+')';
             if (prof.email) m += ' · '+prof.email;
             document.getElementById('cachedMeta').innerHTML = m;
             document.getElementById('cachedProfileBox').style.display = 'block';
@@ -533,9 +542,16 @@ function oaRenderRow(s) {
     var btn = function(st, cls) {
         return '<button class="oa-rbtn '+cls+(cur===st?' on':'')+'" data-uid="'+s.id+'" data-st="'+st+'">'+st+'</button>';
     };
+    var secTag = '';
+    var badges = [];
+    if (s.section) badges.push('Sec ' + s.section);
+    if (s.year_level) badges.push('Y' + s.year_level);
+    if (badges.length) {
+        secTag = '<span class="oa-stag">' + esc(badges.join(' · ')) + '</span>';
+    }
     return '<div class="oa-student" data-uid="'+s.id+'">' +
         '<span class="oa-snum">'+esc(s.student_number||'—')+'</span>' +
-        '<span class="oa-sname">'+esc(s.name)+'</span>' +
+        '<div class="oa-sinfo"><span class="oa-sname">'+esc(s.name)+'</span>' + secTag + '</div>' +
         '<div class="oa-rgroup">'+btn('Present','p')+btn('Late','l')+btn('Absent','a')+'</div>' +
         '</div>';
 }
@@ -605,7 +621,7 @@ function oaSave() {
 
     var opt  = sel.options[sel.selectedIndex];
     var code = sel.value;
-    var name = opt ? opt.textContent.replace(/^[^–]+ – /,'').replace(/ \(.*$/,'') : code;
+    var name = opt ? opt.textContent.replace(/^[^–]+ – /,'').replace(/\s*\(.*$/,'') : code;
 
     var btn = document.getElementById('oaSaveBtn');
     btn.disabled = true;
@@ -669,7 +685,12 @@ function oaInit() {
         subjects.forEach(function(s) {
             var o = document.createElement('option');
             o.value = s.code;
-            o.textContent = s.code+' – '+s.name+(s.section?' ('+s.section+')':'');
+            var meta = [];
+            if (s.course) meta.push(s.course);
+            if (s.year_level) meta.push('Year ' + s.year_level);
+            if (s.section) meta.push('Sec ' + s.section);
+            var metaStr = meta.length ? ' (' + meta.join(' · ') + ')' : (s.section ? ' (' + s.section + ')' : '');
+            o.textContent = s.code + ' – ' + s.name + metaStr;
             o.dataset.students = JSON.stringify(s.students || []);
             sel.appendChild(o);
         });
