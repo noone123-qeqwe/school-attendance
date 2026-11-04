@@ -8,10 +8,10 @@ class AndroidWebAuthnSupportTest extends TestCase
 {
     public function test_android_webview_enables_the_platform_webauthn_bridge(): void
     {
-        $root = dirname(base_path());
-        $activity = file_get_contents($root . '/android_app/app/src/main/java/com/school/attendance/MainActivity.java');
-        $buildFile = file_get_contents($root . '/android_app/app/build.gradle');
-        $rootBuildFile = file_get_contents($root . '/android_app/build.gradle');
+        $androidApp = base_path('apps/android_app');
+        $activity = file_get_contents($androidApp . '/app/src/main/java/com/school/attendance/MainActivity.java');
+        $buildFile = file_get_contents($androidApp . '/app/build.gradle');
+        $rootBuildFile = file_get_contents($androidApp . '/build.gradle');
 
         $this->assertStringContainsString('WebViewFeature.WEB_AUTHENTICATION', $activity);
         $this->assertStringContainsString('setWebAuthenticationSupport', $activity);

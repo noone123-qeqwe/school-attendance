@@ -64,6 +64,7 @@ class WebauthnService
         }
 
         $parsed = $this->parseAuthenticatorData($authData, true);
+        $this->assertRpIdHash($parsed);
         if (($parsed['flags'] & 0x01) !== 0x01 || ($parsed['flags'] & 0x04) !== 0x04) {
             throw new RuntimeException('Device verification was not completed. Please use your fingerprint, Face ID, or device PIN and try again.');
         }
@@ -210,6 +211,7 @@ class WebauthnService
 
         $authenticatorData = $this->base64UrlDecode($assertion['response']['authenticatorData'] ?? '');
         $parsed = $this->parseAuthenticatorData($authenticatorData, false);
+        $this->assertRpIdHash($parsed);
 
         // A biometric/passkey sign-in must include local device verification.
         // Presence alone could be a security-key touch without a fingerprint or PIN.
@@ -417,7 +419,11 @@ class WebauthnService
 
         $flags = ord($authData[32]);
         $signCount = unpack('N', substr($authData, 33, 4))[1];
-        $result = ['flags' => $flags, 'sign_count' => $signCount];
+        $result = [
+            'rp_id_hash' => substr($authData, 0, 32),
+            'flags' => $flags,
+            'sign_count' => $signCount,
+        ];
 
         if (!$requireAttestedCredential) {
             return $result;
@@ -436,6 +442,16 @@ class WebauthnService
         $result['credential_public_key'] = substr($authData, $offset);
 
         return $result;
+    }
+
+    private function assertRpIdHash(array $authenticatorData): void
+    {
+        $rpIdHash = $authenticatorData['rp_id_hash'] ?? null;
+        $expectedRpIdHash = hash('sha256', $this->rpId(), true);
+
+        if (!is_string($rpIdHash) || !hash_equals($expectedRpIdHash, $rpIdHash)) {
+            throw new RuntimeException('Authenticator response is bound to a different website. Please register this device again.');
+        }
     }
 
     private function coseKeyToPem(string $coseKey): string

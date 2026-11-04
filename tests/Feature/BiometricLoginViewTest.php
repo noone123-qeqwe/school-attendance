@@ -10,6 +10,21 @@ class BiometricLoginViewTest extends TestCase
 {
     use RefreshDatabase;
 
+    private const TEST_PRIVATE_KEY = <<<'PEM'
+-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgtucOQP4jlCIRiGa0
+X+PznG9f+FWpgWrCbYVuHdhV22ShRANCAARqqofm5g9rW3PqejuANT1DY2oEHLuq
+nNxXs5owGWCeWWPa0mNecwStKEU70sfSAPA9yniZC6kJP7y/vDYEBrfi
+-----END PRIVATE KEY-----
+PEM;
+
+    private const TEST_PUBLIC_KEY = <<<'PEM'
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaqqH5uYPa1tz6no7gDU9Q2NqBBy7
+qpzcV7OaMBlgnllj2tJjXnMErShFO9LH0gDwPcp4mQupCT+8v7w2BAa34g==
+-----END PUBLIC KEY-----
+PEM;
+
     public function test_fingerprint_enrollment_uses_only_the_local_authenticator_on_every_page()
     {
         $views = [
@@ -95,6 +110,77 @@ class BiometricLoginViewTest extends TestCase
                 'signature' => $encode('invalid'),
             ],
         ], $credential);
+    }
+
+    public function test_webauthn_rejects_assertion_bound_to_a_different_rp_id(): void
+    {
+        $user = User::factory()->create();
+        $credential = \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'rp-hash-test-credential',
+            'public_key' => 'not-needed-before-rp-id-check',
+            'sign_count' => 0,
+            'device_name' => 'Test device',
+        ]);
+        $service = app(\App\Services\WebauthnService::class);
+        $challenge = $service->authenticationOptions($user)['publicKey']['challenge'];
+        $clientData = json_encode([
+            'type' => 'webauthn.get',
+            'challenge' => $challenge,
+            'origin' => 'http://localhost',
+        ]);
+        $authenticatorData = hash('sha256', 'attacker.example', true) . chr(0x05) . pack('N', 1);
+        $encode = static fn (string $value) => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('bound to a different website');
+        $service->verifyAssertion($user, [
+            'id' => $credential->credential_id,
+            'response' => [
+                'clientDataJSON' => $encode($clientData),
+                'authenticatorData' => $encode($authenticatorData),
+                'signature' => $encode('invalid'),
+            ],
+        ], $credential);
+    }
+
+    public function test_webauthn_verifies_a_signed_assertion_and_updates_the_counter(): void
+    {
+        $user = User::factory()->create();
+        $privateKey = openssl_pkey_get_private(self::TEST_PRIVATE_KEY);
+        $this->assertNotFalse($privateKey);
+
+        $credential = \App\Models\WebauthnCredential::create([
+            'user_id' => $user->id,
+            'credential_id' => 'dGVzdC1jcmVkZW50aWFs',
+            'public_key' => self::TEST_PUBLIC_KEY,
+            'sign_count' => 0,
+            'device_name' => 'Test device',
+        ]);
+        $service = app(\App\Services\WebauthnService::class);
+        $challenge = $service->authenticationOptions($user)['publicKey']['challenge'];
+        $clientDataJson = json_encode([
+            'type' => 'webauthn.get',
+            'challenge' => $challenge,
+            'origin' => 'http://localhost',
+        ], JSON_THROW_ON_ERROR);
+        $authenticatorData = hash('sha256', $service->rpId(), true) . chr(0x05) . pack('N', 1);
+        $signedData = $authenticatorData . hash('sha256', $clientDataJson, true);
+        $this->assertTrue(openssl_sign($signedData, $signature, $privateKey, OPENSSL_ALGO_SHA256));
+        $encode = static fn (string $value) => rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+
+        $verified = $service->verifyAssertion($user, [
+            'id' => $credential->credential_id,
+            'response' => [
+                'clientDataJSON' => $encode($clientDataJson),
+                'authenticatorData' => $encode($authenticatorData),
+                'signature' => $encode($signature),
+            ],
+        ], $credential);
+
+        $this->assertSame($credential->id, $verified->id);
+        $this->assertSame(1, $verified->fresh()->sign_count);
+        $this->assertNotNull($verified->fresh()->last_used_at);
     }
 
     public function test_login_page_renders_biometric_button_and_elements_without_inline_onclick()
