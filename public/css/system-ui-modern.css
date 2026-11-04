@@ -175,3 +175,236 @@
         transform: none;
     }
 }
+
+/* Dedicated mobile app surfaces. These rules refine spacing and shape only;
+   all foreground, background, and status colors stay in the existing views. */
+.mobile-app-layout .mobile-header {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.mobile-app-layout .header-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.mobile-app-layout :where(.header-btn-left, .header-btn-right, .mobile-menu-close) {
+    border-radius: 12px;
+}
+
+.mobile-app-layout .mobile-bottom-nav {
+    align-items: center;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.mobile-app-layout .nav-item {
+    min-height: 54px;
+    margin: 4px 3px;
+    padding: 6px 4px;
+    border-radius: 12px;
+    font-size: 0.68rem;
+}
+
+.mobile-app-layout .nav-item i {
+    font-size: 1.2rem;
+}
+
+.mobile-app-layout .nav-item-primary {
+    margin-top: -4px;
+}
+
+.mobile-app-layout .nav-item-primary i {
+    width: 48px;
+    height: 48px;
+    border-radius: 15px;
+    font-size: 1.35rem;
+    box-shadow: 0 3px 10px rgba(207, 164, 111, 0.24);
+}
+
+.mobile-app-layout .mobile-app {
+    padding-inline: max(18px, var(--safe-left)) max(18px, var(--safe-right));
+}
+
+.mobile-app-layout .peer-page {
+    padding: 14px 12px 24px;
+}
+
+.mobile-app-layout :where(
+    .status-card,
+    .quick-action-btn,
+    .class-card,
+    .history-card,
+    .stat-pill,
+    .mobile-profile-hero,
+    .mobile-card,
+    .scan-info-card,
+    .peer-card
+) {
+    border-radius: 16px;
+}
+
+.mobile-app-layout .status-card {
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.mobile-app-layout .welcome-greeting h2 {
+    font-size: clamp(1.35rem, 5vw, 1.55rem);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+}
+
+.mobile-app-layout .status-header {
+    margin-bottom: 14px;
+}
+
+.mobile-app-layout .status-body {
+    margin-bottom: 16px;
+}
+
+.mobile-app-layout .status-icon {
+    font-size: 40px;
+    margin-bottom: 8px;
+}
+
+.mobile-app-layout .status-text {
+    font-size: 1.3rem;
+}
+
+.mobile-app-layout .quick-actions-grid {
+    gap: 10px;
+}
+
+.mobile-app-layout .quick-action-btn {
+    min-height: 104px;
+    padding: 16px 12px;
+    gap: 8px;
+    transition: transform var(--ui-motion), border-color var(--ui-motion), background-color var(--ui-motion);
+}
+
+.mobile-app-layout .quick-action-icon {
+    font-size: 1.65rem;
+}
+
+.mobile-app-layout .quick-action-label {
+    line-height: 1.3;
+    text-align: center;
+}
+
+.mobile-app-layout .class-card,
+.mobile-app-layout .history-card,
+.mobile-app-layout .mobile-card,
+.mobile-app-layout .scan-info-card,
+.mobile-app-layout .peer-card {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-app-layout .history-card {
+    margin-bottom: 10px;
+}
+
+.mobile-app-layout .card-inner {
+    padding: 16px 16px 16px 18px;
+}
+
+.mobile-app-layout .card-details {
+    flex-wrap: wrap;
+    gap: 12px 18px;
+}
+
+.mobile-app-layout .detail-col {
+    min-width: 0;
+}
+
+.mobile-app-layout .stat-pill {
+    min-height: 66px;
+    justify-content: center;
+    padding: 10px 6px;
+}
+
+.mobile-app-layout .filter-btn {
+    min-height: 42px;
+    border-radius: 999px;
+}
+
+.mobile-app-layout .mobile-info-row {
+    min-height: 64px;
+}
+
+.mobile-app-layout .mobile-info-val {
+    overflow-wrap: anywhere;
+}
+
+.mobile-app-layout :where(.peer-card select, .peer-card input) {
+    min-height: 48px;
+}
+
+.mobile-app-layout .scan-hero {
+    margin-bottom: 28px;
+}
+
+.mobile-app-layout .scan-hero-icon {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 16px;
+    font-size: 2.25rem;
+    animation: none;
+}
+
+.mobile-app-layout .scan-hero-title {
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+}
+
+.mobile-app-layout :where(.scan-open-btn, .scan-code-btn, .scan-paste-btn, .peer-primary, .peer-secondary) {
+    min-height: 50px;
+    border-radius: 14px;
+}
+
+.mobile-app-layout .scan-open-btn {
+    padding: 14px 20px;
+    font-size: 1rem;
+}
+
+@media (max-width: 380px) {
+    .mobile-app-layout .mobile-app {
+        padding-inline: max(14px, var(--safe-left)) max(14px, var(--safe-right));
+    }
+
+    .mobile-app-layout .nav-item {
+        font-size: 0.63rem;
+    }
+
+    .mobile-app-layout .quick-action-btn {
+        min-height: 96px;
+        padding-inline: 8px;
+    }
+
+    .mobile-app-layout .detail-col {
+        flex: 1 1 calc(50% - 9px);
+    }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+    .mobile-app-layout .scan-hero {
+        margin-bottom: 18px;
+    }
+
+    .mobile-app-layout .scan-hero-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mobile-app-layout .scan-hero-icon {
+        animation: none;
+    }
+
+    .mobile-app-layout :where(.nav-item, .quick-action-btn, .history-card) {
+        transition-duration: 0.01ms;
+    }
+}
