@@ -314,6 +314,7 @@ class AuthenticationTest extends TestCase
             'student_number' => '0703250',
             'password' => \Illuminate\Support\Facades\Hash::make('student123'),
             'role' => 'student',
+            'rfid_tag' => 'RFID-SECRET-TEST-123',
         ]);
 
         $response = $this->postJson('/api/login', [
@@ -328,6 +329,42 @@ class AuthenticationTest extends TestCase
             'role' => 'student',
         ]);
         $this->assertNotEmpty($response->json('token'));
+        $this->assertArrayNotHasKey('rfid_tag', $response->json('user'));
+
+        $tokenId = (int) explode('|', $response->json('token'), 2)[0];
+        $token = \Illuminate\Support\Facades\DB::table('personal_access_tokens')->find($tokenId);
+        $this->assertNotNull($token);
+        $this->assertGreaterThan(now()->addDays(29)->timestamp, strtotime($token->expires_at));
+        $this->assertLessThanOrEqual(now()->addDays(31)->timestamp, strtotime($token->expires_at));
+    }
+
+    public function test_api_logout_revokes_the_current_personal_access_token(): void
+    {
+        User::factory()->create([
+            'student_number' => '0703251',
+            'password' => \Illuminate\Support\Facades\Hash::make('student123'),
+            'role' => 'student',
+        ]);
+
+        $login = $this->postJson('/api/login', [
+            'identifier' => '0703251',
+            'password' => 'student123',
+        ]);
+        $login->assertOk();
+
+        $tokenId = (int) explode('|', $login->json('token'), 2)[0];
+        $this->withToken($login->json('token'))->postJson('/api/logout')->assertOk();
+
+        $this->assertDatabaseMissing('personal_access_tokens', ['id' => $tokenId]);
+    }
+
+    public function test_api_logout_ends_stateful_session_authentication(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson('/api/logout')->assertOk();
+
+        $this->assertGuest();
     }
 
     public function test_api_login_with_incorrect_password_is_rejected(): void

@@ -265,7 +265,8 @@ class AuthController extends Controller
 
             $token = $user->createToken(
                 'mobile-app',
-                $user->isAdmin() ? ['admin-2fa-verified'] : ['*']
+                $user->isAdmin() ? ['admin-2fa-verified'] : ['*'],
+                now()->addDays(max(1, (int) config('security.api_token_lifetime_days', 30)))
             )->plainTextToken;
 
             // Determine dashboard URL
@@ -317,7 +318,17 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $token = $request->user()?->currentAccessToken();
+        if ($token instanceof \Laravel\Sanctum\TransientToken) {
+            Auth::guard('web')->logout();
+
+            if ($request->hasSession()) {
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+            }
+        } elseif ($token) {
+            $token->delete();
+        }
 
         return response()->json([
             'status' => 'success',

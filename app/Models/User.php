@@ -637,6 +637,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'kiosk_pin',
+        'rfid_tag',
     ];
 
     /**

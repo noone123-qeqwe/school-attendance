@@ -153,8 +153,6 @@ class PTController extends Controller
         $remember = $request->has('remember') ? $request->boolean('remember') : true;
         $lockoutService = app(\App\Services\AccountLockoutService::class);
 
-        Log::info('Login attempt', ['identifier' => $identifier, 'ip' => $request->ip()]);
-
         // 1. Check account lockout (account-specific brute force protection)
         if ($lockoutService->isAccountLocked($identifier)) {
             $remaining = $lockoutService->getRemainingSeconds($identifier, $request->ip());
@@ -339,8 +337,6 @@ class PTController extends Controller
             Log::info('Login successful', [
                 'user_id' => $user->id,
                 'role' => $user->role,
-                'identifier' => $identifier,
-                'session_id' => $request->session()->getId()
             ]);
 
             $request->session()->regenerate();
