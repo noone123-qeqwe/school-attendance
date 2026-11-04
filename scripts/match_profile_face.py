@@ -2,6 +2,7 @@
 """Compare two server-held images with OpenCV Zoo YuNet and SFace."""
 
 import json
+import math
 import os
 import sys
 
@@ -44,12 +45,22 @@ def face_feature(image_path, detector, recognizer, kind):
 
 
 def main():
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 6:
         result(False, "MATCHER_UNAVAILABLE")
         return 2
 
-    reference_path, live_path, detector_path, recognizer_path = sys.argv[1:]
-    if not all(os.path.isfile(path) for path in sys.argv[1:]):
+    reference_path, live_path, detector_path, recognizer_path, threshold_text = sys.argv[1:]
+    try:
+        threshold = float(threshold_text)
+    except ValueError:
+        result(False, "MATCHER_UNAVAILABLE")
+        return 2
+
+    if not math.isfinite(threshold) or not 0 <= threshold <= 1:
+        result(False, "MATCHER_UNAVAILABLE")
+        return 2
+
+    if not all(os.path.isfile(path) for path in (reference_path, live_path, detector_path, recognizer_path)):
         result(False, "MATCHER_UNAVAILABLE")
         return 2
 
@@ -62,8 +73,7 @@ def main():
         reference = face_feature(reference_path, detector, recognizer, "PROFILE")
         live = face_feature(live_path, detector, recognizer, "LIVE")
         similarity = recognizer.match(reference, live, cv2.FaceRecognizerSF_FR_COSINE)
-        # OpenCV Zoo's SFace cosine threshold for the released model is 0.363.
-        result(similarity >= 0.363, "MATCH" if similarity >= 0.363 else "BIOMETRIC_MISMATCH", similarity)
+        result(similarity >= threshold, "MATCH" if similarity >= threshold else "BIOMETRIC_MISMATCH", similarity)
         return 0
     except ValueError as exc:
         result(False, str(exc))

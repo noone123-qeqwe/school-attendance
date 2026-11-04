@@ -2033,7 +2033,6 @@ class QrAttendanceController extends Controller
             if (!$faceMatchResult['match']) {
                 Log::warning('QR Face verification against profile photo failed', [
                     'user_id' => $user->id,
-                    'similarity' => $faceMatchResult['similarity'] ?? 0,
                     'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
                 ]);
 

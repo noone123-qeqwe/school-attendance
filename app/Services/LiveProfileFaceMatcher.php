@@ -19,6 +19,11 @@ class LiveProfileFaceMatcher
             return $this->failure('INVALID_LIVE_FRAME');
         }
 
+        $threshold = filter_var(config('face_match.threshold'), FILTER_VALIDATE_FLOAT);
+        if ($threshold === false || !is_finite((float) $threshold) || $threshold < 0 || $threshold > 1) {
+            return $this->failure('MATCHER_UNAVAILABLE');
+        }
+
         $referencePath = tempnam(sys_get_temp_dir(), 'face_ref_');
         $livePath = tempnam(sys_get_temp_dir(), 'face_live_');
         if ($referencePath === false || $livePath === false) {
@@ -40,11 +45,18 @@ class LiveProfileFaceMatcher
                 $livePath,
                 config('face_match.detector_model'),
                 config('face_match.recognizer_model'),
+                (string) $threshold,
             ]);
             $process->setTimeout(20);
             $process->run(null, ['OMP_NUM_THREADS' => '1', 'OPENBLAS_NUM_THREADS' => '1']);
             $result = json_decode(trim($process->getOutput()), true);
             if (!$process->isSuccessful() || !is_array($result) || !is_bool($result['match'] ?? null)) {
+                return $this->failure('MATCHER_UNAVAILABLE');
+            }
+
+            $similarity = $result['similarity'] ?? null;
+            if (!is_numeric($similarity) || !is_finite((float) $similarity) ||
+                (float) $similarity < -1 || (float) $similarity > 1) {
                 return $this->failure('MATCHER_UNAVAILABLE');
             }
 
@@ -62,10 +74,16 @@ class LiveProfileFaceMatcher
                 return $this->failure('MATCHER_UNAVAILABLE');
             }
 
+            $similarity = (float) $similarity;
+            $match = $result['match'] && $code === 'MATCH' && $similarity >= $threshold;
+            if ($code === 'MATCH' && !$match) {
+                $code = 'BIOMETRIC_MISMATCH';
+            }
+
             return [
-                'match' => $result['match'] && $code === 'MATCH',
+                'match' => $match,
                 'code' => $code,
-                'similarity' => is_numeric($result['similarity'] ?? null) ? (float) $result['similarity'] : 0.0,
+                'similarity' => $similarity,
                 'method' => 'opencv_yunet_sface',
                 'message' => $this->message($code),
             ];
