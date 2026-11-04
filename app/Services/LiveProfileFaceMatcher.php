@@ -20,7 +20,7 @@ class LiveProfileFaceMatcher
         }
 
         $threshold = filter_var(config('face_match.threshold'), FILTER_VALIDATE_FLOAT);
-        if ($threshold === false || !is_finite((float) $threshold) || $threshold < 0 || $threshold > 1) {
+        if ($threshold === false || !is_finite((float) $threshold) || $threshold <= 0 || $threshold > 1) {
             return $this->failure('MATCHER_UNAVAILABLE');
         }
 

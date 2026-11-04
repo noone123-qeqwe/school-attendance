@@ -7,7 +7,7 @@ return [
     'lockout_minutes' => (int) env('PEER_LOCKOUT_MINUTES', 30),
     'session_ttl_seconds' => (int) env('PEER_VERIFICATION_TTL_SECONDS', 120),
     'presence_fresh_seconds' => (int) env('PEER_PRESENCE_FRESH_SECONDS', 120),
-    'match_threshold' => (float) env('FACE_MATCH_THRESHOLD', 0.85),
+    'match_threshold' => (float) env('PEER_FACE_MATCH_THRESHOLD', 0.85),
     'pad_threshold' => (float) env('PEER_PAD_THRESHOLD', 0.90),
     'model_version' => env('PEER_FACE_MODEL_VERSION', ''),
     'verifier_url' => env('PEER_FACE_VERIFIER_URL', ''),

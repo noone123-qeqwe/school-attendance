@@ -56,7 +56,7 @@ def main():
         result(False, "MATCHER_UNAVAILABLE")
         return 2
 
-    if not math.isfinite(threshold) or not 0 <= threshold <= 1:
+    if not math.isfinite(threshold) or not 0 < threshold <= 1:
         result(False, "MATCHER_UNAVAILABLE")
         return 2
 
