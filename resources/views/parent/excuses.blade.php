@@ -86,7 +86,7 @@
                         </td>
                         <td data-label="Child">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : asset('storage/'.$excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}"
+                                <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : public_storage_url($excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}"
                                      class="rounded-circle" style="width: 28px; height: 28px; object-fit: cover;">
                                 <span style="font-weight: 600;">{{ $excuse->user->name }}</span>
                             </div>
@@ -126,7 +126,7 @@
                 @foreach($excuses as $excuse)
                 <div class="mobile-excuse-card">
                     <div class="d-flex align-items-start gap-3 mb-3">
-                        <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : asset('storage/'.$excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}"
+                        <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : public_storage_url($excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}"
                              class="rounded-circle flex-shrink-0" style="width: 48px; height: 48px; object-fit: cover; border: 2px solid rgba(255,255,255,0.1);">
                         <div class="flex-grow-1 min-w-0">
                             <div class="d-flex justify-content-between align-items-start">

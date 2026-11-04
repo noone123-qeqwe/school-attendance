@@ -529,7 +529,7 @@
                 $rRate = $data->rate;
                 $rClass = $rRate >= 90 ? 'rate-pill-high' : ($rRate >= 75 ? 'rate-pill-med' : 'rate-pill-low');
                 $cImg = $data->child->profile_image
-                    ? (str_starts_with($data->child->profile_image, 'http') ? $data->child->profile_image : asset('storage/'.$data->child->profile_image))
+                    ? (str_starts_with($data->child->profile_image, 'http') ? $data->child->profile_image : public_storage_url($data->child->profile_image))
                     : 'https://ui-avatars.com/api/?name='.urlencode($data->child->name).'&background=800000&color=fff&size=52';
             @endphp
             <button type="button" class="student-tab-pill {{ $index === 0 ? 'active' : '' }}" id="tabBtn_{{ $data->child->id }}" onclick="switchDashboardChild('{{ $data->child->id }}')">
@@ -550,7 +550,7 @@
     @php
         $child = $data->child;
         $cImg = $child->profile_image
-            ? (str_starts_with($child->profile_image, 'http') ? $child->profile_image : asset('storage/'.$child->profile_image))
+            ? (str_starts_with($child->profile_image, 'http') ? $child->profile_image : public_storage_url($child->profile_image))
             : 'https://ui-avatars.com/api/?name='.urlencode($child->name).'&background=800000&color=fff&size=96';
         $rateVal = $data->rate;
         $rateStatus = $data->total === 0 ? 'No sessions yet' : ($rateVal >= 90 ? 'Excellent Standing' : ($rateVal >= 75 ? 'Satisfactory Standing' : 'Needs Attention'));

@@ -4,7 +4,7 @@
     <td style="width:40px;"><input type="checkbox" class="student-checkbox" name="selected_students[]" value="{{ $student->id }}" style="accent-color:var(--gold);"></td>
     <td data-label="Student">
         <div class="d-flex align-items-center gap-3">
-            <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=900000&color=fff' }}"
+            <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : public_storage_url($student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=900000&color=fff' }}"
                  style="width:38px;height:38px;border-radius:50%;object-fit:cover;border:1.5px solid rgba(207,164,111,0.5); box-shadow:0 2px 6px rgba(0,0,0,0.3);">
             <div>
                 <div style="font-weight:600;font-size:0.875rem;color:#f3e7cd;letter-spacing:0.2px;display:flex;align-items:center;gap:6px;">

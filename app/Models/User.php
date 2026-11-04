@@ -73,7 +73,7 @@ class User extends Authenticatable
             if (str_starts_with($this->profile_image, '/')) {
                 return $this->profile_image;
             }
-            return asset('storage/' . $this->profile_image);
+            return public_storage_url($this->profile_image);
         }
 
         $initials = urlencode($this->name ?: 'User');

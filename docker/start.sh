@@ -3,6 +3,60 @@ set -e
 
 echo "🚀 Starting Smart Classroom Attendance System..."
 
+APP_PROCESS_ROLE="${APP_PROCESS_ROLE:-all}"
+case "$APP_PROCESS_ROLE" in
+    all|web|worker|scheduler|migrate) ;;
+    *) echo "APP_PROCESS_ROLE must be all, web, worker, scheduler, or migrate." >&2; exit 1 ;;
+esac
+
+case "$APP_PROCESS_ROLE" in
+    all) RUN_MIGRATIONS="${RUN_MIGRATIONS:-true}" ;;
+    migrate) RUN_MIGRATIONS=true ;;
+    *) RUN_MIGRATIONS="${RUN_MIGRATIONS:-false}" ;;
+esac
+
+PHP_FPM_PM="${PHP_FPM_PM:-dynamic}"
+PHP_FPM_MAX_CHILDREN="${PHP_FPM_MAX_CHILDREN:-4}"
+PHP_FPM_START_SERVERS="${PHP_FPM_START_SERVERS:-2}"
+PHP_FPM_MIN_SPARE_SERVERS="${PHP_FPM_MIN_SPARE_SERVERS:-1}"
+PHP_FPM_MAX_SPARE_SERVERS="${PHP_FPM_MAX_SPARE_SERVERS:-3}"
+PHP_FPM_MAX_REQUESTS="${PHP_FPM_MAX_REQUESTS:-500}"
+
+case "$PHP_FPM_PM" in
+    dynamic|ondemand|static) ;;
+    *) echo "PHP_FPM_PM must be dynamic, ondemand, or static." >&2; exit 1 ;;
+esac
+
+for PHP_FPM_VALUE in "$PHP_FPM_MAX_CHILDREN" "$PHP_FPM_START_SERVERS" "$PHP_FPM_MIN_SPARE_SERVERS" "$PHP_FPM_MAX_SPARE_SERVERS" "$PHP_FPM_MAX_REQUESTS"; do
+    case "$PHP_FPM_VALUE" in
+        ''|*[!0-9]*) echo "PHP-FPM worker settings must be positive integers." >&2; exit 1 ;;
+    esac
+done
+
+if [ "$PHP_FPM_MAX_CHILDREN" -lt 1 ] || [ "$PHP_FPM_START_SERVERS" -lt 1 ] ||
+   [ "$PHP_FPM_MIN_SPARE_SERVERS" -lt 1 ] || [ "$PHP_FPM_MAX_SPARE_SERVERS" -lt 1 ] ||
+   [ "$PHP_FPM_MAX_REQUESTS" -lt 1 ]; then
+    echo "PHP-FPM worker settings must be greater than zero." >&2
+    exit 1
+fi
+
+if [ "$PHP_FPM_PM" = "dynamic" ]; then
+    if [ "$PHP_FPM_START_SERVERS" -gt "$PHP_FPM_MAX_CHILDREN" ] ||
+       [ "$PHP_FPM_MIN_SPARE_SERVERS" -gt "$PHP_FPM_MAX_SPARE_SERVERS" ] ||
+       [ "$PHP_FPM_MAX_SPARE_SERVERS" -gt "$PHP_FPM_MAX_CHILDREN" ]; then
+        echo "PHP-FPM dynamic worker settings exceed the configured child limit." >&2
+        exit 1
+    fi
+fi
+
+FPM_CONFIG=/usr/local/etc/php-fpm.d/zz-docker.conf
+sed -i "s/^pm = .*/pm = ${PHP_FPM_PM}/" "$FPM_CONFIG"
+sed -i "s/^pm.max_children = .*/pm.max_children = ${PHP_FPM_MAX_CHILDREN}/" "$FPM_CONFIG"
+sed -i "s/^pm.start_servers = .*/pm.start_servers = ${PHP_FPM_START_SERVERS}/" "$FPM_CONFIG"
+sed -i "s/^pm.min_spare_servers = .*/pm.min_spare_servers = ${PHP_FPM_MIN_SPARE_SERVERS}/" "$FPM_CONFIG"
+sed -i "s/^pm.max_spare_servers = .*/pm.max_spare_servers = ${PHP_FPM_MAX_SPARE_SERVERS}/" "$FPM_CONFIG"
+sed -i "s/^pm.max_requests = .*/pm.max_requests = ${PHP_FPM_MAX_REQUESTS}/" "$FPM_CONFIG"
+
 # Default port to 80 if PORT is not provided by Render/Railway
 PORT="${PORT:-80}"
 echo "🌐 Configuring Nginx to listen on port ${PORT}..."
@@ -62,8 +116,9 @@ if [ "$DB_CONNECTION" = "sqlite" ]; then
     chmod -R 775 "$(dirname "$DB_FILE")"
 fi
 
-# Run database migrations if configured
-if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ] || [ -n "$DB_URL" ] || [ -n "$MYSQLHOST" ] || [ -n "$MYSQL_URL" ] || [ "$DB_CONNECTION" = "sqlite" ]; then
+# Run database migrations once in the combined role, or through an explicit
+# migrate release process before starting horizontally scaled web replicas.
+if [ "$RUN_MIGRATIONS" = "true" ] && { [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ] || [ -n "$DB_URL" ] || [ -n "$MYSQLHOST" ] || [ -n "$MYSQL_URL" ] || [ "$DB_CONNECTION" = "sqlite" ]; }; then
     echo "🗄️ Database configured, running migrations..."
     RETRY_COUNT=0
     MAX_RETRIES=6
@@ -76,6 +131,16 @@ if [ -n "$DB_HOST" ] || [ -n "$DATABASE_URL" ] || [ -n "$DB_URL" ] || [ -n "$MYS
         echo "Database not ready yet... retry $RETRY_COUNT/$MAX_RETRIES in 5 seconds..."
         sleep 5
     done
+elif [ "$RUN_MIGRATIONS" = "true" ]; then
+    echo "A database is required when RUN_MIGRATIONS=true." >&2
+    exit 1
+else
+    echo "⏭️ Skipping startup migrations for role ${APP_PROCESS_ROLE}."
+fi
+
+if [ "$APP_PROCESS_ROLE" = "migrate" ]; then
+    echo "✅ Release migrations completed."
+    exit 0
 fi
 
 # Cache config, routes, views, and events for production performance
@@ -85,6 +150,21 @@ php artisan view:clear || true
 php artisan optimize || true
 php artisan event:cache || true
 php artisan view:cache || true
+
+case "$APP_PROCESS_ROLE" in
+    worker)
+        if [ "${QUEUE_CONNECTION:-sync}" = "sync" ]; then
+            echo "APP_PROCESS_ROLE=worker requires QUEUE_CONNECTION to be database, redis, or another async queue." >&2
+            exit 1
+        fi
+        echo "📨 Starting dedicated Laravel queue worker..."
+        exec php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --timeout="${QUEUE_TIMEOUT:-90}" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}"
+        ;;
+    scheduler)
+        echo "⏱️ Starting dedicated Laravel scheduler..."
+        exec php artisan schedule:work
+        ;;
+esac
 
 # Start PHP-FPM in daemon mode
 echo "🐘 Starting PHP-FPM..."
@@ -100,25 +180,29 @@ while [ ! -e /var/run/php-fpm.sock ] && [ $RETRY_FPM -lt 10 ]; do
 done
 chmod 666 /var/run/php-fpm.sock 2>/dev/null || true
 
-# Start Laravel scheduler worker in background for automated attendance and warnings
-echo "⏱️ Starting Laravel Scheduler Worker..."
-php artisan schedule:work >> /var/www/html/storage/logs/scheduler.log 2>&1 &
+# The legacy all-in-one mode remains available for a single container. Scaled
+# deployments should use separate web, worker, and scheduler process roles.
+if [ "$APP_PROCESS_ROLE" = "all" ]; then
+    echo "⏱️ Starting Laravel Scheduler Worker..."
+    php artisan schedule:work >> /var/www/html/storage/logs/scheduler.log 2>&1 &
 
-# Start Laravel Queue Worker in background for push notifications and async jobs
-echo "📨 Starting Laravel Queue Worker..."
-php artisan queue:work --sleep=3 --tries=3 --timeout=90 >> /var/www/html/storage/logs/queue.log 2>&1 &
+    if [ "${QUEUE_CONNECTION:-sync}" != "sync" ]; then
+        echo "📨 Starting Laravel Queue Worker..."
+        php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --timeout="${QUEUE_TIMEOUT:-90}" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}" >> /var/www/html/storage/logs/queue.log 2>&1 &
+    else
+        echo "⏭️ Queue worker disabled because QUEUE_CONNECTION=sync."
+    fi
 
-# ── Keep-alive self-pinger ────────────────────────────────────────────────────
-# Render free tier spins down after ~15 min of inactivity.
-# This loop pings /up every 10 minutes to prevent cold-start timeouts.
-echo "💓 Starting keep-alive pinger (every 10 minutes)..."
-(
-    APP_PING_URL="http://localhost:${PORT:-80}/up"
-    while true; do
-        sleep 600
-        curl -sf --max-time 10 "$APP_PING_URL" > /dev/null 2>&1 || true
-    done
-) &
+    # Keep the existing single-instance development/free-tier behavior.
+    echo "💓 Starting keep-alive pinger (every 10 minutes)..."
+    (
+        APP_PING_URL="http://localhost:${PORT:-80}/up"
+        while true; do
+            sleep 600
+            curl -sf --max-time 10 "$APP_PING_URL" > /dev/null 2>&1 || true
+        done
+    ) &
+fi
 
 # Start Nginx in the foreground
 echo "🚀 Starting Nginx..."

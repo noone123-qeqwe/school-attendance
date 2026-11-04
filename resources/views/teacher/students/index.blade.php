@@ -101,7 +101,7 @@
             <tr>
                 <td data-label="Student">
                     <div class="d-flex align-items-center gap-3">
-                        <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/'.$student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}" 
+                        <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : public_storage_url($student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=800000&color=fff' }}"
                              style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold);">
                         <div>
                             <div style="font-weight: 600;">{{ $student->name }}</div>

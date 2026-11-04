@@ -41,11 +41,17 @@ return [
         ],
 
         'public' => [
-    'driver' => 'local',
-    'root' => storage_path('app/public'),
-    'url' => env('APP_URL').'/storage', // This uses the 127.0.0.1:8000 address
-    'visibility' => 'public',
-],
+            // Keep local as the default; production can select the configured
+            // Cloudinary driver so uploads are shared by every web replica.
+            'driver' => env('PUBLIC_FILESYSTEM_DRIVER', 'local'),
+            'root' => env('PUBLIC_FILESYSTEM_DRIVER') === 'cloudinary' ? '' : storage_path('app/public'),
+            'url' => env('PUBLIC_FILESYSTEM_DRIVER') === 'cloudinary'
+                ? env('CLOUDINARY_URL')
+                : env('PUBLIC_FILESYSTEM_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/storage'),
+            'visibility' => env('PUBLIC_FILESYSTEM_DRIVER') === 'cloudinary' ? null : 'public',
+            'throw' => false,
+            'report' => false,
+        ],
 
         's3' => [
             'driver' => 's3',

@@ -427,7 +427,7 @@
                         </td>
                         <td data-label="Student">
                             <div class="student-info">
-                                <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : asset('storage/'.$excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}" 
+                                <img src="{{ $excuse->user->profile_image ? (str_starts_with($excuse->user->profile_image, 'http') ? $excuse->user->profile_image : public_storage_url($excuse->user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($excuse->user->name).'&background=800000&color=fff' }}"
                                      class="student-avatar" alt="Student avatar">
                                 <div class="student-meta">
                                     <div class="name">{{ $excuse->user->name }}</div>
@@ -762,7 +762,7 @@ function viewExcuse(excuseId) {
                             <div>
                                 <h6 style="font-weight: 600; color: #f8fafc; margin-bottom: 8px;">Student</h6>
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <img src="${excuse.user.profile_image ? (excuse.user.profile_image.startsWith('http') ? excuse.user.profile_image : '/storage/' + excuse.user.profile_image) : 'https://ui-avatars.com/api/?name=' + encodeURIComponent(excuse.user.name) + '&background=800000&color=fff'}" 
+                                    <img src="${excuse.user.profile_photo_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(excuse.user.name) + '&background=800000&color=fff')}"
                                          style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
                                     <div>
                                         <div style="font-weight: 600;">${excuse.user.name}</div>
@@ -801,7 +801,7 @@ function viewExcuse(excuseId) {
                                     ${excuse.attachments.map(attachment => {
                                         const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment);
                                         const fileName = attachment.split('/').pop();
-                                        const fileUrl = attachment.startsWith('http') ? attachment : '/storage/' + attachment;
+                                        const fileUrl = attachment;
                                         return `
                                             <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.8rem;">
                                                 <div style="width: 32px; height: 32px; border-radius: 6px; background: ${isImage ? '#16a34a' : '#475569'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">

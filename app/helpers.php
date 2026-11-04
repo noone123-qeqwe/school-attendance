@@ -52,3 +52,26 @@ if (!function_exists('app_release_date')) {
         return app(\App\Services\VersionService::class)->getFormattedReleaseDate();
     }
 }
+
+if (!function_exists('public_storage_url')) {
+    /**
+     * Resolve an uploaded public file through the configured shared disk.
+     * Existing absolute URLs remain valid for legacy profile images.
+     */
+    function public_storage_url(?string $path): string
+    {
+        if ($path === null || trim($path) === '') {
+            return '';
+        }
+
+        if (filter_var($path, FILTER_VALIDATE_URL)) {
+            return $path;
+        }
+
+        if (str_starts_with($path, '/')) {
+            return url($path);
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+    }
+}

@@ -1581,6 +1581,13 @@ class TeacherController extends Controller
 
         $excuseSubmission->load(['user', 'attendance.subject', 'reviewer', 'comments.user']);
 
+        if (is_array($excuseSubmission->attachments)) {
+            $excuseSubmission->attachments = array_map(
+                static fn ($path) => public_storage_url(is_string($path) ? $path : null),
+                $excuseSubmission->attachments
+            );
+        }
+
         return response()->json([
             'success' => true,
             'excuse' => $excuseSubmission

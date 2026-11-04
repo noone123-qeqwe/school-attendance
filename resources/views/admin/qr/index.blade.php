@@ -58,7 +58,7 @@
                 <div style="width:120px; height:120px; background:white; padding:10px; border-radius:12px; margin-bottom:16px;">
                     <!-- Real QR generation using Google Charts API for placeholder if local image doesn't exist -->
                     @if($student->qr_code_path)
-                        <img src="{{ asset('storage/'.$student->qr_code_path) }}" style="width:100%; height:100%; object-fit:contain;">
+                        <img src="{{ public_storage_url($student->qr_code_path) }}" style="width:100%; height:100%; object-fit:contain;">
                     @else
                         <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ urlencode($student->student_number ?? $student->id) }}" style="width:100%; height:100%; object-fit:contain;" alt="QR Code">
                     @endif

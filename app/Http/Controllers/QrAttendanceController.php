@@ -875,7 +875,7 @@ class QrAttendanceController extends Controller
                 'outside_since'     => ($record && $record->outside_since) ? Carbon::parse($record->outside_since)->format('h:i A') : null,
                 'escaped_at'        => ($record && $record->escaped_at) ? Carbon::parse($record->escaped_at)->format('h:i A') : null,
                 'avatar'            => $student->profile_image
-                    ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : asset('storage/' . $student->profile_image))
+                    ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : public_storage_url($student->profile_image))
                     : 'https://ui-avatars.com/api/?name=' . urlencode($student->name) . '&background=7c2d12&color=fff&size=80',
                 'sort_order'        => match($status) {
                     'Escaped'      => 0,

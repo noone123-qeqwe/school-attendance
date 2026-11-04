@@ -63,7 +63,7 @@
                         <td data-label="Student Name">
                             <div style="display:flex;align-items:center;gap:12px;">
                                 @if($student->profile_image)
-                                    <img src="{{ filter_var($student->profile_image, FILTER_VALIDATE_URL) ? $student->profile_image : Storage::url($student->profile_image) }}" alt="{{ $student->name }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+                                    <img src="{{ filter_var($student->profile_image, FILTER_VALIDATE_URL) ? $student->profile_image : public_storage_url($student->profile_image) }}" alt="{{ $student->name }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
                                 @else
                                     <div class="ent-avatar ent-avatar-round" style="width:32px;height:32px;font-size:0.8rem;">
                                         {{ substr($student->name, 0, 2) }}
