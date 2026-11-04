@@ -1,0 +1,177 @@
+/* Shared visual polish for every role portal. Brand colors remain in the
+   existing design tokens and role themes. */
+
+:root {
+    --ui-radius-control: 10px;
+    --ui-radius-card: 16px;
+    --ui-motion: 160ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.main-content > .page-enter {
+    width: min(100%, 1720px);
+    margin-inline: auto;
+}
+
+/* Clearer, more consistent navigation rhythm across role sidebars. */
+.sidebar .nav-link {
+    min-height: 44px;
+    border-radius: 10px;
+    transition: background-color var(--ui-motion), color var(--ui-motion),
+        border-color var(--ui-motion), transform var(--ui-motion);
+}
+
+.sidebar .nav-link:active {
+    transform: scale(0.985);
+}
+
+.sidebar .nav-section-label {
+    line-height: 1.3;
+}
+
+.header-page-title {
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.header-search-bar,
+.notif-btn,
+.user-menu-btn,
+.mobile-back-btn,
+.burger-btn {
+    transition: background-color var(--ui-motion), border-color var(--ui-motion),
+        box-shadow var(--ui-motion), transform var(--ui-motion);
+}
+
+/* One measured radius and hover treatment for shared surface components. */
+:where(
+    .adm-card,
+    .tch-card,
+    .glass-card,
+    .saas-card,
+    .ent-section,
+    .modern-table-card,
+    .panel-section,
+    .child-card,
+    .child-card-ent,
+    .adm-stat,
+    .stat-card,
+    .ent-kpi-card,
+    .saas-kpi-card,
+    .premium-hero-card,
+    .dashboard-hero
+) {
+    border-radius: var(--ui-radius-card);
+}
+
+:where(.adm-card, .tch-card, .glass-card, .saas-card, .ent-section, .modern-table-card) {
+    transition: border-color var(--ui-motion), box-shadow var(--ui-motion), transform var(--ui-motion);
+}
+
+:where(.adm-card, .tch-card, .glass-card, .saas-card, .ent-section, .modern-table-card):hover {
+    transform: translateY(-2px);
+}
+
+:where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head, .tch-card-head) {
+    row-gap: 10px;
+}
+
+:where(.adm-card-title, .ent-section-title, .saas-card-title, .tch-card-title) {
+    line-height: 1.3;
+    letter-spacing: -0.015em;
+}
+
+/* More predictable controls without changing their existing theme colors. */
+:where(.btn, .ent-btn, .saas-btn, .btn-modern-primary, .btn-modern-gold, .btn-modern-glass, .action-btn) {
+    border-radius: var(--ui-radius-control);
+    font-weight: 600;
+    transition: background-color var(--ui-motion), border-color var(--ui-motion),
+        color var(--ui-motion), box-shadow var(--ui-motion), transform var(--ui-motion);
+}
+
+:where(.btn, .ent-btn, .saas-btn, .btn-modern-primary, .btn-modern-gold, .btn-modern-glass):active {
+    transform: translateY(1px);
+}
+
+:where(
+    .form-control,
+    .form-select,
+    .ds-input,
+    .ds-select,
+    .ds-textarea,
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    select,
+    textarea
+) {
+    border-radius: var(--ui-radius-control);
+}
+
+/* Quieter table chrome and steadier row alignment in admin, teacher, and student views. */
+:where(.adm-table, .ent-table, .saas-table, .tch-table, .table) {
+    line-height: 1.45;
+}
+
+:where(.adm-table, .ent-table, .saas-table, .tch-table, .table) thead th {
+    line-height: 1.35;
+}
+
+:where(.adm-table, .ent-table, .saas-table, .tch-table, .table) tbody tr {
+    transition: background-color var(--ui-motion), border-color var(--ui-motion);
+}
+
+:where(.pagination, .page-actions, .header-actions, .card-actions, .directory-actions) {
+    row-gap: 10px;
+}
+
+:where(.badge, .ent-badge, .saas-badge, .ds-badge) {
+    line-height: 1.35;
+}
+
+.dropdown-menu {
+    border-radius: 12px;
+}
+
+.modal-content {
+    border-radius: 16px;
+}
+
+@media (max-width: 768px) {
+    .sidebar .nav-link {
+        min-height: 46px;
+    }
+
+    :where(.adm-card-head, .ent-section-header, .saas-card-header, .modern-table-card-head) {
+        row-gap: 10px;
+    }
+
+    :where(.btn, .ent-btn, .saas-btn, .btn-modern-primary, .btn-modern-gold, .btn-modern-glass) {
+        min-height: 42px;
+    }
+
+    .modal-content {
+        border-radius: 16px 16px 12px 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :where(
+        .sidebar .nav-link,
+        .header-search-bar,
+        .notif-btn,
+        .user-menu-btn,
+        .btn,
+        .ent-btn,
+        .saas-btn,
+        .adm-card,
+        .tch-card,
+        .glass-card,
+        .saas-card,
+        .ent-section,
+        .modern-table-card
+    ) {
+        transition-duration: 0.01ms;
+    }
+
+    :where(.adm-card, .tch-card, .glass-card, .saas-card, .ent-section, .modern-table-card):hover {
+        transform: none;
+    }
+}
