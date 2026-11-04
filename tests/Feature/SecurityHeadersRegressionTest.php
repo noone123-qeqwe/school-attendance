@@ -55,6 +55,15 @@ class SecurityHeadersRegressionTest extends TestCase
         $this->assertNotEmpty($response->headers->get('Content-Security-Policy'));
     }
 
+    public function test_csp_includes_the_configured_asset_cdn_origin()
+    {
+        config(['app.asset_url' => 'https://assets.school.example']);
+
+        $csp = $this->getCSP();
+
+        $this->assertStringContainsString('https://assets.school.example', $csp);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // CSP — unsafe-eval must never be present
     // ─────────────────────────────────────────────────────────────────────────

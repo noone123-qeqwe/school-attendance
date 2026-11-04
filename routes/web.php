@@ -121,7 +121,8 @@ Route::get('/storage/{path}', function (string $path) {
         abort(404);
     }
     return response()->file($fullPath, [
-        'Cache-Control' => 'public, max-age=86400',
+        'Cache-Control' => 'private, max-age=300, must-revalidate',
+        'X-Content-Type-Options' => 'nosniff',
     ]);
 })->where('path', '.*')->name('storage.fallback');
 

@@ -33,6 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
+            // Keep Laravel's signed private-file route separate from public /storage assets.
+            'url' => env('PRIVATE_STORAGE_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/private-storage'),
             'serve' => true,
             'throw' => false,
             'report' => false,

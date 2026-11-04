@@ -11,6 +11,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Optional static asset CDN origin (for example https://assets.example.edu).
+    'asset_url' => env('ASSET_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

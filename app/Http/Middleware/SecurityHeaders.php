@@ -48,13 +48,31 @@ class SecurityHeaders
         //   the app actually fetches at runtime; ws:/wss: for Reverb/Echo.
         // form-action: 'self' only — no third-party POST targets.
         //
-        $appHost = parse_url(config('app.url', ''), PHP_URL_HOST) ?: '';
+        $assetOrigin = '';
+        $assetUrl = (string) config('app.asset_url', '');
+        $assetParts = $assetUrl !== '' ? parse_url($assetUrl) : false;
+        if (filter_var($assetUrl, FILTER_VALIDATE_URL) && is_array($assetParts) && isset($assetParts['scheme'], $assetParts['host']) &&
+            in_array(strtolower($assetParts['scheme']), ['http', 'https'], true)) {
+            $assetOrigin = strtolower($assetParts['scheme']) . '://' . strtolower($assetParts['host']);
+            if (isset($assetParts['port'])) {
+                $assetOrigin .= ':' . $assetParts['port'];
+            }
+
+            $appParts = parse_url((string) config('app.url', ''));
+            $appOrigin = is_array($appParts) && isset($appParts['scheme'], $appParts['host'])
+                ? strtolower($appParts['scheme']) . '://' . strtolower($appParts['host']) . (isset($appParts['port']) ? ':' . $appParts['port'] : '')
+                : '';
+            if ($assetOrigin === $appOrigin) {
+                $assetOrigin = '';
+            }
+        }
+        $assetSource = $assetOrigin !== '' ? ' ' . $assetOrigin : '';
 
         $csp = implode(' ', [
             "default-src 'self';",
 
             // Scripts: per-request nonce plus self and unsafe-inline so inline event handlers and scripts execute securely
-            "script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://cdn.jsdelivr.net;",
+            "script-src 'self' 'unsafe-inline' 'nonce-{$nonce}' https://cdn.jsdelivr.net{$assetSource};",
             "script-src-attr 'unsafe-inline';",
 
             // Styles: nonce for inline styles; CDN origins for Bootstrap / Fonts.
@@ -62,17 +80,17 @@ class SecurityHeaders
             // nonce attribute requires templating changes across all views — this
             // is the pragmatic intermediate step. Remove once all inline styles
             // are extracted to .css files or given nonce attributes.
-            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com;",
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com{$assetSource};",
 
-            "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net;",
+            "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net{$assetSource};",
 
             // Images: data: / blob: for canvas/QR; specific remote hosts only.
-            "img-src 'self' data: blob: https://ui-avatars.com https://api.qrserver.com https://*.tile.openstreetmap.org https://res.cloudinary.com https://*.cloudinary.com;",
+            "img-src 'self' data: blob: https://ui-avatars.com https://api.qrserver.com https://*.tile.openstreetmap.org https://res.cloudinary.com https://*.cloudinary.com{$assetSource};",
 
             // Fetch / XHR: same-origin + WebSocket for real-time + Cloudinary + connectivity probe hosts
-            "connect-src 'self' wss: https://res.cloudinary.com https://*.cloudinary.com https://www.google.com https://1.1.1.1 https://cloudflare.com;",
+            "connect-src 'self' wss: https://res.cloudinary.com https://*.cloudinary.com https://www.google.com https://1.1.1.1 https://cloudflare.com{$assetSource};",
 
-            "media-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com;",
+            "media-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com{$assetSource};",
 
             // Workers / frames / base / objects
             "worker-src 'self' blob:;",
