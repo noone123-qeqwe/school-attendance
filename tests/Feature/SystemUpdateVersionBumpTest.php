@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Otp;
+use App\Services\AccountLockoutService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SystemUpdateVersionBumpTest extends TestCase
@@ -83,6 +86,7 @@ class SystemUpdateVersionBumpTest extends TestCase
         $swPath = public_path('sw.js');
         $this->assertFileExists($swPath);
         $initialContent = File::get($swPath);
+        $this->getJson('/pwa/version')->assertOk(); // Warm the server-side version cache before bumping.
         $baseVersion = $this->getBaselineVersion();
 
         try {
@@ -133,6 +137,11 @@ class SystemUpdateVersionBumpTest extends TestCase
         $base = $this->getBaselineVersion();
         $expectedNext1 = 'v' . $this->bumpSemver($base, 1);
         $expectedNext2 = 'v' . $this->bumpSemver($base, 2);
+        $accountIdentifier = 'update-cache-survival@example.com';
+        $accountLockoutKey = 'lockout:acc:' . sha1($accountIdentifier) . ':attempts';
+        $otpCooldownKey = 'otp_cooldown:' . sha1($accountIdentifier . ':verification');
+        Cache::put($accountLockoutKey, 5, 900);
+        Cache::put($otpCooldownKey, now()->addSeconds(900)->timestamp, 900);
 
         try {
             $res = $this->actingAs($superAdmin)->postJson(route('admin.system-update.run'));
@@ -145,6 +154,9 @@ class SystemUpdateVersionBumpTest extends TestCase
             $this->assertArrayHasKey('app_version', $data);
             $this->assertNotEmpty($data['version']);
             $this->assertEquals($expectedNext1, $data['app_version']);
+            $this->assertSame(5, Cache::get($accountLockoutKey));
+            $this->assertTrue(app(AccountLockoutService::class)->isAccountLocked($accountIdentifier));
+            $this->assertGreaterThan(0, Otp::getCooldownRemaining($accountIdentifier, 'verification'));
 
             // Subsequent update bump advances patch version and does NOT stay stuck on 2.3.5
             $res2 = $this->actingAs($superAdmin)->postJson(route('admin.system-update.run'));

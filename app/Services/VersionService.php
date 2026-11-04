@@ -620,12 +620,12 @@ class VersionService
         // 4. Bump sw.js Service Worker Cache Version
         $newSwVersion = $this->bumpSwJs();
 
-        // 5. Invalidate Caches
-        try { Cache::flush(); } catch (\Throwable $e) {}
+        // 5. The PWA version response cache key includes the service worker,
+        // version manifest, and cached SW version fingerprints. The new values
+        // naturally start a fresh entry without clearing unrelated cache data.
         Cache::forever('pwa_sw_version', $newSwVersion);
         try {
             \Illuminate\Support\Facades\Artisan::call('view:clear');
-            try { \Illuminate\Support\Facades\Artisan::call('config:clear'); } catch (\Throwable $ex) {}
         } catch (\Throwable $e) {}
 
         $this->refresh();

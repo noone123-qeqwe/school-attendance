@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Services\ChangelogService;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SoftwareUpdateChangelogTest extends TestCase
@@ -151,6 +152,27 @@ class SoftwareUpdateChangelogTest extends TestCase
         $data = $response->json();
         $this->assertEquals('1.4.2', $data['changelog']['version']);
         $this->assertEmpty($data['changelog']['security']);
+    }
+
+    public function test_pwa_version_response_is_cached_separately_for_requested_releases(): void
+    {
+        Cache::flush();
+
+        $this->mock(ChangelogService::class, function ($mock): void {
+            $mock->shouldReceive('getRelease')
+                ->once()
+                ->with('1.4.2')
+                ->andReturn(['version' => '1.4.2']);
+            $mock->shouldReceive('getRelease')
+                ->once()
+                ->with('1.4.3')
+                ->andReturn(['version' => '1.4.3']);
+        });
+
+        $this->getJson('/pwa/version?v=1.4.2')->assertJsonPath('changelog.version', '1.4.2');
+        $this->getJson('/pwa/version?v=1.4.2')->assertJsonPath('changelog.version', '1.4.2');
+        $this->getJson('/pwa/version?v=1.4.3')->assertJsonPath('changelog.version', '1.4.3');
+        $this->getJson('/pwa/version?v=1.4.3')->assertJsonPath('changelog.version', '1.4.3');
     }
 
     public function test_rendered_pwa_banner_is_clean_and_omits_update_notes(): void

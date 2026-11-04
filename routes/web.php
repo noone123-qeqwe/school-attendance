@@ -3,6 +3,7 @@
 use App\Http\Controllers\PTController;
 use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Cache;
 use App\Http\Controllers\ClassController;
 use App\Http\Controllers\HomeController;
 
@@ -128,12 +129,21 @@ Route::get('/SmartAttendance.apk', function () {
     return redirect()->route('pwa.download.apk');
 });
 
-// Real-time PWA Version Checker with memory cache
+// Real-time PWA version checker with short-lived server-side caching.
 Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Services\ChangelogService $changelogService, \App\Services\VersionService $versionService) {
     $swPath = public_path('sw.js');
     $swMtime = file_exists($swPath) ? filemtime($swPath) : time();
+    $versionPath = base_path('version.json');
+    $versionFingerprint = file_exists($versionPath) ? (@hash_file('sha256', $versionPath) ?: 'unreadable') : 'missing';
+    $cachedSwVersion = (string) Cache::get('pwa_sw_version', '');
     $requestedVer = $request->query('v');
-    $cacheKey = 'pwa_version_response_' . $swMtime . ($requestedVer ? '_' . preg_replace('/[^a-zA-Z0-9_.]/', '', $requestedVer) : '');
+    $requestedVer = is_string($requestedVer) && trim($requestedVer) !== '' ? trim($requestedVer) : null;
+    $cacheKey = 'pwa_version_response_' . hash('sha256', implode("\0", [
+        (string) $swMtime,
+        $versionFingerprint,
+        $cachedSwVersion,
+        $requestedVer !== null ? 'query:' . $requestedVer : 'default',
+    ]));
 
     $resolver = function () use ($swMtime, $requestedVer, $changelogService, $versionService) {
         $latestVersion = $versionService->getLatestVersion();
@@ -162,7 +172,7 @@ Route::get('/pwa/version', function (\Illuminate\Http\Request $request, \App\Ser
         ];
     };
 
-    $versionData = $resolver();
+    $versionData = Cache::remember($cacheKey, 30, $resolver);
 
     return response()->json($versionData, 200, [
         'Cache-Control' => 'no-cache, no-store, must-revalidate, max-age=0',

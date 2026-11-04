@@ -4,10 +4,13 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\Setting;
+use App\Models\Otp;
+use App\Services\AccountLockoutService;
 use App\Services\VersionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class CentralizedVersionSystemTest extends TestCase
@@ -112,6 +115,12 @@ class CentralizedVersionSystemTest extends TestCase
         /** @var VersionService $service */
         $service = app(VersionService::class);
 
+        $accountIdentifier = 'cache-survival@example.com';
+        $accountLockoutKey = 'lockout:acc:' . sha1($accountIdentifier) . ':attempts';
+        $otpCooldownKey = 'otp_cooldown:' . sha1($accountIdentifier . ':verification');
+        Cache::put($accountLockoutKey, 5, 900);
+        Cache::put($otpCooldownKey, now()->addSeconds(900)->timestamp, 900);
+
         $initialBuild = $service->getBuild();
         $expectedVersion = $service->incrementSemver($service->getLatestVersion(), 'minor');
 
@@ -143,6 +152,11 @@ class CentralizedVersionSystemTest extends TestCase
         // Check sw.js was updated with new cache version
         $sw = File::get(public_path('sw.js'));
         $this->assertStringContainsString($release['sw_version'], $sw);
+
+        // Publishing a release must not reset authentication safety state.
+        $this->assertSame(5, Cache::get($accountLockoutKey));
+        $this->assertTrue(app(AccountLockoutService::class)->isAccountLocked($accountIdentifier));
+        $this->assertGreaterThan(0, Otp::getCooldownRemaining($accountIdentifier, 'verification'));
     }
 
     public function test_blade_directives_render_version_and_build(): void

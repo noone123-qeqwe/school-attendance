@@ -316,16 +316,15 @@ class SystemUpdateController extends Controller
             ];
         }
 
-        // 3. Clear & Rebuild Application Caches
+        // 3. Clear compiled application caches without flushing the shared data store.
         try {
             Artisan::call('view:clear');
-            Artisan::call('cache:clear');
             try { Artisan::call('config:clear'); } catch (\Exception $ex) {}
             try { Artisan::call('route:clear'); } catch (\Exception $ex) {}
             $results[] = [
                 'step' => 'Cache Invalidation & Warmup',
                 'status' => 'success',
-                'message' => 'All compiled views, route tables, configuration files, and application caches cleared and re-primed.'
+                'message' => 'Compiled views, route tables, and configuration cache cleared. Shared application and authentication data caches were preserved.'
             ];
         } catch (\Exception $e) {
             $results[] = [
@@ -362,7 +361,6 @@ class SystemUpdateController extends Controller
         // Invalidate and re-prime view and route caches AFTER version is bumped
         try {
             Artisan::call('view:clear');
-            Artisan::call('cache:clear');
             try { Artisan::call('config:clear'); } catch (\Throwable $ex) {}
             try { Artisan::call('route:clear'); } catch (\Throwable $ex) {}
         } catch (\Throwable $e) {}
@@ -726,9 +724,6 @@ class SystemUpdateController extends Controller
         $swPath = public_path('sw.js');
         $newVersion = 'v8';
 
-        // Capture old mtime BEFORE modifying sw.js so we can forget the old cache key
-        $oldMtime = File::exists($swPath) ? filemtime($swPath) : 0;
-
         if (File::exists($swPath)) {
             $content = File::get($swPath);
             $currentNum = 7;
@@ -782,15 +777,6 @@ class SystemUpdateController extends Controller
 
         \Illuminate\Support\Facades\Cache::forever('pwa_sw_version', $newVersion);
 
-        // Flush the old and new mtime-based cached version responses so /pwa/version immediately returns the new tag
-        $newMtime = File::exists($swPath) ? filemtime($swPath) : 0;
-        if ($oldMtime) {
-            \Illuminate\Support\Facades\Cache::forget('pwa_version_response_' . $oldMtime);
-        }
-        if ($newMtime) {
-            \Illuminate\Support\Facades\Cache::forget('pwa_version_response_' . $newMtime);
-        }
-
         return $newVersion;
     }
 
@@ -808,7 +794,6 @@ class SystemUpdateController extends Controller
 
             // Clear compiled view cache so new version badge and asset query hashes take effect immediately
             try { Artisan::call('view:clear'); } catch (\Throwable $ex) {}
-            try { Artisan::call('cache:clear'); } catch (\Throwable $ex) {}
 
             // Broadcast Web Push announcement for the new semantic release
             try {
