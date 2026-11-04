@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -16,16 +17,50 @@ class AccountLockoutService
      */
     public function isPrivateOrLoopbackIp(?string $ip): bool
     {
-        if (!$ip) return false;
-        $clean = trim($ip);
-        if (in_array($clean, ['127.0.0.1', '::1', 'localhost'])) {
+        $clean = trim((string) $ip);
+        if ($clean === '') {
+            return false;
+        }
+
+        if (strtolower($clean) === 'localhost') {
             return true;
         }
-        return filter_var(
-            $clean,
-            FILTER_VALIDATE_IP,
-            FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE
-        ) === false;
+
+        $packedIp = @inet_pton($clean);
+        if ($packedIp === false) {
+            // Invalid or missing client IPs must not get the private-network exemption.
+            return false;
+        }
+
+        // Treat IPv4-mapped IPv6 values the same as their native IPv4 address.
+        if (strlen($packedIp) === 16 && substr($packedIp, 0, 12) === str_repeat("\0", 10) . "\xff\xff") {
+            $packedIp = substr($packedIp, 12);
+        }
+
+        $ranges = strlen($packedIp) === 4
+            ? [
+                ['10.0.0.0', 8],
+                ['172.16.0.0', 12],
+                ['192.168.0.0', 16],
+                ['127.0.0.0', 8],
+                ['169.254.0.0', 16],
+                ['0.0.0.0', 8],
+            ]
+            : [
+                ['::1', 128],
+                ['::', 128],
+                ['fc00::', 7],
+                ['fe80::', 10],
+            ];
+
+        foreach ($ranges as [$network, $prefix]) {
+            $packedNetwork = inet_pton($network);
+            if ($packedNetwork !== false && $this->ipMatchesNetwork($packedIp, $packedNetwork, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -103,28 +138,22 @@ class AccountLockoutService
     {
         $accKey = $this->accountKey($identifier);
         $ipKey  = $this->ipKey($ip);
-        $expiresAt = now()->addSeconds(self::LOCKOUT_SECONDS)->timestamp;
 
         $accAttempts = 0;
         if ($accKey) {
-            $accAttempts = (int) Cache::get($accKey . ':attempts', 0) + 1;
-            Cache::put($accKey . ':attempts', $accAttempts, self::LOCKOUT_SECONDS);
-            Cache::put($accKey . ':expires_at', $expiresAt, self::LOCKOUT_SECONDS);
+            $accAttempts = $this->incrementCounter($accKey, self::MAX_ATTEMPTS);
         }
 
         $ipAttempts = 0;
         if ($ipKey) {
-            $ipAttempts = (int) Cache::get($ipKey . ':attempts', 0) + 1;
-            Cache::put($ipKey . ':attempts', $ipAttempts, self::LOCKOUT_SECONDS);
-            Cache::put($ipKey . ':expires_at', $expiresAt, self::LOCKOUT_SECONDS);
+            $ipAttempts = $this->incrementCounter($ipKey, self::IP_MAX_ATTEMPTS);
         }
 
-        $isLocked = ($accAttempts >= self::MAX_ATTEMPTS) || ($ipAttempts >= self::IP_MAX_ATTEMPTS);
+        $ipLocked = $ipAttempts >= self::IP_MAX_ATTEMPTS && !$this->isPrivateOrLoopbackIp($ip);
+        $isLocked = ($accAttempts >= self::MAX_ATTEMPTS) || $ipLocked;
 
         if ($isLocked) {
             Log::warning('Account/IP locked out due to excessive failed attempts', [
-                'identifier' => $identifier,
-                'ip' => $ip,
                 'acc_attempts' => $accAttempts,
                 'ip_attempts' => $ipAttempts,
             ]);
@@ -167,12 +196,73 @@ class AccountLockoutService
     private function accountKey(?string $identifier): ?string
     {
         $clean = $this->normalizeIdentifier($identifier);
-        return $clean !== '' ? 'lockout:acc:' . sha1($clean) : null;
+        return $clean !== '' ? 'lockout:acc:' . $this->fingerprint($clean) : null;
     }
 
     private function ipKey(?string $ip): ?string
     {
         $clean = trim((string) $ip);
-        return $clean !== '' ? 'lockout:ip:' . sha1($clean) : null;
+        return $clean !== '' ? 'lockout:ip:' . $this->fingerprint($clean) : null;
+    }
+
+    private function fingerprint(string $value): string
+    {
+        $key = (string) config('app.key');
+        if ($key === '') {
+            $key = 'attendance-lockout';
+        }
+
+        return hash_hmac('sha256', $value, $key);
+    }
+
+    /**
+     * Increment a lockout window under a cache lock so concurrent failures are
+     * counted instead of overwriting one another on file and database stores.
+     */
+    private function incrementCounter(string $key, int $lockThreshold): int
+    {
+        try {
+            return Cache::lock($key . ':mutex', 10)->block(2, function () use ($key) {
+                $attemptKey = $key . ':attempts';
+                $attempts = (int) Cache::get($attemptKey, 0) + 1;
+                $expiresAt = now()->addSeconds(self::LOCKOUT_SECONDS)->timestamp;
+
+                Cache::put($attemptKey, $attempts, self::LOCKOUT_SECONDS);
+                Cache::put($key . ':expires_at', $expiresAt, self::LOCKOUT_SECONDS);
+
+                return $attempts;
+            });
+        } catch (LockTimeoutException) {
+            // Under lock-store contention, fail closed rather than drop a failed
+            // attempt and leave the account/IP unprotected.
+            $attemptKey = $key . ':attempts';
+            $attempts = max((int) Cache::get($attemptKey, 0) + 1, $lockThreshold);
+            Cache::put($attemptKey, $attempts, self::LOCKOUT_SECONDS);
+            Cache::put($key . ':expires_at', now()->addSeconds(self::LOCKOUT_SECONDS)->timestamp, self::LOCKOUT_SECONDS);
+
+            Log::warning('Rate limit counter lock timed out; applying a temporary fail-closed lockout', [
+                'counter' => hash('sha256', $key),
+            ]);
+
+            return $attempts;
+        }
+    }
+
+    private function ipMatchesNetwork(string $ip, string $network, int $prefix): bool
+    {
+        $wholeBytes = intdiv($prefix, 8);
+        $remainingBits = $prefix % 8;
+
+        if ($wholeBytes > 0 && substr($ip, 0, $wholeBytes) !== substr($network, 0, $wholeBytes)) {
+            return false;
+        }
+
+        if ($remainingBits === 0) {
+            return true;
+        }
+
+        $mask = (0xff << (8 - $remainingBits)) & 0xff;
+
+        return (ord($ip[$wholeBytes]) & $mask) === (ord($network[$wholeBytes]) & $mask);
     }
 }
