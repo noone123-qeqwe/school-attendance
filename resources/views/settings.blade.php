@@ -3899,17 +3899,17 @@
                                         <span class="bio-status-pill not-reg" id="statusBadgeFingerprint">Checking...</span>
                                     </div>
                                     <p class="bio-method-desc">
-                                        Authenticate in seconds using your device's built-in fingerprint scanner, Touch ID sensor, or USB security key.
+                                        Use your built-in fingerprint sensor when configured. Your device may also ask for a PIN.
                                     </p>
                                     <div class="bio-method-meta">
-                                        <span class="bio-spec-chip"><i class="bi bi-shield-check" style="color:#34d399;"></i> FIDO2 L3</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-cpu" style="color:#cfa46f;"></i> Secure Enclave</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-lightning-charge" style="color:#34d399;"></i> Sub-second</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-shield-check" style="color:#34d399;"></i> WebAuthn</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-cpu" style="color:#cfa46f;"></i> Device-protected key</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-lightning-charge" style="color:#34d399;"></i> User verified</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Option 2: Face Recognition -->
+                            <!-- Option 2: Device face sign-in -->
                             <div class="bio-method-card" id="methodCardFace" data-method="face" tabindex="0" role="button" aria-pressed="false" onclick="selectBiometricMethod('face')" onkeydown="if(event.key==='Enter'||event.key===' ')selectBiometricMethod('face')">
                                 <div class="bio-card-radio">
                                     <div class="bio-radio-inner">
@@ -3921,16 +3921,16 @@
                                 </div>
                                 <div class="bio-method-info">
                                     <div class="bio-method-header">
-                                        <span class="bio-method-name">Face Recognition</span>
+                                        <span class="bio-method-name">Face ID / Windows Hello</span>
                                         <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
                                     </div>
                                     <p class="bio-method-desc">
-                                        Sign in through your device's protected Face ID or Windows Hello prompt. Your browser never uploads a face image.
+                                        Verify with your device's protected Face ID or Windows Hello passkey prompt. Your browser never uploads a face image.
                                     </p>
                                     <div class="bio-method-meta">
-                                        <span class="bio-spec-chip"><i class="bi bi-eye" style="color:#38bdf8;"></i> 3D Topology</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-patch-check" style="color:#cfa46f;"></i> Anti-Spoofing</span>
-                                        <span class="bio-spec-chip"><i class="bi bi-lock" style="color:#38bdf8;"></i> Zero-Knowledge</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-eye" style="color:#38bdf8;"></i> On-device</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-patch-check" style="color:#cfa46f;"></i> Verified passkey</span>
+                                        <span class="bio-spec-chip"><i class="bi bi-lock" style="color:#38bdf8;"></i> No face upload</span>
                                     </div>
                                 </div>
                             </div>
@@ -3975,8 +3975,8 @@
                                                 <i class="bi bi-person-bounding-box bio-idle-face-icon"></i>
                                             </div>
                                         </div>
-                                        <div class="bio-preview-title">Register Face Recognition</div>
-                                        <div class="bio-preview-sub">Set up secure sign-in through Face ID or Windows Hello on this device. Your device may also offer a PIN.</div>
+                                        <div class="bio-preview-title">Register a device passkey</div>
+                                        <div class="bio-preview-sub">Confirm in your device prompt. Verification stays on the device; your device may offer a PIN.</div>
                                     </div>
                                 </div>
 
@@ -3985,7 +3985,7 @@
                                         <i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint
                                     </button>
                                     <span class="bio-hardware-note">
-                                        <i class="bi bi-shield-check text-success me-1"></i>FIDO2 / WebAuthn Hardware Security
+                                        <i class="bi bi-shield-check text-success me-1"></i>FIDO2 / WebAuthn Device Passkey Security
                                     </span>
                                 </div>
                             </div>
@@ -4027,47 +4027,25 @@
                                         </div>
                                     </div>
 
-                                    <!-- Face Recognition Realistic Scanner -->
+                                    <!-- Device verification prompt; no camera capture occurs here. -->
                                     <div id="faceActiveScanner" class="bio-scanner-display">
                                         <div class="face-scan-frame" id="faceScanFrame">
-                                            <button type="button" id="faceFlashToggleBtn" class="face-hud-flash-btn" onclick="toggleFaceFlash()" title="Toggle Flash / Fill Light" aria-label="Toggle Flash">
-                                                <i class="bi bi-lightning-fill"></i>
-                                                <span class="flash-text">Flash</span>
-                                            </button>
-                                            <div id="faceScreenFlashOverlay" class="face-screen-flash-overlay"></div>
                                             <span class="hud-corner hud-tl"></span>
                                             <span class="hud-corner hud-tr"></span>
                                             <span class="hud-corner hud-bl"></span>
                                             <span class="hud-corner hud-br"></span>
-                                            <div class="face-laser-bar" id="faceLaserBar"></div>
-
-                                            <video id="faceCameraVideo" class="face-camera-feed" autoplay playsinline muted style="display:none;"></video>
-                                            <div id="faceHoloGraphic" class="face-holo-mesh">
-                                                <div class="face-oval-target"></div>
-                                                <div class="face-mesh-node n-forehead"></div>
-                                                <div class="face-mesh-node n-eye-l"></div>
-                                                <div class="face-mesh-node n-eye-r"></div>
-                                                <div class="face-mesh-node n-nose"></div>
-                                                <div class="face-mesh-node n-mouth"></div>
-                                                <div class="face-mesh-node n-jaw-l"></div>
-                                                <div class="face-mesh-node n-jaw-r"></div>
-                                            </div>
+                                            <div class="face-holo-mesh"><i class="bi bi-person-check" aria-hidden="true"></i></div>
                                         </div>
-                                        <div class="bio-scanning-title" id="faceScanningTitle">Waiting for Device Verification...</div>
-                                        <div class="bio-scanning-sub" id="faceStatusSub">Complete the Face ID or Windows Hello prompt on this device</div>
-
-                                        <!-- Progressive Scan Feedback -->
+                                        <div class="bio-scanning-title" id="faceScanningTitle">Waiting for Device Verification</div>
+                                        <div class="bio-scanning-sub" id="faceStatusSub">Complete the protected prompt on your device. A PIN may be available.</div>
                                         <div class="bio-progress-container">
-                                            <div class="bio-progress-track">
-                                                <div class="bio-progress-fill cyan-fill" id="faceProgressFill" style="width: 0%;"></div>
-                                            </div>
+                                            <div class="bio-progress-track"><div class="bio-progress-fill cyan-fill" id="faceProgressFill" style="width: 0%;"></div></div>
                                             <div class="bio-progress-labels">
                                                 <span class="bio-progress-state" id="faceStateLabel">Waiting for device prompt...</span>
-                                                <span class="bio-progress-pct" id="facePctLabel">0%</span>
+                                                <span class="bio-progress-pct" id="facePctLabel">Ready</span>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
+                                    </div></div>
 
                                 <div class="bio-cancel-row">
                                     <button type="button" onclick="cancelBiometricRegistration()" class="cancel-btn bio-cancel-btn">
@@ -4087,7 +4065,7 @@
                                     </div>
                                     <div class="bio-success-title" id="bioSuccessTitle">Biometric Registered Successfully!</div>
                                     <div class="bio-success-desc" id="bioSuccessDesc">
-                                        Your credential has been securely enrolled in your hardware enclave and linked to your account.
+                                        Your device passkey has been verified and linked to your account.
                                     </div>
                                     <div class="bio-success-actions">
                                         <button type="button" onclick="resetToSelectionStage()" class="sbtn btn-emerald" style="padding:10px 24px;">
@@ -4134,7 +4112,7 @@
                             <div style="text-align:center;padding:32px 20px;color:#94a3b8;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);" id="noDevices">
                                 <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
                                 <div style="font-weight:700;color:#f8fafc;margin-bottom:4px;">No biometric credentials registered yet</div>
-                                <div style="font-size:.78rem;color:#94a3b8;">Choose Fingerprint or Face Recognition above to register this device.</div>
+                                <div style="font-size:.78rem;color:#94a3b8;">Choose a device sign-in method above to register this device.</div>
                             </div>
                         </div>
                     </div>
@@ -5495,11 +5473,10 @@ function isInAppBrowser() {
     return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Twitter|Snapchat|MicroMessenger|KAKAOTALK/i.test(ua);
 }
 
-// ── WebAuthn Biometrics Registration (Fingerprint & Face Recognition) ──
+// ── WebAuthn Device Biometrics (Fingerprint & Face ID / Windows Hello) ──
 let selectedBioMethod = 'fingerprint'; // 'fingerprint' | 'face'
 let bioAbortController = null;
 let bioScanProgressTimer = null;
-let bioCameraStream = null;
 
 function selectBiometricMethod(method) {
     if (method !== 'fingerprint' && method !== 'face') return;
@@ -5556,7 +5533,7 @@ function selectBiometricMethod(method) {
             displaySpan.textContent = 'Fingerprint';
             displaySpan.style.color = '#4ade80';
         } else {
-            displaySpan.textContent = 'Face Recognition';
+            displaySpan.textContent = 'Face ID / Windows Hello';
             displaySpan.style.color = '#38bdf8';
         }
     }
@@ -5567,7 +5544,7 @@ function selectBiometricMethod(method) {
             startBtn.style.background = '';
             startBtn.style.color = '';
         } else {
-            startBtn.innerHTML = '<i class="bi bi-person-bounding-box me-2"></i>Register Face Recognition';
+            startBtn.innerHTML = '<i class="bi bi-person-bounding-box me-2"></i>Register Device Passkey';
             startBtn.className = 'sbtn bio-primary-cta';
             startBtn.style.background = 'linear-gradient(135deg, #0284c7, #0ea5e9)';
             startBtn.style.color = '#ffffff';
@@ -5587,162 +5564,6 @@ function selectBiometricMethod(method) {
     }
 
     if (window.triggerHaptic) window.triggerHaptic('light');
-}
-
-async function startBioCamera() {
-    const video = document.getElementById('faceCameraVideo');
-    const holo = document.getElementById('faceHoloGraphic');
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        if (video) video.style.display = 'none';
-        if (holo) holo.style.display = 'block';
-        return;
-    }
-    try {
-        bioCameraStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: 'user',
-                width: { ideal: 640 },
-                height: { ideal: 640 }
-            }
-        });
-        if (video && bioCameraStream) {
-            video.srcObject = bioCameraStream;
-            video.style.display = 'block';
-            if (holo) holo.style.display = 'none';
-            try { await video.play(); } catch(e) {}
-        }
-    } catch(err) {
-        console.warn('Camera feed unavailable or denied for face HUD, falling back to holographic mesh:', err);
-        if (video) video.style.display = 'none';
-        if (holo) holo.style.display = 'block';
-    }
-}
-
-let isFaceFlashActive = false;
-
-async function toggleFaceFlash(stream, overlayId, btnId) {
-    isFaceFlashActive = !isFaceFlashActive;
-    const overlay = document.getElementById(overlayId || 'faceScreenFlashOverlay');
-    const btn = document.getElementById(btnId || 'faceFlashToggleBtn');
-    const frame = document.getElementById('faceScanFrame') || document.querySelector('.bio-login-camera-box');
-    const scannerCard = document.getElementById('bioScannerStage');
-    
-    if (overlay) {
-        if (isFaceFlashActive) {
-            overlay.classList.add('active');
-        } else {
-            overlay.classList.remove('active');
-        }
-    }
-
-    if (frame) {
-        if (isFaceFlashActive) {
-            frame.classList.add('flash-on');
-        } else {
-            frame.classList.remove('flash-on');
-        }
-    }
-
-    if (scannerCard) {
-        if (isFaceFlashActive) {
-            scannerCard.classList.add('flash-on');
-        } else {
-            scannerCard.classList.remove('flash-on');
-        }
-    }
-    
-    if (btn) {
-        btn.classList.remove('flash-suggest-pulse');
-        const textSpan = btn.querySelector('.flash-text');
-        if (isFaceFlashActive) {
-            btn.classList.add('active-flash');
-            if (textSpan) textSpan.textContent = 'Flash ON';
-            btn.setAttribute('title', 'Turn Flash / Fill Light OFF');
-            btn.setAttribute('aria-pressed', 'true');
-        } else {
-            btn.classList.remove('active-flash');
-            if (textSpan) textSpan.textContent = 'Flash';
-            btn.setAttribute('title', 'Turn Flash / Fill Light ON');
-            btn.setAttribute('aria-pressed', 'false');
-        }
-    }
-
-    // Hardware camera torch if supported
-    const activeStream = stream || bioCameraStream;
-    if (activeStream) {
-        try {
-            const track = activeStream.getVideoTracks()[0];
-            if (track) {
-                const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                if (capabilities.torch || ('torch' in capabilities)) {
-                    await track.applyConstraints({
-                        advanced: [{ torch: isFaceFlashActive }]
-                    });
-                }
-            }
-        } catch(e) {
-            console.warn('Hardware torch toggle not supported on this device/track:', e);
-        }
-    }
-
-    if (window.triggerHaptic) window.triggerHaptic('light');
-    return isFaceFlashActive;
-}
-
-function resetFaceFlash(overlayId, btnId) {
-    isFaceFlashActive = false;
-    const overlay = document.getElementById(overlayId || 'faceScreenFlashOverlay');
-    const btn = document.getElementById(btnId || 'faceFlashToggleBtn');
-    const frame = document.getElementById('faceScanFrame') || document.querySelector('.bio-login-camera-box');
-    const scannerCard = document.getElementById('bioScannerStage');
-    if (overlay) overlay.classList.remove('active');
-    if (frame) frame.classList.remove('flash-on');
-    if (scannerCard) scannerCard.classList.remove('flash-on');
-    if (btn) {
-        btn.classList.remove('active-flash');
-        btn.classList.remove('flash-suggest-pulse');
-        const textSpan = btn.querySelector('.flash-text');
-        if (textSpan) textSpan.textContent = 'Flash';
-        btn.setAttribute('title', 'Toggle Flash / Fill Light');
-        btn.setAttribute('aria-pressed', 'false');
-    }
-}
-
-function triggerCaptureFlash(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    container.classList.remove('face-flash-burst');
-    void container.offsetWidth;
-    container.classList.add('face-flash-burst');
-    setTimeout(() => {
-        container.classList.remove('face-flash-burst');
-    }, 400);
-}
-
-function stopBioCamera() {
-    faceAnalysisActive = false;
-    resetFaceFlash('faceScreenFlashOverlay', 'faceFlashToggleBtn');
-    if (bioCameraStream) {
-        try {
-            bioCameraStream.getTracks().forEach(track => {
-                try {
-                    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
-                    if (capabilities.torch) {
-                        track.applyConstraints({ advanced: [{ torch: false }] });
-                    }
-                } catch(e){}
-                track.stop();
-            });
-        } catch(e){}
-        bioCameraStream = null;
-    }
-    const video = document.getElementById('faceCameraVideo');
-    if (video) {
-        video.srcObject = null;
-        video.style.display = 'none';
-    }
-    const holo = document.getElementById('faceHoloGraphic');
-    if (holo) holo.style.display = 'block';
 }
 
 function updateProgressiveFeedback(pct, stateText) {
@@ -5793,12 +5614,12 @@ function triggerBiometricDetected() {
 }
 
 function cancelBiometricRegistration() {
-    faceAnalysisActive = false;
+
     if (bioAbortController) {
         try { bioAbortController.abort(); } catch(e){}
         bioAbortController = null;
     }
-    stopBioCamera();
+
     clearInterval(bioScanProgressTimer);
     bioScanProgressTimer = null;
     isBioRegistrationRunning = false;
@@ -5865,14 +5686,15 @@ async function loadDevices() {
         list.innerHTML = '';
 
         const hasFp = Array.isArray(devices) && devices.some(d => (d.biometric_type || 'fingerprint') === 'fingerprint');
-        const hasFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face');
+        const hasFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face' && d.is_secure_face_credential);
+        const hasLegacyFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face' && !d.is_secure_face_credential);
 
         if (badgeFp) {
             badgeFp.textContent = hasFp ? 'Active' : 'Not Registered';
             badgeFp.className = 'bio-status-pill ' + (hasFp ? 'reg-active' : 'not-reg');
         }
         if (badgeFace) {
-            badgeFace.textContent = hasFace ? 'Active' : 'Not Registered';
+            badgeFace.textContent = hasFace ? 'Active' : (hasLegacyFace ? 'Re-enroll' : 'Not Registered');
             badgeFace.className = 'bio-status-pill ' + (hasFace ? 'reg-active' : 'not-reg');
         }
 
@@ -5885,19 +5707,27 @@ async function loadDevices() {
             }
 
             const activeSummary = document.createElement('div');
-            activeSummary.style.cssText = 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
+            const hasUsableCredential = hasFp || hasFace;
+            const enrolledMethods = [
+                ...(hasFp ? ['Fingerprint'] : []),
+                ...(hasFace ? ['Face ID / Windows Hello'] : [])
+            ];
+            activeSummary.style.cssText = hasUsableCredential
+                ? 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;'
+                : 'padding:14px 18px;color:#fbbf24;font-size:.875rem;background:rgba(245,158,11,0.12);border-radius:12px;border:1px solid rgba(245,158,11,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
             activeSummary.innerHTML = `
-                <i class="bi bi-check-circle-fill" style="font-size:1.2rem;color:#22c55e;"></i>
+                <i class="bi ${hasUsableCredential ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}" style="font-size:1.2rem;color:${hasUsableCredential ? '#22c55e' : '#f59e0b'};"></i>
                 <div>
-                    <div>Biometric authentication is <strong>active</strong> on your account.</div>
-                    <div style="font-size:.76rem;color:#86efac;font-weight:400;margin-top:2px;">
-                        Enrolled: ${hasFp && hasFace ? 'Fingerprint & Face Recognition' : (hasFace ? 'Face Recognition' : 'Fingerprint')}
+                    <div>${hasUsableCredential ? 'Device sign-in is <strong>active</strong> on your account.' : 'A camera-only face profile <strong>cannot sign in</strong>. Register a device passkey below.'}</div>
+                    <div style="font-size:.76rem;color:${hasUsableCredential ? '#86efac' : '#fcd34d'};font-weight:400;margin-top:2px;">
+                        ${hasUsableCredential ? `Enrolled: ${enrolledMethods.join(' and ')}` : 'Remove the old profile after registering a passkey.'}
                     </div>
                 </div>`;
             list.appendChild(activeSummary);
 
             devices.forEach(d => {
                 const isFace = d.biometric_type === 'face';
+                const isLegacyFace = isFace && !d.is_secure_face_credential;
                 const div = document.createElement('div');
                 div.className = 'device-item-card';
                 div.innerHTML = `
@@ -5913,7 +5743,7 @@ async function loadDevices() {
                                 </span>
                             </div>
                             <div class="device-item-meta">
-                                <span class="device-meta-verified"><i class="bi bi-shield-check me-1"></i>Hardware Enclave</span>
+                                <span class="device-meta-verified"><i class="bi ${isLegacyFace ? 'bi-exclamation-triangle' : 'bi-shield-check'} me-1"></i>${isLegacyFace ? 'Camera-only legacy profile · re-enroll' : 'Device-protected credential'}</span>
                                 <span class="device-meta-dot">•</span>
                                 <span class="device-meta-date">${d.created_at ? new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Registered'}</span>
                             </div>
@@ -5937,7 +5767,7 @@ async function loadDevices() {
             emptyDiv.innerHTML = `
                 <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
                 <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
-                <div style="font-size:.78rem;color:#b39b82;">Select Fingerprint or Face Recognition above and click Continue to register.</div>
+                <div style="font-size:.78rem;color:#b39b82;">Select a device sign-in method above and continue to register.</div>
             `;
             list.appendChild(emptyDiv);
         }
@@ -6019,1339 +5849,15 @@ async function prefetchWebAuthn() {
     isFetchingOptions = false;
 }
 
-// ── Decoupled Biometric Registration (Fingerprint WebAuthn / Camera Face Recognition) ──
+// ── Device Passkey Registration ──
 let isBioRegistrationRunning = false;
 
-function showFaceError(title, message) {
-    stopBioCamera();
-    clearInterval(bioScanProgressTimer);
-    bioScanProgressTimer = null;
-    isBioRegistrationRunning = false;
-
-    const scanningView = document.getElementById('bioScanningView');
-    const idleView = document.getElementById('bioIdleView');
-    const successView = document.getElementById('bioSuccessView');
-    const errorView = document.getElementById('bioErrorView');
-    const errorTitle = document.getElementById('bioErrorTitle');
-    const errorDesc = document.getElementById('bioErrorDesc');
-
-    if (idleView) idleView.style.display = 'none';
-    if (scanningView) scanningView.style.display = 'none';
-    if (successView) successView.style.display = 'none';
-    if (errorView) {
-        errorView.style.display = 'block';
-        if (errorTitle) errorTitle.textContent = title;
-        if (errorDesc) errorDesc.innerHTML = message;
-    }
-}
-
-// Reusable offscreen canvas & native detector cache for real-time face frame processing
-let _faceCanvas = null;
-let _nativeFaceDetector = null;
-let faceAnalysisActive = false;
-
-if ('FaceDetector' in window) {
-    try {
-        _nativeFaceDetector = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 5 });
-    } catch(e) {
-        _nativeFaceDetector = null;
-    }
-}
-
-/**
- * Performs computer vision analysis on the video feed to detect and verify human faces.
- * Supports native FaceDetector API and adaptive multi-spectral computer vision cascade.
- * Returns:
- * {
- *   status: 'VALID_FACE' | 'NO_FACE' | 'MULTIPLE_FACES' | 'TOO_FAR' | 'TOO_CLOSE' | 'OFF_CENTER' | 'PARTIAL_FACE' | 'BLURRY' | 'UNUSABLE' | 'ALIGNING',
- *   passed: boolean,
- *   facesCount: number,
- *   score: number, // 0 to 100 matching confidence
- *   descriptor?: string,
- *   publicKey?: string,
- *   message: string
- * }
- */
-async function detectAndAnalyzeFaceFrame(video) {
-    // 1. Validate video readyState and dimensions
-    if (!video || !video.videoWidth || !video.videoHeight || video.readyState < 2) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-    if (video.paused && video.srcObject) {
-        try { await video.play(); } catch(e) {}
-    }
-
-    const vw = 160;
-    const vh = 160;
-    if (!_faceCanvas) {
-        _faceCanvas = document.createElement('canvas');
-        _faceCanvas.width = vw;
-        _faceCanvas.height = vh;
-    }
-    const ctx = _faceCanvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
-    // Undistorted center-crop: crop square region from center of video to preserve true facial aspect ratio
-    const srcW = video.videoWidth;
-    const srcH = video.videoHeight;
-    const minDim = Math.min(srcW, srcH);
-    const sx = Math.max(0, (srcW - minDim) / 2);
-    const sy = Math.max(0, (srcH - minDim) / 2);
-
-    ctx.drawImage(video, sx, sy, minDim, minDim, 0, 0, vw, vh);
-    const imgData = ctx.getImageData(0, 0, vw, vh);
-    const pixels = imgData.data;
-
-    // 2. Global Frame Quality Checks (Illumination, Glare, Blurriness)
-    let totalLuma = 0;
-    let minLuma = 255;
-    let maxLuma = 0;
-    let sampledCount = 0;
-    let lumaSumSq = 0;
-
-    // Edge gradient energy accumulator (Sharpness/Blurriness check)
-    let totalEdgeEnergy = 0;
-    let edgeSamples = 0;
-
-    for (let y = 0; y < vh; y += 2) {
-        for (let x = 0; x < vw; x += 2) {
-            const idx = (y * vw + x) * 4;
-            const r = pixels[idx];
-            const g = pixels[idx + 1];
-            const b = pixels[idx + 2];
-            const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-
-            totalLuma += luma;
-            lumaSumSq += luma * luma;
-            if (luma < minLuma) minLuma = luma;
-            if (luma > maxLuma) maxLuma = luma;
-            sampledCount++;
-
-            // Sample edge gradients in central facial zone
-            if (x >= 24 && x <= 136 && y >= 24 && y <= 136 && x + 2 < vw && y + 2 < vh) {
-                const rightIdx = (y * vw + (x + 2)) * 4;
-                const downIdx = ((y + 2) * vw + x) * 4;
-                const rightLuma = 0.299 * pixels[rightIdx] + 0.587 * pixels[rightIdx + 1] + 0.114 * pixels[rightIdx + 2];
-                const downLuma = 0.299 * pixels[downIdx] + 0.587 * pixels[downIdx + 1] + 0.114 * pixels[downIdx + 2];
-                totalEdgeEnergy += Math.abs(luma - rightLuma) + Math.abs(luma - downLuma);
-                edgeSamples++;
-            }
-        }
-    }
-
-    const avgLuma = sampledCount > 0 ? (totalLuma / sampledCount) : 0;
-    const lumaVariance = sampledCount > 0 ? (lumaSumSq / sampledCount - avgLuma * avgLuma) : 0;
-    const lumaStdDev = Math.sqrt(Math.max(0, lumaVariance));
-    const lumaContrast = maxLuma - minLuma;
-    const avgEdgeGradient = edgeSamples > 0 ? (totalEdgeEnergy / edgeSamples) : 0;
-
-    // Reject dark / covered frame (supports low-light rooms with screen flash fill light)
-    if (avgLuma < 10 || (avgLuma < 14 && lumaContrast < 12 && lumaStdDev < 4.0)) {
-        return {
-            status: 'UNUSABLE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'Lighting is too dark. Please improve lighting.'
-        };
-    }
-
-    // Reject extreme glare / washed out frame
-    if (avgLuma > 248 && lumaContrast < 18) {
-        return {
-            status: 'UNUSABLE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'Too much glare. Please improve lighting and face the camera.'
-        };
-    }
-
-    // Reject blurry / unfocused frame (relaxed threshold to support 720p webcams while detecting motion blur)
-    if (avgEdgeGradient < 0.28) {
-        return {
-            status: 'BLURRY',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'Camera image is blurry. Please hold steady in front of the camera.'
-        };
-    }
-
-    // 3. Multi-Method Face Detection
-    // Step A: Check Native Shape Detection API if available
-    let nativeFace = null;
-    if (_nativeFaceDetector) {
-        try {
-            const detected = await _nativeFaceDetector.detect(_faceCanvas);
-            if (Array.isArray(detected)) {
-                if (detected.length > 1) {
-                    return {
-                        status: 'MULTIPLE_FACES',
-                        passed: false,
-                        facesCount: detected.length,
-                        score: 0,
-                        message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
-                    };
-                }
-                if (detected.length === 1 && detected[0].boundingBox) {
-                    nativeFace = detected[0].boundingBox;
-                }
-            }
-        } catch(err) {
-            // Fall through to computer vision cascade
-        }
-    }
-
-    // Step B: Computer Vision Adaptive Multi-Spectral Segmentation Pipeline
-    const gridCols = 10;
-    const gridRows = 10;
-    const cellW = vw / gridCols; // 16px
-    const cellH = vh / gridRows; // 16px
-    const cellSkinCounts = new Array(gridCols * gridRows).fill(0);
-    const cellTotalCounts = new Array(gridCols * gridRows).fill(0);
-
-    for (let y = 0; y < vh; y += 2) {
-        const row = Math.min(gridRows - 1, Math.floor(y / cellH));
-        for (let x = 0; x < vw; x += 2) {
-            const col = Math.min(gridCols - 1, Math.floor(x / cellW));
-            const cellIdx = row * gridCols + col;
-            cellTotalCounts[cellIdx]++;
-
-            const idx = (y * vw + x) * 4;
-            const r = pixels[idx];
-            const g = pixels[idx + 1];
-            const b = pixels[idx + 2];
-            const sumRgb = r + g + b || 1;
-
-            // Normalized RGB space (chrominance)
-            const normR = r / sumRgb;
-            const normG = g / sumRgb;
-
-            // YCbCr color space
-            const yVal  = 0.299 * r + 0.587 * g + 0.114 * b;
-            const cbVal = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
-            const crVal = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
-
-            // HSV Hue & Saturation
-            const maxC = Math.max(r, g, b);
-            const minC = Math.min(r, g, b);
-            const delta = maxC - minC;
-            let hue = 0;
-            if (delta > 0) {
-                if (maxC === r) hue = ((g - b) / delta) % 6;
-                else if (maxC === g) hue = (b - r) / delta + 2;
-                else hue = (r - g) / delta + 4;
-                hue = Math.round(hue * 60);
-                if (hue < 0) hue += 360;
-            }
-            const sat = maxC > 0 ? (delta / maxC) : 0;
-            const val = maxC / 255;
-
-            // Multi-spectral skin tone classifier ensemble (inclusive of light, tan, olive, dark brown, and deep tones)
-            const isYcbcrSkin = (yVal >= 8 && yVal <= 255) &&
-                                (cbVal >= 55 && cbVal <= 170) &&
-                                (crVal >= 110 && crVal <= 200);
-
-            const isNormRgbSkin = (normR >= 0.24 && normR <= 0.74) &&
-                                  (normG >= 0.18 && normG <= 0.46);
-
-            const isHsvSkin = ((hue >= 0 && hue <= 68) || (hue >= 305 && hue <= 360)) &&
-                              (sat >= 0.04 && sat <= 0.90) &&
-                              (val >= 0.06);
-
-            const isSkin = (isYcbcrSkin && (isNormRgbSkin || isHsvSkin)) ||
-                           (isNormRgbSkin && isHsvSkin) ||
-                           (isYcbcrSkin && (r > b - 15)) ||
-                           (r > 55 && g > 30 && b > 15 && r >= g && (r - b) >= 6) ||
-                           (Math.abs(r - g) < 22 && r > b && (r - b) >= 8);
-
-            if (isSkin) {
-                cellSkinCounts[cellIdx]++;
-            }
-        }
-    }
-
-    // Spatial Grid Clustering
-    const activeGrid = new Array(gridCols * gridRows).fill(false);
-    let activeCount = 0;
-    for (let i = 0; i < gridCols * gridRows; i++) {
-        const density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-        if (density >= 0.20) {
-            activeGrid[i] = true;
-            activeCount++;
-        }
-    }
-
-    // Adaptive fallback if lighting makes skin counts softer
-    if (activeCount < 4) {
-        for (let i = 0; i < gridCols * gridRows; i++) {
-            const density = cellTotalCounts[i] > 0 ? (cellSkinCounts[i] / cellTotalCounts[i]) : 0;
-            if (density >= 0.12) {
-                activeGrid[i] = true;
-            }
-        }
-    }
-
-    // Find connected components in the grid
-    const visited = new Array(gridCols * gridRows).fill(false);
-    const clusters = [];
-
-    for (let r = 0; r < gridRows; r++) {
-        for (let c = 0; c < gridCols; c++) {
-            const idx = r * gridCols + c;
-            if (activeGrid[idx] && !visited[idx]) {
-                const queue = [[r, c]];
-                visited[idx] = true;
-                const clusterCells = [];
-
-                while (queue.length > 0) {
-                    const [currR, currC] = queue.shift();
-                    clusterCells.push([currR, currC]);
-
-                    const neighbors = [
-                        [currR - 1, currC], [currR + 1, currC],
-                        [currR, currC - 1], [currR, currC + 1]
-                    ];
-                    for (const [nr, nc] of neighbors) {
-                        if (nr >= 0 && nr < gridRows && nc >= 0 && nc < gridCols) {
-                            const nIdx = nr * gridCols + nc;
-                            if (activeGrid[nIdx] && !visited[nIdx]) {
-                                visited[nIdx] = true;
-                                queue.push([nr, nc]);
-                            }
-                        }
-                    }
-                }
-
-                if (clusterCells.length >= 2) {
-                    let minR = gridRows, maxR = 0, minC = gridCols, maxC = 0;
-                    for (const [cr, cc] of clusterCells) {
-                        if (cr < minR) minR = cr;
-                        if (cr > maxR) maxR = cr;
-                        if (cc < minC) minC = cc;
-                        if (cc > maxC) maxC = cc;
-                    }
-
-                    // Trim excessive bottom rows (neck / clothing) if cluster spans almost all vertical rows
-                    if (minR <= 2 && maxR >= 8 && (maxR - minR >= 7)) {
-                        maxR = Math.min(maxR, 7);
-                    }
-
-                    const centerCol = (minC + maxC) / 2;
-                    const centerRw = (minR + maxR) / 2;
-                    const distFromCenter = Math.hypot(centerCol - 4.5, centerRw - 4.5);
-                    clusters.push({
-                        cells: clusterCells.length,
-                        minC: minC, maxC: maxC,
-                        minR: minR, maxR: maxR,
-                        centerC: centerCol,
-                        centerR: centerRw,
-                        distFromCenter: distFromCenter,
-                        wPx: (maxC - minC + 1) * cellW,
-                        hPx: (maxR - minR + 1) * cellH
-                    });
-                }
-            }
-        }
-    }
-
-    // Check for distinct multiple faces separated horizontally
-    if (clusters.length > 1) {
-        clusters.sort((a, b) => b.cells - a.cells);
-        const primary = clusters[0];
-        const secondary = clusters[1];
-        const secondaryAspect = secondary.hPx / Math.max(1, secondary.wPx);
-        // Only trigger multiple faces if secondary cluster is a substantial face-shaped head
-        if (secondary.cells >= 12 && secondary.cells >= primary.cells * 0.70 &&
-            Math.abs(primary.centerC - secondary.centerC) >= 3.8 &&
-            secondaryAspect >= 0.75 && secondaryAspect <= 2.2) {
-            return {
-                status: 'MULTIPLE_FACES',
-                passed: false,
-                facesCount: clusters.length,
-                score: 0,
-                message: 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.'
-            };
-        }
-        clusters.sort((a, b) => {
-            return (a.distFromCenter * 0.7 - a.cells * 0.3) - (b.distFromCenter * 0.7 - b.cells * 0.3);
-        });
-    }
-
-    // If nativeFace exists, integrate its bounding box; otherwise use primary CV cluster
-    let faceX = 0, faceY = 0, faceW = 0, faceH = 0;
-    let isNativeDetected = false;
-    if (nativeFace && nativeFace.width >= 20 && nativeFace.height >= 24) {
-        faceX = Math.max(0, Math.floor(nativeFace.x));
-        faceY = Math.max(0, Math.floor(nativeFace.y));
-        faceW = Math.min(vw - faceX, Math.floor(nativeFace.width));
-        faceH = Math.min(vh - faceY, Math.floor(nativeFace.height));
-        isNativeDetected = true;
-    } else if (clusters.length > 0) {
-        const primaryCluster = clusters[0];
-        faceX = Math.max(0, Math.floor(primaryCluster.minC * cellW));
-        faceY = Math.max(0, Math.floor(primaryCluster.minR * cellH));
-        faceW = Math.min(vw - faceX, Math.floor(primaryCluster.wPx));
-        faceH = Math.min(vh - faceY, Math.floor(primaryCluster.hPx));
-    } else {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 0,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
-    // 4. Distance / Proximity Validation (Real-Time Guidance)
-    const wRatio = faceW / vw;
-    if (wRatio < 0.14 || faceW < 22 || faceH < 26) {
-        return {
-            status: 'TOO_FAR',
-            passed: false,
-            facesCount: 1,
-            score: 30,
-            message: 'Move closer to the camera.'
-        };
-    }
-    if (wRatio > 0.96 || (faceW > 154 && faceH > 154)) {
-        return {
-            status: 'TOO_CLOSE',
-            passed: false,
-            facesCount: 1,
-            score: 32,
-            message: 'Move farther away from the camera.'
-        };
-    }
-
-    // 5. Centering & Partial Face Cut-Off Validation
-    const centerX = faceX + faceW / 2;
-    const centerY = faceY + faceH / 2;
-    const offX = Math.abs(centerX - (vw / 2)) / vw;
-    const offY = Math.abs(centerY - (vh / 2)) / vh;
-
-    if (offX > 0.34 || offY > 0.36) {
-        return {
-            status: 'OFF_CENTER',
-            passed: false,
-            facesCount: 1,
-            score: 40,
-            message: 'Center your face inside the target frame.'
-        };
-    }
-
-    // Partial face check: only flag if significantly cut off at edges
-    const isClippedLeft = faceX <= 0 && (faceX + faceW) < 80;
-    const isClippedRight = (faceX + faceW) >= 159 && faceX > 80;
-    const isClippedBottom = (faceY + faceH) >= 159 && faceY > 90;
-    if (isClippedLeft || isClippedRight || isClippedBottom) {
-        return {
-            status: 'PARTIAL_FACE',
-            passed: false,
-            facesCount: 1,
-            score: 42,
-            message: 'Center your face. Face is partially outside the frame.'
-        };
-    }
-
-    // 6. Facial Aspect Ratio Validation
-    const aspect = faceH / Math.max(1, faceW);
-    if (aspect < 0.60 || aspect > 2.8) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: 20,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
-    // 7. Illumination Normalization (Gray-World White Balance + Adaptive Gamma)
-    let faceRSum = 0, faceGSum = 0, faceBSum = 0, facePixelCount = 0;
-    for (let dy = 0; dy < faceH; dy += 2) {
-        const curY = faceY + dy;
-        for (let dx = 0; dx < faceW; dx += 2) {
-            const curX = faceX + dx;
-            const pIdx = (curY * vw + curX) * 4;
-            faceRSum += pixels[pIdx];
-            faceGSum += pixels[pIdx + 1];
-            faceBSum += pixels[pIdx + 2];
-            facePixelCount++;
-        }
-    }
-
-    const faceAvgR = facePixelCount > 0 ? (faceRSum / facePixelCount) : 128;
-    const faceAvgG = facePixelCount > 0 ? (faceGSum / facePixelCount) : 128;
-    const faceAvgB = facePixelCount > 0 ? (faceBSum / facePixelCount) : 128;
-    const faceGray = (faceAvgR + faceAvgG + faceAvgB) / 3;
-
-    // Gray-World White Balance scaling factors (constrained between 0.70 and 1.35 to avoid channel clipping)
-    const scaleR = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgR)));
-    const scaleG = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgG)));
-    const scaleB = Math.max(0.70, Math.min(1.35, faceGray / Math.max(1, faceAvgB)));
-
-    // Adaptive continuous gamma: boost underexposed shadow details, suppress bright specular highlights
-    const faceAvgLuma = 0.299 * faceAvgR + 0.587 * faceAvgG + 0.114 * faceAvgB;
-    const gamma = faceAvgLuma < 75 
-        ? Math.max(0.48, Math.min(0.92, Math.log(0.48) / Math.log(Math.max(0.04, faceAvgLuma / 255.0))))
-        : (faceAvgLuma > 170 ? Math.min(1.38, 1.0 + (faceAvgLuma - 170) / 220.0) : 1.0);
-
-    // Auto-engage fill light assistance if face is severely underexposed
-    if (faceAvgLuma < 30 && !isFaceFlashActive) {
-        const flashBtn = document.getElementById('faceFlashToggleBtn');
-        if (flashBtn) flashBtn.classList.add('flash-suggest-pulse');
-    }
-
-    // Dual-axis illumination disparity detection: measure horizontal & vertical illumination balance
-    let leftHalfLumaSum = 0, leftHalfCount = 0;
-    let rightHalfLumaSum = 0, rightHalfCount = 0;
-    let topHalfLumaSum = 0, topHalfCount = 0;
-    let bottomHalfLumaSum = 0, bottomHalfCount = 0;
-    const halfW = faceW / 2;
-    const halfH = faceH / 2;
-
-    for (let dy = 0; dy < faceH; dy += 4) {
-        const curY = faceY + dy;
-        for (let dx = 0; dx < faceW; dx += 4) {
-            const curX = faceX + dx;
-            const pIdx = (curY * vw + curX) * 4;
-            const pxLuma = 0.299 * pixels[pIdx] + 0.587 * pixels[pIdx + 1] + 0.114 * pixels[pIdx + 2];
-            if (dx < halfW) {
-                leftHalfLumaSum += pxLuma;
-                leftHalfCount++;
-            } else {
-                rightHalfLumaSum += pxLuma;
-                rightHalfCount++;
-            }
-            if (dy < halfH) {
-                topHalfLumaSum += pxLuma;
-                topHalfCount++;
-            } else {
-                bottomHalfLumaSum += pxLuma;
-                bottomHalfCount++;
-            }
-        }
-    }
-
-    const avgLeftLuma = leftHalfCount > 0 ? (leftHalfLumaSum / leftHalfCount) : faceAvgLuma;
-    const avgRightLuma = rightHalfCount > 0 ? (rightHalfLumaSum / rightHalfCount) : faceAvgLuma;
-    const lumaDisparityX = (avgLeftLuma - avgRightLuma) / Math.max(20, (avgLeftLuma + avgRightLuma) / 2);
-
-    const avgTopLuma = topHalfCount > 0 ? (topHalfLumaSum / topHalfCount) : faceAvgLuma;
-    const avgBottomLuma = bottomHalfCount > 0 ? (bottomHalfLumaSum / bottomHalfCount) : faceAvgLuma;
-    const lumaDisparityY = (avgTopLuma - avgBottomLuma) / Math.max(20, (avgTopLuma + avgBottomLuma) / 2);
-
-    // Peripheral background luminance (for backlight silhouette detection)
-    const bgBorderLuma = (avgLuma * 1.5 - faceAvgLuma * 0.5);
-    const isBacklit = bgBorderLuma > 1.35 * faceAvgLuma && faceAvgLuma < 110;
-    const backlightBoost = isBacklit ? Math.min(1.40, 1.0 + (bgBorderLuma - faceAvgLuma) / 180.0) : 1.0;
-
-    const getNormLuma = (px, py) => {
-        const clX = Math.max(0, Math.min(vw - 1, px));
-        const clY = Math.max(0, Math.min(vh - 1, py));
-        const idx = (clY * vw + clX) * 4;
-        const rNorm = Math.pow(Math.min(255, pixels[idx] * scaleR) / 255, gamma) * 255;
-        const gNorm = Math.pow(Math.min(255, pixels[idx + 1] * scaleG) / 255, gamma) * 255;
-        const bNorm = Math.pow(Math.min(255, pixels[idx + 2] * scaleB) / 255, gamma) * 255;
-        let baseLuma = 0.299 * rNorm + 0.587 * gNorm + 0.114 * bNorm;
-
-        // Apply backlight recovery boost to facial core pixels
-        if (isBacklit) {
-            baseLuma = Math.min(255, baseLuma * backlightBoost);
-        }
-
-        // Dual-axis lighting compensation for window side-shadows and overhead ceiling lights
-        let compX = 1.0;
-        if (Math.abs(lumaDisparityX) > 0.12) {
-            const relX = (px - faceX) / Math.max(1, faceW) - 0.5;
-            compX = Math.max(0.72, Math.min(1.32, 1.0 - relX * lumaDisparityX * 0.70));
-        }
-        let compY = 1.0;
-        if (Math.abs(lumaDisparityY) > 0.14) {
-            const relY = (py - faceY) / Math.max(1, faceH) - 0.5;
-            compY = Math.max(0.75, Math.min(1.28, 1.0 - relY * lumaDisparityY * 0.55));
-        }
-
-        return Math.min(255, baseLuma * compX * compY);
-    };
-
-    // 8. Topological Feature Analysis & Landmarks (on Illumination-Normalized Luma)
-    let leftEyeLumaSum = 0, leftEyeCount = 0;
-    let rightEyeLumaSum = 0, rightEyeCount = 0;
-    let noseBridgeLumaSum = 0, noseBridgeCount = 0;
-    let cheekLumaSum = 0, cheekCount = 0;
-    let mouthLumaSum = 0, mouthCount = 0;
-
-    for (let dy = 0; dy < faceH; dy += 2) {
-        const curY = faceY + dy;
-        const normY = dy / faceH;
-
-        for (let dx = 0; dx < faceW; dx += 2) {
-            const curX = faceX + dx;
-            const normX = dx / faceW;
-            const pLuma = getNormLuma(curX, curY);
-
-            // Zone 1: Eyes & Nose Bridge
-            if (normY >= 0.26 && normY <= 0.50) {
-                if (normX >= 0.14 && normX <= 0.44) {
-                    leftEyeLumaSum += pLuma;
-                    leftEyeCount++;
-                } else if (normX >= 0.56 && normX <= 0.86) {
-                    rightEyeLumaSum += pLuma;
-                    rightEyeCount++;
-                } else if (normX > 0.44 && normX < 0.56) {
-                    noseBridgeLumaSum += pLuma;
-                    noseBridgeCount++;
-                }
-            }
-
-            // Zone 2: Cheeks / Mid-face
-            if (normY >= 0.50 && normY <= 0.70) {
-                if ((normX >= 0.14 && normX <= 0.42) || (normX >= 0.58 && normX <= 0.86)) {
-                    cheekLumaSum += pLuma;
-                    cheekCount++;
-                }
-            }
-
-            // Zone 3: Mouth / Lower face
-            if (normY >= 0.70 && normY <= 0.88) {
-                if (normX >= 0.26 && normX <= 0.74) {
-                    mouthLumaSum += pLuma;
-                    mouthCount++;
-                }
-            }
-        }
-    }
-
-    const avgLeftEye    = leftEyeCount > 0 ? (leftEyeLumaSum / leftEyeCount) : 128;
-    const avgRightEye   = rightEyeCount > 0 ? (rightEyeLumaSum / rightEyeCount) : 128;
-    const avgNoseBridge = noseBridgeCount > 0 ? (noseBridgeLumaSum / noseBridgeCount) : 128;
-    const avgCheek      = cheekCount > 0 ? (cheekLumaSum / cheekCount) : avgLuma;
-    const avgMouth      = mouthCount > 0 ? (mouthLumaSum / mouthCount) : avgLuma;
-
-    // 9. Compute Facial Confidence & Verification Score (0 - 100)
-    let score = isNativeDetected ? 65 : 54; // Base confidence for confirmed face
-
-    // A. Aspect ratio fit (0 - 15 pts)
-    if (aspect >= 0.85 && aspect <= 1.95) {
-        score += 15;
-    } else if (aspect >= 0.70 && aspect <= 2.30) {
-        score += 10;
-    } else {
-        score += 5;
-    }
-
-    // B. Centering and scale optimality (0 - 15 pts)
-    if (offX <= 0.20 && offY <= 0.22 && wRatio >= 0.20 && wRatio <= 0.85) {
-        score += 15;
-    } else if (offX <= 0.30 && offY <= 0.32) {
-        score += 10;
-    } else {
-        score += 5;
-    }
-
-    // C. Eye socket bilateral depression & symmetry (0 - 12 pts)
-    const eyeCheekRatioL = avgCheek > 0 ? (avgLeftEye / avgCheek) : 1;
-    const eyeCheekRatioR = avgCheek > 0 ? (avgRightEye / avgCheek) : 1;
-    const eyeSymmetryDiff = Math.abs(avgLeftEye - avgRightEye) / (avgLeftEye + avgRightEye + 1);
-
-    if (eyeCheekRatioL <= 1.25 && eyeCheekRatioR <= 1.25) {
-        score += 6;
-    } else {
-        score += 3;
-    }
-
-    if (eyeSymmetryDiff < 0.45) {
-        score += 6;
-    } else if (eyeSymmetryDiff < 0.65) {
-        score += 4;
-    } else {
-        score += 2;
-    }
-
-    // D. Nose bridge highlight vs eye contrast (0 - 8 pts)
-    const noseEyeDiff = avgNoseBridge - (avgLeftEye + avgRightEye) / 2;
-    if (noseEyeDiff > -10) {
-        score += 8;
-    } else if (noseEyeDiff > -20) {
-        score += 5;
-    } else {
-        score += 3;
-    }
-
-    // E. Mouth cavity depression / contrast (0 - 6 pts)
-    const mouthCheekRatio = avgCheek > 0 ? (avgMouth / avgCheek) : 1;
-    if (mouthCheekRatio < 1.25) {
-        score += 6;
-    } else {
-        score += 3;
-    }
-
-    // F. Edge definition & sharpness bonus (0 - 6 pts)
-    if (avgEdgeGradient >= 0.9) {
-        score += 6;
-    } else if (avgEdgeGradient >= 0.35) {
-        score += 5;
-    } else {
-        score += 3;
-    }
-
-    score = Math.min(96, Math.max(0, Math.round(score)));
-
-    // 10. Enforce Recognition & Matching Threshold
-    const MATCHING_THRESHOLD = 70;
-
-    if (score < 35) {
-        return {
-            status: 'NO_FACE',
-            passed: false,
-            facesCount: 0,
-            score: score,
-            message: 'No face detected. Please position your face in front of the camera.'
-        };
-    }
-
-    if (score >= 35 && score < MATCHING_THRESHOLD) {
-        return {
-            status: 'ALIGNING',
-            passed: false,
-            facesCount: 1,
-            score: score,
-            message: 'Face detected. Please hold still and center your face in the frame.'
-        };
-    }
-
-    // 11. Extract 48-Dimensional Illumination-Invariant Biometric Feature Vector
-    // Part 1: 8 Primary Scale & Illumination Invariant Landmark Ratios (Prefix compatible)
-    const eyeSpanRatio = 0.42;
-    const eyeToNoseRatio = 0.22;
-    const noseToMouthRatio = 0.23;
-    const leftEyeContrast = Math.min(2.0, avgLeftEye / Math.max(1, avgCheek));
-    const rightEyeContrast = Math.min(2.0, avgRightEye / Math.max(1, avgCheek));
-    const nasalProminence = Math.min(2.0, avgNoseBridge / Math.max(1, (avgLeftEye + avgRightEye) / 2));
-    const mouthCavityContrast = Math.min(2.0, avgMouth / Math.max(1, avgCheek));
-    const normAspect = Math.min(2.0, aspect / 1.3);
-
-    const primaryLandmarkRatios = [
-        Math.round(eyeSpanRatio * 1000) / 1000,
-        Math.round(eyeToNoseRatio * 1000) / 1000,
-        Math.round(noseToMouthRatio * 1000) / 1000,
-        Math.round(leftEyeContrast * 1000) / 1000,
-        Math.round(rightEyeContrast * 1000) / 1000,
-        Math.round(nasalProminence * 1000) / 1000,
-        Math.round(mouthCavityContrast * 1000) / 1000,
-        Math.round(normAspect * 1000) / 1000,
-    ];
-
-    // Part 2: 16 Spatial Gradient Orientation Energy Zones (4x4 sub-grid across facial region)
-    const gradientEnergies = [];
-    const subGridSize = 4;
-    const subCellW = faceW / subGridSize;
-    const subCellH = faceH / subGridSize;
-    let totalGradEnergy = 0;
-
-    for (let gy = 0; gy < subGridSize; gy++) {
-        for (let gx = 0; gx < subGridSize; gx++) {
-            let zoneGradSum = 0;
-            let zoneSamples = 0;
-            const startX = Math.floor(faceX + gx * subCellW);
-            const startY = Math.floor(faceY + gy * subCellH);
-
-            for (let sy = 2; sy < subCellH - 2; sy += 2) {
-                for (let sx = 2; sx < subCellW - 2; sx += 2) {
-                    const cx = startX + sx;
-                    const cy = startY + sy;
-                    const dx = getNormLuma(cx + 1, cy) - getNormLuma(cx - 1, cy);
-                    const dy = getNormLuma(cx, cy + 1) - getNormLuma(cx, cy - 1);
-                    zoneGradSum += Math.sqrt(dx * dx + dy * dy);
-                    zoneSamples++;
-                }
-            }
-
-            const zoneAvg = zoneSamples > 0 ? (zoneGradSum / zoneSamples) : 0;
-            gradientEnergies.push(zoneAvg);
-            totalGradEnergy += zoneAvg * zoneAvg;
-        }
-    }
-
-    // L2-normalize gradient orientation energies
-    const gradL2Norm = Math.sqrt(Math.max(1e-6, totalGradEnergy));
-    const normalizedGrads = gradientEnergies.map(val => Math.round((val / gradL2Norm) * 1000) / 1000);
-
-    // Part 3: 8 Enhanced Invariant Structural & Symmetry Quotients
-    const eyeSymmetryRatio = Math.round((1.0 - Math.min(1.0, eyeSymmetryDiff)) * 1000) / 1000;
-    const nasalSlopeRatio = Math.round(Math.min(2.0, avgNoseBridge / Math.max(1, avgMouth)) * 1000) / 1000;
-    const midfaceToJawRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, avgMouth)) * 1000) / 1000;
-    const browToEyeRatio = Math.round(Math.min(2.0, (avgNoseBridge + avgCheek) / Math.max(1, avgLeftEye + avgRightEye)) * 1000) / 1000;
-    const leftCheekRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, faceAvgLuma)) * 1000) / 1000;
-    const rightCheekRatio = Math.round(Math.min(2.0, avgCheek / Math.max(1, avgRightEye)) * 1000) / 1000;
-    const foreheadToNoseRatio = Math.round(Math.min(2.0, faceAvgLuma / Math.max(1, avgNoseBridge)) * 1000) / 1000;
-    const lowerFacialProportion = Math.round(Math.min(2.0, (avgMouth + avgCheek) / Math.max(1, 2 * faceAvgLuma)) * 1000) / 1000;
-
-    const enhancedRatios = [
-        eyeSymmetryRatio,
-        nasalSlopeRatio,
-        midfaceToJawRatio,
-        browToEyeRatio,
-        leftCheekRatio,
-        rightCheekRatio,
-        foreheadToNoseRatio,
-        lowerFacialProportion
-    ];
-
-    // Part 4: 16 Uniform Local Binary Pattern (ULBP) Micro-Texture Energy Zones (4x4 sub-grid)
-    const lbpEnergies = [];
-    let totalLbpEnergy = 0;
-
-    for (let gy = 0; gy < subGridSize; gy++) {
-        for (let gx = 0; gx < subGridSize; gx++) {
-            let zoneLbpSum = 0;
-            let zoneLbpSamples = 0;
-            const startX = Math.floor(faceX + gx * subCellW);
-            const startY = Math.floor(faceY + gy * subCellH);
-
-            for (let sy = 2; sy < subCellH - 2; sy += 2) {
-                for (let sx = 2; sx < subCellW - 2; sx += 2) {
-                    const cx = startX + sx;
-                    const cy = startY + sy;
-                    const centerVal = getNormLuma(cx, cy);
-
-                    const p0 = getNormLuma(cx - 1, cy - 1);
-                    const p1 = getNormLuma(cx, cy - 1);
-                    const p2 = getNormLuma(cx + 1, cy - 1);
-                    const p3 = getNormLuma(cx + 1, cy);
-                    const p4 = getNormLuma(cx + 1, cy + 1);
-                    const p5 = getNormLuma(cx, cy + 1);
-                    const p6 = getNormLuma(cx - 1, cy + 1);
-                    const p7 = getNormLuma(cx - 1, cy);
-
-                    const b0 = p0 >= centerVal ? 1 : 0;
-                    const b1 = p1 >= centerVal ? 1 : 0;
-                    const b2 = p2 >= centerVal ? 1 : 0;
-                    const b3 = p3 >= centerVal ? 1 : 0;
-                    const b4 = p4 >= centerVal ? 1 : 0;
-                    const b5 = p5 >= centerVal ? 1 : 0;
-                    const b6 = p6 >= centerVal ? 1 : 0;
-                    const b7 = p7 >= centerVal ? 1 : 0;
-
-                    const transitions = (b0 !== b1 ? 1 : 0) + (b1 !== b2 ? 1 : 0) + (b2 !== b3 ? 1 : 0) +
-                                      (b3 !== b4 ? 1 : 0) + (b4 !== b5 ? 1 : 0) + (b5 !== b6 ? 1 : 0) +
-                                      (b6 !== b7 ? 1 : 0) + (b7 !== b0 ? 1 : 0);
-
-                    const isUniform = transitions <= 2 ? 1 : 0;
-                    const bitSum = b0 + b1 + b2 + b3 + b4 + b5 + b6 + b7;
-                    zoneLbpSum += isUniform * (bitSum / 8.0);
-                    zoneLbpSamples++;
-                }
-            }
-
-            const zoneLbpAvg = zoneLbpSamples > 0 ? (zoneLbpSum / zoneLbpSamples) : 0.5;
-            lbpEnergies.push(zoneLbpAvg);
-            totalLbpEnergy += zoneLbpAvg * zoneLbpAvg;
-        }
-    }
-
-    const lbpL2Norm = Math.sqrt(Math.max(1e-6, totalLbpEnergy));
-    const normalizedLbp = lbpEnergies.map(val => Math.round((val / lbpL2Norm) * 1000) / 1000);
-
-    // Part 5: 8 Multi-Scale Triangular & Invariant Structural Quotients
-    const interOcularMouthRatio = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye) / Math.max(1, 2 * avgMouth)) * 1000) / 1000;
-    const bilateralNoseDepthRatio = Math.round(Math.min(2.0, Math.abs(avgNoseBridge - avgLeftEye) / Math.max(1, Math.abs(avgNoseBridge - avgRightEye) + 1)) * 1000) / 1000;
-    const verticalContourSymmetry = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye + avgNoseBridge) / Math.max(1, avgCheek + 2 * avgMouth)) * 1000) / 1000;
-    const cheekJawContourGrad = Math.round(Math.min(2.0, avgCheek / Math.max(1, (avgCheek + avgMouth) / 2)) * 1000) / 1000;
-    const philtrumVerticalGrad = Math.round(Math.min(2.0, Math.abs(avgNoseBridge - avgMouth) / Math.max(1, avgCheek)) * 1000) / 1000;
-    const foreheadSpecularDamping = Math.round(Math.min(2.0, faceAvgLuma / Math.max(1, (avgLeftEye + avgRightEye) / 2)) * 1000) / 1000;
-    const skinPoreMicroEnergy = Math.round(Math.min(2.0, avgEdgeGradient / Math.max(0.2, (avgLeftEye + avgRightEye) / 100.0)) * 1000) / 1000;
-    const facialPerimeterCurvature = Math.round(Math.min(2.0, (avgLeftEye + avgRightEye + avgMouth) / Math.max(1, 3 * faceAvgLuma)) * 1000) / 1000;
-
-    const triangularContourRatios = [
-        interOcularMouthRatio,
-        bilateralNoseDepthRatio,
-        verticalContourSymmetry,
-        cheekJawContourGrad,
-        philtrumVerticalGrad,
-        foreheadSpecularDamping,
-        skinPoreMicroEnergy,
-        facialPerimeterCurvature
-    ];
-
-    // Part 6: 8 Multi-Radius Texture Contrast Energy Zones (2x4 upper/lower facial zones evaluating radius r=2 contrast)
-    const multiRadiusEnergies = [];
-    let mrTotalEnergy = 0;
-    const mrRows = 2, mrCols = 4;
-    const mrCellW = faceW / mrCols;
-    const mrCellH = faceH / mrRows;
-
-    for (let mry = 0; mry < mrRows; mry++) {
-        for (let mrx = 0; mrx < mrCols; mrx++) {
-            let zoneMrSum = 0;
-            let zoneMrSamples = 0;
-            const mrStartX = Math.floor(faceX + mrx * mrCellW);
-            const mrStartY = Math.floor(faceY + mry * mrCellH);
-
-            for (let my = 3; my < mrCellH - 3; my += 3) {
-                for (let mx = 3; mx < mrCellW - 3; mx += 3) {
-                    const pxX = mrStartX + mx;
-                    const pxY = mrStartY + my;
-                    const cVal = getNormLuma(pxX, pxY);
-                    const surroundVal = (getNormLuma(pxX - 2, pxY) + getNormLuma(pxX + 2, pxY) + 
-                                         getNormLuma(pxX, pxY - 2) + getNormLuma(pxX, pxY + 2)) / 4.0;
-                    zoneMrSum += Math.abs(cVal - surroundVal);
-                    zoneMrSamples++;
-                }
-            }
-
-            const zoneMrAvg = zoneMrSamples > 0 ? (zoneMrSum / zoneMrSamples) : 0.4;
-            multiRadiusEnergies.push(zoneMrAvg);
-            mrTotalEnergy += zoneMrAvg * zoneMrAvg;
-        }
-    }
-
-    const mrL2Norm = Math.sqrt(Math.max(1e-6, mrTotalEnergy));
-    const normalizedMultiRadiusTexture = multiRadiusEnergies.map(val => Math.round((val / mrL2Norm) * 1000) / 1000);
-
-    // 64-dimensional combined invariant vector (Prefix order: 8 Primary Ratios + 16 Gradients + 8 Enhanced Ratios + 16 ULBP + 8 Triangular Invariants + 8 Multi-Radius Texture)
-    const featureVector = [
-        ...primaryLandmarkRatios,
-        ...normalizedGrads,
-        ...enhancedRatios,
-        ...normalizedLbp,
-        ...triangularContourRatios,
-        ...normalizedMultiRadiusTexture
-    ];
-    const vectorJson = JSON.stringify(featureVector);
-    const vectorPayload = btoa(vectorJson).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-
-    // Single genuine face verified above security threshold!
-    const descriptor = 'face_desc_' + Math.round(score) + '_' + Math.round(avgLeftEye) + '_' + Math.round(avgRightEye) + '_' + Math.round(avgNoseBridge) + '_' + Math.round(avgMouth) + '_v2_' + vectorPayload;
-    const publicKey = 'pub_face_' + btoa(descriptor).replace(/=/g, '');
-
-    return {
-        status: 'VALID_FACE',
-        passed: true,
-        facesCount: 1,
-        score: score,
-        faceCenterX: centerX,
-        faceCenterY: centerY,
-        featureVector: featureVector,
-        descriptor: descriptor,
-        publicKey: publicKey,
-        message: 'Face verified ✓'
-    };
-}
-
-// Backward-compatible alias for unit/canvas tests
-async function analyzeFaceVideoFrame(video) {
-    const res = await detectAndAnalyzeFaceFrame(video);
-    if (!res.passed) {
-        const err = new Error(res.message);
-        err.title = res.status === 'MULTIPLE_FACES' ? 'Multiple Faces' : 'Face Detection';
-        return { passed: false, error: err };
-    }
-    return res;
-}
-
-async function executeFaceCaptureAndVerificationSequence(video) {
-    const scanningTitle = document.getElementById('faceScanningTitle');
-    const statusSub = document.getElementById('faceStatusSub');
-    const faceScanFrame = document.getElementById('faceScanFrame');
-    const faceLaserBar = document.getElementById('faceLaserBar');
-
-    faceAnalysisActive = true;
-    let consecutiveValidFrames = 0;
-    const REQUIRED_CONSECUTIVE_FRAMES = 4; // Fast, stable verification (~0.4s)
-    let verifiedFramesHistory = [];
-    const SCAN_TIMEOUT_MS = 45000; // 45 seconds timeout
-    const startTime = Date.now();
-    let currentProgress = 15;
-    let lastVerifiedResult = null;
-    const flashBtn = document.getElementById('faceFlashToggleBtn');
-
-    updateProgressiveFeedback(currentProgress, 'Searching for face in camera frame...');
-    if (scanningTitle) scanningTitle.textContent = 'Position Your Face';
-    if (statusSub) statusSub.textContent = 'No face detected. Please position your face in front of the camera.';
-    if (faceScanFrame) {
-        faceScanFrame.classList.remove('bio-detected');
-        faceScanFrame.style.borderColor = 'rgba(6, 182, 212, 0.4)';
-    }
-
-    const sleep = (ms) => new Promise((resolve, reject) => {
-        const timer = setTimeout(() => resolve(), ms);
-        if (bioAbortController?.signal) {
-            bioAbortController.signal.addEventListener('abort', () => {
-                clearTimeout(timer);
-                const err = new Error('Registration cancelled');
-                err.name = 'AbortError';
-                reject(err);
-            }, { once: true });
-        }
-    });
-
-    // Continuous Real-Time Face Detection & Verification Loop
-    while (faceAnalysisActive && !bioAbortController?.signal?.aborted) {
-        // Check timeout
-        if (Date.now() - startTime > SCAN_TIMEOUT_MS) {
-            faceAnalysisActive = false;
-            const timeoutErr = new Error('Face recognition timed out. No valid face was verified within the time limit. Please position your face clearly in front of the camera and try again.');
-            timeoutErr.title = 'Face Detection Timed Out';
-            throw timeoutErr;
-        }
-
-        const analysis = await detectAndAnalyzeFaceFrame(video);
-
-        if (!faceAnalysisActive || bioAbortController?.signal?.aborted) {
-            break;
-        }
-
-        if (analysis.status === 'NO_FACE') {
-            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            currentProgress = Math.max(15, currentProgress - 2);
-            updateProgressiveFeedback(currentProgress, 'No face detected. Please position your face in front of the camera.');
-            if (scanningTitle) scanningTitle.textContent = 'Position Your Face';
-            if (statusSub) statusSub.textContent = 'No face detected. Please position your face in front of the camera.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(239, 68, 68, 0.6)';
-            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
-        } else if (analysis.status === 'MULTIPLE_FACES') {
-            consecutiveValidFrames = 0;
-            currentProgress = 15;
-            updateProgressiveFeedback(currentProgress, 'Multiple faces detected');
-            if (scanningTitle) scanningTitle.textContent = 'Multiple Faces Detected';
-            if (statusSub) statusSub.textContent = 'Multiple faces detected. Please ensure only one person is visible. Multiple faces detected. Please ensure only the intended person is visible.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(239, 68, 68, 0.8)';
-            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #ef4444 35%, #f87171 50%, #ef4444 65%, transparent 100%)';
-        } else if (analysis.status === 'TOO_FAR') {
-            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            updateProgressiveFeedback(currentProgress, 'Move closer');
-            if (scanningTitle) scanningTitle.textContent = 'Move Closer';
-            if (statusSub) statusSub.textContent = 'Move closer to the camera.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.7)';
-            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #f59e0b 35%, #fbbf24 50%, #f59e0b 65%, transparent 100%)';
-        } else if (analysis.status === 'TOO_CLOSE') {
-            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            updateProgressiveFeedback(currentProgress, 'Move farther away');
-            if (scanningTitle) scanningTitle.textContent = 'Move Farther Away';
-            if (statusSub) statusSub.textContent = 'Move farther away from the camera.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.7)';
-            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #f59e0b 35%, #fbbf24 50%, #f59e0b 65%, transparent 100%)';
-        } else if (analysis.status === 'OFF_CENTER' || analysis.status === 'PARTIAL_FACE') {
-            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            updateProgressiveFeedback(currentProgress, 'Center your face');
-            if (scanningTitle) scanningTitle.textContent = 'Center Your Face';
-            if (statusSub) statusSub.textContent = analysis.message || 'Center your face inside the target frame.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.7)';
-            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #f59e0b 35%, #fbbf24 50%, #f59e0b 65%, transparent 100%)';
-        } else if (analysis.status === 'BLURRY') {
-            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            updateProgressiveFeedback(currentProgress, 'Camera image is blurry. Please hold steady.');
-            if (scanningTitle) scanningTitle.textContent = 'Camera Image Blurry';
-            if (statusSub) statusSub.textContent = 'Camera image is blurry. Please hold steady in front of the camera.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.6)';
-        } else if (analysis.status === 'UNUSABLE') {
-            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            if (flashBtn && !isFaceFlashActive) flashBtn.classList.add('flash-suggest-pulse');
-            updateProgressiveFeedback(currentProgress, 'Improve lighting');
-            if (scanningTitle) scanningTitle.textContent = 'Improve Lighting';
-            if (statusSub) statusSub.textContent = isFaceFlashActive ? 'Lighting is dark. Please improve lighting and face the camera.' : 'Lighting is dark. Tap Flash to illuminate your face, or improve lighting.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(245, 158, 11, 0.6)';
-        } else if (analysis.status === 'ALIGNING') {
-            if (flashBtn) flashBtn.classList.remove('flash-suggest-pulse');
-            consecutiveValidFrames = Math.max(0, consecutiveValidFrames - 1);
-            const alignProgress = Math.max(30, Math.min(65, Math.round(analysis.score || 45)));
-            currentProgress = Math.max(currentProgress, alignProgress);
-            updateProgressiveFeedback(currentProgress, 'Face detected. Aligning with reticle...');
-            if (scanningTitle) scanningTitle.textContent = 'Align Your Face';
-            if (statusSub) statusSub.textContent = analysis.message || 'Face detected. Please hold still and center your face in the frame.';
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(6, 182, 212, 0.6)';
-            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #06b6d4 35%, #38bdf8 50%, #06b6d4 65%, transparent 100%)';
-        } else if (analysis.status === 'VALID_FACE' && analysis.passed) {
-            if (flashBtn) flashBtn.classList.remove('flash-suggest-pulse');
-            consecutiveValidFrames++;
-            lastVerifiedResult = analysis;
-            verifiedFramesHistory.push(analysis);
-
-            // Reset frame and laser styles to active cyan
-            if (faceScanFrame) faceScanFrame.style.borderColor = 'rgba(6, 182, 212, 0.85)';
-            if (faceLaserBar) faceLaserBar.style.background = 'linear-gradient(90deg, transparent 0%, #22c55e 35%, #4ade80 50%, #22c55e 65%, transparent 100%)';
-
-            // Progressive scan feedback as face remains verified
-            const stepRatio = consecutiveValidFrames / REQUIRED_CONSECUTIVE_FRAMES;
-            const targetProg = Math.min(96, Math.max(60, Math.round(40 + stepRatio * 56)));
-            currentProgress = Math.max(currentProgress, targetProg);
-
-            if (consecutiveValidFrames <= 1) {
-                if (scanningTitle) scanningTitle.textContent = 'Face Detected';
-                if (statusSub) statusSub.textContent = 'Hold still, verifying facial landmarks...';
-                updateProgressiveFeedback(currentProgress, `Face detected (${analysis.score}% match). Hold still...`);
-            } else if (consecutiveValidFrames <= 2) {
-                if (scanningTitle) scanningTitle.textContent = 'Analyzing Facial Geometry';
-                if (statusSub) statusSub.textContent = 'Mapping 3D contours and anti-spoofing...';
-                updateProgressiveFeedback(currentProgress, 'Mapping 3D biometric landmarks...');
-            } else if (consecutiveValidFrames < REQUIRED_CONSECUTIVE_FRAMES) {
-                if (scanningTitle) scanningTitle.textContent = 'Verifying Biometric Threshold';
-                if (statusSub) statusSub.textContent = `Confidence score ${analysis.score}%. Confirming biometric stability...`;
-                updateProgressiveFeedback(currentProgress, `Threshold passed (${analysis.score}%). Finalizing...`);
-            } else {
-                // Passive liveness & anti-spoofing verification across frame trajectory
-                let totalCentroidDrift = 0;
-                for (let fi = 1; fi < verifiedFramesHistory.length; fi++) {
-                    const prev = verifiedFramesHistory[fi - 1];
-                    const curr = verifiedFramesHistory[fi];
-                    totalCentroidDrift += Math.hypot((curr.faceCenterX || 0) - (prev.faceCenterX || 0), (curr.faceCenterY || 0) - (prev.faceCenterY || 0));
-                }
-
-                // If perfectly frozen (zero movement across 4 consecutive frames, typical of static 2D photo attack)
-                if (verifiedFramesHistory.length >= 4 && totalCentroidDrift < 0.12) {
-                    if (statusSub) statusSub.textContent = 'Natural movement required. Please blink or shift slightly...';
-                    updateProgressiveFeedback(currentProgress, 'Natural movement required...');
-                    consecutiveValidFrames = Math.max(1, consecutiveValidFrames - 2);
-                    await sleep(120);
-                    continue;
-                }
-
-                // Completed all required consecutive frames with face matching threshold!
-                // Temporal template averaging across consecutive verified frames to cancel noise
-                if (verifiedFramesHistory.length >= 2) {
-                    const vLen = verifiedFramesHistory[0].featureVector?.length || 0;
-                    if (vLen > 0) {
-                        const avgVector = new Array(vLen).fill(0);
-                        for (const item of verifiedFramesHistory) {
-                            if (item.featureVector) {
-                                for (let vi = 0; vi < vLen; vi++) {
-                                    avgVector[vi] += item.featureVector[vi];
-                                }
-                            }
-                        }
-                        for (let vi = 0; vi < vLen; vi++) {
-                            avgVector[vi] = Math.round((avgVector[vi] / verifiedFramesHistory.length) * 10000) / 10000;
-                        }
-                        const avgPayload = btoa(JSON.stringify(avgVector)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-                        const baseParts = lastVerifiedResult.descriptor.split('_v2_')[0];
-                        lastVerifiedResult.descriptor = baseParts + '_v2_' + avgPayload;
-                        lastVerifiedResult.publicKey = 'pub_face_' + btoa(lastVerifiedResult.descriptor).replace(/=/g, '');
-                    }
-                }
-
-                currentProgress = 100;
-                if (scanningTitle) scanningTitle.textContent = 'Face Verified ✓';
-                if (statusSub) statusSub.textContent = 'Biometric match confirmed. Saving credential...';
-                updateProgressiveFeedback(100, 'Face recognized! Finalizing...');
-                triggerCaptureFlash('faceScanFrame');
-                triggerBiometricDetected();
-                faceAnalysisActive = false;
-                break;
-            }
-        }
-
-        await sleep(90);
-    }
-
-    if (bioAbortController?.signal?.aborted) {
-        const cancelErr = new Error('Registration cancelled');
-        cancelErr.name = 'AbortError';
-        throw cancelErr;
-    }
-
-    // Safety guard: ensure face was truly verified and not an empty/unusable frame
-    if (!lastVerifiedResult || !lastVerifiedResult.passed || !lastVerifiedResult.descriptor) {
-        const invalidErr = new Error('No face detected. Please position your face in front of the camera.');
-        invalidErr.title = 'Face Not Detected';
-        throw invalidErr;
-    }
-
-    await sleep(400);
-
-    // Save Face Recognition Data to User Account
-    const credentialId = 'face_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 9);
-    const ua = navigator.userAgent;
-    let deviceType = ua.indexOf('iPhone') !== -1 ? 'iPhone' :
-                     ua.indexOf('iPad') !== -1 ? 'iPad' :
-                     ua.indexOf('Android') !== -1 ? 'Android Device' :
-                     ua.indexOf('Windows') !== -1 ? 'Windows PC' :
-                     ua.indexOf('Mac') !== -1 ? 'Mac' : 'Face Biometric Device';
-    const deviceName = `${deviceType} (Face Recognition)`;
-
-    const res = await fetch('{{ route("webauthn.register") }}', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify({
-            credential_id: credentialId,
-            biometric_type: 'face',
-            device_name: deviceName,
-            face_descriptor: lastVerifiedResult.descriptor,
-            public_key: lastVerifiedResult.publicKey
-        }),
-        signal: bioAbortController.signal
-    });
-
-    const data = await res.json();
-    stopBioCamera();
-
-    if (res.status === 409 || (data && data.error === 'duplicate')) {
-        showFaceError('Biometric Already Registered', data.message || 'This face recognition credential is already registered on your account.');
-        return;
-    }
-
-    if (data.success) {
-        const scanningView = document.getElementById('bioScanningView');
-        const successView = document.getElementById('bioSuccessView');
-        const successTitle = document.getElementById('bioSuccessTitle');
-        const successDesc = document.getElementById('bioSuccessDesc');
-
-        if (scanningView) scanningView.style.display = 'none';
-        if (successView) {
-            successView.style.display = 'block';
-            if (successTitle) successTitle.textContent = 'Face Recognition Registered Successfully ✓';
-            if (successDesc) successDesc.innerHTML = data.message || 'Your face recognition profile has been verified and registered to your account.';
-        }
-        await loadDevices();
-    } else {
-        const errMsg = data.message || 'Face registration failed. Please try again.';
-        showFaceError('Registration Failed', errMsg);
-    }
-}
-
-// ── Flow 1: Direct Camera Face Recognition Registration ──
-// NOTE: This flow ONLY uses the device camera (getUserMedia). It does NOT call
-// navigator.credentials.create() and therefore does NOT trigger any Device
-// Verification / WebAuthn OS dialog. Keep these two flows strictly separate.
 async function beginFaceRegistration() {
-    // Safety guard: ensure we never accidentally trigger hardware WebAuthn
-    // (Device Verification) when the user intended face camera registration.
+    // Face verification stays on the device; the server stores only a verified passkey public key.
     selectedBioMethod = 'face';
-    const idleView = document.getElementById('bioIdleView');
-    const scanningView = document.getElementById('bioScanningView');
-    const successView = document.getElementById('bioSuccessView');
-    const errorView = document.getElementById('bioErrorView');
-
-    if (idleView) idleView.style.display = 'none';
-    if (successView) successView.style.display = 'none';
-    if (errorView) errorView.style.display = 'none';
-    if (scanningView) scanningView.style.display = 'block';
-
-    const fpScan = document.getElementById('fpActiveScanner');
-    const faceScan = document.getElementById('faceActiveScanner');
-    if (fpScan) fpScan.classList.remove('active');
-    if (faceScan) faceScan.classList.add('active');
-
-    const faceScanFrame = document.getElementById('faceScanFrame');
-    if (faceScanFrame) faceScanFrame.classList.remove('bio-detected');
-
-    bioAbortController = new AbortController();
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        showFaceError('Camera Unsupported', 'Camera permission is required to register your face.');
-        return;
-    }
-
-    updateProgressiveFeedback(10, 'Requesting camera access...');
-    const scanningTitle = document.getElementById('faceScanningTitle');
-    const statusSub = document.getElementById('faceStatusSub');
-    if (scanningTitle) scanningTitle.textContent = 'Opening Camera...';
-    if (statusSub) statusSub.textContent = 'Please allow camera access to scan your face';
-
-    let stream;
-    try {
-        stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                facingMode: 'user',
-                width: { ideal: 640 },
-                height: { ideal: 480 }
-            },
-            audio: false
-        });
-        bioCameraStream = stream;
-    } catch (err1) {
-        if (err1.name === 'NotAllowedError' || err1.name === 'PermissionDeniedError') {
-            showFaceError('Camera Permission Denied', 'Camera permission is required to register your face.');
-            return;
-        }
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user' },
-                audio: false
-            });
-            bioCameraStream = stream;
-        } catch (err2) {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: false
-                });
-                bioCameraStream = stream;
-            } catch (err) {
-                console.error('Face camera access error:', err);
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    showFaceError('Camera Permission Denied', 'Camera permission is required to register your face.');
-                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                    showFaceError('Camera Not Found', 'No camera detected on this device. Please connect a camera and try again.');
-                } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                    showFaceError('Camera In Use', 'Camera is already in use by another application. Please close other camera apps and try again.');
-                } else {
-                    showFaceError('Camera Error', 'Camera permission is required to register your face.');
-                }
-                return;
-            }
-        }
-    }
-
-    const video = document.getElementById('faceCameraVideo');
-    const holo = document.getElementById('faceHoloGraphic');
-    if (video) {
-        video.srcObject = bioCameraStream;
-        video.style.display = 'block';
-        if (holo) holo.style.display = 'none';
-
-        try {
-            await video.play();
-        } catch(e) {
-            console.warn('Video play error:', e);
-        }
-    }
-
-    const flashBtn = document.getElementById('faceFlashToggleBtn');
-    if (flashBtn && !flashBtn.dataset.flashBound) {
-        flashBtn.dataset.flashBound = 'true';
-        flashBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toggleFaceFlash(bioCameraStream, 'faceScreenFlashOverlay', 'faceFlashToggleBtn');
-        });
-    }
-    resetFaceFlash('faceScreenFlashOverlay', 'faceFlashToggleBtn');
-
-    try {
-        await executeFaceCaptureAndVerificationSequence(video);
-    } catch (err) {
-        stopBioCamera();
-        if (err.name === 'AbortError') {
-            cancelBiometricRegistration();
-            return;
-        }
-        showFaceError(err.title || 'Registration Failed', err.message || 'Face registration failed. Please try again.');
-    }
+    return beginFingerprintRegistration();
 }
-
-// ── Flow 2: Hardware WebAuthn Fingerprint Registration ──
+// ── WebAuthn Device Credential Registration ──
 async function beginFingerprintRegistration() {
     const registrationType = selectedBioMethod === 'face' ? 'face' : 'fingerprint';
     const idleView = document.getElementById('bioIdleView');
@@ -7401,9 +5907,6 @@ async function beginFingerprintRegistration() {
     const faceScan = document.getElementById('faceActiveScanner');
     if (faceScan) faceScan.classList.toggle('active', registrationType === 'face');
     if (fpScan) fpScan.classList.toggle('active', registrationType !== 'face');
-    stopBioCamera();
-    const faceFlashToggle = document.getElementById('faceFlashToggleBtn');
-    if (faceFlashToggle) faceFlashToggle.style.display = registrationType === 'face' ? 'none' : '';
 
     const fpScanFrame = document.querySelector(registrationType === 'face' ? '.face-scan-frame' : '.fp-scan-frame');
     if (fpScanFrame) {
@@ -7901,7 +6404,7 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Active Sessions & Audit Trail', desc: 'Review login history and active device sessions', cat: 'Security & Access', tab: 'security', icon: 'bi-shield-check', elId: 'tab-security' },
     { title: 'Biometrics Sensors', desc: 'Manage hardware biometric credentials', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'tab-fingerprint' },
     { title: 'Fingerprint Registration', desc: 'Register hardware fingerprint sensor via WebAuthn', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'methodCardFp' },
-    { title: 'Face Recognition Registration', desc: 'Scan and register facial biometric vector', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-camera-video', elId: 'methodCardFace' },
+    { title: 'Face Recognition Registration', desc: 'Register a device passkey for face sign-in', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-camera-video', elId: 'methodCardFace' },
     { title: 'Registered Hardware Credentials', desc: 'View, test, or remove registered biometric tokens', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-usb-drive', elId: 'deviceList' },
     { title: 'Device Binding & Trust', desc: 'Hardware device binding and attendance authorization', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
     { title: 'Bind Current Device', desc: 'Cryptographically bind this phone or computer to your attendance', cat: 'Security & Access', tab: 'device', icon: 'bi-phone-fill', elId: 'tabDeviceBindBtn' },

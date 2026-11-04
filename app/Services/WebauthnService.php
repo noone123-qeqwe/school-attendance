@@ -68,6 +68,11 @@ class WebauthnService
             throw new RuntimeException('Device verification was not completed. Please use your fingerprint, Face ID, or device PIN and try again.');
         }
         $credentialId = $this->base64UrlEncode($parsed['credential_id']);
+        $submittedCredentialId = $credential['rawId'] ?? $credential['id'] ?? null;
+        if (!is_string($submittedCredentialId)
+            || $this->normalizeCredentialId($submittedCredentialId) !== $this->normalizeCredentialId($credentialId)) {
+            throw new RuntimeException('The credential ID does not match the verified authenticator response. Please try registering this device again.');
+        }
         $publicKey = $this->coseKeyToPem($parsed['credential_public_key']);
 
         session()->forget('webauthn.register_challenge');

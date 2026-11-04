@@ -78,8 +78,8 @@ class BiometricRegistrationTest extends TestCase
                 return WebauthnCredential::create([
                     'user_id' => $user->id,
                     'credential_id' => 'cred_face_456',
-                    'public_key' => 'pubkey_sample_face',
-                    'device_name' => 'Face ID / Facial Recognition',
+                    'public_key' => "-----BEGIN PUBLIC KEY-----\nverified-test-key\n-----END PUBLIC KEY-----",
+                    'device_name' => 'Face ID / Windows Hello passkey',
                     'biometric_type' => 'face',
                 ]);
             });
@@ -97,7 +97,7 @@ class BiometricRegistrationTest extends TestCase
                     'attestationObject' => base64_encode('{}'),
                 ],
             ],
-            'device_name' => 'Windows Hello Face Camera',
+            'device_name' => 'Windows Hello device passkey',
         ]);
 
         $response->assertOk()

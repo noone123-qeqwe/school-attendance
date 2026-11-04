@@ -40,7 +40,7 @@ class SecureFaceLoginTest extends TestCase
             'credential_id' => 'face-passkey',
             'identifier' => 'FACE-105',
             'face_descriptor' => 'face_desc_90_115_112_130_105_123456',
-        ])->assertStatus(422)->assertJsonPath('code', 'BIOMETRIC_MISMATCH');
+        ])->assertStatus(422)->assertJsonPath('code', 'CAMERA_FACE_LOGIN_DISABLED');
 
         $this->assertGuest();
     }
@@ -107,7 +107,7 @@ class SecureFaceLoginTest extends TestCase
         $this->assertGuest();
     }
 
-    public function test_camera_face_records_allow_camera_face_login(): void
+    public function test_legacy_camera_face_records_are_not_offered_or_accepted_for_login(): void
     {
         $user = User::factory()->create(['student_number' => 'FACE-103', 'is_active' => true]);
         $this->credential($user, 'legacy-face', 'face', 'face_desc_90_fake');
@@ -116,15 +116,41 @@ class SecureFaceLoginTest extends TestCase
             'identifier' => 'FACE-103',
         ]);
         $methods->assertOk();
-        $this->assertContains('face', $methods->json('available_methods'));
+        $this->assertNotContains('face', $methods->json('available_methods'));
 
         $this->postJson(route('webauthn.login'), [
             'biometric_method' => 'face',
             'credential_id' => 'legacy-face',
             'face_descriptor' => 'face_desc_90_fake',
-        ])->assertOk()->assertJson(['success' => true]);
+        ])->assertStatus(422)->assertJsonPath('code', 'CAMERA_FACE_LOGIN_DISABLED');
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertGuest();
+    }
+
+    public function test_camera_face_descriptor_cannot_be_registered_as_a_face_passkey(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson(route('webauthn.register'), [
+            'credential_id' => 'fake-camera-face',
+            'biometric_type' => 'face',
+            'face_descriptor' => 'face_desc_99_client_claimed_confidence',
+        ])->assertStatus(422)->assertJsonPath('code', 'SECURE_FACE_CREDENTIAL_REQUIRED');
+
+        $this->assertDatabaseMissing('webauthn_credentials', ['credential_id' => 'fake-camera-face']);
+    }
+
+    public function test_face_registration_requires_a_device_attestation(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->postJson(route('webauthn.register'), [
+            'credential_id' => 'missing-attestation-face',
+            'biometric_type' => 'face',
+            'credential' => ['id' => 'missing-attestation-face', 'response' => []],
+        ])->assertStatus(422)->assertJsonPath('code', 'SECURE_FACE_CREDENTIAL_REQUIRED');
+
+        $this->assertDatabaseMissing('webauthn_credentials', ['credential_id' => 'missing-attestation-face']);
     }
 
     public function test_face_registration_and_login_views_use_device_verification(): void
@@ -134,9 +160,11 @@ class SecureFaceLoginTest extends TestCase
 
         $this->assertStringContainsString("biometric_type: registrationType", $settings);
         $this->assertStringContainsString("authenticatorAttachment: 'platform'", $settings);
+        $this->assertStringNotContainsString("face_descriptor: lastVerifiedResult.descriptor", $settings);
         $this->assertStringContainsString("biometric_method: selectedMethod.id", $login);
         $this->assertStringContainsString("var onDeviceMethod = selectedMethod.id === 'fingerprint' || selectedMethod.id === 'face'", $login);
         $this->assertStringContainsString('Confirm with Face ID or Windows Hello', $login);
+        $this->assertStringNotContainsString('face_descriptor: lastVerifiedAnalysis.descriptor', $login);
     }
 
     private function credential(User $user, string $id, string $type, string $publicKey): WebauthnCredential
