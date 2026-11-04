@@ -41,7 +41,7 @@ jobs:
 
       - name: Prepare Environment
         run: |
-          cp .env.example .env.testing
+          cp tests/ci.env .env.testing
           php artisan key:generate --env=testing
 
       - name: Execute Tests via PHPUnit / Artisan
@@ -99,7 +99,7 @@ jobs:
 
       - name: Prepare Environment
         run: |
-          cp .env.example .env.testing
+          cp tests/ci.env .env.testing
           php artisan key:generate --env=testing
 
       - name: Execute Tests via PHPUnit / Artisan (MySQL)

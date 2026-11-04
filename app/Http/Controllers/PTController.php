@@ -104,41 +104,6 @@ class PTController extends Controller
             }
         }
 
-        // Link parent to student if student identifier was provided
-        if ($user && $request->role === 'parent') {
-            $studentIdentifier = trim((string) ($request->student_number ?? $request->student_id ?? ''));
-            if ($studentIdentifier !== '') {
-                $rawNumbers = preg_split('/[,\s]+/', $studentIdentifier, -1, PREG_SPLIT_NO_EMPTY);
-                foreach ($rawNumbers as $num) {
-                    $st = User::where('role', 'student')->where(function($q) use ($num) {
-                        $q->where('student_number', $num)
-                          ->orWhere('student_number', ltrim($num, '0'))
-                          ->orWhere('id', $num);
-                    })->first();
-                    if ($st) {
-                        DB::table('parent_student')->insertOrIgnore([
-                            'parent_id' => $user->id,
-                            'student_id' => $st->id,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        if (empty($st->guardian_email)) {
-                            $st->update(['guardian_email' => $user->email]);
-                        }
-                        try {
-                            \App\Models\Notification::create([
-                                'user_id' => $st->id,
-                                'sent_by' => $user->id,
-                                'type'    => 'parent_linked',
-                                'message' => "Your parent/guardian {$user->name} ({$user->email}) connected to your student profile during registration.",
-                                'is_read' => false,
-                            ]);
-                        } catch (\Throwable $e) {}
-                    }
-                }
-            }
-        }
-
         // 4. Log them in and redirect based on role
         Auth::login($user, true);
         $request->session()->regenerate();
@@ -148,7 +113,10 @@ class PTController extends Controller
             $request->session()->save();
             return redirect()->route('home');
         } elseif ($request->role === 'parent') {
-            return redirect()->route('parent.dashboard');
+            return redirect()->route('parent.dashboard')->with(
+                'success',
+                'Account created. Use Link Child to connect to a student after they approve the request.'
+            );
         } else {
             return redirect()->route('teacher.dashboard');
         }

@@ -651,26 +651,17 @@
                                 </div>
                             </div>
 
-                            <!-- Parent Specific: Connect to Student -->
+                            <!-- Parent-specific link guidance -->
                             <div id="parent-fields" style="{{ old('role') == 'parent' ? 'display:block;' : 'display:none;' }}">
                                 <div class="p-3 mb-2" style="background: rgba(212, 175, 55, 0.06); border: 1px dashed rgba(212, 175, 55, 0.35); border-radius: 12px;">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                         <div class="d-flex align-items-center gap-2">
                                             <i class="bi bi-link-45deg" style="color: var(--accent); font-size: 1.25rem;"></i>
-                                            <span style="font-weight: 600; color: #FCF8F2; font-size: 0.92rem;">Connect to Student</span>
+                                            <span style="font-weight: 600; color: #FCF8F2; font-size: 0.92rem;">Link a Student Securely</span>
                                         </div>
-                                        <span class="badge" style="background: rgba(212, 175, 55, 0.18); color: var(--accent); font-size: 0.7rem; font-weight: 500;">Optional</span>
                                     </div>
                                     <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; margin-bottom: 12px;">
-                                        Link your parent profile directly to your child's student account by entering their Student ID number below.
-                                    </div>
-                                    <div class="form-floating-custom mb-1" id="wrap-parent_student_number">
-                                        <input type="text" name="student_number" id="parent_student_number" placeholder=" " value="{{ old('role') == 'parent' ? old('student_number') : '' }}" autocomplete="off">
-                                        <label for="parent_student_number">Child's Student ID (e.g. 2311969)</label>
-                                    </div>
-                                    <div class="field-feedback" id="feedback-parent_student_number"></div>
-                                    <div class="form-text px-1" style="font-size: 0.74rem; color: var(--text-muted); opacity: 0.85;">
-                                        <i class="bi bi-info-circle me-1"></i>You can enter multiple student numbers separated by commas, or connect anytime later.
+                                        After creating your account, open <strong>Link Child</strong> in the parent portal. The student must approve the connection with a verification code.
                                     </div>
                                 </div>
                             </div>
@@ -954,24 +945,20 @@
             const yLvl = document.getElementById('year_level');
             const sem = document.getElementById('semester');
             const snInput = document.getElementById('student_number');
-            const parentSnInput = document.getElementById('parent_student_number');
 
             if (role === 'student') {
                 if (dynamicFields) dynamicFields.style.display = 'block';
                 if (studentFields) studentFields.style.display = 'block';
                 if (parentFields) parentFields.style.display = 'none';
                 if (snInput) snInput.disabled = false;
-                if (parentSnInput) parentSnInput.disabled = true;
                 if (crs && crs.tagName === 'SELECT') crs.required = true;
                 if (yLvl) yLvl.required = true;
                 if (sem) sem.required = true;
-                clearFieldFeedback('parent_student_number');
             } else if (role === 'parent') {
                 if (dynamicFields) dynamicFields.style.display = 'block';
                 if (studentFields) studentFields.style.display = 'none';
                 if (parentFields) parentFields.style.display = 'block';
                 if (snInput) snInput.disabled = true;
-                if (parentSnInput) parentSnInput.disabled = false;
                 if (crs) {
                     crs.required = false;
                     clearFieldFeedback('course');
@@ -990,7 +977,6 @@
                 if (parentFields) parentFields.style.display = 'none';
                 if (dynamicFields) dynamicFields.style.display = 'none';
                 if (snInput) snInput.disabled = true;
-                if (parentSnInput) parentSnInput.disabled = true;
                 if (crs) {
                     crs.required = false;
                     clearFieldFeedback('course');
@@ -1004,7 +990,6 @@
                     clearFieldFeedback('semester');
                 }
                 clearFieldFeedback('student_number');
-                clearFieldFeedback('parent_student_number');
             }
         }
 
@@ -1141,25 +1126,6 @@
                 return true;
             }
 
-            if (fieldId === 'parent_student_number') {
-                const val = el.value.trim();
-                if (val) {
-                    if (val.length < 3) {
-                        setFieldFeedback('parent_student_number', false, 'Student ID must be at least 3 characters.');
-                        return false;
-                    }
-                    if (val.length > 50) {
-                        setFieldFeedback('parent_student_number', false, 'Student ID exceeds maximum length.');
-                        return false;
-                    }
-                    if (showValidState) setFieldFeedback('parent_student_number', true, 'Valid Student ID format');
-                    else clearFieldFeedback('parent_student_number');
-                } else {
-                    clearFieldFeedback('parent_student_number');
-                }
-                return true;
-            }
-
             if (fieldId === 'year_level') {
                 if (!el.value) {
                     setFieldFeedback('year_level', false, 'Please select your year level.');
@@ -1286,25 +1252,6 @@
                         }
                     } else {
                         clearFieldFeedback('student_number');
-                    }
-                } else if (roleChecked.value === 'parent') {
-                    // Parent Connect to Student (Optional format check)
-                    const psnField = document.getElementById('parent_student_number');
-                    if (psnField && psnField.value.trim()) {
-                        const psnVal = psnField.value.trim();
-                        if (psnVal.length < 3) {
-                            if (showInlineErrors) setFieldFeedback('parent_student_number', false, 'Student ID must be at least 3 characters.');
-                            isValid = false;
-                            if (!firstErrorMsg) firstErrorMsg = 'Student ID must be at least 3 characters.';
-                        } else if (psnVal.length > 50) {
-                            if (showInlineErrors) setFieldFeedback('parent_student_number', false, 'Student ID exceeds maximum length.');
-                            isValid = false;
-                            if (!firstErrorMsg) firstErrorMsg = 'Student ID exceeds maximum length.';
-                        } else {
-                            if (showInlineErrors) setFieldFeedback('parent_student_number', true, 'Valid Student ID format');
-                        }
-                    } else {
-                        clearFieldFeedback('parent_student_number');
                     }
                 }
             }
@@ -1972,18 +1919,6 @@
                 });
                 snInputField.addEventListener('blur', () => {
                     if (snInputField.value.trim()) validateSingleField('student_number', true);
-                });
-            }
-
-            const psnInputField = document.getElementById('parent_student_number');
-            if (psnInputField) {
-                psnInputField.addEventListener('input', () => {
-                    if (document.getElementById('wrap-parent_student_number')?.classList.contains('is-invalid')) {
-                        validateSingleField('parent_student_number', true);
-                    }
-                });
-                psnInputField.addEventListener('blur', () => {
-                    if (psnInputField.value.trim()) validateSingleField('parent_student_number', true);
                 });
             }
 
