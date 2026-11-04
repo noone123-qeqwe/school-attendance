@@ -27,6 +27,39 @@ class RoleHardeningTest extends TestCase
             ->get(route('admin.dashboard'))->assertOk();
     }
 
+    public function test_web_version_update_requires_admin_role_and_verified_code(): void
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+        ]);
+        $this->actingAs($superAdmin)->postJson(route('pwa.update'), [])
+            ->assertForbidden();
+
+        $regularAdmin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'data_entry',
+        ]);
+        $this->actingAs($regularAdmin)->withSession(['admin_2fa_verified' => true])
+            ->postJson(route('pwa.update'), [])
+            ->assertForbidden();
+    }
+
+    public function test_development_debug_routes_are_not_registered(): void
+    {
+        foreach ([
+            '/debug-session',
+            '/test-classroom/CS101',
+            '/test-classroom-auth/CS101',
+            '/test-session-set',
+            '/test-session-get',
+            '/_debug/generate-students-pdf',
+            '/test-teacher',
+        ] as $path) {
+            $this->get($path)->assertNotFound();
+        }
+    }
+
     public function test_admin_api_login_issues_token_only_after_email_code(): void
     {
         Mail::fake();

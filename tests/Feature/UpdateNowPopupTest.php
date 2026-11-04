@@ -67,7 +67,7 @@ class UpdateNowPopupTest extends TestCase
         Setting::flushCache();
         $versionService->refresh();
 
-        $response = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', [
+        $response = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->withSession(['admin_2fa_verified' => true])->postJson('/pwa/update', [
             'version' => $latest,
         ]);
 

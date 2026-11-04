@@ -96,7 +96,7 @@ class InstalledVersionDynamicUpdateTest extends TestCase
         $res1->assertSee('v2.5.0');
 
         // 2. An update is applied to 2.5.3 via /pwa/update
-        $updateRes = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->postJson('/pwa/update', [
+        $updateRes = $this->actingAs(\App\Models\User::factory()->create(['role' => 'admin', 'admin_sub_role' => 'super_admin']))->withSession(['admin_2fa_verified' => true])->postJson('/pwa/update', [
             'version' => '2.5.3',
         ]);
         $updateRes->assertStatus(200)

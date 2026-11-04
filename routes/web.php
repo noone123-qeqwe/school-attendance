@@ -212,60 +212,7 @@ Route::post('/pwa/update', function (\Illuminate\Http\Request $request, \App\Ser
         'is_up_to_date'     => $versionService->isUpToDate(),
         'message'           => "Successfully updated to Version {$installed}."
     ], 200, ['Cache-Control' => 'no-cache, no-store, must-revalidate']);
-})->middleware(['auth', 'admin.super'])->name('pwa.update');
-
-// Debug routes — only available in local development
-if (app()->environment('local', 'testing')) {
-    // Debug route (remove in production) - NO AUTH REQUIRED
-    Route::get('/debug-session', function() {
-        return response()->json([
-            'authenticated' => auth()->check(),
-            'user_id' => auth()->id(),
-            'user_role' => auth()->user()?->role,
-            'user_email' => auth()->user()?->email,
-            'session_id' => session()->getId(),
-            'session_data' => session()->all(),
-            'cookie_name' => config('session.cookie'),
-            'session_lifetime' => config('session.lifetime'),
-            'session_driver' => config('session.driver'),
-            'app_env' => config('app.env'),
-            'app_debug' => config('app.debug'),
-            'cookies' => request()->cookies->all(),
-            'headers' => request()->headers->all(),
-        ]);
-    });
-
-    // Test classroom route without middleware
-    Route::get('/test-classroom/{code}', function($code) {
-        return response()->json([
-            'message' => 'Route reached successfully',
-            'code' => $code,
-            'auth_check' => auth()->check(),
-            'user' => auth()->user(),
-            'subject_exists' => \App\Models\Subject::where('code', $code)->exists(),
-        ]);
-    });
-
-    // Test route WITH auth middleware
-    Route::get('/test-classroom-auth/{code}', function($code) {
-        return response()->json([
-            'message' => 'Auth route reached',
-            'code' => $code,
-            'user' => auth()->user(),
-            'session_id' => session()->getId(),
-        ]);
-    })->middleware('auth');
-
-    Route::get('/test-session-set', function() {
-        session(['test_key' => 'test_value_' . time()]);
-        session()->save();
-        return response('Session set: ' . session('test_key') . ' | Session ID: ' . session()->getId());
-    });
-
-    Route::get('/test-session-get', function() {
-        return response('Session get: ' . session('test_key') . ' | Session ID: ' . session()->getId() . ' | Authenticated: ' . (auth()->check() ? 'YES' : 'NO'));
-    });
-}
+})->middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor', 'admin.super'])->name('pwa.update');
 
 // Public Legal Policies (accessible to guests and authenticated users)
 Route::get('/privacy', [App\Http\Controllers\LegalController::class, 'privacy'])->name('privacy');
@@ -408,41 +355,6 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/excuses/create/{attendance}', [App\Http\Controllers\HomeController::class, 'createExcuse'])->name('excuses.create');
     Route::post('/excuses', [App\Http\Controllers\HomeController::class, 'storeExcuse'])->name('excuses.store');
 });
-
-// Local debug helper: generate students PDF as the first teacher (development only)
-if (app()->environment('local', 'testing')) {
-    Route::get('/_debug/generate-students-pdf', function () {
-        $teacher = \App\Models\User::where('role', 'teacher')->first();
-        if (! $teacher) {
-            return response('No teacher user found', 404);
-        }
-
-        \Illuminate\Support\Facades\Auth::login($teacher);
-
-        $controller = new \App\Http\Controllers\TeacherController();
-        return $controller->exportStudentsPdf(request());
-    });
-
-    Route::get('/test-teacher', function () {
-        $teacher = \App\Models\User::where('role', 'teacher')->first();
-        \Illuminate\Support\Facades\Auth::login($teacher);
-        return view('teacher.dashboard', [
-            'teacher' => $teacher,
-            'teacherSubjects' => collect(),
-            'todayClasses' => collect(),
-            'totalStudents' => 0,
-            'totalPresent' => 0,
-            'totalAbsent' => 0,
-            'totalLate' => 0,
-            'weeklyLabels' => [],
-            'weeklyPresent' => [],
-            'weeklyLate' => [],
-            'weeklyAbsent' => [],
-            'recentAttendance' => collect(),
-            'pendingExcuses' => 0
-        ]);
-    });
-}
 
 // QR Scan (student) - allow public access so guests can scan and login through the QR flow
 Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->middleware(['throttle:120,1', 'audit.attendance.qr'])->name('qr.scan');
