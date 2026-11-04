@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 
 class User extends Authenticatable
 {
@@ -137,6 +139,51 @@ class User extends Authenticatable
     'kiosk_pin',
     'is_active',
 ];
+
+    /**
+     * Force accounts that still use known shared starter passwords to reset them.
+     * The hash-derived cache key avoids repeating expensive password-hash checks
+     * on every authenticated request and automatically changes with the password.
+     */
+    public function ensurePasswordChangeRequired(): bool
+    {
+        if ($this->must_change_password) {
+            return true;
+        }
+
+        if ($this->usesSharedStarterPassword()) {
+            $this->forceFill(['must_change_password' => true])->saveQuietly();
+            return true;
+        }
+
+        return false;
+    }
+
+    /** Return whether the stored credential matches a known shared starter password. */
+    public function usesSharedStarterPassword(): bool
+    {
+        if (app()->environment() === 'local' || app()->environment() === 'testing') {
+            return false;
+        }
+
+        $passwordHash = (string) $this->getAuthPassword();
+        if ($passwordHash === '') {
+            return false;
+        }
+
+        $cacheKey = 'password-rotation-required:' . $this->getKey() . ':' . hash('sha256', $passwordHash);
+        $mustChange = Cache::rememberForever($cacheKey, static function () use ($passwordHash): bool {
+            foreach (['password', 'student123', 'teacher123', 'parent123'] as $starterPassword) {
+                if (Hash::check($starterPassword, $passwordHash)) {
+                    return true;
+                }
+            }
+
+            return false;
+        });
+
+        return $mustChange;
+    }
 
     /**
      * Generate all valid formatting variants for a phone number.

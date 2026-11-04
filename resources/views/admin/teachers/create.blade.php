@@ -46,7 +46,7 @@
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Password</label>
                     <div style="position: relative;">
-                        <input type="password" name="password" id="t_pw1" class="adm-input" required minlength="8" style="width:100%; padding-right: 42px;">
+                        <input type="password" name="password" id="t_pw1" class="adm-input" required minlength="12" style="width:100%; padding-right: 42px;">
                         <button type="button" class="eye-btn" onclick="togglePassword('t_pw1', this, event)" data-toggle-password="t_pw1" aria-controls="t_pw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                     </div>
                 </div>

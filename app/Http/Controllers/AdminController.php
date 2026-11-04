@@ -1186,21 +1186,22 @@ class AdminController extends Controller
     {
         $request->validate([
             'current_password' => 'required',
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', strong_password_rule(), 'confirmed'],
         ]);
 
         if (!Hash::check($request->current_password, Auth::user()->password)) {
             return back()->withErrors(['current_password' => 'Current password is incorrect']);
         }
 
-        Auth::user()->update(['password' => Hash::make($request->password)]);
+        Auth::user()->update(['password' => Hash::make($request->password), 'must_change_password' => false]);
+        Auth::user()->tokens()->delete();
         return back()->with('success', 'Password updated successfully!');
     }
 
     public function resetPassword(Request $request, User $user)
     {
         $request->validate([
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', strong_password_rule(), 'confirmed'],
         ]);
 
         // Prevent non-super-admins from resetting admin accounts
@@ -1212,6 +1213,7 @@ class AdminController extends Controller
             'password' => Hash::make($request->password),
             'must_change_password' => true,
         ]);
+        $user->tokens()->delete();
 
         return back()->with('success', "Password for {$user->name} has been reset successfully.");
     }
@@ -1398,7 +1400,7 @@ class AdminController extends Controller
                     }
                 },
             ],
-            'password'    => 'required|string|min:8|confirmed',
+            'password'    => ['required', strong_password_rule(), 'confirmed'],
             'phone'       => 'nullable|string|max:20',
             'department'  => 'nullable|string|max:255',
         ]);

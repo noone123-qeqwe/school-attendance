@@ -118,14 +118,14 @@
             <div>
                 <label class="field-label">New Password</label>
                 <div class="pw-wrap">
-                    <input type="password" name="password" id="pw1" class="field-input" placeholder="At least 8 characters" required>
+                    <input type="password" name="password" id="pw1" class="field-input" placeholder="12+ chars, mixed case, number, symbol" minlength="12" required>
                     <button type="button" class="eye-btn" onclick="togglePw('pw1',this,event)" data-toggle-password="pw1" aria-controls="pw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                 </div>
             </div>
             <div>
                 <label class="field-label">Confirm Password</label>
                 <div class="pw-wrap">
-                    <input type="password" name="password_confirmation" id="pw2" class="field-input" placeholder="Repeat new password" required>
+                    <input type="password" name="password_confirmation" id="pw2" class="field-input" placeholder="Repeat new password" minlength="12" required>
                     <button type="button" class="eye-btn" onclick="togglePw('pw2',this,event)" data-toggle-password="pw2" aria-controls="pw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                 </div>
             </div>

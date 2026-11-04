@@ -64,6 +64,7 @@ return new class extends Migration
                 'email_verified_at'        => $now,
                 'is_active'                => true,
                 'password'                 => Hash::make('parent123'),
+                'must_change_password'     => true,
                 'notification_preferences' => [
                     'email_notifications' => true,
                     'push_notifications'  => true,

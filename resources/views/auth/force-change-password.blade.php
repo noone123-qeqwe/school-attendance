@@ -11,7 +11,7 @@
                         <i class="bi bi-shield-lock text-primary" style="font-size:24px;"></i>
                     </div>
                     <h4 style="font-weight:700;color:#fff;">Update Your Password</h4>
-                    <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;">For security reasons, you must change your temporary password before continuing.</p>
+                    <p style="color:rgba(255,255,255,0.6);font-size:0.9rem;">Use at least 12 characters with uppercase and lowercase letters, a number, and a symbol.</p>
                 </div>
 
                 @if($errors->any())
@@ -28,7 +28,7 @@
                     @csrf
                     
                     <div class="form-floating-custom mb-3" style="position: relative;">
-                        <input type="password" name="password" id="password" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
+                        <input type="password" name="password" id="password" placeholder=" " required minlength="12" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
                         <label for="password" style="color:rgba(255,255,255,0.5);">New Password</label>
                         <button type="button" class="eye-toggle" onclick="togglePassword('password', this, event)" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false">
                             <i class="bi bi-eye-slash"></i>
@@ -36,7 +36,7 @@
                     </div>
 
                     <div class="form-floating-custom mb-4" style="position: relative;">
-                        <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required minlength="8" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
+                        <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required minlength="12" class="form-control" style="background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); color:#fff; padding-right: 42px;">
                         <label for="password_confirmation" style="color:rgba(255,255,255,0.5);">Confirm New Password</label>
                         <button type="button" class="eye-toggle" onclick="togglePassword('password_confirmation', this, event)" data-toggle-password="password_confirmation" aria-controls="password_confirmation" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false">
                             <i class="bi bi-eye-slash"></i>

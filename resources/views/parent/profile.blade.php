@@ -430,12 +430,12 @@
                             <input type="hidden" name="otp" id="settingsOtpHidden">
                             <label class="sl">New Password</label>
                             <div class="pw-wrap" style="margin-bottom:12px;">
-                                <input type="password" name="password" id="spw1" class="si" placeholder="At least 8 characters" required>
+                                <input type="password" name="password" id="spw1" class="si" placeholder="12+ chars, mixed case, number, symbol" minlength="12" required>
                                 <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <label class="sl">Confirm Password</label>
                             <div class="pw-wrap" style="margin-bottom:16px;">
-                                <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" required>
+                                <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" minlength="12" required>
                                 <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                             </div>
                             <div style="display:flex;gap:10px;">

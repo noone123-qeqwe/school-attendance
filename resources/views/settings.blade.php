@@ -3820,12 +3820,12 @@
                                 <input type="hidden" name="otp" id="settingsOtpHidden">
                                 <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">New Password</label>
                                 <div class="pw-wrap" style="margin-bottom:10px;">
-                                    <input type="password" name="password" id="spw1" class="si" placeholder="Minimum 8 characters" style="padding:9px 12px;font-size:0.84rem;" required>
+                                    <input type="password" name="password" id="spw1" class="si" placeholder="12+ chars, mixed case, number, symbol" minlength="12" style="padding:9px 12px;font-size:0.84rem;" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('spw1',this,event)" data-toggle-password="spw1" aria-controls="spw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                                 <label class="sl" style="font-size:0.72rem;margin-bottom:4px;">Confirm Password</label>
                                 <div class="pw-wrap" style="margin-bottom:14px;">
-                                    <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" style="padding:9px 12px;font-size:0.84rem;" required>
+                                    <input type="password" name="password_confirmation" id="spw2" class="si" placeholder="Repeat new password" minlength="12" style="padding:9px 12px;font-size:0.84rem;" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('spw2',this,event)" data-toggle-password="spw2" aria-controls="spw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                                 <div style="display:flex;gap:8px;">

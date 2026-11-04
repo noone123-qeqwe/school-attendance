@@ -47,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.ip'      => \App\Http\Middleware\EnsureAdminIpWhitelisted::class,
             'admin.super'   => \App\Http\Middleware\SuperAdminMiddleware::class,
             'admin.auditor' => \App\Http\Middleware\RestrictAuditor::class,
+            'password.rotate.api' => \App\Http\Middleware\RequirePasswordRotation::class,
         ]);
 
         $middleware->append([
@@ -54,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->web(append: [
+            \Illuminate\Session\Middleware\AuthenticateSession::class,
             \App\Http\Middleware\CheckPasswordChange::class,
             \App\Http\Middleware\CheckAccountStatus::class,
         ]);

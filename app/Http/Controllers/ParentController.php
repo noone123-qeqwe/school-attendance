@@ -692,7 +692,7 @@ class ParentController extends Controller
 
         if ($request->filled('current_password') || $request->filled('password')) {
             $rules['current_password'] = 'required|current_password';
-            $rules['password'] = 'required|string|min:8|confirmed';
+            $rules['password'] = ['required', strong_password_rule(), 'confirmed'];
         }
 
         $request->validate($rules, [
@@ -714,6 +714,8 @@ class ParentController extends Controller
 
         if ($request->filled('password')) {
             $user->password = Hash::make($request->password);
+            $user->must_change_password = false;
+            $user->tokens()->delete();
         }
 
         // Update notification preferences

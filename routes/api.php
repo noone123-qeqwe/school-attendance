@@ -34,23 +34,25 @@ Route::post('/email/resend', [OtpApiController::class, 'sendEmailVerification'])
 
 // Authenticated API Routes
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    });
-    
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Version mutation changes server-side release metadata and is restricted
-    // to authenticated super administrators. Version reads remain public.
-    Route::middleware(['admin.super', 'admin.api.2fa'])->group(function () {
-        Route::post('/version/update', [App\Http\Controllers\Api\VersionController::class, 'update']);
-        Route::post('/version/release', [App\Http\Controllers\Api\VersionController::class, 'release']);
-    });
+    Route::middleware('password.rotate.api')->group(function () {
+        Route::get('/user', function (Request $request) {
+            return $request->user();
+        });
 
-    // Parent specific mobile API endpoints
-    Route::prefix('parent')->middleware('parent')->group(function () {
-        Route::get('/dashboard', [ParentApiController::class, 'dashboard']);
-        Route::get('/child/{child}', [ParentApiController::class, 'childDetail']);
+        // Version mutation changes server-side release metadata and is restricted
+        // to authenticated super administrators. Version reads remain public.
+        Route::middleware(['admin.super', 'admin.api.2fa'])->group(function () {
+            Route::post('/version/update', [App\Http\Controllers\Api\VersionController::class, 'update']);
+            Route::post('/version/release', [App\Http\Controllers\Api\VersionController::class, 'release']);
+        });
+
+        // Parent specific mobile API endpoints
+        Route::prefix('parent')->middleware('parent')->group(function () {
+            Route::get('/dashboard', [ParentApiController::class, 'dashboard']);
+            Route::get('/child/{child}', [ParentApiController::class, 'childDetail']);
+        });
     });
 });
 

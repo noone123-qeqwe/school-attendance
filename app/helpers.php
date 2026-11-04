@@ -75,3 +75,14 @@ if (!function_exists('public_storage_url')) {
         return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
     }
 }
+
+if (!function_exists('strong_password_rule')) {
+    /** Require a longer password with mixed case, numbers, and symbols. */
+    function strong_password_rule(): \Illuminate\Validation\Rules\Password
+    {
+        return \Illuminate\Validation\Rules\Password::min(12)
+            ->mixedCase()
+            ->numbers()
+            ->symbols();
+    }
+}

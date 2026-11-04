@@ -96,6 +96,7 @@ class ParentManagementController extends Controller
             'role' => 'parent',
             'is_active' => true,
             'email_verified_at' => null,
+            'must_change_password' => true,
         ]);
 
         $studentIdsToLink = [];
@@ -185,7 +186,7 @@ class ParentManagementController extends Controller
                 },
             ],
             'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:8',
+            'password' => ['nullable', strong_password_rule()],
             'student_id' => 'nullable|exists:users,id',
             'student_number' => 'nullable|string|max:255',
         ]);
@@ -198,9 +199,13 @@ class ParentManagementController extends Controller
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->password);
+            $data['must_change_password'] = true;
         }
 
         $parent->update($data);
+        if ($request->filled('password')) {
+            $parent->tokens()->delete();
+        }
 
         // Connect additional student if provided
         $studentToLink = null;

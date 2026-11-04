@@ -757,7 +757,7 @@ class OtpController extends Controller
         }
 
         $request->validate([
-            'password'              => 'required|min:8|confirmed',
+            'password'              => ['required', strong_password_rule(), 'confirmed'],
             'password_confirmation' => 'required',
         ]);
 
@@ -766,7 +766,9 @@ class OtpController extends Controller
             $user->update([
                 'password' => Hash::make($request->password),
                 'email_verified_at' => $user->email_verified_at ?? now(),
+                'must_change_password' => false,
             ]);
+            $user->tokens()->delete();
 
             // Invalidate any remaining unused forgot_password OTPs for this user
             Otp::invalidatePrevious($user->email, 'forgot_password');
@@ -919,7 +921,7 @@ class OtpController extends Controller
     {
         $request->validate([
             'otp'                   => 'required|digits:6',
-            'password'              => 'required|min:8|confirmed',
+            'password'              => ['required', strong_password_rule(), 'confirmed'],
             'password_confirmation' => 'required',
         ]);
 
@@ -932,7 +934,8 @@ class OtpController extends Controller
             return back()->withErrors(['otp' => $result['message']])->withInput();
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        $user->update(['password' => Hash::make($request->password), 'must_change_password' => false]);
+        $user->tokens()->delete();
 
         return redirect()->route($this->roleRedirect())->with('success', 'Password changed successfully!');
     }
@@ -959,7 +962,7 @@ class OtpController extends Controller
     {
         $request->validate([
             'otp'                   => 'required|digits:6',
-            'password'              => 'required|min:8|confirmed',
+            'password'              => ['required', strong_password_rule(), 'confirmed'],
             'password_confirmation' => 'required',
         ]);
 
@@ -975,7 +978,8 @@ class OtpController extends Controller
             return back()->withErrors(['otp' => $result['message']])->withInput();
         }
 
-        $user->update(['password' => Hash::make($request->password)]);
+        $user->update(['password' => Hash::make($request->password), 'must_change_password' => false]);
+        $user->tokens()->delete();
 
         return redirect()->route('teacher.profile')->with('success', 'Password changed successfully!');
     }

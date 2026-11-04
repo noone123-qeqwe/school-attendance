@@ -192,12 +192,6 @@ class AuthController extends Controller
         }
 
         if ($authenticated && $user) {
-            $this->lockoutService->clear($identifier, $ip);
-            if ($user->email) $this->lockoutService->clear($user->email, $ip);
-            if ($user->student_number) $this->lockoutService->clear($user->student_number, $ip);
-            if ($user->employee_id) $this->lockoutService->clear($user->employee_id, $ip);
-            if ($user->phone) $this->lockoutService->clear($user->phone, $ip);
-
             if (!$user->isActive()) {
                 Auth::logout();
                 return response()->json([
@@ -207,6 +201,33 @@ class AuthController extends Controller
                     'account_disabled' => true,
                 ], 403);
             }
+
+            if ($user->usesSharedStarterPassword()) {
+                Auth::logout();
+                $user->forceFill(['must_change_password' => true])->saveQuietly();
+                return response()->json([
+                    'status' => 'error',
+                    'code' => 'password_reset_required',
+                    'password_change_required' => true,
+                    'message' => 'This account uses a shared starter password. Verify your email through password recovery before signing in.',
+                ], 403);
+            }
+
+            if ($user->ensurePasswordChangeRequired()) {
+                Auth::logout();
+                return response()->json([
+                    'status' => 'error',
+                    'code' => 'password_change_required',
+                    'password_change_required' => true,
+                    'message' => 'Reset your password before signing in. Use the password recovery flow to continue.',
+                ], 403);
+            }
+
+            $this->lockoutService->clear($identifier, $ip);
+            if ($user->email) $this->lockoutService->clear($user->email, $ip);
+            if ($user->student_number) $this->lockoutService->clear($user->student_number, $ip);
+            if ($user->employee_id) $this->lockoutService->clear($user->employee_id, $ip);
+            if ($user->phone) $this->lockoutService->clear($user->phone, $ip);
 
             if ($user->isAdmin()) {
                 $purpose = 'admin_api_login';

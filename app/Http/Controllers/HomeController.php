@@ -27,13 +27,14 @@ class HomeController extends Controller
     public function submitPasswordChange(Request $request)
     {
         $request->validate([
-            'password' => 'required|min:8|confirmed',
+            'password' => ['required', strong_password_rule(), 'confirmed'],
         ]);
 
         $user = Auth::user();
         $user->password = Hash::make($request->password);
         $user->must_change_password = false;
         $user->save();
+        $user->tokens()->delete();
 
         // Redirect to the appropriate dashboard based on role
         if ($user->isAdmin()) {

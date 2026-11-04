@@ -15,6 +15,10 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \LogicException('Demo accounts and sample records cannot be seeded in production.');
+        }
+
         // Seed default active Academic Year & Terms
         \App\Models\AcademicYear::firstOrCreate(
             ['name' => '2026-2027', 'semester' => 1],

@@ -69,7 +69,7 @@ class RegisterUserRequest extends FormRequest
                     }
                 },
             ],
-            'password'       => 'required|min:8|confirmed',
+            'password'       => ['required', strong_password_rule(), 'confirmed'],
         ];
 
         // Strict role validation based on the route

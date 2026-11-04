@@ -328,6 +328,23 @@ class PTController extends Controller
         }
 
         if ($authenticated && $user) {
+            if ($user->usesSharedStarterPassword()) {
+                Auth::logout();
+                $user->forceFill(['must_change_password' => true])->saveQuietly();
+                $message = 'This account uses a shared starter password. Use Forgot Password to verify your email and set a new password.';
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'status' => 'error',
+                        'code' => 'password_reset_required',
+                        'password_change_required' => true,
+                        'message' => $message,
+                    ], 403);
+                }
+
+                return back()->withInput($request->only('identifier'))
+                    ->withErrors(['identifier' => $message]);
+            }
+
             $lockoutService->clear($identifier, $request->ip());
             if ($user->email) $lockoutService->clear($user->email, $request->ip());
             if ($user->student_number) $lockoutService->clear($user->student_number, $request->ip());

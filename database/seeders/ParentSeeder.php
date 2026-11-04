@@ -73,7 +73,8 @@ class ParentSeeder extends Seeder
                 }
                 $parent->update($attributes);
             } else {
-                $attributes['password'] = Hash::make('parent123');
+                $attributes['password'] = Hash::make(\Illuminate\Support\Str::random(48));
+                $attributes['must_change_password'] = true;
                 $parent = User::create($attributes);
                 $createdCount++;
             }

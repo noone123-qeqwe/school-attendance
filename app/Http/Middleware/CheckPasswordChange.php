@@ -16,7 +16,7 @@ class CheckPasswordChange
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->must_change_password) {
+        if (Auth::check() && Auth::user()->ensurePasswordChangeRequired()) {
             // Allow them to visit the password reset form and submission route
             if (!$request->routeIs('password.change.form') && !$request->routeIs('password.change.submit') && !$request->routeIs('logout')) {
                 return redirect()->route('password.change.form');

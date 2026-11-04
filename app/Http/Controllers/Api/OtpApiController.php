@@ -381,7 +381,7 @@ class OtpApiController extends Controller
             'identifier'            => 'required_without:email|nullable',
             'account_id'            => 'nullable|string',
             'otp'                   => 'required|digits:6',
-            'password'              => 'required|min:8|confirmed',
+            'password'              => ['required', strong_password_rule(), 'confirmed'],
             'password_confirmation' => 'required',
         ]);
 
@@ -453,7 +453,9 @@ class OtpApiController extends Controller
         $user->update([
             'password' => Hash::make($request->password),
             'email_verified_at' => $user->email_verified_at ?? now(),
+            'must_change_password' => false,
         ]);
+        $user->tokens()->delete();
 
         // Invalidate any remaining forgot_password OTPs for this user
         Otp::invalidatePrevious($user->email, 'forgot_password');

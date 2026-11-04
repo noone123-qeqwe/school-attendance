@@ -263,14 +263,14 @@
                             <div class="mb-3">
                                 <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">New Password</label>
                                 <div class="pw-wrap">
-                                    <input type="password" name="password" id="tpw1" class="tch-form-input" placeholder="At least 8 characters" required>
+                                    <input type="password" name="password" id="tpw1" class="tch-form-input" placeholder="12+ chars, mixed case, number, symbol" minlength="12" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('tpw1',this,event)" data-toggle-password="tpw1" aria-controls="tpw1" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                             </div>
                             <div class="mb-4">
                                 <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Confirm Password</label>
                                 <div class="pw-wrap">
-                                    <input type="password" name="password_confirmation" id="tpw2" class="tch-form-input" placeholder="Repeat new password" required>
+                                    <input type="password" name="password_confirmation" id="tpw2" class="tch-form-input" placeholder="Repeat new password" minlength="12" required>
                                     <button type="button" class="eye-btn" onclick="togglePw('tpw2',this,event)" data-toggle-password="tpw2" aria-controls="tpw2" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                                 </div>
                             </div>

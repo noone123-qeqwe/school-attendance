@@ -681,14 +681,14 @@
                         <div class="field-feedback" id="feedback-email"></div>
                         
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password">
-                            <input type="password" name="password" id="password" placeholder=" " required autocomplete="new-password">
-                            <label for="password">Password (Min 8 chars)</label>
+                            <input type="password" name="password" id="password" placeholder=" " required minlength="12" autocomplete="new-password">
+                            <label for="password">Password (12+ chars with mixed case, number and symbol)</label>
                             <button type="button" class="eye-btn" id="btn-toggle-password" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                         </div>
                         <div class="field-feedback" id="feedback-password"></div>
 
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password_confirmation">
-                            <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required autocomplete="new-password">
+                            <input type="password" name="password_confirmation" id="password_confirmation" placeholder=" " required minlength="12" autocomplete="new-password">
                             <label for="password_confirmation">Confirm Password</label>
                             <button type="button" class="eye-btn" id="btn-toggle-password-conf" data-toggle-password="password_confirmation" aria-controls="password_confirmation" aria-label="Show password confirmation" title="Show password confirmation" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
 
@@ -1569,8 +1569,8 @@
             if (!pass) {
                 setFieldFeedback('password', false, 'Please enter a password.');
                 hasStep2Error = true;
-            } else if (pass.length < 8) {
-                setFieldFeedback('password', false, 'Password must be at least 8 characters.');
+            } else if (pass.length < 12 || !/[a-z]/.test(pass) || !/[A-Z]/.test(pass) || !/[0-9]/.test(pass) || !/[^A-Za-z0-9]/.test(pass)) {
+                setFieldFeedback('password', false, 'Use at least 12 characters with uppercase and lowercase letters, a number, and a symbol.');
                 hasStep2Error = true;
             } else {
                 setFieldFeedback('password', true, 'Valid');
