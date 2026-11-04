@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Warning;
 use App\Models\ExcuseSubmission;
+use App\Http\Requests\Api\ParentAttendanceIndexRequest;
+use App\Http\Resources\Api\ParentAttendanceResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -115,36 +117,54 @@ class ParentApiController extends Controller
         ]);
     }
 
-    public function childDetail(Request $request, User $child)
+    public function childDetail(ParentAttendanceIndexRequest $request, User $child)
     {
         $this->authorizeChild($child);
+        $filters = $request->validated();
 
-        $query = Attendance::with('subject')
+        $query = Attendance::query()
+            ->select([
+                'id',
+                'subject_id',
+                'subject_code',
+                'subject_name',
+                'status',
+                'excused',
+                'time_in',
+                'time_out',
+                'date',
+                'method',
+            ])
+            ->with('subject:id,code,name')
             ->where('user_id', $child->id)
-            ->orderBy('date', 'desc');
+            ->orderByDesc('date')
+            ->orderByDesc('id');
 
-        if ($request->filled('subject')) {
-            $query->where('subject_code', $request->subject);
+        if (isset($filters['subject'])) {
+            $query->where('subject_code', $filters['subject']);
         }
-        if ($request->filled('status')) {
-            if ($request->status === 'Excused') {
+        if (isset($filters['status'])) {
+            if ($filters['status'] === 'Excused') {
                 $query->where('excused', true);
             } else {
-                $query->where('status', $request->status)->where('excused', false);
+                $query->where('status', $filters['status'])->where('excused', false);
             }
         }
-        if ($request->filled('date_from')) {
-            $query->whereDate('date', '>=', $request->date_from);
+        if (isset($filters['date_from'])) {
+            $query->where('date', '>=', $filters['date_from']);
         }
-        if ($request->filled('date_to')) {
-            $query->whereDate('date', '<=', $request->date_to);
+        if (isset($filters['date_to'])) {
+            $query->where('date', '<=', $filters['date_to']);
         }
 
-        $records = $query->paginate(20);
+        $records = $query->paginate($filters['per_page'] ?? 20);
+        $records->through(fn (Attendance $attendance) => (new ParentAttendanceResource($attendance))->toArray($request));
 
         return response()->json([
             'status' => 'success',
             'data' => $records
+        ], 200, [
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 }
