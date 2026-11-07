@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Services\FeatureFlagService;
+use App\Services\ProfileFaceEnrollmentService;
+use App\Services\ProfileFacePhotoService;
 
 class ProfilePhotoController extends Controller
 {
@@ -43,6 +46,29 @@ class ProfilePhotoController extends Controller
             ], 422);
         }
 
+        $profileFacePhotos = app(ProfileFacePhotoService::class);
+        $normalizedFacePhoto = $profileFacePhotos->normalizeForMatching($file->get());
+        if ($normalizedFacePhoto === null) {
+            return $this->faceEnrollmentFailure($request, [
+                'code' => 'PROFILE_IMAGE_UNREADABLE',
+                'message' => 'Choose a readable JPG, PNG, WEBP, or GIF photo with dimensions between 100 and 5000 pixels.',
+            ], 422);
+        }
+
+        $faceMatchingEnabled = $user->role === 'student'
+            && app(FeatureFlagService::class)->enabled('feature.face_verification');
+        if ($faceMatchingEnabled) {
+            $quality = app(ProfileFaceEnrollmentService::class)->validate($normalizedFacePhoto);
+            if (!($quality['valid'] ?? false)) {
+                $status = ($quality['code'] ?? '') === 'MATCHER_UNAVAILABLE' ? 503 : 422;
+                return $this->faceEnrollmentFailure($request, $quality, $status);
+            }
+        }
+
+        $successMessage = $faceMatchingEnabled
+            ? 'Profile photo saved and checked for attendance face matching.'
+            : 'Profile picture updated successfully!';
+
         $storedPath = null;
         try {
             // Secure internal filename generation
@@ -63,8 +89,8 @@ class ProfilePhotoController extends Controller
             }
 
             $previousPath = $user->profile_image;
-            DB::transaction(function () use ($user, $file, $storedPath) {
-                app(\App\Services\ProfileFacePhotoService::class)->save($user, $file->get(), $storedPath);
+            DB::transaction(function () use ($user, $normalizedFacePhoto, $storedPath, $profileFacePhotos) {
+                $profileFacePhotos->saveNormalized($user, $normalizedFacePhoto, $storedPath);
                 $user->profile_image = $storedPath;
                 $user->save();
             });
@@ -83,14 +109,15 @@ class ProfilePhotoController extends Controller
             if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Profile picture updated successfully!',
+                    'message' => $successMessage,
                     'image_url' => $user->profile_photo_url,
                     'versioned_url' => $user->profile_photo_url_with_version,
                     'has_custom' => true,
+                    'face_match_ready' => $faceMatchingEnabled,
                 ]);
             }
 
-            return back()->with('success', 'Profile picture updated successfully!');
+            return back()->with('success', $successMessage);
         } catch (\Throwable $e) {
             if ($storedPath && !str_starts_with($storedPath, 'http') && $user->profile_image !== $storedPath) {
                 Storage::disk('public')->delete($storedPath);
@@ -108,6 +135,27 @@ class ProfilePhotoController extends Controller
 
             return back()->with('error', 'Unable to update your profile picture. Please try again.');
         }
+    }
+
+    private function faceEnrollmentFailure(Request $request, array $result, int $status): mixed
+    {
+        $message = (string) ($result['message'] ?? 'This photo could not be used for face matching.');
+        $code = (string) ($result['code'] ?? 'PROFILE_IMAGE_QUALITY');
+
+        if ($request->expectsJson() || $request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => false,
+                'code' => $code,
+                'message' => $message,
+                'errors' => ['profile_image' => [$message]],
+            ], $status);
+        }
+
+        if ($status === 422) {
+            return back()->withErrors(['profile_image' => $message]);
+        }
+
+        return back()->with('error', $message);
     }
 
     /**

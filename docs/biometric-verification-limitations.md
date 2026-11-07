@@ -2,7 +2,7 @@
 
 ## Technical limits
 
-The attendance matcher uses OpenCV YuNet face detection and SFace similarity against the student's existing profile photo. It now checks two or three samples for image quality, similarity, and face-box consistency. This is a consistency check only. It is not liveness detection or presentation attack detection (PAD); a printed photo, screen replay, or other presentation attack may still pass.
+The attendance matcher uses OpenCV YuNet face detection and SFace similarity against the student's existing profile photo. Student photo enrollment checks for one detectable, sufficiently large, sharp face before replacing the current photo. Attendance checks two or three samples for image quality, similarity, and face-box consistency, and reports the weakest sample's score. These checks improve input quality and consistency only. They are not liveness detection or presentation attack detection (PAD); a printed photo, screen replay, or other presentation attack may still pass. The configured similarity threshold has not been calibrated against this school's students, devices, and lighting conditions.
 
 Do not use face matching as sole proof of identity. The student screen states this limitation, and administrators can require an existing WebAuthn authenticator, an already registered device, or both after a face match. If reliable PAD is required, evaluate a purpose-built PAD implementation with independent testing evidence (for example, an applicable ISO/IEC 30107-3 test report), then validate it against the school's actual devices, lighting, and attack scenarios before enabling it.
 

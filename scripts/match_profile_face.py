@@ -23,6 +23,29 @@ def result(match, code, similarity=0.0, frame_count=1, frame_consistent=True):
     }))
 
 
+def validate_profile_image(image_path, detector_path, recognizer_path):
+    """Check enrollment-photo quality with the same detector used during matching."""
+    if not all(os.path.isfile(path) for path in (image_path, detector_path, recognizer_path)):
+        print(json.dumps({"valid": False, "code": "MATCHER_UNAVAILABLE"}))
+        return 2
+
+    try:
+        detector = cv2.FaceDetectorYN.create(
+            detector_path, "", (320, 320), score_threshold=0.9,
+            nms_threshold=0.3, top_k=10
+        )
+        recognizer = cv2.FaceRecognizerSF.create(recognizer_path, "")
+        face_feature(image_path, detector, recognizer, "PROFILE")
+        print(json.dumps({"valid": True, "code": "PROFILE_READY"}))
+        return 0
+    except ValueError as exc:
+        print(json.dumps({"valid": False, "code": str(exc)}))
+        return 0
+    except Exception:
+        print(json.dumps({"valid": False, "code": "MATCHER_UNAVAILABLE"}))
+        return 2
+
+
 def face_feature(image_path, detector, recognizer, kind):
     image = cv2.imread(image_path, cv2.IMREAD_COLOR)
     if image is None:
@@ -59,6 +82,9 @@ def face_feature(image_path, detector, recognizer, kind):
 
 
 def main():
+    if len(sys.argv) == 5 and sys.argv[1] == "--validate-profile":
+        return validate_profile_image(sys.argv[2], sys.argv[3], sys.argv[4])
+
     if len(sys.argv) not in (6, 7, 8):
         result(False, "MATCHER_UNAVAILABLE")
         return 2
@@ -95,6 +121,9 @@ def main():
             float(recognizer.match(reference, feature, cv2.FaceRecognizerSF_FR_COSINE))
             for feature, _ in live_features
         ]
+        if not all(math.isfinite(value) and -1 <= value <= 1 for value in similarities):
+            result(False, "MATCHER_UNAVAILABLE", 0.0, frame_count, False)
+            return 2
         boxes = [box for _, box in live_features]
         frame_consistent = True
         for index, first in enumerate(boxes):
@@ -104,7 +133,9 @@ def main():
                 if center_distance > 0.18 or size_delta > 0.20:
                     frame_consistent = False
 
-        similarity = sum(similarities) / len(similarities)
+        # Report the weakest sample, matching the all-frames-must-pass decision.
+        # An average could hide one poor sample behind two stronger ones.
+        similarity = min(similarities)
         if not frame_consistent:
             result(False, "LIVE_FRAME_INCONSISTENT", similarity, frame_count, False)
             return 0

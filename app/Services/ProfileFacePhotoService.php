@@ -15,9 +15,23 @@ class ProfileFacePhotoService
 
     public function save(User $user, string $sourceBytes, string $sourcePath): void
     {
-        $jpeg = $this->normalize($sourceBytes);
+        $jpeg = $this->normalizeForMatching($sourceBytes);
         if ($jpeg === null) {
             throw new \RuntimeException('Profile photo must be a readable JPEG, PNG, WebP, or GIF image.');
+        }
+
+        $this->saveNormalized($user, $jpeg, $sourcePath);
+    }
+
+    /** Persist an already-normalized JPEG so enrollment validates and stores identical bytes. */
+    public function saveNormalized(User $user, string $jpeg, string $sourcePath): void
+    {
+        $metadata = @getimagesizefromstring($jpeg);
+        if (strlen($jpeg) < 128 || strlen($jpeg) > self::MAX_SOURCE_BYTES ||
+            !is_array($metadata) || ($metadata['mime'] ?? null) !== 'image/jpeg' ||
+            !isset($metadata[0], $metadata[1]) || min($metadata[0], $metadata[1]) < 100 ||
+            max($metadata[0], $metadata[1]) > self::MAX_SIDE) {
+            throw new \RuntimeException('Normalized profile photo is invalid.');
         }
 
         ProfileFacePhoto::updateOrCreate(
@@ -28,6 +42,12 @@ class ProfileFacePhotoService
                 'source_path' => $sourcePath,
             ]
         );
+    }
+
+    /** Normalize enrollment input once before face-quality validation and encrypted storage. */
+    public function normalizeForMatching(string $sourceBytes): ?string
+    {
+        return $this->normalize($sourceBytes);
     }
 
     public function delete(User $user): void
@@ -106,6 +126,16 @@ class ProfileFacePhotoService
     private function normalize(string $bytes): ?string
     {
         if (strlen($bytes) < 128 || strlen($bytes) > self::MAX_SOURCE_BYTES || !function_exists('imagecreatefromstring')) {
+            return null;
+        }
+
+        // Check dimensions from image metadata before decoding pixel data. This avoids
+        // allocating a huge bitmap for a small, highly-compressed upload.
+        $metadata = @getimagesizefromstring($bytes);
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!is_array($metadata) || !in_array($metadata['mime'] ?? '', $allowedMimes, true) ||
+            !isset($metadata[0], $metadata[1]) || min($metadata[0], $metadata[1]) < 100 ||
+            max($metadata[0], $metadata[1]) > 5000) {
             return null;
         }
 

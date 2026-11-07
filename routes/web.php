@@ -264,7 +264,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/recovery/generate', [App\Http\Controllers\RecoveryCodeController::class, 'generate'])->name('recovery.generate');
 
     // Profile Image Management (all authenticated roles)
-    Route::post('/profile/image', [App\Http\Controllers\ProfilePhotoController::class, 'update'])->name('profile.image.update');
+    Route::post('/profile/image', [App\Http\Controllers\ProfilePhotoController::class, 'update'])->middleware('throttle:profile-photo')->name('profile.image.update');
     Route::delete('/profile/image', [App\Http\Controllers\ProfilePhotoController::class, 'destroy'])->name('profile.image.delete');
     Route::post('/profile/image/remove', [App\Http\Controllers\ProfilePhotoController::class, 'destroy'])->name('profile.image.remove');
 

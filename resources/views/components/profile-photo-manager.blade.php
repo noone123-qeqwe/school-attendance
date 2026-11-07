@@ -10,6 +10,8 @@
     $user = $user ?: Auth::user();
     $avatarUrl = $user ? $user->profile_photo_url_with_version : 'https://ui-avatars.com/api/?name=User&background=800000&color=fff&size=256';
     $hasCustom = $user ? $user->has_custom_profile_image : false;
+    $faceEnrollmentEnabled = $user && $user->role === 'student'
+        && app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification');
 @endphp
 
 <div class="ppm-container d-flex flex-column {{ $align === 'center' ? 'align-items-center text-center' : 'align-items-start' }}" data-user-id="{{ $user->id ?? '' }}">
@@ -64,7 +66,7 @@
            id="ppmFileInput" 
            name="profile_image"
            style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0; opacity: 0;" 
-           accept="image/*,image/jpeg,image/png,image/jpg,image/webp,image/gif,image/heic,image/heif" 
+           accept="image/jpeg,image/png,image/jpg,image/webp,image/gif"
            onchange="ppmHandleFileSelect(this)">
 
     <!-- Optional Remove Action (Strictly displayed when a custom photo exists, no empty gap when absent) -->
@@ -144,6 +146,12 @@
                 <div class="small text-muted mt-1" style="font-size: 0.76rem;">
                     <i class="bi bi-info-circle me-1"></i>Your photo will be cropped to a clean square avatar.
                 </div>
+
+                @if($faceEnrollmentEnabled)
+                    <div class="alert alert-info mt-3 mb-0 py-2 small text-start" role="note">
+                        <strong>For attendance face matching:</strong> use a recent, front-facing photo with even lighting and only you in frame. Keep your face clear and large enough to see; avoid masks, sunglasses, and heavy filters. The system checks photo quality, but face matching does not verify liveness.
+                    </div>
+                @endif
                 
                 <div class="alert alert-danger d-none mt-3 py-2 small" id="ppmPreviewError" role="alert"></div>
             </div>
@@ -849,11 +857,11 @@
         const file = input.files[0];
 
         // 1. Validate File Type (flexible for mobile camera captures)
-        const isImage = (file.type && file.type.startsWith('image/')) || 
-                        /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name || '') || 
-                        (file.size > 0 && !file.type);
+        const supportedImageType = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes((file.type || '').toLowerCase());
+        const supportedImageName = /\.(jpe?g|png|webp|gif)$/i.test(file.name || '');
+        const isImage = supportedImageType || supportedImageName;
         if (!isImage) {
-            ppmShowToast('Please select a valid image file (JPG, PNG, WEBP, HEIC).', 'error');
+            ppmShowToast('Please select a JPG, PNG, WEBP, or GIF image.', 'error');
             return;
         }
 

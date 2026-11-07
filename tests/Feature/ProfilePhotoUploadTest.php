@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\ProfileFaceEnrollmentService;
 use App\Services\ProfileFacePhotoService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -12,6 +13,28 @@ use Tests\TestCase;
 class ProfilePhotoUploadTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->useFaceEnrollmentResult([
+            'valid' => true,
+            'code' => 'PROFILE_READY',
+            'message' => '',
+        ]);
+    }
+
+    private function useFaceEnrollmentResult(array $result): void
+    {
+        $this->app->instance(ProfileFaceEnrollmentService::class, new class($result) extends ProfileFaceEnrollmentService {
+            public function __construct(private array $result) {}
+
+            public function validate(string $normalizedJpeg): array
+            {
+                return $this->result;
+            }
+        });
+    }
 
     public function test_student_can_upload_profile_image(): void
     {
@@ -64,15 +87,75 @@ class ProfilePhotoUploadTest extends TestCase
             'image_url',
             'versioned_url',
             'has_custom',
+            'face_match_ready',
         ]);
         $response->assertJson([
             'success' => true,
             'has_custom' => true,
+            'face_match_ready' => true,
         ]);
 
         $student->refresh();
         $this->assertNotNull($student->profile_image);
         $this->assertTrue($student->has_custom_profile_image);
+    }
+
+    public function test_student_face_photo_must_pass_quality_check_before_replacing_existing_photo(): void
+    {
+        Storage::fake('public');
+        $existingPath = 'profile_images/current.jpg';
+        Storage::disk('public')->put($existingPath, 'existing-photo');
+        $student = User::factory()->create(['role' => 'student', 'profile_image' => $existingPath]);
+        $this->useFaceEnrollmentResult([
+            'valid' => false,
+            'code' => 'PROFILE_FACE_NOT_FOUND',
+            'message' => 'No clear face was found. Choose a recent, front-facing photo with your face visible.',
+        ]);
+
+        $response = $this->actingAs($student)->postJson(route('profile.image.update'), [
+            'profile_image' => UploadedFile::fake()->image('landscape.jpg', 400, 400),
+        ]);
+
+        $response->assertStatus(422)->assertJsonPath('code', 'PROFILE_FACE_NOT_FOUND');
+        $this->assertSame($existingPath, $student->fresh()->profile_image);
+        $this->assertSame([$existingPath], Storage::disk('public')->allFiles('profile_images'));
+    }
+
+    public function test_student_upload_surfaces_matcher_outage_without_losing_existing_photo(): void
+    {
+        Storage::fake('public');
+        $existingPath = 'profile_images/current.jpg';
+        Storage::disk('public')->put($existingPath, 'existing-photo');
+        $student = User::factory()->create(['role' => 'student', 'profile_image' => $existingPath]);
+        $this->useFaceEnrollmentResult([
+            'valid' => false,
+            'code' => 'MATCHER_UNAVAILABLE',
+            'message' => 'Face-photo checks are temporarily unavailable. Please retry later or use your registered fingerprint.',
+        ]);
+
+        $response = $this->actingAs($student)->postJson(route('profile.image.update'), [
+            'profile_image' => UploadedFile::fake()->image('new.jpg', 400, 400),
+        ]);
+
+        $response->assertStatus(503)->assertJsonPath('code', 'MATCHER_UNAVAILABLE');
+        $this->assertSame($existingPath, $student->fresh()->profile_image);
+        $this->assertSame([$existingPath], Storage::disk('public')->allFiles('profile_images'));
+    }
+
+    public function test_profile_photo_upload_is_rate_limited_per_authenticated_user(): void
+    {
+        Storage::fake('public');
+        $student = User::factory()->create(['role' => 'student']);
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->actingAs($student)->postJson(route('profile.image.update'), [
+                'profile_image' => UploadedFile::fake()->image("photo-{$attempt}.jpg", 300, 300),
+            ])->assertOk();
+        }
+
+        $this->actingAs($student)->postJson(route('profile.image.update'), [
+            'profile_image' => UploadedFile::fake()->image('sixth-photo.jpg', 300, 300),
+        ])->assertTooManyRequests();
     }
 
     public function test_teacher_can_upload_profile_image(): void
@@ -226,6 +309,7 @@ class ProfilePhotoUploadTest extends TestCase
         $response->assertSee('Janessa Herminado');
         $response->assertSee('2024-00123');
         $response->assertSee('ppm-avatar-dropzone', false);
+        $response->assertSee('For attendance face matching:', false);
     }
 
     public function test_user_cannot_alter_another_users_profile_image(): void
@@ -287,9 +371,9 @@ class ProfilePhotoUploadTest extends TestCase
         $response->assertSee('bi-camera-fill', false);
         $response->assertSee('ppmTriggerPicker', false);
 
-        // Must have the native hidden file input accepting image/*
+        // Must have the native hidden file input accepting formats supported by the server.
         $response->assertSee('id="ppmFileInput"', false);
-        $response->assertSee('accept="image/*', false);
+        $response->assertSee('accept="image/jpeg,image/png,image/jpg,image/webp,image/gif"', false);
         $response->assertSee('ppmHandleFileSelect', false);
 
         // Must have the status overlay for loading, success, and error feedback

@@ -128,6 +128,13 @@ class AppServiceProvider extends ServiceProvider
         }
 
         // ── Anti-Spam & Security Rate Limiters ──────────────────────────────────
+
+        // Face-photo enrollment invokes the OpenCV models; limit expensive per-user uploads.
+        RateLimiter::for('profile-photo', function (Request $request) {
+            $identity = (string) ($request->user()?->getAuthIdentifier() ?? $request->ip() ?? 'unknown');
+
+            return Limit::perMinute(5)->by($this->rateLimitKey('profile_photo', $identity));
+        });
         
         // 1. Login: Multi-tier protection (5 attempts/min per account+IP, 10 attempts/min per IP)
         RateLimiter::for('login', function (Request $request) {
