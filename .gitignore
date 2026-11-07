@@ -2,6 +2,7 @@
 .DS_Store
 .env
 .env*
+!.env.example
 render-env-variables.txt
 .phpactor.json
 .phpunit.result.cache
@@ -57,3 +58,9 @@ export_database.bat
 test_*.html
 test_response.html
 scratch/
+
+# Local Windows test and debugging helpers
+TEST_*.bat
+test_*.bat
+send_*.bat
+debug_*.bat

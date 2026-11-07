@@ -48,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.super'   => \App\Http\Middleware\SuperAdminMiddleware::class,
             'admin.auditor' => \App\Http\Middleware\RestrictAuditor::class,
             'password.rotate.api' => \App\Http\Middleware\RequirePasswordRotation::class,
+            'feature' => \App\Http\Middleware\EnsureFeatureEnabled::class,
         ]);
 
         $middleware->append([
@@ -66,6 +67,28 @@ return Application::configure(basePath: dirname(__DIR__))
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->render(function (\App\Exceptions\AppException $e, Request $request) {
+            \Illuminate\Support\Facades\Log::error('Application domain exception.', [
+                'error_code' => $e->errorCode(),
+                'exception_type' => $e::class,
+                'route' => $request->route()?->getName(),
+                'method' => $request->method(),
+                'context' => $e->safeContext(),
+            ]);
+
+            if ($request->expectsJson() || $request->ajax() || $request->is('api/*')) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'error_code' => $e->errorCode(),
+                ], $e->httpStatus());
+            }
+
+            return response()->view('errors.domain', [
+                'message' => $e->getMessage(),
+                'errorCode' => $e->errorCode(),
+            ], $e->httpStatus());
+        });
+
         $exceptions->render(function (\Illuminate\Session\TokenMismatchException $e, Request $request) {
             if ($request->expectsJson() || $request->ajax()) {
                 return response()->json([

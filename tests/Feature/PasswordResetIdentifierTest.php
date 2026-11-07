@@ -18,8 +18,8 @@ class PasswordResetIdentifierTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'identifier' => 'nonexistent@example.com',
             'otp' => '123456',
-            'password' => 'newpassword123',
-            'password_confirmation' => 'newpassword123'
+            'password' => 'Newpassword123!',
+            'password_confirmation' => 'Newpassword123!'
         ]);
 
         $response->assertStatus(422)
@@ -41,8 +41,8 @@ class PasswordResetIdentifierTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'identifier' => 'STU-12345',
             'otp' => $otp->code,
-            'password' => 'newpassword123',
-            'password_confirmation' => 'newpassword123'
+            'password' => 'Newpassword123!',
+            'password_confirmation' => 'Newpassword123!'
         ]);
 
         $response->assertStatus(200)
@@ -51,6 +51,6 @@ class PasswordResetIdentifierTest extends TestCase
                      'message' => 'Password reset successfully.'
                  ]);
 
-        $this->assertTrue(Hash::check('newpassword123', $user->fresh()->password));
+        $this->assertTrue(Hash::check('Newpassword123!', $user->fresh()->password));
     }
 }

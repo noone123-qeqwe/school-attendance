@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use App\Services\QrSessionService;
+use App\Rules\ValidCoordinate;
 
 class QrAttendanceController extends Controller
 {
@@ -354,7 +355,10 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $radius = $request->filled('radius_meters') ? (int) $request->radius_meters : 50;
+        $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
+        $radius = $gpsVerificationEnabled
+            ? ($request->filled('radius_meters') ? (int) $request->radius_meters : 50)
+            : 0;
         if ($radius > 0 && (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy'))) {
             return response()->json(['success' => false, 'message' => 'A fresh, accurate teacher laptop location is required to start a geofenced session.'], 422);
         }
@@ -1013,10 +1017,11 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     public function verifyPresence(Request $request)
     {
+        $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
         $request->validate([
             'session_id'    => 'required|integer',
-            'latitude'      => 'required_without:error_code|nullable|numeric|between:-90,90',
-            'longitude'     => 'required_without:error_code|nullable|numeric|between:-180,180',
+            'latitude'      => [$gpsVerificationEnabled ? 'required_without:error_code' : 'nullable', ValidCoordinate::latitude()],
+            'longitude'     => [$gpsVerificationEnabled ? 'required_without:error_code' : 'nullable', ValidCoordinate::longitude()],
             'accuracy'      => 'nullable|numeric',
             'error_code'    => 'nullable|string|max:50',
             'error_message' => 'nullable|string|max:255',
@@ -1089,7 +1094,7 @@ class QrAttendanceController extends Controller
         }
 
         $now = now();
-        $radius = $session->getAllowedRadius();
+        $radius = $gpsVerificationEnabled ? $session->getAllowedRadius() : 0;
         $graceMinutes = $session->getGracePeriodMinutes();
 
         if ($radius <= 0) {
@@ -1403,6 +1408,34 @@ class QrAttendanceController extends Controller
 
         $now = now();
         $graceMinutes = $session->getGracePeriodMinutes();
+        $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
+        if (!$gpsVerificationEnabled) {
+            if (!in_array($attendance->status, ['Escaped']) && $attendance->monitoring_status !== 'completed') {
+                $attendance->update([
+                    'monitoring_status' => 'disabled',
+                    'last_location_check_at' => $now,
+                    'outside_since' => null,
+                    'consecutive_outside_count' => 0,
+                ]);
+            }
+
+            return response()->json([
+                'has_active_session' => true,
+                'session_id' => $session->id,
+                'subject_code' => $session->subject_code,
+                'subject_name' => $session->subject?->name ?? $session->subject_code,
+                'status' => $attendance->status,
+                'monitoring_status' => $attendance->status === 'Escaped' ? 'escaped' : 'disabled',
+                'radius' => 0,
+                'grace_period_minutes' => 0,
+                'session_ends_at' => $session->session_ends_at->timestamp,
+                'last_distance' => null,
+                'outside_since' => null,
+                'remaining_grace_seconds' => 0,
+                'escaped_at' => $attendance->escaped_at ? $attendance->escaped_at->format('h:i A') : null,
+            ]);
+        }
+
         $attDateStr = $attendance->date instanceof \DateTimeInterface 
             ? $attendance->date->format('Y-m-d') 
             : substr((string) $attendance->date, 0, 10);
@@ -1535,8 +1568,14 @@ class QrAttendanceController extends Controller
             return view('qr.result', ['status' => 'error', 'message' => 'You are not enrolled in this class.']);
         }
 
-        $hasCustomPhoto = app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
-        $hasCredentials = $user->webauthnCredentials()->exists();
+        $faceEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification');
+        $hasCustomPhoto = $faceEnabled && app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
+        $hasCredentials = $user->webauthnCredentials()
+            ->where(function ($query) {
+                $query->whereNull('biometric_type')->orWhere('biometric_type', '!=', 'face');
+            })
+            ->where('public_key', 'like', '%BEGIN PUBLIC KEY%')
+            ->exists();
 
         if (!$hasCredentials && !$hasCustomPhoto) {
             return view('qr.verify', [
@@ -1570,14 +1609,17 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        $coords = $this->resolveClassroomCoords($session);
+        $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
+        $coords = $gpsVerificationEnabled
+            ? $this->resolveClassroomCoords($session)
+            : ['schoolLat' => null, 'schoolLng' => null];
         $classroomLat = $coords['schoolLat'];
         $classroomLng = $coords['schoolLng'];
-        $radiusMeters = (int) $session->getAllowedRadius();
+        $radiusMeters = $gpsVerificationEnabled ? (int) $session->getAllowedRadius() : 0;
 
         $hasHardwareFp = $user->webauthnCredentials()->where(function ($q) {
             $q->whereNull('biometric_type')->orWhere('biometric_type', '!=', 'face');
-        })->exists();
+        })->where('public_key', 'like', '%BEGIN PUBLIC KEY%')->exists();
 
         return view('qr.verify', [
             'status'          => 'ready',
@@ -1593,6 +1635,7 @@ class QrAttendanceController extends Controller
             'hasFaceMethod'   => $hasCustomPhoto,
             'hasFingerprint'  => $hasHardwareFp,
             'defaultMethod'   => $hasCustomPhoto ? 'face' : 'fingerprint',
+            'faceAdditionalFactor' => \App\Models\Setting::get('face_verification_additional_factor', 'none'),
         ]);
     }
     public function verificationOptions(Request $request, WebauthnService $webauthn)
@@ -1649,8 +1692,11 @@ class QrAttendanceController extends Controller
         // The challenge should persist until the user completes verification or it's very old
         // $session->cleanupExpiredChallenge();
 
-        $hasCustomPhoto = app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
-        if (!$user->webauthnCredentials()->exists() && !$hasCustomPhoto) {
+        $faceEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification');
+        $hasCustomPhoto = $faceEnabled && app(\App\Services\ProfileFacePhotoService::class)->bytes($user) !== null;
+        if (!$user->webauthnCredentials()->where(function ($query) {
+                $query->whereNull('biometric_type')->orWhere('biometric_type', '!=', 'face');
+            })->where('public_key', 'like', '%BEGIN PUBLIC KEY%')->exists() && !$hasCustomPhoto) {
             return response()->json(['success' => false, 'message' => 'Biometric verification is not set up on this account. Please upload a profile photo or register your biometric device.'], 422);
         }
 
@@ -1683,7 +1729,7 @@ class QrAttendanceController extends Controller
         }
 
         $availableMethods = [];
-        if ($hasCustomPhoto) {
+        if ($faceEnabled && $hasCustomPhoto) {
             $availableMethods[] = 'face';
         }
         if ($validCredentials->isNotEmpty()) {
@@ -1725,15 +1771,18 @@ class QrAttendanceController extends Controller
 
     public function completeVerification(Request $request, WebauthnService $webauthn)
     {
+        $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
         $request->validate([
             'token'            => 'required|string',
-            'latitude'         => 'required|numeric|between:-90,90',
-            'longitude'        => 'required|numeric|between:-180,180',
+            'latitude'         => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::latitude()],
+            'longitude'        => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::longitude()],
             'accuracy'         => 'nullable|numeric',
             'location_timestamp_ms' => 'nullable|integer',
             'credential'       => 'nullable',
             'face_descriptor'  => 'nullable|string|max:4096',
             'live_frame'       => 'nullable|string|max:4194304',
+            'live_frames'      => 'nullable|array|min:2|max:3',
+            'live_frames.*'    => 'required|string|max:4194304',
             'biometric_method' => 'nullable|string',
         ]);
 
@@ -1785,6 +1834,12 @@ class QrAttendanceController extends Controller
         // The per-student cached challenge has a bounded lifetime. A session
         // column may contain an older student's challenge and must not extend it.
         $challenge = Cache::get($cacheKey);
+        if (!is_string($challenge) || $challenge === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fingerprint challenge expired or not found. Please request verification options again.',
+            ], 422);
+        }
 
         Log::debug('QR completeVerification request', [
             'token_hash' => hash('sha256', $request->token),
@@ -1859,7 +1914,7 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $radiusMeters = (int) $session->getAllowedRadius();
+        $radiusMeters = $gpsVerificationEnabled ? (int) $session->getAllowedRadius() : 0;
 
         if ($radiusMeters > 0) {
             $studentAccuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
@@ -2017,23 +2072,42 @@ class QrAttendanceController extends Controller
         $faceMatchResult = null;
 
         if ($isFaceMethod) {
-            $liveFrame = $request->input('live_frame')
-                ?? (is_array($credential) ? ($credential['live_frame'] ?? null) : null);
+            if (!app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification')) {
+                return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_DISABLED', 'message' => 'Face verification is currently unavailable. Please use your registered fingerprint or ask your instructor for help.'], 403);
+            }
 
-            if (!is_string($liveFrame) || $liveFrame === '') {
+            $attemptLimiter = app(\App\Services\FaceVerificationAttemptLimiter::class);
+            $audit = app(\App\Services\BiometricVerificationAuditService::class);
+            if ($attemptLimiter->isLocked($user, (int) $session->id)) {
+                $audit->record($user, $request, (int) $session->id, false, 'attempt_limit');
                 return response()->json([
                     'success' => false,
-                    'code' => 'INVALID_LIVE_FRAME',
-                    'message' => 'No camera image received. Please position your face clearly in front of the camera.'
+                    'code' => 'FACE_ATTEMPTS_EXHAUSTED',
+                    'message' => 'Too many unsuccessful face checks. Please wait ' . max(1, (int) ceil($attemptLimiter->secondsUntilRetry($user, (int) $session->id) / 60)) . ' minute(s), then retry or use your registered fingerprint.',
+                ], 429);
+            }
+
+            $liveFrames = $request->input('live_frames');
+            if (!is_array($liveFrames) || count($liveFrames) < 2 || count($liveFrames) > 3) {
+                $attemptLimiter->recordFailure($user, (int) $session->id);
+                $audit->record($user, $request, (int) $session->id, false, 'incomplete_capture');
+                return response()->json([
+                    'success' => false,
+                    'code' => 'INCOMPLETE_MULTI_FRAME_CAPTURE',
+                    'message' => 'The camera capture was incomplete. Please capture three samples and retry.',
                 ], 422);
             }
 
-            $faceMatchResult = app(\App\Services\LiveProfileFaceMatcher::class)->compare($user, $liveFrame);
+            $faceMatchResult = app(\App\Services\LiveProfileFaceMatcher::class)->compareFrames($user, $liveFrames);
 
             if (!$faceMatchResult['match']) {
+                $attemptLimiter->recordFailure($user, (int) $session->id);
+                $failureCategory = (string) ($faceMatchResult['code'] ?? 'biometric_mismatch');
+                $audit->record($user, $request, (int) $session->id, false, $failureCategory);
                 Log::warning('QR Face verification against profile photo failed', [
                     'user_id' => $user->id,
-                    'code' => $faceMatchResult['code'] ?? 'BIOMETRIC_MISMATCH',
+                    'session_id' => $session->id,
+                    'failure_category' => $failureCategory,
                 ]);
 
                 return response()->json([
@@ -2043,43 +2117,62 @@ class QrAttendanceController extends Controller
                 ], ($faceMatchResult['code'] ?? null) === 'MATCHER_UNAVAILABLE' ? 503 : 422);
             }
 
-            $recordedMethod = 'qr_face';
+            $factor = \App\Models\Setting::get('face_verification_additional_factor', 'none');
+            if (!in_array($factor, ['none', 'fingerprint', 'device', 'fingerprint_and_device'], true)) {
+                $factor = 'none';
+            }
+
+            $requiresFingerprint = in_array($factor, ['fingerprint', 'fingerprint_and_device'], true);
+            $requiresDevice = in_array($factor, ['device', 'fingerprint_and_device'], true);
+
+            try {
+                if ($requiresFingerprint) {
+                    if (!is_array($credential)) {
+                        throw new RuntimeException('Fingerprint assertion is required.');
+                    }
+                    $this->verifyQrFingerprintAssertion($user, $credential, $challenge, $webauthn);
+                }
+
+                if ($requiresDevice) {
+                    $binding = $user->deviceBinding ?: \App\Models\DeviceBinding::where('user_id', $user->id)->first();
+                    if (!$binding || !app(\App\Services\DeviceBindingService::class)->isCurrentDevice($user, $request)) {
+                        throw new RuntimeException('This attendance check must be completed on your registered device.');
+                    }
+                }
+            } catch (RuntimeException) {
+                $attemptLimiter->recordFailure($user, (int) $session->id);
+                $audit->record($user, $request, (int) $session->id, false, $requiresFingerprint ? 'additional_fingerprint_failed' : 'device_binding_failed');
+                return response()->json([
+                    'success' => false,
+                    'code' => 'ADDITIONAL_VERIFICATION_FAILED',
+                    'message' => $requiresFingerprint
+                        ? 'Fingerprint verification did not complete. Please retry with your registered fingerprint.'
+                        : 'This check must be completed on your registered device.',
+                ], 422);
+            }
+
+            $attemptLimiter->clear($user, (int) $session->id);
+            $audit->record($user, $request, (int) $session->id, true, '');
+            $recordedMethod = $factor === 'none' ? 'qr_face' : 'qr_face_' . $factor;
         } else {
             if (!is_array($credential)) {
                 return response()->json(['success' => false, 'message' => 'Invalid biometric assertion data.'], 422);
             }
 
             try {
-                if (!$challenge) {
-                    Log::warning('QR completeVerification - cached challenge expired', [
-                        'attendance_session_id' => $session->id,
-                        'user_id' => $user->id,
-                        'cache_key' => $cacheKey,
-                    ]);
-                    throw new RuntimeException('WebAuthn biometric challenge expired or not found. Please try scanning again.');
-                }
-
-                // Store challenge in session for WebauthnService verification
-                session(['webauthn.auth_challenge' => $challenge]);
-
-                try {
-                    $webauthn->verifyAssertion($user, $credential);
-                    Log::debug('QR completeVerification - verification successful', [
-                        'user_id' => $user->id,
-                        'attendance_session_id' => $session->id,
-                    ]);
-                } finally {
-                    session()->forget('webauthn.auth_challenge');
-                }
+                $this->verifyQrFingerprintAssertion($user, $credential, $challenge, $webauthn);
+                Log::debug('QR completeVerification - verification successful', [
+                    'user_id' => $user->id,
+                    'attendance_session_id' => $session->id,
+                ]);
 
             } catch (RuntimeException $e) {
                 Log::debug('QR completeVerification failure', [
-                    'exception' => $e->getMessage(),
+                    'failure_category' => 'fingerprint_assertion_failed',
                     'attendance_session_id' => $session->id,
                     'user_id' => $user->id,
-                    'credential' => $credential['id'] ?? null,
                 ]);
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+                return response()->json(['success' => false, 'message' => 'Fingerprint verification failed. Please retry or use another enabled verification method.'], 422);
             }
         }
         // Get class start time for late threshold calculation
@@ -2274,9 +2367,9 @@ class QrAttendanceController extends Controller
             'status'               => $status,
             'time'                 => $now->format('h:i A'),
             'date'                 => $now->format('F j, Y'),
-            'radius'               => $session->getAllowedRadius(),
+            'radius'               => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification') ? $session->getAllowedRadius() : 0,
             'grace_period_minutes' => $session->getGracePeriodMinutes(),
-            'monitoring_active'    => true,
+            'monitoring_active'    => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification'),
             'session_ends_at'      => $session->session_ends_at ? $session->session_ends_at->timestamp : null,
         ]);
     }
@@ -2289,8 +2382,8 @@ class QrAttendanceController extends Controller
         $request->validate([
             'token'     => 'required_without:code|nullable|string',
             'code'      => 'required_without:token|nullable|string',
-            'latitude'  => 'nullable|numeric|between:-90,90',
-            'longitude' => 'nullable|numeric|between:-180,180',
+            'latitude'  => ['nullable', ValidCoordinate::latitude()],
+            'longitude' => ['nullable', ValidCoordinate::longitude()],
             'accuracy'  => 'nullable|numeric',
             'location_timestamp_ms' => 'nullable|integer',
         ]);
@@ -2707,7 +2800,9 @@ class QrAttendanceController extends Controller
         }
 
         // 3. Geofence Distance Check
-        $radiusMeters = (int) $session->getAllowedRadius();
+        $radiusMeters = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification')
+            ? (int) $session->getAllowedRadius()
+            : 0;
         $hasCoordinates = $request->filled('latitude') && $request->filled('longitude');
 
         if ($radiusMeters > 0) {
@@ -2968,9 +3063,9 @@ class QrAttendanceController extends Controller
             'instructor'           => $instructorName,
             'session_id'           => (string) $session->id,
             'sessionId'            => (string) $session->id,
-            'radius'               => $session->getAllowedRadius(),
+            'radius'               => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification') ? $session->getAllowedRadius() : 0,
             'grace_period_minutes' => $session->getGracePeriodMinutes(),
-            'monitoring_active'    => true,
+            'monitoring_active'    => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification'),
             'session_ends_at'      => $session->session_ends_at ? $session->session_ends_at->timestamp : null,
             'message'              => 'Attendance recorded successfully.'
         ]);
@@ -2979,6 +3074,20 @@ class QrAttendanceController extends Controller
     // ─────────────────────────────────────────
     // HELPER METHODS
     // ─────────────────────────────────────────
+    private function verifyQrFingerprintAssertion(User $user, array $credential, ?string $challenge, WebauthnService $webauthn): void
+    {
+        if (!$challenge) {
+            throw new RuntimeException('The biometric challenge expired. Please scan the QR code again.');
+        }
+
+        session(['webauthn.auth_challenge' => $challenge]);
+        try {
+            $webauthn->verifyAssertion($user, $credential);
+        } finally {
+            session()->forget('webauthn.auth_challenge');
+        }
+    }
+
     private function matchesStudentSchedule(Subject $subject, User $student): bool
     {
         return $this->scheduleMismatchReason($subject, $student) === null;

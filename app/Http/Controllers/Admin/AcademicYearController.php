@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\Setting;
+use App\Rules\ValidAcademicYear;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -32,11 +34,13 @@ class AcademicYearController extends Controller
      */
     public function store(Request $request)
     {
+        $yearName = ['required', 'string', 'max:50', new ValidAcademicYear($request->input('start_date'), $request->input('end_date'))];
+        $semester = $request->input('semester');
         $request->validate([
-            'name' => 'required|string|max:50',
+            'name' => [...$yearName, Rule::unique('academic_years', 'name')->where(fn ($query) => $query->where('semester', $semester))],
             'semester' => 'required|integer|in:1,2,3',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date' => 'required|date_format:Y-m-d|after:start_date',
             'is_current' => 'nullable|boolean',
         ]);
 
@@ -75,11 +79,13 @@ class AcademicYearController extends Controller
      */
     public function update(Request $request, AcademicYear $academicYear)
     {
+        $yearName = ['required', 'string', 'max:50', new ValidAcademicYear($request->input('start_date'), $request->input('end_date'))];
+        $semester = $request->input('semester');
         $request->validate([
-            'name' => 'required|string|max:50',
+            'name' => [...$yearName, Rule::unique('academic_years', 'name')->where(fn ($query) => $query->where('semester', $semester))->ignore($academicYear->id)],
             'semester' => 'required|integer|in:1,2,3',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
+            'start_date' => 'required|date_format:Y-m-d',
+            'end_date' => 'required|date_format:Y-m-d|after:start_date',
             'is_current' => 'nullable|boolean',
         ]);
 

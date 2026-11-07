@@ -64,13 +64,27 @@ jobs:
         run: |
           php scripts/version-bump.php --ci
 
+      - name: Set up Node
+        if: steps.check_bump.outputs.should_bump == 'true' && steps.bump.outputs.bumped == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Build release assets and synchronize service worker
+        if: steps.check_bump.outputs.should_bump == 'true' && steps.bump.outputs.bumped == 'true'
+        run: |
+          npm ci
+          npm run build
+          php scripts/check-release-manifest.php
+
       - name: Commit, Tag & Push New Application Version
         if: steps.check_bump.outputs.should_bump == 'true' && steps.bump.outputs.bumped == 'true'
         run: |
           NEW_VER="${{ steps.bump.outputs.new_version }}"
           echo "Committing release v${NEW_VER}..."
           git pull --rebase origin ${{ github.ref_name }}
-          git add version.json package.json public/manifest.json public/sw.js
+          git add version.json package.json package-lock.json public/manifest.json public/sw.js
           git commit -m "chore(release): bump version to ${NEW_VER} [skip ci]"
           git tag -a "v${NEW_VER}" -m "Release v${NEW_VER}"
           git push origin HEAD:${{ github.ref_name }} --follow-tags

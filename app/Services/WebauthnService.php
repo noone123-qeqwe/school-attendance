@@ -155,8 +155,7 @@ class WebauthnService
         
         Log::debug('WebAuthn verifyAssertion starting', [
             'user_id' => $user->id,
-            'credential_id' => $credentialId,
-            'normalized_credential_id' => $normalizedCredentialId,
+            'credential_id_present' => is_string($credentialId) && $credentialId !== '',
             'session_challenge' => session('webauthn.auth_challenge') ? 'present' : 'missing',
         ]);
         
@@ -190,7 +189,6 @@ class WebauthnService
 
             Log::error('WebAuthn credential not found', [
                 'user_id' => $user->id,
-                'credential_id' => $credentialId,
             ]);
             throw new RuntimeException('Unknown biometric credential.');
         }
@@ -201,8 +199,7 @@ class WebauthnService
 
         Log::debug('WebAuthn credential found', [
             'user_id' => $user->id,
-            'found_credential_id' => $credential->credential_id,
-            'provided_credential_id' => $credentialId,
+            'credential_match' => true,
         ]);
 
         $clientDataJson = $this->base64UrlDecode($assertion['response']['clientDataJSON'] ?? '');
@@ -301,8 +298,8 @@ class WebauthnService
             Log::debug('WebAuthn clientData type mismatch', [
                 'expected' => $type,
                 'actual' => $clientData['type'] ?? null,
-                'challenge' => $clientData['challenge'] ?? null,
-                'session_challenge' => $challenge,
+                'challenge_present' => !empty($clientData['challenge']),
+                'session_challenge_present' => !empty($challenge),
             ]);
             throw new RuntimeException('Invalid WebAuthn challenge - type mismatch.');
         }
@@ -321,8 +318,6 @@ class WebauthnService
 
         if ($expectedChallenge === '' || $actualChallenge === '') {
             Log::error('WebAuthn challenge encoding issue', [
-                'expected_challenge' => $challenge,
-                'actual_challenge' => $clientData['challenge'] ?? null,
                 'expected_decoded_length' => strlen($expectedChallenge),
                 'actual_decoded_length' => strlen($actualChallenge),
             ]);
@@ -331,10 +326,6 @@ class WebauthnService
 
         if (!hash_equals($expectedChallenge, $actualChallenge)) {
             Log::debug('WebAuthn challenge mismatch', [
-                'expected_raw' => bin2hex($expectedChallenge),
-                'actual_raw' => bin2hex($actualChallenge),
-                'expected_encoded' => $challenge,
-                'actual_encoded' => $clientData['challenge'] ?? null,
                 'expected_length' => strlen($expectedChallenge),
                 'actual_length' => strlen($actualChallenge),
             ]);
@@ -356,8 +347,6 @@ class WebauthnService
                 'origin_host' => $originHost,
                 'request_host' => $requestHost,
                 'rp_id' => $rpId,
-                'full_origin' => $origin,
-                'client_data' => $clientData,
             ]);
             throw new RuntimeException('Invalid WebAuthn origin - host mismatch.');
         }

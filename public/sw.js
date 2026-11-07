@@ -1,8 +1,8 @@
-/* BUMP_TIMESTAMP: 2026-10-19T18:23:26+02:00 */
-const CACHE_VERSION = 'v376';
-const CACHE_NAME = `attendance-v376`;
+const APP_VERSION = '9.1.4';
+const CACHE_VERSION = 'v20261019003';
+const CACHE_NAME = `attendance-${CACHE_VERSION}`;
 const STATIC_CACHE_NAME = CACHE_NAME;
-const RUNTIME_CACHE_NAME = `attendance-runtime-v376`;
+const RUNTIME_CACHE_NAME = `attendance-runtime-${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline';
 const FALLBACK_IMAGE = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 24 24" fill="none" stroke="%23CFA46F" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`;
 
@@ -69,11 +69,14 @@ self.addEventListener('install', (event) => {
 
 // Activate: clean up old caches (seamless, no auto-reloading or claiming open windows)
 self.addEventListener('activate', (event) => {
-    const validCaches = [STATIC_CACHE_NAME, RUNTIME_CACHE_NAME];
+        const validCaches = [STATIC_CACHE_NAME, RUNTIME_CACHE_NAME];
     event.waitUntil(
         caches.keys().then((cacheNames) => {
+            const ownedCaches = cacheNames.filter((cacheName) =>
+                cacheName.startsWith('attendance-v') || cacheName.startsWith('attendance-runtime-v')
+            );
             return Promise.all(
-                cacheNames.map((cacheName) => {
+                ownedCaches.map((cacheName) => {
                     if (!validCaches.includes(cacheName)) {
                         console.log('[PWA SW] Clearing old cache:', cacheName);
                         return caches.delete(cacheName);

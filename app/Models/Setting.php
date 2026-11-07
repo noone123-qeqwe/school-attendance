@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Setting extends Model
 {
@@ -18,10 +19,16 @@ class Setting extends Model
     {
         static::saved(function ($setting) {
             self::$runtimeCache[$setting->key] = $setting->value;
+            if (str_starts_with($setting->key, 'feature.')) {
+                Cache::forget('application_feature_flags');
+            }
         });
 
         static::deleted(function ($setting) {
             unset(self::$runtimeCache[$setting->key]);
+            if (str_starts_with($setting->key, 'feature.')) {
+                Cache::forget('application_feature_flags');
+            }
         });
     }
 

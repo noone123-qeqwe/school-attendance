@@ -93,6 +93,7 @@ class StudentParentBindingTest extends TestCase
         $code = $codeResponse->json('code');
 
         // 2. Parent links using the code
+        $this->actingAsGuest()->flushSession();
         $linkResponse = $this->actingAs($this->parent)
             ->postJson(route('parent.link.code'), ['code' => $code]);
 
@@ -176,6 +177,7 @@ class StudentParentBindingTest extends TestCase
             ->postJson(route('student.parent_link.generate_code'));
         $code = $codeResponse->json('code');
 
+        $this->actingAsGuest()->flushSession();
         $linkResponse = $this->actingAs($this->parent)
             ->postJson(route('parent.link.code'), ['code' => $code]);
 
@@ -360,7 +362,7 @@ class StudentParentBindingTest extends TestCase
         ]);
     }
 
-    public function test_public_parent_registration_connects_to_student(): void
+    public function test_public_parent_registration_requires_the_student_link_code_flow(): void
     {
         $regEmail = 'parent.registrant@gmail.com';
 
@@ -382,12 +384,12 @@ class StudentParentBindingTest extends TestCase
         $parent = User::where('email', $regEmail)->first();
         $this->assertNotNull($parent);
 
-        $this->assertDatabaseHas('parent_student', [
+        $this->assertDatabaseMissing('parent_student', [
             'parent_id'  => $parent->id,
             'student_id' => $this->student->id,
         ]);
 
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseMissing('notifications', [
             'user_id' => $this->student->id,
             'sent_by' => $parent->id,
             'type'    => 'parent_linked',

@@ -56,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
         Blade::directive('appReleaseDate', function () {
             return '<?php echo e(app(\App\Services\VersionService::class)->getFormattedReleaseDate()); ?>';
         });
+        Blade::if('feature', fn (string $name): bool => app(\App\Services\FeatureFlagService::class)->enabled($name));
 
         View::composer('*', function ($view) {
             // A page renders many nested Blade views. Build this shared data once

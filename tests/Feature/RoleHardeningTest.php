@@ -33,7 +33,7 @@ class RoleHardeningTest extends TestCase
             'role' => 'admin',
             'admin_sub_role' => 'super_admin',
         ]);
-        $this->actingAs($superAdmin)->postJson(route('pwa.update'), [])
+        $this->actingAs($superAdmin)->withSession(['admin_2fa_verified' => false])->postJson(route('pwa.update'), [])
             ->assertForbidden();
 
         $regularAdmin = User::factory()->create([

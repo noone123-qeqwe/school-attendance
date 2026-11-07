@@ -20,8 +20,27 @@ class EnsureStudentDeviceIsBound
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-
         if (!$user || !$user->isStudent()) {
+            return $next($request);
+        }
+
+        $faceFactor = \App\Models\Setting::get('face_verification_additional_factor', 'none');
+        $facePayload = $request->input('biometric_method') === 'face'
+            || $request->filled('face_descriptor')
+            || $request->filled('live_frame')
+            || $request->filled('live_frames');
+        $requiresRegisteredDevice = in_array($faceFactor, ['device', 'fingerprint_and_device'], true);
+        if ($request->routeIs('qr.verify.complete') && $facePayload && $requiresRegisteredDevice
+            && app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification')
+            && !\App\Models\DeviceBinding::where('user_id', $user->id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Register this device in Settings before using face verification with the device check.',
+                'error_type' => 'device_not_registered',
+            ], 403);
+        }
+
+        if (!app(\App\Services\FeatureFlagService::class)->enabled('feature.device_binding')) {
             return $next($request);
         }
 

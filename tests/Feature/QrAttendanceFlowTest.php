@@ -32,7 +32,7 @@ class QrAttendanceFlowTest extends TestCase
         // Mock webauthn credential for the student
         $student->webauthnCredentials()->create([
             'credential_id' => 'fake_cred_id',
-            'public_key' => 'fake_key',
+            'public_key' => "-----BEGIN PUBLIC KEY-----\nQR-TEST-KEY\n-----END PUBLIC KEY-----",
             'sign_count' => 0,
             'user_handle' => 'fake_handle',
         ]);
@@ -134,7 +134,7 @@ class QrAttendanceFlowTest extends TestCase
 
         $student->webauthnCredentials()->create([
             'credential_id' => 'fake_cred_id_2',
-            'public_key' => 'fake_key_2',
+            'public_key' => "-----BEGIN PUBLIC KEY-----\nQR-TEST-KEY-2\n-----END PUBLIC KEY-----",
             'sign_count' => 0,
             'user_handle' => 'fake_handle_2',
         ]);

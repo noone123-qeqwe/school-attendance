@@ -61,12 +61,18 @@ services:
       - key: MAIL_ENCRYPTION
         value: tls
       - key: MAIL_USERNAME
-        value: osmenacolleges.attendance@gmail.com
+        sync: false
       - key: MAIL_PASSWORD
         sync: false
       - key: MAIL_FROM_ADDRESS
-        value: osmenacolleges.attendance@gmail.com
+        sync: false
       - key: MAIL_FROM_NAME
         value: "Smart Classroom Attendance System"
       - key: BREVO_API_KEY
+        sync: false
+      - key: SMS_ENABLED
+        value: "false"
+      - key: SEMAPHORE_API_KEY
+        sync: false
+      - key: SEMAPHORE_SENDER_NAME
         sync: false

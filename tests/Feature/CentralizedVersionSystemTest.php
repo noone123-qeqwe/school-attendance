@@ -116,7 +116,7 @@ class CentralizedVersionSystemTest extends TestCase
         $service = app(VersionService::class);
 
         $accountIdentifier = 'cache-survival@example.com';
-        $accountLockoutKey = 'lockout:acc:' . sha1($accountIdentifier) . ':attempts';
+        $accountLockoutKey = 'lockout:acc:' . hash_hmac('sha256', strtolower($accountIdentifier), config('app.key')) . ':attempts';
         $otpCooldownKey = 'otp_cooldown:' . sha1($accountIdentifier . ':verification');
         Cache::put($accountLockoutKey, 5, 900);
         Cache::put($otpCooldownKey, now()->addSeconds(900)->timestamp, 900);

@@ -10,6 +10,7 @@ use App\Events\AttendanceClockedIn;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Rules\ValidCoordinate;
 use App\Http\Controllers\Controller;
 
 
@@ -35,10 +36,11 @@ class AttendanceController extends Controller
 
    public function store(Request $request)
 {
+   $gpsVerificationEnabled = app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification');
    $request->validate([
     'subject_code' => 'required|string',
-    'latitude' => 'required|numeric|between:-90,90',
-    'longitude' => 'required|numeric|between:-180,180',
+    'latitude' => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::latitude()],
+    'longitude' => [$gpsVerificationEnabled ? 'required' : 'nullable', ValidCoordinate::longitude()],
     'accuracy' => 'nullable|numeric',
 ]);
     $user = auth()->user();
@@ -64,7 +66,7 @@ class AttendanceController extends Controller
         ->latest('id')
         ->first();
 
-    $radiusMeters = (int) ($activeSession ? $activeSession->getAllowedRadius() : 50);
+    $radiusMeters = $gpsVerificationEnabled ? (int) ($activeSession ? $activeSession->getAllowedRadius() : 50) : 0;
 
     if ($radiusMeters > 0) {
         if (!$activeSession || $activeSession->classroom_lat === null || $activeSession->classroom_lng === null) {

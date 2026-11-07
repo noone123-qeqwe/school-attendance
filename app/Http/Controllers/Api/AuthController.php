@@ -342,6 +342,8 @@ class AuthController extends Controller
         $token = $request->user()?->currentAccessToken();
         if ($token instanceof \Laravel\Sanctum\TransientToken) {
             Auth::guard('web')->logout();
+            Auth::guard('sanctum')->forgetUser();
+            Auth::shouldUse(config('auth.defaults.guard', 'web'));
 
             if ($request->hasSession()) {
                 $request->session()->invalidate();

@@ -235,19 +235,67 @@
                 </div>
             </label>
             
-            <label style="display:flex; align-items:center; gap:12px; cursor:pointer;">
-                <input type="checkbox" name="sms_notifications" style="accent-color:var(--saas-primary); width:16px; height:16px;">
-                <div>
-                    <div style="font-weight:500; font-size:0.9rem;">Enable SMS Gateway</div>
-                    <div class="saas-text-muted" style="font-size:0.75rem;">Requires active Twilio/Vonage integration.</div>
-                </div>
-            </label>
+            @php
+                $featureControls = [
+                    'face_verification' => ['Face verification', 'Supplementary identity check during attendance.'],
+                    'peer_biometric' => ['Peer biometric verification', 'Allow the peer verification attendance workflow.'],
+                    'student_assistant_qr' => ['Student assistant QR', 'Allow assigned student assistants to manage session QR codes.'],
+                    'gps_verification' => ['GPS verification', 'Use location checks for attendance sessions.'],
+                    'device_binding' => ['Device binding', 'Require the student’s registered device when the workflow requests it.'],
+                    'sms_notifications' => ['SMS notifications', 'Send supported absence alerts by text message.'],
+                    'offline_attendance' => ['Offline attendance sync', 'Allow queued attendance records to sync after connectivity returns.'],
+                ];
+            @endphp
+            <input type="hidden" name="feature_flags_present" value="1">
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-top:18px;">
+                @foreach($featureControls as $name => [$label, $description])
+                    <label style="display:flex; align-items:flex-start; gap:10px; padding:12px; border:1px solid var(--saas-border); border-radius:10px; cursor:pointer;">
+                        <input type="checkbox" name="features[{{ $name }}]" value="1" @checked($featureFlags['feature.' . $name] ?? false) style="accent-color:var(--saas-primary); width:16px; height:16px; margin-top:2px;">
+                        <span>
+                            <span style="display:block; font-weight:500; font-size:0.9rem;">{{ $label }}</span>
+                            <span class="saas-text-muted" style="display:block; font-size:0.75rem;">{{ $description }}</span>
+                            @if($name === 'sms_notifications')
+                                <span class="saas-text-muted" style="display:block; font-size:0.72rem; margin-top:4px;">
+                                    @if(app(\App\Services\SemaphoreService::class)->isConfigured())
+                                        SMS gateway configured.
+                                    @else
+                                        SMS unavailable until SMS_ENABLED and a valid Semaphore key are configured in the deployment environment.
+                                    @endif
+                                </span>
+                            @endif
+                        </span>
+                    </label>
+                @endforeach
+            </div>
 
             <hr style="border:0; border-top:1px solid var(--saas-border); margin:32px 0;">
             
             <h3 class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
                 <i class="bi bi-shield-lock saas-text-muted"></i> Security & Access
             </h3>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;">
+                <div class="saas-form-group">
+                    <label class="saas-label" for="face_lockout_minutes">Face verification lockout</label>
+                    <select id="face_lockout_minutes" name="face_lockout_minutes" class="saas-input">
+                        @foreach([5, 10, 15, 30, 60] as $minutes)
+                            <option value="{{ $minutes }}" @selected((int) \App\Models\Setting::get('face_lockout_minutes', 15) === $minutes)>{{ $minutes }} minutes after five failed attempts</option>
+                        @endforeach
+                    </select>
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">The limit is five unsuccessful face checks per student per attendance session.</p>
+                </div>
+                <div class="saas-form-group">
+                    <label class="saas-label" for="face_verification_additional_factor">Additional check after face match</label>
+                    <select id="face_verification_additional_factor" name="face_verification_additional_factor" class="saas-input">
+                        @php($faceFactor = \App\Models\Setting::get('face_verification_additional_factor', 'none'))
+                        <option value="none" @selected($faceFactor === 'none')>None</option>
+                        <option value="fingerprint" @selected($faceFactor === 'fingerprint')>Registered fingerprint or device biometric</option>
+                        <option value="device" @selected($faceFactor === 'device')>Registered device</option>
+                        <option value="fingerprint_and_device" @selected($faceFactor === 'fingerprint_and_device')>Fingerprint and registered device</option>
+                    </select>
+                    <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Fingerprint uses the existing WebAuthn assertion. Device checks require an existing device binding.</p>
+                </div>
+            </div>
             
             <div class="saas-form-group" style="margin-bottom:32px;">
                 <label class="saas-label">Admin IP Whitelist</label>

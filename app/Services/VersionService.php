@@ -647,6 +647,38 @@ class VersionService
     }
 
     /**
+     * Advance only the build identifier for a manual PWA cache refresh.
+     * The service worker cache remains derived from version.json's build value.
+     */
+    public function bumpBuild(): string
+    {
+        $this->refresh();
+        $payload = $this->getFileData();
+        $todayPrefix = date('Ymd');
+        $currentBuild = $this->getBuild();
+        $buildSeq = str_starts_with($currentBuild, $todayPrefix . '.')
+            ? ((int) substr($currentBuild, strlen($todayPrefix) + 1)) + 1
+            : 1;
+        $targetBuild = sprintf('%s.%03d', $todayPrefix, $buildSeq);
+        $payload['build'] = $targetBuild;
+        $payload['commit'] = $this->getCommit();
+
+        try {
+            File::put(base_path('version.json'), json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Unable to update the release build metadata.', 0, $e);
+        }
+
+        config(['version.build' => $targetBuild]);
+        $newSwVersion = $this->bumpSwJs();
+        Cache::forever('pwa_sw_version', $newSwVersion);
+
+        try { \Illuminate\Support\Facades\Artisan::call('view:clear'); } catch (\Throwable $e) {}
+
+        return $newSwVersion;
+    }
+
+    /**
      * Publish a new release without immediately installing it on this device.
      */
     public function publishRelease(?string $targetVersion = null, string $type = 'patch'): array
@@ -716,28 +748,18 @@ class VersionService
      */
     protected function bumpSwJs(): string
     {
-        $swPath = public_path('sw.js');
-        $newSwVersion = 'v350';
+        $buildDigits = preg_replace('/\D/', '', $this->getBuild());
+        $newSwVersion = 'v' . ($buildDigits ?: '1');
         try {
-            if (File::exists($swPath)) {
+            if (File::exists(public_path('sw.js'))) {
+                $swPath = public_path('sw.js');
                 $swContent = File::get($swPath);
-                $currentNum = 349;
-                if (preg_match('/CACHE_VERSION\s*=\s*[\'"]v?(\d+)[\'"]/', $swContent, $matches)) {
-                    $currentNum = (int)$matches[1];
-                }
-                $newSwVersion = 'v' . ($currentNum + 1);
-
-                $swContent = preg_replace('/const\s+CACHE_VERSION\s*=\s*[\'"][^\'"]+[\'"];/', "const CACHE_VERSION = '{$newSwVersion}';", $swContent);
-                $swContent = preg_replace('/const\s+CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/', "const CACHE_NAME = `attendance-{$newSwVersion}`;", $swContent);
-                $swContent = preg_replace('/const\s+RUNTIME_CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/', "const RUNTIME_CACHE_NAME = `attendance-runtime-{$newSwVersion}`;", $swContent);
-
-                $timestampIso = now()->toIso8601String();
-                if (preg_match('/\/\* BUMP_TIMESTAMP:.*?\*\//s', $swContent)) {
-                    $swContent = preg_replace('/\/\* BUMP_TIMESTAMP:.*?\*\//s', "/* BUMP_TIMESTAMP: {$timestampIso} */", $swContent);
-                } else {
-                    $swContent = "/* BUMP_TIMESTAMP: {$timestampIso} */\n" . $swContent;
-                }
-
+                $appVersion = $this->getVersion();
+                $swContent = preg_replace('/const\s+APP_VERSION\s*=\s*[\'"][^\'"]+[\'"];/',
+                    "const APP_VERSION = '{$appVersion}';", $swContent);
+                $swContent = preg_replace('/const\s+CACHE_VERSION\s*=\s*[\'"][^\'"]+[\'"];/',
+                    "const CACHE_VERSION = '{$newSwVersion}';", $swContent);
+                $swContent = preg_replace('/\/\*\s*BUMP_TIMESTAMP:.*?\*\/\s*/s', '', $swContent);
                 File::put($swPath, $swContent);
             }
         } catch (\Throwable $e) {
@@ -761,6 +783,6 @@ class VersionService
             }
         }
 
-        return (string)(Cache::get('pwa_sw_version') ?: 'v350');
+        return (string)(Cache::get('pwa_sw_version') ?: 'v1');
     }
 }

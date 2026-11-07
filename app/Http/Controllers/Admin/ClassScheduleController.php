@@ -8,6 +8,7 @@ use App\Models\Subject;
 use App\Models\Section;
 use App\Models\Schedule;
 use App\Models\User;
+use App\Rules\ValidScheduleSlot;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -68,29 +69,24 @@ class ClassScheduleController extends Controller
             'teacher_id' => 'nullable|exists:users,id',
             'section_id' => 'required|exists:sections,id',
             'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-            'start_time' => 'required',
+            'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|after:start_time',
-            'room' => 'required|string|max:50',
+            'room' => [
+                'required',
+                'string',
+                'max:50',
+                new ValidScheduleSlot(
+                    (string) $request->input('day_of_week'),
+                    (string) $request->input('start_time'),
+                    (string) $request->input('end_time'),
+                    $request->filled('teacher_id') ? (int) $request->input('teacher_id') : null,
+                    (string) $request->input('room'),
+                ),
+            ],
         ]);
 
         $startTime = Carbon::parse($request->start_time)->format('H:i');
         $endTime = Carbon::parse($request->end_time)->format('H:i');
-
-        // Check for room conflict on the same day and overlapping time
-        $roomConflict = ClassSchedule::where('room', trim($request->room))
-            ->where('day_of_week', $request->day_of_week)
-            ->where(function ($q) use ($startTime, $endTime) {
-                $q->where(function ($sub) use ($startTime, $endTime) {
-                    $sub->where('start_time', '<', $endTime)
-                        ->where('end_time', '>', $startTime);
-                });
-            })
-            ->first();
-
-        if ($roomConflict) {
-            $existingSub = $roomConflict->subject->code ?? 'another subject';
-            return back()->withInput()->with('error', "Room conflict: '{$request->room}' is already scheduled for {$existingSub} on {$request->day_of_week} ({$roomConflict->start_time} - {$roomConflict->end_time}).");
-        }
 
         ClassSchedule::create([
             'subject_id' => $request->subject_id,
@@ -130,30 +126,25 @@ class ClassScheduleController extends Controller
             'teacher_id' => 'nullable|exists:users,id',
             'section_id' => 'required|exists:sections,id',
             'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-            'start_time' => 'required',
+            'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|after:start_time',
-            'room' => 'required|string|max:50',
+            'room' => [
+                'required',
+                'string',
+                'max:50',
+                new ValidScheduleSlot(
+                    (string) $request->input('day_of_week'),
+                    (string) $request->input('start_time'),
+                    (string) $request->input('end_time'),
+                    $request->filled('teacher_id') ? (int) $request->input('teacher_id') : null,
+                    (string) $request->input('room'),
+                    $classSchedule->id,
+                ),
+            ],
         ]);
 
         $startTime = Carbon::parse($request->start_time)->format('H:i');
         $endTime = Carbon::parse($request->end_time)->format('H:i');
-
-        // Check for room conflict on the same day and overlapping time excluding self
-        $roomConflict = ClassSchedule::where('id', '!=', $classSchedule->id)
-            ->where('room', trim($request->room))
-            ->where('day_of_week', $request->day_of_week)
-            ->where(function ($q) use ($startTime, $endTime) {
-                $q->where(function ($sub) use ($startTime, $endTime) {
-                    $sub->where('start_time', '<', $endTime)
-                        ->where('end_time', '>', $startTime);
-                });
-            })
-            ->first();
-
-        if ($roomConflict) {
-            $existingSub = $roomConflict->subject->code ?? 'another subject';
-            return back()->withInput()->with('error', "Room conflict: '{$request->room}' is already scheduled for {$existingSub} on {$request->day_of_week} ({$roomConflict->start_time} - {$roomConflict->end_time}).");
-        }
 
         $classSchedule->update([
             'subject_id' => $request->subject_id,

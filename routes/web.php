@@ -120,10 +120,12 @@ Route::get('/storage/{path}', function (string $path) {
         !is_file($fullPath)) {
         abort(404);
     }
-    return response()->file($fullPath, [
-        'Cache-Control' => 'private, max-age=300, must-revalidate',
-        'X-Content-Type-Options' => 'nosniff',
-    ]);
+    $response = response()->file($fullPath);
+    $response->setPrivate();
+    $response->headers->set('Cache-Control', 'private, max-age=300, must-revalidate');
+    $response->headers->set('X-Content-Type-Options', 'nosniff');
+
+    return $response;
 })->where('path', '.*')->name('storage.fallback');
 
 Route::get('/SmartAttendance.apk', function () {
@@ -308,16 +310,16 @@ Route::middleware('auth')->prefix('mobile')->name('mobile.')->group(function () 
 
 // Authenticated Routes (Protected) - Student Routes
 Route::middleware(['auth', 'student'])->group(function () {
-    Route::get('/peer-snap', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'index'])->name('peer-snap.index');
-    Route::get('/peer-snap/sessions', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'sessions'])->middleware(['device.bound', 'throttle:30,1'])->name('peer-snap.sessions');
-    Route::post('/peer-snap/session', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'start'])->middleware(['device.bound', 'throttle:10,1'])->name('peer-snap.start');
-    Route::post('/peer-snap/confirm', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'confirm'])->middleware(['device.bound', 'throttle:5,1'])->name('peer-snap.confirm');
-    Route::get('/student-assistant/classes', [App\Http\Controllers\StudentAssistantSessionController::class, 'index'])->name('student-assistant.classes');
-    Route::get('/student-assistant/sessions/{session}', [App\Http\Controllers\StudentAssistantSessionController::class, 'show'])->name('student-assistant.sessions.show');
-    Route::get('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'status'])->name('student-assistant.qr.status');
-    Route::post('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'generate'])->middleware('throttle:12,1')->name('student-assistant.qr.generate');
-    Route::post('/student-assistant/sessions/{session}/qr/rotate', [App\Http\Controllers\AttendanceQrTokenController::class, 'rotate'])->middleware('throttle:12,1')->name('student-assistant.qr.rotate');
-    Route::post('/student-assistant/sessions/{session}/qr/replace', [App\Http\Controllers\AttendanceQrTokenController::class, 'replace'])->middleware('throttle:6,1')->name('student-assistant.qr.replace');
+    Route::get('/peer-snap', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'index'])->middleware('feature:peer_biometric')->name('peer-snap.index');
+    Route::get('/peer-snap/sessions', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'sessions'])->middleware(['feature:peer_biometric', 'device.bound', 'throttle:30,1'])->name('peer-snap.sessions');
+    Route::post('/peer-snap/session', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'start'])->middleware(['feature:peer_biometric', 'device.bound', 'throttle:10,1'])->name('peer-snap.start');
+    Route::post('/peer-snap/confirm', [App\Http\Controllers\PeerBiometricAttendanceController::class, 'confirm'])->middleware(['feature:peer_biometric', 'device.bound', 'throttle:5,1'])->name('peer-snap.confirm');
+    Route::get('/student-assistant/classes', [App\Http\Controllers\StudentAssistantSessionController::class, 'index'])->middleware('feature:student_assistant_qr')->name('student-assistant.classes');
+    Route::get('/student-assistant/sessions/{session}', [App\Http\Controllers\StudentAssistantSessionController::class, 'show'])->middleware('feature:student_assistant_qr')->name('student-assistant.sessions.show');
+    Route::get('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'status'])->middleware('feature:student_assistant_qr')->name('student-assistant.qr.status');
+    Route::post('/student-assistant/sessions/{session}/qr', [App\Http\Controllers\AttendanceQrTokenController::class, 'generate'])->middleware(['feature:student_assistant_qr', 'throttle:12,1'])->name('student-assistant.qr.generate');
+    Route::post('/student-assistant/sessions/{session}/qr/rotate', [App\Http\Controllers\AttendanceQrTokenController::class, 'rotate'])->middleware(['feature:student_assistant_qr', 'throttle:12,1'])->name('student-assistant.qr.rotate');
+    Route::post('/student-assistant/sessions/{session}/qr/replace', [App\Http\Controllers\AttendanceQrTokenController::class, 'replace'])->middleware(['feature:student_assistant_qr', 'throttle:6,1'])->name('student-assistant.qr.replace');
     Route::get('/profile', [PTController::class, 'profile'])->name('profile');
     Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store')->middleware('device.bound');
     Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
@@ -504,8 +506,8 @@ Route::middleware(['auth', 'teacher'])->prefix('teacher')->name('teacher.')->gro
     Route::get('/corrections', [App\Http\Controllers\TeacherController::class, 'corrections'])->name('corrections');
 
     // Offline Attendance Sync
-    Route::post('/offline-attendance/sync', [App\Http\Controllers\OfflineAttendanceController::class, 'sync'])->name('offline.sync');
-    Route::get('/offline-attendance/roster', [App\Http\Controllers\OfflineAttendanceController::class, 'roster'])->name('offline.roster');
+    Route::post('/offline-attendance/sync', [App\Http\Controllers\OfflineAttendanceController::class, 'sync'])->middleware('feature:offline_attendance')->name('offline.sync');
+    Route::get('/offline-attendance/roster', [App\Http\Controllers\OfflineAttendanceController::class, 'roster'])->middleware('feature:offline_attendance')->name('offline.roster');
 });
 
 // Guest Excuse Submission (Signed URLs)

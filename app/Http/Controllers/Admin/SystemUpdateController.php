@@ -721,68 +721,10 @@ class SystemUpdateController extends Controller
 
     private function bumpPwaVersionInternal()
     {
-        $swPath = public_path('sw.js');
-        $newVersion = 'v8';
-
-        if (File::exists($swPath)) {
-            $content = File::get($swPath);
-            $currentNum = 7;
-            if (preg_match('/CACHE_VERSION\s*=\s*[\'"]v?(\d+)[\'"]/', $content, $matches)) {
-                $currentNum = (int)$matches[1];
-            } elseif (preg_match('/CACHE_NAME\s*=\s*[`\'"][^`\'"]*v(\d+)[`\'"]/', $content, $matches)) {
-                $currentNum = (int)$matches[1];
-            }
-
-            $nextNum = $currentNum + 1;
-            $newVersion = 'v' . $nextNum;
-            $timestamp = now()->toIso8601String();
-
-            // Update CACHE_VERSION
-            if (preg_match('/const\s+CACHE_VERSION\s*=\s*[\'"][^\'"]+[\'"];/', $content)) {
-                $content = preg_replace('/const\s+CACHE_VERSION\s*=\s*[\'"][^\'"]+[\'"];/', "const CACHE_VERSION = '{$newVersion}';", $content);
-            } else {
-                $content = "const CACHE_VERSION = '{$newVersion}';\n" . $content;
-            }
-
-            // Update CACHE_NAME
-            $content = preg_replace('/const\s+CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/', "const CACHE_NAME = `attendance-{$newVersion}`;", $content);
-
-            // Update RUNTIME_CACHE_NAME
-            $content = preg_replace('/const\s+RUNTIME_CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/', "const RUNTIME_CACHE_NAME = `attendance-runtime-{$newVersion}`;", $content);
-
-            // Ensure timestamp header comment to guarantee byte-level modification
-            if (preg_match('/\/\* BUMP_TIMESTAMP:.*?\*\//s', $content)) {
-                $content = preg_replace('/\/\* BUMP_TIMESTAMP:.*?\*\//s', "/* BUMP_TIMESTAMP: {$timestamp} */", $content);
-            } else {
-                $content = "/* BUMP_TIMESTAMP: {$timestamp} */\n" . $content;
-            }
-
-            File::put($swPath, $content);
-        }
-
-        $tagsPath = resource_path('views/partials/pwa-tags.blade.php');
-        if (File::exists($tagsPath)) {
-            $tagsContent = File::get($tagsPath);
-            $tagsContent = preg_replace('/\/sw\.js(?:\?[^"\']*)?/', '/sw.js?v={{ $swQueryVer }}', $tagsContent);
-            File::put($tagsPath, $tagsContent);
-        }
-
-        $manifestPath = public_path('manifest.json');
-        if (File::exists($manifestPath)) {
-            $manifestContent = File::get($manifestPath);
-            $appVer = app(\App\Services\VersionService::class)->getVersion();
-            $manifestContent = preg_replace('/"version"\s*:\s*"[^"]+"/', "\"version\": \"{$appVer}\"", $manifestContent);
-            File::put($manifestPath, $manifestContent);
-        }
-
-        \Illuminate\Support\Facades\Cache::forever('pwa_sw_version', $newVersion);
-
-        return $newVersion;
+        return app(\App\Services\VersionService::class)->bumpBuild();
     }
 
-    /**
-     * Endpoint to bump the semantic application release version (Super Admin).
-     */
+    /** Endpoint to bump the semantic application release version (Super Admin). */
     public function bumpAppVersion(Request $request)
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
@@ -792,10 +734,8 @@ class SystemUpdateController extends Controller
             $release = app(\App\Services\VersionService::class)->createRelease($type, $specified);
             $newAppVer = $release['version'];
 
-            // Clear compiled view cache so new version badge and asset query hashes take effect immediately
             try { Artisan::call('view:clear'); } catch (\Throwable $ex) {}
 
-            // Broadcast Web Push announcement for the new semantic release
             try {
                 app(\App\Services\WebPushService::class)->broadcastAnnouncement(
                     '⚡ Smart Attendance Release v' . $newAppVer,
@@ -807,7 +747,7 @@ class SystemUpdateController extends Controller
                     ]
                 );
             } catch (\Throwable $pushErr) {
-                Log::warning('App version bump push error: ' . $pushErr->getMessage());
+                Log::warning('App version bump push error', ['exception_class' => get_class($pushErr)]);
             }
 
             return response()->json([
@@ -826,9 +766,7 @@ class SystemUpdateController extends Controller
         }
     }
 
-    /**
-     * Bump semantic application version (patch increment, e.g. 2.4.0 -> 2.4.1).
-     */
+    /** Bump the semantic application version. */
     public function bumpAppVersionInternal(?string $specifiedVersion = null): string
     {
         $versionService = app(\App\Services\VersionService::class);
@@ -836,52 +774,46 @@ class SystemUpdateController extends Controller
         $baseVer = $versionService->getVersion();
         $targetVer = $specifiedVersion ? ltrim(trim($specifiedVersion), 'vV ') : $this->incrementSemver($baseVer);
         $release = $versionService->createRelease('patch', $targetVer);
+
         return $release['version'];
     }
 
-    /**
-     * Synchronize app version to the latest release, or increment if already on or above release.
-     */
+    /** Synchronize the semantic release and advance it when already current. */
     public function syncOrBumpAppVersionInternal(?string $targetVersion = null): string
     {
         $versionService = app(\App\Services\VersionService::class);
         $versionService->refresh();
         $activeVer = $versionService->getVersion();
         $targetVer = $targetVersion ? ltrim(trim($targetVersion), 'vV ') : $this->incrementSemver($activeVer);
-
         $release = $versionService->createRelease('patch', $targetVer);
+
         return $release['version'];
     }
 
-    /**
-     * Helper to increment semver patch: 2.4.0 -> 2.4.1
-     */
     private function incrementSemver(string $version): string
     {
         return app(\App\Services\VersionService::class)->incrementSemver($version, 'patch');
     }
 
-    /**
-     * Send an independent diagnostic test email (Super Admin tool).
-     */
+    /** Send an independent diagnostic test email (Super Admin tool). */
     public function sendTestEmail(Request $request, \App\Services\Email\EmailDeliveryService $emailDeliveryService)
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
 
         $request->validate(['email' => 'required|email']);
         $email = trim((string) $request->input('email'));
-
         $result = $emailDeliveryService->sendDiagnosticTestEmail($email);
 
         return response()->json([
-            'success'     => $result->success,
-            'provider'    => $result->provider,
-            'message_id'  => $result->messageId,
-            'response'    => $result->response,
-            'message'     => $result->success 
+            'success' => $result->success,
+            'provider' => $result->provider,
+            'message_id' => $result->messageId,
+            'response' => $result->response,
+            'message' => $result->success
                 ? "Diagnostic test email successfully delivered to {$email} via {$result->provider}."
-                : ($result->error ?: "Failed to deliver test email."),
+                : ($result->error ?: 'Failed to deliver test email.'),
             'diagnostics' => $result->diagnostics,
         ], $result->success ? 200 : 500);
     }
+
 }

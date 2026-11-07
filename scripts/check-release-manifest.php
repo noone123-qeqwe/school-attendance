@@ -42,9 +42,17 @@ if (!preg_match('/const CACHE_VERSION = [\x27\x22](v\d+)[\x27\x22];?/', $worker,
     $errors[] = 'Service worker cache version is missing';
 } else {
     $cacheVersion = $matches[1];
-    if (!str_contains($worker, 'const CACHE_NAME = `attendance-' . $cacheVersion . '`;')
-        || !str_contains($worker, 'const RUNTIME_CACHE_NAME = `attendance-runtime-' . $cacheVersion . '`;')) {
-        $errors[] = 'Service worker cache names do not match its cache version';
+    $expectedCacheVersion = 'v' . preg_replace('/\D/', '', (string) ($release['build'] ?? ''));
+    if (!preg_match('/const APP_VERSION = [\x27\x22]' . preg_quote((string) $version, '/') . '[\x27\x22];/', $worker)) {
+        $errors[] = 'Service worker APP_VERSION does not match version.json';
+    }
+    if ($cacheVersion !== $expectedCacheVersion) {
+        $errors[] = 'Service worker cache version does not match version.json build';
+    }
+    $backtick = chr(96);
+    if (!str_contains($worker, 'const CACHE_NAME = ' . $backtick . 'attendance-' . '$' . '{CACHE_VERSION}' . $backtick . ';')
+        || !str_contains($worker, 'const RUNTIME_CACHE_NAME = ' . $backtick . 'attendance-runtime-' . '$' . '{CACHE_VERSION}' . $backtick . ';')) {
+        $errors[] = 'Service worker cache names do not derive from its cache version';
     }
 }
 

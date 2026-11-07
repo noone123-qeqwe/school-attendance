@@ -146,45 +146,23 @@ if (file_exists($headFile)) {
     }
 }
 
-// 4. Service Worker Cache Version Bump
-$newSwVersion = 'v351';
+// 4. Service Worker cache version derives from the release build identifier.
+$newSwVersion = 'v' . preg_replace('/\D/', '', $newBuild);
 $swBumped = false;
 if (file_exists($swJsPath)) {
     $swContent = (string)@file_get_contents($swJsPath);
-    $currentSwNum = 350;
-    if (preg_match('/CACHE_VERSION\s*=\s*[\'"]v?(\d+)[\'"]/', $swContent, $matches)) {
-        $currentSwNum = (int)$matches[1];
-    }
-    $newSwVersion = 'v' . ($currentSwNum + 1);
-
     if (!$isDryRun) {
+        $swContent = preg_replace(
+            '/const\s+APP_VERSION\s*=\s*[\'"][^\'"]+[\'"];/',
+            "const APP_VERSION = '{$newVersion}';",
+            $swContent
+        );
         $swContent = preg_replace(
             '/const\s+CACHE_VERSION\s*=\s*[\'"][^\'"]+[\'"];/',
             "const CACHE_VERSION = '{$newSwVersion}';",
             $swContent
         );
-        $swContent = preg_replace(
-            '/const\s+CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/',
-            "const CACHE_NAME = `attendance-{$newSwVersion}`;",
-            $swContent
-        );
-        $swContent = preg_replace(
-            '/const\s+RUNTIME_CACHE_NAME\s*=\s*[`\'"][^`\'"]+[`\'"];/',
-            "const RUNTIME_CACHE_NAME = `attendance-runtime-{$newSwVersion}`;",
-            $swContent
-        );
-
-        $timestampIso = date('c');
-        if (preg_match('/\/\* BUMP_TIMESTAMP:.*?\*\//s', $swContent)) {
-            $swContent = preg_replace(
-                '/\/\* BUMP_TIMESTAMP:.*?\*\//s',
-                "/* BUMP_TIMESTAMP: {$timestampIso} */",
-                $swContent
-            );
-        } else {
-            $swContent = "/* BUMP_TIMESTAMP: {$timestampIso} */\n" . $swContent;
-        }
-
+        $swContent = preg_replace('/\/\*\s*BUMP_TIMESTAMP:.*?\*\/\s*/s', '', $swContent);
         @file_put_contents($swJsPath, $swContent);
         $swBumped = true;
     }

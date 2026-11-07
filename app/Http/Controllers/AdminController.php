@@ -1125,12 +1125,12 @@ class AdminController extends Controller
         return app(\App\Http\Controllers\ProfilePhotoController::class)->update($request);
     }
 
-    public function settings()
+    public function settings(\App\Services\FeatureFlagService $featureFlagService)
     {
-        return view('admin.settings');
+        return view('admin.settings', ['featureFlags' => $featureFlagService->all()]);
     }
 
-    public function updateSettings(Request $request)
+    public function updateSettings(Request $request, \App\Services\FeatureFlagService $featureFlagService)
     {
         $request->validate([
             'school_name'               => 'nullable|string|max:255',
@@ -1147,13 +1147,19 @@ class AdminController extends Controller
             'gps_radius'                => 'nullable|integer|min:10|max:1000',
             'qr_expiry'                 => 'nullable|integer|min:5|max:300',
             'require_biometric'         => 'nullable|in:0,1',
+            'face_lockout_minutes'      => 'sometimes|required|integer|min:1|max:60',
+            'face_verification_additional_factor' => 'sometimes|required|in:none,fingerprint,device,fingerprint_and_device',
             'admin_ip_whitelist'        => 'nullable|string',
+            'feature_flags_present'    => 'sometimes|in:1',
+            'features'                 => 'sometimes|array',
+            'features.*'               => 'sometimes|boolean',
         ]);
 
         $settingsToUpdate = [
             'school_name', 'school_short_name', 'school_subtitle', 'academic_year', 
             'current_semester', 'late_threshold', 'absent_threshold', 'warning_threshold', 
-            'attendance_rate_threshold', 'gps_lat', 'gps_lng', 'gps_radius', 'qr_expiry', 'admin_ip_whitelist'
+            'attendance_rate_threshold', 'gps_lat', 'gps_lng', 'gps_radius', 'qr_expiry', 'admin_ip_whitelist',
+            'face_lockout_minutes', 'face_verification_additional_factor'
         ];
 
         foreach ($settingsToUpdate as $key) {
@@ -1178,6 +1184,14 @@ class AdminController extends Controller
             ['key' => 'anti_proxy_device_check'],
             ['value' => $request->has('anti_proxy_device_check') ? 1 : 0]
         );
+
+        if ($request->boolean('feature_flags_present')) {
+            foreach ($featureFlagService->defaults() as $key => $default) {
+                $shortName = substr($key, strlen('feature.'));
+                $enabled = $request->boolean('features.' . $shortName);
+                $featureFlagService->set($key, $enabled, Auth::user());
+            }
+        }
 
         return back()->with('success', 'System settings updated successfully!');
     }

@@ -13,10 +13,15 @@ class CacheAndCdnHeadersTest extends TestCase
         Storage::disk('public')->put($path, 'cache policy check');
 
         try {
-            $this->get('/storage/' . $path)
+            $response = $this->get('/storage/' . $path)
                 ->assertOk()
-                ->assertHeader('Cache-Control', 'private, max-age=300, must-revalidate')
                 ->assertHeader('X-Content-Type-Options', 'nosniff');
+
+            $cacheControl = strtolower((string) $response->headers->get('Cache-Control'));
+            $this->assertStringContainsString('private', $cacheControl);
+            $this->assertStringContainsString('max-age=300', $cacheControl);
+            $this->assertStringContainsString('must-revalidate', $cacheControl);
+            $this->assertStringNotContainsString('public', $cacheControl);
         } finally {
             Storage::disk('public')->delete($path);
         }

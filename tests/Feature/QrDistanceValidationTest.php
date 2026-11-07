@@ -51,7 +51,7 @@ class QrDistanceValidationTest extends TestCase
 
         $this->student->webauthnCredentials()->create([
             'credential_id' => 'fake_cred_dist',
-            'public_key'    => 'fake_key_dist',
+            'public_key'    => "-----BEGIN PUBLIC KEY-----\nDISTANCE-TEST-KEY\n-----END PUBLIC KEY-----",
             'sign_count'    => 0,
             'user_handle'   => 'fake_handle_dist',
         ]);
@@ -637,7 +637,7 @@ class QrDistanceValidationTest extends TestCase
         $student2->enrolledSubjects()->attach($this->subject->id);
         $student2->webauthnCredentials()->create([
             'credential_id' => 'fake_cred_dist_2',
-            'public_key'    => 'fake_key_dist_2',
+            'public_key'    => "-----BEGIN PUBLIC KEY-----\nDISTANCE-TEST-KEY-2\n-----END PUBLIC KEY-----",
             'sign_count'    => 0,
             'user_handle'   => 'fake_handle_dist_2',
         ]);

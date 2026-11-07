@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use App\Rules\ValidCoordinate;
 
 class GpsController extends Controller
 {
@@ -19,8 +20,8 @@ class GpsController extends Controller
     public function updateConfig(Request $request)
     {
         $request->validate([
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180',
+            'latitude' => ['required', ValidCoordinate::latitude()],
+            'longitude' => ['required', ValidCoordinate::longitude()],
             'radius' => 'required|integer|min:10|max:500'
         ]);
         
@@ -38,8 +39,8 @@ class GpsController extends Controller
     public function quickUpdate(Request $request)
     {
         $request->validate([
-            'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180'
+            'latitude' => ['required', ValidCoordinate::latitude()],
+            'longitude' => ['required', ValidCoordinate::longitude()],
         ]);
         
         $lat = $request->latitude;
