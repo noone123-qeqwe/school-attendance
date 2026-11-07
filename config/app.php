@@ -32,7 +32,10 @@ return [
 
     'key' => env('APP_KEY'),
 
-    'trusted_proxies' => env('TRUSTED_PROXIES', '*'),
+    'trusted_proxies' => env('TRUSTED_PROXIES', ''),
+
+    // Set only when the hosting edge overwrites this header with the true client IP.
+    'client_ip_header' => env('CLIENT_IP_HEADER'),
 
     'maintenance' => [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),

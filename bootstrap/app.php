@@ -15,25 +15,23 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // ── Trusted Proxy Configuration ─────────────────────────────────────
-        // TRUSTED_PROXIES: comma-separated IPs/CIDRs, or '*' to trust all proxies.
-        // In production (Render, Railway, Heroku, nginx reverse-proxy) set this to
-        // the actual proxy IP ranges so isSecure(), ip(), and URL generation all
-        // resolve correctly from X-Forwarded-* headers.
-        // Example .env values:
-        //   TRUSTED_PROXIES=*                         (trust all — safe behind managed PaaS)
-        //   TRUSTED_PROXIES=10.0.0.0/8,172.16.0.0/12 (specific CIDR ranges)
+        // Trust only X-Forwarded-Proto, never forwarded client IP or host values.
+        // Render's client IP is resolved from the edge-overwritten CF header below.
         $trustedProxies = trim((string) env('TRUSTED_PROXIES', ''));
         if ($trustedProxies !== '') {
             $middleware->trustProxies(
                 at: $trustedProxies === '*'
                     ? '*'
-                    : array_values(array_filter(array_map('trim', explode(',', $trustedProxies))))
+                    : array_values(array_filter(array_map('trim', explode(',', $trustedProxies)))),
+                headers: Request::HEADER_X_FORWARDED_PROTO
             );
         }
 
         $middleware->encryptCookies(except: [
             'student_device_key',
         ]);
+
+        $middleware->prepend(\App\Http\Middleware\ResolveClientIpFromTrustedHeader::class);
 
         $middleware->alias([
             'admin'         => \App\Http\Middleware\AdminMiddleware::class,

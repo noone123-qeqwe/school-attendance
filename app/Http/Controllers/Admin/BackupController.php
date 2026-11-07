@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use App\Models\BackupLog;
 
 class BackupController extends Controller
@@ -193,15 +194,14 @@ class BackupController extends Controller
             return back()->with('error', 'Please upload a valid .sql backup file.');
         }
 
-        $filename = 'uploaded_restore_' . date('Y_m_d_His') . '_' . $file->getClientOriginalName();
+        // Never use a client supplied filename as part of a filesystem path.
+        $filename = 'uploaded_restore_' . date('Y_m_d_His') . '_' . bin2hex(random_bytes(16)) . '.sql';
         $path = storage_path('app/backups');
-        if (!file_exists($path)) {
-            mkdir($path, 0755, true);
-        }
         $targetPath = $path . '/' . $filename;
-        $file->move($path, $filename);
 
         try {
+            File::ensureDirectoryExists($path, 0755, true);
+            $file->move($path, $filename);
             $this->executeSqlFile($targetPath);
 
             BackupLog::create([
@@ -212,11 +212,14 @@ class BackupController extends Controller
 
             return back()->with('success', 'Database successfully restored from uploaded file!');
         } catch (\Throwable $e) {
-            // Restore failure cleanup: remove the uploaded file if execution failed
             if (file_exists($targetPath)) {
                 @unlink($targetPath);
             }
-            return back()->with('error', 'Restore failed: ' . $e->getMessage());
+            Log::warning('Uploaded database restore failed.', [
+                'admin_id' => Auth::id(),
+                'exception' => get_class($e),
+            ]);
+            return back()->with('error', 'Restore failed. The uploaded backup could not be restored.');
         }
     }
 

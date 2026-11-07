@@ -7,11 +7,31 @@ use App\Models\User;
 use App\Services\DeviceBindingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cookie;
 use Tests\TestCase;
 
 class StudentDeviceBindingTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_device_key_cookie_is_secure_in_production_even_without_forwarded_https(): void
+    {
+        config(['session.secure' => false]);
+        $this->app->instance('env', 'production');
+        Cookie::flushQueuedCookies();
+
+        $student = User::factory()->create(['role' => 'student']);
+        $request = Request::create('/login', 'POST', ['device_key' => 'production-device-key']);
+        $request->setUserResolver(fn () => $student);
+
+        app(DeviceBindingService::class)->bind($student, $request);
+
+        $cookies = Cookie::getQueuedCookies();
+        $deviceCookie = collect($cookies)->first(fn ($cookie) => $cookie->getName() === DeviceBindingService::COOKIE_NAME);
+        $this->assertNotNull($deviceCookie);
+        $this->assertTrue($deviceCookie->isSecure());
+        $this->assertFalse($deviceCookie->isHttpOnly());
+    }
 
     public function test_student_device_is_bound_on_login(): void
     {

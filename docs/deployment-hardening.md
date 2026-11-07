@@ -6,6 +6,7 @@
 2. Review the Render service's existing environment values in the dashboard. The Blueprint now marks SMTP login/from addresses and Semaphore credentials as manually configured values instead of embedding an address in `render.yaml`.
 3. Keep `SMS_ENABLED=false` unless the school has configured and tested its Semaphore account. To enable absence SMS later, configure `SEMAPHORE_API_KEY`, optionally set `SEMAPHORE_SENDER_NAME`, set `SMS_ENABLED=true`, then enable SMS notifications in the admin settings.
 4. Confirm production `APP_DEBUG=false`, `APP_KEY`, database, SMTP/Brevo, Reverb, VAPID, Cloudinary, and other provider settings are present in Render. Rotate the providers listed in [the credential rotation checklist](security-credential-rotation.md).
+5. Keep `CLIENT_IP_HEADER=CF-Connecting-IP` on Render when using the administrator IP allowlist. The middleware trusts this only because Render's Cloudflare edge overwrites it; for another host, configure only a header that the trusted edge overwrites, and do not use caller-controlled `X-Forwarded-For` as the allowlist identity.
 
 ## Deploy
 

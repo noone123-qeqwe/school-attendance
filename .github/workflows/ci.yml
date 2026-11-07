@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 jobs:
   sqlite-tests:
     name: Run Automated Tests (SQLite)

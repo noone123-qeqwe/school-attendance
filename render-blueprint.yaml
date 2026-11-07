@@ -36,6 +36,9 @@ services:
           envVarKey: RENDER_EXTERNAL_URL
       - key: APP_TIMEZONE
         value: Asia/Manila
+      # Render's Cloudflare edge overwrites this with the source client IP.
+      - key: CLIENT_IP_HEADER
+        value: CF-Connecting-IP
       - key: LOG_CHANNEL
         value: stderr
       - key: SESSION_DRIVER

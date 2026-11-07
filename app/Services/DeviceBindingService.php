@@ -280,7 +280,7 @@ class DeviceBindingService
             self::COOKIE_MINUTES,
             null,
             null,
-            $request->isSecure(),
+            $request->isSecure() || config('session.secure', false) || app()->environment('production'),
             false,
             false,
             'Lax'

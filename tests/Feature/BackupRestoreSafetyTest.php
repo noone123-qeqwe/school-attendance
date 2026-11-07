@@ -137,15 +137,45 @@ class BackupRestoreSafetyTest extends TestCase
         $corruptedSql = "INVALID SQL SYNTAX THAT WILL DEFINITELY FAIL;";
         $file = UploadedFile::fake()->createWithContent('corrupted.sql', $corruptedSql);
 
+        $existingUploads = File::glob(storage_path('app/backups/uploaded_restore_*'));
         $response = $this->actingAs($this->superAdmin)->post('/admin/backups/upload-restore', [
             'backup_file' => $file
         ]);
 
-        $response->assertSessionHas('error');
+        $response->assertSessionHas('error', 'Restore failed. The uploaded backup could not be restored.');
 
         // Verify that no orphaned file remains in storage/app/backups/
-        $files = File::glob(storage_path('app/backups/uploaded_restore_*_corrupted.sql'));
+        $files = array_values(array_diff(File::glob(storage_path('app/backups/uploaded_restore_*')), $existingUploads));
         $this->assertEmpty($files, 'Corrupted upload backup file should be removed on restore failure.');
+    }
+
+    public function test_uploaded_restore_uses_generated_filename_instead_of_client_filename(): void
+    {
+        $file = UploadedFile::fake()->createWithContent(
+            'outside.sql',
+            "CREATE TABLE IF NOT EXISTS safe_upload_test (id INTEGER);\n"
+        );
+        $backupPath = null;
+
+        try {
+            $response = $this->actingAs($this->superAdmin)->post('/admin/backups/upload-restore', [
+                'backup_file' => $file,
+            ]);
+
+            $response->assertSessionHas('success');
+            $backup = BackupLog::latest()->firstOrFail();
+            $this->assertMatchesRegularExpression('/^uploaded_restore_\d{4}_\d{2}_\d{2}_\d{6}_[a-f0-9]{32}\.sql$/', $backup->filename);
+            $this->assertStringNotContainsString('..', $backup->filename);
+            $this->assertStringNotContainsString('outside', $backup->filename);
+            $backupPath = storage_path('app/' . $backup->path);
+            $this->assertFileExists($backupPath);
+
+            $backup->delete();
+        } finally {
+            if ($backupPath !== null && File::exists($backupPath)) {
+                File::delete($backupPath);
+            }
+        }
     }
 
     public function test_super_admin_can_create_backup_via_controller()

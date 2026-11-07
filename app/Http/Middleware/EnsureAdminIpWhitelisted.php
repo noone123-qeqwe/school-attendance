@@ -27,9 +27,18 @@ class EnsureAdminIpWhitelisted
             
             if (!empty($whitelistString)) {
                 $whitelistedIps = array_map('trim', explode(',', $whitelistString));
-                $clientIp = $request->ip();
+                $clientIpHeader = trim((string) config('app.client_ip_header'));
+                $clientIp = $clientIpHeader !== ''
+                    ? $request->header($clientIpHeader)
+                    : $request->ip();
+
+                // A configured proxy header is trusted only when it contains a
+                // single valid address. Fail closed rather than treating the
+                // shared proxy address as an administrator's client address.
+                if (!is_string($clientIp) || filter_var($clientIp, FILTER_VALIDATE_IP) === false) {
+                    abort(403, 'Unable to verify client IP address.');
+                }
                 
-                // Allow localhost by default for local development, unless it's strictly removed
                 if (!in_array($clientIp, $whitelistedIps) && $clientIp !== '127.0.0.1' && $clientIp !== '::1') {
                     abort(403, 'Unauthorized IP address.');
                 }
