@@ -30,7 +30,7 @@ Schedule::command('attendance:check-rate')->dailyAt('20:00')->onOneServer()->wit
 Schedule::command('app:send-parent-digests')->dailyAt('18:00')->onOneServer()->withoutOverlapping(); // Evening digest
 
 // Automated Database Backup (Daily at 02:00 with 14-day retention pruning)
-Schedule::command('app:backup-database --days=14')->dailyAt('02:00')->onOneServer()->withoutOverlapping();
+Schedule::command('app:backup-database --prune --days=14')->dailyAt('02:00')->onOneServer()->withoutOverlapping();
 
 // Hourly SQLite WAL Checkpoint & Query Plan Optimization
 Schedule::command('app:wal-checkpoint')->hourly()->onOneServer()->withoutOverlapping();

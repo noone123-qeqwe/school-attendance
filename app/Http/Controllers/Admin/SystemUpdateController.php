@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Log;
 use App\Models\BackupLog;
+use App\Services\PostgresBackupService;
 use App\Models\Setting;
 
 class SystemUpdateController extends Controller
@@ -205,8 +206,10 @@ class SystemUpdateController extends Controller
         $overallSuccess = true;
 
         // 1. Auto Backup Database Snapshot
+        $filepath = null;
+        $handle = null;
         try {
-            $filename = 'backup_pre_update_' . date('Y_m_d_His') . '.sql';
+            $filename = 'backup_pre_update_' . date('Y_m_d_His') . '_' . bin2hex(random_bytes(8)) . '.sql';
             $path = storage_path('app/backups');
             if (!file_exists($path)) {
                 mkdir($path, 0755, true);
@@ -243,7 +246,11 @@ class SystemUpdateController extends Controller
                         if ($hasRows) fwrite($handle, "\n");
                     }
                     fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
-                } else {
+                } elseif ($driver === 'pgsql') {
+                    fclose($handle);
+                    $handle = null;
+                    app(PostgresBackupService::class)->dumpTo($filepath);
+                } elseif ($driver === 'mysql') {
                     $tables = DB::select('SHOW TABLES');
                     foreach ($tables as $table) {
                         $tableName = array_values((array)$table)[0];
@@ -269,7 +276,14 @@ class SystemUpdateController extends Controller
                         if ($hasRows) fwrite($handle, "\n");
                     }
                 }
-                fclose($handle);
+                if (is_resource($handle)) {
+                    fclose($handle);
+                    $handle = null;
+                }
+
+                if (!is_file($filepath) || filesize($filepath) === 0) {
+                    throw new \RuntimeException('Database backup did not produce a usable file.');
+                }
 
                 $backupLog = BackupLog::create([
                     'filename' => $filename,
@@ -291,10 +305,20 @@ class SystemUpdateController extends Controller
                 ];
             }
         } catch (\Exception $e) {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+            if ($filepath && file_exists($filepath)) {
+                @unlink($filepath);
+            }
+            Log::warning('System update safety snapshot failed.', [
+                'admin_id' => Auth::id(),
+                'exception' => get_class($e),
+            ]);
             $results[] = [
                 'step' => 'Database Safety Snapshot',
                 'status' => 'warning',
-                'message' => 'Backup warning: ' . $e->getMessage()
+                'message' => 'The safety snapshot could not be created; the update will continue without it.'
             ];
         }
 

@@ -6,7 +6,8 @@ use App\Models\BackupLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
-use Symfony\Component\Process\Process;
+use Illuminate\Support\Facades\Log;
+use App\Services\PostgresBackupService;
 
 class BackupDatabaseCommand extends Command
 {
@@ -15,14 +16,14 @@ class BackupDatabaseCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'app:backup-database {--days=14 : Days of backup history to retain}';
+    protected $signature = 'app:backup-database {--days=14 : Days of backup history to retain} {--prune : Delete backups older than the retention period} {--prefix=backup_auto : Safe filename prefix for this backup}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Create an automated database snapshot and prune old backups';
+    protected $description = 'Create a database snapshot and optionally prune old backups';
 
     /**
      * Execute the console command.
@@ -36,7 +37,12 @@ class BackupDatabaseCommand extends Command
         $filepath = null;
 
         try {
-            $filename = 'backup_auto_' . date('Y_m_d_His') . '.sql';
+            $prefix = trim((string) $this->option('prefix'));
+            if ($prefix === '' || !preg_match('/\A[a-zA-Z0-9_]+\z/', $prefix)) {
+                throw new \InvalidArgumentException('Backup filename prefix is invalid.');
+            }
+
+            $filename = $prefix . '_' . date('Y_m_d_His') . '_' . bin2hex(random_bytes(8)) . '.sql';
             $path = storage_path('app/backups');
 
             if (!file_exists($path)) {
@@ -47,7 +53,7 @@ class BackupDatabaseCommand extends Command
             $handle = fopen($filepath, 'w');
 
             if (!$handle) {
-                $this->error("Cannot open file for writing: {$filepath}");
+                $this->error('Cannot open the database backup file for writing.');
                 return self::FAILURE;
             }
 
@@ -59,49 +65,7 @@ class BackupDatabaseCommand extends Command
             if ($driver === 'pgsql') {
                 fclose($handle);
                 $handle = null;
-
-                $connection = config('database.connections.pgsql', []);
-                $databaseUrl = $connection['url'] ?? null;
-                if (is_string($databaseUrl) && $databaseUrl !== '') {
-                    $parts = parse_url($databaseUrl);
-                    if (!is_array($parts) || empty($parts['host']) || empty($parts['path'])) {
-                        throw new \RuntimeException('PostgreSQL backup connection URL is invalid.');
-                    }
-
-                    parse_str($parts['query'] ?? '', $query);
-                    $connection['host'] = $parts['host'];
-                    $connection['port'] = $parts['port'] ?? 5432;
-                    $connection['database'] = ltrim(rawurldecode($parts['path']), '/');
-                    $connection['username'] = rawurldecode($parts['user'] ?? '');
-                    $connection['password'] = rawurldecode($parts['pass'] ?? '');
-                    $connection['sslmode'] = $query['sslmode'] ?? ($connection['sslmode'] ?? 'prefer');
-                }
-
-                $processEnv = ['PGPASSWORD' => (string) ($connection['password'] ?? '')];
-                if (!empty($connection['password'])) {
-                    $processEnv['PGPASSWORD'] = (string) $connection['password'];
-                }
-                if (!empty($connection['sslmode'])) {
-                    $processEnv['PGSSLMODE'] = (string) $connection['sslmode'];
-                }
-
-                $process = new Process([
-                    'pg_dump',
-                    '--host', (string) ($connection['host'] ?? 'localhost'),
-                    '--port', (string) ($connection['port'] ?? 5432),
-                    '--username', (string) ($connection['username'] ?? ''),
-                    '--dbname', (string) ($connection['database'] ?? ''),
-                    '--no-password',
-                    '--no-owner',
-                    '--no-privileges',
-                    '--format=plain',
-                    '--file', $filepath,
-                ], null, $processEnv, null, 300);
-                $process->run();
-
-                if (!$process->isSuccessful()) {
-                    throw new \RuntimeException('PostgreSQL backup command failed.');
-                }
+                app(PostgresBackupService::class)->dumpTo($filepath);
             } else {
                 if ($driver === 'mysql') {
                     DB::statement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
@@ -182,24 +146,25 @@ class BackupDatabaseCommand extends Command
 
             $this->info("Backup created successfully: {$filename} (" . round($size / 1024 / 1024, 2) . " MB)");
 
-            // Prune old backups older than specified retention days
-            $retentionDays = (int) $this->option('days');
-            $cutoffDate = now()->subDays($retentionDays);
+            if ($this->option('prune')) {
+                $retentionDays = max(1, (int) $this->option('days'));
+                $cutoffDate = now()->subDays($retentionDays);
 
-            $oldBackups = BackupLog::where('created_at', '<', $cutoffDate)->get();
-            $prunedCount = 0;
+                $oldBackups = BackupLog::where('created_at', '<', $cutoffDate)->get();
+                $prunedCount = 0;
 
-            foreach ($oldBackups as $old) {
-                $oldPath = storage_path('app/' . $old->path);
-                if (File::exists($oldPath)) {
-                    File::delete($oldPath);
+                foreach ($oldBackups as $old) {
+                    $oldPath = storage_path('app/' . $old->path);
+                    if (File::exists($oldPath)) {
+                        File::delete($oldPath);
+                    }
+                    $old->delete();
+                    $prunedCount++;
                 }
-                $old->delete();
-                $prunedCount++;
-            }
 
-            if ($prunedCount > 0) {
-                $this->info("Pruned {$prunedCount} old backup(s) older than {$retentionDays} days.");
+                if ($prunedCount > 0) {
+                    $this->info("Pruned {$prunedCount} old backup(s) older than {$retentionDays} days.");
+                }
             }
 
             return self::SUCCESS;
@@ -210,7 +175,11 @@ class BackupDatabaseCommand extends Command
             if ($filepath && file_exists($filepath)) {
                 @unlink($filepath);
             }
-            $this->error("Failed to create backup: " . $e->getMessage());
+            Log::warning('Automated database backup failed.', [
+                'exception' => get_class($e),
+                'connection' => config('database.default'),
+            ]);
+            $this->error('Failed to create database backup.');
             return self::FAILURE;
         } finally {
             if ($handle && is_resource($handle)) {

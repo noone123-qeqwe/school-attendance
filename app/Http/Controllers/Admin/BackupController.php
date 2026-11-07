@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use App\Models\BackupLog;
+use App\Services\PostgresBackupService;
 
 class BackupController extends Controller
 {
@@ -21,12 +22,17 @@ class BackupController extends Controller
     public function create()
     {
         abort_if(!Auth::user()->isSuperAdmin(), 403);
+
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return $this->createPostgresBackup();
+        }
+
         $handle = null;
         $inTransaction = false;
         $filepath = null;
 
         try {
-            $filename = 'backup_' . date('Y_m_d_His') . '.sql';
+            $filename = 'backup_' . date('Y_m_d_His') . '_' . bin2hex(random_bytes(8)) . '.sql';
             $path = storage_path('app/backups');
             if (!file_exists($path)) {
                 mkdir($path, 0755, true);
@@ -146,18 +152,70 @@ class BackupController extends Controller
                 @unlink($filepath);
             }
 
+            Log::warning('Database backup failed.', [
+                'admin_id' => Auth::id(),
+                'exception' => get_class($e),
+            ]);
+
             if (request()->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to create backup: ' . $e->getMessage()
+                    'message' => 'Backup creation failed.'
                 ], 500);
             }
-
-            return back()->with('error', 'Failed to create backup: ' . $e->getMessage());
+            return back()->with('error', 'Backup creation failed.');
         } finally {
             if ($handle && is_resource($handle)) {
                 fclose($handle);
             }
+        }
+    }
+
+    private function createPostgresBackup()
+    {
+        $filepath = null;
+
+        try {
+            $filename = 'backup_' . date('Y_m_d_His') . '_' . bin2hex(random_bytes(8)) . '.sql';
+            $path = storage_path('app/backups');
+            File::ensureDirectoryExists($path, 0755, true);
+            $filepath = $path . '/' . $filename;
+
+            app(PostgresBackupService::class)->dumpTo($filepath);
+            if (!is_file($filepath) || filesize($filepath) === 0) {
+                throw new \RuntimeException('PostgreSQL backup did not produce a usable file.');
+            }
+
+            $backup = BackupLog::create([
+                'filename' => $filename,
+                'path' => 'backups/' . $filename,
+                'size' => filesize($filepath),
+            ]);
+
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Backup created successfully!',
+                    'backup' => $backup,
+                ]);
+            }
+
+            return back()->with('success', 'Backup created successfully!');
+        } catch (\Throwable $exception) {
+            if ($filepath && file_exists($filepath)) {
+                @unlink($filepath);
+            }
+
+            Log::warning('PostgreSQL backup failed.', [
+                'admin_id' => Auth::id(),
+                'exception' => get_class($exception),
+            ]);
+
+            if (request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Backup creation failed.'], 500);
+            }
+
+            return back()->with('error', 'Backup creation failed.');
         }
     }
 
@@ -176,7 +234,12 @@ class BackupController extends Controller
             $this->executeSqlFile($filepath);
             return back()->with('success', "Database successfully restored from {$safeFilename}!");
         } catch (\Throwable $e) {
-            return back()->with('error', 'Database restore failed: ' . $e->getMessage());
+            Log::warning('Database restore failed.', [
+                'admin_id' => Auth::id(),
+                'backup_id' => $backup->id,
+                'exception' => get_class($e),
+            ]);
+            return back()->with('error', 'Database restore failed.');
         }
     }
 
@@ -229,12 +292,18 @@ class BackupController extends Controller
             throw new \Exception('Backup file is empty or does not exist.');
         }
 
-        // Enforce a safe maximum file size (50MB) for restore operations
-        if (filesize($filepath) > 50 * 1024 * 1024) {
-            throw new \Exception('Backup file exceeds the maximum allowed size of 50MB.');
+        $maxRestoreSizeMb = max(1, (int) config('services.backup.max_restore_size_mb', 512));
+        if (filesize($filepath) > $maxRestoreSizeMb * 1024 * 1024) {
+            throw new \RuntimeException('Backup file exceeds the configured restore size limit.');
         }
 
         $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'pgsql') {
+            app(PostgresBackupService::class)->restoreFrom($filepath);
+            return;
+        }
+
         $pdo = DB::connection()->getPdo();
 
         if ($driver === 'mysql') {

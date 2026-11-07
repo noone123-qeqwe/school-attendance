@@ -2,6 +2,11 @@
 
 return [
 
+    'backup' => [
+        'process_timeout' => env('BACKUP_PROCESS_TIMEOUT', 300),
+        'max_restore_size_mb' => env('BACKUP_MAX_RESTORE_SIZE_MB', 512),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

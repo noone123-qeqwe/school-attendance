@@ -16,9 +16,13 @@ This change adds no schema migration. Three historical data-provisioning migrati
 
 ## Data durability and database checks
 
-The Render cron service runs the scheduled database backup command, but Render cron jobs cannot attach persistent disks. Backup files created by that service are temporary, and its backup log rows can point to files unavailable from the web service. Do not rely on these files as recoverable backups. Configure backups to a durable external object store and test a restore, or rely on a separately verified managed PostgreSQL backup plan, before treating production data as protected.
+The current `render.yaml` runs the scheduler in the web container; the older `render-blueprint.yaml` has a separate cron service. Both backup paths write files to local container storage, which may disappear when an instance is replaced, while `backup_logs` rows remain in PostgreSQL. The app does not yet upload backup files to durable object storage. Do not treat these files as recoverable production backups; verify Render's managed PostgreSQL backup and restore plan before relying on it.
 
 The Blueprint uses Render PostgreSQL. The repository test suite covers SQLite and MySQL paths; it does not establish PostgreSQL migration or backup compatibility. Validate migrations, attendance workflows, and a restore against a disposable PostgreSQL staging database before production use.
+
+PostgreSQL backup creation now uses `pg_dump` for schema and data, and restore uses `psql` with stop-on-error and a single transaction. PostgreSQL command construction is covered by tests, but a live staging database restore is still required to establish compatibility. The files remain on ephemeral local storage and are not durable across replacement.
+
+`BACKUP_PROCESS_TIMEOUT` controls the `pg_dump`/`psql` time limit (300 seconds by default), and `BACKUP_MAX_RESTORE_SIZE_MB` controls restores from stored backup files (512 MiB by default). The browser upload route remains limited to 10 MiB; larger restores must use a backup already saved on the server.
 
 ## Offline attendance and queue recovery
 

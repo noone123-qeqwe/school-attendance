@@ -62,7 +62,7 @@ class RealWorldResilienceTest extends TestCase
         $oldLog->updated_at = now()->subDays(20);
         $oldLog->save();
 
-        $exitCode = Artisan::call('app:backup-database', ['--days' => 14]);
+        $exitCode = Artisan::call('app:backup-database', ['--days' => 14, '--prune' => true]);
         $this->assertEquals(0, $exitCode);
 
         $output = Artisan::output();
@@ -80,6 +80,42 @@ class RealWorldResilienceTest extends TestCase
 
         // Clean up created file
         File::delete(storage_path('app/' . $latest->path));
+    }
+
+    public function test_backup_command_keeps_old_archives_unless_pruning_is_requested(): void
+    {
+        $backupDir = storage_path('app/backups');
+        File::ensureDirectoryExists($backupDir);
+
+        $oldFilename = 'backup_auto_preserve_' . bin2hex(random_bytes(6)) . '.sql';
+        $oldPath = $backupDir . '/' . $oldFilename;
+        File::put($oldPath, '-- retained backup test file');
+
+        $oldBackup = BackupLog::create([
+            'filename' => $oldFilename,
+            'path' => 'backups/' . $oldFilename,
+            'size' => filesize($oldPath),
+        ]);
+        $oldBackup->timestamps = false;
+        $oldBackup->created_at = now()->subDays(30);
+        $oldBackup->updated_at = now()->subDays(30);
+        $oldBackup->save();
+        $lastExistingId = (int) BackupLog::max('id');
+
+        try {
+            $exitCode = Artisan::call('app:backup-database');
+            $this->assertSame(0, $exitCode);
+            $this->assertDatabaseHas('backup_logs', ['id' => $oldBackup->id]);
+            $this->assertFileExists($oldPath);
+        } finally {
+            foreach (BackupLog::where('id', '>', $lastExistingId)->get() as $createdBackup) {
+                File::delete(storage_path('app/' . $createdBackup->path));
+                $createdBackup->delete();
+            }
+
+            File::delete($oldPath);
+            $oldBackup->delete();
+        }
     }
 
     /**
