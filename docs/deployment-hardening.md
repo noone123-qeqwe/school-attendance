@@ -19,6 +19,12 @@ The Render cron service runs the scheduled database backup command, but Render c
 
 The Blueprint uses Render PostgreSQL. The repository test suite covers SQLite and MySQL paths; it does not establish PostgreSQL migration or backup compatibility. Validate migrations, attendance workflows, and a restore against a disposable PostgreSQL staging database before production use.
 
+## Offline attendance and queue recovery
+
+Pending attendance stays in the teacher's browser IndexedDB until the server acknowledges it. The PWA now resumes sync when reopened online, retries transient failures with capped exponential backoff, and keeps permanent validation or enrollment failures on-device for manual review. The browser is asked to preserve this site's storage where supported, but that request can be denied; unsynced data still exists only on that device and cannot be recovered if the device or browser storage is lost.
+
+The Render queue worker uses a 90-second job timeout and a 120-second database queue visibility timeout. Keep `DB_QUEUE_RETRY_AFTER` at least several seconds above `QUEUE_TIMEOUT`; the container refuses to start the worker with an unsafe pair. For another queue backend, configure its visibility or retry timeout to satisfy the same relationship.
+
 After Render reports the deployment healthy, verify `/up`, administrator settings, one teacher QR session, one student attendance flow using the enabled method, and the PWA update prompt on an installed test device. Keep SMS disabled during verification unless the provider has been explicitly configured.
 
 ## Rollback

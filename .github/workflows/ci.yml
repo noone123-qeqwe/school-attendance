@@ -16,6 +16,14 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js for browser-flow regression tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run JavaScript browser-flow regression tests
+        run: node --test tests/js/*.test.cjs
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:

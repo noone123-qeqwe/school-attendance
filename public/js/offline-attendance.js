@@ -28,9 +28,11 @@
     let db = null;
     let csrfToken = '';
     let teacherId = null;
-    let connectionState = navigator.onLine ? 'online' : 'offline'; // 'online' | 'offline' | 'syncing'
+    // navigator.onLine only reports network-interface state, not server reachability.
+    let connectionState = 'offline'; // 'online' | 'offline' | 'syncing'
     let pingTimer = null;
     let syncTimer = null;
+    let connectivityRetryAttempt = 0;
     let isSyncing = false;
     let initialized = false;
 
@@ -93,6 +95,7 @@
 
                         var existing = existingRecords.find(function(r) {
                             return (r.sync_status === 'pending' || r.sync_status === 'failed') &&
+                                String(r.teacher_id || '') === String(tid || '') &&
                                 String(r.user_id) === targetUserId &&
                                 String(r.subject_code || '').toUpperCase() === targetSubject &&
                                 String(r.date) === targetDate;
@@ -192,7 +195,16 @@
         });
     }
 
-    function updateRecordStatus(localId, status, error) {
+    function getAutomaticSyncRecords() {
+        return Promise.all([getPendingRecords(), getFailedRecords()]).then(function(results) {
+            return results[0].concat(results[1].filter(function(record) {
+                // Records from an older queue schema remain retryable by default.
+                return record.sync_retryable !== false;
+            }));
+        });
+    }
+
+    function updateRecordStatus(localId, status, error, retryable, requiresAuthentication) {
         return openDB().then(function(database) {
             return new Promise(function(resolve, reject) {
                 var tx = database.transaction(STORE_RECORDS, 'readwrite');
@@ -203,15 +215,33 @@
                     if (!rec) { resolve(null); return; }
                     rec.sync_status = status;
                     rec.updated_at = new Date().toISOString();
-                    if (error) rec.sync_error = error;
-                    if (status === 'failed') rec.sync_attempts = (rec.sync_attempts || 0) + 1;
-                    if (status === 'synced') rec.synced_at = new Date().toISOString();
+                    rec.sync_error = error || null;
+                    if (status === 'failed') {
+                        rec.sync_attempts = (rec.sync_attempts || 0) + 1;
+                        rec.sync_retryable = retryable !== false;
+                        rec.sync_requires_auth = requiresAuthentication === true;
+                    }
+                    if (status === 'synced') {
+                        rec.synced_at = new Date().toISOString();
+                        rec.sync_retryable = false;
+                        rec.sync_requires_auth = false;
+                    }
                     var putReq = store.put(rec);
                     putReq.onsuccess = function() { resolve(rec); };
                     putReq.onerror = function() { reject(putReq.error); };
                 };
                 req.onerror = function() { reject(req.error); };
             });
+        });
+    }
+
+    function restoreAuthenticationBlockedRecords() {
+        return getFailedRecords().then(function(records) {
+            return Promise.all(records.filter(function(record) {
+                return record.sync_requires_auth === true;
+            }).map(function(record) {
+                return updateRecordStatus(record.local_id, 'failed', record.sync_error, true, false);
+            }));
         });
     }
 
@@ -274,7 +304,7 @@
             checkServerReachable().then(function(reachable) {
                 if (reachable) {
                     setConnectionState('online');
-                    triggerSync();
+                    triggerSync(false);
                 }
             });
         });
@@ -290,7 +320,7 @@
             checkServerReachable().then(function(reachable) {
                 if (reachable && connectionState === 'offline') {
                     setConnectionState('online');
-                    triggerSync();
+                    triggerSync(false);
                 } else if (!reachable && connectionState === 'online') {
                     setConnectionState('offline');
                 }
@@ -300,25 +330,29 @@
         // Initial check
         checkServerReachable().then(function(reachable) {
             setConnectionState(reachable ? 'online' : 'offline');
+            if (reachable) triggerSync(false);
         });
     }
 
     // ──────────────────────────────────────────────
     //  Sync Engine
     // ──────────────────────────────────────────────
-    function triggerSync() {
+    function triggerSync(includePermanentFailures) {
         if (isSyncing) return;
-        syncPendingRecords();
+        syncPendingRecords(includePermanentFailures === true);
     }
 
-    function syncPendingRecords() {
+    function syncPendingRecords(includePermanentFailures) {
         if (isSyncing) return Promise.resolve();
         isSyncing = true;
         setConnectionState('syncing');
 
         return Promise.all([getPendingRecords(), getFailedRecords()])
             .then(function(results) {
-                var allPending = results[0].concat(results[1]);
+                var failedRecords = includePermanentFailures ? results[1] : results[1].filter(function(record) {
+                    return record.sync_retryable !== false;
+                });
+                var allPending = results[0].concat(failedRecords);
                 if (allPending.length === 0) {
                     isSyncing = false;
                     setConnectionState('online');
@@ -349,6 +383,7 @@
             });
             updateUI();
             cleanupSyncedRecords();
+            scheduleRetry();
             return Promise.resolve();
         }
 
@@ -377,13 +412,25 @@
             body: JSON.stringify({ records: payload }),
         })
         .then(function(resp) {
-            if (!resp.ok) throw new Error('Server returned ' + resp.status);
+            if (!resp.ok) {
+                var responseError = new Error('Server returned ' + resp.status);
+                responseError.retryable = resp.status >= 500 || [408, 425, 429].indexOf(resp.status) !== -1;
+                responseError.requiresAuthentication = [401, 419].indexOf(resp.status) !== -1;
+                throw responseError;
+            }
             return resp.json();
         })
         .then(function(data) {
-            if (!data.success) throw new Error(data.message || 'Sync failed');
+            if (!data.success) {
+                var responseError = new Error(data.message || 'Sync failed');
+                responseError.retryable = true;
+                throw responseError;
+            }
+            connectivityRetryAttempt = 0;
 
             var syncedCount = 0;
+            var skippedCount = 0;
+            var failedCount = Array.isArray(data.failed) ? data.failed.length : 0;
 
             // Mark synced
             var promises = [];
@@ -399,7 +446,7 @@
             if (data.skipped) {
                 data.skipped.forEach(function(s) {
                     if (s.local_id) {
-                        syncedCount++;
+                        skippedCount++;
                         promises.push(updateRecordStatus(s.local_id, 'synced', 'Skipped: ' + (s.reason || '')));
                     }
                 });
@@ -408,53 +455,77 @@
             if (data.failed) {
                 data.failed.forEach(function(f) {
                     if (f.local_id) {
-                        promises.push(updateRecordStatus(f.local_id, 'failed', f.reason || 'Unknown error'));
+                        promises.push(updateRecordStatus(f.local_id, 'failed', f.reason || 'Unknown error', f.retryable !== false));
                     }
                 });
             }
 
             return Promise.all(promises).then(function() {
-                if (syncedCount > 0) {
+                if (syncedCount > 0 || skippedCount > 0 || failedCount > 0) {
                     dispatchEvent('offline-attendance-synced', {
                         count: syncedCount,
+                        skipped: skippedCount,
+                        failed: failedCount,
                         summary: data.summary,
                     });
-                    showSyncToast(syncedCount);
+                    var firstFailureReason = data.failed && data.failed.length ? data.failed[0].reason : '';
+                    showSyncToast(syncedCount, skippedCount, failedCount, firstFailureReason);
                 }
                 return processBatches(batches, index + 1);
             });
         })
         .catch(function(err) {
             console.error('[OfflineAttendance] Batch sync failed:', err);
-            // Mark all in this batch as failed
-            var failPromises = batch.map(function(rec) {
-                return updateRecordStatus(rec.local_id, 'failed', err.message);
+            // Preserve all unsent records and distinguish transient transport
+            // errors from responses that require the teacher to resolve them.
+            var affectedRecords = batch.slice();
+            if (err.retryable === false) {
+                for (var remainingIndex = index + 1; remainingIndex < batches.length; remainingIndex++) {
+                    affectedRecords = affectedRecords.concat(batches[remainingIndex]);
+                }
+            }
+            var failPromises = affectedRecords.map(function(rec) {
+                return updateRecordStatus(rec.local_id, 'failed', err.message, err.retryable !== false, err.requiresAuthentication === true);
             });
             return Promise.all(failPromises).then(function() {
                 isSyncing = false;
-                setConnectionState('offline');
-                scheduleRetry();
+                if (err.retryable === false) {
+                    setConnectionState('online');
+                    updateUI();
+                } else {
+                    setConnectionState('offline');
+                    scheduleRetry();
+                }
             });
         });
     }
 
     function scheduleRetry() {
         if (syncTimer) clearTimeout(syncTimer);
-        getPendingCount().then(function(count) {
-            if (count === 0) return;
-            // Exponential backoff
-            var delay = Math.min(RETRY_BASE_MS * Math.pow(2, Math.floor(Math.random() * 3)), MAX_RETRY_MS);
+        getAutomaticSyncRecords().then(function(records) {
+            if (records.length === 0) return;
+            var attempts = records.reduce(function(max, record) {
+                return Math.max(max, Number(record.sync_attempts) || 0);
+            }, connectivityRetryAttempt);
+            var exponent = Math.min(Math.max(attempts - 1, 0), 4);
+            var backoff = Math.min(RETRY_BASE_MS * Math.pow(2, exponent), MAX_RETRY_MS);
+            var delay = Math.min(Math.round(backoff * (0.75 + Math.random() * 0.5)), MAX_RETRY_MS);
             console.log('[OfflineAttendance] Scheduling retry in', Math.round(delay / 1000), 's');
             syncTimer = setTimeout(function() {
+                syncTimer = null;
                 checkServerReachable().then(function(reachable) {
                     if (reachable) {
+                        connectivityRetryAttempt = 0;
                         setConnectionState('online');
-                        triggerSync();
+                        triggerSync(false);
                     } else {
+                        connectivityRetryAttempt++;
                         scheduleRetry();
                     }
                 });
             }, delay);
+        }).catch(function(err) {
+            console.warn('[OfflineAttendance] Unable to inspect retry queue:', err);
         });
     }
 
@@ -499,7 +570,7 @@
                         var filtered = list.filter(function(subject) {
                             return String(subject.teacher_id) === String(tid);
                         });
-                        resolve(filtered.length > 0 ? filtered : list);
+                        resolve(filtered);
                     } else {
                         resolve(list);
                     }
@@ -520,6 +591,8 @@
                 req.onsuccess = function() {
                     if (req.result) {
                         resolve(req.result);
+                    } else if (tid) {
+                        resolve(null);
                     } else {
                         var allReq = store.getAll();
                         allReq.onsuccess = function() {
@@ -566,7 +639,7 @@
         if (syncBtn) {
             syncBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                if (!isSyncing) triggerSync();
+                if (!isSyncing) triggerSync(true);
             });
         }
 
@@ -597,6 +670,8 @@
             '.oa-sync-btn:hover{background:rgba(207,164,111,.3);transform:scale(1.08)}' +
             '.oa-sync-btn.spinning i{animation:oaSpin .8s linear infinite}' +
             '.oa-sync-toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-60px);padding:12px 22px;border-radius:14px;font-size:.85rem;font-weight:700;z-index:100001;display:flex;align-items:center;gap:10px;background:rgba(22,163,74,.95);color:#fff;border:1px solid rgba(255,255,255,.2);box-shadow:0 10px 30px rgba(0,0,0,.5);transition:transform .4s cubic-bezier(.16,1,.3,1),opacity .3s;opacity:0;pointer-events:none}' +
+            '.oa-sync-toast.warning{background:rgba(180,83,9,.97)}' +
+            '.oa-sync-toast.error{background:rgba(185,28,28,.97)}' +
             '.oa-sync-toast.show{transform:translateX(-50%) translateY(0);opacity:1}' +
             /* Offline attendance form banner */
             '.oa-offline-banner{display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:12px;color:#fbbf24;font-size:.82rem;font-weight:600;margin-bottom:16px;animation:oaSlideIn .3s ease}' +
@@ -641,14 +716,21 @@
         });
     }
 
-    function showSyncToast(count) {
+    function showSyncToast(count, skippedCount, failedCount, firstFailureReason) {
         var existing = document.getElementById('oaSyncToast');
         if (existing) existing.remove();
 
         var toast = document.createElement('div');
         toast.id = 'oaSyncToast';
-        toast.className = 'oa-sync-toast';
-        toast.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + count + ' attendance record' + (count !== 1 ? 's' : '') + ' synced successfully!';
+        toast.className = 'oa-sync-toast' + (failedCount ? ' error' : (skippedCount ? ' warning' : ''));
+        var parts = [];
+        if (count > 0) parts.push(count + ' attendance record' + (count !== 1 ? 's' : '') + ' synced.');
+        if (skippedCount > 0) parts.push(skippedCount + ' already had verified server records and were left unchanged.');
+        if (failedCount > 0) {
+            var reason = String(firstFailureReason || 'Sync failed.').slice(0, 160);
+            parts.push(failedCount + ' need attention (' + reason + '); their data is still saved on this device.');
+        }
+        toast.textContent = parts.join(' ');
         document.body.appendChild(toast);
 
         requestAnimationFrame(function() {
@@ -663,7 +745,7 @@
         }, 4000);
 
         // Haptic feedback
-        if (window.triggerHaptic) window.triggerHaptic('success');
+        if (!failedCount && !skippedCount && window.triggerHaptic) window.triggerHaptic('success');
     }
 
     // ──────────────────────────────────────────────
@@ -796,7 +878,21 @@
             } catch(e) {}
         }
 
+        if (navigator.storage && typeof navigator.storage.persist === 'function') {
+            navigator.storage.persist().then(function(persisted) {
+                if (!persisted) {
+                    console.warn('[OfflineAttendance] Browser storage may be cleared under storage pressure.');
+                }
+            }).catch(function() {
+                // Persistence is best-effort; IndexedDB remains available where supported.
+            });
+        }
+
         openDB().then(function() {
+            return restoreAuthenticationBlockedRecords();
+        }).catch(function(err) {
+            console.warn('[OfflineAttendance] Unable to restore session-blocked records:', err);
+        }).then(function() {
             injectStatusUI();
             startConnectivityMonitor();
 
@@ -807,8 +903,16 @@
 
             // Listen for online to sync
             window.addEventListener('online', function() {
-                setTimeout(function() { triggerSync(); }, 2000);
+                setTimeout(function() { triggerSync(false); }, 2000);
             });
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.addEventListener('message', function(event) {
+                    if (event.data && event.data.type === 'OFFLINE_ATTENDANCE_SYNC') {
+                        triggerSync(false);
+                    }
+                });
+            }
 
             // Initial UI update
             updateUI();
@@ -828,7 +932,7 @@
         getPendingRecords: getPendingRecords,
         getFailedRecords: getFailedRecords,
         getPendingCount: getPendingCount,
-        syncNow: triggerSync,
+        syncNow: function() { return triggerSync(true); },
         getConnectionState: function() { return connectionState; },
         isOnline: function() { return connectionState === 'online'; },
         isOffline: function() { return connectionState !== 'online'; },

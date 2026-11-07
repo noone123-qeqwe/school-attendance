@@ -60,6 +60,7 @@ class OfflineAttendanceController extends Controller
                     'index'    => $index,
                     'local_id' => $record['local_id'] ?? null,
                     'reason'   => $validator->errors()->first(),
+                    'retryable' => false,
                 ];
                 continue;
             }
@@ -72,6 +73,7 @@ class OfflineAttendanceController extends Controller
                     'index'    => $index,
                     'local_id' => $record['local_id'] ?? null,
                     'reason'   => "You are not the instructor for subject '{$subjectCode}'.",
+                    'retryable' => false,
                 ];
                 continue;
             }
@@ -93,6 +95,7 @@ class OfflineAttendanceController extends Controller
                     'index' => $index,
                     'local_id' => $record['local_id'] ?? null,
                     'reason' => 'Student is not enrolled in this subject.',
+                    'retryable' => false,
                 ];
                 continue;
             }
@@ -151,15 +154,16 @@ class OfflineAttendanceController extends Controller
                 ];
             } catch (\Throwable $e) {
                 Log::error('Offline attendance sync failed for record', [
-                    'index' => $index,
-                    'record' => $record,
-                    'error' => $e->getMessage(),
+                    'teacher_id' => $teacher->id,
+                    'local_id' => $record['local_id'] ?? null,
+                    'error_type' => get_class($e),
                 ]);
 
                 $failed[] = [
                     'index'    => $index,
                     'local_id' => $record['local_id'] ?? null,
                     'reason'   => 'The record could not be synchronized. Please retry.',
+                    'retryable' => true,
                 ];
             }
         }

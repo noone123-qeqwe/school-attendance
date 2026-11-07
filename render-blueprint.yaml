@@ -144,6 +144,10 @@ services:
         value: "false"
       - key: QUEUE_CONNECTION
         value: database
+      - key: DB_QUEUE_RETRY_AFTER
+        value: "120"
+      - key: QUEUE_TIMEOUT
+        value: "90"
       - key: BROADCAST_CONNECTION
         value: reverb
       - fromGroup: attendance-reverb-credentials

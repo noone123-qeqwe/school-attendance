@@ -164,8 +164,32 @@ case "$APP_PROCESS_ROLE" in
             echo "APP_PROCESS_ROLE=worker requires QUEUE_CONNECTION to be database, redis, or another async queue." >&2
             exit 1
         fi
+        QUEUE_TIMEOUT="${QUEUE_TIMEOUT:-90}"
+        case "$QUEUE_TIMEOUT" in
+            ''|*[!0-9]*) echo "QUEUE_TIMEOUT must be a positive integer." >&2; exit 1 ;;
+        esac
+        if [ "$QUEUE_TIMEOUT" -lt 1 ]; then
+            echo "QUEUE_TIMEOUT must be a positive integer." >&2
+            exit 1
+        fi
+
+        QUEUE_RETRY_AFTER=""
+        case "${QUEUE_CONNECTION:-sync}" in
+            database) QUEUE_RETRY_AFTER="${DB_QUEUE_RETRY_AFTER:-120}" ;;
+            redis) QUEUE_RETRY_AFTER="${REDIS_QUEUE_RETRY_AFTER:-120}" ;;
+            beanstalkd) QUEUE_RETRY_AFTER="${BEANSTALKD_QUEUE_RETRY_AFTER:-120}" ;;
+        esac
+        if [ -n "$QUEUE_RETRY_AFTER" ]; then
+            case "$QUEUE_RETRY_AFTER" in
+                ''|*[!0-9]*) echo "Queue retry_after must be a positive integer." >&2; exit 1 ;;
+            esac
+            if [ "$QUEUE_RETRY_AFTER" -le "$((QUEUE_TIMEOUT + 5))" ]; then
+                echo "Queue retry_after must exceed QUEUE_TIMEOUT by more than 5 seconds." >&2
+                exit 1
+            fi
+        fi
         echo "📨 Starting dedicated Laravel queue worker..."
-        exec php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --timeout="${QUEUE_TIMEOUT:-90}" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}"
+        exec php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --backoff="${QUEUE_BACKOFF:-5}" --timeout="$QUEUE_TIMEOUT" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}"
         ;;
     scheduler)
         echo "⏱️ Starting dedicated Laravel scheduler..."
@@ -203,7 +227,7 @@ if [ "$APP_PROCESS_ROLE" = "all" ]; then
 
     if [ "${QUEUE_CONNECTION:-sync}" != "sync" ]; then
         echo "📨 Starting Laravel Queue Worker..."
-        php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --timeout="${QUEUE_TIMEOUT:-90}" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}" >> /var/www/html/storage/logs/queue.log 2>&1 &
+        php artisan queue:work --sleep="${QUEUE_SLEEP:-3}" --tries="${QUEUE_TRIES:-3}" --backoff="${QUEUE_BACKOFF:-5}" --timeout="${QUEUE_TIMEOUT:-90}" --max-jobs="${QUEUE_MAX_JOBS:-1000}" --max-time="${QUEUE_MAX_TIME:-3600}" --memory="${QUEUE_MEMORY:-192}" >> /var/www/html/storage/logs/queue.log 2>&1 &
     else
         echo "⏭️ Queue worker disabled because QUEUE_CONNECTION=sync."
     fi

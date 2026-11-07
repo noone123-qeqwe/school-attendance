@@ -170,6 +170,23 @@ class OfflineAttendanceSyncTest extends TestCase
             'status' => 'Present',
             'method' => 'offline_sync',
         ]);
+
+        $repeatResponse = $this->actingAs($teacher)->postJson(
+            route('teacher.offline.sync'),
+            ['records' => [[
+                'local_id' => 1,
+                'subject_code' => $subject->code,
+                'user_id' => $student->id,
+                'status' => 'Present',
+                'date' => '2026-09-22',
+            ]]]
+        );
+
+        $repeatResponse->assertOk()->assertJsonPath('summary.synced', 1);
+        $this->assertSame(1, Attendance::where('user_id', $student->id)
+            ->where('subject_code', $subject->code)
+            ->where('date', '2026-09-22')
+            ->count());
     }
 
     public function test_non_teacher_users_cannot_access_sync_endpoint()
@@ -218,7 +235,8 @@ class OfflineAttendanceSyncTest extends TestCase
                     'synced' => 0,
                     'failed' => 1,
                 ],
-            ]);
+            ])
+            ->assertJsonPath('failed.0.retryable', false);
 
         // Verify no record was created
         $this->assertDatabaseMissing('attendances', [
@@ -251,7 +269,9 @@ class OfflineAttendanceSyncTest extends TestCase
                     'synced' => 1,
                     'failed' => 2,
                 ],
-            ]);
+            ])
+            ->assertJsonPath('failed.0.retryable', false)
+            ->assertJsonPath('failed.1.retryable', false);
     }
 
     public function test_empty_records_array_is_rejected()
