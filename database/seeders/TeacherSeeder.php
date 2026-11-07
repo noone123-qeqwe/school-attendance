@@ -14,7 +14,11 @@ class TeacherSeeder extends Seeder
      */
     public function run(): void
     {
-        $csvPath = database_path('data/teachers.csv');
+        if (!app()->environment('local')) {
+            throw new \LogicException('Teacher roster seeding is limited to local development. Use the authorized import workflow elsewhere.');
+        }
+
+        $csvPath = storage_path('app/private-imports/teachers.csv');
 
         if (!File::exists($csvPath)) {
             $this->command->warn("Teachers CSV file not found at: {$csvPath}");

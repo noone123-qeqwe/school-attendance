@@ -5,8 +5,8 @@ echo "🚀 Starting Smart Classroom Attendance System..."
 
 APP_PROCESS_ROLE="${APP_PROCESS_ROLE:-all}"
 case "$APP_PROCESS_ROLE" in
-    all|web|worker|scheduler|migrate) ;;
-    *) echo "APP_PROCESS_ROLE must be all, web, worker, scheduler, or migrate." >&2; exit 1 ;;
+    all|web|worker|scheduler|migrate|cron|reverb) ;;
+    *) echo "APP_PROCESS_ROLE must be all, web, worker, scheduler, migrate, cron, or reverb." >&2; exit 1 ;;
 esac
 
 case "$APP_PROCESS_ROLE" in
@@ -58,7 +58,16 @@ sed -i "s/^pm.max_spare_servers = .*/pm.max_spare_servers = ${PHP_FPM_MAX_SPARE_
 sed -i "s/^pm.max_requests = .*/pm.max_requests = ${PHP_FPM_MAX_REQUESTS}/" "$FPM_CONFIG"
 
 # Default port to 80 if PORT is not provided by Render/Railway
-PORT="${PORT:-80}"
+DEFAULT_PORT=80
+if [ "$APP_PROCESS_ROLE" = "reverb" ]; then
+    DEFAULT_PORT=8080
+fi
+PORT="${PORT:-$DEFAULT_PORT}"
+if [ "$APP_PROCESS_ROLE" = "reverb" ]; then
+    REVERB_SERVER_HOST="${REVERB_SERVER_HOST:-0.0.0.0}"
+    REVERB_SERVER_PORT="${REVERB_SERVER_PORT:-$PORT}"
+    export REVERB_SERVER_HOST REVERB_SERVER_PORT
+fi
 echo "🌐 Configuring Nginx to listen on port ${PORT}..."
 sed -i "s/listen 80;/listen ${PORT};/g" /etc/nginx/http.d/default.conf
 sed -i "s/listen \[::\]:80;/listen [::]:${PORT};/g" /etc/nginx/http.d/default.conf
@@ -98,8 +107,6 @@ export MAIL_MAILER="${MAIL_MAILER:-smtp}"
 export MAIL_HOST="${MAIL_HOST:-smtp.gmail.com}"
 export MAIL_PORT="${MAIL_PORT:-587}"
 export MAIL_ENCRYPTION="${MAIL_ENCRYPTION:-tls}"
-export MAIL_USERNAME="${MAIL_USERNAME:-osmenacolleges.attendance@gmail.com}"
-export MAIL_FROM_ADDRESS="${MAIL_FROM_ADDRESS:-osmenacolleges.attendance@gmail.com}"
 export MAIL_FROM_NAME="${MAIL_FROM_NAME:-Smart Classroom Attendance System}"
 export BREVO_API_KEY="${BREVO_API_KEY:-}"
 
@@ -163,6 +170,14 @@ case "$APP_PROCESS_ROLE" in
     scheduler)
         echo "⏱️ Starting dedicated Laravel scheduler..."
         exec php artisan schedule:work
+        ;;
+    cron)
+        echo "⏱️ Running scheduled Laravel tasks..."
+        exec php artisan schedule:run
+        ;;
+    reverb)
+        echo "🔌 Starting Laravel Reverb..."
+        exec php artisan reverb:start --host="$REVERB_SERVER_HOST" --port="$REVERB_SERVER_PORT"
         ;;
 esac
 

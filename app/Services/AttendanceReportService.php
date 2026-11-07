@@ -6,12 +6,15 @@ use App\Models\Attendance;
 use App\Models\Subject;
 use App\Models\User;
 use App\Models\Section;
+use App\Traits\SanitizesExport;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceReportService
 {
+    use SanitizesExport;
+
     /**
      * Generate structured attendance report based on request filters.
      */
@@ -272,7 +275,8 @@ class AttendanceReportService
      */
     public function downloadCsv(array $report): StreamedResponse
     {
-        $filename = 'attendance-report-' . $report['type'] . '-' . now()->format('Y-m-d-His') . '.csv';
+        $type = preg_replace('/[^a-z0-9_-]+/i', '-', (string) ($report['type'] ?? 'daily')) ?: 'daily';
+        $filename = 'attendance-report-' . $type . '-' . now()->format('Y-m-d-His') . '.csv';
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
@@ -293,61 +297,61 @@ class AttendanceReportService
                 foreach ($report['percentageData'] as $item) {
                     $s = $item['student'];
                     fputcsv($handle, [
-                        $s->name,
-                        $s->student_number ?? 'N/A',
-                        $s->course ?? 'N/A',
-                        $s->year_level ?? 'N/A',
-                        $s->section ?? 'N/A',
-                        $item['total'],
-                        $item['present'],
-                        $item['late'],
-                        $item['absent'],
-                        $item['excused'],
-                        $item['rate'] . '%',
+                        $this->sanitizeField($s->name),
+                        $this->sanitizeField($s->student_number ?? 'N/A'),
+                        $this->sanitizeField($s->course ?? 'N/A'),
+                        $this->sanitizeField($s->year_level ?? 'N/A'),
+                        $this->sanitizeField($s->section ?? 'N/A'),
+                        $this->sanitizeField($item['total']),
+                        $this->sanitizeField($item['present']),
+                        $this->sanitizeField($item['late']),
+                        $this->sanitizeField($item['absent']),
+                        $this->sanitizeField($item['excused']),
+                        $this->sanitizeField($item['rate'] . '%'),
                     ]);
                 }
             } elseif ($type === 'class_summary') {
                 fputcsv($handle, ['Course', 'Year Level', 'Section', 'Total Records', 'Present', 'Late', 'Absent', 'Excused', 'Attendance Rate (%)']);
                 foreach ($report['summaryData'] as $row) {
                     fputcsv($handle, [
-                        $row->course,
-                        $row->year_level,
-                        $row->section,
-                        $row->total_records,
-                        $row->present_count,
-                        $row->late_count,
-                        $row->absent_count,
-                        $row->excused_count,
-                        $row->rate . '%',
+                        $this->sanitizeField($row->course),
+                        $this->sanitizeField($row->year_level),
+                        $this->sanitizeField($row->section),
+                        $this->sanitizeField($row->total_records),
+                        $this->sanitizeField($row->present_count),
+                        $this->sanitizeField($row->late_count),
+                        $this->sanitizeField($row->absent_count),
+                        $this->sanitizeField($row->excused_count),
+                        $this->sanitizeField($row->rate . '%'),
                     ]);
                 }
             } elseif ($type === 'subject_summary') {
                 fputcsv($handle, ['Subject Code', 'Subject Name', 'Total Records', 'Present', 'Late', 'Absent', 'Excused', 'Attendance Rate (%)']);
                 foreach ($report['summaryData'] as $row) {
                     fputcsv($handle, [
-                        $row->subject_code,
-                        $row->subject_name,
-                        $row->total_records,
-                        $row->present_count,
-                        $row->late_count,
-                        $row->absent_count,
-                        $row->excused_count,
-                        $row->rate . '%',
+                        $this->sanitizeField($row->subject_code),
+                        $this->sanitizeField($row->subject_name),
+                        $this->sanitizeField($row->total_records),
+                        $this->sanitizeField($row->present_count),
+                        $this->sanitizeField($row->late_count),
+                        $this->sanitizeField($row->absent_count),
+                        $this->sanitizeField($row->excused_count),
+                        $this->sanitizeField($row->rate . '%'),
                     ]);
                 }
             } else {
                 fputcsv($handle, ['Date', 'Time In', 'Student Name', 'Student Number', 'Subject Code', 'Subject Name', 'Status', 'Excused', 'Method']);
                 foreach ($report['records'] as $att) {
                     fputcsv($handle, [
-                        $att->date ? (is_string($att->date) ? $att->date : $att->date->format('Y-m-d')) : 'N/A',
-                        $att->time_in ?? 'N/A',
-                        $att->user->name ?? 'Unknown',
-                        $att->user->student_number ?? 'N/A',
-                        $att->subject_code,
-                        $att->subject->name ?? $att->subject_code,
-                        $att->status,
-                        $att->excused ? 'Yes' : 'No',
-                        strtoupper($att->method ?? 'QR'),
+                        $this->sanitizeField($att->date ? (is_string($att->date) ? $att->date : $att->date->format('Y-m-d')) : 'N/A'),
+                        $this->sanitizeField($att->time_in ?? 'N/A'),
+                        $this->sanitizeField($att->user->name ?? 'Unknown'),
+                        $this->sanitizeField($att->user->student_number ?? 'N/A'),
+                        $this->sanitizeField($att->subject_code),
+                        $this->sanitizeField($att->subject->name ?? $att->subject_code),
+                        $this->sanitizeField($att->status),
+                        $this->sanitizeField($att->excused ? 'Yes' : 'No'),
+                        $this->sanitizeField(strtoupper($att->method ?? 'QR')),
                     ]);
                 }
             }

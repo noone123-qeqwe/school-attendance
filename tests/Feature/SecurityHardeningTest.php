@@ -203,6 +203,32 @@ class SecurityHardeningTest extends TestCase
         $this->assertStringStartsWith("'", $mapped['email']);
     }
 
+    public function test_attendance_report_csv_sanitizes_cells_and_filename()
+    {
+        $report = app(\App\Services\AttendanceReportService::class)->downloadCsv([
+            'type' => "daily\r\nX-Injected: yes",
+            'records' => collect([(object) [
+                'date' => '2026-01-01',
+                'time_in' => '08:00',
+                'user' => (object) ['name' => '=HYPERLINK("https://example.invalid")', 'student_number' => '@SUM(1,1)'],
+                'subject_code' => '+CMD',
+                'subject' => (object) ['name' => '=1+1'],
+                'status' => 'Present',
+                'excused' => false,
+                'method' => 'qr',
+            ]]),
+        ]);
+
+        $this->assertStringNotContainsString("\r\nX-Injected", (string) $report->headers->get('Content-Disposition'));
+        ob_start();
+        $report->sendContent();
+        $csv = ob_get_clean();
+
+        $this->assertStringContainsString("'=HYPERLINK", $csv);
+        $this->assertStringContainsString("'@SUM", $csv);
+        $this->assertStringContainsString("'+CMD", $csv);
+    }
+
     public function test_csv_student_import_does_not_demote_or_overwrite_admin_accounts()
     {
         $admin = User::factory()->create([
@@ -230,5 +256,41 @@ class SecurityHardeningTest extends TestCase
         $admin->refresh();
         $this->assertEquals('admin', $admin->role);
         $this->assertEquals('Head Admin', $admin->name);
+    }
+
+    public function test_student_import_skips_new_accounts_without_an_individual_password()
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+            'must_change_password' => false,
+        ]);
+        $csv = "Name,Student Number,Email,Course,Year Level,Semester,Section,Password\n";
+        $csv .= "New Student,9991001,new.student@example.edu,BSCS,1,1,A,\n";
+
+        $response = $this->actingAs($superAdmin)->post(route('admin.students.import'), [
+            'csv_file' => UploadedFile::fake()->createWithContent('students.csv', $csv),
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('users', ['email' => 'new.student@example.edu']);
+    }
+
+    public function test_teacher_import_skips_new_accounts_without_an_individual_password()
+    {
+        $superAdmin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+            'must_change_password' => false,
+        ]);
+        $csv = "Name,Employee ID,Email,Department,Position,Specialization,Password\n";
+        $csv .= "New Teacher,T-9999,new.teacher@example.edu,Science,Instructor,Physics,\n";
+
+        $response = $this->actingAs($superAdmin)->post(route('admin.teachers.import'), [
+            'csv_file' => UploadedFile::fake()->createWithContent('teachers.csv', $csv),
+        ]);
+
+        $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('users', ['email' => 'new.teacher@example.edu']);
     }
 }

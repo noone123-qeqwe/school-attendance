@@ -1,22 +1,24 @@
 # Smart Classroom Attendance System - Render Blueprint
 # Deploy entire stack with one click
 
+envVarGroups:
+  - name: attendance-reverb-credentials
+    envVars:
+      - key: REVERB_APP_ID
+        value: attendance-app
+      - key: REVERB_APP_KEY
+        generateValue: true
+      - key: REVERB_APP_SECRET
+        generateValue: true
+
 services:
   # Main Web Application
   - type: web
     name: attendance-web
-    runtime: php
+    runtime: docker
     plan: starter
-    buildCommand: |
-      composer install --optimize-autoloader --no-dev --no-interaction
-      php artisan config:cache
-      php artisan route:cache
-      php artisan view:cache
-      php artisan storage:link
-    startCommand: |
-      php artisan migrate --force
-      php artisan optimize  
-      php artisan serve --host=0.0.0.0 --port=$PORT
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     healthCheckPath: /login
     envVars:
       - key: APP_NAME
@@ -24,7 +26,14 @@ services:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: false
+        value: "false"
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
       - key: APP_TIMEZONE
         value: Asia/Manila
       - key: LOG_CHANNEL
@@ -39,9 +48,45 @@ services:
         value: database
       - key: BROADCAST_CONNECTION
         value: reverb
-      # Database connection (auto-filled by Render)
+      - key: MAIL_MAILER
+        sync: false
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        sync: false
+      - key: MAIL_ENCRYPTION
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: "Smart Classroom Attendance System"
+      - key: SMS_ENABLED
+        value: "false"
+      - key: SEMAPHORE_API_KEY
+        sync: false
+      - key: SEMAPHORE_SENDER_NAME
+        value: OsmenaAtt
+      - key: APP_PROCESS_ROLE
+        value: web
+      - key: RUN_MIGRATIONS
+        value: "true"
+      - fromGroup: attendance-reverb-credentials
+      - key: REVERB_HOST
+        fromService:
+          name: attendance-reverb
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: REVERB_PORT
+        value: "443"
+      - key: REVERB_SCHEME
+        value: https
+      # Render's managed database is PostgreSQL.
       - key: DB_CONNECTION
-        value: mysql
+        value: pgsql
       - key: DB_HOST
         fromDatabase:
           name: attendance-db
@@ -65,18 +110,114 @@ services:
       - key: BREVO_API_KEY
         sync: false
 
-  # WebSocket Server for Real-time Features
+  # Queue worker (the public Reverb endpoint is defined below).
   - type: worker
     name: attendance-websocket
-    runtime: php
+    runtime: docker
     plan: starter
-    buildCommand: composer install --optimize-autoloader --no-dev --no-interaction
-    startCommand: php artisan reverb:start --host=0.0.0.0 --port=8080
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: APP_ENV
         value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: CACHE_STORE
+        value: database
+      - key: APP_KEY
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: APP_KEY
+      - key: APP_URL
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: APP_URL
+      - key: APP_PROCESS_ROLE
+        value: worker
+      - key: RUN_MIGRATIONS
+        value: "false"
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - fromGroup: attendance-reverb-credentials
+      - key: REVERB_HOST
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: REVERB_HOST
+      - key: REVERB_PORT
+        value: "443"
+      - key: REVERB_SCHEME
+        value: https
+      - key: BREVO_API_KEY
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: BREVO_API_KEY
+      - key: MAIL_MAILER
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_MAILER
+      - key: MAIL_HOST
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_HOST
+      - key: MAIL_PORT
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_PORT
+      - key: MAIL_ENCRYPTION
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_ENCRYPTION
+      - key: MAIL_USERNAME
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_USERNAME
+      - key: MAIL_PASSWORD
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_PASSWORD
+      - key: MAIL_FROM_ADDRESS
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_FROM_ADDRESS
+      - key: MAIL_FROM_NAME
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_FROM_NAME
+      - key: SMS_ENABLED
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: SMS_ENABLED
+      - key: SEMAPHORE_API_KEY
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: SEMAPHORE_API_KEY
+      - key: SEMAPHORE_SENDER_NAME
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: SEMAPHORE_SENDER_NAME
       - key: DB_CONNECTION
-        value: mysql
+        value: pgsql
       - key: DB_HOST
         fromDatabase:
           name: attendance-db
@@ -98,18 +239,114 @@ services:
           name: attendance-db
           property: password
 
-  # Scheduled Tasks (Attendance marking, cleanup)
+  # Run Laravel's minute-level scheduler at the cadence expected by routes/console.php.
   - type: cron
     name: attendance-cron
-    runtime: php
-    schedule: "0 * * * *"  # Every hour
-    buildCommand: composer install --optimize-autoloader --no-dev --no-interaction
-    startCommand: php artisan schedule:run
+    runtime: docker
+    schedule: "* * * * *"
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     envVars:
       - key: APP_ENV
         value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: CACHE_STORE
+        value: database
+      - key: APP_KEY
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: APP_KEY
+      - key: APP_URL
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: APP_URL
+      - key: APP_PROCESS_ROLE
+        value: cron
+      - key: RUN_MIGRATIONS
+        value: "false"
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - fromGroup: attendance-reverb-credentials
+      - key: REVERB_HOST
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: REVERB_HOST
+      - key: REVERB_PORT
+        value: "443"
+      - key: REVERB_SCHEME
+        value: https
+      - key: BREVO_API_KEY
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: BREVO_API_KEY
+      - key: MAIL_MAILER
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_MAILER
+      - key: MAIL_HOST
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_HOST
+      - key: MAIL_PORT
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_PORT
+      - key: MAIL_ENCRYPTION
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_ENCRYPTION
+      - key: MAIL_USERNAME
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_USERNAME
+      - key: MAIL_PASSWORD
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_PASSWORD
+      - key: MAIL_FROM_ADDRESS
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_FROM_ADDRESS
+      - key: MAIL_FROM_NAME
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: MAIL_FROM_NAME
+      - key: SMS_ENABLED
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: SMS_ENABLED
+      - key: SEMAPHORE_API_KEY
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: SEMAPHORE_API_KEY
+      - key: SEMAPHORE_SENDER_NAME
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: SEMAPHORE_SENDER_NAME
       - key: DB_CONNECTION
-        value: mysql
+        value: pgsql
       - key: DB_HOST
         fromDatabase:
           name: attendance-db
@@ -131,9 +368,79 @@ services:
           name: attendance-db
           property: password
 
+  # Public WebSocket endpoint for browser clients; Render workers cannot receive connections.
+  - type: web
+    name: attendance-reverb
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_TIMEZONE
+        value: Asia/Manila
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: CACHE_STORE
+        value: database
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        fromService:
+          name: attendance-reverb
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: APP_PROCESS_ROLE
+        value: reverb
+      - key: RUN_MIGRATIONS
+        value: false
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: attendance-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: attendance-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: attendance-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: attendance-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: attendance-db
+          property: password
+      - fromGroup: attendance-reverb-credentials
+      - key: REVERB_ALLOWED_ORIGINS
+        fromService:
+          name: attendance-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: REVERB_HOST
+        fromService:
+          name: attendance-reverb
+          type: web
+          envVarKey: RENDER_EXTERNAL_HOSTNAME
+      - key: REVERB_PORT
+        value: "443"
+      - key: REVERB_SCHEME
+        value: https
+      - key: REVERB_SERVER_HOST
+        value: 0.0.0.0
+
 databases:
-  # MySQL Database
+  # Render-managed PostgreSQL database.
   - name: attendance-db
     databaseName: attendance_production
     user: attendance_user
     plan: starter
+    ipAllowList: []

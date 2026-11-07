@@ -14,7 +14,11 @@ class StudentSeeder extends Seeder
      */
     public function run(): void
     {
-        $csvPath = database_path('data/students.csv');
+        if (!app()->environment('local')) {
+            throw new \LogicException('Student roster seeding is limited to local development. Use the authorized import workflow elsewhere.');
+        }
+
+        $csvPath = storage_path('app/private-imports/students.csv');
 
         if (!File::exists($csvPath)) {
             $this->command->warn("Students CSV file not found at: {$csvPath}");

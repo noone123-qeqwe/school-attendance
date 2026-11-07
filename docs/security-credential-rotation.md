@@ -6,6 +6,8 @@ The current working tree ignores local `.env*` files, and `.env.example` was als
 
 A read-only history scan found credential-shaped values in committed environment files, including `APP_KEY`, `DB_PASSWORD`, `MAIL_PASSWORD`, `REVERB_APP_SECRET`, and `SEMAPHORE_API_KEY`. Values were not copied into this report. Confirm whether any deployed credentials match those historical values and rotate matching credentials. Ordinary commits do not remove values from old Git commits.
 
+Tracked student and teacher roster CSVs also contained personal account data and shared starter passwords. They have been removed from the current source tree and preserved only in the ignored `storage/app/private-imports/` directory for local seeding. Historical account-provisioning migrations are now no-ops. The earlier CSVs and migration contents remain in Git history; this change does not rewrite shared history or restore any account records those migrations may already have changed.
+
 ## Rotate in the provider before any history cleanup
 
 - **Laravel application key (`APP_KEY`)**: inspect whether it protects persisted encrypted values. Plan the rotation because it invalidates encrypted cookies and may make data encrypted with the old key unreadable.
@@ -17,6 +19,7 @@ A read-only history scan found credential-shaped values in committed environment
 - **Reverb**: rotate the app key and secret together, then update the server and `VITE_REVERB_*` deployment variables together.
 - **Web Push**: rotate the VAPID private key and public key as a pair if exposed.
 - **Other configured integrations**: check AWS, Pusher, Ably, Slack, peer-face verifier, and any other provider credentials in the deployment dashboard. Rotate any value that appears in history or local deployment files.
+- **Roster accounts**: check whether the old account-sync migrations ran in production and review any accounts they may have created or updated. The application forces known starter-password accounts through password recovery, but the school should verify affected accounts and follow its privacy incident process if roster data was exposed.
 
 Use provider-generated credentials and update the deployment secret store directly. Do not put replacement values in this repository, tickets, logs, or chat. Confirm production connections after each provider change. Keep SMS disabled until a valid Semaphore key and sender name are configured.
 

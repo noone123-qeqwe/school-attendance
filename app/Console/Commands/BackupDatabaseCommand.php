@@ -6,6 +6,7 @@ use App\Models\BackupLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Symfony\Component\Process\Process;
 
 class BackupDatabaseCommand extends Command
 {
@@ -51,68 +52,124 @@ class BackupDatabaseCommand extends Command
             }
 
             $driver = DB::connection()->getDriverName();
-            if ($driver === 'mysql') {
-                DB::statement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
+            if (!in_array($driver, ['pgsql', 'mysql', 'sqlite'], true)) {
+                throw new \RuntimeException('Database backups are not supported for this driver.');
             }
-            DB::beginTransaction();
-            $inTransaction = true;
 
-            $pdo = DB::connection()->getPdo();
+            if ($driver === 'pgsql') {
+                fclose($handle);
+                $handle = null;
 
-            if ($driver === 'sqlite') {
-                fwrite($handle, "PRAGMA foreign_keys = OFF;\nBEGIN TRANSACTION;\n\n");
-                $tables = DB::select("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-                foreach ($tables as $table) {
-                    $tableName = $table->name;
-                    $createSql = $table->sql;
-                    fwrite($handle, "-- Table structure for `{$tableName}`\n\nDROP TABLE IF EXISTS `{$tableName}`;\n{$createSql};\n\n");
-
-                    $cursor = DB::table($tableName)->cursor();
-                    $hasRows = false;
-                    foreach ($cursor as $row) {
-                        if (!$hasRows) {
-                            fwrite($handle, "-- Dumping data for table `{$tableName}`\n\n");
-                            $hasRows = true;
-                        }
-                        $rowArr = (array)$row;
-                        $keys = array_map(fn($k) => "`{$k}`", array_keys($rowArr));
-                        $values = array_map(function($v) use ($pdo) {
-                            return is_null($v) ? "NULL" : $pdo->quote($v);
-                        }, array_values($rowArr));
-                        fwrite($handle, "INSERT INTO `{$tableName}` (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ");\n");
+                $connection = config('database.connections.pgsql', []);
+                $databaseUrl = $connection['url'] ?? null;
+                if (is_string($databaseUrl) && $databaseUrl !== '') {
+                    $parts = parse_url($databaseUrl);
+                    if (!is_array($parts) || empty($parts['host']) || empty($parts['path'])) {
+                        throw new \RuntimeException('PostgreSQL backup connection URL is invalid.');
                     }
-                    if ($hasRows) fwrite($handle, "\n");
+
+                    parse_str($parts['query'] ?? '', $query);
+                    $connection['host'] = $parts['host'];
+                    $connection['port'] = $parts['port'] ?? 5432;
+                    $connection['database'] = ltrim(rawurldecode($parts['path']), '/');
+                    $connection['username'] = rawurldecode($parts['user'] ?? '');
+                    $connection['password'] = rawurldecode($parts['pass'] ?? '');
+                    $connection['sslmode'] = $query['sslmode'] ?? ($connection['sslmode'] ?? 'prefer');
                 }
-                fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
+
+                $processEnv = ['PGPASSWORD' => (string) ($connection['password'] ?? '')];
+                if (!empty($connection['password'])) {
+                    $processEnv['PGPASSWORD'] = (string) $connection['password'];
+                }
+                if (!empty($connection['sslmode'])) {
+                    $processEnv['PGSSLMODE'] = (string) $connection['sslmode'];
+                }
+
+                $process = new Process([
+                    'pg_dump',
+                    '--host', (string) ($connection['host'] ?? 'localhost'),
+                    '--port', (string) ($connection['port'] ?? 5432),
+                    '--username', (string) ($connection['username'] ?? ''),
+                    '--dbname', (string) ($connection['database'] ?? ''),
+                    '--no-password',
+                    '--no-owner',
+                    '--no-privileges',
+                    '--format=plain',
+                    '--file', $filepath,
+                ], null, $processEnv, null, 300);
+                $process->run();
+
+                if (!$process->isSuccessful()) {
+                    throw new \RuntimeException('PostgreSQL backup command failed.');
+                }
             } else {
-                fwrite($handle, "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
-                $tables = DB::select('SHOW TABLES');
-                foreach ($tables as $table) {
-                    $tableName = array_values((array)$table)[0];
-                    $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`")[0];
-                    fwrite($handle, "-- Table structure for `{$tableName}`\n\nDROP TABLE IF EXISTS `{$tableName}`;\n" . array_values((array)$createTable)[1] . ";\n\n");
-
-                    $cursor = DB::table($tableName)->cursor();
-                    $hasRows = false;
-                    foreach ($cursor as $row) {
-                        if (!$hasRows) {
-                            fwrite($handle, "-- Dumping data for table `{$tableName}`\n\n");
-                            $hasRows = true;
-                        }
-                        $rowArr = (array)$row;
-                        $keys = array_map(fn($k) => "`{$k}`", array_keys($rowArr));
-                        $values = array_map(function($v) use ($pdo) {
-                            return is_null($v) ? "NULL" : $pdo->quote($v);
-                        }, array_values($rowArr));
-                        fwrite($handle, "INSERT INTO `{$tableName}` (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ");\n");
-                    }
-                    if ($hasRows) fwrite($handle, "\n");
+                if ($driver === 'mysql') {
+                    DB::statement('SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ');
                 }
-                fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n");
+                DB::beginTransaction();
+                $inTransaction = true;
+
+                $pdo = DB::connection()->getPdo();
+
+                if ($driver === 'sqlite') {
+                    fwrite($handle, "PRAGMA foreign_keys = OFF;\nBEGIN TRANSACTION;\n\n");
+                    $tables = DB::select("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                    foreach ($tables as $table) {
+                        $tableName = $table->name;
+                        $createSql = $table->sql;
+                        fwrite($handle, "-- Table structure for `{$tableName}`\n\nDROP TABLE IF EXISTS `{$tableName}`;\n{$createSql};\n\n");
+
+                        $cursor = DB::table($tableName)->cursor();
+                        $hasRows = false;
+                        foreach ($cursor as $row) {
+                            if (!$hasRows) {
+                                fwrite($handle, "-- Dumping data for table `{$tableName}`\n\n");
+                                $hasRows = true;
+                            }
+                            $rowArr = (array) $row;
+                            $keys = array_map(fn ($key) => "`{$key}`", array_keys($rowArr));
+                            $values = array_map(
+                                fn ($value) => is_null($value) ? 'NULL' : $pdo->quote($value),
+                                array_values($rowArr)
+                            );
+                            fwrite($handle, "INSERT INTO `{$tableName}` (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ");\n");
+                        }
+                        if ($hasRows) {
+                            fwrite($handle, "\n");
+                        }
+                    }
+                    fwrite($handle, "COMMIT;\nPRAGMA foreign_keys = ON;\n");
+                } else {
+                    fwrite($handle, "/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;\nSET FOREIGN_KEY_CHECKS=0;\n\n");
+                    $tables = DB::select('SHOW TABLES');
+                    foreach ($tables as $table) {
+                        $tableName = array_values((array)$table)[0];
+                        $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`")[0];
+                        fwrite($handle, "-- Table structure for `{$tableName}`\n\nDROP TABLE IF EXISTS `{$tableName}`;\n" . array_values((array)$createTable)[1] . ";\n\n");
+
+                        $cursor = DB::table($tableName)->cursor();
+                        $hasRows = false;
+                        foreach ($cursor as $row) {
+                            if (!$hasRows) {
+                                fwrite($handle, "-- Dumping data for table `{$tableName}`\n\n");
+                                $hasRows = true;
+                            }
+                            $rowArr = (array)$row;
+                            $keys = array_map(fn($k) => "`{$k}`", array_keys($rowArr));
+                            $values = array_map(function($v) use ($pdo) {
+                                return is_null($v) ? "NULL" : $pdo->quote($v);
+                            }, array_values($rowArr));
+                            fwrite($handle, "INSERT INTO `{$tableName}` (" . implode(', ', $keys) . ") VALUES (" . implode(', ', $values) . ");\n");
+                        }
+                        if ($hasRows) fwrite($handle, "\n");
+                    }
+                    fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;\n");
+                }
+
+                DB::commit();
+                $inTransaction = false;
             }
 
-            DB::commit();
-            $inTransaction = false;
             fclose($handle);
             $handle = null;
 

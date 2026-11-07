@@ -19,6 +19,8 @@ render-env-variables.txt
 /public/storage
 /storage/*.key
 /storage/*.sqlite*
+/storage/app/private-imports/
+/database/data/*.csv
 /storage/pail
 /storage/framework/sessions/*
 /storage/framework/views/*

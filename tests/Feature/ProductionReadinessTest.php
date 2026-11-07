@@ -10,6 +10,7 @@ use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use PHPUnit\Framework\Attributes\Test;
 use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
@@ -53,14 +54,14 @@ class ProductionReadinessTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function active_users_can_authenticate_and_access_protected_routes()
     {
         $response = $this->actingAs($this->student)->get(route('student.classes'));
         $response->assertStatus(200);
     }
 
-    /** @test */
+    #[Test]
     public function deactivated_users_are_immediately_logged_out_by_middleware()
     {
         $this->student->update(['is_active' => false]);
@@ -70,7 +71,7 @@ class ProductionReadinessTest extends TestCase
         $this->assertGuest();
     }
 
-    /** @test */
+    #[Test]
     public function deactivated_users_cannot_login()
     {
         $this->student->update([
@@ -87,7 +88,7 @@ class ProductionReadinessTest extends TestCase
         $this->assertGuest();
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_deactivate_and_reactivate_student_and_teacher()
     {
         // Deactivate student
@@ -111,7 +112,7 @@ class ProductionReadinessTest extends TestCase
         $this->assertTrue($this->teacher->fresh()->isActive());
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_manage_academic_years_and_switch_active_term()
     {
         $term2 = AcademicYear::create([
@@ -130,7 +131,7 @@ class ProductionReadinessTest extends TestCase
         $this->assertEquals('2nd Semester', Setting::get('current_semester'));
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_view_individual_attendance_records_tab()
     {
         $subject = Subject::factory()->create(['code' => 'CS101', 'instructor_id' => $this->teacher->id]);
@@ -149,7 +150,7 @@ class ProductionReadinessTest extends TestCase
         $response->assertSee('CS101');
     }
 
-    /** @test */
+    #[Test]
     public function admin_can_override_attendance_record_with_audit_trail()
     {
         $subject = Subject::factory()->create(['code' => 'CS102', 'instructor_id' => $this->teacher->id]);
@@ -179,7 +180,7 @@ class ProductionReadinessTest extends TestCase
         ]);
     }
 
-    /** @test */
+    #[Test]
     public function reports_and_csv_streaming_works_for_admin_and_teacher()
     {
         $subject = Subject::factory()->create(['code' => 'CS103', 'instructor_id' => $this->teacher->id]);

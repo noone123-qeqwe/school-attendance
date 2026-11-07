@@ -15,6 +15,7 @@ RUN apk add --no-cache \
     icu-dev \
     libpq \
     postgresql-dev \
+    postgresql-client \
     sqlite-dev \
     python3 \
     py3-opencv \
@@ -48,7 +49,7 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 
 # Copy package files and install frontend dependencies
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci
 
 # Copy application source code
 COPY . .

@@ -22,9 +22,12 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Services\AnalyticsService;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Http\Requests\SendWarningRequest;
+use App\Traits\SanitizesExport;
 
 class AdminController extends Controller
 {
+    use SanitizesExport;
+
     // ─────────────────────────────────────────
     // DASHBOARD
     // ─────────────────────────────────────────
@@ -142,11 +145,11 @@ class AdminController extends Controller
 
             foreach ($warnings as $w) {
                 fputcsv($handle, [
-                    $w->user->name ?? 'Unknown',
-                    $w->user->student_number ?? 'N/A',
-                    $w->subject_code ?? 'N/A',
-                    $w->message ?? '',
-                    $w->created_at ? $w->created_at->format('Y-m-d H:i:s') : 'N/A',
+                    $this->sanitizeField($w->user->name ?? 'Unknown'),
+                    $this->sanitizeField($w->user->student_number ?? 'N/A'),
+                    $this->sanitizeField($w->subject_code ?? 'N/A'),
+                    $this->sanitizeField($w->message ?? ''),
+                    $this->sanitizeField($w->created_at ? $w->created_at->format('Y-m-d H:i:s') : 'N/A'),
                 ]);
             }
             fclose($handle);
@@ -348,10 +351,7 @@ class AdminController extends Controller
 
         $callback = function () {
             $handle = fopen('php://output', 'w');
-            // Write column headers
             fputcsv($handle, ['Name', 'Student Number', 'Email', 'Course', 'Year Level', 'Semester', 'Section', 'Password']);
-            // Sample row
-            fputcsv($handle, ['Juan Dela Cruz', '2024100', 'juan.delacruz@student.edu', 'BSCS', '1', '1', 'A', 'student123']);
             fclose($handle);
         };
 
@@ -400,10 +400,12 @@ class AdminController extends Controller
         $created = 0;
         $updated = 0;
         $skipped = 0;
+        $passwordSkipped = 0;
+        $usedPasswordFingerprints = [];
 
         $chunks = array_chunk($rows, 100);
         foreach ($chunks as $chunk) {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($chunk, $nameIdx, $emailIdx, $idIdx, $courseIdx, $yearIdx, $semIdx, $sectionIdx, $passIdx, &$created, &$updated, &$skipped) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($chunk, $nameIdx, $emailIdx, $idIdx, $courseIdx, $yearIdx, $semIdx, $sectionIdx, $passIdx, &$created, &$updated, &$skipped, &$passwordSkipped, &$usedPasswordFingerprints) {
                 foreach ($chunk as $row) {
                     $name  = isset($row[$nameIdx]) ? trim($row[$nameIdx]) : '';
                     $email = isset($row[$emailIdx]) ? strtolower(trim($row[$emailIdx])) : '';
@@ -418,7 +420,7 @@ class AdminController extends Controller
                     $yearLevel     = ($yearIdx !== null && isset($row[$yearIdx]) && is_numeric(trim($row[$yearIdx]))) ? (int)trim($row[$yearIdx]) : null;
                     $semester      = ($semIdx !== null && isset($row[$semIdx]) && is_numeric(trim($row[$semIdx]))) ? (int)trim($row[$semIdx]) : null;
                     $section       = ($sectionIdx !== null && isset($row[$sectionIdx])) ? trim($row[$sectionIdx]) : 'A';
-                    $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && !empty(trim($row[$passIdx]))) ? trim($row[$passIdx]) : 'student123';
+                    $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && trim($row[$passIdx]) !== '') ? trim($row[$passIdx]) : null;
 
                     $existing = User::withTrashed()
                         ->where(function ($q) use ($studentNumber, $email) {
@@ -455,6 +457,20 @@ class AdminController extends Controller
                         $existing->update($attributes);
                         $updated++;
                     } else {
+                        if ($plainPassword === null || strlen($plainPassword) < 12) {
+                            $skipped++;
+                            $passwordSkipped++;
+                            continue;
+                        }
+
+                        $passwordFingerprint = hash('sha256', $plainPassword);
+                        if (isset($usedPasswordFingerprints[$passwordFingerprint])) {
+                            $skipped++;
+                            $passwordSkipped++;
+                            continue;
+                        }
+                        $usedPasswordFingerprints[$passwordFingerprint] = true;
+
                         $attributes['password'] = Hash::make($plainPassword);
                         $attributes['must_change_password'] = true;
                         User::create($attributes);
@@ -465,8 +481,11 @@ class AdminController extends Controller
         }
 
         $message = "Import completed: {$created} new students added, {$updated} updated.";
-        if ($skipped > 0) {
-            $message .= " ({$skipped} invalid rows skipped).";
+        if ($passwordSkipped > 0) {
+            $message .= " ({$passwordSkipped} new rows skipped because each needs a distinct password of at least 12 characters.)";
+        }
+        if ($skipped > $passwordSkipped) {
+            $message .= ' (' . ($skipped - $passwordSkipped) . ' invalid or conflicting rows skipped).';
         }
 
         return redirect()->route('admin.students')->with('success', $message);
@@ -1590,10 +1609,7 @@ class AdminController extends Controller
 
         $callback = function () {
             $handle = fopen('php://output', 'w');
-            // Write column headers
             fputcsv($handle, ['Name', 'Employee ID', 'Email', 'Department', 'Position', 'Specialization', 'Password']);
-            // Sample row
-            fputcsv($handle, ['Prof. Maria Santos', 'T-2024-005', 'maria.santos@school.edu', 'Computer Science', 'Instructor', 'Database Systems', 'teacher123']);
             fclose($handle);
         };
 
@@ -1640,6 +1656,8 @@ class AdminController extends Controller
         $created = 0;
         $updated = 0;
         $skipped = 0;
+        $passwordSkipped = 0;
+        $usedPasswordFingerprints = [];
 
         foreach ($rows as $row) {
             $name  = isset($row[$nameIdx]) ? trim($row[$nameIdx]) : '';
@@ -1654,7 +1672,7 @@ class AdminController extends Controller
             $department    = ($deptIdx !== null && isset($row[$deptIdx])) ? trim($row[$deptIdx]) : null;
             $position      = ($posIdx !== null && isset($row[$posIdx])) ? trim($row[$posIdx]) : 'Instructor';
             $specialization= ($specIdx !== null && isset($row[$specIdx])) ? trim($row[$specIdx]) : null;
-            $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && !empty(trim($row[$passIdx]))) ? trim($row[$passIdx]) : 'teacher123';
+            $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && trim($row[$passIdx]) !== '') ? trim($row[$passIdx]) : null;
 
             $existing = User::withTrashed()
                 ->where(function ($q) use ($employeeId, $email) {
@@ -1683,6 +1701,20 @@ class AdminController extends Controller
                 $existing->update($attributes);
                 $updated++;
             } else {
+                if ($plainPassword === null || strlen($plainPassword) < 12) {
+                    $skipped++;
+                    $passwordSkipped++;
+                    continue;
+                }
+
+                $passwordFingerprint = hash('sha256', $plainPassword);
+                if (isset($usedPasswordFingerprints[$passwordFingerprint])) {
+                    $skipped++;
+                    $passwordSkipped++;
+                    continue;
+                }
+                $usedPasswordFingerprints[$passwordFingerprint] = true;
+
                 $attributes['password'] = Hash::make($plainPassword);
                 $attributes['must_change_password'] = true;
                 User::create($attributes);
@@ -1691,8 +1723,11 @@ class AdminController extends Controller
         }
 
         $message = "Import completed: {$created} new instructors added, {$updated} updated.";
-        if ($skipped > 0) {
-            $message .= " ({$skipped} invalid rows skipped).";
+        if ($passwordSkipped > 0) {
+            $message .= " ({$passwordSkipped} new rows skipped because each needs a distinct password of at least 12 characters.)";
+        }
+        if ($skipped > $passwordSkipped) {
+            $message .= ' (' . ($skipped - $passwordSkipped) . ' invalid or conflicting rows skipped).';
         }
 
         return redirect()->route('admin.teachers')->with('success', $message);
@@ -1727,12 +1762,12 @@ class AdminController extends Controller
             fputcsv($handle, ['Name', 'Employee ID', 'Email', 'Department', 'Position', 'Specialization']);
             foreach ($teachers as $teacher) {
                 fputcsv($handle, [
-                    $teacher->name,
-                    $teacher->employee_id ?? 'N/A',
-                    $teacher->email,
-                    $teacher->department ?? 'General',
-                    $teacher->position ?? 'Instructor',
-                    $teacher->specialization ?? 'N/A',
+                    $this->sanitizeField($teacher->name),
+                    $this->sanitizeField($teacher->employee_id ?? 'N/A'),
+                    $this->sanitizeField($teacher->email),
+                    $this->sanitizeField($teacher->department ?? 'General'),
+                    $this->sanitizeField($teacher->position ?? 'Instructor'),
+                    $this->sanitizeField($teacher->specialization ?? 'N/A'),
                 ]);
             }
             fclose($handle);

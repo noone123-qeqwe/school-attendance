@@ -14,6 +14,8 @@ test_*.php
 test_*.html
 debug_*.php
 storage/logs/*
+storage/app/private-imports/
+database/data/*.csv
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
