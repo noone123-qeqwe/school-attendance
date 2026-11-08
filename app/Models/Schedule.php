@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Schedule extends Model
 {
@@ -14,7 +15,8 @@ class Schedule extends Model
         'room',
     ];
 
-    public function subject()
+    /** @return BelongsTo<Subject, $this> */
+    public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
     }

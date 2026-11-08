@@ -112,19 +112,9 @@ class MarkAbsentStudents extends Command
 
     private function sendAbsenceNotification($student, $subject, $date)
     {
-        $adminUser = User::where('role', 'admin')->first();
         $dateFormatted = $date->format('M j, Y');
         
         $message = "📋 You were marked absent in {$subject->name} ({$subject->code}) on {$dateFormatted}. If you attended this class, please contact your instructor immediately.";
-
-        // Create notification
-        Notification::create([
-            'user_id' => $student->id,
-            'sent_by' => $adminUser ? $adminUser->id : null,
-            'type' => 'absence',
-            'subject_code' => $subject->code,
-            'message' => $message
-        ]);
 
         try {
             broadcast(new NotificationSent(

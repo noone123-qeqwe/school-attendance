@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ClassSchedule extends Model
@@ -19,17 +20,20 @@ class ClassSchedule extends Model
         'end_time',
     ];
 
-    public function subject()
+    /** @return BelongsTo<Subject, $this> */
+    public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class);
     }
 
-    public function teacher()
+    /** @return BelongsTo<User, $this> */
+    public function teacher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    public function section()
+    /** @return BelongsTo<Section, $this> */
+    public function section(): BelongsTo
     {
         return $this->belongsTo(Section::class);
     }

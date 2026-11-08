@@ -11,6 +11,8 @@ use App\Models\User;
 use App\Rules\ValidScheduleSlot;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class ClassScheduleController extends Controller
 {
@@ -66,7 +68,7 @@ class ClassScheduleController extends Controller
     {
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
-            'teacher_id' => 'nullable|exists:users,id',
+            'teacher_id' => ['required', Rule::exists('users', 'id')->where('role', 'teacher')],
             'section_id' => 'required|exists:sections,id',
             'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'start_time' => 'required|date_format:H:i',
@@ -81,40 +83,31 @@ class ClassScheduleController extends Controller
                     (string) $request->input('end_time'),
                     $request->filled('teacher_id') ? (int) $request->input('teacher_id') : null,
                     (string) $request->input('room'),
+                    null,
+                    $request->filled('section_id') ? (int) $request->input('section_id') : null,
                 ),
             ],
         ]);
 
         $startTime = Carbon::parse($request->start_time)->format('H:i');
         $endTime = Carbon::parse($request->end_time)->format('H:i');
+        $room = trim($request->room);
+        $slot = $this->attendanceSlot((int) $request->subject_id, $request->day_of_week, $startTime, $endTime);
 
-        ClassSchedule::create([
-            'subject_id' => $request->subject_id,
-            'teacher_id' => $request->teacher_id,
-            'section_id' => $request->section_id,
-            'day_of_week' => $request->day_of_week,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'room' => trim($request->room),
-        ]);
-
-        // Sync with Subject's instructor and section if specified
-        if ($request->filled('teacher_id')) {
-            Subject::where('id', $request->subject_id)->update(['instructor_id' => $request->teacher_id]);
-        }
-
-        // Sync with Attendance Schedule table so student scanning works
-        Schedule::updateOrCreate(
-            [
+        DB::transaction(function () use ($request, $startTime, $endTime, $room, $slot) {
+            ClassSchedule::create([
                 'subject_id' => $request->subject_id,
-                'day' => $request->day_of_week,
+                'teacher_id' => $request->teacher_id,
+                'section_id' => $request->section_id,
+                'day_of_week' => $request->day_of_week,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
-            ],
-            [
-                'room' => trim($request->room),
-            ]
-        );
+                'room' => $room,
+            ]);
+
+            Subject::where('id', $request->subject_id)->update(['instructor_id' => $request->teacher_id]);
+            $this->syncAttendanceSchedule(null, $slot, $room);
+        });
 
         return redirect()->route('admin.class-schedules.index')->with('success', 'Class schedule assigned successfully.');
     }
@@ -123,7 +116,7 @@ class ClassScheduleController extends Controller
     {
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
-            'teacher_id' => 'nullable|exists:users,id',
+            'teacher_id' => ['required', Rule::exists('users', 'id')->where('role', 'teacher')],
             'section_id' => 'required|exists:sections,id',
             'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'start_time' => 'required|date_format:H:i',
@@ -139,51 +132,93 @@ class ClassScheduleController extends Controller
                     $request->filled('teacher_id') ? (int) $request->input('teacher_id') : null,
                     (string) $request->input('room'),
                     $classSchedule->id,
+                    $request->filled('section_id') ? (int) $request->input('section_id') : null,
                 ),
             ],
         ]);
 
         $startTime = Carbon::parse($request->start_time)->format('H:i');
         $endTime = Carbon::parse($request->end_time)->format('H:i');
+        $oldSlot = $this->attendanceSlot(
+            (int) $classSchedule->subject_id,
+            $classSchedule->day_of_week,
+            Carbon::parse($classSchedule->start_time)->format('H:i'),
+            Carbon::parse($classSchedule->end_time)->format('H:i'),
+        );
+        $newSlot = $this->attendanceSlot((int) $request->subject_id, $request->day_of_week, $startTime, $endTime);
+        $room = trim($request->room);
 
-        $classSchedule->update([
-            'subject_id' => $request->subject_id,
-            'teacher_id' => $request->teacher_id,
-            'section_id' => $request->section_id,
-            'day_of_week' => $request->day_of_week,
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'room' => trim($request->room),
-        ]);
-
-        if ($request->filled('teacher_id')) {
-            Subject::where('id', $request->subject_id)->update(['instructor_id' => $request->teacher_id]);
-        }
-
-        Schedule::updateOrCreate(
-            [
+        DB::transaction(function () use ($request, $classSchedule, $startTime, $endTime, $room, $oldSlot, $newSlot) {
+            $classSchedule->update([
                 'subject_id' => $request->subject_id,
-                'day' => $request->day_of_week,
+                'teacher_id' => $request->teacher_id,
+                'section_id' => $request->section_id,
+                'day_of_week' => $request->day_of_week,
                 'start_time' => $startTime,
                 'end_time' => $endTime,
-            ],
-            [
-                'room' => trim($request->room),
-            ]
-        );
+                'room' => $room,
+            ]);
+
+            Subject::where('id', $request->subject_id)->update(['instructor_id' => $request->teacher_id]);
+            $this->syncAttendanceSchedule($oldSlot, $newSlot, $room);
+        });
 
         return redirect()->route('admin.class-schedules.index')->with('success', 'Class schedule updated successfully.');
     }
 
     public function destroy(ClassSchedule $classSchedule)
     {
-        // Also remove matching Schedule entry if exists
-        Schedule::where('subject_id', $classSchedule->subject_id)
-            ->where('day', $classSchedule->day_of_week)
-            ->where('start_time', $classSchedule->start_time)
-            ->delete();
+        $slot = $this->attendanceSlot(
+            (int) $classSchedule->subject_id,
+            $classSchedule->day_of_week,
+            Carbon::parse($classSchedule->start_time)->format('H:i'),
+            Carbon::parse($classSchedule->end_time)->format('H:i'),
+        );
 
-        $classSchedule->delete();
+        DB::transaction(function () use ($classSchedule, $slot) {
+            $classSchedule->delete();
+            $this->removeAttendanceScheduleIfUnused($slot);
+        });
+
         return redirect()->route('admin.class-schedules.index')->with('success', 'Class schedule deleted successfully.');
+    }
+
+    /** @return array{subject_id: int, day: string, start_time: string, end_time: string} */
+    private function attendanceSlot(int $subjectId, string $day, string $startTime, string $endTime): array
+    {
+        return [
+            'subject_id' => $subjectId,
+            'day' => $day,
+            'start_time' => $startTime,
+            'end_time' => $endTime,
+        ];
+    }
+
+    /**
+     * @param array{subject_id: int, day: string, start_time: string, end_time: string} $oldSlot
+     * @param array{subject_id: int, day: string, start_time: string, end_time: string} $newSlot
+     */
+    private function syncAttendanceSchedule(?array $oldSlot, array $newSlot, string $room): void
+    {
+        if ($oldSlot !== null && $oldSlot !== $newSlot) {
+            $this->removeAttendanceScheduleIfUnused($oldSlot);
+        }
+
+        Schedule::updateOrCreate($newSlot, ['room' => $room]);
+    }
+
+    /** @param array{subject_id: int, day: string, start_time: string, end_time: string} $slot */
+    private function removeAttendanceScheduleIfUnused(array $slot): void
+    {
+        $stillAssigned = ClassSchedule::query()
+            ->where('subject_id', $slot['subject_id'])
+            ->where('day_of_week', $slot['day'])
+            ->where('start_time', $slot['start_time'])
+            ->where('end_time', $slot['end_time'])
+            ->exists();
+
+        if (!$stillAssigned) {
+            Schedule::where($slot)->delete();
+        }
     }
 }

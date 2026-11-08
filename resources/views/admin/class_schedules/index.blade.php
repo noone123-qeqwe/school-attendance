@@ -809,9 +809,9 @@
                 </div>
 
                 <div style="margin-bottom: 16px;">
-                    <label class="sch-form-label">Faculty Instructor (Optional)</label>
-                    <select name="teacher_id" class="sch-form-control">
-                        <option value="">-- Unassigned / Assign Later --</option>
+                    <label class="sch-form-label">Faculty Instructor</label>
+                    <select name="teacher_id" class="sch-form-control" required>
+                        <option value="">-- Select Instructor --</option>
                         @foreach($teachers as $teacher)
                             <option value="{{ $teacher->id }}">
                                 {{ $teacher->name }} ({{ $teacher->employee_id ?? 'Instructor' }})
@@ -898,8 +898,8 @@
 
                 <div style="margin-bottom: 16px;">
                     <label class="sch-form-label">Faculty Instructor</label>
-                    <select name="teacher_id" id="edit_teacher_id" class="sch-form-control">
-                        <option value="">-- Unassigned --</option>
+                    <select name="teacher_id" id="edit_teacher_id" class="sch-form-control" required>
+                        <option value="">-- Select Instructor --</option>
                         @foreach($teachers as $teacher)
                             <option value="{{ $teacher->id }}">
                                 {{ $teacher->name }} ({{ $teacher->employee_id ?? 'Instructor' }})

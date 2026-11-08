@@ -256,6 +256,52 @@ class EndToEndAttendanceQrWorkflowTest extends TestCase
         $this->assertContains('Student Bob', $rosterNames);
     }
 
+    public function test_qr_attendance_is_consistent_across_student_teacher_admin_and_linked_parent_views(): void
+    {
+        $parent = User::factory()->create([
+            'role' => 'parent',
+            'student_number' => null,
+            'course' => null,
+            'year_level' => null,
+            'semester' => null,
+        ]);
+        $parent->children()->attach($this->studentQr->id);
+
+        $start = $this->actingAs($this->teacher)->postJson('/teacher/qr/start', [
+            'subject_code' => $this->subject->code,
+            'radius_meters' => 0,
+        ]);
+        $start->assertOk();
+
+        $scan = $this->actingAs($this->studentQr)->postJson('/qr/scan-process', [
+            'token' => $start->json('token'),
+        ]);
+        $scan->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('status', 'Present');
+
+        $teacherMonitor = $this->actingAs($this->teacher)->getJson('/teacher/qr/clockins?session_id='.$start->json('session_id'));
+        $teacherMonitor->assertOk()
+            ->assertJsonPath('stats.present', 1)
+            ->assertJsonFragment(['name' => 'Student Alice']);
+
+        $parentDashboard = $this->actingAs($parent)->get(route('parent.dashboard'));
+        $parentDashboard->assertOk()
+            ->assertSee('Student Alice')
+            ->assertSee($this->subject->code)
+            ->assertSee('Present');
+
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'admin_sub_role' => 'super_admin',
+        ]);
+        $adminAttendance = $this->actingAs($admin)->withSession(['admin_2fa_verified' => true])->get(route('admin.attendance', ['tab' => 'records']));
+        $adminAttendance->assertOk()
+            ->assertSee('Student Alice')
+            ->assertSee($this->subject->code)
+            ->assertSee('Present');
+    }
+
     /**
      * Test Token Refresh:
      * When the teacher refreshes the QR token, the new token works,

@@ -10,8 +10,11 @@ use App\Models\Subject;
 use App\Models\Schedule;
 use App\Models\Attendance;
 use App\Models\AttendanceSession;
+use App\Models\Notification as NotificationRecord;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
+use Illuminate\Support\Facades\Queue;
 use Carbon\Carbon;
 use App\Models\Holiday;
 
@@ -79,6 +82,47 @@ class AttendanceLifecycleTest extends TestCase
         ]);
 
         Carbon::setTestNow();
+    }
+
+    public function test_mark_absent_command_creates_one_student_alert_and_one_linked_parent_alert(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-08-25 14:00:00', 'Asia/Manila'));
+        Queue::fake();
+        NotificationFacade::fake();
+
+        try {
+            $parent = User::factory()->create([
+                'role' => 'parent',
+                'student_number' => null,
+                'course' => null,
+                'year_level' => null,
+                'semester' => null,
+            ]);
+            $parent->children()->attach($this->student->id);
+
+            $now = now('Asia/Manila');
+            Schedule::create([
+                'subject_id' => $this->subject->id,
+                'day' => $now->format('l'),
+                'start_time' => $now->copy()->subHours(2)->format('H:i:s'),
+                'end_time' => $now->copy()->subHour()->format('H:i:s'),
+            ]);
+
+            Artisan::call('attendance:mark-absent');
+
+            NotificationFacade::assertSentTo($parent, \App\Notifications\AbsenceAlert::class);
+
+            $this->assertSame(1, NotificationRecord::where('user_id', $this->student->id)
+                ->where('subject_code', $this->subject->code)
+                ->where('type', 'absence_alert')
+                ->count());
+            $this->assertSame(1, NotificationRecord::where('user_id', $parent->id)
+                ->where('subject_code', $this->subject->code)
+                ->where('type', 'absence_alert')
+                ->count());
+        } finally {
+            Carbon::setTestNow();
+        }
     }
 
     public function test_mark_absent_command_does_not_mark_before_class_ends()

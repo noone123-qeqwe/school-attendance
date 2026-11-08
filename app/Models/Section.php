@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Section extends Model
@@ -15,12 +17,14 @@ class Section extends Model
         'year_level',
     ];
 
-    public function course()
+    /** @return BelongsTo<Course, $this> */
+    public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
     }
 
-    public function schedules()
+    /** @return HasMany<ClassSchedule, $this> */
+    public function schedules(): HasMany
     {
         return $this->hasMany(ClassSchedule::class);
     }

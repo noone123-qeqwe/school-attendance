@@ -76,7 +76,10 @@ class Attendance extends Model
     protected static function booted()
     {
         static::saved(function ($attendance) {
-            if ($attendance->status === 'Absent' && $attendance->wasChanged('status') && !$attendance->excused) {
+            $isNewAbsentRecord = $attendance->wasRecentlyCreated;
+            $statusChangedToAbsent = $attendance->wasChanged('status');
+
+            if ($attendance->status === 'Absent' && ($isNewAbsentRecord || $statusChangedToAbsent) && !$attendance->excused) {
                 try {
                     $student = $attendance->user;
                     if (!$student) {

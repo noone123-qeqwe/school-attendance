@@ -18,6 +18,7 @@ class ValidScheduleSlot implements ValidationRule
         private readonly ?int $teacherId = null,
         private readonly ?string $room = null,
         private readonly ?int $excludeScheduleId = null,
+        private readonly ?int $sectionId = null,
     ) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
@@ -43,6 +44,12 @@ class ValidScheduleSlot implements ValidationRule
 
         if ($this->excludeScheduleId !== null) {
             $conflicts->whereKeyNot($this->excludeScheduleId);
+        }
+
+        if ($this->sectionId !== null && (clone $conflicts)->where('section_id', $this->sectionId)->exists()) {
+            $fail('This section already has a class scheduled during this time slot on ' . $this->day . '.');
+
+            return;
         }
 
         if ($this->teacherId !== null && (clone $conflicts)->where('teacher_id', $this->teacherId)->exists()) {
