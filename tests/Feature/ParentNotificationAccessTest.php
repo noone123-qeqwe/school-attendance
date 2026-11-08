@@ -19,12 +19,13 @@ class ParentNotificationAccessTest extends TestCase
         $otherChild = User::factory()->create(['role' => 'student']);
         $parent->children()->attach($student->id);
         $parent->children()->attach($otherChild->id);
+        $otherParent->children()->attach($student->id);
 
         $ownAlert = $this->notification($parent, 'Own linked-child absence', 'absence_alert');
         $ownAlert->update(['related_user_id' => $student->id]);
         $this->notification($parent, 'Other linked-child absence', 'absence_alert')
             ->update(['related_user_id' => $otherChild->id]);
-        $this->notification($student, 'Linked child information', 'absence');
+        $childAlert = $this->notification($student, 'Linked child information', 'absence');
         $this->notification($otherParent, 'Unrelated private alert', 'absence_alert');
 
         $this->actingAs($parent)->get(route('parent.notifications'))
@@ -55,6 +56,13 @@ class ParentNotificationAccessTest extends TestCase
 
         $this->actingAs($parent)->post(route('parent.notifications.read'))->assertOk();
         $this->assertDatabaseHas('notifications', ['id' => $ownAlert->id, 'is_read' => true]);
+        $this->assertDatabaseHas('parent_notification_reads', ['parent_id' => $parent->id, 'notification_id' => $childAlert->id]);
+        $this->assertDatabaseHas('notifications', ['id' => $childAlert->id, 'is_read' => false]);
+
+        $this->actingAs($otherParent)->getJson(route('notifications.poll'))
+            ->assertOk()
+            ->assertJsonPath('unread_count', 2)
+            ->assertJsonFragment(['id' => $childAlert->id, 'is_read' => false]);
     }
 
     public function test_notification_poll_is_available_to_verified_roles_but_not_unverified_admin_or_guest(): void

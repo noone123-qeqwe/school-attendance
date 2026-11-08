@@ -694,8 +694,14 @@ class HomeController extends Controller
             $childIds = $user->children()->pluck('users.id');
             $recipientIds = $childIds->all();
             $recipientIds[] = $user->id;
-            $unreadCount = \App\Models\Notification::whereIn('user_id', $recipientIds)->active()->where('is_read', false)->count();
-            $notifications = \App\Models\Notification::with(['user', 'sender', 'subject'])
+            $unreadCount = \App\Models\Notification::where('user_id', $user->id)->active()->where('is_read', false)->count()
+                + \App\Models\Notification::whereIn('user_id', $childIds)->active()->where('is_read', false)
+                    ->whereNotExists(function ($query) use ($user) {
+                        $query->selectRaw('1')->from('parent_notification_reads')
+                            ->whereColumn('parent_notification_reads.notification_id', 'notifications.id')
+                            ->where('parent_notification_reads.parent_id', $user->id);
+                    })->count();
+            $notifications = \App\Models\Notification::with(['user', 'sender', 'subject', 'parentReads' => fn ($q) => $q->where('parent_id', $user->id)])
                 ->whereIn('user_id', $recipientIds)
                 ->active()
                 ->orderBy('created_at', 'desc')
@@ -711,12 +717,14 @@ class HomeController extends Controller
                 ->get();
         }
 
-        $formatted = $notifications->map(function($notif) {
+        $formatted = $notifications->map(function ($notif) use ($user) {
             return [
                 'id' => $notif->id,
                 'type' => $notif->type,
                 'message' => $notif->message,
-                'is_read' => (bool)$notif->is_read,
+                'is_read' => $user->isParent() && (int) $notif->user_id !== (int) $user->id
+                    ? $notif->parentReads->isNotEmpty()
+                    : (bool) $notif->is_read,
                 'created_at_human' => $notif->created_at->diffForHumans(),
                 'is_today' => $notif->created_at->isToday(),
                 'sender_name' => $notif->sender?->name,

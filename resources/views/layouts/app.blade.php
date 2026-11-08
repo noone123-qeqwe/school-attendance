@@ -130,8 +130,11 @@
                         if (Auth::user()->isParent()) {
                             $childIds = Auth::user()->children()->pluck('users.id');
                             $parentNotificationRecipientIds = $childIds->push(Auth::id())->unique();
-                            $unreadCount = \App\Models\Notification::whereIn('user_id', $parentNotificationRecipientIds)
-                                ->active()->where('is_read', false)->count();
+                            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->active()->where('is_read', false)->count()
+                                + \App\Models\Notification::whereIn('user_id', $childIds)->active()->where('is_read', false)
+                                    ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('parent_notification_reads')
+                                        ->whereColumn('parent_notification_reads.notification_id', 'notifications.id')
+                                        ->where('parent_notification_reads.parent_id', Auth::id()))->count();
                         } else {
                             $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count();
                         }

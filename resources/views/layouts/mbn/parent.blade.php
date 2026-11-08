@@ -14,9 +14,13 @@
 
     <a href="{{ route('parent.notifications') }}" id="parentMobileAlertsLink" class="mbn-item {{ request()->routeIs('parent.notifications') ? 'active' : '' }}">
         @php
-            $pNotificationRecipientIds = Auth::user()->children()->pluck('users.id')->push(Auth::id())->unique();
-            $pUnreadNotifs = \App\Models\Notification::whereIn('user_id', $pNotificationRecipientIds)
-                ->active()->where('is_read', false)->count();
+            $pChildIds = Auth::user()->children()->pluck('users.id');
+            $pNotificationRecipientIds = $pChildIds->push(Auth::id())->unique();
+            $pUnreadNotifs = \App\Models\Notification::where('user_id', Auth::id())->active()->where('is_read', false)->count()
+                + \App\Models\Notification::whereIn('user_id', $pChildIds)->active()->where('is_read', false)
+                    ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('parent_notification_reads')
+                        ->whereColumn('parent_notification_reads.notification_id', 'notifications.id')
+                        ->where('parent_notification_reads.parent_id', Auth::id()))->count();
         @endphp
         @if($pUnreadNotifs > 0)<span class="mbn-badge">{{ $pUnreadNotifs > 9 ? '9+' : $pUnreadNotifs }}</span>@endif
         <i class="bi bi-bell-fill"></i>

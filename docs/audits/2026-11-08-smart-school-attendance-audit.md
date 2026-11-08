@@ -18,7 +18,7 @@ This is a source and automated-test audit. It does not certify production readin
 | JavaScript tests (`node --test tests/js/*.test.cjs`) | **14 passed, 0 failed** |
 | PHP syntax on changed application files | **Passed** |
 | PHPStan level 5 on the changed schedule controller, lock and roster services, subject requests, attendance and notification models | **No errors**; the report service and other existing controllers retain type findings |
-| PHPStan level 5 across the full project | **574 findings remain**; full-project analysis is not clean |
+| PHPStan level 5 across the full project | **558 findings remain**; full-project analysis is not clean (down from 574 after relation typing) |
 | `git diff --check` | **Passed** |
 | Role page render smoke coverage from the continuation run | **219 pages** across student, teacher, parent, admin, data-entry, and auditor role contexts; notification polling is now a shared authenticated route with separate role tests |
 | Route inventory from the audit run | **403 registered Laravel routes** |
@@ -44,6 +44,7 @@ The automated suite runs with `APP_ENV=testing` and an in-memory SQLite database
 | High | Parent absence alerts were addressed to the parent, but the parent list and poll read only child recipient IDs. The shared poll route was limited to students. | Parent views and polling include parent-owned alerts; the poll route now supports authenticated roles, respects admin IP rules and requires verified admin 2FA. New parent alerts carry a related student ID for safe child filtering. | `ParentNotificationAccessTest`: 2 passed; `AttendanceLifecycleTest`: 6 passed; full suite passed. Existing older alerts are not retroactively linked to a student. |
 | Medium | The CSP contains a script nonce, which blocks inline `<script>` blocks lacking that nonce in modern browsers. Many role views had affected inline blocks. | Added the existing `@cspNonce` directive to inline blocks across role views without changing colors; updated parent alert and subject edit controls where needed. | Source scan found **zero** inline script openings without a nonce; `CspInlineScriptTest` rendered admin, teacher, student, and parent pages and passed with 60 assertions; full suite passed. |
 | Medium | Subject creation and editing accepted any user ID as an instructor. | Both subject request validators now require a user with the teacher role. | `ClassScheduleConflictTest` includes an invalid-instructor regression; full suite passed. |
+| High | A linked guardian marking a child's notification read changed the shared notification row, so every other guardian lost the unread state. | Added a per-guardian `parent_notification_reads` table. Parent list, poll, and badge counts now use the signed-in guardian's read state, while the child's notification remains unread. | `ParentNotificationAccessTest` verifies two linked guardians see independent read state; parent notification and attendance lifecycle tests: 8 passed, 42 assertions. |
 
 ### Feature verification matrix
 
@@ -84,7 +85,7 @@ Role page smoke tests establish that representative routes render for the tested
 
 - The full automated suite includes authorization, security-header, device-binding, biometric/WebAuthn, QR-session, parent-child isolation, offline-sync, and upload validation coverage. These checks are useful evidence, not a penetration test.
 - Class schedule writes now acquire a singleton row lock inside the transaction before validation, which serializes cooperating admin edits on PostgreSQL and MySQL. The schema still has no range-overlap constraint, and a concurrent PostgreSQL run was not available locally. Verify locking under load against the production database engine.
-- The full-project PHPStan run has **574** remaining findings. Keep the focused clean result for changed application files distinct from the unresolved repository-wide findings; fix these in small groups and add typing where it improves actual confidence.
+- The full-project PHPStan run has **558** remaining findings, down from 574 after typing notification relations. The focused analysis still reports legacy findings in the large home and parent controllers; fix these in small groups, prioritizing authorization, attendance, and data-write paths.
 - Earlier dependency checks in this audit found no reported Composer or production npm dependency vulnerabilities. `composer validate` did flag an unbounded `*` version constraint for `spatie/laravel-activitylog`; replace it with a supported bounded constraint and validate lockfile/update behavior.
 - The deployment backup path on Render was identified as ephemeral in the deployment audit. Production backups should be copied to durable external storage and periodically restored in a staging environment.
 - Face matching does not have independently verified presentation-attack/liveness detection. The Peer-Snap verifier is disabled by default; enabling it sends multiple image frames to an external verifier. Before enabling face verification for attendance, document retention and consent, review the verifier’s processing and data residency, and test spoof resistance with real devices and representative users.
@@ -94,19 +95,19 @@ Role page smoke tests establish that representative routes render for the tested
 
 1. Run the new migrations and backup/restore workflow against the same database engine used in production, with a disposable staging dataset.
 2. Run two concurrent administrators creating conflicting schedules against PostgreSQL and confirm that the second request is rejected after the first commits.
-3. Reduce the 574 full-project PHPStan findings, prioritizing authorization, attendance, and data-write paths.
+3. Reduce the 558 full-project PHPStan findings, prioritizing authorization, attendance, and data-write paths.
 4. Validate backup durability and perform a timed restore drill.
 5. Test each role at desktop and mobile breakpoints in a browser, operating the actual forms, dialogs, navigation, and report actions; preserve the current color system.
 6. Complete privacy and presentation-attack review before enabling external face verification, then run real-device registration and matching trials.
 7. If different teachers must teach different sections of the same subject code, redesign QR sessions, rosters, attendance keys, and teacher authorization around a section-specific class identity. The current safe invariant is one teacher per subject code.
-8. Give each guardian independent read state for child notifications; the current shared child notification rows can be marked read by a linked guardian. Older parent alerts also lack the new related-student field.
+8. Backfill older parent alerts with a related-student field only where the child association can be established reliably; per-guardian read state is now implemented and regression-tested.
 
 ## Change set
 
-The previous audit fixes are already on `origin/main`. This continuation changes the following files and is intended for a separate verified commit:
+The previous audit fixes are already on `origin/main`. This continuation includes per-guardian notification read state and changes the following files in the verified commit:
 
-- Backend: `app/Http/Controllers/Admin/ClassScheduleController.php`, `AdminController.php`, `HomeController.php`, `ParentController.php`, `TeacherController.php`; `app/Http/Requests/StoreSubjectRequest.php`, `UpdateSubjectRequest.php`; `app/Models/Attendance.php`, `Notification.php`; `app/Services/AttendanceReportService.php`, `ClassScheduleLock.php`, `SubjectRosterService.php`; `routes/web.php`.
-- Database: `database/migrations/2026_11_08_000001_create_class_schedule_locks_table.php`, `2026_11_08_000002_add_related_student_to_notifications_table.php`.
+- Backend: `app/Http/Controllers/Admin/ClassScheduleController.php`, `AdminController.php`, `HomeController.php`, `ParentController.php`, `TeacherController.php`; `app/Http/Requests/StoreSubjectRequest.php`, `UpdateSubjectRequest.php`; `app/Models/Attendance.php`, `Notification.php`, `ParentNotificationRead.php`; `app/Services/AttendanceReportService.php`, `ClassScheduleLock.php`, `SubjectRosterService.php`; `routes/web.php`.
+- Database: `database/migrations/2026_11_08_000001_create_class_schedule_locks_table.php`, `2026_11_08_000002_add_related_student_to_notifications_table.php`, `2026_11_09_000001_create_parent_notification_reads_table.php`.
 - Tests: `tests/Feature/AttendanceLifecycleTest.php`, `ClassScheduleConflictTest.php`, `CspInlineScriptTest.php`, `ParentNotificationAccessTest.php`, `TeacherDataScopeTest.php`.
 - Views: `resources/views/admin/{absent,activity_logs,calendar,dashboard,gps-config,location-finder,profile,settings,student}.blade.php`; admin subdirectories `academic_years`, `attendance`, `backups`, `corrections`, `courses`, `departments`, `excuses`, `roles`, `sections`, `students`, `subjects`, `teachers`; `resources/views/attendance/records.blade.php`, `auth/forgot-password.blade.php`, `components/modal.blade.php`, `excuses/{create,create_general}.blade.php`, `instructor/calendar.blade.php`, `layouts/app.blade.php`, `layouts/mbn/parent.blade.php`, `mobile/history.blade.php`, `offline.blade.php`, `parent/{attendance-calendar,dashboard,excuse-form-general,excuse-form,link-child,notifications}.blade.php`, `partials/scripts/{admin,teacher}.blade.php`, `qr/verify.blade.php`, `student/profile.blade.php`, `teacher/{absent-report,attendance,calendar,excuse-reviews,student-detail}.blade.php`, and teacher subdirectories `classroom`, `my_excuses`, `notifications`, `students`, `subjects`.
 

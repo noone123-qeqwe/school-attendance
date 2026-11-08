@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Notification extends Model
 {
@@ -22,22 +24,27 @@ class Notification extends Model
         'is_read' => 'boolean',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function relatedStudent()
+    public function relatedStudent(): BelongsTo
     {
         return $this->belongsTo(User::class, 'related_user_id');
     }
 
-    public function sender()
+    public function parentReads(): HasMany
+    {
+        return $this->hasMany(ParentNotificationRead::class);
+    }
+
+    public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sent_by');
     }
 
-    public function subject()
+    public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'subject_code', 'code');
     }

@@ -515,7 +515,7 @@ class ParentController extends Controller
         $recipientIds = $childIds->all();
         $recipientIds[] = $parent->id;
 
-        $query = Notification::with(['user', 'relatedStudent', 'sender', 'subject'])
+        $query = Notification::with(['user', 'relatedStudent', 'sender', 'subject', 'parentReads' => fn ($q) => $q->where('parent_id', $parent->id)])
             ->whereIn('user_id', $recipientIds)
             ->orderBy('created_at', 'desc');
 
@@ -542,6 +542,11 @@ class ParentController extends Controller
         }
 
         $notifications = $query->paginate(20)->withQueryString();
+        $notifications->getCollection()->each(function (Notification $notification) use ($parent) {
+            if ((int) $notification->user_id !== (int) $parent->id) {
+                $notification->setAttribute('is_read', $notification->parentReads->isNotEmpty());
+            }
+        });
         $children = $parent->children()->get();
 
         return view('parent.notifications', compact('notifications', 'children'));
@@ -553,12 +558,21 @@ class ParentController extends Controller
     public function markNotificationsRead()
     {
         $parent = Auth::user();
-        $recipientIds = $parent->children()->pluck('users.id')->all();
-        $recipientIds[] = $parent->id;
-
-        Notification::whereIn('user_id', $recipientIds)
+        Notification::where('user_id', $parent->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
+
+        $childNotificationIds = Notification::whereIn('user_id', $parent->children()->pluck('users.id'))
+            ->where('is_read', false)
+            ->pluck('id');
+        if ($childNotificationIds->isNotEmpty()) {
+            $now = now();
+            \App\Models\ParentNotificationRead::upsert(
+                $childNotificationIds->map(fn ($id) => ['parent_id' => $parent->id, 'notification_id' => $id, 'read_at' => $now])->all(),
+                ['parent_id', 'notification_id'],
+                ['read_at'],
+            );
+        }
 
         return response()->json(['success' => true]);
     }
