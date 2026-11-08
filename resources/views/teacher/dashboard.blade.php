@@ -169,16 +169,8 @@
     </div>
 </div>
 
-<!-- Skeleton Stats -->
-<div class="row g-3 mb-4" id="skelStats">
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-</div>
-
 <!-- Quick Stats -->
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:20px; margin-bottom:24px;">
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:20px; margin-bottom:24px;">
     <x-card type="kpi" accent="gold" label="Today's Classes" value="{{ $todayClasses->count() }}" icon="bi bi-easel-fill" />
     <x-card type="kpi" accent="info" label="Total Students" value="{{ $totalStudents ?? 0 }}" icon="bi bi-people-fill" />
     <x-card type="kpi" accent="success" label="Present Today" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
@@ -484,13 +476,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
 <script nonce="{{ csp_nonce() }}">
-// Skeleton -> Real Content
-document.addEventListener('DOMContentLoaded', function() {
-    var skelStats = document.getElementById('skelStats');
-    var realStats = document.getElementById('realStats');
-    if (skelStats && realStats) { skelStats.style.display = 'none'; realStats.style.display = 'grid'; }
-});
-
 // Real-time clock
 (function() {
     const clockEl = document.getElementById('teacherClock');

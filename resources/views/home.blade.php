@@ -1112,7 +1112,7 @@
         }
 
         /* Quick Stats KPI Grid */
-        #realStats, #skelStats {
+        #realStats {
             gap: 12px !important;
             margin-bottom: 20px !important;
         }
@@ -1346,16 +1346,8 @@
     </div>
 </div>
 
-<!-- Skeleton Stats -->
-<div class="row g-3 mb-4" id="skelStats">
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-    <div class="col-md-3 col-6"><x-skeleton type="stat" /></div>
-</div>
-
 <!-- Quick Stats -->
-<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:none; gap:16px; margin-bottom:20px;">
+<div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:16px; margin-bottom:20px;">
     <x-card type="kpi" accent="success" label="Present" value="{{ $totalPresent ?? 0 }}" icon="bi bi-check-circle-fill" />
     <x-card type="kpi" accent="warning" label="Late" value="{{ $totalLate ?? 0 }}" icon="bi bi-clock-fill" />
     <x-card type="kpi" accent="danger" label="Absent" value="{{ $totalAbsent ?? 0 }}" icon="bi bi-x-circle-fill" />
@@ -2851,13 +2843,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script nonce="{{ csp_nonce() }}">
-// ── Skeleton → Content Reveal ──
-document.addEventListener('DOMContentLoaded', function() {
-    var skelStats = document.getElementById('skelStats');
-    var realStats = document.getElementById('realStats');
-    if (skelStats && realStats) { skelStats.style.display = 'none'; realStats.style.display = ''; }
-});
-
 // ── Real-time Clock ──
 (function() {
     function tick() {
