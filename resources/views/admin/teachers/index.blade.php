@@ -141,7 +141,7 @@
 }
 </style>
 
-<script>
+<script @cspNonce>
 (function () {
     const searchInput    = document.getElementById('teacherSearchInput');
     const deptSelect     = document.getElementById('filterDepartment');

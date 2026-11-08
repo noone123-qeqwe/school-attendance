@@ -272,7 +272,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script @cspNonce>
 document.addEventListener('DOMContentLoaded', function() {
     // ─── Ticking Live Clock ───
     function updateClock() {

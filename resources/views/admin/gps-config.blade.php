@@ -91,7 +91,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 document.addEventListener('DOMContentLoaded', function() {
     let currentLat = parseFloat(document.getElementById('latitude').value);
     let currentLng = parseFloat(document.getElementById('longitude').value);

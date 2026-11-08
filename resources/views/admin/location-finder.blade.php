@@ -41,7 +41,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 let currentLat, currentLng;
 
 document.getElementById('getLocationBtn').addEventListener('click', function() {

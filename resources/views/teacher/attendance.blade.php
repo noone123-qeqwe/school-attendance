@@ -140,7 +140,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script @cspNonce>
 document.addEventListener('DOMContentLoaded', function() {
     const overrides = document.querySelectorAll('.status-override');
     

@@ -344,7 +344,6 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::post('/settings/update', [App\Http\Controllers\HomeController::class, 'update'])->name('settings.update');
     Route::post('/settings/preferences/update', [App\Http\Controllers\HomeController::class, 'updatePreferences'])->name('settings.preferences.update');
     Route::get('/notifications', [App\Http\Controllers\HomeController::class, 'notifications'])->name('notifications');
-    Route::get('/notifications/poll', [App\Http\Controllers\HomeController::class, 'pollNotifications'])->name('notifications.poll');
     Route::post('/notifications/read', [App\Http\Controllers\HomeController::class, 'markNotificationsRead'])->name('notifications.read');
     Route::post('/notifications/{notification}/read', [App\Http\Controllers\HomeController::class, 'markSingleNotificationRead'])->name('notifications.markRead');
     Route::delete('/notifications/{notification}', [App\Http\Controllers\HomeController::class, 'deleteNotification'])->name('notifications.delete');
@@ -358,6 +357,8 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/excuses/create/{attendance}', [App\Http\Controllers\HomeController::class, 'createExcuse'])->name('excuses.create');
     Route::post('/excuses', [App\Http\Controllers\HomeController::class, 'storeExcuse'])->name('excuses.store');
 });
+
+Route::middleware(['auth', 'admin.ip'])->get('/notifications/poll', [App\Http\Controllers\HomeController::class, 'pollNotifications'])->name('notifications.poll');
 
 // QR Scan (student) - allow public access so guests can scan and login through the QR flow
 Route::get('/qr/scan/{token}', [App\Http\Controllers\QrAttendanceController::class, 'scan'])->middleware(['throttle:120,1', 'audit.attendance.qr'])->name('qr.scan');

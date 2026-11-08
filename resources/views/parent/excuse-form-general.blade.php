@@ -103,7 +103,7 @@
     </x-card>
 </div>
 
-<script>
+<script @cspNonce>
 function updateAttendanceOptions() {
     const childSelect = document.getElementById('childSelect');
     const attendanceSelect = document.getElementById('attendanceSelect');

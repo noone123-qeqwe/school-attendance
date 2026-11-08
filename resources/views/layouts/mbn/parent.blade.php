@@ -12,10 +12,11 @@
         <span>Calendar</span>
     </a>
 
-    <a href="{{ route('parent.notifications') }}" class="mbn-item {{ request()->routeIs('parent.notifications') ? 'active' : '' }}">
+    <a href="{{ route('parent.notifications') }}" id="parentMobileAlertsLink" class="mbn-item {{ request()->routeIs('parent.notifications') ? 'active' : '' }}">
         @php
-            $pChildIds = Auth::user()->children()->pluck('users.id');
-            $pUnreadNotifs = \App\Models\Notification::whereIn('user_id', $pChildIds)->where('is_read', false)->count();
+            $pNotificationRecipientIds = Auth::user()->children()->pluck('users.id')->push(Auth::id())->unique();
+            $pUnreadNotifs = \App\Models\Notification::whereIn('user_id', $pNotificationRecipientIds)
+                ->active()->where('is_read', false)->count();
         @endphp
         @if($pUnreadNotifs > 0)<span class="mbn-badge">{{ $pUnreadNotifs > 9 ? '9+' : $pUnreadNotifs }}</span>@endif
         <i class="bi bi-bell-fill"></i>

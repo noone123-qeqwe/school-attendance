@@ -199,7 +199,7 @@
 }
 </style>
 
-<script>
+<script @cspNonce>
 (function () {
     const searchInput    = document.getElementById('studentSearchInput');
     const courseSelect   = document.getElementById('filterCourse');

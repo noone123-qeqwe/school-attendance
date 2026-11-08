@@ -775,7 +775,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function openExcuseModal(attendanceId, subjectName, date) {
     document.getElementById('attendanceId').value = attendanceId;
     document.getElementById('excuseDetails').innerHTML = `

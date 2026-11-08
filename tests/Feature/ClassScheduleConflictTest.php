@@ -86,6 +86,7 @@ class ClassScheduleConflictTest extends TestCase
     public function test_adjacent_schedule_slots_do_not_count_as_overlapping(): void
     {
         $this->createClassSchedule($this->subject, $this->teacher, $this->section, 'Room 1');
+        $this->otherSubject->update(['instructor_id' => $this->teacher->id, 'section' => 'B']);
 
         $response = $this->asAdmin()->post(route('admin.class-schedules.store'), $this->payload(
             $this->otherSubject,
@@ -119,6 +120,127 @@ class ClassScheduleConflictTest extends TestCase
         $this->assertSame(0, ClassSchedule::count());
     }
 
+    public function test_subject_owner_and_cohort_cannot_be_changed_by_a_schedule_assignment(): void
+    {
+        $this->asAdmin()->post(route('admin.class-schedules.store'), $this->payload(
+            $this->subject,
+            $this->otherTeacher,
+            $this->section,
+            'Room 1',
+        ))->assertSessionHasErrors('teacher_id');
+
+        $this->asAdmin()->post(route('admin.class-schedules.store'), $this->payload(
+            $this->subject,
+            $this->teacher,
+            $this->otherSection,
+            'Room 1',
+        ))->assertSessionHasErrors('section_id');
+
+        $this->assertSame($this->teacher->id, $this->subject->fresh()->instructor_id);
+        $this->assertSame(0, ClassSchedule::count());
+    }
+
+    public function test_first_schedule_can_assign_an_unowned_subject_without_changing_later_ownership(): void
+    {
+        $this->subject->update(['instructor_id' => null]);
+
+        $this->asAdmin()->post(route('admin.class-schedules.store'), $this->payload(
+            $this->subject,
+            $this->teacher,
+            $this->section,
+            'Room 1',
+        ))->assertSessionHasNoErrors();
+
+        $this->assertSame($this->teacher->id, $this->subject->fresh()->instructor_id);
+
+        $classSchedule = ClassSchedule::firstOrFail();
+        $this->asAdmin()->put(route('admin.class-schedules.update', $classSchedule), $this->payload(
+            $this->subject,
+            $this->otherTeacher,
+            $this->section,
+            'Room 1',
+        ))->assertSessionHasErrors('teacher_id');
+
+        $this->assertSame($this->teacher->id, $classSchedule->fresh()->teacher_id);
+        $this->assertSame($this->teacher->id, $this->subject->fresh()->instructor_id);
+    }
+
+    public function test_editing_subject_details_preserves_class_schedule_slots_and_blocks_owner_changes(): void
+    {
+        $this->createClassSchedule($this->subject, $this->teacher, $this->section, 'Room 1');
+        $payload = [
+            'code' => $this->subject->code,
+            'name' => 'Renamed Subject',
+            'year_level' => $this->subject->year_level,
+            'semester' => $this->subject->semester,
+            'course' => $this->subject->course,
+            'units' => $this->subject->units,
+            'section' => $this->subject->section,
+            'instructor_id' => $this->teacher->id,
+            'days' => 'T',
+            'start_time' => '11:00',
+            'end_time' => '12:00',
+        ];
+
+        $this->asAdmin()->put(route('admin.subjects.update', $this->subject), $payload)
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('Renamed Subject', $this->subject->fresh()->name);
+        $this->assertDatabaseHas('schedules', [
+            'subject_id' => $this->subject->id,
+            'day' => 'Monday',
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+        ]);
+
+        $this->asAdmin()->put(route('admin.subjects.update', $this->subject), [
+            ...$payload,
+            'instructor_id' => $this->otherTeacher->id,
+        ])->assertSessionHasErrors('instructor_id');
+
+        $this->assertSame($this->teacher->id, $this->subject->fresh()->instructor_id);
+    }
+
+    public function test_admin_cannot_assign_a_student_as_subject_instructor(): void
+    {
+        $this->asAdmin()->post(route('admin.subjects.store'), [
+            'code' => 'CS103',
+            'name' => 'Invalid Instructor',
+            'year_level' => 1,
+            'semester' => 1,
+            'course' => 'BSCS',
+            'instructor_id' => $this->student->id,
+            'section' => 'A',
+        ])->assertSessionHasErrors('instructor_id');
+
+        $this->assertDatabaseMissing('subjects', ['code' => 'CS103']);
+    }
+
+    public function test_teacher_subject_edit_preserves_admin_class_schedule_slots(): void
+    {
+        $this->createClassSchedule($this->subject, $this->teacher, $this->section, 'Room 1');
+
+        $this->actingAs($this->teacher)->put(route('teacher.subjects.update', $this->subject), [
+            'code' => $this->subject->code,
+            'name' => 'Updated by Teacher',
+            'year_level' => $this->subject->year_level,
+            'semester' => $this->subject->semester,
+            'units' => $this->subject->units,
+            'section' => $this->subject->section,
+            'days' => 'T',
+            'start_time' => '11:00',
+            'end_time' => '12:00',
+        ])->assertSessionHasNoErrors();
+
+        $this->assertSame('Updated by Teacher', $this->subject->fresh()->name);
+        $this->assertDatabaseHas('schedules', [
+            'subject_id' => $this->subject->id,
+            'day' => 'Monday',
+            'start_time' => '09:00',
+            'end_time' => '10:00',
+        ]);
+    }
+
     public function test_rescheduling_removes_the_old_attendance_slot_and_adds_the_new_slot(): void
     {
         $classSchedule = $this->createClassSchedule($this->subject, $this->teacher, $this->section, 'Room 1');
@@ -149,12 +271,13 @@ class ClassScheduleConflictTest extends TestCase
 
     public function test_rescheduling_keeps_an_old_slot_still_used_by_another_section(): void
     {
+        $this->subject->update(['section' => null]);
         $this->createClassSchedule($this->subject, $this->teacher, $this->section, 'Room 1');
-        $classSchedule = $this->createClassSchedule($this->subject, $this->otherTeacher, $this->otherSection, 'Room 2');
+        $classSchedule = $this->createClassSchedule($this->subject, $this->teacher, $this->otherSection, 'Room 2');
 
         $this->asAdmin()->put(route('admin.class-schedules.update', $classSchedule), $this->payload(
             $this->subject,
-            $this->otherTeacher,
+            $this->teacher,
             $this->otherSection,
             'Room 2',
             '10:00',
@@ -198,8 +321,9 @@ class ClassScheduleConflictTest extends TestCase
 
     public function test_deleting_one_section_keeps_a_shared_attendance_slot_for_the_other_section(): void
     {
+        $this->subject->update(['section' => null]);
         $this->createClassSchedule($this->subject, $this->teacher, $this->section, 'Room 1');
-        $classSchedule = $this->createClassSchedule($this->subject, $this->otherTeacher, $this->otherSection, 'Room 2');
+        $classSchedule = $this->createClassSchedule($this->subject, $this->teacher, $this->otherSection, 'Room 2');
 
         $this->asAdmin()->delete(route('admin.class-schedules.destroy', $classSchedule))->assertSessionHasNoErrors();
 

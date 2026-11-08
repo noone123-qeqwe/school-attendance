@@ -94,7 +94,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 // Enhance the days field functionality
 document.addEventListener('DOMContentLoaded', function() {
     const daysField = document.getElementById('days-field');

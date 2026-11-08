@@ -483,7 +483,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function normalizeBase64(base64) {
     base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
     var padding = base64.length % 4;

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Subject;
+use App\Models\ClassSchedule;
 use App\Models\Notification;
 use App\Models\Holiday;
 use App\Events\NotificationSent;
@@ -20,9 +21,11 @@ use App\Http\Controllers\Controller;
 use App\Exports\AttendanceExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\AnalyticsService;
+use App\Services\ClassScheduleLock;
 use App\Http\Requests\UpdateStudentRequest;
 use App\Http\Requests\SendWarningRequest;
 use App\Traits\SanitizesExport;
+use Illuminate\Validation\ValidationException;
 
 class AdminController extends Controller
 {
@@ -768,32 +771,54 @@ class AdminController extends Controller
     public function editSubject(Subject $subject)
     {
         $subject->load('schedules');
+        $hasClassSchedules = ClassSchedule::where('subject_id', $subject->id)->exists();
         $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        return view('admin.subjects.edit', compact('subject', 'teachers'));
+        return view('admin.subjects.edit', compact('subject', 'teachers', 'hasClassSchedules'));
     }
 
 
 
 
     
-  public function updateSubject(\App\Http\Requests\UpdateSubjectRequest $request, Subject $subject)
-{
+    public function updateSubject(\App\Http\Requests\UpdateSubjectRequest $request, Subject $subject)
+    {
+        DB::transaction(function () use ($request, $subject) {
+            ClassScheduleLock::acquire();
+            $subject = Subject::findOrFail($subject->id);
+            $data = $request->only([
+                'code', 'name', 'year_level', 'semester', 'course', 'units', 'instructor_id', 'section',
+            ]);
 
-    $data = $request->only([
-        'code', 'name', 'year_level', 'semester', 'course', 'units', 'instructor_id', 'section',
-    ]);
-    if (!empty($data['instructor_id'])) {
-        $teacher = User::find($data['instructor_id']);
-        if ($teacher) {
-            $data['instructor'] = $teacher->name;
-        }
+            $hasClassSchedules = ClassSchedule::where('subject_id', $subject->id)->exists();
+            if ($hasClassSchedules) {
+                foreach (['code', 'year_level', 'semester', 'course', 'section', 'instructor_id'] as $field) {
+                    if (array_key_exists($field, $data) && (string) ($data[$field] ?? '') !== (string) ($subject->{$field} ?? '')) {
+                        throw ValidationException::withMessages([
+                            $field => 'Remove or update this subject\'s class schedules before changing its code, cohort, or instructor.',
+                        ]);
+                    }
+                }
+            }
+
+            if (($data['code'] ?? $subject->code) !== $subject->code
+                && Attendance::where(function ($query) use ($subject) {
+                    $query->where('subject_id', $subject->id)->orWhere('subject_code', $subject->code);
+                })->exists()) {
+                throw ValidationException::withMessages(['code' => 'A subject with attendance records cannot change its code.']);
+            }
+
+            if (!empty($data['instructor_id'])) {
+                $data['instructor'] = User::findOrFail($data['instructor_id'])->name;
+            }
+
+            $subject->update($data);
+            if (!$hasClassSchedules) {
+                $this->saveSubjectSchedules($subject, $request);
+            }
+        }, 3);
+
+        return redirect()->route('admin.subjects')->with('success', 'Subject updated successfully.');
     }
-    $subject->update($data);
-
-    $this->saveSubjectSchedules($subject, $request);
-
-    return redirect()->route('admin.subjects')->with('success', 'Subject updated successfully.');
-}
 
     public function destroySubject(Subject $subject)
     {

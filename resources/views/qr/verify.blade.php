@@ -536,7 +536,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 var STUDENT_NUMBER = '{{ addslashes(Auth::user()->student_number) }}';
 var QR_TOKEN = '{{ addslashes($token) }}';
 var CSRF = '{{ csrf_token() }}';

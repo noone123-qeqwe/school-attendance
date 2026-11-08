@@ -895,7 +895,7 @@
 </div>
 @endforelse
 
-<script>
+<script @cspNonce>
 // ── Child Switcher Logic ──
 function switchDashboardChild(childId) {
     document.querySelectorAll('.child-view-content').forEach(function(el) {

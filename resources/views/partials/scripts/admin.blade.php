@@ -1,4 +1,4 @@
-<script>
+<script @cspNonce>
     // Admin-specific page helpers
     function adminSidebarToggle() {
         const sidebar = document.getElementById('sidebar');

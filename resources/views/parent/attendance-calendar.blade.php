@@ -983,7 +983,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 var attCalendarData = @json($calendarJson);
 let dayModalInstance = null;
 let currentSelectedDateKey = '{{ $calYear }}-{{ str_pad($calMonth, 2, '0', STR_PAD_LEFT) }}-{{ str_pad(($isCurrentMonth && $today ? $today : 14), 2, '0', STR_PAD_LEFT) }}';

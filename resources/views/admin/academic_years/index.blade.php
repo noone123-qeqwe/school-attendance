@@ -250,7 +250,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function openModal(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = 'flex';

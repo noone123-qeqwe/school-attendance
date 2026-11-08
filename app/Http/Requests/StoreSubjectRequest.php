@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreSubjectRequest extends FormRequest
 {
@@ -32,7 +33,7 @@ class StoreSubjectRequest extends FormRequest
             'days'       => 'nullable|string|max:30',
             'start_time' => 'nullable|date_format:H:i',
             'end_time'   => 'nullable|date_format:H:i|after_or_equal:start_time',
-            'instructor_id' => 'nullable|exists:users,id',
+            'instructor_id' => ['nullable', Rule::exists('users', 'id')->where('role', 'teacher')],
             'section'    => 'nullable|string',
         ];
     }

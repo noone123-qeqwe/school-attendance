@@ -386,7 +386,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function switchMethodTab(method) {
     const codeSection = document.getElementById('methodCodeSection');
     const otpSection = document.getElementById('methodOtpSection');

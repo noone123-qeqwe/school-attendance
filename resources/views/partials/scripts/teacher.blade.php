@@ -1,4 +1,4 @@
-<script>
+<script @cspNonce>
     // Teacher-specific page helpers
     function teacherSidebarToggle() {
         const sidebar = document.getElementById('sidebar');

@@ -1053,7 +1053,7 @@
 }
 </style>
 
-<script>
+<script @cspNonce>
 function updateSelectedFilename(input) {
     const display = document.getElementById('selectedFilenameDisplay');
     if (input.files && input.files[0]) {

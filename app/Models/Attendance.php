@@ -102,6 +102,7 @@ class Attendance extends Model
                         foreach ($parents as $parent) {
                             \App\Models\Notification::create([
                                 'user_id' => $parent->id,
+                                'related_user_id' => $student->id,
                                 'type' => 'absence_alert',
                                 'subject_code' => $attendance->subject_code,
                                 'message' => "{$student->name} was marked Absent in {$attendance->subject_code} on {$formattedDate}.",

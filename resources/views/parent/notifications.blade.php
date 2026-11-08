@@ -3,11 +3,11 @@
 
 @section('content')
 <div class="p-4">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <h2 style="color: #f3e7cd; font-weight: 800; margin: 0;">
             <i class="bi bi-bell-fill" style="color: #cfa46f; margin-right: 8px;"></i>Notifications
         </h2>
-        <button id="markAllReadBtn" class="ent-btn ent-btn-ghost" onclick="markAllNotificationsRead()">
+        <button type="button" id="markAllReadBtn" class="ent-btn ent-btn-ghost" onclick="markAllNotificationsRead()">
             <i class="bi bi-check2-all"></i> Mark All as Read
         </button>
     </div>
@@ -16,17 +16,17 @@
     <x-card type="section" class="ent-mb-lg">
         <form method="GET" action="{{ route('parent.notifications') }}" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end;">
             <div style="flex:1; min-width: 160px;">
-                <label class="ent-label">Child</label>
-                <select name="child_id" class="ent-input">
-                    <option value="">All Children</option>
+                <label class="ent-label" for="parentNotificationChild">Child</label>
+                <select name="child_id" id="parentNotificationChild" class="ent-input">
+                    <option value="">All Alerts</option>
                     @foreach($children as $child)
                         <option value="{{ $child->id }}" {{ request('child_id') == $child->id ? 'selected' : '' }}>{{ $child->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div style="flex:1; min-width: 120px;">
-                <label class="ent-label">Type</label>
-                <select name="type" class="ent-input">
+                <label class="ent-label" for="parentNotificationType">Type</label>
+                <select name="type" id="parentNotificationType" class="ent-input">
                     <option value="">All Types</option>
                     <option value="absence" {{ request('type') == 'absence' ? 'selected' : '' }}>Absences</option>
                     <option value="warning" {{ request('type') == 'warning' ? 'selected' : '' }}>Warnings</option>
@@ -66,10 +66,10 @@
                                     </div>
                                 @endif
                             </div>
-                            <div style="flex: 1;">
+                            <div style="flex: 1; min-width: 0;">
                                 <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 10px;">
                                     <div style="font-size: 0.95rem; font-weight: 700; color: #f3e7cd; display: flex; align-items: center; gap: 8px;">
-                                        {{ $notification->user->name }}
+                                        {{ $notification->user_id === Auth::id() ? ($notification->relatedStudent?->name ?? 'Your alert') : $notification->user->name }}
                                         @if($notification->subject)
                                             <span style="color: #b39b82; font-weight: 500;">&bull; {{ $notification->subject->name ?? $notification->subject_code }}</span>
                                         @endif
@@ -106,7 +106,7 @@
     </x-card>
 </div>
 
-<script>
+<script @cspNonce>
 function markAllNotificationsRead() {
     fetch('{{ route('parent.notifications.read') }}', {
         method: 'POST',

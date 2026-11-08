@@ -79,21 +79,21 @@
 
                 <div class="col-md-4">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Days (MWF, TTH)</label>
-                    <input type="text" name="days" class="tch-input"
+                    <input type="text" name="days" class="tch-input" @disabled($hasClassSchedules)
                         value="{{ old('days', $existingDays) }}"
                         style="width:100%;" placeholder="e.g. MWF or TTHS">
                 </div>
 
                 <div class="col-md-2">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Start Time</label>
-                    <input type="time" name="start_time" class="tch-input"
+                    <input type="time" name="start_time" class="tch-input" @disabled($hasClassSchedules)
                         value="{{ old('start_time', $existingStart) }}"
                         style="width:100%;">
                 </div>
 
                 <div class="col-md-2">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">End Time</label>
-                    <input type="time" name="end_time" class="tch-input"
+                    <input type="time" name="end_time" class="tch-input" @disabled($hasClassSchedules)
                         value="{{ old('end_time', $existingEnd) }}"
                         style="width:100%;">
                 </div>
@@ -104,6 +104,12 @@
                         value="{{ old('section', $subject->section) }}"
                         style="width:100%;">
                 </div>
+
+                @if($hasClassSchedules)
+                    <div class="col-12" style="color:#b39b82;font-size:.85rem;">
+                        The subject code, cohort, and meeting times are fixed while class schedules exist. Ask an administrator to update those schedules before changing these details.
+                    </div>
+                @endif
 
                 <div class="col-12" style="margin-top:8px;">
                     <button type="submit" class="tch-btn tch-btn-primary">

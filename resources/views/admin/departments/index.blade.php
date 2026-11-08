@@ -130,7 +130,7 @@
 @endsection
 
 @push('scripts')
-<script>
+<script @cspNonce>
     function openModal(id) {
         const modal = document.getElementById(id);
         const card = modal.querySelector('.saas-card');

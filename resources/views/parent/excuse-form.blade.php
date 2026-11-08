@@ -129,7 +129,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 // Character Counter
 const descInput = document.getElementById('descInput');
 const charCount = document.getElementById('charCount');

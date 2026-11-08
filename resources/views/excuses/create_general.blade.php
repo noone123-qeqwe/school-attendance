@@ -232,7 +232,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script @cspNonce>
 function toggleSubjectCard(card, event) {
     if (event.target.type === 'checkbox') {
         updateSubjectSelectionState();

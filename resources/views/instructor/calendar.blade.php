@@ -584,7 +584,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.21/index.global.min.js"></script>
-<script>
+<script @cspNonce>
 let calendar;
 let currentYear = {{ $year }};
 let currentMonth = {{ $month }};

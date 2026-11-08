@@ -720,7 +720,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 const teacherExcuseBaseUrl = "{{ url('teacher/excuse') }}";
 let currentExcuseId = null;
 

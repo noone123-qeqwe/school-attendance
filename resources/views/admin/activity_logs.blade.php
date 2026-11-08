@@ -829,7 +829,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script @cspNonce>
 let currentRawProperties = {};
 
 function switchAuditTab(tab) {

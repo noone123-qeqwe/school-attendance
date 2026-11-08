@@ -117,6 +117,7 @@ class AttendanceLifecycleTest extends TestCase
                 ->where('type', 'absence_alert')
                 ->count());
             $this->assertSame(1, NotificationRecord::where('user_id', $parent->id)
+                ->where('related_user_id', $this->student->id)
                 ->where('subject_code', $this->subject->code)
                 ->where('type', 'absence_alert')
                 ->count());

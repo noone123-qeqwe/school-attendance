@@ -9,10 +9,12 @@ use App\Models\Section;
 use App\Models\Schedule;
 use App\Models\User;
 use App\Rules\ValidScheduleSlot;
+use App\Services\ClassScheduleLock;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ClassScheduleController extends Controller
 {
@@ -66,35 +68,15 @@ class ClassScheduleController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'subject_id' => 'required|exists:subjects,id',
-            'teacher_id' => ['required', Rule::exists('users', 'id')->where('role', 'teacher')],
-            'section_id' => 'required|exists:sections,id',
-            'day_of_week' => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|after:start_time',
-            'room' => [
-                'required',
-                'string',
-                'max:50',
-                new ValidScheduleSlot(
-                    (string) $request->input('day_of_week'),
-                    (string) $request->input('start_time'),
-                    (string) $request->input('end_time'),
-                    $request->filled('teacher_id') ? (int) $request->input('teacher_id') : null,
-                    (string) $request->input('room'),
-                    null,
-                    $request->filled('section_id') ? (int) $request->input('section_id') : null,
-                ),
-            ],
-        ]);
+        DB::transaction(function () use ($request) {
+            ClassScheduleLock::acquire();
+            $subject = $this->validateScheduleRequest($request);
 
-        $startTime = Carbon::parse($request->start_time)->format('H:i');
-        $endTime = Carbon::parse($request->end_time)->format('H:i');
-        $room = trim($request->room);
-        $slot = $this->attendanceSlot((int) $request->subject_id, $request->day_of_week, $startTime, $endTime);
+            $startTime = Carbon::parse($request->start_time)->format('H:i');
+            $endTime = Carbon::parse($request->end_time)->format('H:i');
+            $room = trim($request->room);
+            $slot = $this->attendanceSlot((int) $request->subject_id, $request->day_of_week, $startTime, $endTime);
 
-        DB::transaction(function () use ($request, $startTime, $endTime, $room, $slot) {
             ClassSchedule::create([
                 'subject_id' => $request->subject_id,
                 'teacher_id' => $request->teacher_id,
@@ -105,14 +87,49 @@ class ClassScheduleController extends Controller
                 'room' => $room,
             ]);
 
-            Subject::where('id', $request->subject_id)->update(['instructor_id' => $request->teacher_id]);
+            $this->assignUnownedSubject($subject, (int) $request->teacher_id);
             $this->syncAttendanceSchedule(null, $slot, $room);
-        });
+        }, 3);
 
         return redirect()->route('admin.class-schedules.index')->with('success', 'Class schedule assigned successfully.');
     }
 
     public function update(Request $request, ClassSchedule $classSchedule)
+    {
+        DB::transaction(function () use ($request, $classSchedule) {
+            ClassScheduleLock::acquire();
+            $classSchedule = ClassSchedule::findOrFail($classSchedule->id);
+            $subject = $this->validateScheduleRequest($request, $classSchedule);
+
+            $startTime = Carbon::parse($request->start_time)->format('H:i');
+            $endTime = Carbon::parse($request->end_time)->format('H:i');
+            $oldSlot = $this->attendanceSlot(
+                (int) $classSchedule->subject_id,
+                $classSchedule->day_of_week,
+                Carbon::parse($classSchedule->start_time)->format('H:i'),
+                Carbon::parse($classSchedule->end_time)->format('H:i'),
+            );
+            $newSlot = $this->attendanceSlot((int) $request->subject_id, $request->day_of_week, $startTime, $endTime);
+            $room = trim($request->room);
+
+            $classSchedule->update([
+                'subject_id' => $request->subject_id,
+                'teacher_id' => $request->teacher_id,
+                'section_id' => $request->section_id,
+                'day_of_week' => $request->day_of_week,
+                'start_time' => $startTime,
+                'end_time' => $endTime,
+                'room' => $room,
+            ]);
+
+            $this->assignUnownedSubject($subject, (int) $request->teacher_id);
+            $this->syncAttendanceSchedule($oldSlot, $newSlot, $room);
+        }, 3);
+
+        return redirect()->route('admin.class-schedules.index')->with('success', 'Class schedule updated successfully.');
+    }
+
+    private function validateScheduleRequest(Request $request, ?ClassSchedule $current = null): Subject
     {
         $request->validate([
             'subject_id' => 'required|exists:subjects,id',
@@ -131,54 +148,51 @@ class ClassScheduleController extends Controller
                     (string) $request->input('end_time'),
                     $request->filled('teacher_id') ? (int) $request->input('teacher_id') : null,
                     (string) $request->input('room'),
-                    $classSchedule->id,
+                    $current?->id,
                     $request->filled('section_id') ? (int) $request->input('section_id') : null,
                 ),
             ],
         ]);
 
-        $startTime = Carbon::parse($request->start_time)->format('H:i');
-        $endTime = Carbon::parse($request->end_time)->format('H:i');
-        $oldSlot = $this->attendanceSlot(
-            (int) $classSchedule->subject_id,
-            $classSchedule->day_of_week,
-            Carbon::parse($classSchedule->start_time)->format('H:i'),
-            Carbon::parse($classSchedule->end_time)->format('H:i'),
-        );
-        $newSlot = $this->attendanceSlot((int) $request->subject_id, $request->day_of_week, $startTime, $endTime);
-        $room = trim($request->room);
+        $subject = Subject::findOrFail((int) $request->subject_id);
+        $teacherId = (int) $request->teacher_id;
+        if ($subject->instructor_id !== null && (int) $subject->instructor_id !== $teacherId) {
+            throw ValidationException::withMessages(['teacher_id' => 'This subject is assigned to another instructor. Update the subject assignment first.']);
+        }
 
-        DB::transaction(function () use ($request, $classSchedule, $startTime, $endTime, $room, $oldSlot, $newSlot) {
-            $classSchedule->update([
-                'subject_id' => $request->subject_id,
-                'teacher_id' => $request->teacher_id,
-                'section_id' => $request->section_id,
-                'day_of_week' => $request->day_of_week,
-                'start_time' => $startTime,
-                'end_time' => $endTime,
-                'room' => $room,
-            ]);
+        $differentTeacherAssigned = ClassSchedule::query()
+            ->where('subject_id', $subject->id)
+            ->when($current, fn ($query) => $query->whereKeyNot($current->id))
+            ->where('teacher_id', '!=', $teacherId)
+            ->exists();
+        if ($differentTeacherAssigned) {
+            throw ValidationException::withMessages(['teacher_id' => 'All schedules for a subject must use the same instructor.']);
+        }
 
-            Subject::where('id', $request->subject_id)->update(['instructor_id' => $request->teacher_id]);
-            $this->syncAttendanceSchedule($oldSlot, $newSlot, $room);
-        });
+        $section = Section::with('course')->findOrFail((int) $request->section_id);
+        if ((int) $subject->year_level !== (int) $section->year_level
+            || (filled($subject->course) && strcasecmp(trim((string) $subject->course), trim((string) $section->course?->code)) !== 0)
+            || (filled($subject->section) && strcasecmp(trim((string) $subject->section), trim((string) $section->name)) !== 0)) {
+            throw ValidationException::withMessages(['section_id' => 'The section must match the subject course, year level, and section.']);
+        }
 
-        return redirect()->route('admin.class-schedules.index')->with('success', 'Class schedule updated successfully.');
+        return $subject;
     }
 
     public function destroy(ClassSchedule $classSchedule)
     {
-        $slot = $this->attendanceSlot(
-            (int) $classSchedule->subject_id,
-            $classSchedule->day_of_week,
-            Carbon::parse($classSchedule->start_time)->format('H:i'),
-            Carbon::parse($classSchedule->end_time)->format('H:i'),
-        );
-
-        DB::transaction(function () use ($classSchedule, $slot) {
+        DB::transaction(function () use ($classSchedule) {
+            ClassScheduleLock::acquire();
+            $classSchedule = ClassSchedule::findOrFail($classSchedule->id);
+            $slot = $this->attendanceSlot(
+                (int) $classSchedule->subject_id,
+                $classSchedule->day_of_week,
+                Carbon::parse($classSchedule->start_time)->format('H:i'),
+                Carbon::parse($classSchedule->end_time)->format('H:i'),
+            );
             $classSchedule->delete();
             $this->removeAttendanceScheduleIfUnused($slot);
-        });
+        }, 3);
 
         return redirect()->route('admin.class-schedules.index')->with('success', 'Class schedule deleted successfully.');
     }
@@ -192,6 +206,14 @@ class ClassScheduleController extends Controller
             'start_time' => $startTime,
             'end_time' => $endTime,
         ];
+    }
+
+    private function assignUnownedSubject(Subject $subject, int $teacherId): void
+    {
+        if ($subject->instructor_id === null) {
+            $teacher = User::findOrFail($teacherId);
+            $subject->update(['instructor_id' => $teacherId, 'instructor' => $teacher->name]);
+        }
     }
 
     /**

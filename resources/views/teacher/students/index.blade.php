@@ -162,7 +162,7 @@
     </x-data-table>
 </x-card>
 
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         const debounce = (fn, delay = 450) => {
             let timer;
@@ -236,7 +236,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function openWarningModal(studentId, studentName) {
     document.getElementById('studentName').textContent = studentName;
     document.getElementById('warningForm').action = `/teacher/student/${studentId}/warn`;

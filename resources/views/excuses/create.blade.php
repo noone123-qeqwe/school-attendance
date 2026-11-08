@@ -235,7 +235,7 @@
 </div>
 
 @push('scripts')
-<script>
+<script @cspNonce>
 const primarySubjectCode = '{{ $attendance->subject_code }}';
 
 function toggleSubjectCard(card, event) {

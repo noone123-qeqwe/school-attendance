@@ -91,7 +91,7 @@
 
                 <div class="col-md-4">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Days (MWF, TTH, S)</label>
-                    <input type="text" name="days" class="adm-input"
+                    <input type="text" name="days" class="adm-input" @disabled($hasClassSchedules)
                         value="{{ old('days', $existingDays) }}"
                         style="width:100%;background:white;" placeholder="e.g. MWF, TTHS"
                         maxlength="15">
@@ -99,21 +99,21 @@
 
                 <div class="col-md-2">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Start Time</label>
-                    <input type="time" name="start_time" class="adm-input"
+                    <input type="time" name="start_time" class="adm-input" @disabled($hasClassSchedules)
                         value="{{ old('start_time', $existingStart) }}"
                         style="width:100%;">
                 </div>
 
                 <div class="col-md-2">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">End Time</label>
-                    <input type="time" name="end_time" class="adm-input"
+                    <input type="time" name="end_time" class="adm-input" @disabled($hasClassSchedules)
                         value="{{ old('end_time', $existingEnd) }}"
                         style="width:100%;">
                 </div>
 
                 <div class="col-md-6">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Instructor</label>
-                    <select name="instructor_id" class="adm-input" style="width:100%;">
+                    <select name="instructor_id" class="adm-input" style="width:100%;" @disabled($hasClassSchedules)>
                         <option value="">Select Instructor</option>
                         @foreach($teachers as $teacher)
                             <option value="{{ $teacher->id }}" {{ old('instructor_id', $subject->instructor_id) == $teacher->id ? 'selected' : '' }}>
@@ -130,6 +130,12 @@
                         style="width:100%;" placeholder="e.g. A, B, 1001, CS-1A">
                 </div>
 
+                @if($hasClassSchedules)
+                    <div class="col-12" style="color:#b39b82;font-size:.85rem;">
+                        Instructor, cohort, code, and meeting times are fixed while class schedules exist. Edit or remove those schedules before changing these details.
+                    </div>
+                @endif
+
                 <div class="col-12" style="margin-top:8px;">
                     <button type="submit" class="adm-btn adm-btn-primary">
                         <i class="bi bi-check2 me-2"></i>Save Changes
@@ -141,7 +147,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 document.addEventListener('DOMContentLoaded', function() {
     // Simple fix - ensure the form submits properly
     const form = document.querySelector('form');

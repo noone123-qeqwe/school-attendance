@@ -30,7 +30,7 @@ class AttendanceReportService
         // Base attendance query
         $baseQuery = Attendance::with(['user', 'subject', 'academicYear']);
 
-        if (!empty($scopedSubjectCodes)) {
+        if ($scopedSubjectCodes !== null) {
             $baseQuery->whereIn('subject_code', $scopedSubjectCodes);
         }
 
@@ -121,7 +121,7 @@ class AttendanceReportService
             case 'class_summary':
                 $title = 'Class & Section Attendance Summary';
                 $summaryQuery = Attendance::query();
-                if (!empty($scopedSubjectCodes)) {
+                if ($scopedSubjectCodes !== null) {
                     $summaryQuery->whereIn('subject_code', $scopedSubjectCodes);
                 }
                 if (!empty($params['subject'])) {
@@ -157,7 +157,7 @@ class AttendanceReportService
             case 'subject_summary':
                 $title = 'Subject Attendance Summary';
                 $subjQuery = Attendance::query();
-                if (!empty($scopedSubjectCodes)) {
+                if ($scopedSubjectCodes !== null) {
                     $subjQuery->whereIn('subject_code', $scopedSubjectCodes);
                 }
                 $subjQuery->whereDate('date', '>=', $startDate)->whereDate('date', '<=', $endDate);
@@ -199,8 +199,18 @@ class AttendanceReportService
                     $studentQuery->where('section', $params['section']);
                 }
 
+                if ($scopedSubjectCodes !== null) {
+                    $scopedSubjects = Subject::whereIn('code', $scopedSubjectCodes);
+                    if (!empty($params['subject'])) {
+                        $scopedSubjects->where('code', $params['subject']);
+                    }
+
+                    $studentIds = SubjectRosterService::studentIds($scopedSubjects->get());
+                    $studentQuery->whereIn('id', $studentIds);
+                }
+
                 $students = $studentQuery->with(['attendances' => function ($q) use ($scopedSubjectCodes, $startDate, $endDate, $params) {
-                    if (!empty($scopedSubjectCodes)) {
+                    if ($scopedSubjectCodes !== null) {
                         $q->whereIn('subject_code', $scopedSubjectCodes);
                     }
                     if (!empty($params['subject'])) {

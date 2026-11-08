@@ -622,7 +622,7 @@
 @endpush
 
 @push('scripts')
-<script>
+<script @cspNonce>
     function filterHistory(status, btn) {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');

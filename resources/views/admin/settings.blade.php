@@ -176,7 +176,7 @@
                 <div id="campusGpsStatus" style="font-size:0.75rem;margin-top:8px;display:none;"></div>
             </div>
 
-            <script>
+            <script @cspNonce>
                 function resetAttendanceRules() {
                     document.getElementById('setting_qr_expiry').value = 20;
                     document.getElementById('setting_gps_radius').value = 50;
@@ -347,7 +347,7 @@
 </div>
 </div>
 
-<script>
+<script @cspNonce>
 async function checkAdminUpdates() {
     const btn = document.getElementById('adminCheckUpdateBtn');
     const feedback = document.getElementById('adminUpdateFeedback');

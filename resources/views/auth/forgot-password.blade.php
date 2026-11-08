@@ -248,7 +248,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 document.addEventListener('DOMContentLoaded', function() {
     function isValidGmailFormat(email) {
         if (!email || typeof email !== 'string') return false;

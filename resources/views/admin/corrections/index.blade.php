@@ -138,7 +138,7 @@
     </x-card>
 </div>
 
-<script>
+<script @cspNonce>
 function toggleAll(cb) {
     document.querySelectorAll('.correction-cb').forEach(el => el.checked = cb.checked);
 }

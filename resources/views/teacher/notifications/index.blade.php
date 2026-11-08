@@ -255,7 +255,7 @@
     @endif
 </div>
 
-<script>
+<script @cspNonce>
 function archiveNotification(id) {
     if (confirm('Archive this notification?')) {
         fetch(`/teacher/notifications/${id}/archive`, {

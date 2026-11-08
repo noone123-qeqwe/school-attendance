@@ -429,7 +429,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 window.hcalEventsMap = @json($hcalEventsMap ?? []);
 let selectedHcalDate = null;
 let selectedHcalDateFormatted = '';

@@ -201,7 +201,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         const debounce = (fn, delay = 450) => {
             let timer;

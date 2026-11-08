@@ -235,7 +235,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function excuseAbsence(attendanceId) {
     document.getElementById('excuseForm').action = `/teacher/attendance/${attendanceId}/excuse`;
     new bootstrap.Modal(document.getElementById('excuseModal')).show();

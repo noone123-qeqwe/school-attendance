@@ -204,7 +204,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function openWarnModal(userId, name, subjectCode, subjectName, absenceCount) {
     const modal    = document.getElementById('warnModal');
     const icon     = document.getElementById('warnIcon');

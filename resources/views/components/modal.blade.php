@@ -85,7 +85,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 if (typeof window.openDsModal === 'undefined') {
     window.openDsModal = function(id) {
         const modal = document.getElementById(id);

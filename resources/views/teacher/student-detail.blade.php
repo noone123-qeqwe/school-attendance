@@ -237,7 +237,7 @@
 .modal .tch-btn.tch-btn-ghost { background: transparent !important; color: #374151 !important; border: 1px solid #e6edf3 !important; }
 </style>
 
-<script>
+<script @cspNonce>
 function openWarningModal(studentId, studentName) {
     new bootstrap.Modal(document.getElementById('warningModal')).show();
 }

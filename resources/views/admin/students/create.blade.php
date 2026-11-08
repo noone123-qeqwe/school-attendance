@@ -214,7 +214,7 @@
 @endsection
 
 @section('scripts')
-<script>
+<script @cspNonce>
     // Form elements
     const sendOtpBtn = document.getElementById('sendStudentEmailOtpBtn');
     const verifyOtpBtn = document.getElementById('verifyStudentEmailOtpBtn');

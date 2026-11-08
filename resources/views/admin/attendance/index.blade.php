@@ -275,7 +275,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function openOverrideModal(id, studentName, status, isExcused) {
     const form = document.getElementById('overrideForm');
     form.action = `/admin/attendance/${id}/override`;

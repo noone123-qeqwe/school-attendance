@@ -575,7 +575,7 @@
 @endpush
 
 @push('scripts')
-<script>
+<script @cspNonce>
     // Tab switching
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {

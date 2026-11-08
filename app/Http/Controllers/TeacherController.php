@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Subject;
+use App\Models\ClassSchedule;
 use App\Models\Notification;
 use App\Models\Holiday;
 use App\Models\ExcuseSubmission;
@@ -13,10 +14,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Warning;
 use App\Services\AnalyticsService;
+use App\Services\ClassScheduleLock;
+use App\Services\SubjectRosterService;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\StudentsExport;
 use App\Exports\AttendanceExport;
@@ -127,7 +132,8 @@ class TeacherController extends Controller
         }
 
         $subject->load('schedules');
-        return view('teacher.subjects.edit', compact('subject'));
+        $hasClassSchedules = ClassSchedule::where('subject_id', $subject->id)->exists();
+        return view('teacher.subjects.edit', compact('subject', 'hasClassSchedules'));
     }
 
     public function updateSubject(Request $request, Subject $subject)
@@ -156,13 +162,35 @@ class TeacherController extends Controller
             'section'    => 'nullable|string',
         ]);
 
-        $subject->update(array_merge($request->only([
-            'code', 'name', 'year_level', 'semester', 'units', 'section'
-        ]), [
-            'instructor_id' => $teacher->id
-        ]));
+        DB::transaction(function () use ($request, $subject, $teacher) {
+            ClassScheduleLock::acquire();
+            $subject = Subject::findOrFail($subject->id);
+            abort_unless((int) $subject->instructor_id === (int) $teacher->id, 403);
 
-        $this->saveSubjectSchedules($subject, $request);
+            $data = $request->only(['code', 'name', 'year_level', 'semester', 'units', 'section']);
+            $hasClassSchedules = ClassSchedule::where('subject_id', $subject->id)->exists();
+            if ($hasClassSchedules) {
+                foreach (['code', 'year_level', 'semester', 'section'] as $field) {
+                    if (array_key_exists($field, $data) && (string) ($data[$field] ?? '') !== (string) ($subject->{$field} ?? '')) {
+                        throw ValidationException::withMessages([
+                            $field => 'Remove or update this subject\'s class schedules before changing its code or cohort.',
+                        ]);
+                    }
+                }
+            }
+
+            if (($data['code'] ?? $subject->code) !== $subject->code
+                && Attendance::where(function ($query) use ($subject) {
+                    $query->where('subject_id', $subject->id)->orWhere('subject_code', $subject->code);
+                })->exists()) {
+                throw ValidationException::withMessages(['code' => 'A subject with attendance records cannot change its code.']);
+            }
+
+            $subject->update($data);
+            if (!$hasClassSchedules) {
+                $this->saveSubjectSchedules($subject, $request);
+            }
+        }, 3);
 
         return redirect()->route('teacher.classroom.index')->with('success', 'Subject updated successfully.');
     }
@@ -498,30 +526,9 @@ class TeacherController extends Controller
         $teacherSubjects = Subject::where('instructor_id', $teacher->id)
             ->get();
 
-        // Get students who match the year/semester of teacher's subjects
         $subjectCodes = $teacherSubjects->pluck('code');
-        
-        // Get unique year_level and semester combinations from teacher's subjects
-        $yearSemesters = $teacherSubjects->map(function($subject) {
-            return [
-                'year_level' => $subject->year_level,
-                'semester' => $subject->semester,
-                'course' => $subject->course
-            ];
-        })->unique()->values();
-
         $query = User::where('role', 'student')
-            ->where(function($q) use ($yearSemesters) {
-                foreach($yearSemesters as $ys) {
-                    $q->orWhere(function($subQ) use ($ys) {
-                        $subQ->where('year_level', $ys['year_level'])
-                             ->where('semester', $ys['semester']);
-                        if ($ys['course']) {
-                            $subQ->where('course', $ys['course']);
-                        }
-                    });
-                }
-            })
+            ->whereIn('id', SubjectRosterService::studentIds($teacherSubjects))
             ->with(['attendances' => function($q) use ($subjectCodes) {
                 $q->whereIn('subject_code', $subjectCodes);
             }]);
@@ -627,27 +634,8 @@ class TeacherController extends Controller
 
         $subjectCodes = $teacherSubjects->pluck('code');
         
-        // Get students who match the year/semester of teacher's subjects
-        $yearSemesters = $teacherSubjects->map(function($subject) {
-            return [
-                'year_level' => $subject->year_level,
-                'semester' => $subject->semester,
-                'course' => $subject->course
-            ];
-        })->unique()->values();
-
         $query = User::where('role', 'student')
-            ->where(function($q) use ($yearSemesters) {
-                foreach($yearSemesters as $ys) {
-                    $q->orWhere(function($subQ) use ($ys) {
-                        $subQ->where('year_level', $ys['year_level'])
-                             ->where('semester', $ys['semester']);
-                        if ($ys['course']) {
-                            $subQ->where('course', $ys['course']);
-                        }
-                    });
-                }
-            })
+            ->whereIn('id', SubjectRosterService::studentIds($teacherSubjects))
             ->with(['attendances' => function($q) use ($subjectCodes) {
                 $q->whereIn('subject_code', $subjectCodes);
             }]);
@@ -689,27 +677,8 @@ class TeacherController extends Controller
 
         $subjectCodes = $teacherSubjects->pluck('code');
         
-        // Get students who match the year/semester of teacher's subjects
-        $yearSemesters = $teacherSubjects->map(function($subject) {
-            return [
-                'year_level' => $subject->year_level,
-                'semester' => $subject->semester,
-                'course' => $subject->course
-            ];
-        })->unique()->values();
-
         $query = User::where('role', 'student')
-            ->where(function($q) use ($yearSemesters) {
-                foreach($yearSemesters as $ys) {
-                    $q->orWhere(function($subQ) use ($ys) {
-                        $subQ->where('year_level', $ys['year_level'])
-                             ->where('semester', $ys['semester']);
-                        if ($ys['course']) {
-                            $subQ->where('course', $ys['course']);
-                        }
-                    });
-                }
-            })
+            ->whereIn('id', SubjectRosterService::studentIds($teacherSubjects))
             ->with(['attendances' => function($q) use ($subjectCodes) {
                 $q->whereIn('subject_code', $subjectCodes);
             }]);
@@ -2038,11 +2007,9 @@ class TeacherController extends Controller
     public function exportStudentsCsv(Request $request)
     {
         $teacher = Auth::user();
-        $mySubjectCodes = $teacher->subjects()->pluck('code')->toArray();
+        $teacherSubjects = $teacher->subjects()->get();
         $query = User::where('role', 'student')
-            ->whereHas('attendances', function ($q) use ($mySubjectCodes) {
-                $q->whereIn('subject_code', $mySubjectCodes);
-            });
+            ->whereIn('id', SubjectRosterService::studentIds($teacherSubjects));
 
         if ($request->filled('search')) {
             $search = strtolower($request->search);
@@ -2062,14 +2029,11 @@ class TeacherController extends Controller
         $mySubjectCodes = $teacher->subjects()->pluck('code')->toArray();
 
         $filters = $request->only(['subject_code', 'date', 'status']);
-        
-        // Ensure teacher can only export their own subjects
-        if (empty($filters['subject_code']) || !in_array($filters['subject_code'], $mySubjectCodes)) {
-            // Default to first subject if not specified or invalid
-            $filters['subject_code'] = $mySubjectCodes[0] ?? null;
+        if (!empty($filters['subject_code']) && !in_array($filters['subject_code'], $mySubjectCodes, true)) {
+            abort(403);
         }
 
-        $query = Attendance::with(['user', 'subject']);
+        $query = Attendance::with(['user', 'subject'])->whereIn('subject_code', $mySubjectCodes);
         if (!empty($filters['subject_code'])) $query->where('subject_code', $filters['subject_code']);
         if (!empty($filters['date'])) $query->whereDate('date', $filters['date']);
         if (!empty($filters['status'])) $query->where('status', $filters['status']);

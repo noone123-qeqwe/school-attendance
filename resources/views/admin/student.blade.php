@@ -367,7 +367,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function openWarningModal(studentId, studentName) {
     new bootstrap.Modal(document.getElementById('warningModal')).show();
 }

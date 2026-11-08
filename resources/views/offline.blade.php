@@ -367,7 +367,7 @@
 <!-- offline-attendance.js is pre-cached by the service worker -->
 <script src="/js/offline-attendance.js"></script>
 
-<script>
+<script @cspNonce>
 // ── Connectivity management ────────────────────────────────────────────
 var currentState = 'no-internet';
 var isReconnecting = false;

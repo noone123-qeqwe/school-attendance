@@ -506,21 +506,38 @@ class ParentController extends Controller
     }
 
     /**
-     * View notifications for all children.
+     * View notifications addressed to the parent or their linked children.
      */
     public function notifications(Request $request)
     {
         $parent = Auth::user();
         $childIds = $parent->children()->pluck('users.id');
+        $recipientIds = $childIds->all();
+        $recipientIds[] = $parent->id;
 
-        $query = Notification::with(['user', 'sender', 'subject'])
-            ->whereIn('user_id', $childIds)
+        $query = Notification::with(['user', 'relatedStudent', 'sender', 'subject'])
+            ->whereIn('user_id', $recipientIds)
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('child_id')) {
-            $query->where('user_id', $request->child_id);
+            $childId = (int) $request->input('child_id');
+            if (!$childIds->contains($childId)) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->where(function ($q) use ($childId, $parent) {
+                    $q->where('user_id', $childId)
+                        ->orWhere(function ($parentAlert) use ($childId, $parent) {
+                            $parentAlert->where('user_id', $parent->id)
+                                ->where('related_user_id', $childId);
+                        });
+                });
+            }
         }
-        if ($request->filled('type')) {
+        if ($request->query('type') === 'absence') {
+            $query->whereIn('type', ['absence', 'absence_alert']);
+        } elseif ($request->query('type') === 'warning') {
+            $query->where('type', 'like', 'warning%');
+        } elseif ($request->filled('type')) {
             $query->where('type', $request->type);
         }
 
@@ -531,14 +548,15 @@ class ParentController extends Controller
     }
 
     /**
-     * Mark all notifications as read for children.
+     * Mark notifications for the parent and their linked children as read.
      */
     public function markNotificationsRead()
     {
         $parent = Auth::user();
-        $childIds = $parent->children()->pluck('users.id');
+        $recipientIds = $parent->children()->pluck('users.id')->all();
+        $recipientIds[] = $parent->id;
 
-        Notification::whereIn('user_id', $childIds)
+        Notification::whereIn('user_id', $recipientIds)
             ->where('is_read', false)
             ->update(['is_read' => true]);
 

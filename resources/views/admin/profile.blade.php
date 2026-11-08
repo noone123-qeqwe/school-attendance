@@ -369,7 +369,7 @@
 
 </div>
 
-<script>
+<script @cspNonce>
 function togglePw(id, btn, e) {
     if (e && e.preventDefault) e.preventDefault();
     if (window.togglePassword) {

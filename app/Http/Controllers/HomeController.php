@@ -679,24 +679,30 @@ class HomeController extends Controller
         return back()->with('success', 'Notification unarchived.');
     }
 
-    public function pollNotifications()
+    public function pollNotifications(Request $request)
     {
         $user = Auth::user();
         if (!$user) {
             return response()->json(['unread_count' => 0, 'notifications' => []]);
         }
 
+        if ($user->isAdmin() && !$request->session()->get('admin_2fa_verified', false)) {
+            return response()->json(['message' => 'Admin verification is required.'], 403);
+        }
+
         if ($user->isParent()) {
             $childIds = $user->children()->pluck('users.id');
-            $unreadCount = \App\Models\Notification::whereIn('user_id', $childIds)->where('is_read', false)->count();
+            $recipientIds = $childIds->all();
+            $recipientIds[] = $user->id;
+            $unreadCount = \App\Models\Notification::whereIn('user_id', $recipientIds)->active()->where('is_read', false)->count();
             $notifications = \App\Models\Notification::with(['user', 'sender', 'subject'])
-                ->whereIn('user_id', $childIds)
+                ->whereIn('user_id', $recipientIds)
                 ->active()
                 ->orderBy('created_at', 'desc')
                 ->take(8)
                 ->get();
         } else {
-            $unreadCount = \App\Models\Notification::where('user_id', $user->id)->where('is_read', false)->count();
+            $unreadCount = \App\Models\Notification::where('user_id', $user->id)->active()->where('is_read', false)->count();
             $notifications = \App\Models\Notification::with(['sender', 'subject'])
                 ->where('user_id', $user->id)
                 ->active()
@@ -721,7 +727,7 @@ class HomeController extends Controller
         return response()->json([
             'unread_count' => $unreadCount,
             'notifications' => $formatted,
-        ]);
+        ], 200, ['Cache-Control' => 'private, no-store']);
     }
 
     public function update(Request $request)
