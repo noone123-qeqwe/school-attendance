@@ -25,10 +25,15 @@ return [
 
     'resend' => [
         'key' => env('RESEND_API_KEY'),
+        'from' => env('RESEND_FROM', 'onboarding@resend.dev'),
     ],
 
     'brevo' => [
         'key' => env('BREVO_API_KEY'),
+    ],
+
+    'hosting' => [
+        'is_cloud' => env('RENDER', false) || env('RENDER_SERVICE_ID') || env('RAILWAY_ENVIRONMENT'),
     ],
 
     'ses' => [

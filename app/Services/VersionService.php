@@ -77,7 +77,7 @@ class VersionService
 
         // 1. Environment metadata is a fallback only: it cannot prove that a
         // web release was actually deployed to this installation.
-        $envVer = env('APP_VERSION', env('APP_LATEST_VERSION'));
+        $envVer = config('version.version_override');
         $cleanEnv = null;
         if (!empty($envVer)) {
             $candidate = ltrim(trim((string)$envVer), 'vV ');
@@ -193,7 +193,10 @@ class VersionService
         // 1. Cloud deployment environment variables take highest priority because they reflect
         // the exact git revision built and deployed by the host platform (Render, Railway, Vercel, etc.).
         foreach (['RENDER_GIT_COMMIT', 'RAILWAY_GIT_COMMIT_SHA', 'VERCEL_GIT_COMMIT_SHA', 'GITHUB_SHA'] as $variable) {
-            $revision = env($variable) ?: getenv($variable);
+            $revision = getenv($variable);
+            if ($revision === false) {
+                $revision = $_SERVER[$variable] ?? $_ENV[$variable] ?? null;
+            }
             if (is_string($revision) && preg_match('/^[a-f0-9]{7,40}$/i', trim($revision))) {
                 return substr(trim($revision), 0, 7);
             }
@@ -278,7 +281,7 @@ class VersionService
         }
 
         // 1. Check config overrides if set in environment
-        $configInstalled = env('APP_INSTALLED_VERSION');
+        $configInstalled = config('version.installed_version_override');
         if (!empty($configInstalled)) {
             return ltrim(trim((string)$configInstalled), 'vV ');
         }

@@ -23,7 +23,9 @@ return [
     | Reads from root version.json with optional environment overrides.
     |
     */
-    'version' => env('APP_VERSION', $versionData['version'] ?? '1.0.0'),
+    'version_override' => env('APP_VERSION', env('APP_LATEST_VERSION')),
+    'installed_version_override' => env('APP_INSTALLED_VERSION'),
+    'version' => env('APP_VERSION', env('APP_LATEST_VERSION', $versionData['version'] ?? '1.0.0')),
     'installed_version' => env('APP_INSTALLED_VERSION', $versionData['installed_version'] ?? ($versionData['version'] ?? '1.0.0')),
     'build' => env('APP_BUILD', $versionData['build'] ?? date('Ymd') . '.001'),
     'commit' => env('RENDER_GIT_COMMIT')

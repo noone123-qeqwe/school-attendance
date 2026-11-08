@@ -41,7 +41,7 @@ class EmailDeliveryService
         }
 
         // Outbound HTTP API keys (Resend / Brevo) work on any cloud environment without SMTP restrictions
-        if (!empty(config('services.resend.key')) || !empty(env('RESEND_API_KEY')) || !empty(env('BREVO_API_KEY')) || !empty(config('services.brevo.key'))) {
+        if (!empty(config('services.resend.key')) || !empty(config('services.brevo.key'))) {
             return true;
         }
 
@@ -85,7 +85,7 @@ class EmailDeliveryService
 
         // 1. Check HTTP API providers first (works over HTTPS port 443; never blocked on cloud/Render free tier)
         // Try Brevo first: It has an authenticated, verified sender that reliably delivers to any email domain
-        $brevoKey = config('services.brevo.key') ?: env('BREVO_API_KEY');
+        $brevoKey = config('services.brevo.key');
         if (!empty($brevoKey) && !app()->runningUnitTests()) {
             $httpRes = $this->sendViaBrevoHttp($recipientEmail, $otpCode, $purpose, $recipientName, $brevoKey, $requestId);
             if ($httpRes->success) {
@@ -95,7 +95,7 @@ class EmailDeliveryService
         }
 
         // Try Resend next (works if API key is provided and custom domain or owner recipient is used)
-        $resendKey = config('services.resend.key') ?: env('RESEND_API_KEY');
+        $resendKey = config('services.resend.key');
         if (!empty($resendKey) && !app()->runningUnitTests()) {
             $httpRes = $this->sendViaResendHttp($recipientEmail, $otpCode, $purpose, $recipientName, $resendKey, $requestId);
             if ($httpRes->success) {
@@ -177,7 +177,7 @@ class EmailDeliveryService
             }
 
             // Cloud provider diagnostic alert
-            $isCloud = env('RENDER') || env('RENDER_SERVICE_ID') || env('RAILWAY_ENVIRONMENT');
+            $isCloud = config('services.hosting.is_cloud', false);
             if ($isCloud && (str_contains($primaryError, 'timed out') || str_contains($primaryError, 'Connection refused') || str_contains($primaryError, '110'))) {
                 Log::error("Cloud host blocked SMTP traffic. Note: Render Free Tier blocks outbound SMTP traffic on ports 25, 465, and 587. Configure an HTTP API key (e.g. RESEND_API_KEY or BREVO_API_KEY) or upgrade to a Render paid instance.");
             }
@@ -357,7 +357,7 @@ class EmailDeliveryService
         try {
             $mailable = new OtpMail($otpCode, $purpose, $recipientName);
             $appName = config('app.name', 'Smart Classroom Attendance System');
-            $fromAddress = env('RESEND_FROM', 'onboarding@resend.dev');
+            $fromAddress = config('services.resend.from', 'onboarding@resend.dev');
 
             $response = Http::withToken($apiKey)
                 ->timeout(10)
