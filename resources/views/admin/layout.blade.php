@@ -40,10 +40,12 @@
             <i class="bi bi-calendar-check-fill"></i>
             <span class="nav-link-text">Attendance Logs</span>
         </a>
-        <a href="{{ route('admin.activity.log') }}" class="nav-link {{ request()->routeIs('admin.activity.log*') ? 'active' : '' }}">
-            <i class="bi bi-journal-text"></i>
-            <span class="nav-link-text">Activity Logs</span>
-        </a>
+        @if(Auth::user()->admin_sub_role !== 'data_entry')
+            <a href="{{ route('admin.activity.log') }}" class="nav-link {{ request()->routeIs('admin.activity.log*') ? 'active' : '' }}">
+                <i class="bi bi-journal-text"></i>
+                <span class="nav-link-text">Activity Logs</span>
+            </a>
+        @endif
         <a href="{{ route('admin.calendar') }}" class="nav-link {{ request()->routeIs('admin.calendar*') ? 'active' : '' }}">
             <i class="bi bi-calendar3-fill"></i>
             <span class="nav-link-text">Holiday Calendar</span>

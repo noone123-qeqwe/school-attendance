@@ -594,19 +594,24 @@ table th {
 }
 
 .directory-status-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
     max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    padding-bottom: 4px;
+    overflow: visible;
 }
 
 .directory-status-tabs a {
-    flex: 0 0 auto;
-    min-height: 40px;
+    flex: 0 1 auto;
+    min-width: 0;
+    min-height: 44px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
+    line-height: 1.25;
+    text-align: center;
 }
 
 .directory-filter-bar > * {
@@ -619,6 +624,35 @@ table th {
 }
 
 @media (max-width: 768px) {
+    .directory-status-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .directory-status-tabs a {
+        width: 100%;
+        white-space: normal;
+    }
+
+    .directory-status-tabs a:last-child {
+        grid-column: 1 / -1;
+    }
+
+    .admin-dashboard-actions {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .admin-dashboard-actions .modern-qa-tile {
+        min-width: 0;
+        min-height: 84px;
+        padding: 14px 10px;
+    }
+
+    .admin-dashboard-actions .qa-label {
+        overflow-wrap: anywhere;
+        text-align: center;
+    }
+
     .directory-page-actions {
         display: grid !important;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -655,6 +689,16 @@ table th {
     .directory-pagination {
         justify-content: center !important;
         text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-dashboard-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-dashboard-actions .modern-qa-tile {
+        min-height: 88px;
     }
 }
 

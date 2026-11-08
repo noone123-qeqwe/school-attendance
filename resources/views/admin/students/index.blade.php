@@ -3,28 +3,33 @@
 @section('title', 'Students')
 
 @section('content')
+@php($isReadOnlyAuditor = Auth::user()?->admin_sub_role === 'auditor')
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 directory-page-header">
     <div>
         <h1 class="saas-heading saas-heading-lg mb-1">Students</h1>
-        <p class="saas-text-muted m-0">Manage student enrollments and records.</p>
+        <p class="saas-text-muted m-0">{{ $isReadOnlyAuditor ? 'Review student enrollments and records.' : 'Manage student enrollments and records.' }}</p>
     </div>
     
     <div class="d-flex gap-2 flex-wrap directory-page-actions">
         <a href="{{ route('admin.students.template') }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" title="Download CSV Template">
             <i class="bi bi-download"></i> Template
         </a>
-        <button type="button" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" onclick="openImportModal()">
-            <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
-        </button>
+        @unless($isReadOnlyAuditor)
+            <button type="button" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" onclick="openImportModal()">
+                <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
+            </button>
+        @endunless
         <a href="{{ route('admin.students.csv', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
             <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>
         <a href="{{ route('admin.students.preview', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
             <i class="bi bi-file-earmark-pdf"></i> Export PDF
         </a>
-        <a href="{{ route('admin.student.create') }}" class="btn btn-primary" style="background: var(--gold); color: #1a0808; font-weight: 600; border: none;">
-            <i class="bi bi-plus-lg"></i> Add Student
-        </a>
+        @unless($isReadOnlyAuditor)
+            <a href="{{ route('admin.student.create') }}" class="btn btn-primary" style="background: var(--gold); color: #1a0808; font-weight: 600; border: none;">
+                <i class="bi bi-plus-lg"></i> Add Student
+            </a>
+        @endunless
     </div>
 </div>
 
@@ -80,16 +85,19 @@
 @endif
 
 <!-- Student Account Status Filter Tabs -->
-<div class="directory-status-tabs" style="display:flex; gap:10px; margin-bottom:16px;">
+<div class="directory-status-tabs">
     <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'active'])) }}" 
+       class="directory-status-tab"
        style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? 'active') === 'active' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-check-circle-fill me-1"></i> Active Students
     </a>
     <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'deactivated'])) }}" 
+       class="directory-status-tab"
        style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? '') === 'deactivated' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-person-x-fill me-1"></i> Deactivated Accounts
     </a>
     <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'all'])) }}" 
+       class="directory-status-tab"
        style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? '') === 'all' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         All Records
     </a>
@@ -152,13 +160,15 @@
         <table class="adm-table">
             <thead>
                 <tr>
-                    <th style="width:40px;"><input type="checkbox" id="selectAll" style="accent-color:var(--gold);" onclick="document.querySelectorAll('.student-checkbox').forEach(c => c.checked = this.checked)"></th>
+                    @unless($isReadOnlyAuditor)
+                        <th style="width:40px;"><input type="checkbox" id="selectAll" style="accent-color:var(--gold);" onclick="document.querySelectorAll('.student-checkbox').forEach(c => c.checked = this.checked)"></th>
+                    @endunless
                     <th>Student</th>
                     <th>ID</th>
                     <th>Course &amp; Year</th>
                     <th>Bound Device</th>
                     <th>Absences</th>
-                    <th>Actions</th>
+                    <th>{{ $isReadOnlyAuditor ? 'Details' : 'Actions' }}</th>
                 </tr>
             </thead>
             <tbody id="studentTableBody">
@@ -339,6 +349,7 @@ function copyCreatedId(id) {
 }
 </script>
 
+@unless($isReadOnlyAuditor)
 <!-- Import CSV Modal -->
 <div id="importModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#1e1414; border:1px solid rgba(207,164,111,0.35); border-radius:16px; width:100%; max-width:520px; padding:28px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); color:#f3e7cd; position:relative;">
@@ -387,4 +398,5 @@ function copyCreatedId(id) {
         </form>
     </div>
 </div>
+@endunless
 @endsection

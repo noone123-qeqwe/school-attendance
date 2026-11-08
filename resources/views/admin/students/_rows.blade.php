@@ -1,7 +1,14 @@
-@forelse($students as $student)
-@php $absences = $student->attendances->where('status','Absent')->count(); @endphp
+@php
+    $isReadOnlyAuditor = auth()->user()?->admin_sub_role === 'auditor';
+@endphp
+@foreach($students as $student)
+@php
+    $absences = $student->attendances->where('status', 'Absent')->count();
+@endphp
 <tr>
-    <td style="width:40px;"><input type="checkbox" class="student-checkbox" name="selected_students[]" value="{{ $student->id }}" style="accent-color:var(--gold);"></td>
+    @unless($isReadOnlyAuditor)
+        <td style="width:40px;"><input type="checkbox" class="student-checkbox" name="selected_students[]" value="{{ $student->id }}" style="accent-color:var(--gold);"></td>
+    @endunless
     <td data-label="Student">
         <div class="d-flex align-items-center gap-3">
             <img src="{{ $student->profile_image ? (str_starts_with($student->profile_image, 'http') ? $student->profile_image : public_storage_url($student->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($student->name).'&background=900000&color=fff' }}"
@@ -44,11 +51,12 @@
             <span style="color: rgba(179,155,130,0.4);">—</span>
         @endif
     </td>
-    <td data-label="Actions">
+    <td data-label="{{ $isReadOnlyAuditor ? 'Details' : 'Actions' }}">
         <div class="d-flex gap-1 align-items-center">
             <a href="{{ route('admin.student', $student->id) }}" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border: 1px solid rgba(207,164,111,0.25); background:rgba(207,164,111,0.06); color: var(--gold); border-radius:6px; transition:all 0.2s;" title="View Details">
                 <i class="bi bi-eye"></i>
             </a>
+            @unless($isReadOnlyAuditor)
             <a href="{{ route('admin.student.edit', $student->id) }}" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border: 1px solid rgba(207,164,111,0.25); background:rgba(207,164,111,0.06); color: var(--gold); border-radius:6px; transition:all 0.2s;" title="Edit Student">
                 <i class="bi bi-pencil"></i>
             </a>
@@ -79,19 +87,21 @@
                     <i class="bi bi-trash"></i>
                 </button>
             </form>
+            @endunless
         </div>
     </td>
 </tr>
-@empty
+@endforeach
+@if($students->isEmpty())
 <tr>
-    <td colspan="7" class="p-0 border-0">
-        <x-empty-state 
+    <td colspan="{{ $isReadOnlyAuditor ? 6 : 7 }}" class="p-0 border-0">
+        <x-empty-state
             icon="people"
             title="No students found"
-            message="No students match your search criteria. Try adjusting your filters or add a new student."
-            :action-url="route('admin.student.create')"
-            action-text="Add Student"
+            :message="$isReadOnlyAuditor ? 'No student records match your search. Try adjusting your filters.' : 'No students match your search criteria. Try adjusting your filters or add a new student.'"
+            :action-url="$isReadOnlyAuditor ? null : route('admin.student.create')"
+            :action-text="$isReadOnlyAuditor ? null : 'Add Student'"
         />
     </td>
 </tr>
-@endforelse
+@endif

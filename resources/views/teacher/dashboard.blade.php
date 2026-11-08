@@ -521,11 +521,20 @@ function filterRecentLogs() {
     const status = document.getElementById('peerLiveConnection');
     const seen = new Set();
     function setConnectionMessage(message) { status.textContent = message; status.hidden = !message; }
+    function connectionMessageFor(state) {
+        if (state === 'connected') return '';
+        if (state === 'initialized' || state === 'connecting') return 'Connecting to live attendance updates…';
+        if (state === 'unavailable' || state === 'failed') {
+            return 'Live updates are unavailable. Attendance data is saved; refresh after the live service reconnects.';
+        }
+        return 'Live updates are disconnected. Attendance data is saved while the connection recovers.';
+    }
     function connect() {
         const echo = window.teacherEcho || window.Echo;
         if (!echo) {
+            setConnectionMessage(connectionMessageFor('connecting'));
             if (++attempts < 20) setTimeout(connect, 500);
-            else setConnectionMessage('Live attendance updates are unavailable. Reload to refresh the dashboard.');
+            else setConnectionMessage(connectionMessageFor('unavailable'));
             return;
         }
         try {
@@ -557,9 +566,9 @@ function filterRecentLogs() {
                     absent.textContent = String(Math.max(0, Number(absent.textContent.trim()) - 1));
             });
             const connection = echo.connector?.pusher?.connection;
-            connection?.bind('state_change', state => setConnectionMessage(state.current === 'connected' ? '' : 'Live updates disconnected. Reload if this persists.'));
-            setConnectionMessage(connection && connection.state !== 'connected' ? 'Connecting to live attendance updates…' : '');
-        } catch { setConnectionMessage('Live attendance updates are unavailable. Reload to refresh the dashboard.'); }
+            connection?.bind('state_change', state => setConnectionMessage(connectionMessageFor(state.current)));
+            setConnectionMessage(connectionMessageFor(connection?.state || 'unavailable'));
+        } catch { setConnectionMessage(connectionMessageFor('unavailable')); }
     }
     connect();
 })();

@@ -55,17 +55,21 @@
     </a>
 
     {{-- ── SYSTEM ── --}}
-    <div class="nav-section-label">System</div>
-    @if(Auth::user()->isSuperAdmin())
-    <a href="{{ route('admin.system-update.index') }}" class="nav-link {{ (request()->routeIs('admin.system-update*') || request()->routeIs('admin.backups*') || request()->routeIs('admin.system-health*')) ? 'active' : '' }}" data-title="System Maintenance">
-        <i class="bi bi-tools"></i>
-        <span class="nav-link-text">System Maintenance</span>
-    </a>
+    @if(Auth::user()->admin_sub_role === 'data_entry')
+        <div class="nav-section-label">Account</div>
+    @else
+        <div class="nav-section-label">System</div>
+        @if(Auth::user()->isSuperAdmin())
+        <a href="{{ route('admin.system-update.index') }}" class="nav-link {{ (request()->routeIs('admin.system-update*') || request()->routeIs('admin.backups*') || request()->routeIs('admin.system-health*')) ? 'active' : '' }}" data-title="System Maintenance">
+            <i class="bi bi-tools"></i>
+            <span class="nav-link-text">System Maintenance</span>
+        </a>
+        @endif
+        <a href="{{ route('admin.activity.log') }}" class="nav-link {{ request()->routeIs('admin.activity.log') ? 'active' : '' }}" data-title="Audit Logs">
+            <i class="bi bi-list-check"></i>
+            <span class="nav-link-text">Audit Logs</span>
+        </a>
     @endif
-    <a href="{{ route('admin.activity.log') }}" class="nav-link {{ request()->routeIs('admin.activity.log') ? 'active' : '' }}" data-title="Audit Logs">
-        <i class="bi bi-list-check"></i>
-        <span class="nav-link-text">Audit Logs</span>
-    </a>
     <a href="{{ route('admin.profile') }}" class="nav-link {{ request()->routeIs('admin.profile') ? 'active' : '' }}" data-title="Profile">
         <i class="bi bi-person-circle"></i>
         <span class="nav-link-text">Biometric &amp; Profile</span>

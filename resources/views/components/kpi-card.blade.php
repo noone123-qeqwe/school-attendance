@@ -33,10 +33,10 @@
     $cleanIcon = $icon ? (str_starts_with($icon, 'bi-') ? 'bi ' . $icon : $icon) : null;
 @endphp
 
-<div {{ $attributes->merge(['class' => 'ent-kpi-card']) }} style="position: relative; background: linear-gradient(145deg, rgba(30, 21, 21, 0.7) 0%, rgba(18, 10, 10, 0.85) 100%); border: 1px solid var(--ds-border, rgba(212, 175, 55, 0.16)); border-radius: var(--ds-radius-lg, 18px); padding: 22px; box-shadow: var(--ds-shadow-md, 0 8px 24px rgba(0,0,0,0.35)); overflow: hidden; backdrop-filter: blur(16px); transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);">
+<div {{ $attributes->merge(['class' => 'ent-kpi-card ent-kpi-summary-card']) }} style="position: relative; background: linear-gradient(145deg, rgba(30, 21, 21, 0.7) 0%, rgba(18, 10, 10, 0.85) 100%); border: 1px solid var(--ds-border, rgba(212, 175, 55, 0.16)); border-radius: var(--ds-radius-lg, 18px); padding: 22px; box-shadow: var(--ds-shadow-md, 0 8px 24px rgba(0,0,0,0.35)); overflow: hidden; backdrop-filter: blur(16px); transition: all 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);">
     <div style="position: absolute; top: 0; left: 0; right: 0; height: 3px; background: {{ $accent === 'success' ? 'var(--ds-success, #4ade80)' : ($accent === 'danger' ? 'var(--ds-danger, #f87171)' : ($accent === 'warning' ? 'var(--ds-warning, #fbbf24)' : ($accent === 'info' ? 'var(--ds-info, #60a5fa)' : 'var(--ds-gold, #D4AF37)'))) }}; opacity: 0.85;"></div>
     @if($loading)
-        <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="ent-kpi-summary-loading" style="display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div style="height: 14px; width: 45%; background: rgba(255,255,255,0.06); border-radius: 4px;"></div>
                 <div style="width: 36px; height: 36px; background: rgba(255,255,255,0.06); border-radius: 10px;"></div>
@@ -45,37 +45,33 @@
             <div style="height: 12px; width: 40%; background: rgba(255,255,255,0.04); border-radius: 4px;"></div>
         </div>
     @else
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-            <span style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ds-text-secondary, #D1C5B4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        <div class="ent-kpi-summary-header">
+            <span class="ent-kpi-summary-label">
                 {{ $label }}
             </span>
             @if($cleanIcon)
-                <div style="width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; flex-shrink: 0; {{ $accentStyles[$accent] ?? $accentStyles['gold'] }}">
+                <div class="ent-kpi-summary-icon" style="{{ $accentStyles[$accent] ?? $accentStyles['gold'] }}">
                     <i class="{{ $cleanIcon }}" aria-hidden="true"></i>
                 </div>
             @endif
         </div>
 
-        <div style="margin-top: 10px; display: flex; align-items: baseline; gap: 8px;">
-            <span style="font-size: 2.1rem; font-weight: 800; color: #ffffff; line-height: 1; letter-spacing: -0.5px; font-variant-numeric: tabular-nums;">
-                {{ $value }}
-            </span>
-        </div>
+        <div class="ent-kpi-value ent-kpi-summary-value">{{ $value }}</div>
 
         @if($delta !== null)
-            <div style="margin-top: 12px; display: flex; align-items: center; gap: 6px; font-size: 0.76rem;">
-                <span style="display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 6px; font-weight: 700; {{ $deltaColors[$deltaType] ?? $deltaColors['neutral'] }}">
+            <div class="ent-kpi-summary-footer">
+                <span class="ent-kpi-summary-delta" style="{{ $deltaColors[$deltaType] ?? $deltaColors['neutral'] }}">
                     <i class="bi {{ $deltaIcons[$deltaType] ?? 'bi-dash' }}" style="font-size: 0.9em;" aria-hidden="true"></i>
                     {{ $delta }}
                 </span>
-                <span style="color: var(--ds-text-muted, #A39683); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                <span class="ent-kpi-summary-delta-text">
                     {{ $deltaText }}
                 </span>
             </div>
         @endif
 
         @if(trim((string)$slot) !== '')
-            <div style="margin-top: 12px;">
+            <div class="ent-kpi-summary-slot">
                 {{ $slot }}
             </div>
         @endif

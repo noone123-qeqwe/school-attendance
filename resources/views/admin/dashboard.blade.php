@@ -71,12 +71,14 @@
         </div>
         <span class="qa-label">Announcements</span>
     </a>
-    <a href="{{ route('admin.activity.log') }}" class="modern-qa-tile">
-        <div class="qa-icon-wrap" style="background: rgba(245, 158, 11, 0.14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25);">
-            <i class="bi bi-journal-text"></i>
-        </div>
-        <span class="qa-label">Activity Logs</span>
-    </a>
+    @if(Auth::user()->admin_sub_role !== 'data_entry')
+        <a href="{{ route('admin.activity.log') }}" class="modern-qa-tile">
+            <div class="qa-icon-wrap" style="background: rgba(245, 158, 11, 0.14); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.25);">
+                <i class="bi bi-journal-text"></i>
+            </div>
+            <span class="qa-label">Activity Logs</span>
+        </a>
+    @endif
     @if(Auth::user()->admin_sub_role === 'super_admin' || is_null(Auth::user()->admin_sub_role))
     <a href="{{ route('admin.system-health.index') }}" class="modern-qa-tile">
         <div class="qa-icon-wrap" style="background: rgba(20, 184, 166, 0.14); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.25);">
