@@ -1,90 +1,111 @@
 name: Automatic Application Versioning
 
 on:
-  push:
-    branches:
-      - main
-      - master
-    paths-ignore:
-      - 'README.md'
-      - '.gitignore'
-      - '.vscode/**'
-      - 'docs/**'
+  workflow_run:
+    workflows: ["Laravel CI Test Suite"]
+    types: [completed]
+    branches: [main]
 
 concurrency:
-  group: auto-version-bump-${{ github.ref }}
+  group: auto-version-bump-main
   cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   auto_version_bump:
-    name: Auto Increment Version & Release
+    name: Release verified main updates
     runs-on: ubuntu-latest
     if: >-
-      !contains(github.event.head_commit.message, '[skip ci]') &&
-      !contains(github.event.head_commit.message, '[ci skip]') &&
-      !contains(github.event.head_commit.message, 'chore(release):') &&
-      github.actor != 'github-actions[bot]'
-
-    permissions:
-      contents: write
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
 
     steps:
-      - name: Checkout Code
+      - name: Check out the commit that passed CI
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha }}
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup PHP
+      - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: mbstring, json, pdo, pdo_sqlite
           coverage: none
 
-      - name: Configure Git Bot
+      - name: Configure release bot
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Verify Push Needs Version Bump
-        id: check_bump
+      - name: Confirm this verified commit is still the tip of main
+        id: release_check
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
         run: |
-          # If version.json was already modified in this commit, skip double-bumping
-          if git diff-tree --no-commit-id --name-only -r HEAD | grep -q "^version\.json$"; then
-            echo "version.json was already modified in this push. Skipping auto-bump."
-            echo "should_bump=false" >> $GITHUB_OUTPUT
-          else
-            echo "should_bump=true" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          git fetch origin main --quiet
+          MAIN_SHA="$(git rev-parse FETCH_HEAD)"
+          if [[ "$MAIN_SHA" != "$TESTED_SHA" ]]; then
+            echo "The tested commit is no longer the tip of main; a newer CI run will release the latest commit."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
-      - name: Execute Automated Version Increment
+          COMMIT_MESSAGE="$(git show -s --format=%s "$TESTED_SHA")"
+          if [[ "$COMMIT_MESSAGE" == *"[skip ci]"* || "$COMMIT_MESSAGE" == *"[ci skip]"* || "$COMMIT_MESSAGE" == *"chore(release):"* ]]; then
+            echo "This commit is marked to skip CI or is already a release commit."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if git diff-tree --no-commit-id --name-only -r -m "$TESTED_SHA" | grep -qx 'version.json'; then
+            echo "This commit already changed version.json; skipping the automatic bump."
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "should_release=true" >> "$GITHUB_OUTPUT"
+
+      - name: Increment the verified web release version
         id: bump
-        if: steps.check_bump.outputs.should_bump == 'true'
-        run: |
-          php scripts/version-bump.php --ci
+        if: steps.release_check.outputs.should_release == 'true'
+        run: php scripts/version-bump.php --ci --release
 
       - name: Set up Node
-        if: steps.check_bump.outputs.should_bump == 'true' && steps.bump.outputs.bumped == 'true'
+        if: steps.bump.outputs.bumped == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
 
-      - name: Build release assets and synchronize service worker
-        if: steps.check_bump.outputs.should_bump == 'true' && steps.bump.outputs.bumped == 'true'
+      - name: Build and validate release assets
+        if: steps.bump.outputs.bumped == 'true'
         run: |
           npm ci
           npm run build
           php scripts/check-release-manifest.php
 
-      - name: Commit, Tag & Push New Application Version
-        if: steps.check_bump.outputs.should_bump == 'true' && steps.bump.outputs.bumped == 'true'
+      - name: Commit and publish the release
+        if: steps.bump.outputs.bumped == 'true'
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
         run: |
-          NEW_VER="${{ steps.bump.outputs.new_version }}"
-          echo "Committing release v${NEW_VER}..."
-          git pull --rebase origin ${{ github.ref_name }}
+          set -euo pipefail
+          git fetch origin main --quiet
+          if [[ "$(git rev-parse FETCH_HEAD)" != "$TESTED_SHA" ]]; then
+            echo "main advanced while the release was being prepared; refusing to publish a stale release."
+            exit 1
+          fi
+
           git add version.json package.json package-lock.json public/manifest.json public/sw.js
-          git commit -m "chore(release): bump version to ${NEW_VER} [skip ci]"
-          git tag -a "v${NEW_VER}" -m "Release v${NEW_VER}"
-          git push origin HEAD:${{ github.ref_name }} --follow-tags
+          git commit -m "chore(release): bump version to ${NEW_VERSION} [skip ci]"
+          git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
+          git push origin HEAD:main --follow-tags

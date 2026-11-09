@@ -45,9 +45,9 @@ $isCi = isset($options['ci']);
 $isRelease = isset($options['release']);
 $isDryRun = isset($options['dry-run']);
 
-// The legacy workflow invokes --ci for every push. Until it is replaced,
-// refuse to publish a release unless the tested release workflow explicitly
-// supplies --release. Local CLI/test usage is unaffected.
+// GitHub Actions may publish a version only after verification succeeds and
+// the release workflow explicitly supplies --release. Local CLI usage is
+// unaffected.
 if ($isCi && getenv('GITHUB_ACTIONS') === 'true' && !$isRelease) {
     echo "Skipping version bump: an explicit --release flag is required in GitHub Actions.\n";
     $githubOutput = getenv('GITHUB_OUTPUT');

@@ -4,11 +4,10 @@ The web/PWA and Android APK are separate deployable products. The web release is
 
 ## Publish a web release
 
-1. Merge verified code to `main`. Ordinary pushes run CI but do **not** announce a new release.
-2. In GitHub Actions, run **Release Web Application** on `main` and choose patch, minor, or major.
-3. The workflow runs the Laravel test suite, builds assets, confirms that the tested commit is still `main`, updates release metadata, validates it, then commits and tags the release. A failed check stops publication.
-4. Deploy the tagged commit with the normal hosting process. After deployment, verify `/pwa/version` reports the new `latest_version`, `installed_version`, `build`, and service-worker version. The application cannot infer deployment success from a Git push alone.
-5. On a test browser, confirm the update prompt appears once for a genuinely newer loaded release, **Later** leaves a quiet pill, and **Update Now** loads new HTML/assets before reporting success.
+1. Push the finished update to `main`. The Laravel CI workflow checks the commit.
+2. After CI succeeds, **Automatic Application Versioning** increments the patch version, updates the web package and service-worker cache metadata, builds the release assets, checks that the tested commit is still the tip of `main`, then commits and tags the release. A failed CI run does not create a release. A commit that already changes `version.json` is treated as an explicitly versioned release and is not bumped again.
+3. The hosting service must deploy the generated release commit. The displayed version changes only after that deployment is live; a code push by itself does not prove deployment succeeded.
+4. After deployment, verify `/pwa/version` reports the new `latest_version`, `installed_version`, `build`, and service-worker version. On a test browser, confirm the update prompt appears once for a genuinely newer loaded release, **Later** leaves a quiet pill, and **Update Now** loads new HTML/assets before reporting success.
 
 Run `php scripts/check-release-manifest.php` to validate the checked-out web metadata locally. `php scripts/version-bump.php --dry-run` previews the next version without changing files.
 
