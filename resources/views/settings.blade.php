@@ -3566,17 +3566,22 @@
         width: 30px;
         height: 30px;
         transform: translateY(-50%);
-        background: rgba(30, 24, 20, .97);
+        background: rgba(30, 24, 20, .98);
+        border-color: rgba(207, 164, 111, .7);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .5), 0 0 12px rgba(207, 164, 111, .16);
     }
     .student-settings .stabs-arrow-left { left: 7px; }
     .student-settings .stabs-arrow-right { right: 7px; }
     .student-settings .stabs-wrapper.has-scroll-left .stabs { padding-left: 40px; }
-    .student-settings .stabs-wrapper.has-scroll-right .stabs-arrow-right {
-        animation: studentSettingsScrollNudge 1.25s ease-in-out infinite;
+    .student-settings .stabs-wrapper.has-scroll-right .stabs-arrow-right i {
+        animation: studentSettingsScrollNudge 1.1s ease-in-out infinite;
     }
     @keyframes studentSettingsScrollNudge {
-        0%, 100% { transform: translate(0, -50%); }
-        50% { transform: translate(4px, -50%); }
+        0%, 100% { transform: translateX(-2px); opacity: .72; }
+        50% { transform: translateX(3px); opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .student-settings .stabs-wrapper.has-scroll-right .stabs-arrow-right i { animation: none; }
     }
     .student-settings .stab {
         flex: 0 0 auto;
@@ -5335,34 +5340,24 @@ function updateStabsScrollArrows() {
     const leftBtn = document.getElementById('stabsArrowLeft');
     const rightBtn = document.getElementById('stabsArrowRight');
     if (!nav || !leftBtn || !rightBtn) return;
+    if (nav.clientWidth === 0) return;
 
     const wrapper = nav.closest('.stabs-wrapper');
-    const maxScrollLeft = nav.scrollWidth - nav.clientWidth;
+    const maxScrollLeft = Math.max(0, nav.scrollWidth - nav.clientWidth);
+    const reservedArrowSpace = Number.parseFloat(window.getComputedStyle(nav).paddingRight) || 0;
+    // Ignore overflow caused only by the space reserved for the arrow itself.
+    const hasScrollableContent = nav.scrollWidth - reservedArrowSpace > nav.clientWidth + 3;
 
-    if (maxScrollLeft <= 4) {
-        leftBtn.style.display = 'none';
-        rightBtn.style.display = 'none';
-        leftBtn.setAttribute('aria-hidden', 'true');
-        rightBtn.setAttribute('aria-hidden', 'true');
-        wrapper?.classList.remove('has-scroll-left', 'has-scroll-right');
-        return;
-    }
-
-    // Show left arrow only when scrolled away from start
-    const canScrollLeft = nav.scrollLeft > 6;
+    const canScrollLeft = hasScrollableContent && nav.scrollLeft > 3;
     leftBtn.style.display = canScrollLeft ? 'flex' : 'none';
     leftBtn.setAttribute('aria-hidden', canScrollLeft ? 'false' : 'true');
+    leftBtn.tabIndex = canScrollLeft ? 0 : -1;
 
-    // Show right arrow only when there is more content to scroll to on the right
-    const canScrollRight = nav.scrollLeft < maxScrollLeft - 6;
-    if (canScrollRight) {
-        rightBtn.style.display = 'flex';
-        rightBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
-        rightBtn.setAttribute('title', 'Scroll right');
-    } else {
-        rightBtn.style.display = 'none';
-    }
+    const canScrollRight = hasScrollableContent && nav.scrollLeft < maxScrollLeft - 3;
+    rightBtn.style.display = canScrollRight ? 'flex' : 'none';
     rightBtn.setAttribute('aria-hidden', canScrollRight ? 'false' : 'true');
+    rightBtn.tabIndex = canScrollRight ? 0 : -1;
+    rightBtn.setAttribute('title', canScrollRight ? 'More settings categories. Scroll right.' : '');
     wrapper?.classList.toggle('has-scroll-left', canScrollLeft);
     wrapper?.classList.toggle('has-scroll-right', canScrollRight);
 }
@@ -7395,6 +7390,17 @@ function initSettingsPage() {
     const nav = document.getElementById('stabsNav');
     if (nav) {
         nav.addEventListener('scroll', updateStabsScrollArrows, { passive: true });
+        // Recheck after responsive layout, font loading, or tab sizing changes.
+        if (!nav.dataset.scrollCueObserver && 'ResizeObserver' in window) {
+            nav.dataset.scrollCueObserver = 'true';
+            nav.settingsScrollCueObserver = new ResizeObserver(() => updateStabsScrollArrows());
+            nav.settingsScrollCueObserver.observe(nav);
+            Array.from(nav.children).forEach(tab => nav.settingsScrollCueObserver.observe(tab));
+        }
+        requestAnimationFrame(updateStabsScrollArrows);
+        if (document.fonts && document.fonts.ready) {
+            document.fonts.ready.then(updateStabsScrollArrows).catch(() => {});
+        }
     }
     window.addEventListener('resize', updateStabsScrollArrows, { passive: true });
 
