@@ -150,13 +150,12 @@ if [ "$APP_PROCESS_ROLE" = "migrate" ]; then
     exit 0
 fi
 
-# Cache config, routes, views, and events for production performance
+# Optimize the framework once. `optimize` already caches config, routes, views,
+# and events, so separate event/view cache commands only repeated the work.
 echo "⚡ Optimizing Laravel for production..."
 php artisan config:clear || true
 php artisan view:clear || true
 php artisan optimize || true
-php artisan event:cache || true
-php artisan view:cache || true
 
 case "$APP_PROCESS_ROLE" in
     worker)

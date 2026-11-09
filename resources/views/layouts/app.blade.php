@@ -10,6 +10,9 @@
     <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
     <title>{{ config('app.name') }} | @yield('portal-title', match(auth()->user()?->role) { 'admin' => 'Admin Portal', 'teacher' => 'Teacher Portal', 'parent' => 'Parent Portal', default => 'Student Portal' })</title>
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -130,17 +133,9 @@
                     </button>
 
                     @php
-                        if (Auth::user()->isParent()) {
-                            $childIds = Auth::user()->children()->pluck('users.id');
-                            $parentNotificationRecipientIds = $childIds->push(Auth::id())->unique();
-                            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->active()->where('is_read', false)->count()
-                                + \App\Models\Notification::whereIn('user_id', $childIds)->active()->where('is_read', false)
-                                    ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('parent_notification_reads')
-                                        ->whereColumn('parent_notification_reads.notification_id', 'notifications.id')
-                                        ->where('parent_notification_reads.parent_id', Auth::id()))->count();
-                        } else {
-                            $unreadCount = \App\Models\Notification::where('user_id', Auth::id())->where('is_read', false)->count();
-                        }
+                        // Notification data is loaded after the page is visible so the shared
+                        // layout does not block every role's first render on extra DB queries.
+                        $unreadCount = 0;
                     @endphp
 
                     <div class="dropdown">
@@ -163,19 +158,9 @@
                                 </div>
                             </div>
                             @php
-                                if (Auth::user()->isParent()) {
-                                    $notifications = \App\Models\Notification::with(['user', 'sender', 'subject'])
-                                        ->whereIn('user_id', $parentNotificationRecipientIds)
-                                        ->active()
-                                        ->orderBy('created_at','desc')->take(8)->get();
-                                } else {
-                                    $notifications = \App\Models\Notification::where('user_id', Auth::id())
-                                        ->active()
-                                        ->orderBy('created_at','desc')->take(8)->get();
-                                }
-                                $todayNotifs = $notifications->filter(fn($n) => $n->created_at->isToday());
-                                $olderNotifs = $notifications->filter(fn($n) => !$n->created_at->isToday());
-
+                                $notifications = collect();
+                                $todayNotifs = collect();
+                                $olderNotifs = collect();
                                 $getNotifVisual = function($type) {
                                     if ($type === 'system_update') {
                                         return [
@@ -265,7 +250,7 @@
                                 @else
                                 <div style="text-align:center;padding:32px 20px;color:#94a3b8;">
                                     <i class="bi bi-bell-slash" style="font-size:1.8rem;display:block;margin-bottom:8px;opacity:.3;"></i>
-                                    <span style="font-size:.85rem;">No notifications yet</span>
+                                    <span style="font-size:.85rem;">Loading notifications…</span>
                                 </div>
                                 @endif
                             </div>
@@ -583,12 +568,24 @@
         }
 
         // ── Real-Time Notification Bell Poller & WebSocket Sync ──
+        let notificationBellRefreshInFlight = false;
         window.refreshNotificationBell = async function() {
+            if (notificationBellRefreshInFlight) return;
+            notificationBellRefreshInFlight = true;
+            const showNotificationLoadError = () => {
+                const listEl = document.getElementById('topNavNotifList');
+                if (listEl) {
+                    listEl.innerHTML = '<div style="text-align:center;padding:32px 20px;color:#94a3b8;font-size:.85rem;">Notifications are unavailable right now.</div>';
+                }
+            };
             try {
                 const res = await fetch('{{ route("notifications.poll") }}', {
                     headers: { 'X-Requested-With': 'XMLHttpRequest', 'Cache-Control': 'no-cache' }
                 });
-                if (!res.ok) return;
+                if (!res.ok) {
+                    showNotificationLoadError();
+                    return;
+                }
                 const data = await res.json();
                 
                 // 1. Update bell badge
@@ -624,7 +621,13 @@
 
                 // 3. Update dropdown notification list
                 const listEl = document.getElementById('topNavNotifList');
-                if (listEl && data.notifications && data.notifications.length > 0) {
+                if (listEl && Array.isArray(data.notifications) && data.notifications.length === 0) {
+                    listEl.innerHTML = `
+                        <div style="text-align:center;padding:32px 20px;color:#94a3b8;">
+                            <i class="bi bi-bell-slash" style="font-size:1.8rem;display:block;margin-bottom:8px;opacity:.3;"></i>
+                            <span style="font-size:.85rem;">No notifications yet</span>
+                        </div>`;
+                } else if (listEl && Array.isArray(data.notifications)) {
                     const iconMap = {
                         system_update: 'bi-rocket-takeoff-fill',
                         warning_3: 'bi-exclamation-octagon-fill',
@@ -680,15 +683,38 @@
 
                     listEl.innerHTML = html;
                 }
-            } catch(e) {}
+            } catch(e) {
+                showNotificationLoadError();
+            } finally {
+                notificationBellRefreshInFlight = false;
+            }
         };
 
-        // Poll every 30s when tab is active and check on focus
+        // Load the bell after the first render, and refresh immediately when opened.
+        const notificationDropdown = document.getElementById('topNavNotifBtn')?.closest('.dropdown');
+        if (notificationDropdown) {
+            notificationDropdown.addEventListener('show.bs.dropdown', () => window.refreshNotificationBell());
+        }
+        const scheduleNotificationRefresh = () => {
+            const refresh = () => window.refreshNotificationBell();
+            if ('requestIdleCallback' in window) {
+                window.requestIdleCallback(refresh, { timeout: 1200 });
+            } else {
+                window.setTimeout(refresh, 500);
+            }
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', scheduleNotificationRefresh, { once: true });
+        } else {
+            scheduleNotificationRefresh();
+        }
+
+        // Keep the fallback poll light; live updates are also delivered over WebSockets.
         setInterval(() => {
             if (document.visibilityState === 'visible') {
                 window.refreshNotificationBell();
             }
-        }, 30000);
+        }, 120000);
         window.addEventListener('focus', () => window.refreshNotificationBell());
 
         // ── WEBSOCKET: Real-time notifications via Laravel Echo + Reverb ──
