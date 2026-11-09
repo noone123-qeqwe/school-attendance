@@ -12,6 +12,7 @@ use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
@@ -672,7 +673,8 @@ class User extends Authenticatable
         return $this->belongsToMany(User::class, 'parent_student', 'parent_id', 'student_id');
     }
 
-    public function parents()
+    /** @return BelongsToMany<User, $this> */
+    public function parents(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'parent_student', 'student_id', 'parent_id');
     }
@@ -774,7 +776,8 @@ class User extends Authenticatable
         return $explicit->merge($implicit)->unique('id')->values();
     }
 
-    public function excuseSubmissions()
+    /** @return HasMany<ExcuseSubmission, $this> */
+    public function excuseSubmissions(): HasMany
     {
         return $this->hasMany(ExcuseSubmission::class);
     }

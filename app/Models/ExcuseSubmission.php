@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
@@ -35,22 +37,26 @@ class ExcuseSubmission extends Model
         'reviewed_at' => 'datetime'
     ];
 
-    public function user()
+    /** @return BelongsTo<User, $this> */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function attendance()
+    /** @return BelongsTo<Attendance, $this> */
+    public function attendance(): BelongsTo
     {
         return $this->belongsTo(Attendance::class);
     }
 
-    public function reviewer()
+    /** @return BelongsTo<User, $this> */
+    public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
-    public function comments()
+    /** @return HasMany<ExcuseComment, $this> */
+    public function comments(): HasMany
     {
         return $this->hasMany(ExcuseComment::class);
     }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Announcement extends Model
@@ -22,7 +23,8 @@ class Announcement extends Model
         'scheduled_for' => 'datetime',
     ];
 
-    public function author()
+    /** @return BelongsTo<User, $this> */
+    public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'author_id');
     }
