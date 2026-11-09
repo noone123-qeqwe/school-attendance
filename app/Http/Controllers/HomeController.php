@@ -115,21 +115,22 @@ class HomeController extends Controller
             ->get();
     }
 
-    // 3. Fetch Active Class for "Today's Clock In"
+    // Reuse today's eager-loaded schedules to locate the active class instead of
+    // issuing a second subject/schedule query for the same student.
     $currentClass = null;
-    if ($currentDayLetter) {
-        $currentClass = Subject::where($memberOfSubject)
-            ->whereHas('schedules', function ($query) use ($currentTime, $currentDayName) {
-                $query->whereTime('start_time', '<=', $currentTime)
-                      ->whereTime('end_time', '>=', $currentTime)
-                      ->where('day', $currentDayName);
-            })
-            ->with(['schedules' => function ($query) use ($currentTime, $currentDayName) {
-                $query->whereTime('start_time', '<=', $currentTime)
-                      ->whereTime('end_time', '>=', $currentTime)
-                      ->where('day', $currentDayName);
-            }])
-            ->first();
+    foreach ($todaySubjects as $subject) {
+        $activeSchedule = $subject->schedules->first(function ($schedule) use ($currentTime) {
+            return Carbon::parse($schedule->start_time)->format('H:i:s') <= $currentTime
+                && Carbon::parse($schedule->end_time)->format('H:i:s') >= $currentTime;
+        });
+
+        if (!$activeSchedule) {
+            continue;
+        }
+
+        $currentClass = clone $subject;
+        $currentClass->setRelation('schedules', collect([$activeSchedule]));
+        break;
     }
 
     // 4. Attendance Status (15-min Grace Period)
@@ -206,12 +207,6 @@ class HomeController extends Controller
     }
 
     // 8. Stats Calculation — Option B (overall rate)
-    $weeklyClasses = Attendance::where('user_id', $user->id)
-        ->whereBetween('date', [
-            Carbon::now()->startOfWeek()->toDateString(),
-            Carbon::now()->endOfWeek()->toDateString()
-        ])->count();
-
     $attendanceRecordCount = array_sum($stats);
 
     $totalPresent = $stats['Present'] ?? 0;
@@ -366,7 +361,6 @@ class HomeController extends Controller
         'records',
         'attendanceRecordCount',
         'attendanceRate',
-        'weeklyClasses',
         'todaySubjects',
         'todayHoliday',
         'upcomingHolidays',
