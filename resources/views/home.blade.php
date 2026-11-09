@@ -103,59 +103,7 @@
         })->values()->toArray();
     }
 
-    $allRecordsJson = isset($records) ? $records->map(function($r) {
-        $dayName = \Carbon\Carbon::parse($r->date)->format('l');
-        $sched = null;
-        if ($r->subject && $r->subject->schedules) {
-            $sched = $r->subject->schedules->firstWhere('day', $dayName) 
-                  ?? $r->subject->schedules->first();
-        }
-
-        $schedStart = $sched ? \Carbon\Carbon::parse($sched->start_time)->format('g:i A') : null;
-        $schedEnd   = $sched ? \Carbon\Carbon::parse($sched->end_time)->format('g:i A') : null;
-        $schedText  = ($schedStart && $schedEnd) ? "{$schedStart} – {$schedEnd}" : 'Schedule TBA';
-
-        $clockInTime = $r->time_in 
-            ? \Carbon\Carbon::parse($r->time_in)->format('g:i A') 
-            : ($r->checked_in_at ? $r->checked_in_at->format('g:i A') : null);
-
-        $clockOutTime = $r->time_out 
-            ? \Carbon\Carbon::parse($r->time_out)->format('g:i A') 
-            : null;
-
-        $status = $r->status ? ucfirst(strtolower($r->status)) : 'Absent';
-        $clockInDisplay = $clockInTime ?? ($status === 'Absent' ? 'No clock-in' : '—');
-
-        $instructorName = $r->subject?->instructorUser?->name 
-                       ?? $r->subject?->instructor 
-                       ?? 'Instructor TBA';
-
-        $remarks = $r->excuse_note 
-                ?? $r->excuseSubmission?->reason 
-                ?? ($r->excused ? 'Excused Absence' : null);
-
-        $dateObj = \Carbon\Carbon::parse($r->date);
-
-        return [
-            'id'             => $r->id,
-            'date'           => $dateObj->format('Y-m-d'),
-            'date_formatted' => $dateObj->format('F j, Y'),
-            'date_month'     => $dateObj->format('Y-m'),
-            'day_name'       => $dateObj->format('l'),
-            'subject'        => $r->subject->name ?? $r->subject_name ?? $r->subject_code ?? 'Class',
-            'code'           => $r->subject_code ?? ($r->subject->code ?? ''),
-            'instructor'     => $instructorName,
-            'schedule'       => $schedText,
-            'status'         => $status,
-            'status_lower'   => strtolower($status),
-            'clock_in'       => $clockInDisplay,
-            'clock_out'      => $clockOutTime ?? '—',
-            'remarks'        => $remarks ?? '—',
-            'excused'        => (bool) $r->excused,
-        ];
-    })->values()->toArray() : [];
-
-    $distinctMonths = isset($records) ? $records->map(fn($r) => \Carbon\Carbon::parse($r->date)->format('Y-m'))->unique()->sortDesc() : collect();
+    $distinctMonths = collect();
 
     $today     = now()->day;
     $todayFull = now()->toDateString();
@@ -170,7 +118,7 @@
     }
     $isLatestMonth = $isCurrentMonth;
 
-    $totalRecords = isset($records) ? $records->count() : 0;
+    $totalRecords = isset($attendanceRecordCount) ? (int) $attendanceRecordCount : (isset($records) ? $records->count() : 0);
     $greetHour = now()->hour;
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
 @endphp
@@ -2234,9 +2182,6 @@
                     <div class="col-6 col-md-3">
                         <select id="recordsMonthFilter" onchange="filterAttendanceRecords()" class="form-select form-select-sm" style="background:#140e0c; border:1px solid rgba(255,255,255,0.1); color:#f3ede4; border-radius:12px; font-size:0.82rem; height:38px;">
                             <option value="all">All Months</option>
-                            @foreach($distinctMonths as $m)
-                                <option value="{{ $m }}">{{ \Carbon\Carbon::createFromFormat('Y-m', $m)->format('F Y') }}</option>
-                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -2265,7 +2210,9 @@
 <script nonce="{{ csp_nonce() }}">
 var attCalendarData = @json($calendarJson);
 var eventsCalendarData = @json($eventsMap ?? []);
-var allAttendanceRecords = @json($allRecordsJson);
+var allAttendanceRecords = [];
+let attendanceHistoryLoaded = false;
+let attendanceHistoryRequest = null;
 let dayModalInstance = null;
 let recordsModalInstance = null;
 let currentSelectedDateKey = '{{ $calYear }}-{{ str_pad($calMonth, 2, '0', STR_PAD_LEFT) }}-{{ str_pad(($isCurrentMonth && $today ? $today : 14), 2, '0', STR_PAD_LEFT) }}';
@@ -2615,8 +2562,67 @@ function showAttDetail(dateKey, day) {
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 
+async function loadAttendanceRecordsForModal() {
+    if (attendanceHistoryLoaded) {
+        filterAttendanceRecords();
+        return;
+    }
+    if (attendanceHistoryRequest) return attendanceHistoryRequest;
+
+    const listEl = document.getElementById('recordsModalList');
+    if (listEl) {
+        listEl.innerHTML = `
+            <div style="text-align:center;padding:40px 20px;color:#b39b82;">
+                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                Loading attendance records…
+            </div>`;
+    }
+
+    attendanceHistoryRequest = fetch('{{ route('attendance.history.data') }}', {
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            if (!response.ok) throw new Error('Attendance history request failed');
+            return response.json();
+        })
+        .then(data => {
+            allAttendanceRecords = Array.isArray(data.records) ? data.records : [];
+            attendanceHistoryLoaded = true;
+
+            const monthFilter = document.getElementById('recordsMonthFilter');
+            if (monthFilter) {
+                while (monthFilter.options.length > 1) monthFilter.remove(1);
+                const months = [...new Set(allAttendanceRecords.map(record => record.date_month).filter(Boolean))]
+                    .sort((a, b) => b.localeCompare(a));
+                months.forEach(month => {
+                    const [year, monthNumber] = month.split('-').map(Number);
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = new Date(year, monthNumber - 1, 1)
+                        .toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+                    monthFilter.appendChild(option);
+                });
+            }
+
+            filterAttendanceRecords();
+        })
+        .catch(() => {
+            if (listEl) {
+                listEl.innerHTML = `
+                    <div style="text-align:center;padding:40px 20px;color:#b39b82;">
+                        Could not load attendance records. Close this window and try again.
+                    </div>`;
+            }
+        })
+        .finally(() => {
+            attendanceHistoryRequest = null;
+        });
+
+    return attendanceHistoryRequest;
+}
+
 function openAttendanceRecordsModal() {
-    renderAttendanceRecordsList(allAttendanceRecords);
     const modalEl = document.getElementById('attendanceRecordsModal');
     if (modalEl) {
         if (modalEl.parentNode !== document.body) {
@@ -2640,6 +2646,7 @@ function openAttendanceRecordsModal() {
             document.body.classList.add('modal-open');
         }
     }
+    loadAttendanceRecordsForModal();
     if (window.triggerHaptic) window.triggerHaptic('light');
 }
 

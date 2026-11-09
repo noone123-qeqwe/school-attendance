@@ -324,6 +324,7 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/profile', [PTController::class, 'profile'])->name('profile');
     Route::post('/attendance/store', [AttendanceController::class, 'store'])->name('attendance.store')->middleware('device.bound');
     Route::get('/attendance/records', [AttendanceController::class, 'index'])->name('attendance.records');
+    Route::get('/attendance/history-data', [AttendanceController::class, 'historyData'])->name('attendance.history.data');
     Route::get('/attendance/history', [AttendanceController::class, 'index'])->name('attendance.history');
     Route::get('/student/attendance-history', [AttendanceController::class, 'index']);
     

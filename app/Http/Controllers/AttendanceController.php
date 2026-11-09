@@ -32,6 +32,63 @@ class AttendanceController extends Controller
         return view('attendance.records', compact('records'));
     }
 
+    /**
+     * Return the authenticated student's complete history for the dashboard dialog.
+     * This is intentionally loaded on demand so large histories do not slow every
+     * dashboard visit or inflate the initial HTML response.
+     */
+    public function historyData()
+    {
+        $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission'])
+            ->where('user_id', Auth::id())
+            ->orderBy('date', 'desc')
+            ->orderBy('time_in', 'desc')
+            ->get();
+
+        $formattedRecords = $records->map(function (Attendance $record) {
+            $date = Carbon::parse($record->date);
+            $dayName = $date->format('l');
+            $schedule = $record->subject?->schedules?->firstWhere('day', $dayName)
+                ?? $record->subject?->schedules?->first();
+
+            $scheduleStart = $schedule ? Carbon::parse($schedule->start_time)->format('g:i A') : null;
+            $scheduleEnd = $schedule ? Carbon::parse($schedule->end_time)->format('g:i A') : null;
+            $status = $record->status ? ucfirst(strtolower($record->status)) : 'Absent';
+            $clockIn = $record->time_in
+                ? Carbon::parse($record->time_in)->format('g:i A')
+                : ($record->checked_in_at ? Carbon::parse($record->checked_in_at)->format('g:i A') : null);
+            $clockOut = $record->time_out
+                ? Carbon::parse($record->time_out)->format('g:i A')
+                : null;
+
+            return [
+                'id' => $record->id,
+                'date' => $date->format('Y-m-d'),
+                'date_formatted' => $date->format('F j, Y'),
+                'date_month' => $date->format('Y-m'),
+                'day_name' => $dayName,
+                'subject' => $record->subject?->name ?? $record->subject_name ?? $record->subject_code ?? 'Class',
+                'code' => $record->subject_code ?? $record->subject?->code ?? '',
+                'instructor' => $record->subject?->instructorUser?->name
+                    ?? $record->subject?->instructor
+                    ?? 'Instructor TBA',
+                'schedule' => ($scheduleStart && $scheduleEnd) ? "{$scheduleStart} – {$scheduleEnd}" : 'Schedule TBA',
+                'status' => $status,
+                'status_lower' => strtolower($status),
+                'clock_in' => $clockIn ?? ($status === 'Absent' ? 'No clock-in' : '—'),
+                'clock_out' => $clockOut ?? '—',
+                'remarks' => $record->excuse_note
+                    ?? $record->excuseSubmission?->reason
+                    ?? ($record->excused ? 'Excused Absence' : '—'),
+                'excused' => (bool) $record->excused,
+            ];
+        });
+
+        return response()->json([
+            'records' => $formattedRecords,
+        ], 200, ['Cache-Control' => 'private, no-store']);
+    }
+
     
 
    public function store(Request $request)

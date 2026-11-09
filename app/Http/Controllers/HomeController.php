@@ -160,12 +160,50 @@ class HomeController extends Controller
     $subjects->load('schedules');
     $subjectsById = $subjects->keyBy('id');
 
-    // 7. Fetch Attendance History
-    $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission', 'correction']) 
+    // Load only the selected calendar month on the dashboard. The complete
+    // history is fetched on demand when the student opens the records dialog.
+    $calendarMonth = Carbon::create(
+        (int) request()->query('cal_year', $now->year),
+        (int) request()->query('cal_month', $now->month),
+        1
+    );
+    $calendarMonthStart = $calendarMonth->copy()->startOfMonth()->toDateString();
+    $calendarMonthEnd = $calendarMonth->copy()->endOfMonth()->toDateString();
+
+    $records = Attendance::with(['subject.schedules', 'subject.instructorUser', 'excuseSubmission'])
         ->where('user_id', $user->id)
+        ->whereBetween('date', [$calendarMonthStart, $calendarMonthEnd])
         ->orderBy('date', 'desc')
         ->orderBy('time_in', 'desc')
         ->get();
+
+    // Aggregate once in the database, then build the small per-subject summary
+    // in PHP instead of loading every historical row for this dashboard.
+    $attendanceSummaryRows = Attendance::where('user_id', $user->id)
+        ->selectRaw('subject_code, status, COUNT(*) as record_count, SUM(CASE WHEN excused THEN 1 ELSE 0 END) as excused_count')
+        ->groupBy('subject_code', 'status')
+        ->get();
+
+    $stats = [];
+    $subjectAttendanceStats = collect();
+    foreach ($attendanceSummaryRows as $summaryRow) {
+        $recordCount = (int) $summaryRow->record_count;
+        $stats[$summaryRow->status] = ($stats[$summaryRow->status] ?? 0) + $recordCount;
+
+        $subjectCode = (string) ($summaryRow->subject_code ?? '');
+        $subjectStatsRow = $subjectAttendanceStats->get($subjectCode) ?? (object) [
+            'present_count' => 0,
+            'late_count' => 0,
+            'absent_count' => 0,
+            'excused_count' => 0,
+        ];
+
+        if ($summaryRow->status === 'Present') $subjectStatsRow->present_count += $recordCount;
+        if ($summaryRow->status === 'Late') $subjectStatsRow->late_count += $recordCount;
+        if ($summaryRow->status === 'Absent') $subjectStatsRow->absent_count += $recordCount;
+        $subjectStatsRow->excused_count += (int) $summaryRow->excused_count;
+        $subjectAttendanceStats->put($subjectCode, $subjectStatsRow);
+    }
 
     // 8. Stats Calculation — Option B (overall rate)
     $weeklyClasses = Attendance::where('user_id', $user->id)
@@ -174,11 +212,7 @@ class HomeController extends Controller
             Carbon::now()->endOfWeek()->toDateString()
         ])->count();
 
-    $stats = Attendance::where('user_id', $user->id)
-        ->selectRaw('status, count(*) as count')
-        ->groupBy('status')
-        ->pluck('count', 'status')
-        ->toArray();
+    $attendanceRecordCount = array_sum($stats);
 
     $totalPresent = $stats['Present'] ?? 0;
     $totalLate    = $stats['Late'] ?? 0;
@@ -294,15 +328,13 @@ class HomeController extends Controller
 
     // 13. Per-Subject Attendance Breakdown
     $subjectStats = collect();
-    $grouped = $records->groupBy('subject_code');
-    
     foreach ($subjects as $subjectModel) {
-        $subjectRecords = $grouped->get($subjectModel->code, collect());
-        
-        $present = $subjectRecords->where('status', 'Present')->count();
-        $late = $subjectRecords->where('status', 'Late')->count();
-        $absent = $subjectRecords->where('status', 'Absent')->count();
-        $excused = $subjectRecords->where('excused', true)->count();
+        $subjectRecords = $subjectAttendanceStats->get($subjectModel->code);
+
+        $present = (int) ($subjectRecords->present_count ?? 0);
+        $late = (int) ($subjectRecords->late_count ?? 0);
+        $absent = (int) ($subjectRecords->absent_count ?? 0);
+        $excused = (int) ($subjectRecords->excused_count ?? 0);
         
         // Add historical missed classes (unrecorded absences from past days)
         $historicalMiss = $historicalMissesPerSubject[$subjectModel->code] ?? 0;
@@ -332,6 +364,7 @@ class HomeController extends Controller
         'alreadyClockedIn',
         'subjects',
         'records',
+        'attendanceRecordCount',
         'attendanceRate',
         'weeklyClasses',
         'todaySubjects',

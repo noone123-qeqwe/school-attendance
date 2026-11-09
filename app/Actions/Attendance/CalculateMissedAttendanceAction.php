@@ -29,8 +29,11 @@ class CalculateMissedAttendanceAction
         $currentTime = $now->format('H:i:s');
 
         $cacheKey = "student_missed_att_{$student->id}_{$todayDate}_" . floor($now->minute / 5);
-        if (!app()->environment('testing') && \Illuminate\Support\Facades\Cache::has($cacheKey)) {
-            return \Illuminate\Support\Facades\Cache::get($cacheKey);
+        if (!app()->environment('testing')) {
+            $cachedMisses = \Illuminate\Support\Facades\Cache::get($cacheKey);
+            if (is_array($cachedMisses)) {
+                return $cachedMisses;
+            }
         }
 
         // 1. Fetch relevant subjects with preloaded schedules
