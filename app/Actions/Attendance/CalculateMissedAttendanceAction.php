@@ -97,8 +97,7 @@ class CalculateMissedAttendanceAction
 
         // 3. Pre-fetch holidays in a single lookup list
         $holidays = Holiday::active()
-            ->whereDate('date', '>=', $startDate->toDateString())
-            ->whereDate('date', '<=', $todayDate)
+            ->whereBetween('date', [$startDate->toDateString(), $todayDate])
             ->pluck('date')
             ->map(fn($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : Carbon::parse($d)->format('Y-m-d'))
             ->toArray();
@@ -108,8 +107,7 @@ class CalculateMissedAttendanceAction
         // 4. Pre-fetch all actual attendance counts grouped by subject in 1 query
         $actualCounts = Attendance::where('user_id', $student->id)
             ->whereIn('subject_code', $subjects->pluck('code'))
-            ->whereDate('date', '>=', $startDate->toDateString())
-            ->whereDate('date', '<=', $todayDate)
+            ->whereBetween('date', [$startDate->toDateString(), $todayDate])
             ->selectRaw('subject_code, count(*) as count')
             ->groupBy('subject_code')
             ->pluck('count', 'subject_code');

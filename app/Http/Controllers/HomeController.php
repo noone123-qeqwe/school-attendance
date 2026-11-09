@@ -87,32 +87,33 @@ class HomeController extends Controller
     ];
     $currentDayLetter = $dayMap[$now->format('l')] ?? null;
     $currentDayName   = $now->format('l');
-    $memberOfSubject = function ($query) use ($user) {
-        $query->whereHas('enrolledStudents', fn ($students) => $students->whereKey($user->id))
-            ->orWhere(function ($subjects) use ($user) {
-                $subjects->where('year_level', $user->year_level)
-                    ->where('semester', $user->semester)
-                    ->where(function ($scope) use ($user) {
-                        $scope->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
-                    })
-                    ->where(function ($scope) use ($user) {
-                        $scope->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
-                    });
-            });
-    };
+    // Load a student's subjects and schedules once, then derive today's classes
+    // from that collection instead of repeating subject and schedule queries.
+    $subjects = $user->getAllSubjects();
+    $subjects->load('schedules');
+    $subjectsById = $subjects->keyBy('id');
 
-    // 2. Today's subjects (auto-absent marking is handled by scheduled command: attendance:mark-absent)
     $todaySubjects = collect();
-
     if ($currentDayLetter) {
-        $todaySubjects = Subject::where($memberOfSubject)
-            ->whereHas('schedules', function ($query) use ($currentDayName) {
-                $query->where('day', $currentDayName);
-            })
-            ->with(['schedules' => function ($query) use ($currentDayName) {
-                $query->where('day', $currentDayName);
-            }])
-            ->get();
+        $todaySubjects = $subjects->map(function ($subject) use ($user, $currentDayName) {
+            $hasExplicitEnrollment = $subject->relationLoaded('pivot')
+                && $subject->getRelation('pivot') !== null;
+            $matchesStudentProfile = $subject->matchesStudentProfile($user)
+                && (!empty($user->section) || empty($subject->section));
+
+            if (!$hasExplicitEnrollment && !$matchesStudentProfile) {
+                return null;
+            }
+
+            $daySchedules = $subject->schedules->where('day', $currentDayName)->values();
+            if ($daySchedules->isEmpty()) {
+                return null;
+            }
+
+            $todaySubject = clone $subject;
+            $todaySubject->setRelation('schedules', $daySchedules);
+            return $todaySubject;
+        })->filter()->values();
     }
 
     // Reuse today's eager-loaded schedules to locate the active class instead of
@@ -155,11 +156,6 @@ class HomeController extends Controller
         $existingRecord = $todayAttendances->get($currentClass->code);
         $alreadyClockedIn = $existingRecord && in_array($existingRecord->status, ['Present', 'Late']);
     }
-
-    // 6. Subjects
-    $subjects = clone $user->getAllSubjects();
-    $subjects->load('schedules');
-    $subjectsById = $subjects->keyBy('id');
 
     // Load only the selected calendar month on the dashboard. The complete
     // history is fetched on demand when the student opens the records dialog.
@@ -281,7 +277,7 @@ class HomeController extends Controller
     // 8c. Attendance streak (consecutive days present/late, not absent - optimized query)
     $streakCount = 0;
     $streakRecords = Attendance::where('user_id', $user->id)
-        ->whereDate('date', '>=', now()->subDays(60))
+        ->where('date', '>=', now()->subDays(60)->toDateString())
         ->select('date', 'status')
         ->orderBy('date', 'desc')
         ->get()
@@ -416,8 +412,7 @@ class HomeController extends Controller
 
         // 1. Fetch active holidays in range
         $holidays = Holiday::active()
-            ->whereDate('date', '>=', $rangeStart)
-            ->whereDate('date', '<=', $rangeEnd)
+            ->whereBetween('date', [$rangeStart, $rangeEnd])
             ->orderBy('date')
             ->get();
 
@@ -425,8 +420,7 @@ class HomeController extends Controller
         $studentEvents = Event::visibleTo($user)
             ->with('subject')
             ->where('status', '!=', 'cancelled')
-            ->whereDate('date', '>=', $rangeStart)
-            ->whereDate('date', '<=', $rangeEnd)
+            ->whereBetween('date', [$rangeStart, $rangeEnd])
             ->orderBy('date')
             ->orderBy('start_time')
             ->get();
