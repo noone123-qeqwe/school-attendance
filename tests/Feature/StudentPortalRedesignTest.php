@@ -65,6 +65,16 @@ class StudentPortalRedesignTest extends TestCase
         $response->assertDontSee('student-portal-redesign.css', false);
     }
 
+    public function test_student_settings_uses_roomy_desktop_and_narrow_phone_layouts(): void
+    {
+        $response = $this->actingAs($this->student)->get('/settings');
+
+        $response->assertOk();
+        $response->assertSee('max-width: 1480px', false);
+        $response->assertSee('grid-template-columns: 1fr; gap: 8px;', false);
+        $response->assertSee('padding: 22px 14px;', false);
+    }
+
     public function test_student_design_layer_includes_desktop_mobile_and_reduced_motion_rules(): void
     {
         $stylesheet = file_get_contents(public_path('css/student-portal-redesign.css'));

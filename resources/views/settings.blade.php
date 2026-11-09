@@ -3295,8 +3295,8 @@
     --student-panel-strong: rgba(20, 13, 10, 0.98);
     --student-line: rgba(207, 164, 111, 0.2);
     --student-space: clamp(16px, 2.3vw, 30px);
-    max-width: 1320px;
-    padding: 22px var(--student-space) 48px;
+    max-width: 1480px;
+    padding: 28px var(--student-space) 64px;
 }
 .student-settings .settings-command-header {
     min-height: 142px;
@@ -3359,8 +3359,8 @@
 
 .student-settings .settings-layout-grid {
     display: grid;
-    grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: minmax(250px, 280px) minmax(0, 1fr);
+    gap: 32px;
     align-items: start;
     margin-top: 2px;
 }
@@ -3418,8 +3418,8 @@
 }
 .student-settings .sc { border-radius: 20px; overflow: hidden; }
 .student-settings .sc + .sc { margin-top: 18px; }
-.student-settings .sc-head { padding: 20px 22px 15px; border-bottom-color: rgba(207,164,111,.12); }
-.student-settings .sc-body { padding: 22px; }
+.student-settings .sc-head { padding: 22px 26px 18px; border-bottom-color: rgba(207,164,111,.12); }
+.student-settings .sc-body { padding: 28px; }
 .student-settings .sc-title, .student-settings .sec-group-title { font-size: 1.03rem; }
 .student-settings .sc-sub, .student-settings .sec-group-desc { line-height: 1.48; }
 .student-settings .profile-card-inner {
@@ -3443,7 +3443,7 @@
 
 .student-settings .sec-health-hero {
     margin-bottom: 14px;
-    padding: 22px;
+    padding: 26px;
     border-radius: 20px;
 }
 .student-settings .sec-health-title { font-size: 1.15rem; }
@@ -3476,10 +3476,10 @@
     -webkit-backdrop-filter: blur(16px);
 }
 .student-settings .sec-subnav-pill { min-height: 39px; border-radius: 10px; }
-.student-settings .sec-group-panel { margin-bottom: 18px; border-radius: 18px; padding: 20px; }
-.student-settings .sec-group-header { margin-bottom: 18px; }
-.student-settings .sec-cards-grid { gap: 14px; }
-.student-settings .sec-card { border-radius: 16px; padding: 18px; }
+.student-settings .sec-group-panel { margin-bottom: 22px; border-radius: 18px; padding: 24px; }
+.student-settings .sec-group-header { margin-bottom: 20px; }
+.student-settings .sec-cards-grid { gap: 20px; }
+.student-settings .sec-card { border-radius: 16px; padding: 22px; }
 .student-settings .sec-card-top { margin-bottom: 14px; }
 .student-settings .sec-card-name { font-size: .95rem; }
 .student-settings .sec-card-subtitle { line-height: 1.4; }
@@ -3498,7 +3498,7 @@
 @media (max-width: 1100px) {
     .student-settings .settings-command-header { align-items: flex-start; }
     .student-settings .settings-top-right { flex: 1 1 100%; }
-    .student-settings .settings-layout-grid { grid-template-columns: 210px minmax(0, 1fr); gap: 16px; }
+    .student-settings .settings-layout-grid { grid-template-columns: 200px minmax(0, 1fr); gap: 16px; }
     .student-settings .settings-sidebar { top: 10px; }
 }
 @media (max-width: 991.98px) {
@@ -3546,20 +3546,20 @@
     .student-settings .settings-layout-grid { display: block; margin-top: 0; }
     .student-settings .settings-sidebar { display: none; }
     .student-settings .sc { border-radius: 17px; }
-    .student-settings .sc-head { padding: 17px 17px 13px; }
-    .student-settings .sc-body { padding: 17px; }
-    .student-settings .sec-health-hero { padding: 17px; border-radius: 17px; }
+    .student-settings .sc-head { padding: 20px 18px 16px; }
+    .student-settings .sc-body { padding: 22px 18px; }
+    .student-settings .sec-health-hero { padding: 22px 18px; border-radius: 17px; }
     .student-settings .sec-matrix-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .student-settings .sec-subnav-bar { top: 58px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
     .student-settings .sec-subnav-pill { flex: 0 0 auto; white-space: nowrap; }
-    .student-settings .sec-group-panel { padding: 15px; border-radius: 16px; }
-    .student-settings .sec-card { padding: 15px; }
+    .student-settings .sec-group-panel { padding: 20px 16px; border-radius: 16px; }
+    .student-settings .sec-card { padding: 20px 16px; }
 }
 @media (max-width: 575.98px) {
-    .student-settings { padding-inline: 12px; }
+    .student-settings { padding-inline: 10px; }
     .student-settings .settings-command-header { padding: 16px; border-radius: 17px; }
-    .student-settings .settings-command-telemetry { gap: 6px; }
-    .student-settings .telemetry-pill { min-width: 0; }
+    .student-settings .settings-command-telemetry { grid-template-columns: 1fr; gap: 8px; }
+    .student-settings .telemetry-pill { min-width: 0; min-height: 52px; padding: 10px 12px; }
     .student-settings .telemetry-pill:nth-child(n+4) { display: none; }
     .student-settings .profile-card-inner { align-items: flex-start; flex-direction: column; }
     .student-settings .profile-details-col { width: 100%; }
@@ -3572,7 +3572,16 @@
     .student-settings .sec-health-title { font-size: 1rem; }
     .student-settings .sec-health-sub { font-size: .75rem; }
     .student-settings .sec-cards-grid { grid-template-columns: 1fr; }
-    .student-settings .pref-tile { align-items: flex-start; gap: 12px; }
+    .student-settings .sc-head { padding: 20px 14px 16px; align-items: flex-start; }
+    .student-settings .sc-body { padding: 22px 14px; }
+    .student-settings .sec-health-hero { padding: 22px 14px; }
+    .student-settings .sec-group-panel { padding: 18px 12px; }
+    .student-settings .sec-card { padding: 20px 14px; }
+    .student-settings .bio-method-grid { grid-template-columns: 1fr; gap: 18px; }
+    .student-settings .bio-method-card { padding: 22px 16px 20px; }
+    .student-settings .bio-action-row { align-items: stretch; flex-direction: column; gap: 12px; }
+    .student-settings .pref-tile { align-items: flex-start; flex-wrap: wrap; gap: 12px; padding: 18px 14px; }
+    .student-settings .pref-tile > * { min-width: 0; }
     .student-settings .pref-tile .form-check { padding-top: 4px; }
     .student-settings .pref-tile select { width: 100% !important; min-width: 0 !important; margin-top: 8px; }
     .student-settings .sbtn, .student-settings .sec-action-btn { width: 100%; justify-content: center; }
