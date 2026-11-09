@@ -183,8 +183,11 @@
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
+    @if(Auth::check() && Auth::user()->isStudent())
+        <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
+    @endif
 </head>
-<body class="mobile-app-layout">
+<body class="mobile-app-layout {{ Auth::check() && Auth::user()->isStudent() ? 'student-portal student-mobile-portal' : '' }}">
     <!-- Mobile Header -->
     @include('components.mobile.header')
 

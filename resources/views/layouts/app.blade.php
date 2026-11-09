@@ -34,9 +34,12 @@
     <link rel="stylesheet" href="{{ asset('css/desktop-layout.css') }}?v={{ filemtime(public_path('css/desktop-layout.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/portal-layout-refinements.css') }}?v={{ filemtime(public_path('css/portal-layout-refinements.css')) }}">
     <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
+    @if(Auth::check() && Auth::user()->isStudent() && !request()->routeIs('settings'))
+        <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
+    @endif
 </head>
 
-<body>
+<body class="{{ Auth::check() && Auth::user()->isStudent() ? 'student-portal' : '' }}">
 
     <!-- Skip to main content link for keyboard/screen readers -->
     <a href="#mainContent" class="visually-hidden-focusable" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
