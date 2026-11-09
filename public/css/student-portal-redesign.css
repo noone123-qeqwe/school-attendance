@@ -174,7 +174,7 @@ body.student-portal .cor-empty-state {
 }
 
 /* Profile: reliable visual grouping for data, security, and shortcuts. */
-body.student-portal .profile-page { max-width: 1120px; }
+body.student-portal .profile-page { max-width: 1280px; }
 body.student-portal .profile-hero {
     height: 198px;
     border-radius: 24px;
@@ -195,7 +195,7 @@ body.student-portal .info-row { padding-block: 16px; }
 body.student-portal .stat-chip { min-height: 90px; border-radius: 13px; }
 
 /* Records, schedules, and the certificate of registration use the same scan-friendly rhythm. */
-body.student-portal .records-page { max-width: 1180px; }
+body.student-portal .records-page { max-width: 1320px; }
 body.student-portal .page-header { margin-bottom: 28px; }
 body.student-portal .page-header-title { font-size: clamp(1.5rem, 2.4vw, 2rem); }
 body.student-portal .summary-chip { min-height: 112px; border-radius: 16px; }
@@ -214,7 +214,7 @@ body.student-portal .cor-day-pills-rail::-webkit-scrollbar,
 body.student-portal .filter-tabs::-webkit-scrollbar { display: none; }
 
 body.student-portal .cor-page-wrapper {
-    max-width: 1320px;
+    max-width: 1400px;
     margin-inline: auto;
 }
 body.student-portal .cor-actions-bar {
@@ -232,7 +232,7 @@ body.student-portal .cor-day-btn { min-height: 38px; border-radius: 10px; }
 body.student-portal .cor-card-item { border-radius: 16px; }
 
 /* Calendar surfaces share a calmer monthly overview and comfortable touch targets. */
-body.student-portal .scal-outer { max-width: 1260px; margin-inline: auto; }
+body.student-portal .scal-outer { max-width: 1360px; margin-inline: auto; }
 body.student-portal .scal-card,
 body.student-portal .att-cal-wrap {
     border: 1px solid var(--student-border);
@@ -366,10 +366,10 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
     body.student-portal .top-header { min-height: 64px; }
     body.student-portal .header-page-title { font-size: 0.98rem; }
     body.student-portal .header-page-sub { font-size: 0.68rem; }
-    body.student-portal .main-content > .page-enter { padding-inline: 18px !important; }
+    body.student-portal .main-content > .page-enter { padding-inline: 14px !important; }
 
     body.student-portal .student-hero-banner { margin-bottom: 24px !important; }
-    body.student-portal .student-hero-inner { padding: 24px !important; }
+    body.student-portal .student-hero-inner { padding: 20px !important; }
     body.student-portal .student-hero-profile { align-items: flex-start; }
     body.student-portal .student-avatar-box { width: 52px; height: 52px; }
     body.student-portal .student-hero-name { font-size: 1.34rem; }
@@ -431,25 +431,25 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
     body.student-portal .excuse-subject-card { min-height: 78px; }
     body.student-portal .tch-card { border-radius: 17px; }
 
-    body.student-mobile-portal .mobile-app { padding-inline: max(20px, var(--safe-left)) max(20px, var(--safe-right)); }
+    body.student-mobile-portal .mobile-app { padding-inline: max(14px, var(--safe-left)) max(14px, var(--safe-right)); }
     body.student-mobile-portal .mobile-home,
     body.student-mobile-portal .mobile-history,
     body.student-mobile-portal .mobile-profile-page { padding-bottom: 40px; }
-    body.student-mobile-portal .mobile-home .welcome-card { padding: 22px 20px; margin-bottom: 24px; }
-    body.student-mobile-portal .mobile-home .status-card { padding: 24px 22px; margin-bottom: 30px; }
+    body.student-mobile-portal .mobile-home .welcome-card { padding: 20px 18px; margin-bottom: 24px; }
+    body.student-mobile-portal .mobile-home .status-card { padding: 22px 18px; margin-bottom: 30px; }
     body.student-mobile-portal .mobile-home :is(.quick-actions-section, .upcoming-section, .activity-section) { margin-top: 30px; }
     body.student-mobile-portal .quick-actions-grid { gap: 14px; }
     body.student-mobile-portal .mobile-home .quick-action-btn { min-height: 116px; padding: 18px 14px; }
     body.student-mobile-portal .mobile-history .history-top-bar { padding: 18px; margin-bottom: 24px; }
     body.student-mobile-portal .mobile-history .stats-pills-grid { gap: 12px; margin-bottom: 24px; }
     body.student-mobile-portal .mobile-history .history-card { margin-bottom: 14px; }
-    body.student-mobile-portal .mobile-history .card-inner { padding: 20px 18px 20px 22px; }
+    body.student-mobile-portal .mobile-history .card-inner { padding: 18px 16px 18px 20px; }
     body.student-mobile-portal .mobile-profile-page { padding-top: 20px; }
-    body.student-mobile-portal .mobile-profile-page .mobile-profile-hero { padding: 28px 20px; margin-bottom: 28px !important; }
+    body.student-mobile-portal .mobile-profile-page .mobile-profile-hero { padding: 26px 18px; margin-bottom: 28px !important; }
     body.student-mobile-portal .mobile-profile-page .mobile-section { margin-bottom: 28px !important; }
     body.student-mobile-portal .mobile-profile-page .mobile-info-row { min-height: 72px; padding: 17px 18px; }
     body.student-mobile-portal .mobile-scan-page { padding-top: 28px; }
-    body.student-mobile-portal .mobile-scan-page .scan-hero { padding: 28px 20px; margin-bottom: 32px; }
+    body.student-mobile-portal .mobile-scan-page .scan-hero { padding: 26px 18px; margin-bottom: 32px; }
     body.student-mobile-portal .mobile-scan-page .scan-action-area { gap: 10px; margin-bottom: 28px; }
     body.student-mobile-portal .mobile-scan-page .scan-info-card { padding: 22px 20px; gap: 18px; }
 }
@@ -459,6 +459,23 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
     body.student-portal .student-meta-chip:nth-child(n + 4) { display: none; }
     body.student-portal .cor-card-sched-matrix { grid-template-columns: 1fr; }
     body.student-portal .scal-tile { min-height: 40px; height: 40px; }
+}
+
+/* On narrow phones, avoid forcing important information into tiny columns. */
+@media (max-width: 480px) {
+    body.student-portal .student-hero-deck,
+    body.student-portal .stat-chips,
+    body.student-portal .cor-card-sched-matrix {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.student-mobile-portal .mobile-history .stats-pills-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.student-mobile-portal .mobile-home .quick-action-peer {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
