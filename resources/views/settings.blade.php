@@ -3589,6 +3589,193 @@
     .student-settings #tabDeviceBoundTile > div:last-child,
     .student-settings #tabDeviceBoundTile div[style*="display:flex;gap:10px"] { flex-direction: column; }
 }
+
+/* Student settings: calmer hierarchy and easier category navigation. */
+.student-settings .settings-command-header {
+    background: linear-gradient(135deg, rgba(35, 25, 19, 0.98), rgba(20, 14, 11, 0.98));
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.24);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.student-settings .settings-avatar-chip {
+    box-shadow: none;
+}
+.student-settings .pg-title {
+    background: none;
+    color: #f3e7cd;
+    -webkit-text-fill-color: currentColor;
+}
+.student-settings .pg-sub { max-width: 520px; }
+.student-settings .settings-search-box { min-width: min(100%, 240px); }
+.student-settings .settings-search-input {
+    box-shadow: none;
+    border-color: rgba(207, 164, 111, 0.22);
+}
+.student-settings .settings-command-telemetry { gap: 8px; }
+.student-settings .telemetry-pill {
+    backdrop-filter: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+.student-settings .telemetry-pill:hover { transform: none; }
+.student-settings .settings-sidebar {
+    background: rgba(23, 16, 12, 0.98);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.student-settings .snav-group-header { letter-spacing: 0.07em; }
+.student-settings .snav-item {
+    min-height: 62px;
+    align-items: center;
+    transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+.student-settings .snav-item:hover { transform: none; }
+.student-settings .snav-item-desc {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.35;
+}
+.student-settings .snav-item.active {
+    background: rgba(207, 164, 111, 0.12);
+    border-color: rgba(207, 164, 111, 0.3);
+    box-shadow: inset 3px 0 var(--gold-primary);
+}
+.student-settings .snav-sub-item,
+.student-settings .snav-sub-item.active {
+    margin-left: 0 !important;
+    padding: 9px 10px !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    opacity: 1;
+}
+.student-settings .snav-sub-item.active {
+    background: rgba(207, 164, 111, 0.12) !important;
+    border-color: rgba(207, 164, 111, 0.3) !important;
+    box-shadow: inset 3px 0 var(--gold-primary);
+}
+.student-settings .snav-footer-card { box-shadow: none; }
+.student-settings .sc,
+.student-settings .sec-health-hero,
+.student-settings .sec-card,
+.student-settings .sec-group-panel {
+    background: rgba(25, 18, 14, 0.96);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+.student-settings .sc { border-radius: 18px; }
+.student-settings .sc-head { background: rgba(255, 255, 255, 0.015); }
+.student-settings .sc + .sc { margin-top: 20px; }
+.student-settings .sec-subnav-bar {
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+.student-settings .sec-subnav-pill {
+    min-height: 42px;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+.student-settings .sec-subnav-pill:hover { transform: none; }
+.student-settings :is(button, a, input, select, textarea):focus-visible {
+    outline: 2px solid var(--gold-bright);
+    outline-offset: 3px;
+}
+
+@media (max-width: 575.98px) {
+    .student-settings { padding-inline: 14px; }
+    .student-settings .settings-command-header {
+        gap: 16px;
+        padding: 18px;
+        margin-bottom: 14px;
+    }
+    .student-settings .settings-top-left { gap: 12px; }
+    .student-settings .settings-title-group { flex-basis: calc(100% - 64px); }
+    .student-settings .pg-title { font-size: 1.3rem; }
+    .student-settings .pg-sub { max-width: 36ch; line-height: 1.45; }
+    .student-settings .settings-command-telemetry {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+    .student-settings .telemetry-pill {
+        min-height: 54px;
+        align-items: center;
+        padding: 9px 10px;
+    }
+    .student-settings .telemetry-pill:nth-child(n+4) { display: inline-flex; }
+    .student-settings .telemetry-val {
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        line-height: 1.25;
+    }
+    .student-settings .stabs-wrapper {
+        position: sticky;
+        top: 0;
+        margin: 0 0 16px;
+        padding: 8px;
+        border-radius: 16px;
+        background: rgba(18, 14, 11, 0.98);
+        border-color: rgba(207, 164, 111, 0.2);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+    .student-settings .stabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        overflow: visible;
+        padding: 0;
+    }
+    .student-settings .stab {
+        width: 100%;
+        min-width: 0;
+        min-height: 46px;
+        justify-content: flex-start;
+        padding: 10px 12px;
+        border-radius: 11px;
+        font-size: 0.78rem;
+    }
+    .student-settings .stab:hover { transform: none; }
+    .student-settings .stab.active {
+        color: #fffbeb !important;
+        background: rgba(207, 164, 111, 0.16) !important;
+        border-color: rgba(207, 164, 111, 0.38) !important;
+        box-shadow: inset 0 -2px var(--gold-primary);
+    }
+    .student-settings .sec-subnav-bar {
+        position: static;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+        overflow: visible;
+        margin: 12px 0 18px;
+        padding: 8px;
+    }
+    .student-settings .sec-subnav-pill {
+        min-width: 0;
+        justify-content: flex-start;
+        white-space: normal;
+        text-align: left;
+        padding: 9px 10px;
+        line-height: 1.25;
+    }
+    .student-settings .sc-head { padding: 20px 18px 16px; }
+    .student-settings .sc-body { padding: 22px 18px; }
+    .student-settings .sec-group-panel { padding: 20px 16px; }
+    .student-settings .sec-card { padding: 20px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .student-settings *,
+    .student-settings *::before,
+    .student-settings *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
 </style>
 
 <div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}">
