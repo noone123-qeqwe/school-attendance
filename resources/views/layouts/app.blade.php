@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="auth-user-id" content="{{ Auth::id() ?? '' }}">
     <meta name="reverb-app-key" content="{{ config('broadcasting.connections.reverb.key') }}">
     <meta name="reverb-host" content="{{ config('broadcasting.connections.reverb.options.host') }}">
     <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
@@ -27,7 +28,10 @@
         @endif
     @endauth
     @include('partials.pwa-tags')
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @vite(['resources/css/app.css'])
+    @auth
+        @vite(['resources/js/app.js'])
+    @endauth
     @stack('styles')
     <link rel="stylesheet" href="{{ asset('css/experience-refinements.css') }}?v={{ filemtime(public_path('css/experience-refinements.css')) }}">
     @if(request()->routeIs('settings', 'admin.settings'))
@@ -716,49 +720,6 @@
             }
         }, 120000);
         window.addEventListener('focus', () => window.refreshNotificationBell());
-
-        // ── WEBSOCKET: Real-time notifications via Laravel Echo + Reverb ──
-        (function() {
-            const reverbKey = '{{ config("broadcasting.connections.reverb.key") ?: env("REVERB_APP_KEY") }}';
-            if (!reverbKey) return;
-
-            const script1 = document.createElement('script');
-            script1.src = 'https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js';
-            script1.onload = function() {
-                const script2 = document.createElement('script');
-                script2.src = 'https://cdn.jsdelivr.net/npm/laravel-echo@1.16.0/dist/echo.iife.js';
-                script2.onload = function() {
-                    try {
-                        const isHttps = window.location.protocol === 'https:';
-                        const wsHost = '{{ config("broadcasting.connections.reverb.options.host") ?: env("REVERB_HOST", "") }}' || window.location.hostname;
-                        const wsPort = {{ (int) (config("broadcasting.connections.reverb.options.port") ?: env("REVERB_PORT", 8080)) }};
-                        const forceTls = {{ (config("broadcasting.connections.reverb.options.useTLS") || env("REVERB_SCHEME") === 'https') ? 'true' : 'false' }} || isHttps;
-
-                        window.adminEcho = new Echo({
-                            broadcaster: 'reverb',
-                            key: reverbKey,
-                            wsHost: wsHost,
-                            wsPort: wsPort,
-                            wssPort: wsPort,
-                            forceTLS: forceTls,
-                            enabledTransports: forceTls ? ['wss', 'ws'] : ['ws'],
-                        });
-                        window.Echo = window.adminEcho;
-                        window.teacherEcho = window.adminEcho;
-
-                        window.adminEcho.private('notifications.{{ Auth::id() }}')
-                            .listen('.notification.sent', (e) => {
-                                window.refreshNotificationBell();
-                                if (typeof showToast === 'function') {
-                                    showToast(e.message, e.type || 'custom');
-                                }
-                            });
-                    } catch(ex) {}
-                };
-                document.head.appendChild(script2);
-            };
-            document.head.appendChild(script1);
-        })();
     </script>
     @endauth
     
