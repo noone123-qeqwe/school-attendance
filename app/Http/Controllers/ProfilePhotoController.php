@@ -14,6 +14,53 @@ use App\Services\ProfileFacePhotoService;
 
 class ProfilePhotoController extends Controller
 {
+    /** Enroll a student's face from a camera capture, kept only in encrypted storage. */
+    public function enrollFace(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || $user->role !== 'student') {
+            return response()->json(['success' => false, 'message' => 'Face enrollment is available to student accounts only.'], 403);
+        }
+
+        if (!app(FeatureFlagService::class)->enabled('feature.face_verification')) {
+            return response()->json(['success' => false, 'code' => 'FACE_VERIFICATION_DISABLED', 'message' => 'Face attendance enrollment is currently unavailable.'], 503);
+        }
+
+        $request->validate([
+            'face_image' => 'required|image|mimes:jpeg,jpg|max:5120|dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000',
+        ]);
+
+        $file = $request->file('face_image');
+        if (!$file || !$file->isValid()) {
+            return response()->json(['success' => false, 'message' => 'The camera image could not be read. Please capture it again.'], 422);
+        }
+
+        $photos = app(ProfileFacePhotoService::class);
+        $jpeg = $photos->normalizeForMatching($file->get());
+        if ($jpeg === null) {
+            return response()->json(['success' => false, 'code' => 'PROFILE_IMAGE_UNREADABLE', 'message' => 'The camera image could not be processed. Please capture it again.'], 422);
+        }
+
+        $quality = app(ProfileFaceEnrollmentService::class)->validate($jpeg);
+        if (!($quality['valid'] ?? false)) {
+            $status = ($quality['code'] ?? '') === 'MATCHER_UNAVAILABLE' ? 503 : 422;
+            return response()->json([
+                'success' => false,
+                'code' => $quality['code'] ?? 'PROFILE_IMAGE_QUALITY',
+                'message' => $quality['message'] ?? 'The captured face image did not pass quality checks.',
+            ], $status);
+        }
+
+        try {
+            DB::transaction(fn () => $photos->saveCameraEnrollment($user, $jpeg));
+        } catch (\Throwable $e) {
+            Log::error('Camera face enrollment storage failed', ['user_id' => $user->id, 'exception' => $e::class]);
+            return response()->json(['success' => false, 'message' => 'The face enrollment could not be saved securely. Please try again.'], 500);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Face registered securely for attendance verification.']);
+    }
+
     /**
      * Upload and update the authenticated user's profile picture.
      */

@@ -74,7 +74,7 @@ class ProfileFaceEnrollmentService
             'PROFILE_IMAGE_BLURRY' =>
                 'This photo is too blurry for face matching. Choose a sharper photo with good lighting.',
             default =>
-                'Face-photo checks are temporarily unavailable. Please retry later or use your registered fingerprint.',
+                'Face-photo checks are temporarily unavailable. Please retry later.',
         };
 
         return ['valid' => false, 'code' => $code, 'message' => $message];

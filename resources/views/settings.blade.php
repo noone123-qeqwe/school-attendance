@@ -3856,6 +3856,31 @@
                 </div>
                 <div class="sc-body">
 
+                    @if(Auth::user()->isStudent())
+                    <section id="cameraFaceEnrollment" aria-labelledby="cameraFaceEnrollmentTitle" style="margin:0 0 26px;padding:20px;border:1px solid rgba(14,165,233,.28);border-radius:16px;background:rgba(14,165,233,.045);">
+                        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
+                            <i class="bi bi-camera-video" aria-hidden="true" style="font-size:1.35rem;color:#38bdf8;"></i>
+                            <div>
+                                <h3 id="cameraFaceEnrollmentTitle" style="font-size:1rem;font-weight:750;color:#f8fafc;margin:0 0 4px;">Register face for attendance</h3>
+                                <p style="font-size:.82rem;color:#cbd5e1;margin:0;line-height:1.5;">Use your camera to capture one clear face. The image is checked for quality and stored encrypted for attendance matching; it is not saved as a public profile photo.</p>
+                            </div>
+                        </div>
+                        <div id="cameraFacePreviewWrap" style="display:none;position:relative;overflow:hidden;width:min(100%,440px);aspect-ratio:4/3;margin:0 auto 14px;border-radius:14px;background:#080b12;border:1px solid rgba(56,189,248,.3);">
+                            <video id="cameraFaceVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+                            <div aria-hidden="true" style="position:absolute;inset:10% 25%;border:2px solid rgba(56,189,248,.9);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.24);pointer-events:none;"></div>
+                            <canvas id="cameraFaceCanvas" style="display:none;"></canvas>
+                        </div>
+                        <div id="cameraFaceStatus" role="status" aria-live="polite" style="min-height:1.3em;margin:0 0 10px;color:#94a3b8;font-size:.82rem;"></div>
+                        <div style="display:flex;gap:9px;flex-wrap:wrap;">
+                            <button type="button" id="cameraFaceStartBtn" class="sbtn bio-primary-cta" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera-video me-2"></i>Open camera</button>
+                            <button type="button" id="cameraFaceCaptureBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera me-2"></i>Capture face</button>
+                            <button type="button" id="cameraFaceRetakeBtn" class="cancel-btn" style="display:none;"><i class="bi bi-arrow-repeat me-1"></i>Retake</button>
+                            <button type="button" id="cameraFaceSaveBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-shield-check me-2"></i>Register face</button>
+                            <button type="button" id="cameraFaceCancelBtn" class="cancel-btn" style="display:none;">Cancel</button>
+                        </div>
+                    </section>
+                    @endif
+
                     <!-- In-app browser & Insecure Context Alert -->
                     <div id="webauthnUnsupported" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
                         <div style="display:flex;align-items:flex-start;gap:12px;">
@@ -3921,11 +3946,11 @@
                                 </div>
                                 <div class="bio-method-info">
                                     <div class="bio-method-header">
-                                        <span class="bio-method-name">Face ID / Windows Hello</span>
+                                        <span class="bio-method-name">Device passkey (Face ID / Windows Hello)</span>
                                         <span class="bio-status-pill not-reg" id="statusBadgeFace">Checking...</span>
                                     </div>
                                     <p class="bio-method-desc">
-                                        Verify with your device's protected Face ID or Windows Hello passkey prompt. Your browser never uploads a face image.
+                                        This enrolls a device passkey and uses whatever verification your device supports. For camera-based attendance face registration, use the camera section above.
                                     </p>
                                     <div class="bio-method-meta">
                                         <span class="bio-spec-chip"><i class="bi bi-eye" style="color:#38bdf8;"></i> On-device</span>
@@ -5849,6 +5874,147 @@ async function prefetchWebAuthn() {
     isFetchingOptions = false;
 }
 
+// ── Camera-based face enrollment for attendance ──
+let cameraFaceStream = null;
+let cameraFaceBlob = null;
+
+function stopCameraFaceStream() {
+    if (cameraFaceStream) cameraFaceStream.getTracks().forEach(track => track.stop());
+    cameraFaceStream = null;
+}
+
+function initCameraFaceEnrollment() {
+    const start = document.getElementById('cameraFaceStartBtn');
+    if (!start) return;
+    const video = document.getElementById('cameraFaceVideo');
+    const canvas = document.getElementById('cameraFaceCanvas');
+    const wrap = document.getElementById('cameraFacePreviewWrap');
+    const capture = document.getElementById('cameraFaceCaptureBtn');
+    const save = document.getElementById('cameraFaceSaveBtn');
+    const retake = document.getElementById('cameraFaceRetakeBtn');
+    const cancel = document.getElementById('cameraFaceCancelBtn');
+    const status = document.getElementById('cameraFaceStatus');
+
+    const setStatus = (message, color = '#94a3b8') => {
+        if (status) { status.textContent = message; status.style.color = color; }
+    };
+    const reset = () => {
+        stopCameraFaceStream();
+        cameraFaceBlob = null;
+        if (wrap) wrap.style.display = 'none';
+        if (video) video.style.display = 'block';
+        if (canvas) canvas.style.display = 'none';
+        if (capture) capture.style.display = 'none';
+        if (retake) retake.style.display = 'none';
+        if (save) { save.style.display = 'none'; save.disabled = false; }
+        if (cancel) cancel.style.display = 'none';
+        if (start) { start.style.display = ''; start.disabled = false; }
+    };
+
+    start.addEventListener('click', async () => {
+        if (!navigator.mediaDevices?.getUserMedia) {
+            setStatus('Camera access requires a supported browser and a secure HTTPS connection.', '#f87171');
+            return;
+        }
+        start.disabled = true;
+        setStatus('Requesting camera access…');
+        try {
+            stopCameraFaceStream();
+            cameraFaceStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
+                video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 960 } }
+            });
+            video.srcObject = cameraFaceStream;
+            await video.play();
+            wrap.style.display = 'block';
+            video.style.display = 'block';
+            canvas.style.display = 'none';
+            start.style.display = 'none';
+            capture.style.display = '';
+            cancel.style.display = '';
+            setStatus('Center your face inside the frame, face the camera, and use even lighting.');
+        } catch (error) {
+            stopCameraFaceStream();
+            start.disabled = false;
+            setStatus(error?.name === 'NotAllowedError'
+                ? 'Camera permission was denied. Allow camera access in your browser settings and retry.'
+                : 'The camera could not be opened. Check that it is available, then retry.', '#f87171');
+        }
+    });
+
+    capture.addEventListener('click', () => {
+        if (!video.videoWidth || !video.videoHeight) {
+            setStatus('The camera is not ready yet. Wait a moment and retry.', '#f87171');
+            return;
+        }
+        const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
+        canvas.width = Math.round(video.videoWidth * scale);
+        canvas.height = Math.round(video.videoHeight * scale);
+        canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+            if (!blob) {
+                setStatus('The camera frame could not be captured. Please try again.', '#f87171');
+                return;
+            }
+            cameraFaceBlob = blob;
+            stopCameraFaceStream();
+            video.srcObject = null;
+            video.style.display = 'none';
+            canvas.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);';
+            capture.style.display = 'none';
+            retake.style.display = '';
+            save.style.display = '';
+            setStatus('Capture ready. Register it for secure face matching, or cancel to retake.');
+        }, 'image/jpeg', 0.88);
+    });
+
+    save.addEventListener('click', async () => {
+        if (!cameraFaceBlob) return;
+        save.disabled = true;
+        setStatus('Checking face quality and saving securely…');
+        const form = new FormData();
+        form.append('face_image', cameraFaceBlob, 'face-enrollment.jpg');
+        try {
+            const response = await fetch('{{ route("profile.face.enroll") }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                body: form,
+                credentials: 'same-origin'
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                save.disabled = false;
+                retake.style.display = '';
+                setStatus(result.message || 'Face registration could not be completed. Please try again.', '#f87171');
+                return;
+            }
+            reset();
+            setStatus(result.message || 'Face registered securely for attendance verification.', '#34d399');
+        } catch (error) {
+            save.disabled = false;
+            retake.style.display = '';
+            setStatus('Could not reach the server. Your capture was not saved; please retry.', '#f87171');
+        }
+    });
+
+    retake.addEventListener('click', () => {
+        reset();
+        start.click();
+    });
+
+    cancel.addEventListener('click', () => {
+        reset();
+        setStatus('Capture canceled.');
+    });
+    window.addEventListener('pagehide', stopCameraFaceStream, { once: true });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initCameraFaceEnrollment, { once: true });
+} else {
+    initCameraFaceEnrollment();
+}
+
 // ── Device Passkey Registration ──
 let isBioRegistrationRunning = false;
 
@@ -6404,7 +6570,10 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Active Sessions & Audit Trail', desc: 'Review login history and active device sessions', cat: 'Security & Access', tab: 'security', icon: 'bi-shield-check', elId: 'tab-security' },
     { title: 'Biometrics Sensors', desc: 'Manage hardware biometric credentials', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'tab-fingerprint' },
     { title: 'Fingerprint Registration', desc: 'Register hardware fingerprint sensor via WebAuthn', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'methodCardFp' },
-    { title: 'Face Recognition Registration', desc: 'Register a device passkey for face sign-in', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-camera-video', elId: 'methodCardFace' },
+    { title: 'Device Passkey', desc: 'Enroll a passkey using your device security prompt', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-key', elId: 'methodCardFace' },
+    @if(Auth::user()->isStudent())
+    { title: 'Camera Face Registration', desc: 'Capture and securely enroll a face for attendance verification', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-camera-video', elId: 'cameraFaceEnrollment' },
+    @endif
     { title: 'Registered Hardware Credentials', desc: 'View, test, or remove registered biometric tokens', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-usb-drive', elId: 'deviceList' },
     { title: 'Device Binding & Trust', desc: 'Hardware device binding and attendance authorization', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
     { title: 'Bind Current Device', desc: 'Cryptographically bind this phone or computer to your attendance', cat: 'Security & Access', tab: 'device', icon: 'bi-phone-fill', elId: 'tabDeviceBindBtn' },

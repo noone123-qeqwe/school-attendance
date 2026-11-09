@@ -106,7 +106,9 @@ class FaceRecognitionRegistrationTest extends TestCase
         $response->assertSee("authenticatorAttachment: 'platform'", false);
         $response->assertSee('navigator.credentials.create', false);
         $response->assertSee('your device may offer a PIN.', false);
-        $response->assertSee('Your browser never uploads a face image.', false);
+        $response->assertSee('Register face for attendance', false);
+        $response->assertSee('This enrolls a device passkey', false);
+        $response->assertSee('navigator.mediaDevices.getUserMedia', false);
     }
 
     public function test_login_page_renders_device_passkey_face_sign_in()

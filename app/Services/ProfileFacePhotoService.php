@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfileFacePhotoService
 {
+    private const CAMERA_ENROLLMENT_SOURCE = 'camera-face-enrollment';
     private const MAX_SOURCE_BYTES = 5 * 1024 * 1024;
     private const MAX_SIDE = 1280;
 
@@ -44,6 +45,12 @@ class ProfileFacePhotoService
         );
     }
 
+    /** Persist a camera enrollment without placing the face image in public avatar storage. */
+    public function saveCameraEnrollment(User $user, string $jpeg): void
+    {
+        $this->saveNormalized($user, $jpeg, self::CAMERA_ENROLLMENT_SOURCE);
+    }
+
     /** Normalize enrollment input once before face-quality validation and encrypted storage. */
     public function normalizeForMatching(string $sourceBytes): ?string
     {
@@ -57,12 +64,16 @@ class ProfileFacePhotoService
 
     public function bytes(User $user): ?string
     {
+        $saved = ProfileFacePhoto::find($user->id);
+        if ($saved && hash_equals(self::CAMERA_ENROLLMENT_SOURCE, (string) $saved->source_path)) {
+            return $this->decrypt($saved);
+        }
+
         $path = (string) $user->profile_image;
         if ($path === '') {
             return null;
         }
 
-        $saved = ProfileFacePhoto::find($user->id);
         if ($saved && hash_equals((string) $saved->source_path, $path)) {
             $bytes = $this->decrypt($saved);
             if ($bytes !== null) {
