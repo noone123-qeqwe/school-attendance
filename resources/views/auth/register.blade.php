@@ -681,10 +681,11 @@
                         <div class="field-feedback" id="feedback-email"></div>
                         
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password">
-                            <input type="password" name="password" id="password" placeholder=" " required minlength="12" autocomplete="new-password">
-                            <label for="password">Password (12+ chars with mixed case, number and symbol)</label>
+                            <input type="password" name="password" id="password" placeholder=" " required minlength="12" autocomplete="new-password" aria-describedby="password-help feedback-password">
+                            <label for="password">Password</label>
                             <button type="button" class="eye-btn" id="btn-toggle-password" data-toggle-password="password" aria-controls="password" aria-label="Show password" title="Show password" aria-pressed="false"><i class="bi bi-eye-slash"></i></button>
                         </div>
+                        <div class="form-text px-1 mb-2" id="password-help" style="font-size: 0.76rem; color: var(--text-muted);">Use 12+ characters with uppercase and lowercase letters, a number, and a symbol.</div>
                         <div class="field-feedback" id="feedback-password"></div>
 
                         <div class="form-floating-custom mb-1 mt-2" id="wrap-password_confirmation">
