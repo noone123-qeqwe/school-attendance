@@ -3530,8 +3530,54 @@
         margin: 0 -2px 14px;
         background: linear-gradient(180deg, rgba(18, 12, 9, .98) 76%, rgba(18, 12, 9, 0));
     }
-    .student-settings .stabs { gap: 8px; padding: 0 2px 8px; scrollbar-width: none; }
+    .student-settings .stabs {
+        gap: 8px;
+        padding: 0 40px 8px 2px;
+        scrollbar-width: none;
+        scroll-padding-inline: 8px;
+    }
     .student-settings .stabs::-webkit-scrollbar { display: none; }
+    .student-settings .stabs-wrapper::before,
+    .student-settings .stabs-wrapper::after {
+        content: "";
+        position: absolute;
+        z-index: 1;
+        top: 1px;
+        bottom: 1px;
+        width: 42px;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease;
+    }
+    .student-settings .stabs-wrapper::before {
+        left: 1px;
+        background: linear-gradient(90deg, rgba(18, 14, 11, .98), rgba(18, 14, 11, 0));
+    }
+    .student-settings .stabs-wrapper::after {
+        right: 1px;
+        background: linear-gradient(270deg, rgba(18, 14, 11, .98), rgba(18, 14, 11, 0));
+    }
+    .student-settings .stabs-wrapper.has-scroll-left::before,
+    .student-settings .stabs-wrapper.has-scroll-right::after { opacity: 1; }
+    .student-settings .stabs-arrow {
+        position: absolute;
+        z-index: 3;
+        top: 50%;
+        width: 30px;
+        height: 30px;
+        transform: translateY(-50%);
+        background: rgba(30, 24, 20, .97);
+    }
+    .student-settings .stabs-arrow-left { left: 7px; }
+    .student-settings .stabs-arrow-right { right: 7px; }
+    .student-settings .stabs-wrapper.has-scroll-left .stabs { padding-left: 40px; }
+    .student-settings .stabs-wrapper.has-scroll-right .stabs-arrow-right {
+        animation: studentSettingsScrollNudge 1.25s ease-in-out infinite;
+    }
+    @keyframes studentSettingsScrollNudge {
+        0%, 100% { transform: translate(0, -50%); }
+        50% { transform: translate(4px, -50%); }
+    }
     .student-settings .stab {
         flex: 0 0 auto;
         min-height: 42px;
@@ -3542,7 +3588,7 @@
         border: 1px solid rgba(255,255,255,.08);
     }
     .student-settings .stab.active { background: linear-gradient(135deg, rgba(207,164,111,.25), rgba(143,39,31,.2)); border-color: rgba(207,164,111,.4); }
-    .student-settings .stabs-arrow, .student-settings .stabs-floating-hint { display: none !important; }
+    .student-settings .stabs-floating-hint { display: none !important; }
     .student-settings .settings-layout-grid { display: block; margin-top: 0; }
     .student-settings .settings-sidebar { display: none; }
     .student-settings .sc { border-radius: 17px; }
@@ -3721,17 +3767,21 @@
         -webkit-backdrop-filter: none;
     }
     .student-settings .stabs {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        display: flex;
+        flex-wrap: nowrap;
         gap: 8px;
-        overflow: visible;
-        padding: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 40px 8px 2px;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
     }
     .student-settings .stab {
-        width: 100%;
-        min-width: 0;
+        width: max-content;
+        min-width: max-content;
+        flex: 0 0 auto;
         min-height: 46px;
-        justify-content: flex-start;
+        justify-content: center;
         padding: 10px 12px;
         border-radius: 11px;
         font-size: 0.78rem;
@@ -3867,7 +3917,7 @@
     <!-- ── MOBILE / COMPACT HORIZONTAL TAB BAR (<992px) ── -->
     <div class="stabs-wrapper">
         <span id="stabsFloatingHint" class="stabs-floating-hint d-none" aria-hidden="true">Scrollable</span>
-        <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll left" style="display:none;">
+        <button type="button" class="stabs-arrow stabs-arrow-left" id="stabsArrowLeft" onclick="scrollStabs('left')" aria-label="Scroll settings tabs left" aria-controls="stabsNav" style="display:none;">
             <i class="bi bi-chevron-left"></i>
         </button>
         <div class="stabs" id="stabsNav">
@@ -3878,7 +3928,7 @@
             @endif
             <button class="stab" data-tab="preferences" data-tab-id="preferences" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
         </div>
-        <button type="button" class="stabs-arrow stabs-arrow-right" id="stabsArrowRight" onclick="scrollStabs('right')" aria-label="Scroll right">
+        <button type="button" class="stabs-arrow stabs-arrow-right" id="stabsArrowRight" onclick="scrollStabs('right')" aria-label="Scroll settings tabs right" aria-controls="stabsNav">
             <i class="bi bi-chevron-right"></i>
         </button>
     </div>
@@ -5286,29 +5336,35 @@ function updateStabsScrollArrows() {
     const rightBtn = document.getElementById('stabsArrowRight');
     if (!nav || !leftBtn || !rightBtn) return;
 
+    const wrapper = nav.closest('.stabs-wrapper');
     const maxScrollLeft = nav.scrollWidth - nav.clientWidth;
 
     if (maxScrollLeft <= 4) {
         leftBtn.style.display = 'none';
         rightBtn.style.display = 'none';
+        leftBtn.setAttribute('aria-hidden', 'true');
+        rightBtn.setAttribute('aria-hidden', 'true');
+        wrapper?.classList.remove('has-scroll-left', 'has-scroll-right');
         return;
     }
 
     // Show left arrow only when scrolled away from start
-    if (nav.scrollLeft > 6) {
-        leftBtn.style.display = 'flex';
-    } else {
-        leftBtn.style.display = 'none';
-    }
+    const canScrollLeft = nav.scrollLeft > 6;
+    leftBtn.style.display = canScrollLeft ? 'flex' : 'none';
+    leftBtn.setAttribute('aria-hidden', canScrollLeft ? 'false' : 'true');
 
     // Show right arrow only when there is more content to scroll to on the right
-    if (nav.scrollLeft < maxScrollLeft - 6) {
+    const canScrollRight = nav.scrollLeft < maxScrollLeft - 6;
+    if (canScrollRight) {
         rightBtn.style.display = 'flex';
         rightBtn.innerHTML = '<i class="bi bi-chevron-right"></i>';
         rightBtn.setAttribute('title', 'Scroll right');
     } else {
         rightBtn.style.display = 'none';
     }
+    rightBtn.setAttribute('aria-hidden', canScrollRight ? 'false' : 'true');
+    wrapper?.classList.toggle('has-scroll-left', canScrollLeft);
+    wrapper?.classList.toggle('has-scroll-right', canScrollRight);
 }
 
 window.scrollStabs = function(direction) {
