@@ -134,8 +134,10 @@ class BackupDatabaseCommand extends Command
                 $inTransaction = false;
             }
 
-            fclose($handle);
-            $handle = null;
+            if (is_resource($handle)) {
+                fclose($handle);
+                $handle = null;
+            }
 
             $size = filesize($filepath);
             $backup = BackupLog::create([

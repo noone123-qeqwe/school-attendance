@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PeerVouchRequest extends Model
 {
@@ -15,17 +16,20 @@ class PeerVouchRequest extends Model
 
     protected $casts = ['expires_at' => 'datetime', 'consumed_at' => 'datetime'];
 
-    public function session()
+    /** @return BelongsTo<AttendanceSession, $this> */
+    public function session(): BelongsTo
     {
         return $this->belongsTo(AttendanceSession::class, 'session_id');
     }
 
-    public function subject()
+    /** @return BelongsTo<User, $this> */
+    public function subject(): BelongsTo
     {
         return $this->belongsTo(User::class, 'subject_student_id');
     }
 
-    public function voucher()
+    /** @return BelongsTo<User, $this> */
+    public function voucher(): BelongsTo
     {
         return $this->belongsTo(User::class, 'voucher_student_id');
     }

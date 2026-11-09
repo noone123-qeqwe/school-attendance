@@ -4,7 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection;
 
 class Subject extends Model
 {
@@ -22,34 +26,40 @@ class Subject extends Model
         'section',
     ];
 
-    public function instructorUser()
+    /** @return BelongsTo<User, $this> */
+    public function instructorUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'instructor_id');
     }
 
-    public function instructor()
+    /** @return BelongsTo<User, $this> */
+    public function instructor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'instructor_id');
     }
 
-    public function schedules()
+    /** @return HasMany<Schedule, $this> */
+    public function schedules(): HasMany
     {
         return $this->hasMany(Schedule::class);
     }
 
-    public function materials()
+    /** @return HasMany<SubjectMaterial, $this> */
+    public function materials(): HasMany
     {
         return $this->hasMany(SubjectMaterial::class);
     }
 
-    public function enrolledStudents()
+    /** @return BelongsToMany<User, $this> */
+    public function enrolledStudents(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'enrollments', 'subject_id', 'user_id')
                     ->where('role', 'student')
                     ->withTimestamps();
     }
 
-    public function studentAssistantAssignments()
+    /** @return HasMany<ClassStudentAssistant, $this> */
+    public function studentAssistantAssignments(): HasMany
     {
         return $this->hasMany(ClassStudentAssistant::class);
     }
@@ -82,7 +92,8 @@ class Subject extends Model
     /**
      * Get all students for this subject (both explicitly enrolled and implicitly via year level / semester)
      */
-    public function getAllStudents()
+    /** @return Collection<int, User> */
+    public function getAllStudents(): Collection
     {
         $explicit = $this->enrolledStudents()->get();
         

@@ -9,6 +9,7 @@ use App\Models\Section;
 use App\Traits\SanitizesExport;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceReportService
@@ -79,7 +80,7 @@ class AttendanceReportService
 
             case 'monthly':
                 $parts = explode('-', $month);
-                $y = (int) ($parts[0] ?? now()->year);
+                $y = (int) $parts[0];
                 $m = (int) ($parts[1] ?? now()->month);
                 $title = 'Monthly Attendance Report - ' . Carbon::create($y, $m, 1)->format('F Y');
                 $records = (clone $baseQuery)
@@ -120,7 +121,7 @@ class AttendanceReportService
 
             case 'class_summary':
                 $title = 'Class & Section Attendance Summary';
-                $summaryQuery = Attendance::query();
+                $summaryQuery = DB::table('attendances')->whereNull('attendances.deleted_at');
                 if ($scopedSubjectCodes !== null) {
                     $summaryQuery->whereIn('subject_code', $scopedSubjectCodes);
                 }
@@ -156,7 +157,7 @@ class AttendanceReportService
 
             case 'subject_summary':
                 $title = 'Subject Attendance Summary';
-                $subjQuery = Attendance::query();
+                $subjQuery = DB::table('attendances')->whereNull('deleted_at');
                 if ($scopedSubjectCodes !== null) {
                     $subjQuery->whereIn('subject_code', $scopedSubjectCodes);
                 }

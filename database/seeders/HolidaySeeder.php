@@ -30,10 +30,9 @@ class HolidaySeeder extends Seeder
         ];
 
         for ($year = 2026; $year <= 2050; $year++) {
-            // Calculate Holy Week dates using easter_days (avoids 2037 limit of easter_date)
-            $easterDays = easter_days($year);
-            $easter = new \DateTime("$year-03-21");
-            $easter->modify("+$easterDays days");
+            // Use a Gregorian computus implementation so seeding does not depend
+            // on PHP's optional calendar extension in the production image.
+            $easter = $this->gregorianEasterSunday($year);
             
             $maundyThursday = (clone $easter)->modify('-3 days')->format('Y-m-d');
             $goodFriday = (clone $easter)->modify('-2 days')->format('Y-m-d');
@@ -96,5 +95,25 @@ class HolidaySeeder extends Seeder
         }
 
         $this->command->info('Default holidays for 2026-2050 seeded successfully!');
+    }
+
+    private function gregorianEasterSunday(int $year): \DateTimeImmutable
+    {
+        $a = $year % 19;
+        $b = intdiv($year, 100);
+        $c = $year % 100;
+        $d = intdiv($b, 4);
+        $e = $b % 4;
+        $f = intdiv($b + 8, 25);
+        $g = intdiv($b - $f + 1, 3);
+        $h = (19 * $a + $b - $d - $g + 15) % 30;
+        $i = intdiv($c, 4);
+        $k = $c % 4;
+        $l = (32 + 2 * $e + 2 * $i - $h - $k) % 7;
+        $m = intdiv($a + 11 * $h + 22 * $l, 451);
+        $month = intdiv($h + $l - 7 * $m + 114, 31);
+        $day = (($h + $l - 7 * $m + 114) % 31) + 1;
+
+        return new \DateTimeImmutable(sprintf('%04d-%02d-%02d', $year, $month, $day));
     }
 }

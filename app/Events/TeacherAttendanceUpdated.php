@@ -18,6 +18,8 @@ class TeacherAttendanceUpdated implements ShouldBroadcastNow
         public string $subjectCode,
         public string $status,
         public string $type = 'clock_in',
+        public ?string $studentId = null,
+        public ?int $attendanceId = null,
         public ?array $stats = null
     ) {}
 
@@ -41,6 +43,8 @@ class TeacherAttendanceUpdated implements ShouldBroadcastNow
             'subject_code'    => $this->subjectCode,
             'status'          => $this->status,
             'type'            => $this->type,
+            'student_id'      => $this->studentId,
+            'attendance_id'   => $this->attendanceId,
             'time'            => now()->format('H:i:s'),
             'stats'           => $this->stats,
             'total_present'   => $this->stats['total_present'] ?? null,

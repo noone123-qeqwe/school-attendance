@@ -137,11 +137,13 @@ class Attendance extends Model
             ->logOnlyDirty();
     }
 
+    /** @return BelongsTo<Subject, $this> */
     public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'subject_id')->withTrashed();
     }
 
+    /** @return BelongsTo<AttendanceSession, $this> */
     public function session(): BelongsTo
     {
         return $this->belongsTo(AttendanceSession::class, 'session_id');
@@ -161,6 +163,7 @@ class Attendance extends Model
         }
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

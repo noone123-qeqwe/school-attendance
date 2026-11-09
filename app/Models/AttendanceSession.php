@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Carbon\Carbon;
@@ -40,7 +43,8 @@ class AttendanceSession extends Model
         return (int) ($this->grace_period_minutes ?: \App\Models\Setting::get('presence_grace_minutes', 5));
     }
 
-    public function subject()
+    /** @return BelongsTo<Subject, $this> */
+    public function subject(): BelongsTo
     {
         return $this->belongsTo(Subject::class, 'subject_code', 'code');
     }
@@ -53,29 +57,32 @@ class AttendanceSession extends Model
             ->dontSubmitEmptyLogs();
     }
 
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function attendances()
+    public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'session_id');
     }
 
-    public function qrTokens()
+    public function qrTokens(): HasMany
     {
         return $this->hasMany(AttendanceQrToken::class);
     }
 
-    public function activeQrToken()
+    /** @return HasOne<AttendanceQrToken, $this> */
+    public function activeQrToken(): HasOne
     {
         return $this->hasOne(AttendanceQrToken::class, 'active_session_id');
     }
 
     public function isTokenValid(): bool
     {
-        return $this->active && $this->expires_at && $this->expires_at->isFuture();
+        $expiresAt = $this->dateTimeAttribute('expires_at');
+
+        return $this->active && $expiresAt !== null && $expiresAt->isFuture();
     }
 
     /**
@@ -115,7 +122,7 @@ class AttendanceSession extends Model
         }
 
         $now = now('Asia/Manila');
-        $expiresAt = $this->expires_at ? Carbon::parse($this->expires_at)->setTimezone('Asia/Manila') : $now;
+        $expiresAt = $this->dateTimeAttribute('expires_at')?->setTimezone('Asia/Manila') ?? $now;
 
         // Current token or current code:
         if ($matchesCurrentToken || $matchesCurrentCode) {
@@ -152,12 +159,15 @@ class AttendanceSession extends Model
 
     public function isSessionActive(): bool
     {
-        return $this->active && $this->session_ends_at && $this->session_ends_at->isFuture();
+        $endsAt = $this->dateTimeAttribute('session_ends_at');
+
+        return $this->active && $endsAt !== null && $endsAt->isFuture();
     }
 
     public function markInactiveIfExpired(): void
     {
-        if ($this->active && $this->session_ends_at && $this->session_ends_at->isPast()) {
+        $endsAt = $this->dateTimeAttribute('session_ends_at');
+        if ($this->active && $endsAt !== null && $endsAt->isPast()) {
             $this->forceFill(['active' => false, 'webauthn_challenge' => null])->save();
         }
     }
@@ -217,5 +227,16 @@ class AttendanceSession extends Model
             return substr($clean, 0, 3) . ' ' . substr($clean, 3, 3);
         }
         return (string) $this->session_code;
+    }
+
+    private function dateTimeAttribute(string $key): ?Carbon
+    {
+        $value = $this->getAttribute($key);
+
+        if ($value instanceof Carbon) {
+            return $value;
+        }
+
+        return is_string($value) && $value !== '' ? Carbon::parse($value) : null;
     }
 }

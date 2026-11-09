@@ -24,6 +24,7 @@ class ClassStudentAssistant extends Model
         return $this->belongsTo(Subject::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function student(): BelongsTo
     {
         return $this->belongsTo(User::class, 'student_id');
@@ -36,12 +37,15 @@ class ClassStudentAssistant extends Model
 
     public function isActive(): bool
     {
+        $student = $this->student;
+
         return $this->active_slot !== null
             && $this->revoked_at === null
             && $this->starts_at <= now()
             && $this->expires_at >= now()
-            && $this->student?->isStudent()
-            && $this->student->isActive();
+            && $student !== null
+            && $student->isStudent()
+            && $student->isActive();
     }
 
     public function getStatusAttribute(): string

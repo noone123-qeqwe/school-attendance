@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 use Symfony\Component\Process\Process;
 
@@ -25,6 +26,8 @@ class PostgresBackupService
             '--format=plain',
             '--file', $filepath,
         ], null, $this->processEnvironment($connection), null, $this->timeout()));
+
+        $this->normalizeDumpForServer($filepath);
     }
 
     public function restoreFrom(string $filepath): void
@@ -116,5 +119,35 @@ class PostgresBackupService
     protected function timeout(): int
     {
         return max(30, (int) config('services.backup.process_timeout', 300));
+    }
+
+    /** Remove session settings emitted by newer pg_dump clients that an older target server cannot parse. */
+    protected function normalizeDumpForServer(string $filepath): void
+    {
+        if (!is_file($filepath) || $this->serverMajorVersion() >= 18) {
+            return;
+        }
+
+        $contents = file_get_contents($filepath);
+        if ($contents === false) {
+            throw new RuntimeException('PostgreSQL backup file could not be read after creation.');
+        }
+
+        $normalized = str_replace("SET transaction_timeout = 0;\n", '', $contents);
+        if ($normalized !== $contents && file_put_contents($filepath, $normalized, LOCK_EX) === false) {
+            throw new RuntimeException('PostgreSQL backup file could not be normalized.');
+        }
+    }
+
+    protected function serverMajorVersion(): int
+    {
+        $row = DB::connection('pgsql')->selectOne('SHOW server_version_num');
+        $versionNumber = (int) ($row->server_version_num ?? 0);
+
+        if ($versionNumber < 10000) {
+            throw new RuntimeException('PostgreSQL server version could not be determined.');
+        }
+
+        return intdiv($versionNumber, 10000);
     }
 }

@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
@@ -369,7 +371,6 @@ class User extends Authenticatable
             $cleanCandidates = array_unique(array_filter($cleanCandidates));
 
             foreach ($cleanCandidates as $clean) {
-                if ($clean === '') continue;
                 $cleanLower = strtolower($clean);
 
                 $user = (clone $baseQuery)->where(function ($q) use ($clean, $cleanLower) {
@@ -496,7 +497,6 @@ class User extends Authenticatable
         $cleanCandidates = array_unique(array_filter($cleanCandidates));
 
         foreach ($cleanCandidates as $clean) {
-            if ($clean === '') continue;
             $cleanLower = strtolower($clean);
             $user = static::whereNull('deleted_at')
                 ->where(function ($q) use ($clean, $cleanLower) {
@@ -705,7 +705,7 @@ class User extends Authenticatable
      * RELATIONSHIP: Attendance
      * This allows us to call $user->attendances in the dashboard.
      */
-    public function attendances()
+    public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);
     }
@@ -714,7 +714,7 @@ class User extends Authenticatable
      * RELATIONSHIP: Subjects (for teachers)
      * Get subjects taught by this teacher
      */
-    public function subjects()
+    public function subjects(): HasMany
     {
         return $this->hasMany(Subject::class, 'instructor_id');
     }
@@ -779,12 +779,14 @@ class User extends Authenticatable
         return $this->hasMany(ExcuseSubmission::class);
     }
 
-    public function webauthnCredentials()
+    /** @return HasMany<WebauthnCredential, $this> */
+    public function webauthnCredentials(): HasMany
     {
         return $this->hasMany(WebauthnCredential::class);
     }
 
-    public function deviceBinding()
+    /** @return HasOne<DeviceBinding, $this> */
+    public function deviceBinding(): HasOne
     {
         return $this->hasOne(DeviceBinding::class);
     }

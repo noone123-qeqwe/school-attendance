@@ -18,11 +18,13 @@ class AttendanceQrToken extends Model
         'invalidated_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<AttendanceSession, $this> */
     public function session(): BelongsTo
     {
         return $this->belongsTo(AttendanceSession::class, 'attendance_session_id');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function generator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by');

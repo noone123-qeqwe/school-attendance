@@ -60,15 +60,46 @@ class PostgresBackupServiceTest extends TestCase
         $this->expectException(\RuntimeException::class);
         $service->dumpTo(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'attendance-backup.sql');
     }
+
+    public function test_new_client_transaction_timeout_setting_is_removed_for_older_servers(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'postgres-dump-');
+        $this->assertNotFalse($path);
+
+        try {
+            file_put_contents($path, "SET statement_timeout = 0;\nSET transaction_timeout = 0;\nSET client_encoding = 'UTF8';\n");
+            $service = new RecordingPostgresBackupService();
+            $service->serverMajor = 16;
+            $service->normalize($path);
+
+            $contents = file_get_contents($path);
+            $this->assertStringNotContainsString('transaction_timeout', $contents);
+            $this->assertStringContainsString('statement_timeout', $contents);
+            $this->assertStringContainsString('client_encoding', $contents);
+        } finally {
+            @unlink($path);
+        }
+    }
 }
 
 class RecordingPostgresBackupService extends PostgresBackupService
 {
     /** @var list<Process> */
     public array $processes = [];
+    public int $serverMajor = 18;
 
     protected function runProcess(Process $process): void
     {
         $this->processes[] = $process;
+    }
+
+    public function normalize(string $filepath): void
+    {
+        $this->normalizeDumpForServer($filepath);
+    }
+
+    protected function serverMajorVersion(): int
+    {
+        return $this->serverMajor;
     }
 }

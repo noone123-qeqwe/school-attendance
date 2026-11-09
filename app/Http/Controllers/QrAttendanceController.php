@@ -141,38 +141,6 @@ class QrAttendanceController extends Controller
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
     }
 
-    private function base64UrlDecode(string $value): string
-    {
-        $value = strtr($value, '-_', '+/');
-        $padding = strlen($value) % 4;
-        if ($padding) {
-            $value .= str_repeat('=', 4 - $padding);
-        }
-
-        return base64_decode($value, true) ?: '';
-    }
-
-    private function decodeBase64UrlJson(string $value): string
-    {
-        return $this->base64UrlDecode($value);
-    }
-
-    private function normalizeBase64UrlString(string $value): string
-    {
-        $value = strtr($value, '+/', '-_');
-        return rtrim($value, '=');
-    }
-
-
-    private function tokenExpiresAt(AttendanceSession $session, ?Carbon $from = null): Carbon
-    {
-        $expiresAt = ($from ?? now())->copy()->addSeconds(self::QR_TTL_SECONDS);
-
-        return $expiresAt->gt($session->session_ends_at)
-            ? $session->session_ends_at->copy()
-            : $expiresAt;
-    }
-
     // ─────────────────────────────────────────
     // Get schedule info for QR session timing
     // ─────────────────────────────────────────
@@ -297,7 +265,7 @@ class QrAttendanceController extends Controller
                 ];
             } else {
             // If the 15-second rotation window has elapsed, refresh to active code
-            if ($activeSession->expires_at && now('Asia/Manila')->gt($activeSession->expires_at)) {
+            if (now('Asia/Manila')->gt($activeSession->expires_at)) {
                 try {
                     $activeSession = $this->qrSessionService->refreshToken($activeSession);
                 } catch (\Throwable $e) {}
@@ -788,9 +756,7 @@ class QrAttendanceController extends Controller
                     continue;
                 }
 
-                $dateStr = $record->date instanceof \DateTimeInterface 
-                    ? $record->date->format('Y-m-d') 
-                    : substr((string) $record->date, 0, 10);
+                $dateStr = $record->date->format('Y-m-d');
 
                 $lastCheck = $record->last_location_check_at 
                     ?? $record->checked_in_at 
@@ -820,7 +786,7 @@ class QrAttendanceController extends Controller
                     try {
                         broadcast(new TeacherAttendanceUpdated(
                             (int) $session->created_by,
-                            $record->user?->name ?? 'Student',
+                            $record->user->name ?? 'Student',
                             $session->subject_code,
                             'Escaped',
                             'status_override',
@@ -839,7 +805,7 @@ class QrAttendanceController extends Controller
             }
         }
 
-        $clockins = $students->map(function ($student) use ($todayRecords, $peerVouchers) {
+        $clockins = $students->map(function (User $student) use ($todayRecords, $peerVouchers): array {
             $record = $todayRecords->firstWhere('user_id', $student->id);
             $rawStatus = $record ? $record->status : 'Missing';
             $monitoringStatus = $record ? ($record->monitoring_status ?? 'active') : null;
@@ -889,10 +855,11 @@ class QrAttendanceController extends Controller
                     default        => 4
                 }
             ];
-        })->sortBy([
-            ['sort_order', 'asc'],
-            ['name', 'asc']
-        ])->values()->all();
+        })->sortBy(fn (array $row): string => sprintf(
+            '%d|%s',
+            $row['sort_order'],
+            strtolower($row['name'])
+        ))->values()->all();
 
         $totalStudents = $students->count();
 
@@ -968,7 +935,7 @@ class QrAttendanceController extends Controller
                     'session_id'                => $session->id,
                     'subject_id'                => $session->subject?->id,
                     'subject_name'              => $session->subject?->name,
-                    'class'                     => $session->subject?->section ?? $student->section ?? 'Regular',
+                    'class'                     => $session->subject->section ?? $student->section ?? 'Regular',
                     'method'                    => 'manual',
                     'excused'                   => false,
                     'academic_year_id'          => \App\Models\AcademicYear::where('is_current', true)->value('id'),
@@ -1423,7 +1390,7 @@ class QrAttendanceController extends Controller
                 'has_active_session' => true,
                 'session_id' => $session->id,
                 'subject_code' => $session->subject_code,
-                'subject_name' => $session->subject?->name ?? $session->subject_code,
+                'subject_name' => $session->subject->name ?? $session->subject_code,
                 'status' => $attendance->status,
                 'monitoring_status' => $attendance->status === 'Escaped' ? 'escaped' : 'disabled',
                 'radius' => 0,
@@ -1436,16 +1403,14 @@ class QrAttendanceController extends Controller
             ]);
         }
 
-        $attDateStr = $attendance->date instanceof \DateTimeInterface 
-            ? $attendance->date->format('Y-m-d') 
-            : substr((string) $attendance->date, 0, 10);
+        $attDateStr = $attendance->date->format('Y-m-d');
 
         $lastCheck = $attendance->last_location_check_at 
             ?? $attendance->checked_in_at 
             ?? $session->created_at 
             ?? now();
 
-        if ($lastCheck && in_array($attendance->status, ['Present', 'Late'])) {
+        if (in_array($attendance->status, ['Present', 'Late'])) {
             $minutesSinceLast = abs($now->diffInMinutes(Carbon::parse($lastCheck)));
             if ($minutesSinceLast >= $graceMinutes) {
                 $attendance->update([
@@ -1474,7 +1439,7 @@ class QrAttendanceController extends Controller
             'has_active_session'      => true,
             'session_id'              => $session->id,
             'subject_code'            => $session->subject_code,
-            'subject_name'            => $session->subject?->name ?? $session->subject_code,
+            'subject_name'            => $session->subject->name ?? $session->subject_code,
             'status'                  => $attendance->status,
             'monitoring_status'       => $attendance->monitoring_status ?? 'active',
             'radius'                  => $session->getAllowedRadius(),
@@ -1601,7 +1566,9 @@ class QrAttendanceController extends Controller
                 'status'     => 'already',
                 'message'    => 'You have already clocked in for this class today.',
                 'subject'    => $subject->name . ' (' . $subject->code . ')',
-                'instructor' => $subject->instructor->name ?? 'Instructor',
+                'instructor' => $subject->instructorUser()->value('name')
+                    ?? (is_string($subject->getAttribute('instructor')) ? $subject->getAttribute('instructor') : null)
+                    ?? 'Instructor',
                 'section'    => $subject->section ?? $user->section ?? 'Regular',
                 'time'       => $existing->time_in ? Carbon::parse($existing->time_in)->format('h:i A') : '',
                 'date'       => Carbon::parse($existing->date)->format('F j, Y'),
@@ -1908,7 +1875,7 @@ class QrAttendanceController extends Controller
                     return response()->json([
                         'success'    => false,
                         'error_type' => 'proxy_device_detected',
-                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user?->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
+                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
                     ], 422);
                 }
             }
@@ -2014,19 +1981,15 @@ class QrAttendanceController extends Controller
         $existing = Attendance::where('user_id', $user->id)
             ->where('date', $todayDate)
             ->where(function ($q) use ($session) {
-                if ($session->subject) {
-                    $q->where('subject_id', $session->subject->id)
-                      ->orWhere('subject_code', $session->subject_code);
-                } else {
-                    $q->where('subject_code', $session->subject_code);
-                }
+                $q->where('subject_id', $session->subject->id)
+                    ->orWhere('subject_code', $session->subject_code);
             })
             ->first();
 
         if ($existing && in_array($existing->status, ['Present', 'Late'])) {
             $subj = $session->subject;
-            $subjName = $subj ? $subj->name : $session->subject_code;
-            $subjId = $subj ? (string) $subj->id : '';
+            $subjName = $subj->name;
+            $subjId = (string) $subj->id;
             return response()->json([
                 'success'            => true,
                 'already_clocked_in' => true,
@@ -2180,27 +2143,23 @@ class QrAttendanceController extends Controller
         $startTime = null;
         
         // Try to get start time from schedules matching current time or active session
-        if ($subject && $subject->schedules) {
-            $todayName = $now->format('l');
-            $matchingSchedules = $subject->schedules->filter(function ($schedule) use ($todayName) {
-                return strcasecmp(trim($schedule->day ?? ''), $todayName) === 0;
-            });
+        $todayName = $now->format('l');
+        $matchingSchedules = $subject->schedules->filter(function ($schedule) use ($todayName) {
+            return strcasecmp(trim($schedule->day ?? ''), $todayName) === 0;
+        });
             
-            if ($matchingSchedules->isNotEmpty()) {
-                $todaySchedule = $matchingSchedules->first(function ($sched) use ($now, $todayDate) {
-                    $slotStart = Carbon::parse($todayDate . ' ' . $sched->start_time)->subMinutes(30);
-                    $slotEnd = Carbon::parse($todayDate . ' ' . $sched->end_time)->addMinutes(30);
-                    return $now->between($slotStart, $slotEnd);
-                }) ?? $matchingSchedules->first();
+        if ($matchingSchedules->isNotEmpty()) {
+            $todaySchedule = $matchingSchedules->first(function ($sched) use ($now, $todayDate) {
+                $slotStart = Carbon::parse($todayDate . ' ' . $sched->start_time)->subMinutes(30);
+                $slotEnd = Carbon::parse($todayDate . ' ' . $sched->end_time)->addMinutes(30);
+                return $now->between($slotStart, $slotEnd);
+            }) ?? $matchingSchedules->first();
 
-                if ($todaySchedule) {
-                    $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
-                }
-            }
+            $startTime = Carbon::parse($todayDate . ' ' . $todaySchedule->start_time);
         }
         
         // Fallback to subject start_time if available
-        if (!$startTime && $subject && $subject->start_time) {
+        if (!$startTime && $subject->start_time) {
             $startTime = Carbon::parse($todayDate . ' ' . $subject->start_time);
         }
 
@@ -2339,6 +2298,8 @@ class QrAttendanceController extends Controller
                 $session->subject_code,
                 $status,
                 'clock_in',
+                null,
+                null,
                 $stats
             ));
         } catch (\Throwable $e) {
@@ -2370,7 +2331,7 @@ class QrAttendanceController extends Controller
             'radius'               => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification') ? $session->getAllowedRadius() : 0,
             'grace_period_minutes' => $session->getGracePeriodMinutes(),
             'monitoring_active'    => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification'),
-            'session_ends_at'      => $session->session_ends_at ? $session->session_ends_at->timestamp : null,
+            'session_ends_at'      => $session->session_ends_at->timestamp,
         ]);
     }
 
@@ -2723,18 +2684,17 @@ class QrAttendanceController extends Controller
         $existing = Attendance::where('user_id', $user->id)
             ->where('date', $todayDate)
             ->where(function ($q) use ($subject, $session) {
-                if ($subject && $subject->id) {
-                    $q->where('subject_id', $subject->id)
-                      ->orWhere('subject_code', $session->subject_code);
-                } else {
-                    $q->where('subject_code', $session->subject_code);
-                }
+                $q->where('subject_id', $subject->id)
+                    ->orWhere('subject_code', $session->subject_code);
             })
             ->first();
 
         if ($existing && in_array($existing->status, ['Present', 'Late'])) {
             $existingTime = $existing->time_in ? Carbon::parse($existing->time_in)->format('h:i A') : 'Earlier';
-            $instructorName = ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : ($subject->instructorUser->name ?? 'Instructor')));
+            $legacyInstructor = $subject->getAttribute('instructor');
+            $instructorName = $subject->instructorUser()->value('name')
+                ?? (is_string($legacyInstructor) ? $legacyInstructor : null)
+                ?? 'Instructor';
             return response()->json([
                 'success'            => true,
                 'already_clocked_in' => true,
@@ -2793,7 +2753,7 @@ class QrAttendanceController extends Controller
                     return response()->json([
                         'success'    => false,
                         'error_type' => 'proxy_device_detected',
-                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user?->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
+                        'message'    => 'Proxy attendance detected. This device was already used by another student (' . ($alreadyClockedInPeer->user->name ?? 'peer') . ') to clock in for this session. Each student must use their own personal device.'
                     ], 422);
                 }
             }
@@ -2827,8 +2787,7 @@ class QrAttendanceController extends Controller
                     'message' => 'A fresh student device GPS location is required. Enable location and retry.'
                 ], 422);
             }
-            if ($hasCoordinates) {
-                [$studentLat, $studentLng] = self::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
+            [$studentLat, $studentLng] = self::normalizeCoordinates((float) $request->latitude, (float) $request->longitude);
                 $accuracy = $request->filled('accuracy') ? (float) $request->accuracy : null;
 
                 if ($accuracy === null || $accuracy <= 0) {
@@ -2898,7 +2857,6 @@ class QrAttendanceController extends Controller
                         ], 422);
                     }
                 }
-            }
         }
 
         if ($radiusMeters > 0) {
@@ -2921,14 +2879,12 @@ class QrAttendanceController extends Controller
 
         // 4. Calculate Timing (Present vs Late threshold)
         $startTime = null;
-        if ($subject->schedules) {
-            $todayName = $now->format('l');
-            $matchingSchedule = $subject->schedules->first(function ($sched) use ($todayName) {
-                return strcasecmp(trim($sched->day ?? ''), $todayName) === 0;
-            });
-            if ($matchingSchedule) {
-                $startTime = Carbon::parse($todayDate . ' ' . $matchingSchedule->start_time);
-            }
+        $todayName = $now->format('l');
+        $matchingSchedule = $subject->schedules->first(function ($sched) use ($todayName) {
+            return strcasecmp(trim($sched->day ?? ''), $todayName) === 0;
+        });
+        if ($matchingSchedule) {
+            $startTime = Carbon::parse($todayDate . ' ' . $matchingSchedule->start_time);
         }
         if (!$startTime && $subject->start_time) {
             $startTime = Carbon::parse($todayDate . ' ' . $subject->start_time);
@@ -3036,13 +2992,18 @@ class QrAttendanceController extends Controller
                 $session->subject_code,
                 $status,
                 'clock_in',
+                null,
+                null,
                 $stats
             ));
         } catch (\Throwable $e) {
             // Ignore broadcast failure in local/test
         }
 
-        $instructorName = ($subject->instructor instanceof \App\Models\User ? $subject->instructor->name : (is_string($subject->instructor) ? $subject->instructor : ($subject->instructorUser->name ?? 'Instructor')));
+        $legacyInstructor = $subject->getAttribute('instructor');
+        $instructorName = $subject->instructorUser()->value('name')
+            ?? (is_string($legacyInstructor) ? $legacyInstructor : null)
+            ?? 'Instructor';
 
         return response()->json([
             'success'              => true,
@@ -3066,7 +3027,7 @@ class QrAttendanceController extends Controller
             'radius'               => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification') ? $session->getAllowedRadius() : 0,
             'grace_period_minutes' => $session->getGracePeriodMinutes(),
             'monitoring_active'    => app(\App\Services\FeatureFlagService::class)->enabled('feature.gps_verification'),
-            'session_ends_at'      => $session->session_ends_at ? $session->session_ends_at->timestamp : null,
+            'session_ends_at'      => $session->session_ends_at->timestamp,
             'message'              => 'Attendance recorded successfully.'
         ]);
     }
@@ -3086,11 +3047,6 @@ class QrAttendanceController extends Controller
         } finally {
             session()->forget('webauthn.auth_challenge');
         }
-    }
-
-    private function matchesStudentSchedule(Subject $subject, User $student): bool
-    {
-        return $this->scheduleMismatchReason($subject, $student) === null;
     }
 
     private function scheduleMismatchReason(Subject $subject, User $student): ?string

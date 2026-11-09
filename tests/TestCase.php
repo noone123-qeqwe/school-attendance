@@ -25,10 +25,12 @@ abstract class TestCase extends BaseTestCase
 
         $app->make(\Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-        config([
-            'database.default' => 'sqlite',
-            'database.connections.sqlite.database' => ':memory:',
-        ]);
+        $testConnection = env('TEST_DB_CONNECTION', 'sqlite');
+        config(['database.default' => $testConnection]);
+
+        if ($testConnection === 'sqlite') {
+            config(['database.connections.sqlite.database' => ':memory:']);
+        }
 
         return $app;
     }
