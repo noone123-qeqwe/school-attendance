@@ -3289,9 +3289,300 @@
             gap: 10px !important;
         }
     }
+/* ── Student settings redesign ─────────────────────────────────────────── */
+.student-settings {
+    --student-panel: rgba(28, 19, 14, 0.92);
+    --student-panel-strong: rgba(20, 13, 10, 0.98);
+    --student-line: rgba(207, 164, 111, 0.2);
+    --student-space: clamp(16px, 2.3vw, 30px);
+    max-width: 1320px;
+    padding: 22px var(--student-space) 48px;
+}
+.student-settings .settings-command-header {
+    min-height: 142px;
+    padding: 24px 28px;
+    border-radius: 24px;
+    border-color: var(--student-line);
+    background:
+        radial-gradient(circle at 84% 15%, rgba(207, 164, 111, 0.17), transparent 24rem),
+        linear-gradient(135deg, rgba(42, 26, 18, 0.97), rgba(18, 12, 9, 0.98));
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34), inset 0 1px rgba(255, 255, 255, 0.08);
+}
+.student-settings .settings-command-header::after { display: none; }
+.student-settings .settings-top-left { align-self: stretch; }
+.student-settings .settings-avatar-chip {
+    width: 68px;
+    height: 68px;
+    border-radius: 22px;
+    padding: 3px;
+    background: linear-gradient(145deg, var(--gold-bright), var(--gold-primary) 48%, #7f2b24);
+}
+.student-settings .settings-chip-avatar { border-radius: 19px; }
+.student-settings .settings-chip-status { width: 16px; height: 16px; }
+.student-settings .settings-breadcrumb-bar {
+    padding: 4px 10px;
+    margin-bottom: 7px;
+    background: rgba(207, 164, 111, 0.1);
+}
+.student-settings .pg-title {
+    font-size: clamp(1.55rem, 2vw, 2.15rem);
+    letter-spacing: -0.045em;
+}
+.student-settings .pg-sub { max-width: 560px; line-height: 1.5; }
+.student-settings .settings-top-right {
+    align-items: center;
+    gap: 12px;
+    flex: 0 1 610px;
+}
+.student-settings .settings-search-box {
+    min-width: min(100%, 260px);
+    flex: 1 1 250px;
+    border-radius: 14px;
+    background: rgba(9, 6, 5, 0.56);
+}
+.student-settings .settings-command-telemetry {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(96px, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+.student-settings .telemetry-pill {
+    min-height: 54px;
+    padding: 9px 11px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.student-settings .telemetry-pill:hover { transform: translateY(-1px); background: rgba(255, 255, 255, 0.075); }
+.student-settings .telemetry-lbl { font-size: 0.64rem; }
+.student-settings .telemetry-val { font-size: 0.78rem; }
+
+.student-settings .settings-layout-grid {
+    display: grid;
+    grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+    margin-top: 2px;
+}
+.student-settings .settings-sidebar {
+    position: sticky;
+    top: 18px;
+    padding: 10px;
+    border: 1px solid var(--student-line);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(29, 19, 14, 0.94), rgba(15, 10, 8, 0.94));
+    box-shadow: 0 12px 28px rgba(0,0,0,.24);
+}
+.student-settings .settings-side-nav { gap: 8px; }
+.student-settings .snav-group { padding: 7px 0; }
+.student-settings .snav-group + .snav-group { border-top: 1px solid rgba(207, 164, 111, 0.12); }
+.student-settings .snav-group-header {
+    padding: 7px 9px 8px;
+    color: var(--gold-primary);
+    font-size: .67rem;
+    letter-spacing: .09em;
+}
+.student-settings .snav-item {
+    min-height: 58px;
+    margin: 2px 0;
+    padding: 9px 10px;
+    border-radius: 13px;
+    border: 1px solid transparent;
+}
+.student-settings .snav-item:hover { background: rgba(207, 164, 111, .08); border-color: rgba(207, 164, 111, .12); }
+.student-settings .snav-item.active {
+    background: linear-gradient(135deg, rgba(207, 164, 111, .18), rgba(143, 39, 31, .18));
+    border-color: rgba(207, 164, 111, .34);
+    box-shadow: inset 3px 0 var(--gold-primary);
+}
+.student-settings .snav-item-icon { width: 34px; height: 34px; border-radius: 10px; }
+.student-settings .snav-item-title { font-size: .84rem; }
+.student-settings .snav-item-desc { font-size: .68rem; line-height: 1.25; }
+.student-settings .snav-footer-card {
+    margin: 8px 2px 2px;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(207, 164, 111, .08);
+    border: 1px solid rgba(207, 164, 111, .16);
+}
+.student-settings .settings-main-content { min-width: 0; }
+.student-settings .spanel { animation: studentPanelIn .25s ease-out; }
+@keyframes studentPanelIn { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.student-settings .sc,
+.student-settings .sec-health-hero,
+.student-settings .sec-card,
+.student-settings .sec-group-panel {
+    border-color: var(--student-line);
+    background: linear-gradient(145deg, var(--student-panel), var(--student-panel-strong));
+    box-shadow: 0 12px 28px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.04);
+}
+.student-settings .sc { border-radius: 20px; overflow: hidden; }
+.student-settings .sc + .sc { margin-top: 18px; }
+.student-settings .sc-head { padding: 20px 22px 15px; border-bottom-color: rgba(207,164,111,.12); }
+.student-settings .sc-body { padding: 22px; }
+.student-settings .sc-title, .student-settings .sec-group-title { font-size: 1.03rem; }
+.student-settings .sc-sub, .student-settings .sec-group-desc { line-height: 1.48; }
+.student-settings .profile-card-inner {
+    gap: 20px;
+    padding: 4px;
+}
+.student-settings .profile-details-col { gap: 8px; }
+.student-settings .profile-user-name { font-size: 1.25rem; }
+.student-settings .academic-spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.student-settings .academic-spec-card {
+    min-height: 92px;
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.07);
+}
+.student-settings .academic-spec-card:hover { border-color: rgba(207,164,111,.26); background: rgba(207,164,111,.055); }
+.student-settings .si { min-height: 46px; border-radius: 12px; }
+.student-settings .sbtn, .student-settings .sec-action-btn { min-height: 44px; border-radius: 12px; }
+.student-settings .flash-ok, .student-settings .flash-err { border-radius: 14px; }
+
+.student-settings .sec-health-hero {
+    margin-bottom: 14px;
+    padding: 22px;
+    border-radius: 20px;
+}
+.student-settings .sec-health-title { font-size: 1.15rem; }
+.student-settings .sec-matrix-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+    gap: 8px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(0,0,0,.2);
+    border: 1px solid rgba(207,164,111,.13);
+}
+.student-settings .sec-matrix-item {
+    justify-content: flex-start;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,.025);
+}
+.student-settings .sec-subnav-bar {
+    position: sticky;
+    top: 10px;
+    z-index: 10;
+    margin: 16px 0;
+    padding: 7px;
+    border-radius: 14px;
+    background: rgba(18, 12, 9, .92);
+    border: 1px solid var(--student-line);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+.student-settings .sec-subnav-pill { min-height: 39px; border-radius: 10px; }
+.student-settings .sec-group-panel { margin-bottom: 18px; border-radius: 18px; padding: 20px; }
+.student-settings .sec-group-header { margin-bottom: 18px; }
+.student-settings .sec-cards-grid { gap: 14px; }
+.student-settings .sec-card { border-radius: 16px; padding: 18px; }
+.student-settings .sec-card-top { margin-bottom: 14px; }
+.student-settings .sec-card-name { font-size: .95rem; }
+.student-settings .sec-card-subtitle { line-height: 1.4; }
+.student-settings .sec-status-tile, .student-settings .pref-tile {
+    border-radius: 14px;
+    border-color: rgba(255,255,255,.08);
+    background: rgba(255,255,255,.025);
+}
+.student-settings .pref-tile { min-height: 72px; padding: 14px; }
+.student-settings .pref-tile:hover { background: rgba(207,164,111,.06); border-color: rgba(207,164,111,.18); }
+.student-settings .cameraFaceEnrollment,
+.student-settings #cameraFaceEnrollment { border-radius: 16px !important; }
+.student-settings #cameraFacePreviewWrap { border-radius: 18px !important; }
+.student-settings .device-item-card { border-radius: 13px; }
+
+@media (max-width: 1100px) {
+    .student-settings .settings-command-header { align-items: flex-start; }
+    .student-settings .settings-top-right { flex: 1 1 100%; }
+    .student-settings .settings-layout-grid { grid-template-columns: 210px minmax(0, 1fr); gap: 16px; }
+    .student-settings .settings-sidebar { top: 10px; }
+}
+@media (max-width: 991.98px) {
+    .student-settings { padding: 14px 14px calc(28px + env(safe-area-inset-bottom)); }
+    .student-settings .settings-command-header {
+        min-height: 0;
+        padding: 18px;
+        margin-bottom: 12px;
+        border-radius: 19px;
+    }
+    .student-settings .settings-top-left { flex: 1 1 100%; gap: 13px; }
+    .student-settings .settings-avatar-chip { width: 52px; height: 52px; border-radius: 17px; }
+    .student-settings .settings-chip-avatar { border-radius: 14px; }
+    .student-settings .settings-breadcrumb-bar { display: none; }
+    .student-settings .pg-title { font-size: 1.35rem; }
+    .student-settings .pg-sub { font-size: .78rem; }
+    .student-settings .settings-top-right { gap: 9px; }
+    .student-settings .settings-search-box { order: 2; flex-basis: 100%; min-width: 100%; }
+    .student-settings .settings-command-telemetry { grid-template-columns: repeat(3, minmax(0, 1fr)); order: 1; }
+    .student-settings .telemetry-pill { min-height: 48px; padding: 7px 8px; gap: 7px; }
+    .student-settings .telemetry-pill i { font-size: .95rem; }
+    .student-settings .telemetry-lbl { font-size: .56rem; }
+    .student-settings .telemetry-val { font-size: .68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .student-settings .stabs-wrapper {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        padding: 7px 0;
+        margin: 0 -2px 14px;
+        background: linear-gradient(180deg, rgba(18, 12, 9, .98) 76%, rgba(18, 12, 9, 0));
+    }
+    .student-settings .stabs { gap: 8px; padding: 0 2px 8px; scrollbar-width: none; }
+    .student-settings .stabs::-webkit-scrollbar { display: none; }
+    .student-settings .stab {
+        flex: 0 0 auto;
+        min-height: 42px;
+        padding: 9px 13px;
+        border-radius: 12px;
+        font-size: .78rem;
+        background: rgba(255,255,255,.045);
+        border: 1px solid rgba(255,255,255,.08);
+    }
+    .student-settings .stab.active { background: linear-gradient(135deg, rgba(207,164,111,.25), rgba(143,39,31,.2)); border-color: rgba(207,164,111,.4); }
+    .student-settings .stabs-arrow, .student-settings .stabs-floating-hint { display: none !important; }
+    .student-settings .settings-layout-grid { display: block; margin-top: 0; }
+    .student-settings .settings-sidebar { display: none; }
+    .student-settings .sc { border-radius: 17px; }
+    .student-settings .sc-head { padding: 17px 17px 13px; }
+    .student-settings .sc-body { padding: 17px; }
+    .student-settings .sec-health-hero { padding: 17px; border-radius: 17px; }
+    .student-settings .sec-matrix-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .student-settings .sec-subnav-bar { top: 58px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+    .student-settings .sec-subnav-pill { flex: 0 0 auto; white-space: nowrap; }
+    .student-settings .sec-group-panel { padding: 15px; border-radius: 16px; }
+    .student-settings .sec-card { padding: 15px; }
+}
+@media (max-width: 575.98px) {
+    .student-settings { padding-inline: 12px; }
+    .student-settings .settings-command-header { padding: 16px; border-radius: 17px; }
+    .student-settings .settings-command-telemetry { gap: 6px; }
+    .student-settings .telemetry-pill { min-width: 0; }
+    .student-settings .telemetry-pill:nth-child(n+4) { display: none; }
+    .student-settings .profile-card-inner { align-items: flex-start; flex-direction: column; }
+    .student-settings .profile-details-col { width: 100%; }
+    .student-settings .academic-spec-grid { grid-template-columns: 1fr; gap: 9px; }
+    .student-settings .academic-spec-card { min-height: 72px; }
+    .student-settings .sec-matrix-bar { grid-template-columns: 1fr; gap: 6px; }
+    .student-settings .sec-matrix-item { min-height: 38px; }
+    .student-settings .sec-health-left { align-items: flex-start; }
+    .student-settings .sec-health-icon { width: 42px; height: 42px; font-size: 1.05rem; }
+    .student-settings .sec-health-title { font-size: 1rem; }
+    .student-settings .sec-health-sub { font-size: .75rem; }
+    .student-settings .sec-cards-grid { grid-template-columns: 1fr; }
+    .student-settings .pref-tile { align-items: flex-start; gap: 12px; }
+    .student-settings .pref-tile .form-check { padding-top: 4px; }
+    .student-settings .pref-tile select { width: 100% !important; min-width: 0 !important; margin-top: 8px; }
+    .student-settings .sbtn, .student-settings .sec-action-btn { width: 100%; justify-content: center; }
+    .student-settings #cameraFacePreviewWrap { width: 100% !important; }
+    .student-settings #tabDeviceBoundTile > div:last-child,
+    .student-settings #tabDeviceBoundTile div[style*="display:flex;gap:10px"] { flex-direction: column; }
+}
 </style>
 
-<div class="sp">
+<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}">
 
     <!-- Mobile Search Backdrop Overlay -->
     <div id="settingsSearchBackdrop" class="settings-search-backdrop" style="display:none;"></div>
@@ -3305,14 +3596,14 @@
             </div>
             <div class="settings-title-group">
                 <div class="settings-breadcrumb-bar">
-                    <span class="crumb-root"><i class="bi bi-shield-check me-1"></i>Settings</span>
+                    <span class="crumb-root"><i class="bi bi-sliders me-1"></i>Student settings</span>
                     <i class="bi bi-chevron-right crumb-sep"></i>
-                    <span id="settingsBreadcrumbCategory" class="crumb-cat">Account</span>
+                    <span id="settingsBreadcrumbCategory" class="crumb-cat">My account</span>
                     <i class="bi bi-chevron-right crumb-sep"></i>
                     <span id="settingsBreadcrumbTab" class="crumb-active">Profile</span>
                 </div>
-                <div class="pg-title">Settings & System Hub</div>
-                <div class="pg-sub">Manage your identity, biometric hardware, security locks, and portal configurations</div>
+                <div class="pg-title">Your settings</div>
+                <div class="pg-sub">Manage your profile, attendance access, guardians, and notifications in one place.</div>
             </div>
         </div>
 
@@ -3339,15 +3630,15 @@
                 <div class="telemetry-pill" title="Role">
                     <i class="bi {{ Auth::user()->isAdmin() ? 'bi-shield-shaded' : (Auth::user()->isTeacher() ? 'bi-mortarboard-fill' : 'bi-person-badge-fill') }}" style="color:#cfa46f;"></i>
                     <div class="telemetry-pill-text">
-                        <span class="telemetry-lbl">Role</span>
-                        <span class="telemetry-val">{{ ucfirst(Auth::user()->role ?? 'Member') }}</span>
+                        <span class="telemetry-lbl">Account</span>
+                        <span class="telemetry-val">Student</span>
                     </div>
                 </div>
-                <div class="telemetry-pill" title="Biometrics">
-                    <i class="bi bi-fingerprint" style="color:#4ade80;"></i>
+                <div class="telemetry-pill" title="Face enrollment">
+                    <i class="bi bi-camera-video-fill" style="color:{{ !empty($hasCameraFaceEnrollment) ? '#4ade80' : '#fbbf24' }};"></i>
                     <div class="telemetry-pill-text">
-                        <span class="telemetry-lbl">Biometrics</span>
-                        <span class="telemetry-val">FIDO2 Ready</span>
+                        <span class="telemetry-lbl">Face enrollment</span>
+                        <span class="telemetry-val">{{ !empty($hasCameraFaceEnrollment) ? 'Registered' : 'Optional' }}</span>
                     </div>
                 </div>
                 <div class="telemetry-pill" title="Device Lock">
@@ -3384,10 +3675,10 @@
             <i class="bi bi-chevron-left"></i>
         </button>
         <div class="stabs" id="stabsNav">
-            <button class="stab active" data-tab="profile" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Profile</button>
+            <button class="stab active" data-tab="profile" onclick="switchTab('profile',this)"><i class="bi bi-person-circle me-1"></i> Account</button>
             <button class="stab" data-tab="security" onclick="switchTab('security',this)"><i class="bi bi-shield-lock-fill me-1"></i> Security</button>
             @if(Auth::user()->isStudent())
-            <button class="stab" data-tab="family" onclick="switchTab('family',this)"><i class="bi bi-people-fill me-1"></i> Family / Guardian</button>
+            <button class="stab" data-tab="family" onclick="switchTab('family',this)"><i class="bi bi-people-fill me-1"></i> Guardians</button>
             @endif
             <button class="stab" data-tab="preferences" data-tab-id="preferences" onclick="switchTab('preferences',this)"><i class="bi bi-sliders me-1"></i> Preferences</button>
         </div>
@@ -3410,16 +3701,16 @@
                     <button type="button" class="snav-item active" data-tab="profile" onclick="switchTab('profile', this)">
                         <span class="snav-item-icon"><i class="bi bi-person-circle"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">Profile & Identity</span>
-                            <span class="snav-item-desc">Avatar, name & identity</span>
+                            <span class="snav-item-title">Profile & identity</span>
+                            <span class="snav-item-desc">Photo, contact number, school details</span>
                         </div>
                     </button>
                     @if(Auth::user()->isStudent())
                     <button type="button" class="snav-item" data-tab="family" onclick="switchTab('family', this)">
                         <span class="snav-item-icon"><i class="bi bi-people-fill"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">Family & Guardian</span>
-                            <span class="snav-item-desc">Linked parent access</span>
+                            <span class="snav-item-title">Guardians</span>
+                            <span class="snav-item-desc">Parent attendance access</span>
                         </div>
                     </button>
                     @endif
@@ -3434,23 +3725,23 @@
                     <button type="button" class="snav-item" data-tab="security" onclick="switchTab('security', this)">
                         <span class="snav-item-icon"><i class="bi bi-shield-lock-fill"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">Security &amp; Access</span>
-                            <span class="snav-item-desc">All authentication controls</span>
+                            <span class="snav-item-title">Account security</span>
+                            <span class="snav-item-desc">Password, email, and recovery</span>
                         </div>
                     </button>
                     <button type="button" class="snav-item snav-sub-item" data-tab="fingerprint" data-sec-sub="biometrics" onclick="switchTab('fingerprint', this)">
                         <span class="snav-item-icon"><i class="bi bi-fingerprint"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">Biometrics Verification</span>
-                            <span class="snav-item-desc">Fingerprint &amp; Face ID</span>
+                            <span class="snav-item-title">Face &amp; passkeys</span>
+                            <span class="snav-item-desc">Camera enrollment and device sign-in</span>
                         </div>
                         <span class="snav-badge snav-badge-emerald">FIDO2</span>
                     </button>
                     <button type="button" class="snav-item snav-sub-item" data-tab="device" data-sec-sub="device" onclick="switchTab('device', this)">
                         <span class="snav-item-icon"><i class="bi bi-phone-fill"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">Device Binding</span>
-                            <span class="snav-item-desc">Hardware trust &amp; anti-proxy</span>
+                            <span class="snav-item-title">Attendance device</span>
+                            <span class="snav-item-desc">Device used to scan attendance</span>
                         </div>
                         <span class="snav-badge {{ $deviceBinding ? 'snav-badge-emerald' : 'snav-badge-amber' }}">{{ $deviceBinding ? 'Bound' : 'Action Req' }}</span>
                     </button>
@@ -3465,8 +3756,8 @@
                     <button type="button" class="snav-item" data-tab="preferences" onclick="switchTab('preferences', this)">
                         <span class="snav-item-icon"><i class="bi bi-sliders"></i></span>
                         <div class="snav-item-body">
-                            <span class="snav-item-title">System Preferences</span>
-                            <span class="snav-item-desc">Language, alerts & updates</span>
+                            <span class="snav-item-title">Notifications &amp; app</span>
+                            <span class="snav-item-desc">Alerts, display, and updates</span>
                         </div>
                     </button>
                 </div>
@@ -3478,7 +3769,7 @@
                     <span class="pulse-beacon"></span>
                     <span class="snav-footer-title">Account Security</span>
                 </div>
-                <div class="snav-footer-sub">All credentials encrypted with AES-256 and WebAuthn hardware roots.</div>
+                <div class="snav-footer-sub">Your password, device credentials, and attendance access are protected.</div>
             </div>
         </aside>
 

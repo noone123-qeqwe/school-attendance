@@ -77,9 +77,19 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
         $response = $this->actingAs($student)->get('/settings');
 
         $response->assertStatus(200);
-        $response->assertSee('Device Binding');
+        $response->assertSee('Your settings');
+        $response->assertSee('Manage your profile, attendance access, guardians, and notifications in one place.');
+        $response->assertSee('class="sp student-settings"', false);
+        $response->assertSee('Account security');
+        $response->assertSee('Face &amp; passkeys', false);
+        $response->assertSee('Guardians');
+        $response->assertSee('@media (max-width: 991.98px)', false);
+        $response->assertSee('@media (max-width: 575.98px)', false);
         $response->assertSee('tab-device');
         $response->assertSee('Bind to This Device');
+        $response->assertSee('cameraFaceEnrollment');
+        $response->assertSee('generateParentCodeBtn');
+        $response->assertSee('checkUpdateBtn');
     }
 
     public function test_authenticated_user_can_check_device_status_via_api(): void
