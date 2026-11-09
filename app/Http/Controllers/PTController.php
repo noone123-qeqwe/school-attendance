@@ -74,10 +74,7 @@ class PTController extends Controller
         }
 
         if ($request->role === 'student') {
-            $hasCustomStudentNumber = $request->filled('student_number') && trim($request->student_number) !== '';
-            $userData['student_number'] = $hasCustomStudentNumber
-                ? trim($request->student_number)
-                : User::generateStudentNumber();
+            $userData['student_number'] = trim($request->student_number);
             $userData['course'] = $request->course ?: 'BSCS';
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
@@ -85,24 +82,9 @@ class PTController extends Controller
         }
 
         /** @var \App\Models\User $user */
-        $maxAttempts = 5;
-        $user = null;
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            try {
-                if ($request->role === 'student' && $attempt > 1 && empty($hasCustomStudentNumber)) {
-                    $userData['student_number'] = User::generateStudentNumber();
-                }
-                $user = DB::transaction(function () use ($userData) {
-                    return User::create($userData);
-                });
-                break;
-            } catch (\Illuminate\Database\QueryException $e) {
-                if ($attempt < $maxAttempts && str_contains($e->getMessage(), 'student_number') && empty($hasCustomStudentNumber)) {
-                    continue;
-                }
-                throw $e;
-            }
-        }
+        $user = DB::transaction(function () use ($userData) {
+            return User::create($userData);
+        });
 
         // 4. Log them in and redirect based on role
         Auth::login($user, true);

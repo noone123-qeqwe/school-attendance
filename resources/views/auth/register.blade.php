@@ -613,12 +613,12 @@
                                 <div class="field-feedback" id="feedback-course" style="display:none;"></div>
 
                                 <div class="form-floating-custom mb-1" id="wrap-student_number">
-                                    <input type="text" name="student_number" id="student_number" placeholder=" " value="{{ old('student_number') }}" autocomplete="off" maxlength="7">
+                                    <input type="text" name="student_number" id="student_number" placeholder=" " value="{{ old('student_number') }}" autocomplete="off" inputmode="numeric" maxlength="7" required>
                                     <label for="student_number">Student ID / Number (e.g. 2311969)</label>
                                 </div>
                                 <div class="field-feedback" id="feedback-student_number"></div>
                                 <div class="form-text px-1 mb-3" style="font-size: 0.76rem; color: var(--text-muted); opacity: 0.85;">
-                                    <i class="bi bi-info-circle me-1"></i>Enter your school Student ID, or leave blank to auto-generate one.
+                                    <i class="bi bi-info-circle me-1"></i>Enter the official 7-digit Student ID issued by your school. The system will not generate one.
                                 </div>
 
                                 <div class="row g-2 mb-1">
@@ -951,6 +951,7 @@
                 if (studentFields) studentFields.style.display = 'block';
                 if (parentFields) parentFields.style.display = 'none';
                 if (snInput) snInput.disabled = false;
+                if (snInput) snInput.required = true;
                 if (crs && crs.tagName === 'SELECT') crs.required = true;
                 if (yLvl) yLvl.required = true;
                 if (sem) sem.required = true;
@@ -959,6 +960,7 @@
                 if (studentFields) studentFields.style.display = 'none';
                 if (parentFields) parentFields.style.display = 'block';
                 if (snInput) snInput.disabled = true;
+                if (snInput) snInput.required = false;
                 if (crs) {
                     crs.required = false;
                     clearFieldFeedback('course');
@@ -1105,24 +1107,18 @@
 
             if (fieldId === 'student_number') {
                 const val = el.value.trim();
-                if (val) {
-                    if (val.length < 3) {
-                        setFieldFeedback('student_number', false, 'Student ID must be at least 3 characters.');
-                        return false;
-                    }
-                    if (val.length > 7) {
-                        setFieldFeedback('student_number', false, 'Student ID cannot exceed 7 characters.');
-                        return false;
-                    }
-                    if (!/^[a-zA-Z0-9\-_]+$/.test(val)) {
-                        setFieldFeedback('student_number', false, 'Student ID can only contain letters, numbers, and hyphens.');
-                        return false;
-                    }
-                    if (showValidState) setFieldFeedback('student_number', true, 'Valid Student ID format');
-                    else clearFieldFeedback('student_number');
-                } else {
-                    clearFieldFeedback('student_number');
+                if (!val) {
+                    setFieldFeedback('student_number', false, 'Please enter your official Student ID.');
+                    return false;
                 }
+
+                if (!/^\d{7}$/.test(val) || Number(val.slice(2)) === 0) {
+                    setFieldFeedback('student_number', false, 'Enter a valid 7-digit Student ID issued by your school.');
+                    return false;
+                }
+
+                if (showValidState) setFieldFeedback('student_number', true, 'Valid Student ID format');
+                else clearFieldFeedback('student_number');
                 return true;
             }
 
@@ -1231,22 +1227,18 @@
                         if (showInlineErrors) setFieldFeedback('semester', true, 'Valid');
                     }
 
-                    // Student ID (Optional format check)
+                    // Student registration requires the student's official ID.
                     const snField = document.getElementById('student_number');
-                    if (snField && snField.value.trim()) {
+                    if (snField && !snField.disabled) {
                         const snVal = snField.value.trim();
-                        if (snVal.length < 3) {
-                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID must be at least 3 characters.');
+                        if (!snVal) {
+                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Please enter your official Student ID.');
                             isValid = false;
-                            if (!firstErrorMsg) firstErrorMsg = 'Student ID must be at least 3 characters.';
-                        } else if (snVal.length > 7) {
-                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID cannot exceed 7 characters.');
+                            if (!firstErrorMsg) firstErrorMsg = 'Please enter your official Student ID.';
+                        } else if (!/^\d{7}$/.test(snVal) || Number(snVal.slice(2)) === 0) {
+                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Enter a valid 7-digit Student ID issued by your school.');
                             isValid = false;
-                            if (!firstErrorMsg) firstErrorMsg = 'Student ID cannot exceed 7 characters.';
-                        } else if (!/^[a-zA-Z0-9\-_]+$/.test(snVal)) {
-                            if (showInlineErrors) setFieldFeedback('student_number', false, 'Student ID can only contain letters, numbers, and hyphens.');
-                            isValid = false;
-                            if (!firstErrorMsg) firstErrorMsg = 'Student ID can only contain letters, numbers, and hyphens.';
+                            if (!firstErrorMsg) firstErrorMsg = 'Enter a valid 7-digit Student ID issued by your school.';
                         } else {
                             if (showInlineErrors) setFieldFeedback('student_number', true, 'Valid Student ID format');
                         }
@@ -1918,7 +1910,7 @@
                     }
                 });
                 snInputField.addEventListener('blur', () => {
-                    if (snInputField.value.trim()) validateSingleField('student_number', true);
+                    if (!snInputField.disabled) validateSingleField('student_number', true);
                 });
             }
 
