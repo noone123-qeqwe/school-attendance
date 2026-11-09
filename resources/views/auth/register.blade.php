@@ -547,7 +547,7 @@
             <div class="card-body-premium">
                 
                 @if($errors->any())
-                    <div class="alert-modern">
+                    <div class="alert-modern" id="server-validation-alert" data-field="{{ $errors->keys()[0] ?? '' }}" role="alert">
                         <i class="bi bi-exclamation-triangle-fill mt-1"></i>
                         <div>{{ $errors->first() }}</div>
                     </div>
@@ -1906,7 +1906,12 @@
             const snInputField = document.getElementById('student_number');
             if (snInputField) {
                 snInputField.addEventListener('input', () => {
-                    if (document.getElementById('wrap-student_number')?.classList.contains('is-invalid')) {
+                    const serverAlert = document.getElementById('server-validation-alert');
+                    const hasStaleStudentIdError = serverAlert?.dataset.field === 'student_number';
+                    if (hasStaleStudentIdError) {
+                        serverAlert.style.display = 'none';
+                    }
+                    if (hasStaleStudentIdError || document.getElementById('wrap-student_number')?.classList.contains('is-invalid')) {
                         validateSingleField('student_number', true);
                     }
                 });
