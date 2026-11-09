@@ -11,7 +11,8 @@ class FeatureFlagService
 {
     public const DEFAULTS = [
         'feature.face_verification' => true,
-        'feature.peer_biometric' => true,
+        // Keep external face verification hidden until privacy/provider review is complete.
+        'feature.peer_biometric' => false,
         'feature.student_assistant_qr' => true,
         'feature.gps_verification' => true,
         'feature.device_binding' => true,

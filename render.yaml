@@ -49,6 +49,9 @@ services:
         value: sync
       - key: DB_CONNECTION
         value: pgsql
+      # External face verification stays disabled until privacy and provider review is complete.
+      - key: PEER_SNAP_ENABLED
+        value: "false"
       - key: DATABASE_URL
         fromDatabase:
           name: attendance-db
