@@ -22,7 +22,7 @@ body.student-portal {
 body.student-portal .main-content > .page-enter {
     width: min(100%, 1440px);
     margin-inline: auto;
-    padding: clamp(18px, 2.5vw, 34px) !important;
+    padding: clamp(28px, 3vw, 46px) !important;
 }
 
 body.student-portal .top-header {
@@ -140,9 +140,9 @@ body.student-portal .student-meta-chip {
     background: rgba(0, 0, 0, 0.16);
 }
 
-body.student-portal .student-hero-deck { gap: 12px; }
+body.student-portal .student-hero-deck { gap: 16px; }
 body.student-portal .hero-deck-card {
-    min-height: 78px;
+    min-height: 88px;
     border-radius: 15px;
     border-color: rgba(255, 255, 255, 0.09);
     background: rgba(10, 7, 6, 0.32);
@@ -176,7 +176,7 @@ body.student-portal .cor-empty-state {
 /* Profile: reliable visual grouping for data, security, and shortcuts. */
 body.student-portal .profile-page { max-width: 1120px; }
 body.student-portal .profile-hero {
-    height: 184px;
+    height: 198px;
     border-radius: 24px;
     border-color: var(--student-border-strong);
     box-shadow: var(--student-shadow);
@@ -187,20 +187,20 @@ body.student-portal .profile-name { font-size: clamp(1.4rem, 2.2vw, 1.9rem); }
 body.student-portal .profile-id { min-height: 30px; }
 body.student-portal .info-card { border-radius: 18px; }
 body.student-portal .info-card-header {
-    padding: 17px 20px 15px;
+    padding: 20px 24px 18px;
     background: rgba(0, 0, 0, 0.16);
 }
-body.student-portal .info-card-body { padding: 20px; }
-body.student-portal .info-row { padding-block: 13px; }
-body.student-portal .stat-chip { min-height: 82px; border-radius: 13px; }
+body.student-portal .info-card-body { padding: 24px; }
+body.student-portal .info-row { padding-block: 16px; }
+body.student-portal .stat-chip { min-height: 90px; border-radius: 13px; }
 
 /* Records, schedules, and the certificate of registration use the same scan-friendly rhythm. */
 body.student-portal .records-page { max-width: 1180px; }
-body.student-portal .page-header { margin-bottom: 20px; }
+body.student-portal .page-header { margin-bottom: 28px; }
 body.student-portal .page-header-title { font-size: clamp(1.5rem, 2.4vw, 2rem); }
-body.student-portal .summary-chip { min-height: 104px; border-radius: 16px; }
+body.student-portal .summary-chip { min-height: 112px; border-radius: 16px; }
 body.student-portal .table-card { border-radius: 20px; }
-body.student-portal .table-card-header { padding: 18px 20px; }
+body.student-portal .table-card-header { padding: 21px 24px; }
 body.student-portal .filter-tab { min-height: 38px; border-radius: 10px; }
 body.student-portal .record-card { border-radius: 15px; }
 
@@ -218,8 +218,8 @@ body.student-portal .cor-page-wrapper {
     margin-inline: auto;
 }
 body.student-portal .cor-actions-bar {
-    gap: 16px;
-    padding-bottom: 18px;
+    gap: 20px;
+    padding-bottom: 24px;
     border-bottom: 1px solid rgba(207, 164, 111, 0.13);
 }
 body.student-portal .cor-sheet {
@@ -355,53 +355,53 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
 }
 
 @media (max-width: 991.98px) {
-    body.student-portal .main-content > .page-enter { padding: 18px 16px calc(104px + env(safe-area-inset-bottom)) !important; }
+    body.student-portal .main-content > .page-enter { padding: 26px 22px calc(112px + env(safe-area-inset-bottom)) !important; }
     body.student-portal .student-hero-banner { border-radius: 21px; }
-    body.student-portal .hero-deck-card { min-height: 68px; }
+    body.student-portal .hero-deck-card { min-height: 78px; }
     body.student-portal .cor-actions-bar { align-items: flex-start; }
-    body.student-portal .scal-outer { gap: 14px; }
+    body.student-portal .scal-outer { gap: 18px; }
 }
 
 @media (max-width: 767.98px) {
     body.student-portal .top-header { min-height: 64px; }
     body.student-portal .header-page-title { font-size: 0.98rem; }
     body.student-portal .header-page-sub { font-size: 0.68rem; }
-    body.student-portal .main-content > .page-enter { padding-inline: 12px !important; }
+    body.student-portal .main-content > .page-enter { padding-inline: 18px !important; }
 
-    body.student-portal .student-hero-banner { margin-bottom: 16px !important; }
-    body.student-portal .student-hero-inner { padding: 18px !important; }
+    body.student-portal .student-hero-banner { margin-bottom: 24px !important; }
+    body.student-portal .student-hero-inner { padding: 24px !important; }
     body.student-portal .student-hero-profile { align-items: flex-start; }
     body.student-portal .student-avatar-box { width: 52px; height: 52px; }
     body.student-portal .student-hero-name { font-size: 1.34rem; }
     body.student-portal .student-meta-strip { margin-top: 8px; }
-    body.student-portal .student-meta-chip { font-size: 0.66rem; }
+    body.student-portal .student-meta-chip { font-size: 0.7rem; }
     body.student-portal .student-hero-deck { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    body.student-portal .hero-deck-card { min-height: 64px; padding: 10px; }
+    body.student-portal .hero-deck-card { min-height: 76px; padding: 14px; }
     body.student-portal .hero-deck-value { font-size: 0.95rem; }
     body.student-portal .hero-deck-label { font-size: 0.62rem; }
 
-    body.student-portal .profile-hero { height: 144px; border-radius: 19px; margin-bottom: 62px; }
-    body.student-portal .student-avatar-container { bottom: -48px; }
-    body.student-portal .profile-meta { padding-top: 90px; }
+    body.student-portal .profile-hero { height: 156px; border-radius: 19px; margin-bottom: 70px; }
+    body.student-portal .student-avatar-container { bottom: -54px; }
+    body.student-portal .profile-meta { padding-top: 98px; }
     body.student-portal .info-card { border-radius: 16px; }
-    body.student-portal .info-card-header { padding: 15px 16px 13px; }
-    body.student-portal .info-card-body { padding: 16px; }
-    body.student-portal .info-row { flex-direction: row; gap: 12px; }
+    body.student-portal .info-card-header { padding: 18px 20px 16px; }
+    body.student-portal .info-card-body { padding: 20px; }
+    body.student-portal .info-row { flex-direction: row; gap: 14px; }
     body.student-portal .info-row-value { overflow-wrap: anywhere; }
     body.student-portal .stat-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    body.student-portal .stat-chip { min-width: 0; min-height: 72px; padding: 11px 8px; }
+    body.student-portal .stat-chip { min-width: 0; min-height: 84px; padding: 13px 10px; }
 
     body.student-portal .page-header-title { font-size: 1.4rem; }
-    body.student-portal .summary-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-    body.student-portal .summary-chip { min-width: 0; min-height: 82px; padding: 13px; }
-    body.student-portal .table-card-header { padding: 16px; }
+    body.student-portal .summary-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    body.student-portal .summary-chip { min-width: 0; min-height: 94px; padding: 15px; }
+    body.student-portal .table-card-header { padding: 19px 20px; }
     body.student-portal .filter-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; }
-    body.student-portal .filter-tab { flex: 0 0 auto; }
-    body.student-portal .records-container { padding: 12px; gap: 10px; }
-    body.student-portal .record-header { padding: 15px 16px 12px; }
+    body.student-portal .filter-tab { flex: 0 0 auto; min-height: 44px; }
+    body.student-portal .records-container { padding: 16px; gap: 14px; }
+    body.student-portal .record-header { padding: 18px 20px 16px; }
 
     body.student-portal .cor-page-wrapper { padding: 0 !important; }
-    body.student-portal .cor-actions-bar { gap: 12px; padding-bottom: 14px; }
+    body.student-portal .cor-actions-bar { gap: 16px; padding-bottom: 20px; }
     body.student-portal .cor-summary-chips-row { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 3px; scrollbar-width: none; }
     body.student-portal .cor-summary-chip { flex: 0 0 auto; }
     body.student-portal .cor-btn-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
@@ -411,12 +411,12 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
     body.student-portal .cor-search-box { flex: 1 1 100%; }
     body.student-portal .cor-day-pills-rail { overflow-x: auto; flex-wrap: nowrap; }
     body.student-portal .cor-day-btn { flex: 0 0 auto; }
-    body.student-portal .cor-card-item { padding: 15px; }
+    body.student-portal .cor-card-item { padding: 18px; }
     body.student-portal .cor-card-sched-matrix { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     body.student-portal .scal-card,
     body.student-portal .att-cal-wrap { border-radius: 18px; }
-    body.student-portal .scal-card { padding: 16px 12px; }
+    body.student-portal .scal-card { padding: 20px 16px; }
     body.student-portal .scal-grid,
     body.student-portal .scal-weekdays { gap: 5px; }
     body.student-portal .scal-tile { min-height: 46px; height: 46px; border-radius: 10px; }
@@ -425,15 +425,37 @@ body.student-mobile-portal .mobile-scan-page .scan-paste-btn {
     body.student-portal .scal-legend-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     body.student-portal .ent-section.ent-fade-up { border-radius: 18px; }
-    body.student-portal .ent-section-header { padding: 16px !important; align-items: flex-start !important; }
-    body.student-portal .ent-section-body { padding: 16px !important; }
+    body.student-portal .ent-section-header { padding: 20px !important; align-items: flex-start !important; }
+    body.student-portal .ent-section-body { padding: 20px !important; }
     body.student-portal .ent-btn { width: 100%; justify-content: center; }
-    body.student-portal .excuse-subject-card { min-height: 70px; }
+    body.student-portal .excuse-subject-card { min-height: 78px; }
     body.student-portal .tch-card { border-radius: 17px; }
+
+    body.student-mobile-portal .mobile-app { padding-inline: max(20px, var(--safe-left)) max(20px, var(--safe-right)); }
+    body.student-mobile-portal .mobile-home,
+    body.student-mobile-portal .mobile-history,
+    body.student-mobile-portal .mobile-profile-page { padding-bottom: 40px; }
+    body.student-mobile-portal .mobile-home .welcome-card { padding: 22px 20px; margin-bottom: 24px; }
+    body.student-mobile-portal .mobile-home .status-card { padding: 24px 22px; margin-bottom: 30px; }
+    body.student-mobile-portal .mobile-home :is(.quick-actions-section, .upcoming-section, .activity-section) { margin-top: 30px; }
+    body.student-mobile-portal .quick-actions-grid { gap: 14px; }
+    body.student-mobile-portal .mobile-home .quick-action-btn { min-height: 116px; padding: 18px 14px; }
+    body.student-mobile-portal .mobile-history .history-top-bar { padding: 18px; margin-bottom: 24px; }
+    body.student-mobile-portal .mobile-history .stats-pills-grid { gap: 12px; margin-bottom: 24px; }
+    body.student-mobile-portal .mobile-history .history-card { margin-bottom: 14px; }
+    body.student-mobile-portal .mobile-history .card-inner { padding: 20px 18px 20px 22px; }
+    body.student-mobile-portal .mobile-profile-page { padding-top: 20px; }
+    body.student-mobile-portal .mobile-profile-page .mobile-profile-hero { padding: 28px 20px; margin-bottom: 28px !important; }
+    body.student-mobile-portal .mobile-profile-page .mobile-section { margin-bottom: 28px !important; }
+    body.student-mobile-portal .mobile-profile-page .mobile-info-row { min-height: 72px; padding: 17px 18px; }
+    body.student-mobile-portal .mobile-scan-page { padding-top: 28px; }
+    body.student-mobile-portal .mobile-scan-page .scan-hero { padding: 28px 20px; margin-bottom: 32px; }
+    body.student-mobile-portal .mobile-scan-page .scan-action-area { gap: 10px; margin-bottom: 28px; }
+    body.student-mobile-portal .mobile-scan-page .scan-info-card { padding: 22px 20px; gap: 18px; }
 }
 
 @media (max-width: 390px) {
-    body.student-portal .main-content > .page-enter { padding-inline: 10px !important; }
+    body.student-portal .main-content > .page-enter { padding-inline: 14px !important; }
     body.student-portal .student-meta-chip:nth-child(n + 4) { display: none; }
     body.student-portal .cor-card-sched-matrix { grid-template-columns: 1fr; }
     body.student-portal .scal-tile { min-height: 40px; height: 40px; }

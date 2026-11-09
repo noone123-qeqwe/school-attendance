@@ -72,6 +72,8 @@ class StudentPortalRedesignTest extends TestCase
         $this->assertNotFalse($stylesheet);
         $this->assertStringContainsString('body.student-portal .student-hero-banner', $stylesheet);
         $this->assertStringContainsString('body.student-mobile-portal .mobile-header', $stylesheet);
+        $this->assertStringContainsString('padding: clamp(28px, 3vw, 46px)', $stylesheet);
+        $this->assertStringContainsString('body.student-mobile-portal .mobile-home .quick-action-btn', $stylesheet);
         $this->assertStringContainsString('@media (max-width: 767.98px)', $stylesheet);
         $this->assertStringContainsString('@media (prefers-reduced-motion: reduce)', $stylesheet);
     }
