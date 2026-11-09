@@ -3821,6 +3821,23 @@
     .student-settings .sec-card { padding: 20px 16px; }
 }
 
+@media (max-width: 767.98px) {
+    body.student-portal .main-content > .page-enter:has(.student-settings) { padding: 0 !important; }
+    .student-settings { padding: 10px 12px calc(20px + env(safe-area-inset-bottom)) !important; }
+    .student-settings .settings-command-header { gap: 12px; margin-bottom: 10px; padding: 14px; }
+    .student-settings .stabs-wrapper { margin-bottom: 10px; }
+    .student-settings .stabs-wrapper:not(.has-scroll-right) .stabs { padding-right: 2px !important; }
+    .student-settings .stabs-wrapper.has-scroll-right .stabs { padding-right: 40px !important; }
+    .student-settings .sc + .sc { margin-top: 14px; }
+    .student-settings .sc-head { padding: 16px 14px 14px; }
+    .student-settings .sc-body { padding: 18px 14px; }
+    .student-settings .sec-health-hero { margin-bottom: 10px; padding: 18px 14px; }
+    .student-settings .sec-subnav-bar { margin: 8px 0 12px; padding: 6px; }
+    .student-settings .sec-group-panel { padding: 16px 12px; }
+    .student-settings .sec-card { padding: 16px 12px; }
+    .student-settings .pref-tile { gap: 10px; padding: 14px 12px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     .student-settings *,
     .student-settings *::before,
