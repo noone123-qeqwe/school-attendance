@@ -4424,19 +4424,25 @@
                                 <p style="font-size:.82rem;color:#cbd5e1;margin:0;line-height:1.5;">Use your camera to capture one clear face. The image is checked for quality and stored encrypted for attendance matching; it is not saved as a public profile photo.</p>
                             </div>
                         </div>
-                        <div id="cameraFacePreviewWrap" style="display:none;position:relative;overflow:hidden;width:min(100%,440px);aspect-ratio:4/3;margin:0 auto 14px;border-radius:14px;background:#080b12;border:1px solid rgba(56,189,248,.3);">
-                            <video id="cameraFaceVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
-                            <div aria-hidden="true" style="position:absolute;inset:10% 25%;border:2px solid rgba(56,189,248,.9);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.24);pointer-events:none;"></div>
-                            <canvas id="cameraFaceCanvas" style="display:none;"></canvas>
-                        </div>
+                        @if($faceEnrollmentAvailable)
+                            <div id="cameraFacePreviewWrap" style="display:none;position:relative;overflow:hidden;width:min(100%,440px);aspect-ratio:4/3;margin:0 auto 14px;border-radius:14px;background:#080b12;border:1px solid rgba(56,189,248,.3);">
+                                <video id="cameraFaceVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
+                                <div aria-hidden="true" style="position:absolute;inset:10% 25%;border:2px solid rgba(56,189,248,.9);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.24);pointer-events:none;"></div>
+                                <canvas id="cameraFaceCanvas" style="display:none;"></canvas>
+                            </div>
+                        @endif
                         <div id="cameraFaceStatus" role="status" aria-live="polite" style="min-height:1.3em;margin:0 0 10px;color:{{ $hasCameraFaceEnrollment ? '#34d399' : '#94a3b8' }};font-size:.82rem;">{{ $hasCameraFaceEnrollment ? 'A face profile is enrolled for attendance matching. Register a new capture to replace it.' : '' }}</div>
-                        <div style="display:flex;gap:9px;flex-wrap:wrap;">
-                            <button type="button" id="cameraFaceStartBtn" class="sbtn bio-primary-cta" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera-video me-2"></i>Open camera</button>
-                            <button type="button" id="cameraFaceCaptureBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera me-2"></i>Capture face</button>
-                            <button type="button" id="cameraFaceRetakeBtn" class="cancel-btn" style="display:none;"><i class="bi bi-arrow-repeat me-1"></i>Retake</button>
-                            <button type="button" id="cameraFaceSaveBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-shield-check me-2"></i>Register face</button>
-                            <button type="button" id="cameraFaceCancelBtn" class="cancel-btn" style="display:none;">Cancel</button>
-                        </div>
+                        @if($faceEnrollmentAvailable)
+                            <div style="display:flex;gap:9px;flex-wrap:wrap;">
+                                <button type="button" id="cameraFaceStartBtn" class="sbtn bio-primary-cta" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera-video me-2"></i>Open camera</button>
+                                <button type="button" id="cameraFaceCaptureBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera me-2"></i>Capture face</button>
+                                <button type="button" id="cameraFaceRetakeBtn" class="cancel-btn" style="display:none;"><i class="bi bi-arrow-repeat me-1"></i>Retake</button>
+                                <button type="button" id="cameraFaceSaveBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-shield-check me-2"></i>Register face</button>
+                                <button type="button" id="cameraFaceCancelBtn" class="cancel-btn" style="display:none;">Cancel</button>
+                            </div>
+                        @else
+                            <p id="cameraFaceUnavailableNotice" role="status" style="margin:0;color:#fbbf24;font-size:.85rem;">Camera-based face registration is currently unavailable. Please contact your administrator.</p>
+                        @endif
                     </section>
                     @endif
 
@@ -6432,6 +6438,7 @@ async function prefetchWebAuthn() {
 // ── Camera-based face enrollment for attendance ──
 let cameraFaceStream = null;
 let cameraFaceBlob = null;
+let cameraFaceRequestId = 0;
 
 function stopCameraFaceStream() {
     if (cameraFaceStream) cameraFaceStream.getTracks().forEach(track => track.stop());
@@ -6456,17 +6463,19 @@ function initCameraFaceEnrollment() {
     const reset = () => {
         stopCameraFaceStream();
         cameraFaceBlob = null;
+        if (video) video.srcObject = null;
         if (wrap) wrap.style.display = 'none';
         if (video) video.style.display = 'block';
         if (canvas) canvas.style.display = 'none';
         if (capture) capture.style.display = 'none';
-        if (retake) retake.style.display = 'none';
+        if (retake) { retake.style.display = 'none'; retake.disabled = false; }
         if (save) { save.style.display = 'none'; save.disabled = false; }
-        if (cancel) cancel.style.display = 'none';
+        if (cancel) { cancel.style.display = 'none'; cancel.disabled = false; }
         if (start) { start.style.display = ''; start.disabled = false; }
     };
 
     start.addEventListener('click', async () => {
+        const requestId = ++cameraFaceRequestId;
         if (!navigator.mediaDevices?.getUserMedia) {
             setStatus('Camera access requires a supported browser and a secure HTTPS connection.', '#f87171');
             return;
@@ -6475,12 +6484,22 @@ function initCameraFaceEnrollment() {
         setStatus('Requesting camera access…');
         try {
             stopCameraFaceStream();
-            cameraFaceStream = await navigator.mediaDevices.getUserMedia({
+            const stream = await navigator.mediaDevices.getUserMedia({
                 audio: false,
                 video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 960 } }
             });
+            if (requestId !== cameraFaceRequestId) {
+                stream.getTracks().forEach(track => track.stop());
+                return;
+            }
+            cameraFaceStream = stream;
             video.srcObject = cameraFaceStream;
             await video.play();
+            if (requestId !== cameraFaceRequestId) {
+                stopCameraFaceStream();
+                video.srcObject = null;
+                return;
+            }
             wrap.style.display = 'block';
             video.style.display = 'block';
             canvas.style.display = 'none';
@@ -6490,6 +6509,8 @@ function initCameraFaceEnrollment() {
             setStatus('Center your face inside the frame, face the camera, and use even lighting.');
         } catch (error) {
             stopCameraFaceStream();
+            if (requestId !== cameraFaceRequestId) return;
+            if (video) video.srcObject = null;
             start.disabled = false;
             setStatus(error?.name === 'NotAllowedError'
                 ? 'Camera permission was denied. Allow camera access in your browser settings and retry.'
@@ -6502,11 +6523,13 @@ function initCameraFaceEnrollment() {
             setStatus('The camera is not ready yet. Wait a moment and retry.', '#f87171');
             return;
         }
+        const requestId = cameraFaceRequestId;
         const scale = Math.min(1, 1280 / Math.max(video.videoWidth, video.videoHeight));
         canvas.width = Math.round(video.videoWidth * scale);
         canvas.height = Math.round(video.videoHeight * scale);
         canvas.getContext('2d', { alpha: false }).drawImage(video, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(blob => {
+            if (requestId !== cameraFaceRequestId) return;
             if (!blob) {
                 setStatus('The camera frame could not be captured. Please try again.', '#f87171');
                 return;
@@ -6525,7 +6548,10 @@ function initCameraFaceEnrollment() {
 
     save.addEventListener('click', async () => {
         if (!cameraFaceBlob) return;
+        const requestId = cameraFaceRequestId;
         save.disabled = true;
+        if (retake) retake.disabled = true;
+        if (cancel) cancel.disabled = true;
         setStatus('Checking face quality and saving securely…');
         const form = new FormData();
         form.append('face_image', cameraFaceBlob, 'face-enrollment.jpg');
@@ -6537,8 +6563,11 @@ function initCameraFaceEnrollment() {
                 credentials: 'same-origin'
             });
             const result = await response.json();
+            if (requestId !== cameraFaceRequestId) return;
             if (!response.ok || !result.success) {
                 save.disabled = false;
+                if (retake) retake.disabled = false;
+                if (cancel) cancel.disabled = false;
                 retake.style.display = '';
                 setStatus(result.message || 'Face registration could not be completed. Please try again.', '#f87171');
                 return;
@@ -6546,22 +6575,31 @@ function initCameraFaceEnrollment() {
             reset();
             setStatus(result.message || 'Face registered securely for attendance verification.', '#34d399');
         } catch (error) {
+            if (requestId !== cameraFaceRequestId) return;
             save.disabled = false;
+            if (retake) retake.disabled = false;
+            if (cancel) cancel.disabled = false;
             retake.style.display = '';
             setStatus('Could not reach the server. Your capture was not saved; please retry.', '#f87171');
         }
     });
 
     retake.addEventListener('click', () => {
+        cameraFaceRequestId++;
         reset();
         start.click();
     });
 
     cancel.addEventListener('click', () => {
+        cameraFaceRequestId++;
         reset();
         setStatus('Capture canceled.');
     });
-    window.addEventListener('pagehide', stopCameraFaceStream, { once: true });
+    window.addEventListener('pagehide', () => {
+        cameraFaceRequestId++;
+        reset();
+        setStatus('The camera was closed when you left Settings. Open it again when you are ready.');
+    });
 }
 
 if (document.readyState === 'loading') {

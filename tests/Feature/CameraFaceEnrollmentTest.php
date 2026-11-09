@@ -59,6 +59,19 @@ class CameraFaceEnrollmentTest extends TestCase
             ->assertSee('id="cameraFaceSaveBtn"', false);
     }
 
+    public function test_student_settings_explains_when_camera_enrollment_is_disabled(): void
+    {
+        Setting::set('feature.face_verification', '0', false);
+        Cache::forget('application_feature_flags');
+        $student = User::factory()->create(['role' => 'student']);
+
+        $this->actingAs($student)->get(route('settings'))
+            ->assertOk()
+            ->assertSee('Camera-based face registration is currently unavailable.', false)
+            ->assertDontSee('id="cameraFaceStartBtn"', false)
+            ->assertDontSee('id="cameraFaceCaptureBtn"', false);
+    }
+
     public function test_camera_enrollment_rejects_non_students_and_does_not_call_face_matcher(): void
     {
         $teacher = User::factory()->create(['role' => 'teacher']);
