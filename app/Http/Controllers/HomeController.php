@@ -484,7 +484,10 @@ class HomeController extends Controller
     {
         $user = Auth::user();
         $linkedParents = ($user && $user->isStudent()) ? $user->parents()->get() : collect();
-        return view('settings', compact('linkedParents'));
+        $hasCameraFaceEnrollment = $user && $user->isStudent()
+            ? \App\Models\ProfileFacePhoto::where('user_id', $user->id)->exists()
+            : false;
+        return view('settings', compact('linkedParents', 'hasCameraFaceEnrollment'));
     }
 
     /**

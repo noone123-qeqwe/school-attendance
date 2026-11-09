@@ -3870,7 +3870,7 @@
                             <div aria-hidden="true" style="position:absolute;inset:10% 25%;border:2px solid rgba(56,189,248,.9);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.24);pointer-events:none;"></div>
                             <canvas id="cameraFaceCanvas" style="display:none;"></canvas>
                         </div>
-                        <div id="cameraFaceStatus" role="status" aria-live="polite" style="min-height:1.3em;margin:0 0 10px;color:#94a3b8;font-size:.82rem;"></div>
+                        <div id="cameraFaceStatus" role="status" aria-live="polite" style="min-height:1.3em;margin:0 0 10px;color:{{ $hasCameraFaceEnrollment ? '#34d399' : '#94a3b8' }};font-size:.82rem;">{{ $hasCameraFaceEnrollment ? 'A face profile is enrolled for attendance matching. Register a new capture to replace it.' : '' }}</div>
                         <div style="display:flex;gap:9px;flex-wrap:wrap;">
                             <button type="button" id="cameraFaceStartBtn" class="sbtn bio-primary-cta" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera-video me-2"></i>Open camera</button>
                             <button type="button" id="cameraFaceCaptureBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera me-2"></i>Capture face</button>

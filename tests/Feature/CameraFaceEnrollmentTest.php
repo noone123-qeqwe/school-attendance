@@ -43,6 +43,9 @@ class CameraFaceEnrollmentTest extends TestCase
         $this->assertSame('camera-face-enrollment', $photo->source_path);
         $this->assertNotSame('', $photo->image_ciphertext);
         $this->assertNotNull(app(ProfileFacePhotoService::class)->bytes($student->fresh()));
+        $this->actingAs($student)->get(route('settings'))
+            ->assertOk()
+            ->assertSee('A face profile is enrolled for attendance matching.', false);
     }
 
     public function test_student_settings_renders_camera_preview_and_registration_controls(): void
