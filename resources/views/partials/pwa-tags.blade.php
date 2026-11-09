@@ -1476,7 +1476,7 @@
     let isCheckingVersion = false;
     let checkVersionPromise = null;
     let lastVersionCheckTime = 0;
-    const VERSION_CHECK_COOLDOWN_MS = 30 * 1000;
+    const VERSION_CHECK_COOLDOWN_MS = 15 * 1000;
 
     // ── Handle URL Version Query Sync & Parameter Cleanup ──
     try {
@@ -2172,10 +2172,13 @@
         checkServerVersion(false);
     }
 
-    // Periodic check; focus and reconnect also trigger a debounced check.
+    // Check visible tabs promptly so a release does not wait for the old five-minute interval.
+    // Focus, reconnect, and service-worker signals also trigger an immediate check.
     setInterval(() => {
-        checkServerVersion(false);
-    }, 5 * 60 * 1000);
+        if (document.visibilityState === 'visible') {
+            checkServerVersion(false);
+        }
+    }, 60 * 1000);
 
     // 4. Tab visibility change (e.g. user returns to the app from another tab/app)
     document.addEventListener('visibilitychange', () => {
@@ -2232,7 +2235,7 @@
 
                 // If an update is waiting:
                 if (reg.waiting) {
-                    checkServerVersion(false);
+                    checkServerVersion(true);
                 }
 
                 // When new update finishes installing:
@@ -2241,7 +2244,7 @@
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
-                                checkServerVersion(false);
+                                checkServerVersion(true);
                             }
                         });
                     }
@@ -2251,7 +2254,7 @@
                 navigator.serviceWorker.addEventListener('message', (event) => {
                     if (event.data && (event.data.type === 'UPDATE_AVAILABLE' || event.data.type === 'SW_UPDATED' || event.data.type === 'UPDATE_WAITING')) {
                         console.log('[PWA] Automatic update signal received:', event.data.version);
-                        checkServerVersion(false);
+                        checkServerVersion(true);
                     }
                 });
 
