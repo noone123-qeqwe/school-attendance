@@ -532,6 +532,13 @@
 </div>
 @endif
 
+@if(session('info'))
+<div style="background: rgba(96, 165, 250, 0.1); border: 1px solid rgba(96, 165, 250, 0.25); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; color: #93C5FD;">
+    <i class="bi bi-info-circle-fill" style="font-size: 1.15rem;"></i>
+    <div style="font-size: 0.9rem; font-weight: 500;">{{ session('info') }}</div>
+</div>
+@endif
+
 @if($errors->any())
 <div style="background: rgba(248, 113, 113, 0.12); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: 12px; padding: 14px 18px; margin-bottom: 20px; color: #F87171;">
     <div style="font-weight: 600; margin-bottom: 6px;">Please check the following errors:</div>
@@ -569,6 +576,47 @@
         <i class="bi bi-clock-fill"></i> Class Schedules
     </a>
 </div>
+
+<!-- Schedule publication -->
+<section style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:18px 20px;margin-bottom:22px;border-radius:16px;border:1px solid rgba(212,175,55,.2);background:rgba(26,17,17,.72);">
+    <div style="display:flex;align-items:flex-start;gap:14px;min-width:240px;flex:1;">
+        <div style="width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex-shrink:0;background:rgba(212,175,55,.12);color:#D4AF37;font-size:1.1rem;">
+            <i class="bi bi-megaphone-fill"></i>
+        </div>
+        <div>
+            <h2 style="font-size:1rem;font-weight:700;color:#FCF8F2;margin:0 0 5px;">Publish schedules to students and teachers</h2>
+            @if($academicYear)
+                <p style="font-size:.84rem;color:#A39683;margin:0;line-height:1.5;">
+                    {{ $academicYear->name }} · {{ $academicYear->semester_label }}
+                    @if($isSchedulePublished)
+                        <span style="color:#34D399;"> · Published {{ $publication->published_at->diffForHumans() }}</span>
+                    @elseif($publication)
+                        <span style="color:#FBBF24;"> · Schedule changes are waiting to be published</span>
+                    @else
+                        <span style="color:#FBBF24;"> · Not published yet</span>
+                    @endif
+                    <br>Students can already view their assigned classes and download their generated COR. Publishing sends an in-app notice when a schedule is first released or changed.
+                </p>
+            @else
+                <p style="font-size:.84rem;color:#A39683;margin:0;line-height:1.5;">Set a current academic term before publishing schedules.</p>
+            @endif
+        </div>
+    </div>
+    @if($academicYear)
+        @php($canPublishSchedule = !$isSchedulePublished && (($publicationStatus['schedule_count'] ?? 0) > 0 || $publication))
+        <form method="POST" action="{{ route('admin.class-schedules.publish') }}" onsubmit="return confirm('Publish the current schedule and notify students and teachers whose schedules changed?');">
+            @csrf
+            <button type="submit" class="sch-btn-primary" @disabled(!$canPublishSchedule) style="white-space:nowrap;{{ !$canPublishSchedule ? 'opacity:.55;cursor:not-allowed;' : '' }}">
+                <i class="bi bi-send-fill"></i>
+                {{ $isSchedulePublished ? 'Schedules Published' : ($publication ? 'Publish Schedule Changes' : 'Publish Schedules') }}
+            </button>
+        </form>
+    @else
+        <a href="{{ route('admin.academic-years.index') }}" class="sch-btn-primary" style="white-space:nowrap;text-decoration:none;">
+            <i class="bi bi-calendar-plus-fill"></i> Set Current Term
+        </a>
+    @endif
+</section>
 
 <!-- Quick Statistics Bar -->
 <div class="sch-stats-grid">

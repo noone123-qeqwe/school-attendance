@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClassSchedule;
+use App\Models\AcademicYear;
+use App\Models\SchedulePublication;
 use App\Models\Subject;
 use App\Models\Section;
 use App\Models\Schedule;
 use App\Models\User;
 use App\Rules\ValidScheduleSlot;
 use App\Services\ClassScheduleLock;
+use App\Services\SchedulePublicationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +66,43 @@ class ClassScheduleController extends Controller
             'rooms' => ClassSchedule::distinct('room')->whereNotNull('room')->count('room'),
         ];
 
-        return view('admin.class_schedules.index', compact('schedules', 'subjects', 'sections', 'teachers', 'stats'));
+        $academicYear = AcademicYear::current();
+        $publication = $academicYear
+            ? SchedulePublication::query()->where('academic_year_id', $academicYear->id)->first()
+            : null;
+        $publicationStatus = $academicYear ? app(SchedulePublicationService::class)->status($academicYear) : null;
+        $isSchedulePublished = $publication && $publicationStatus
+            && hash_equals($publication->schedule_hash, $publicationStatus['hash']);
+
+        return view('admin.class_schedules.index', compact(
+            'schedules', 'subjects', 'sections', 'teachers', 'stats',
+            'academicYear', 'publication', 'publicationStatus', 'isSchedulePublished',
+        ));
+    }
+
+    public function publish(Request $request, SchedulePublicationService $publicationService)
+    {
+        $result = DB::transaction(function () use ($request, $publicationService) {
+            ClassScheduleLock::acquire();
+            $academicYear = AcademicYear::query()->current()->lockForUpdate()->first();
+            if (!$academicYear) {
+                throw ValidationException::withMessages([
+                    'publish' => 'Set a current academic term before publishing schedules.',
+                ]);
+            }
+
+            return $publicationService->publish($academicYear, (int) $request->user()->id);
+        }, 3);
+
+        if (!$result['published']) {
+            return redirect()->route('admin.class-schedules.index')
+                ->with('info', 'These schedules are already published. No duplicate notifications were sent.');
+        }
+
+        return redirect()->route('admin.class-schedules.index')->with(
+            'success',
+            "Schedules published. {$result['notified']} student and teacher notification(s) sent.",
+        );
     }
 
     public function store(Request $request)

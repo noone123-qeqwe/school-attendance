@@ -714,6 +714,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::resource('departments', App\Http\Controllers\Admin\DepartmentController::class)->except(['create', 'show', 'edit']);
     Route::resource('courses', App\Http\Controllers\Admin\CourseController::class)->except(['create', 'show', 'edit']);
     Route::resource('sections', App\Http\Controllers\Admin\SectionController::class)->except(['create', 'show', 'edit']);
+    Route::post('class-schedules/publish', [App\Http\Controllers\Admin\ClassScheduleController::class, 'publish'])->name('class-schedules.publish');
     Route::resource('class-schedules', App\Http\Controllers\Admin\ClassScheduleController::class)->except(['create', 'show', 'edit']);
     
     // System & Communication Modules
