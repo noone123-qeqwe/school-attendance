@@ -260,13 +260,7 @@ class QrAttendanceController extends Controller
         
         $subject = Subject::with('schedules')
             ->where('code', $subjectCode)
-            ->where(function ($q) use ($teacher) {
-                $q->where('instructor_id', $teacher->id)
-                  ->orWhere('instructor', $teacher->name);
-                if ($teacher->isAdmin()) {
-                    $q->orWhereNotNull('id');
-                }
-            })
+            ->when(!$teacher->isAdmin(), fn ($q) => $q->where('instructor_id', $teacher->id))
             ->firstOrFail();
 
         $activeSession = AttendanceSession::where('subject_code', $subjectCode)
@@ -969,14 +963,31 @@ class QrAttendanceController extends Controller
             'status'     => 'required|string|in:Present,Absent,Late,Escaped'
         ]);
 
-        $session = AttendanceSession::find($request->session_id);
+        $session = AttendanceSession::with('subject')->find($request->session_id);
         if (!$session) {
             return response()->json(['success' => false, 'message' => 'Session not found.'], 404);
+        }
+
+        $teacher = Auth::user();
+        $subject = $session->subject;
+        if (!$subject) {
+            return response()->json(['success' => false, 'message' => 'The session is not linked to a valid subject.'], 422);
+        }
+
+        $isAuthorized = $teacher->isAdmin()
+            || (int) $session->created_by === (int) $teacher->id
+            || (int) $subject->instructor_id === (int) $teacher->id;
+        if (!$isAuthorized) {
+            return response()->json(['success' => false, 'message' => 'You are not authorized to update attendance for this session.'], 403);
         }
 
         $student = User::where('id', $request->student_id)->where('role', 'student')->first();
         if (!$student) {
             return response()->json(['success' => false, 'message' => 'Student not found.'], 404);
+        }
+
+        if (!$subject->hasStudent($student)) {
+            return response()->json(['success' => false, 'message' => 'This student is not enrolled in the session subject.'], 403);
         }
 
         $attendance = \Illuminate\Support\Facades\DB::transaction(function () use ($student, $session, $request) {

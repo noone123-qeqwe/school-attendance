@@ -97,6 +97,53 @@ class QrAuthorizationTest extends TestCase
         ]))->assertForbidden();
     }
 
+    public function test_teacher_cannot_override_attendance_for_another_teachers_session(): void
+    {
+        $owner = User::factory()->create(['role' => 'teacher']);
+        $other = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student', 'year_level' => 2, 'semester' => 1, 'course' => 'BSCS', 'section' => 'A',
+        ]);
+        $subject = Subject::factory()->create([
+            'instructor_id' => $owner->id, 'code' => 'OVERRIDE101',
+            'year_level' => 2, 'semester' => 1, 'course' => 'BSCS', 'section' => 'A',
+        ]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code, 'created_by' => $owner->id,
+        ]);
+
+        $this->actingAs($other)->postJson(route('teacher.qr.override'), [
+            'session_id' => $session->id, 'student_id' => $student->id, 'status' => 'Present',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id, 'subject_code' => $subject->code,
+        ]);
+    }
+
+    public function test_teacher_cannot_override_attendance_for_a_student_outside_the_subject_roster(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        $student = User::factory()->create([
+            'role' => 'student', 'year_level' => 4, 'semester' => 2, 'course' => 'BSIT', 'section' => 'Z',
+        ]);
+        $subject = Subject::factory()->create([
+            'instructor_id' => $teacher->id, 'code' => 'ROSTER101',
+            'year_level' => 1, 'semester' => 1, 'course' => 'BSCS', 'section' => 'A',
+        ]);
+        $session = AttendanceSession::factory()->create([
+            'subject_code' => $subject->code, 'created_by' => $teacher->id,
+        ]);
+
+        $this->actingAs($teacher)->postJson(route('teacher.qr.override'), [
+            'session_id' => $session->id, 'student_id' => $student->id, 'status' => 'Present',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id, 'subject_code' => $subject->code,
+        ]);
+    }
+
     public function test_teacher_qr_page_has_distinct_navigation_and_live_roster_ids(): void
     {
         $teacher = User::factory()->create(['role' => 'teacher']);

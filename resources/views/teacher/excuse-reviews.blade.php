@@ -799,9 +799,9 @@ function viewExcuse(excuseId) {
                                 </h6>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
                                     ${excuse.attachments.map(attachment => {
-                                        const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(attachment);
-                                        const fileName = attachment.split('/').pop();
-                                        const fileUrl = attachment;
+                                        const fileName = typeof attachment === 'string' ? attachment.split('/').pop() : attachment.name;
+                                        const fileUrl = typeof attachment === 'string' ? attachment : attachment.url;
+                                        const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(fileName || '');
                                         return `
                                             <div class="attachment-item" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.8rem;">
                                                 <div style="width: 32px; height: 32px; border-radius: 6px; background: ${isImage ? '#16a34a' : '#475569'}; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">

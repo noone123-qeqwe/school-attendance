@@ -857,7 +857,7 @@ class HomeController extends Controller
             'subject_code' => 'nullable|string',
             'subject_codes' => 'nullable|array',
             'subject_codes.*' => 'string|max:50',
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'reason' => 'required|string|max:255',
             'description' => 'required|string|max:1000',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
@@ -895,7 +895,7 @@ class HomeController extends Controller
         $attachmentPaths = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('excuse_attachments', 'public');
+                $path = app(\App\Services\ExcuseAttachmentStorage::class)->store($file);
                 $attachmentPaths[] = $path;
             }
         }
@@ -903,20 +903,16 @@ class HomeController extends Controller
         $submittedCount = 0;
         foreach ($selectedCodes as $code) {
             $subModel = \App\Models\Subject::where('code', $code)->first();
-            // Get or create the attendance record
-            $attendance = Attendance::firstOrCreate([
+            // Excuse submissions must refer to an existing official absence.
+            // Students cannot create attendance rows through this form.
+            $attendance = Attendance::where([
                 'user_id' => $user->id,
                 'subject_code' => $code,
                 'date' => $request->date,
-            ], [
-                'subject_id' => $subModel?->id,
                 'status' => 'Absent',
-                'time_in' => null,
-                'excused' => false
-            ]);
+            ])->whereDoesntHave('excuseSubmission')->first();
 
-            // If it already has an excuse, skip
-            if ($attendance->excuseSubmission) {
+            if (!$attendance) {
                 continue;
             }
 
@@ -951,7 +947,7 @@ class HomeController extends Controller
         }
 
         if ($submittedCount === 0) {
-            return redirect()->route('excuses')->with('error', 'Excuse letters have already been submitted for all selected subjects on this date.');
+            return redirect()->route('excuses')->with('error', 'No unexcused absence record was found for the selected subjects and date.');
         }
 
         $msg = $submittedCount > 1 
@@ -969,7 +965,7 @@ class HomeController extends Controller
             'attendance_ids.*' => 'exists:attendances,id',
             'subject_codes' => 'nullable|array',
             'subject_codes.*' => 'string|max:50',
-            'date' => 'nullable|date',
+            'date' => 'nullable|date|before_or_equal:today',
             'reason' => 'required|string|max:255',
             'description' => 'required|string|max:1000',
             'attachments.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
@@ -983,6 +979,7 @@ class HomeController extends Controller
             $records = Attendance::whereIn('id', $request->attendance_ids)
                 ->where('user_id', $user->id)
                 ->where('status', 'Absent')
+                ->whereDate('date', '<=', today()->toDateString())
                 ->whereDoesntHave('excuseSubmission')
                 ->get();
             $targetAttendances = $targetAttendances->merge($records);
@@ -993,6 +990,7 @@ class HomeController extends Controller
             $single = Attendance::where('id', $request->attendance_id)
                 ->where('user_id', $user->id)
                 ->where('status', 'Absent')
+                ->whereDate('date', '<=', today()->toDateString())
                 ->whereDoesntHave('excuseSubmission')
                 ->first();
             if ($single) {
@@ -1000,27 +998,22 @@ class HomeController extends Controller
             }
         }
 
-        // 3. If additional subject_codes provided for a date
+        // 3. If additional subject_codes provided for a date, only use existing
+        // official absence records. A student cannot manufacture attendance here.
         if ($request->has('subject_codes') && is_array($request->subject_codes)) {
             $refDate = $request->input('date') ?? ($targetAttendances->first() ? $targetAttendances->first()->date : now()->toDateString());
             $enrolledCodes = $user->getAllSubjects()->pluck('code')->toArray();
             
             foreach ($request->subject_codes as $code) {
                 if (!in_array($code, $enrolledCodes)) continue;
-                $subModel = \App\Models\Subject::where('code', $code)->first();
-                
-                $att = Attendance::firstOrCreate([
+                $att = Attendance::where([
                     'user_id' => $user->id,
                     'subject_code' => $code,
                     'date' => $refDate,
-                ], [
-                    'subject_id' => $subModel?->id,
                     'status' => 'Absent',
-                    'time_in' => null,
-                    'excused' => false
-                ]);
+                ])->whereDoesntHave('excuseSubmission')->first();
 
-                if (!$att->excuseSubmission) {
+                if ($att) {
                     $targetAttendances->push($att);
                 }
             }
@@ -1035,7 +1028,7 @@ class HomeController extends Controller
         $attachmentPaths = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('excuse_attachments', 'public');
+                $path = app(\App\Services\ExcuseAttachmentStorage::class)->store($file);
                 $attachmentPaths[] = $path;
             }
         }

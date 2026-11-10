@@ -33,6 +33,11 @@ class GuestExcuseController extends Controller
     {
         $attendance->loadMissing(['user.parents', 'subject.instructorUser']);
 
+        if (!in_array($attendance->status, ['Absent', 'Late'], true)
+            || ($attendance->date && $attendance->date->isAfter(today()))) {
+            abort(422, 'An excuse can only be submitted for a recorded absence or late arrival.');
+        }
+
         // Check if an excuse already exists
         $existing = ExcuseSubmission::where('attendance_id', $attendance->id)->first();
         if ($existing) {
@@ -55,11 +60,7 @@ class GuestExcuseController extends Controller
         $filePath = null;
 
         if ($request->hasFile('attachment')) {
-            if (config('filesystems.default') === 'cloudinary') {
-                $filePath = $request->file('attachment')->storeOnCloudinary('excuses')->getSecurePath();
-            } else {
-                $filePath = $request->file('attachment')->store('excuses', 'public');
-            }
+            $filePath = app(\App\Services\ExcuseAttachmentStorage::class)->store($request->file('attachment'));
         }
 
         $category = $request->input('reason_category');

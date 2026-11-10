@@ -772,15 +772,19 @@ class TeacherController extends Controller
     // ─────────────────────────────────────────
     // NOTIFICATIONS (Teacher-scoped)
     // ─────────────────────────────────────────
+    private function authorizeTeacherNotificationRecipient(Notification $notification): void
+    {
+        abort_unless(
+            (int) $notification->user_id === (int) Auth::id(),
+            403,
+            'You can only manage notifications addressed to your account.'
+        );
+    }
+
     public function markNotificationsRead()
     {
         $teacher = Auth::user();
-        $subjectCodes = Subject::where('instructor_id', $teacher->id)->pluck('code');
-
-        Notification::where(function($q) use ($teacher, $subjectCodes) {
-                $q->where('sent_by', $teacher->id)
-                  ->orWhereIn('subject_code', $subjectCodes);
-            })
+        Notification::where('user_id', $teacher->id)
             ->where('is_read', false)
             ->update(['is_read' => true]);
 
@@ -795,7 +799,8 @@ class TeacherController extends Controller
         
         $subjectCodes = $teacherSubjects->pluck('code');
         
-        // Only show notifications sent by this teacher or related to their subjects
+        // The teacher may review notifications for their classes, but the row's
+        // read/archive state belongs to its recipient.
         $query = Notification::with(['user', 'sender', 'subject'])
             ->where(function($q) use ($teacher, $subjectCodes) {
                 $q->where('sent_by', $teacher->id)
@@ -840,54 +845,21 @@ class TeacherController extends Controller
 
     public function archiveNotification(Notification $notification)
     {
-        $teacher = Auth::user();
-        
-        // Verify teacher has access to this notification
-        if ($notification->sent_by !== $teacher->id) {
-            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-                ->pluck('code');
-                
-            if (!$teacherSubjects->contains($notification->subject_code)) {
-                abort(403, 'Unauthorized access to this notification.');
-            }
-        }
-        
+        $this->authorizeTeacherNotificationRecipient($notification);
         $notification->archive();
         return response()->json(['success' => true]);
     }
 
     public function unarchiveNotification(Notification $notification)
     {
-        $teacher = Auth::user();
-        
-        // Verify teacher has access to this notification
-        if ($notification->sent_by !== $teacher->id) {
-            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-                ->pluck('code');
-                
-            if (!$teacherSubjects->contains($notification->subject_code)) {
-                abort(403, 'Unauthorized access to this notification.');
-            }
-        }
-        
+        $this->authorizeTeacherNotificationRecipient($notification);
         $notification->unarchive();
         return response()->json(['success' => true]);
     }
 
     public function deleteNotification(Notification $notification)
     {
-        $teacher = Auth::user();
-        
-        // Verify teacher has access to this notification
-        if ($notification->sent_by !== $teacher->id) {
-            $teacherSubjects = Subject::where('instructor_id', $teacher->id)
-                ->pluck('code');
-                
-            if (!$teacherSubjects->contains($notification->subject_code)) {
-                abort(403, 'Unauthorized access to this notification.');
-            }
-        }
-        
+        $this->authorizeTeacherNotificationRecipient($notification);
         $notification->delete();
         return response()->json(['success' => true]);
     }
@@ -1551,9 +1523,14 @@ class TeacherController extends Controller
         $excuseSubmission->load(['user', 'attendance.subject', 'reviewer', 'comments.user']);
 
         if (is_array($excuseSubmission->attachments)) {
+            $attachmentPaths = array_values($excuseSubmission->attachments);
             $excuseSubmission->attachments = array_map(
-                static fn ($path) => public_storage_url(is_string($path) ? $path : null),
-                $excuseSubmission->attachments
+                fn ($path, $index) => [
+                    'url' => route('excuse-attachments.show', [$excuseSubmission->id, $index]),
+                    'name' => basename((string) (parse_url((string) $path, PHP_URL_PATH) ?: $path)),
+                ],
+                $attachmentPaths,
+                array_keys($attachmentPaths)
             );
         }
 
@@ -1827,7 +1804,7 @@ class TeacherController extends Controller
         $attachmentPaths = [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
-                $path = $file->store('excuses', 'public');
+                $path = app(\App\Services\ExcuseAttachmentStorage::class)->store($file);
                 $attachmentPaths[] = $path;
             }
         }

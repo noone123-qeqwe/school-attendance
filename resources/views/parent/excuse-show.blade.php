@@ -58,7 +58,7 @@
                     @if(!empty($excuseSubmission->attachments) && count($excuseSubmission->attachments) > 0)
                     <div class="mb-3">
                         <label class="text-muted small fw-bold text-uppercase">Document Attached</label><br>
-                        <a href="{{ public_storage_url($excuseSubmission->attachments[0]) }}" target="_blank" class="adm-btn adm-btn-primary" style="font-size: 0.85rem; padding: 6px 12px; margin-top: 4px;">
+                        <a href="{{ route('excuse-attachments.show', [$excuseSubmission->id, 0]) }}" target="_blank" rel="noopener noreferrer" class="adm-btn adm-btn-primary" style="font-size: 0.85rem; padding: 6px 12px; margin-top: 4px;">
                             <i class="bi bi-paperclip"></i> View Document
                         </a>
                     </div>

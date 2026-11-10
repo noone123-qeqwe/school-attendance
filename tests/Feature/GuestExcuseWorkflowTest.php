@@ -27,7 +27,7 @@ class GuestExcuseWorkflowTest extends TestCase
     {
         parent::setUp();
 
-        Storage::fake('public');
+        Storage::fake(config('filesystems.private_uploads_disk', 'local'));
 
         $this->teacher = User::factory()->create([
             'role' => 'teacher',
@@ -122,6 +122,7 @@ class GuestExcuseWorkflowTest extends TestCase
         $this->assertStringContainsString('Maria Dela Cruz', $submission->description);
         $this->assertStringContainsString('0917-888-9999', $submission->description);
         $this->assertNotEmpty($submission->attachments);
+        Storage::disk(config('filesystems.private_uploads_disk', 'local'))->assertExists($submission->attachments[0]);
 
         // Teacher received in-app notification
         $this->assertDatabaseHas('notifications', [

@@ -366,6 +366,11 @@ class ParentController extends Controller
             abort(403, 'Unauthorized.');
         }
 
+        if (!in_array($attendance->status, ['Absent', 'Late'], true)
+            || ($attendance->date && Carbon::parse($attendance->date)->isAfter(today()))) {
+            return back()->with('error', 'Excuses can only be submitted for recorded absences or late arrivals.');
+        }
+
         // Check if excuse already exists
         $existingExcuse = ExcuseSubmission::where('attendance_id', $attendance->id)->first();
         if ($existingExcuse) {
@@ -380,7 +385,7 @@ class ParentController extends Controller
         ];
 
         if ($request->hasFile('document')) {
-            $path = $request->file('document')->store('excuse_documents', 'public');
+            $path = app(\App\Services\ExcuseAttachmentStorage::class)->store($request->file('document'));
             $data['attachments'] = [$path];
         }
 
@@ -425,6 +430,11 @@ class ParentController extends Controller
             abort(403, 'Unauthorized.');
         }
 
+        if (!in_array($attendance->status, ['Absent', 'Late'], true)
+            || ($attendance->date && Carbon::parse($attendance->date)->isAfter(today()))) {
+            return back()->with('error', 'Excuses can only be submitted for recorded absences or late arrivals.')->withInput();
+        }
+
         // Check if excuse already exists
         $existingExcuse = ExcuseSubmission::where('attendance_id', $attendance->id)->first();
         if ($existingExcuse) {
@@ -439,7 +449,7 @@ class ParentController extends Controller
         ];
 
         if ($request->hasFile('document')) {
-            $path = $request->file('document')->store('excuse_documents', 'public');
+            $path = app(\App\Services\ExcuseAttachmentStorage::class)->store($request->file('document'));
             $data['attachments'] = [$path];
         }
 

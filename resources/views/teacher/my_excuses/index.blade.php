@@ -66,8 +66,8 @@
                             
                             @if($excuse->attachments)
                                 <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                                    @foreach(json_decode($excuse->attachments, true) ?? [] as $attachment)
-                                        <a href="{{ public_storage_url($attachment) }}" target="_blank" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                    @foreach($excuse->attachments ?? [] as $index => $attachment)
+                                        <a href="{{ route('excuse-attachments.show', [$excuse->id, $index]) }}" target="_blank" rel="noopener noreferrer" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; text-decoration: none; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
                                             <i class="bi bi-paperclip"></i> View Attachment
                                         </a>
                                     @endforeach

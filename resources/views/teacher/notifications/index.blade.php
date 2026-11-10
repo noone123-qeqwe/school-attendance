@@ -210,21 +210,25 @@
                         </td>
                         <td data-label="Actions">
                             <div style="display: flex; gap: 4px; flex-wrap: wrap;">
-                                @if($notification->archived_at)
-                                    <button onclick="unarchiveNotification({{ $notification->id }})" 
-                                            class="view-btn" style="background: #f0fdf4; color: #16a34a; border-color: #bbf7d0;">
-                                        <i class="bi bi-arrow-up-circle"></i> Unarchive
+                                @if((int) $notification->user_id === (int) auth()->id())
+                                    @if($notification->archived_at)
+                                        <button onclick="unarchiveNotification({{ $notification->id }})"
+                                                class="view-btn" style="background: #f0fdf4; color: #16a34a; border-color: #bbf7d0;">
+                                            <i class="bi bi-arrow-up-circle"></i> Unarchive
+                                        </button>
+                                    @else
+                                        <button onclick="archiveNotification({{ $notification->id }})"
+                                                class="view-btn" style="background: #fffbeb; color: #d97706; border-color: #fed7aa;">
+                                            <i class="bi bi-archive"></i> Archive
+                                        </button>
+                                    @endif
+                                    <button onclick="deleteNotification({{ $notification->id }})"
+                                            class="view-btn" style="background: #fef2f2; color: #dc2626; border-color: #fecaca;">
+                                        <i class="bi bi-trash"></i> Delete
                                     </button>
                                 @else
-                                    <button onclick="archiveNotification({{ $notification->id }})" 
-                                            class="view-btn" style="background: #fffbeb; color: #d97706; border-color: #fed7aa;">
-                                        <i class="bi bi-archive"></i> Archive
-                                    </button>
+                                    <span class="text-muted small">Recipient only</span>
                                 @endif
-                                <button onclick="deleteNotification({{ $notification->id }})" 
-                                        class="view-btn" style="background: #fef2f2; color: #dc2626; border-color: #fecaca;">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
                             </div>
                         </td>
                     </tr>

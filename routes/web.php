@@ -113,6 +113,13 @@ Route::get('/.well-known/assetlinks.json', function () {
 
 // Public Storage Fallback (Ensures uploaded media/profile images work seamlessly on PaaS/Render even if storage:link symlink is absent)
 Route::get('/storage/{path}', function (string $path) {
+    $normalizedPath = strtolower(str_replace('\\', '/', ltrim($path, '/\\')));
+    foreach (['excuse_attachments/', 'excuse_documents/', 'excuses/'] as $privatePrefix) {
+        if (str_starts_with($normalizedPath, $privatePrefix)) {
+            abort(404);
+        }
+    }
+
     $storageRoot = realpath(storage_path('app/public'));
     $fullPath = realpath(storage_path('app/public/' . ltrim($path, '/\\')));
     if ($storageRoot === false || $fullPath === false ||
@@ -127,6 +134,11 @@ Route::get('/storage/{path}', function (string $path) {
 
     return $response;
 })->where('path', '.*')->name('storage.fallback');
+
+Route::get('/excuse-submissions/{excuseSubmission}/attachments/{index}', [App\Http\Controllers\ExcuseAttachmentController::class, 'show'])
+    ->middleware(['auth', 'admin.ip'])
+    ->whereNumber('index')
+    ->name('excuse-attachments.show');
 
 Route::get('/SmartAttendance.apk', function () {
     return redirect()->route('pwa.download.apk');
