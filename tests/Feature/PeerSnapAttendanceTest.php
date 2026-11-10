@@ -8,7 +8,6 @@ use App\Models\AttendanceSession;
 use App\Models\DeviceBinding;
 use App\Models\PeerFaceEnrollment;
 use App\Models\PeerVouchRequest;
-use App\Models\Setting;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\DeviceBindingService;
@@ -16,7 +15,6 @@ use App\Services\PeerFaceVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -36,9 +34,6 @@ class PeerSnapAttendanceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // Exercise the opt-in feature with a fake verifier; production stays disabled by default.
-        Setting::set('feature.peer_biometric', '1', false);
-        Cache::forget('application_feature_flags');
         $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
         Http::fake(['verifier.example/*' => function () {
             return Http::response($this->verifierResponse, 200);
@@ -364,11 +359,10 @@ class PeerSnapAttendanceTest extends TestCase
     public function test_disabled_feature_shows_no_sessions_and_cannot_start(): void
     {
         config(['peer_snap.enabled' => false]);
-        $this->getJson(route('peer-snap.sessions'))->assertOk()
-            ->assertJsonPath('available', false)->assertJsonPath('sessions', []);
+        $this->getJson(route('peer-snap.sessions'))->assertForbidden();
         $this->postJson(route('peer-snap.start'), [
             'session_id' => $this->session->id, 'student_number' => $this->student->student_number,
-        ])->assertStatus(503);
+        ])->assertForbidden();
     }
 
     public function test_disabling_feature_consumes_pending_verification_without_calling_verifier(): void

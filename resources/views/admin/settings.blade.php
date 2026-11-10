@@ -238,7 +238,6 @@
             @php
                 $featureControls = [
                     'face_verification' => ['Face verification', 'Supplementary identity check during attendance.'],
-                    'peer_biometric' => ['Peer biometric verification', 'Allow the peer verification attendance workflow.'],
                     'student_assistant_qr' => ['Student assistant QR', 'Allow assigned student assistants to manage session QR codes.'],
                     'gps_verification' => ['GPS verification', 'Use location checks for attendance sessions.'],
                     'device_binding' => ['Device binding', 'Require the student’s registered device when the workflow requests it.'],
@@ -246,6 +245,9 @@
                     'offline_attendance' => ['Offline attendance sync', 'Allow queued attendance records to sync after connectivity returns.'],
                 ];
             @endphp
+            <p class="saas-text-muted" role="note" style="font-size:0.8rem; margin:12px 0 0;">
+                Peer biometric follows the deployment setting automatically; check-ins require a configured verifier. No admin toggle is needed.
+            </p>
             <input type="hidden" name="feature_flags_present" value="1">
             <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-top:18px;">
                 @foreach($featureControls as $name => [$label, $description])

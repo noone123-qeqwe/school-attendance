@@ -3,10 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
-use App\Models\Setting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class AuditRolePageSmokeTest extends TestCase
@@ -15,9 +13,13 @@ class AuditRolePageSmokeTest extends TestCase
 
     public function test_parameterless_role_pages_render_without_server_errors(): void
     {
-        // Include optional student pages in render coverage without changing production defaults.
-        Setting::set('feature.peer_biometric', '1', false);
-        Cache::forget('application_feature_flags');
+        // Exercise the deployment-controlled feature with a placeholder verifier config.
+        config([
+            'peer_snap.enabled' => true,
+            'peer_snap.verifier_url' => 'https://verifier.example/verify',
+            'peer_snap.verifier_token' => 'test-secret',
+            'peer_snap.model_version' => 'test-model',
+        ]);
         $roles = [
             'student' => User::factory()->create(['role' => 'student']),
             'teacher' => User::factory()->teacher()->create(),

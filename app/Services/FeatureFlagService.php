@@ -11,8 +11,6 @@ class FeatureFlagService
 {
     public const DEFAULTS = [
         'feature.face_verification' => true,
-        // Keep external face verification hidden until privacy/provider review is complete.
-        'feature.peer_biometric' => false,
         'feature.student_assistant_qr' => true,
         'feature.gps_verification' => true,
         'feature.device_binding' => true,
@@ -47,6 +45,12 @@ class FeatureFlagService
 
     public function enabled(string $key): bool
     {
+        // The deployment switch enables the workflow without a separate admin toggle.
+        // PeerBiometricAttendanceService still fails closed until verifier settings are ready.
+        if ($key === 'feature.peer_biometric') {
+            return (bool) config('peer_snap.enabled');
+        }
+
         return $this->all()[$key] ?? false;
     }
 
