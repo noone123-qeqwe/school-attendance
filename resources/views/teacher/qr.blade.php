@@ -729,8 +729,26 @@
 </div>
 
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
+@php
+    $campusLatValue = \App\Models\Setting::get('gps_lat');
+    $campusLngValue = \App\Models\Setting::get('gps_lng');
+    $campusGpsAnchor = is_numeric($campusLatValue) && is_numeric($campusLngValue)
+        && abs((float) $campusLatValue) <= 90 && abs((float) $campusLngValue) <= 180
+        && !((float) $campusLatValue === 0.0 && (float) $campusLngValue === 0.0)
+        ? ['latitude' => (float) $campusLatValue, 'longitude' => (float) $campusLngValue]
+        : null;
+@endphp
 <script nonce="{{ csp_nonce() }}">
 let currentSession = @json($activeSessionPayload ?? null);
+const CAMPUS_GPS_ANCHOR = @json($campusGpsAnchor);
+function isCampusAnchorLocation(latitude, longitude) {
+    if (!CAMPUS_GPS_ANCHOR || !Number.isFinite(Number(latitude)) || !Number.isFinite(Number(longitude))) return false;
+    const latMeters = (Number(latitude) - CAMPUS_GPS_ANCHOR.latitude) * 111195;
+    const lngMeters = (Number(longitude) - CAMPUS_GPS_ANCHOR.longitude) * 111195 * Math.cos(CAMPUS_GPS_ANCHOR.latitude * Math.PI / 180);
+    return Math.hypot(latMeters, lngMeters) <= 2;
+}
+let selectedLocationSource = currentSession && (currentSession.location_source === 'campus_anchor' ||
+    isCampusAnchorLocation(currentSession.classroom_lat, currentSession.classroom_lng)) ? 'campus_anchor' : 'device';
 window.attendanceUpdateGuard = () => {
     if (!currentSession || currentSession.active === false) return null;
     const end = Date.parse(currentSession.session_end || '');
@@ -747,7 +765,8 @@ let teacherLocation = null;
 let teacherLocationIssue = '';
 let locationRequestSerial = 0;
 let refreshCountdownSeconds = 15;
-let selectedRadius = 50;
+let selectedRadius = currentSession && currentSession.radius_meters !== null && currentSession.radius_meters !== undefined
+    ? Number(currentSession.radius_meters) : 50;
 
 // Audio & Roster State
 let clockInSoundEnabled = true;
@@ -933,26 +952,33 @@ startBtn.addEventListener('click', async () => {
         startBtn.disabled = true;
         startBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i> Starting...';
 
-        // A new session always receives a new device fix, never a preview or cached fix.
-        if (selectedRadius > 0) {
+        // A device center needs a fresh stable fix. The configured campus anchor is an explicit alternative.
+        if (selectedRadius > 0 && selectedLocationSource === 'device') {
             startBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Getting accurate location...';
             teacherLocation = await captureTeacherLocation();
         }
 
-        // When geofence is enabled, teacher laptop location is mandatory as the central reference
-        if (selectedRadius > 0 && !teacherLocation) {
+        if (selectedRadius > 0 && selectedLocationSource === 'campus_anchor' && !CAMPUS_GPS_ANCHOR) {
             startBtn.disabled = false;
             startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Start Session';
-            showTeacherToast('A fresh, accurate laptop location is required. Check location services and retry.', 'warning');
+            showTeacherToast('A campus GPS anchor is not configured. Ask an administrator to set and verify it first.', 'warning');
+            return;
+        }
+
+        // When using the device as center, require a fresh accurate location.
+        if (selectedRadius > 0 && selectedLocationSource === 'device' && !teacherLocation) {
+            startBtn.disabled = false;
+            startBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Start Session';
+            showTeacherToast('A fresh, stable device location is required. Check location services, retry, or choose the campus anchor.', 'warning');
             const statusMessages = document.getElementById('statusMessages');
             if (statusMessages) {
                 statusMessages.innerHTML = `
                     <div class="qr-alert qr-alert-warning">
                         <i class="bi bi-geo-alt-fill mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
                         <div>
-                            <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Laptop Location Unavailable</h6>
+                            <h6 class="qr-alert-title mb-1"><i class="bi bi-exclamation-triangle me-1"></i> Device Location Unavailable</h6>
                             <p class="qr-alert-body mb-0">
-                                Geofencing uses your laptop as the central reference location for the attendance session. Please allow browser location permissions and click <strong>Retry Laptop GPS</strong>, or click <strong>Disable Geofence</strong> to proceed without location restrictions.
+                                Geofencing uses your device as the central reference location. Allow browser location permissions and retry, choose the configured campus anchor, or disable geofencing if your school permits it.
                             </p>
                         </div>
                     </div>
@@ -962,14 +988,16 @@ startBtn.addEventListener('click', async () => {
             return;
         }
 
-        const lat = selectedRadius > 0 ? teacherLocation.latitude : null;
-        const lng = selectedRadius > 0 ? teacherLocation.longitude : null;
+        const usingCampusAnchor = selectedRadius > 0 && selectedLocationSource === 'campus_anchor';
+        const lat = selectedRadius > 0 && !usingCampusAnchor ? teacherLocation.latitude : null;
+        const lng = selectedRadius > 0 && !usingCampusAnchor ? teacherLocation.longitude : null;
 
         const bodyPayload = {
             subject_code: '{{ $subject->code }}',
             classroom_lat: lat,
             classroom_lng: lng,
-            teacher_accuracy: selectedRadius > 0 ? teacherLocation.accuracy : null,
+            teacher_accuracy: selectedRadius > 0 && !usingCampusAnchor ? teacherLocation.accuracy : null,
+            location_source: usingCampusAnchor ? 'campus_anchor' : 'device',
             radius_meters: selectedRadius
         };
 
@@ -987,6 +1015,7 @@ startBtn.addEventListener('click', async () => {
 
         if (data.success) {
             currentSession = data;
+            selectedLocationSource = data.location_source || 'device';
             if (data.radius_meters !== undefined && data.radius_meters !== null) {
                 selectedRadius = Number(data.radius_meters);
             }
@@ -1004,7 +1033,7 @@ startBtn.addEventListener('click', async () => {
             }
             
             document.getElementById('statusMessages').innerHTML = '';
-            showTeacherToast('Attendance session started successfully!', 'success');
+            showTeacherToast('Attendance session started using the ' + (selectedLocationSource === 'campus_anchor' ? 'campus anchor' : 'device location') + '.', 'success');
         } else {
             const statusMessages = document.getElementById('statusMessages');
             statusMessages.innerHTML = `
@@ -2004,14 +2033,16 @@ async function syncSessionClassroomLocation(sessionId, changes) {
             if (currentSession) {
                 currentSession.classroom_lat = data.classroom_lat;
                 currentSession.classroom_lng = data.classroom_lng;
+                currentSession.location_source = data.location_source || 'device';
                 currentSession.radius_meters = data.radius_meters;
             }
+            selectedLocationSource = data.location_source || 'device';
             renderLocationHUD();
             return true;
         }
         showTeacherToast(data.message || 'Unable to update the session location.', 'warning');
     } catch (e) {
-        console.warn('Failed to sync laptop session location:', e);
+        console.warn('Failed to sync session location:', e);
         showTeacherToast('Unable to update the session location. Please retry.', 'warning');
     }
     return false;
@@ -2027,7 +2058,7 @@ function renderLocationHUD(state) {
                     <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
                     <div>
                         <div class="fw-bold" style="font-size: 0.9rem;">Getting accurate location...</div>
-                        <div class="text-muted small">Detecting laptop coordinates as the central reference point for attendance.</div>
+                        <div class="text-muted small">Detecting device coordinates as the central reference point for attendance.</div>
                     </div>
                 </div>
             </div>
@@ -2035,10 +2066,11 @@ function renderLocationHUD(state) {
         return;
     }
 
+    const usingCampusAnchor = selectedLocationSource === 'campus_anchor';
     const savedCenter = currentSession && currentSession.classroom_lat !== null && currentSession.classroom_lng !== null
         ? { latitude: Number(currentSession.classroom_lat), longitude: Number(currentSession.classroom_lng) }
         : null;
-    const center = savedCenter || teacherLocation;
+    const center = usingCampusAnchor ? CAMPUS_GPS_ANCHOR : (savedCenter || teacherLocation);
     const hasCoords = center && Number.isFinite(center.latitude) && Number.isFinite(center.longitude);
     const radiusLabel = selectedRadius <= 0 ? 'Disabled' : selectedRadius + 'm';
 
@@ -2051,13 +2083,16 @@ function renderLocationHUD(state) {
                         ${selectedRadius <= 0 
                             ? 'Geofence: Disabled' 
                             : (hasCoords 
-                                ? 'Teacher Laptop Geofence: Active (' + radiusLabel + ')' 
-                                : 'Teacher Laptop Geofence: Location Needed')}
+                                ? (usingCampusAnchor ? 'Campus Anchor Geofence: Active (' : 'Teacher Device Geofence: Active (') + radiusLabel + ')'
+                                : (CAMPUS_GPS_ANCHOR ? 'Choose a location center' : 'Teacher Device Geofence: Location Needed'))}
                     </span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1" onclick="recalibrateLocation()" style="font-size: 0.78rem;">
-                        <i class="bi bi-arrow-repeat me-1"></i> ${currentSession ? 'Refresh/Update Location' : 'Retry Laptop GPS'}
+                    ${CAMPUS_GPS_ANCHOR ? `<button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3 py-1" onclick="toggleLocationSource()" style="font-size: 0.78rem;">
+                        <i class="bi bi-geo-alt me-1"></i> ${usingCampusAnchor ? 'Use Device GPS' : 'Use Campus Anchor'}
+                    </button>` : ''}
+                    <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 py-1" onclick="recalibrateLocation()" style="font-size: 0.78rem;" ${usingCampusAnchor ? 'disabled title="Campus anchor selected"' : ''}>
+                        <i class="bi bi-arrow-repeat me-1"></i> ${currentSession ? 'Refresh/Update Location' : 'Retry Device GPS'}
                     </button>
                     <button type="button" class="btn btn-sm ${selectedRadius <= 0 ? 'btn-warning' : 'btn-outline-secondary'} rounded-pill px-3 py-1" onclick="toggleGeofenceDisable()" style="font-size: 0.78rem;">
                         <i class="bi bi-slash-circle me-1"></i> ${selectedRadius <= 0 ? 'Enable Geofence' : 'Disable Geofence'}
@@ -2068,10 +2103,10 @@ function renderLocationHUD(state) {
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 text-muted small" style="font-size: 0.8rem;">
                 <div>
                     ${hasCoords 
-                        ? `<span><strong>${savedCenter ? 'Saved session center' : 'Laptop preview'}:</strong> ${center.latitude.toFixed(6)}, ${center.longitude.toFixed(6)}${!savedCenter ? ' (±' + Math.round(teacherLocation.accuracy) + 'm)' : ''} &mdash; ${savedCenter ? 'This center stays fixed until you update it.' : 'A new reading is required when starting the session.'}</span>`
+                        ? `<span><strong>${usingCampusAnchor ? 'Configured campus anchor' : (savedCenter ? 'Saved session center' : 'Device preview')}:</strong> ${center.latitude.toFixed(6)}, ${center.longitude.toFixed(6)}${!usingCampusAnchor && !savedCenter && teacherLocation ? ' (±' + Math.round(teacherLocation.accuracy) + 'm)' : ''} &mdash; ${usingCampusAnchor ? 'Students are checked against the admin-configured campus point.' : (savedCenter ? 'This center stays fixed until you update it.' : 'A new reading is required when starting the session.')}</span>`
                         : (selectedRadius <= 0 
                             ? `<span>Students anywhere (home/remote/labs) can record attendance without location restrictions.</span>`
-                            : `<span><i class="bi bi-exclamation-triangle text-warning me-1"></i> ${teacherLocationIssue || 'Laptop location not detected. Allow browser location access to enable geofencing.'}</span>`)}
+                            : `<span><i class="bi bi-exclamation-triangle text-warning me-1"></i> ${teacherLocationIssue || 'Device location not detected. Allow browser location access or select the configured campus anchor.'}</span>`)}
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span style="color: #b39b82;">Radius:</span>
@@ -2090,27 +2125,53 @@ function renderLocationHUD(state) {
 }
 
 async function recalibrateLocation() {
+    if (selectedLocationSource === 'campus_anchor') {
+        if (!CAMPUS_GPS_ANCHOR) {
+            showTeacherToast('A campus GPS anchor is not configured. Ask an administrator to set it first.', 'warning');
+            return;
+        }
+        if (currentSession && currentSession.session_id) {
+            const updated = await syncSessionClassroomLocation(currentSession.session_id, { location_source: 'campus_anchor' });
+            if (updated) showTeacherToast('Session center updated to the configured campus anchor.', 'success');
+        } else {
+            renderLocationHUD();
+        }
+        return;
+    }
     const freshLocation = await captureTeacherLocation();
     if (!freshLocation) {
-        showTeacherToast(teacherLocationIssue || 'Unable to get an accurate laptop location. Please retry.', 'warning');
+        showTeacherToast(teacherLocationIssue || 'Unable to get an accurate device location. Please retry.', 'warning');
         return;
     }
     if (currentSession && currentSession.session_id) {
         const updated = await syncSessionClassroomLocation(currentSession.session_id, {
             classroom_lat: freshLocation.latitude,
             classroom_lng: freshLocation.longitude,
-            teacher_accuracy: freshLocation.accuracy
+            teacher_accuracy: freshLocation.accuracy,
+            location_source: 'device'
         });
-        if (updated) showTeacherToast('Session center updated to the laptop’s current location.', 'success');
+        if (updated) showTeacherToast('Session center updated to this device’s current location.', 'success');
     } else {
-        showTeacherToast('Laptop location ready. Starting a session will take another fresh reading.', 'success');
+        showTeacherToast('Device location ready. Starting a session will take another fresh reading.', 'success');
+    }
+}
+
+async function toggleLocationSource() {
+    if (!CAMPUS_GPS_ANCHOR) {
+        showTeacherToast('A campus GPS anchor is not configured. Ask an administrator to set it first.', 'warning');
+        return;
+    }
+    selectedLocationSource = selectedLocationSource === 'campus_anchor' ? 'device' : 'campus_anchor';
+    renderLocationHUD();
+    if (currentSession && currentSession.session_id) {
+        await recalibrateLocation();
     }
 }
 
 async function setSessionRadius(radius) {
     if (currentSession && currentSession.session_id) {
         if (radius > 0 && (currentSession.classroom_lat === null || currentSession.classroom_lng === null)) {
-            showTeacherToast('Update the laptop location before enabling the geofence.', 'warning');
+            showTeacherToast('Update the device location before enabling the geofence.', 'warning');
             return;
         }
         if (!await syncSessionClassroomLocation(currentSession.session_id, { radius_meters: radius })) return;
@@ -2144,25 +2205,23 @@ function captureTeacherLocation() {
         let watchId = null;
         let finished = false;
         let bestAccuracy = Infinity;
-        let firstFixTimer = null;
         const readings = [];
         const finish = (location) => {
             if (finished) return;
             finished = true;
             clearTimeout(timer);
-            clearTimeout(firstFixTimer);
             if (watchId !== null) navigator.geolocation.clearWatch(watchId);
             if (requestSerial !== locationRequestSerial) return resolve(null);
             teacherLocation = location;
             if (!location) {
                 teacherLocationIssue = Number.isFinite(bestAccuracy)
-                    ? `Laptop location is weak or unstable (best accuracy ±${Math.round(bestAccuracy)}m). Keep Wi-Fi enabled, move near a window, and retry.`
-                    : 'Could not get a fresh laptop location. Check browser permission and device location, then retry.';
+                    ? `Device location is weak or unstable (best accuracy ±${Math.round(bestAccuracy)}m). Keep Wi-Fi enabled, move near a window, and retry.`
+                    : 'Could not get a fresh device location. Check browser permission and device location, then retry.';
             }
             renderLocationHUD();
             resolve(location);
         };
-        const timer = setTimeout(() => finish(readings.length === 1 ? readings[0] : null), 15000);
+        const timer = setTimeout(() => finish(null), 15000);
         watchId = navigator.geolocation.watchPosition((pos) => {
             const { latitude, longitude, accuracy } = pos.coords;
             const age = Date.now() - pos.timestamp;
@@ -2174,11 +2233,6 @@ function captureTeacherLocation() {
             if (readings.some(previous => previous.timestamp === pos.timestamp)) return;
             const current = { latitude, longitude, accuracy, timestamp: pos.timestamp };
             readings.push(current);
-            if (readings.length === 1) {
-                firstFixTimer = setTimeout(() => {
-                    if (readings.length === 1) finish(readings[0]);
-                }, 4000);
-            }
             for (let i = 0; i < readings.length; i++) {
                 for (let j = i + 1; j < readings.length; j++) {
                     const a = readings[i], b = readings[j];

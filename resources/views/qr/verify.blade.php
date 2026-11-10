@@ -1660,7 +1660,7 @@ function showOutsideClassroomError(dist, limit) {
     document.getElementById('vTitle').textContent = 'Failed to Scan';
     const roundedDist = Math.round(dist);
     document.getElementById('vSub').textContent = 'You are outside the classroom (' + roundedDist.toLocaleString() + 'm away).';
-    showMsg('err', '<i class="bi bi-x-circle-fill me-1"></i> <strong>Outside Classroom:</strong> Attendance can only be recorded while physically inside the classroom (within ' + limit + 'm).');
+    showMsg('err', '<i class="bi bi-x-circle-fill me-1"></i> <strong>Outside Classroom:</strong> Your phone is ' + roundedDist.toLocaleString() + 'm from the session center (limit ' + limit + 'm). If you are beside the instructor, ask them to check the saved center or use the verified campus anchor.');
     var btn = document.getElementById('retryFpBtn');
     btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Retry Location Check';
     btn.onclick = function() { startGPS(); };
@@ -1669,7 +1669,7 @@ function showOutsideClassroomError(dist, limit) {
     showOutsideRangePopup({
         distance: dist,
         radius: limit,
-        message: 'You are outside the classroom boundary (' + roundedDist.toLocaleString() + 'm away, allowed within ' + limit + 'm). Attendance can only be recorded while physically inside the classroom.'
+        message: 'You are ' + roundedDist.toLocaleString() + 'm from the session center (limit ' + limit + 'm). If you are beside the instructor, ask them to check the saved center or use the verified campus anchor.'
     });
 }
 

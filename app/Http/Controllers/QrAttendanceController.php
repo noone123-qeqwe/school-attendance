@@ -34,6 +34,48 @@ class QrAttendanceController extends Controller
     public const NETWORK_GRACE_SECONDS = 5; // Grace period for in-flight requests and clock skew
 
     /**
+     * Read the administrator-configured campus anchor when both coordinates exist.
+     * This is an explicit teacher-selectable reference for devices whose browser
+     * location is based on the network rather than a reliable GPS fix.
+     *
+     * @return array{latitude: float, longitude: float}|null
+     */
+    private function configuredCampusAnchor(): ?array
+    {
+        $latitude = \App\Models\Setting::get('gps_lat');
+        $longitude = \App\Models\Setting::get('gps_lng');
+
+        if (!is_numeric($latitude) || !is_numeric($longitude)) {
+            return null;
+        }
+
+        $latitude = (float) $latitude;
+        $longitude = (float) $longitude;
+        if (abs($latitude) > 90 || abs($longitude) > 180 || ($latitude === 0.0 && $longitude === 0.0)) {
+            return null;
+        }
+
+        [$latitude, $longitude] = self::normalizeCoordinates($latitude, $longitude);
+
+        return ['latitude' => $latitude, 'longitude' => $longitude];
+    }
+
+    private function isCampusAnchor(AttendanceSession $session): bool
+    {
+        $anchor = $this->configuredCampusAnchor();
+        if (!$anchor || $session->classroom_lat === null || $session->classroom_lng === null) {
+            return false;
+        }
+
+        return $this->distance(
+            (float) $session->classroom_lat,
+            (float) $session->classroom_lng,
+            $anchor['latitude'],
+            $anchor['longitude']
+        ) <= 2;
+    }
+
+    /**
      * Normalize and validate coordinates, automatically detecting and correcting swapped (lng, lat) coordinates.
      * Latitude must be in [-90, 90], Longitude in [-180, 180].
      *
@@ -67,9 +109,8 @@ class QrAttendanceController extends Controller
     }
 
     /**
-     * Resolve the central reference location for the attendance session.
-     * The teacher's laptop is the ONLY central device for the geofence.
-     * Predefined campus coordinates or generic classroom defaults are NOT used.
+     * Resolve the stored reference location for an attendance session.
+     * This may be a fresh teacher-device fix or an explicitly selected campus anchor.
      *
      * @param AttendanceSession $session
      * @param float|null $studentLat
@@ -259,6 +300,7 @@ class QrAttendanceController extends Controller
                     'session_end' => $activeSession->session_ends_at->timestamp,
                     'classroom_lat' => $activeSession->classroom_lat,
                     'classroom_lng' => $activeSession->classroom_lng,
+                    'location_source' => $this->isCampusAnchor($activeSession) ? 'campus_anchor' : 'device',
                     'radius_meters' => $activeSession->getAllowedRadius(),
                     'signed_qr' => true,
                     'generated_by' => $signedToken->generator?->name,
@@ -286,6 +328,7 @@ class QrAttendanceController extends Controller
                 'session_end'    => $activeSession->session_ends_at->timestamp,
                 'classroom_lat'  => $activeSession->classroom_lat,
                 'classroom_lng'  => $activeSession->classroom_lng,
+                'location_source' => $this->isCampusAnchor($activeSession) ? 'campus_anchor' : 'device',
                 'radius_meters' => $activeSession->getAllowedRadius(),
             ];
             }
@@ -310,6 +353,7 @@ class QrAttendanceController extends Controller
             'classroom_lat'        => 'nullable|numeric|between:-90,90',
             'classroom_lng'        => 'nullable|numeric|between:-180,180',
             'teacher_accuracy'     => 'nullable|numeric|gt:0|max:10000',
+            'location_source'      => 'nullable|in:device,campus_anchor',
             'radius_meters'        => 'nullable|integer|min:0|max:1000',
             'grace_period_minutes' => 'nullable|integer|min:1|max:60',
         ]);
@@ -327,16 +371,26 @@ class QrAttendanceController extends Controller
         $radius = $gpsVerificationEnabled
             ? ($request->filled('radius_meters') ? (int) $request->radius_meters : 50)
             : 0;
-        if ($radius > 0 && (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy'))) {
-            return response()->json(['success' => false, 'message' => 'A fresh, accurate teacher laptop location is required to start a geofenced session.'], 422);
+        $locationSource = $request->input('location_source', 'device');
+        if ($radius > 0 && $locationSource === 'campus_anchor') {
+            $campusAnchor = $this->configuredCampusAnchor();
+            if (!$campusAnchor) {
+                return response()->json(['success' => false, 'message' => 'A valid campus GPS anchor is not configured. Ask an administrator to set and verify the campus coordinates first.'], 422);
+            }
+            $lat = $campusAnchor['latitude'];
+            $lng = $campusAnchor['longitude'];
+        } else {
+            if ($radius > 0 && (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy'))) {
+                return response()->json(['success' => false, 'message' => 'A fresh, accurate device location is required to start a geofenced session.'], 422);
+            }
+            if ($radius > 0 && (float) $request->teacher_accuracy > 50) {
+                return response()->json(['success' => false, 'message' => 'Device GPS accuracy is too poor. Please retry location capture or use the configured campus anchor.'], 422);
+            }
+            $lat = $request->classroom_lat;
+            $lng = $request->classroom_lng;
         }
-        if ($radius > 0 && (float) $request->teacher_accuracy > 50) {
-            return response()->json(['success' => false, 'message' => 'Teacher laptop GPS accuracy is too poor. Please retry location capture.'], 422);
-        }
-        $lat = $request->classroom_lat;
-        $lng = $request->classroom_lng;
         if ($radius > 0 && (float) $lat === 0.0 && (float) $lng === 0.0) {
-            return response()->json(['success' => false, 'message' => 'The laptop returned an invalid 0,0 location. Please retry.'], 422);
+            return response()->json(['success' => false, 'message' => 'The selected session center is invalid (0,0). Please choose a valid location.'], 422);
         }
         if ($lat !== null && $lng !== null) {
             [$lat, $lng] = self::normalizeCoordinates((float) $lat, (float) $lng);
@@ -393,6 +447,7 @@ class QrAttendanceController extends Controller
                 'session_end'          => $session->session_ends_at->timestamp,
                 'classroom_lat'        => $session->classroom_lat,
                 'classroom_lng'        => $session->classroom_lng,
+                'location_source'      => $locationSource === 'campus_anchor' && $radius > 0 ? 'campus_anchor' : 'device',
                 'radius_meters'        => $session->getAllowedRadius(),
                 'grace_period_minutes' => $session->getGracePeriodMinutes(),
                 'message'              => 'QR & Code attendance session started successfully!'
@@ -415,6 +470,7 @@ class QrAttendanceController extends Controller
             'classroom_lat' => 'nullable|numeric|between:-90,90',
             'classroom_lng' => 'nullable|numeric|between:-180,180',
             'teacher_accuracy' => 'nullable|numeric|gt:0|max:10000',
+            'location_source' => 'nullable|in:device,campus_anchor',
             'radius_meters' => 'nullable|integer|min:0|max:1000',
         ]);
 
@@ -430,27 +486,38 @@ class QrAttendanceController extends Controller
         if (!$session->isSessionActive()) {
             return response()->json(['success' => false, 'message' => 'Only an active session can be updated.'], 422);
         }
-        $hasLocation = $request->filled('classroom_lat') || $request->filled('classroom_lng');
+        $locationSource = $request->input('location_source', 'device');
+        $hasCampusAnchor = $locationSource === 'campus_anchor';
+        $hasLocation = $hasCampusAnchor || $request->filled('classroom_lat') || $request->filled('classroom_lng');
         if (!$hasLocation && !$request->has('radius_meters')) {
             return response()->json(['success' => false, 'message' => 'No location or radius change was provided.'], 422);
         }
         if ($hasLocation) {
-            if (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy')) {
-                return response()->json(['success' => false, 'message' => 'Both laptop coordinates and GPS accuracy are required to update the center.'], 422);
+            if ($hasCampusAnchor) {
+                $campusAnchor = $this->configuredCampusAnchor();
+                if (!$campusAnchor) {
+                    return response()->json(['success' => false, 'message' => 'A valid campus GPS anchor is not configured. Ask an administrator to set and verify the campus coordinates first.'], 422);
+                }
+                $lat = $campusAnchor['latitude'];
+                $lng = $campusAnchor['longitude'];
+            } else {
+                if (!$request->filled('classroom_lat') || !$request->filled('classroom_lng') || !$request->filled('teacher_accuracy')) {
+                    return response()->json(['success' => false, 'message' => 'Both device coordinates and GPS accuracy are required to update the center.'], 422);
+                }
+                if ((float) $request->teacher_accuracy > 50) {
+                    return response()->json(['success' => false, 'message' => 'Device GPS accuracy is too poor. Please retry or use the configured campus anchor.'], 422);
+                }
+                [$lat, $lng] = self::normalizeCoordinates((float) $request->classroom_lat, (float) $request->classroom_lng);
             }
-            if ((float) $request->teacher_accuracy > 50) {
-                return response()->json(['success' => false, 'message' => 'Teacher laptop GPS accuracy is too poor. Please retry.'], 422);
-            }
-            [$lat, $lng] = self::normalizeCoordinates((float) $request->classroom_lat, (float) $request->classroom_lng);
             if ($lat === 0.0 && $lng === 0.0) {
-                return response()->json(['success' => false, 'message' => 'The laptop returned an invalid 0,0 location. Please retry.'], 422);
+                return response()->json(['success' => false, 'message' => 'The selected session center is invalid (0,0). Please choose a valid location.'], 422);
             }
             $session->classroom_lat = $lat;
             $session->classroom_lng = $lng;
         }
         if ($request->has('radius_meters') && (int) $request->radius_meters > 0 &&
             ($session->classroom_lat === null || $session->classroom_lng === null)) {
-            return response()->json(['success' => false, 'message' => 'Capture the teacher laptop location before enabling the geofence.'], 422);
+            return response()->json(['success' => false, 'message' => 'Set a valid session location before enabling the geofence.'], 422);
         }
         if ($request->has('radius_meters') && $request->radius_meters !== null) {
             $session->radius_meters = (int) $request->radius_meters;
@@ -477,6 +544,7 @@ class QrAttendanceController extends Controller
             'message'       => 'Classroom location synced successfully.',
             'classroom_lat' => (float) $session->classroom_lat,
             'classroom_lng' => (float) $session->classroom_lng,
+            'location_source' => $this->isCampusAnchor($session) ? 'campus_anchor' : 'device',
             'radius_meters' => (int) $session->getAllowedRadius(),
         ]);
     }
@@ -1921,7 +1989,7 @@ class QrAttendanceController extends Controller
                     return response()->json([
                         'success'    => false,
                         'error_type' => 'teacher_location_unavailable',
-                        'message'    => 'The teacher\'s laptop location is not available for this session. Please ask your instructor to enable location on their laptop.'
+                        'message'    => 'The session location center is not set. Please ask your instructor to update the device location or select the configured campus anchor.'
                     ], 422);
                 }
 
@@ -1972,7 +2040,7 @@ class QrAttendanceController extends Controller
                         'distance'           => round($distance),
                         'effective_distance' => round($distance),
                         'radius'             => $radiusMeters,
-                        'message'            => 'Failed to scan: You are outside the classroom (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Attendance can only be marked while inside the classroom.'
+                        'message'            => 'Failed to scan: You are ' . round($distance) . 'm from the session location (allowed within ' . $radiusMeters . 'm). If you are beside the instructor, ask them to check the saved location center or select the verified campus anchor.'
                     ], 422);
                 }
             }
@@ -2777,7 +2845,7 @@ class QrAttendanceController extends Controller
                 return response()->json([
                     'success' => false,
                     'error_type' => 'teacher_location_unavailable',
-                    'message' => 'The teacher\'s laptop location is not available for this session. Please ask your instructor to update it.'
+                    'message' => 'The session location center is not set. Please ask your instructor to update the device location or select the configured campus anchor.'
                 ], 422);
             }
             if (!$hasCoordinates) {
@@ -2815,7 +2883,7 @@ class QrAttendanceController extends Controller
                         return response()->json([
                             'success'    => false,
                             'error_type' => 'teacher_location_unavailable',
-                            'message'    => 'The teacher\'s laptop location is not available for this session. Please ask your instructor to enable location on their laptop.'
+                            'message'    => 'The session location center is not set. Please ask your instructor to update the device location or select the configured campus anchor.'
                         ], 422);
                     }
 
@@ -2853,7 +2921,7 @@ class QrAttendanceController extends Controller
                             'distance'           => round($distance),
                             'effective_distance' => round($distance),
                             'radius'             => $radiusMeters,
-                            'message'            => 'You are outside the classroom boundary (' . round($distance) . 'm away, allowed within ' . $radiusMeters . 'm). Please scan inside the classroom.'
+                            'message'            => 'You are ' . round($distance) . 'm from the session location (allowed within ' . $radiusMeters . 'm). If you are beside the instructor, ask them to check the saved location center or select the verified campus anchor.'
                         ], 422);
                     }
                 }

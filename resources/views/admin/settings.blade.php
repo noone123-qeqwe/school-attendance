@@ -156,7 +156,7 @@
                             <i class="bi bi-geo-alt-fill" style="color:var(--saas-primary);"></i> Campus Anchor GPS Coordinates
                         </div>
                         <p class="saas-text-muted" style="font-size:0.75rem;margin:2px 0 0 0;">
-                            Campus reference only. Attendance sessions use a fresh teacher-laptop location and never fall back to these coordinates.
+                            Verified campus pin that teachers can choose when a device reports an inaccurate location. Capture it on campus with a device that has precise location enabled.
                         </p>
                     </div>
                     <button type="button" class="saas-btn saas-btn-secondary" style="padding:5px 12px;font-size:0.8rem;" onclick="detectCampusGps()">
@@ -203,6 +203,13 @@
                     }
                     navigator.geolocation.getCurrentPosition(
                         (pos) => {
+                            if (!Number.isFinite(pos.coords.accuracy) || pos.coords.accuracy <= 0 || pos.coords.accuracy > 50) {
+                                if (statusEl) {
+                                    statusEl.style.color = '#ef4444';
+                                    statusEl.textContent = 'Location accuracy is too low (±' + Math.round(pos.coords.accuracy || 0) + 'm). Enable precise location or use a phone with GPS, then try again.';
+                                }
+                                return;
+                            }
                             document.getElementById('setting_gps_lat').value = pos.coords.latitude.toFixed(6);
                             document.getElementById('setting_gps_lng').value = pos.coords.longitude.toFixed(6);
                             if (statusEl) {
@@ -216,7 +223,7 @@
                                 statusEl.textContent = 'Unable to detect location (' + err.message + '). Please enter coordinates manually.';
                             }
                         },
-                        { enableHighAccuracy: false, timeout: 8000 }
+                        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                     );
                 }
             </script>
