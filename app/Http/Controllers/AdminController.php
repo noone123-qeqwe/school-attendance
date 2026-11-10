@@ -170,12 +170,20 @@ class AdminController extends Controller
     public function students(Request $request)
     {
         $status = $request->get('status', 'active');
+        $pendingCount = User::where('role', 'student')
+            ->where('student_registration_pending', true)
+            ->where(function ($q) { $q->whereNull('is_active')->orWhere('is_active', true); })
+            ->count();
         $query = User::query()->where('role', 'student')->with(['attendances', 'deviceBinding']);
 
         if ($status === 'active') {
             $query->whereNull('deleted_at')->where(function($q) {
                 $q->whereNull('is_active')->orWhere('is_active', true);
-            });
+            })->where('student_registration_pending', false);
+        } elseif ($status === 'pending') {
+            $query->whereNull('deleted_at')->where(function($q) {
+                $q->whereNull('is_active')->orWhere('is_active', true);
+            })->where('student_registration_pending', true);
         } elseif ($status === 'deactivated') {
             $query->withTrashed()->where(function($q) {
                 $q->whereNotNull('deleted_at')->orWhere('is_active', false);
@@ -197,7 +205,7 @@ class AdminController extends Controller
         }
 
         $students = $query->orderBy('year_level')->orderBy('name')->paginate(100)->withQueryString();
-        return view('admin.students.index', compact('students', 'status'));
+        return view('admin.students.index', compact('students', 'status', 'pendingCount'));
      }
 
      public function createStudent()
@@ -267,6 +275,23 @@ class AdminController extends Controller
     {
         $query = User::where('role', 'student')->with(['attendances', 'deviceBinding']);
 
+        $status = $request->input('status', 'active');
+        if ($status === 'pending') {
+            $query->whereNull('deleted_at')->where(function ($q) {
+                $q->whereNull('is_active')->orWhere('is_active', true);
+            })->where('student_registration_pending', true);
+        } elseif ($status === 'deactivated') {
+            $query->withTrashed()->where(function ($q) {
+                $q->whereNotNull('deleted_at')->orWhere('is_active', false);
+            });
+        } elseif ($status === 'all') {
+            $query->withTrashed();
+        } else {
+            $query->whereNull('deleted_at')->where(function ($q) {
+                $q->whereNull('is_active')->orWhere('is_active', true);
+            })->where('student_registration_pending', false);
+        }
+
         if ($request->filled('year_level')) $query->where('year_level', $request->year_level);
         if ($request->filled('semester'))   $query->where('semester', $request->semester);
         if ($request->filled('course'))     $query->where('course', $request->course);
@@ -288,6 +313,21 @@ class AdminController extends Controller
                 ? view('pagination::bootstrap-4', ['paginator' => $students])->render()
                 : null,
         ]);
+    }
+
+    public function approveStudentRegistration(User $student)
+    {
+        abort_unless($student->role === 'student', 404);
+        abort_unless($student->student_registration_pending, 409, 'This student registration is no longer pending.');
+
+        $student->forceFill(['student_registration_pending' => false])->save();
+        activity()
+            ->performedOn($student)
+            ->causedBy(Auth::user())
+            ->log("Approved student registration: {$student->name} ({$student->student_number})");
+
+        return redirect()->route('admin.students', ['status' => 'pending'])
+            ->with('success', "{$student->name}'s student registration was approved.");
     }
 
     public function previewStudentsPdf(Request $request)

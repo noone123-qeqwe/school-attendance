@@ -41,7 +41,7 @@ class PeerVouchPolicy
     /** Match Subject::getAllStudents without loading the whole roster. */
     public function isClassMember(User $student, Subject $subject): bool
     {
-        if ($student->role !== 'student') return false;
+        if ($student->role !== 'student' || $student->student_registration_pending) return false;
 
         if ($subject->enrolledStudents()->whereKey($student->id)->exists()) return true;
 

@@ -230,6 +230,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', function () {
         $sections = \App\Models\Section::query()
             ->with('course')
+            ->whereHas('course', fn ($query) => $query->where('code', 'BSCS'))
             ->orderBy('year_level')
             ->orderBy('name')
             ->get();
@@ -257,6 +258,13 @@ Route::middleware('guest')->group(function () {
 // Authenticated Routes (Protected) - Shared
 Route::middleware('auth')->group(function () {
     Route::match(['get', 'post'], '/logout', [PTController::class, 'logout'])->name('logout');
+    Route::get('/student/pending-approval', function () {
+        abort_unless(auth()->user()?->isStudent(), 403);
+        if (!auth()->user()->student_registration_pending) {
+            return redirect()->route('home');
+        }
+        return view('auth.student-pending-approval');
+    })->name('student.pending-approval');
     Route::get('/password/change', [App\Http\Controllers\HomeController::class, 'showPasswordChangeForm'])->name('password.change.form');
     Route::post('/password/change', [App\Http\Controllers\HomeController::class, 'submitPasswordChange'])->middleware('throttle:password.change')->name('password.change.submit');
 
@@ -538,7 +546,8 @@ Route::middleware(['auth', 'parent'])->prefix('parent')->name('parent.')->group(
     Route::get('/link-child', [App\Http\Controllers\ParentController::class, 'linkChildForm'])->name('link.form');
     Route::post('/link-child/send-otp', [App\Http\Controllers\ParentController::class, 'sendLinkOtp'])->middleware('throttle:otp.send')->name('link.send-otp');
     Route::post('/link-child/verify-otp', [App\Http\Controllers\ParentController::class, 'verifyLinkOtp'])->middleware('throttle:otp.verify')->name('link.verify-otp');
-    Route::post('/link-child/code', [App\Http\Controllers\ParentController::class, 'linkWithCode'])->name('link.code');
+    Route::post('/link-child/code', [App\Http\Controllers\ParentController::class, 'linkWithCode'])
+        ->middleware('throttle:parent-link-code')->name('link.code');
     Route::post('/link-child/unlink', [App\Http\Controllers\ParentController::class, 'unlinkChild'])->name('link.unlink');
     
     Route::get('/child/{child}', [App\Http\Controllers\ParentController::class, 'childDetail'])->name('child');
@@ -606,6 +615,7 @@ Route::middleware(['auth', 'admin', 'admin.ip', 'admin.2fa', 'admin.auditor'])->
     Route::put('/student/{student}', [App\Http\Controllers\AdminController::class, 'updateStudent'])->name('student.update');
     Route::delete('/student/{student}', [App\Http\Controllers\AdminController::class, 'destroyStudent'])->name('student.destroy');
     Route::patch('/student/{student}/deactivate', [App\Http\Controllers\AdminController::class, 'deactivateStudent'])->name('student.deactivate');
+    Route::patch('/student/{student}/approve-registration', [App\Http\Controllers\AdminController::class, 'approveStudentRegistration'])->name('student.approve-registration');
     Route::patch('/student/{id}/reactivate', [App\Http\Controllers\AdminController::class, 'reactivateStudent'])->name('student.reactivate');
     Route::post('/student/{student}/reset-device', [App\Http\Controllers\AdminController::class, 'resetDevice'])->name('student.reset_device');
     Route::post('/student/{student}/lock-device', [App\Http\Controllers\AdminController::class, 'lockDevice'])->name('student.lock_device');

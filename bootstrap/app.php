@@ -57,11 +57,15 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Session\Middleware\AuthenticateSession::class,
             \App\Http\Middleware\CheckPasswordChange::class,
             \App\Http\Middleware\CheckAccountStatus::class,
+            \App\Http\Middleware\EnsureStudentRegistrationApproved::class,
         ]);
 
         $middleware->api(
             prepend: ['throttle:api'],
-            append: [\App\Http\Middleware\CheckAccountStatus::class],
+            append: [
+                \App\Http\Middleware\CheckAccountStatus::class,
+                \App\Http\Middleware\EnsureStudentRegistrationApproved::class,
+            ],
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

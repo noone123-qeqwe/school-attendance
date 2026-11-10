@@ -7,7 +7,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 directory-page-header">
     <div>
         <h1 class="saas-heading saas-heading-lg mb-1">Students</h1>
-        <p class="saas-text-muted m-0">{{ $isReadOnlyAuditor ? 'Review student enrollments and records.' : 'Manage student enrollments and records.' }}</p>
+        <p class="saas-text-muted m-0">{{ $isReadOnlyAuditor ? 'Review student enrollments and records.' : 'Manage student enrollments and verify new student registrations.' }}</p>
     </div>
     
     <div class="d-flex gap-2 flex-wrap directory-page-actions">
@@ -86,6 +86,13 @@
 
 <!-- Student Account Status Filter Tabs -->
 <div class="directory-status-tabs">
+    @unless($isReadOnlyAuditor)
+    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'pending'])) }}"
+       class="directory-status-tab"
+       style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? '') === 'pending' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
+        <i class="bi bi-shield-exclamation me-1"></i> Pending Approval <span class="ms-1">{{ $pendingCount ?? 0 }}</span>
+    </a>
+    @endunless
     <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'active'])) }}" 
        class="directory-status-tab"
        style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? 'active') === 'active' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
@@ -210,6 +217,7 @@
     const resultText     = document.getElementById('resultCountText');
     const pagination     = document.getElementById('paginationContainer');
     const searchUrl      = "{{ route('admin.students.search') }}";
+    const statusFilter   = @json($status ?? 'active');
 
     let debounceTimer = null;
     let currentRequest = null;
@@ -224,6 +232,7 @@
         if (search) params.append('search', search);
         if (course) params.append('course', course);
         if (year)   params.append('year_level', year);
+        params.append('status', statusFilter);
 
         return params;
     }

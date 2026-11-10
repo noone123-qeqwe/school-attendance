@@ -75,10 +75,13 @@ class PTController extends Controller
 
         if ($request->role === 'student') {
             $userData['student_number'] = trim($request->student_number);
-            $userData['course'] = $request->course ?: 'BSCS';
+            $userData['course'] = 'BSCS';
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
             $userData['section'] = \App\Models\Section::findOrFail($request->integer('section_id'))->name;
+            // Email verification proves mailbox control, not school enrollment.
+            // A registrar must confirm the student ID and class before access.
+            $userData['student_registration_pending'] = true;
         }
 
         /** @var \App\Models\User $user */
@@ -91,9 +94,11 @@ class PTController extends Controller
         $request->session()->regenerate();
         
         if ($user->isStudent()) {
+            // Binding a device does not grant access while the registration is
+            // pending, and keeps attendance ready after an administrator approves.
             app(DeviceBindingService::class)->bind($user, $request);
             $request->session()->save();
-            return redirect()->route('home');
+            return redirect()->route('student.pending-approval');
         } elseif ($request->role === 'parent') {
             return redirect()->route('parent.dashboard')->with(
                 'success',

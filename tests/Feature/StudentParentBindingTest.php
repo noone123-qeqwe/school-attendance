@@ -95,7 +95,10 @@ class StudentParentBindingTest extends TestCase
         // 2. Parent links using the code
         $this->actingAsGuest()->flushSession();
         $linkResponse = $this->actingAs($this->parent)
-            ->postJson(route('parent.link.code'), ['code' => $code]);
+            ->postJson(route('parent.link.code'), [
+                'code' => $code,
+                'student_number' => $this->student->student_number,
+            ]);
 
         $linkResponse->assertStatus(200)
             ->assertJson([
@@ -134,7 +137,10 @@ class StudentParentBindingTest extends TestCase
     {
         // Test non-existent code
         $response = $this->actingAs($this->parent)
-            ->postJson(route('parent.link.code'), ['code' => '999999']);
+            ->postJson(route('parent.link.code'), [
+                'code' => '999999',
+                'student_number' => $this->student->student_number,
+            ]);
 
         $response->assertStatus(422)
             ->assertJson([
@@ -152,7 +158,10 @@ class StudentParentBindingTest extends TestCase
         ]);
 
         $expiredResponse = $this->actingAs($this->parent)
-            ->postJson(route('parent.link.code'), ['code' => '112233']);
+            ->postJson(route('parent.link.code'), [
+                'code' => '112233',
+                'student_number' => $this->student->student_number,
+            ]);
 
         $expiredResponse->assertStatus(422);
 
@@ -160,6 +169,92 @@ class StudentParentBindingTest extends TestCase
             'parent_id'  => $this->parent->id,
             'student_id' => $this->student->id,
         ]);
+    }
+
+    public function test_link_code_is_bound_to_the_student_id_and_cannot_resolve_to_another_student(): void
+    {
+        $otherStudent = User::create([
+            'name' => 'Other Student',
+            'email' => 'other.student@school.edu',
+            'student_number' => '20260098',
+            'role' => 'student',
+            'course' => 'BSCS',
+            'year_level' => 2,
+            'semester' => 1,
+            'password' => Hash::make('password123'),
+            'is_active' => true,
+        ]);
+        $code = app(\App\Services\ParentService::class)->generateStudentLinkCode($this->student)['code'];
+
+        $response = $this->actingAs($this->parent)->postJson(route('parent.link.code'), [
+            'code' => $code,
+            'student_number' => $otherStudent->student_number,
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonPath('message', 'Invalid student ID or expired Link Code.');
+        $this->assertDatabaseMissing('parent_student', [
+            'parent_id' => $this->parent->id,
+            'student_id' => $otherStudent->id,
+        ]);
+    }
+
+    public function test_link_code_errors_do_not_disclose_whether_a_student_id_exists(): void
+    {
+        $knownStudentResponse = $this->actingAs($this->parent)->postJson(route('parent.link.code'), [
+            'code' => '999999',
+            'student_number' => $this->student->student_number,
+        ]);
+
+        $unknownStudentResponse = $this->actingAs($this->parent)->postJson(route('parent.link.code'), [
+            'code' => '999999',
+            'student_number' => '9999999',
+        ]);
+
+        $knownStudentResponse->assertStatus(422)
+            ->assertJsonPath('message', 'Invalid student ID or expired Link Code.');
+        $unknownStudentResponse->assertStatus(422)
+            ->assertJsonPath('message', 'Invalid student ID or expired Link Code.');
+    }
+
+    public function test_parent_link_code_attempts_are_rate_limited(): void
+    {
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->actingAs($this->parent)->postJson(route('parent.link.code'), [
+                'code' => '999999',
+                'student_number' => $this->student->student_number,
+            ])->assertStatus(422);
+        }
+
+        $this->actingAs($this->parent)->postJson(route('parent.link.code'), [
+            'code' => '999999',
+            'student_number' => $this->student->student_number,
+        ])->assertStatus(429);
+    }
+
+    public function test_parent_link_code_attempts_are_limited_across_accounts_per_student(): void
+    {
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $parent = User::factory()->create([
+                'role' => 'parent',
+                'email' => "link-attempt-{$attempt}@example.test",
+            ]);
+
+            $this->flushSession()->actingAs($parent)->postJson(route('parent.link.code'), [
+                'code' => '999999',
+                'student_number' => $this->student->student_number,
+            ])->assertStatus(422);
+        }
+
+        $anotherParent = User::factory()->create([
+            'role' => 'parent',
+            'email' => 'link-attempt-over-limit@example.test',
+        ]);
+
+        $this->flushSession()->actingAs($anotherParent)->postJson(route('parent.link.code'), [
+            'code' => '999999',
+            'student_number' => $this->student->student_number,
+        ])->assertStatus(429);
     }
 
     public function test_cannot_link_same_student_twice(): void
@@ -179,7 +274,10 @@ class StudentParentBindingTest extends TestCase
 
         $this->actingAsGuest()->flushSession();
         $linkResponse = $this->actingAs($this->parent)
-            ->postJson(route('parent.link.code'), ['code' => $code]);
+            ->postJson(route('parent.link.code'), [
+                'code' => $code,
+                'student_number' => $this->student->student_number,
+            ]);
 
         $linkResponse->assertStatus(422)
             ->assertJson([
@@ -295,6 +393,7 @@ class StudentParentBindingTest extends TestCase
             ->assertSee('Juan Dela Cruz')
             ->assertSee('20260099')
             ->assertSee('Instant Link Code')
+            ->assertSee('Student ID / Number')
             ->assertSee('Student ID &amp; Email OTP', false);
     }
 

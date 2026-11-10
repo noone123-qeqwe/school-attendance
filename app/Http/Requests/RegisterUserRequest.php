@@ -42,7 +42,11 @@ class RegisterUserRequest extends FormRequest
         // Automatically set student course to BSCS if student role
         if ($this->input('role') === 'student' || $this->role === 'student' || $this->routeIs('admin.student.store')) {
             $this->merge([
-                'course' => $this->input('course') ?: 'BSCS',
+                // Public self-registration only offers BSCS. Do not trust a
+                // client-edited hidden field to select another course.
+                'course' => $this->routeIs('register.submit')
+                    ? 'BSCS'
+                    : ($this->input('course') ?: 'BSCS'),
             ]);
             if ($this->filled('student_number')) {
                 $this->merge([

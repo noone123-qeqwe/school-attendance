@@ -141,6 +141,7 @@ class User extends Authenticatable
     'rfid_tag',
     'kiosk_pin',
     'is_active',
+    'student_registration_pending',
 ];
 
     /**
@@ -700,6 +701,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'notification_preferences' => 'array',
             'is_active' => 'boolean',
+            'student_registration_pending' => 'boolean',
         ];
     }
 
@@ -748,7 +750,7 @@ class User extends Authenticatable
      */
     public function getAllSubjects()
     {
-        if (!$this->isStudent()) return collect();
+        if (!$this->isStudent() || $this->student_registration_pending) return collect();
         
         $explicit = $this->enrolledSubjects()->get();
         

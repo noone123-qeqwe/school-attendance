@@ -66,7 +66,8 @@ class Subject extends Model
 
     public function matchesStudentProfile(User $student): bool
     {
-        return (string) $this->year_level === (string) $student->year_level
+        return !$student->student_registration_pending
+            && (string) $this->year_level === (string) $student->year_level
             && (string) $this->semester === (string) $student->semester
             && (empty($this->course) || $this->course === $student->course)
             && (empty($this->section) || (!empty($student->section)
@@ -76,7 +77,7 @@ class Subject extends Model
     /** Match the explicit and profile-based roster without loading every student. */
     public function hasStudent(User $student): bool
     {
-        if ($student->role !== 'student') {
+        if ($student->role !== 'student' || $student->student_registration_pending) {
             return false;
         }
 
@@ -97,9 +98,10 @@ class Subject extends Model
     /** @return Collection<int, User> */
     public function getAllStudents(): Collection
     {
-        $explicit = $this->enrolledStudents()->get();
+        $explicit = $this->enrolledStudents()->where('student_registration_pending', false)->get();
         
         $query = User::where('role', 'student')
+            ->where('student_registration_pending', false)
             ->where('year_level', $this->year_level)
             ->where('semester', $this->semester);
             

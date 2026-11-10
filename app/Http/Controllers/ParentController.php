@@ -203,11 +203,14 @@ class ParentController extends Controller
     public function linkWithCode(Request $request)
     {
         $request->validate([
+            'student_number' => 'required|string|max:50',
             'code' => 'required|string|size:6',
         ]);
 
         try {
-            $student = $this->parentService->verifyAndLinkWithStudentCode(Auth::user(), $request->code);
+            $student = $this->parentService->verifyAndLinkWithStudentCode(
+                Auth::user(), $request->student_number, $request->code
+            );
             return response()->json([
                 'success' => true,
                 'message' => "Successfully linked to {$student->name}!",

@@ -18,7 +18,7 @@ final class StudentScheduleService
      */
     public function subjectsFor(User $student): Collection
     {
-        if (!$student->isStudent()) {
+        if (!$student->isStudent() || $student->student_registration_pending) {
             return collect();
         }
 

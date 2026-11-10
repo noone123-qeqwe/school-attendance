@@ -16,6 +16,9 @@
             <div>
                 <div style="font-weight:600;font-size:0.875rem;color:#f3e7cd;letter-spacing:0.2px;display:flex;align-items:center;gap:6px;">
                     {{ $student->name }}
+                    @if($student->student_registration_pending)
+                        <span class="badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);font-size:0.65rem;padding:2px 6px;">Pending approval</span>
+                    @endif
                     @if(!$student->isActive())
                         <span class="badge" style="background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.35);font-size:0.65rem;padding:2px 6px;">Deactivated</span>
                     @endif
@@ -53,6 +56,14 @@
     </td>
     <td data-label="{{ $isReadOnlyAuditor ? 'Details' : 'Actions' }}">
         <div class="d-flex gap-1 align-items-center">
+            @if($student->student_registration_pending && !$isReadOnlyAuditor)
+            <form action="{{ route('admin.student.approve-registration', $student->id) }}" method="POST" onsubmit="return confirm('Verify this student against the school roster and approve access?')" style="margin:0;">
+                @csrf @method('PATCH')
+                <button type="submit" class="btn btn-sm" style="height:32px;padding:0 9px;display:inline-flex;align-items:center;justify-content:center;gap:5px;border:1px solid rgba(52,211,153,0.35);background:rgba(52,211,153,0.08);color:#34d399;border-radius:6px;white-space:nowrap;" title="Approve after verifying the student's official ID and section">
+                    <i class="bi bi-shield-check"></i><span>Approve</span>
+                </button>
+            </form>
+            @endif
             <a href="{{ route('admin.student', $student->id) }}" class="btn btn-sm" style="width:32px; height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border: 1px solid rgba(207,164,111,0.25); background:rgba(207,164,111,0.06); color: var(--gold); border-radius:6px; transition:all 0.2s;" title="View Details">
                 <i class="bi bi-eye"></i>
             </a>

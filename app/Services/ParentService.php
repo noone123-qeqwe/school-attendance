@@ -124,7 +124,7 @@ class ParentService
     /**
      * Verify a 6-digit student link code and connect parent to the student.
      */
-    public function verifyAndLinkWithStudentCode(User $parent, string $code): User
+    public function verifyAndLinkWithStudentCode(User $parent, string $studentNumber, string $code): User
     {
         if (!$parent->isParent()) {
             throw new Exception("Only parent accounts can link to students using this code.");
@@ -135,41 +135,51 @@ class ParentService
             throw new Exception("Please enter a valid 6-digit linking code.");
         }
 
-        $otpRecord = Otp::where('code', $cleanCode)
-                        ->where('purpose', 'student_parent_invite')
-                        ->where('used', false)
-                        ->where('expires_at', '>', now())
-                        ->latest()
-                        ->first();
-
-        if (!$otpRecord) {
-            throw new Exception("Invalid or expired Link Code. Please ask the student to generate a fresh code.");
-        }
-
-        $student = User::find($otpRecord->user_id);
-        if (!$student || !$student->isStudent()) {
-            throw new Exception("Associated student account could not be found.");
+        try {
+            $student = $this->findStudent($studentNumber);
+        } catch (Exception) {
+            // Do not reveal whether a student ID belongs to an active account.
+            throw new Exception('Invalid student ID or expired Link Code.');
         }
 
         if ($parent->children()->where('student_id', $student->id)->exists()) {
             throw new Exception("This student ({$student->name}) is already linked to your account.");
         }
 
-        // Mark code as used
-        $otpRecord->update(['used' => true]);
+        $student = DB::transaction(function () use ($parent, $student, $cleanCode) {
+            // Bind the bearer code to the student ID supplied by the parent;
+            // codes are no longer resolved globally, so equal numeric codes
+            // for different students cannot link the wrong child.
+            $otpRecord = Otp::where('user_id', $student->id)
+                ->where('code', $cleanCode)
+                ->where('purpose', 'student_parent_invite')
+                ->where('used', false)
+                ->where('expires_at', '>', now())
+                ->lockForUpdate()
+                ->first();
 
-        // Link parent to student
-        DB::table('parent_student')->insertOrIgnore([
-            'parent_id'  => $parent->id,
-            'student_id' => $student->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            if (!$otpRecord) {
+                throw new Exception('Invalid student ID or expired Link Code.');
+            }
 
-        // Keep student's guardian_email in sync if not set
-        if (empty($student->guardian_email) && !empty($parent->email)) {
-            $student->update(['guardian_email' => $parent->email]);
-        }
+            if ($parent->children()->where('student_id', $student->id)->exists()) {
+                throw new Exception("This student ({$student->name}) is already linked to your account.");
+            }
+
+            $otpRecord->update(['used' => true]);
+            DB::table('parent_student')->insertOrIgnore([
+                'parent_id'  => $parent->id,
+                'student_id' => $student->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            if (empty($student->guardian_email) && !empty($parent->email)) {
+                $student->update(['guardian_email' => $parent->email]);
+            }
+
+            return $student->fresh();
+        });
 
         // Send notifications
         $this->notifyPair(
@@ -320,6 +330,10 @@ class ParentService
 
         if (!$student) {
             throw new Exception("Student not found with that Student ID.");
+        }
+
+        if (!$student->isActive() || $student->student_registration_pending) {
+            throw new Exception('Student account could not be verified for linking.');
         }
 
         return $student;

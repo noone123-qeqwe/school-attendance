@@ -297,8 +297,15 @@
             <div class="security-note-box">
                 <i class="bi bi-lightning-charge-fill text-gold" style="font-size: 1.25rem; flex-shrink: 0; margin-top: 2px;"></i>
                 <div style="font-size: 0.85rem; color: #e6dbce; line-height: 1.5;">
-                    Enter the <strong>6-digit Link Code</strong> generated on your child's device under <strong>Student Portal &gt; Settings &gt; Family / Guardian</strong>. No email delay required.
+                    Enter your child's <strong>Student ID</strong> and the <strong>6-digit Link Code</strong> generated under <strong>Student Portal &gt; Settings &gt; Family / Guardian</strong>. Both are checked together to protect the link.
                 </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="instant_student_number" style="color: #cfa46f; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: block;">
+                    Student ID / Number
+                </label>
+                <input type="text" id="instant_student_number" class="ent-glass-input" placeholder="Enter your child's Student ID" maxlength="50" autocomplete="off" inputmode="numeric">
             </div>
 
             <div class="mb-4 text-center">
@@ -463,6 +470,7 @@ async function confirmUnlinkChild(studentId, studentName) {
 document.addEventListener('DOMContentLoaded', function() {
     const btnVerifyCode = document.getElementById('btn-verify-code');
     const instantCodeInput = document.getElementById('instant_code');
+    const instantStudentNumberInput = document.getElementById('instant_student_number');
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
     const dot1 = document.getElementById('dot1');
@@ -474,18 +482,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-check URL query param ?code=...
     const urlParams = new URLSearchParams(window.location.search);
     const codeParam = urlParams.get('code');
+    const studentNumberParam = urlParams.get('student_number');
     if (codeParam && codeParam.length === 6) {
         instantCodeInput.value = codeParam;
         switchMethodTab('code');
+    }
+    if (studentNumberParam && instantStudentNumberInput) {
+        instantStudentNumberInput.value = studentNumberParam;
     }
 
     // Method 1: Instant Code Verification
     if (btnVerifyCode) {
         btnVerifyCode.addEventListener('click', async () => {
             const code = instantCodeInput.value.trim();
+            const studentNumber = instantStudentNumberInput.value.trim();
             if (code.length !== 6 || !/^\d+$/.test(code)) {
                 showStatus('Please enter the 6-digit Link Code provided by the student.', true);
                 instantCodeInput.focus();
+                return;
+            }
+            if (!studentNumber) {
+                showStatus('Please enter your child\'s Student ID as well as the Link Code.', true);
+                instantStudentNumberInput.focus();
                 return;
             }
 
@@ -500,7 +518,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify({ code: code })
+                    body: JSON.stringify({ code: code, student_number: studentNumber })
                 });
 
                 const data = await response.json();

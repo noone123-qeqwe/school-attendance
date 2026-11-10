@@ -231,6 +231,32 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // Link codes unlock a guardian's access to a student's records. Apply
+        // both account and network limits so changing IPs or parent accounts
+        // cannot make the short, user-shared code practical to brute-force.
+        RateLimiter::for('parent-link-code', function (Request $request) {
+            $parentId = (string) ($request->user()?->getAuthIdentifier() ?? 'guest');
+            $ip = $request->ip() ?: 'unknown';
+            $studentNumber = strtolower(trim((string) $request->input('student_number', '')));
+            $studentIdentity = $studentNumber !== '' ? $studentNumber : 'missing|' . $ip;
+
+            return [
+                Limit::perMinute(5)->by($this->rateLimitKey('parent_link_user_min', $parentId))
+                    ->response(fn (Request $request, array $headers) => $this->format429Response($request, 'Too many link code attempts. Please wait before trying again.', $headers)),
+                Limit::perHour(20)->by($this->rateLimitKey('parent_link_user_hour', $parentId))
+                    ->response(fn (Request $request, array $headers) => $this->format429Response($request, 'Hourly link code attempt limit reached. Please try again later.', $headers)),
+                // Apply limits to the target student as well, so creating many
+                // parent accounts or changing networks cannot multiply guesses
+                // against one student's short-lived six-digit code.
+                Limit::perMinute(10)->by($this->rateLimitKey('parent_link_student_min', $studentIdentity))
+                    ->response(fn (Request $request, array $headers) => $this->format429Response($request, 'Too many attempts for this student. Please wait before trying again.', $headers)),
+                Limit::perHour(50)->by($this->rateLimitKey('parent_link_student_hour', $studentIdentity))
+                    ->response(fn (Request $request, array $headers) => $this->format429Response($request, 'Hourly link code attempt limit reached for this student. Please try again later.', $headers)),
+                Limit::perMinute(30)->by($this->rateLimitKey('parent_link_ip_min', $ip))
+                    ->response(fn (Request $request, array $headers) => $this->format429Response($request, 'Too many link code attempts from this network. Please try again later.', $headers)),
+            ];
+        });
+
         // 4. Password change & reset: 2 attempts/min per account and 10 per IP.
         RateLimiter::for('password.reset', function (Request $request) {
             $email = $this->requestIdentifier($request, ['email', 'identifier', 'username', 'student_id', 'student_number', 'studentId', 'employee_id', 'employeeId', 'id', 'login', 'user', 'user_id', 'userId']);

@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Otp;
+use App\Models\Course;
+use App\Models\Department;
+use App\Models\Section;
 use App\Models\User;
 use App\Services\Email\EmailDeliveryResult;
 use App\Services\Email\EmailDeliveryService;
@@ -179,6 +182,9 @@ class GmailValidationAndVerificationTest extends TestCase
     public function test_successful_full_registration_flow_with_verified_gmail(): void
     {
         $email = 'verified.student99@gmail.com';
+        $department = Department::create(['name' => 'Computing', 'code' => 'COMP']);
+        $course = Course::create(['department_id' => $department->id, 'name' => 'Computer Science', 'code' => 'BSCS']);
+        $section = Section::create(['course_id' => $course->id, 'name' => 'A', 'year_level' => 2]);
 
         // 1. Send OTP
         $sendRes = $this->postJson('/otp/send-register', ['email' => $email]);
@@ -214,6 +220,7 @@ class GmailValidationAndVerificationTest extends TestCase
             'surname'               => 'Student',
             'role'                  => 'student',
             'course'                => 'BSCS',
+            'section_id'            => $section->id,
             'year_level'            => 2,
             'semester'              => '1',
             'email'                 => $email,
@@ -222,11 +229,12 @@ class GmailValidationAndVerificationTest extends TestCase
             'terms'                 => 1,
         ]);
 
-        $regRes->assertRedirect(route('home'));
+        $regRes->assertRedirect(route('student.pending-approval'));
         $this->assertDatabaseHas('users', [
             'email' => $email,
             'role'  => 'student',
             'student_number' => '2311999',
+            'student_registration_pending' => true,
         ]);
 
         // Confirm session was cleared so it cannot be reused

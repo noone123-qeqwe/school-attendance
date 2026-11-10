@@ -7595,7 +7595,8 @@ async function generateParentLinkCode() {
             // Generate QR Code if library is loaded
             if (qrContainer && typeof QRCode !== 'undefined') {
                 qrContainer.innerHTML = '';
-                const linkUrl = '{{ route("parent.link.form") }}?code=' + data.code;
+                const linkUrl = '{{ route("parent.link.form") }}?code=' + encodeURIComponent(data.code)
+                    + '&student_number=' + encodeURIComponent(data.student_number || '');
                 new QRCode(qrContainer, {
                     text: linkUrl,
                     width: 170,
