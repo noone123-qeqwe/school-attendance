@@ -69,7 +69,8 @@ class Subject extends Model
         return (string) $this->year_level === (string) $student->year_level
             && (string) $this->semester === (string) $student->semester
             && (empty($this->course) || $this->course === $student->course)
-            && (empty($student->section) || empty($this->section) || $this->section === $student->section);
+            && (empty($this->section) || (!empty($student->section)
+                && strcasecmp(trim((string) $this->section), trim((string) $student->section)) === 0));
     }
 
     /** Match the explicit and profile-based roster without loading every student. */
@@ -86,7 +87,8 @@ class Subject extends Model
         return (string) $this->year_level === (string) $student->year_level
             && (string) $this->semester === (string) $student->semester
             && (empty($this->course) || $this->course === $student->course)
-            && (empty($this->section) || $this->section === $student->section);
+            && (empty($this->section) || (!empty($student->section)
+                && strcasecmp(trim((string) $this->section), trim((string) $student->section)) === 0));
     }
 
     /**
@@ -106,7 +108,7 @@ class Subject extends Model
         }
         
         if (!empty($this->section)) {
-            $query->where('section', $this->section);
+            $query->whereRaw('LOWER(TRIM(section)) = ?', [mb_strtolower(trim((string) $this->section))]);
         }
             
         $implicit = $query->get();

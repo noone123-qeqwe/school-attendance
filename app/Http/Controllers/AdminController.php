@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Attendance;
 use App\Models\Subject;
 use App\Models\ClassSchedule;
+use App\Models\Section;
 use App\Models\Notification;
 use App\Models\Holiday;
 use App\Events\NotificationSent;
@@ -202,7 +203,14 @@ class AdminController extends Controller
      public function createStudent()
      {
          $nextStudentId = User::previewNextStudentNumber();
-         return view('admin.students.create', compact('nextStudentId'));
+         $sections = Section::query()
+             ->with('course')
+             ->whereHas('course', fn ($query) => $query->where('code', 'BSCS'))
+             ->orderBy('year_level')
+             ->orderBy('name')
+             ->get();
+
+         return view('admin.students.create', compact('nextStudentId', 'sections'));
      }
 
      public function storeStudent(RegisterUserRequest $request)
@@ -216,11 +224,13 @@ class AdminController extends Controller
          // Clear the session so it cannot be reused
          session()->forget('admin_reg_email_verified');
 
+         $section = Section::findOrFail($request->integer('section_id'));
+
          $maxAttempts = 5;
          $student = null;
          for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
              try {
-                 $student = DB::transaction(function () use ($request, $attempt) {
+                 $student = DB::transaction(function () use ($request, $attempt, $section) {
                      $studentNumber = (app()->environment('testing') && $request->filled('student_number') && $attempt === 1)
                          ? trim($request->student_number)
                          : User::generateStudentNumber();
@@ -232,6 +242,7 @@ class AdminController extends Controller
                          'course'            => $request->course ?: 'BSCS',
                          'year_level'        => $request->year_level,
                          'semester'          => $request->semester,
+                         'section'           => $section->name,
                          'password'          => Hash::make($request->password),
                          'role'              => 'student',
                          'email_verified_at' => now(),
@@ -404,11 +415,12 @@ class AdminController extends Controller
         $updated = 0;
         $skipped = 0;
         $passwordSkipped = 0;
+        $unassignedSections = 0;
         $usedPasswordFingerprints = [];
 
         $chunks = array_chunk($rows, 100);
         foreach ($chunks as $chunk) {
-            \Illuminate\Support\Facades\DB::transaction(function () use ($chunk, $nameIdx, $emailIdx, $idIdx, $courseIdx, $yearIdx, $semIdx, $sectionIdx, $passIdx, &$created, &$updated, &$skipped, &$passwordSkipped, &$usedPasswordFingerprints) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($chunk, $nameIdx, $emailIdx, $idIdx, $courseIdx, $yearIdx, $semIdx, $sectionIdx, $passIdx, &$created, &$updated, &$skipped, &$passwordSkipped, &$unassignedSections, &$usedPasswordFingerprints) {
                 foreach ($chunk as $row) {
                     $name  = isset($row[$nameIdx]) ? trim($row[$nameIdx]) : '';
                     $email = isset($row[$emailIdx]) ? strtolower(trim($row[$emailIdx])) : '';
@@ -422,7 +434,7 @@ class AdminController extends Controller
                     $course        = ($courseIdx !== null && isset($row[$courseIdx]) && !empty(trim($row[$courseIdx]))) ? trim($row[$courseIdx]) : 'BSCS';
                     $yearLevel     = ($yearIdx !== null && isset($row[$yearIdx]) && is_numeric(trim($row[$yearIdx]))) ? (int)trim($row[$yearIdx]) : null;
                     $semester      = ($semIdx !== null && isset($row[$semIdx]) && is_numeric(trim($row[$semIdx]))) ? (int)trim($row[$semIdx]) : null;
-                    $section       = ($sectionIdx !== null && isset($row[$sectionIdx])) ? trim($row[$sectionIdx]) : 'A';
+                    $sectionInput  = ($sectionIdx !== null && isset($row[$sectionIdx])) ? trim($row[$sectionIdx]) : '';
                     $plainPassword = ($passIdx !== null && isset($row[$passIdx]) && trim($row[$passIdx]) !== '') ? trim($row[$passIdx]) : null;
 
                     $existing = User::withTrashed()
@@ -441,7 +453,7 @@ class AdminController extends Controller
                         'course'            => $course ?: 'BSCS',
                         'year_level'        => $yearLevel,
                         'semester'          => $semester,
-                        'section'           => $section ?: 'A',
+                        'section'           => $sectionInput !== '' ? $sectionInput : ($existing?->section),
                         'role'              => 'student',
                         'email_verified_at' => now(),
                     ];
@@ -479,6 +491,10 @@ class AdminController extends Controller
                         User::create($attributes);
                         $created++;
                     }
+
+                    if (blank($attributes['section'])) {
+                        $unassignedSections++;
+                    }
                 }
             });
         }
@@ -489,6 +505,9 @@ class AdminController extends Controller
         }
         if ($skipped > $passwordSkipped) {
             $message .= ' (' . ($skipped - $passwordSkipped) . ' invalid or conflicting rows skipped).';
+        }
+        if ($unassignedSections > 0) {
+            $message .= " {$unassignedSections} imported account(s) still need a section assigned before section-based schedules can appear.";
         }
 
         return redirect()->route('admin.students')->with('success', $message);
@@ -644,13 +663,24 @@ class AdminController extends Controller
     public function editStudent(User $student)
     {
         abort_unless($student->role === 'student', 404);
-        return view('admin.students.edit', compact('student'));
+        $sections = Section::query()
+            ->with('course')
+            ->whereHas('course', fn ($query) => $query->where('code', $student->course ?: 'BSCS'))
+            ->orderBy('year_level')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.students.edit', compact('student', 'sections'));
     }
 
     public function updateStudent(UpdateStudentRequest $request, User $student)
     {
         abort_unless($student->role === 'student', 404);
-        $student->update($request->only('name','course','year_level','semester','email'));
+        $section = Section::findOrFail($request->integer('section_id'));
+        $student->update([
+            ...$request->only('name', 'course', 'year_level', 'semester', 'email'),
+            'section' => $section->name,
+        ]);
         return redirect()->route('admin.students')->with('success', 'Student updated successfully.');
     }
 

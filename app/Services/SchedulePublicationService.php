@@ -63,7 +63,8 @@ final class SchedulePublicationService
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        if ($publication && hash_equals($publication->schedule_hash, $scheduleHash)) {
+        $scheduleUnchanged = $publication && hash_equals($publication->schedule_hash, $scheduleHash);
+        if ($scheduleUnchanged && $changedRecipientIds === []) {
             return ['published' => false, 'notified' => 0];
         }
 
@@ -79,7 +80,9 @@ final class SchedulePublicationService
             ->get(['id', 'role']);
 
         foreach ($recipientModels as $recipient) {
-            $kind = $firstPublication ? 'published' : 'updated';
+            $kind = $firstPublication || !isset($previousHashes[(string) $recipient->id])
+                ? 'published'
+                : 'updated';
             $message = $recipient->role === 'teacher'
                 ? "Your teaching schedule for {$academicYear->name} ({$academicYear->semester_label}) has been {$kind}. Open your Classes page to review your assigned classes."
                 : "Your class schedule for {$academicYear->name} ({$academicYear->semester_label}) has been {$kind}. Open Classes / COR & Class Schedule to review or download it.";
@@ -129,7 +132,7 @@ final class SchedulePublicationService
             ? collect()
             : ClassSchedule::query()
                 ->whereIn('subject_id', $subjectIds)
-                ->with('section:id,name')
+                ->with('section.course')
                 ->orderBy('subject_id')
                 ->orderBy('day_of_week')
                 ->orderBy('start_time')
@@ -222,8 +225,13 @@ final class SchedulePublicationService
                 continue;
             }
             foreach ($studentRosters[$subject->id] ?? collect() as $student) {
-                $sameSection = (string) $student->section === (string) $classSchedule->section?->name;
-                if ($sameSection || blank($student->section)) {
+                $section = $classSchedule->section;
+                $sameSection = filled($student->section)
+                    && $section !== null
+                    && strcasecmp(trim((string) $student->section), trim((string) $section->name)) === 0
+                    && (string) $student->year_level === (string) $section->year_level
+                    && strcasecmp(trim((string) ($student->course ?: 'BSCS')), trim((string) $section->course?->code)) === 0;
+                if ($sameSection) {
                     $studentEntries[$student->id][] = $entry;
                 }
             }

@@ -124,6 +124,13 @@
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
 @endphp
 
+@if(blank(auth()->user()->section))
+<div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
+    <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
+    <div><strong>Class section not assigned</strong><br><span style="color:#b39b82;">Your section timetable will appear after the school assigns your section. Contact the registrar or school administrator to update your profile.</span></div>
+</div>
+@endif
+
 @if(session('error'))
 <div class="mobile-error-toast" style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:12px;padding:10px 14px;font-size:.82rem;margin-bottom:16px;display:flex;align-items:center;gap:8px;word-break:break-word;">
     <i class="bi bi-exclamation-circle-fill" style="flex-shrink:0;"></i><span>{{ session('error') }}</span>

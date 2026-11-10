@@ -48,6 +48,26 @@
                         <option value="2" {{ old('semester',$student->semester)=='2'?'selected':'' }}>2nd Semester</option>
                     </select>
                 </div>
+                <div class="col-md-6">
+                    <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Class Section</label>
+                    @php
+                        $selectedSectionId = old('section_id', $sections->first(fn ($sectionOption) =>
+                            (string) $sectionOption->year_level === (string) old('year_level', $student->year_level)
+                            && strcasecmp(trim((string) $sectionOption->name), trim((string) $student->section)) === 0
+                        )?->id);
+                    @endphp
+                    <select name="section_id" id="edit_student_section" class="adm-input" required style="width:100%;">
+                        <option value="">Select a section</option>
+                        @foreach($sections as $sectionOption)
+                        <option value="{{ $sectionOption->id }}"
+                                data-year="{{ $sectionOption->year_level }}"
+                                {{ (string) $selectedSectionId === (string) $sectionOption->id ? 'selected' : '' }}>
+                            Year {{ $sectionOption->year_level }} · {{ $sectionOption->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <small style="display:block;color:#64748b;margin-top:5px;">The selected section controls this student’s class schedule.</small>
+                </div>
                 <div class="col-12">
                     <label style="font-size:.72rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Email Address</label>
                     <input type="email" name="email" class="adm-input" value="{{ old('email', $student->email) }}" required style="width:100%;">
@@ -59,6 +79,31 @@
         </form>
     </div>
 </div>
+
+<script @cspNonce>
+    (() => {
+        const yearSelect = document.querySelector('select[name="year_level"]');
+        const sectionSelect = document.getElementById('edit_student_section');
+        if (!yearSelect || !sectionSelect) return;
+
+        const filterSections = () => {
+            const year = yearSelect.value;
+            let selectedIsVisible = false;
+            Array.from(sectionSelect.options).forEach((option, index) => {
+                if (index === 0) return;
+                const matchesYear = Boolean(year) && option.dataset.year === year;
+                option.hidden = !matchesYear;
+                option.disabled = !matchesYear;
+                if (matchesYear && option.value === sectionSelect.value) selectedIsVisible = true;
+            });
+            if (!selectedIsVisible) sectionSelect.value = '';
+            sectionSelect.disabled = !year;
+        };
+
+        yearSelect.addEventListener('change', filterSections);
+        filterSections();
+    })();
+</script>
 
 <div class="adm-card" style="max-width:680px; margin-top:24px;">
     <div class="adm-card-head" style="background-color:#fee2e2;">

@@ -36,7 +36,7 @@
 <tr>
 
     <td class="ps-4 fw-bold text-maroon">
-        {{ $subject->section ?? 'N/A' }}
+        {{ $subject->section ?? Auth::user()->section ?? 'Not assigned' }}
     </td>
 
     <td>

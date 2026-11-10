@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Helpers\DeviceHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Subject;
 use App\Models\Attendance;
 use Carbon\Carbon;
 
@@ -29,27 +28,20 @@ class MobileController extends Controller
 
         $now = now();
         $todayDate = $now->toDateString();
-        $memberOfSubject = function ($query) use ($user) {
-            $query->whereHas('enrolledStudents', fn ($students) => $students->whereKey($user->id))
-                ->orWhere(function ($subjects) use ($user) {
-                    $subjects->where('year_level', $user->year_level)
-                        ->where('semester', $user->semester)
-                        ->where(function ($scope) use ($user) {
-                            $scope->whereNull('course')->orWhere('course', '')->orWhere('course', $user->course);
-                        })
-                        ->where(function ($scope) use ($user) {
-                            $scope->whereNull('section')->orWhere('section', '')->orWhere('section', $user->section);
-                        });
-                });
-        };
+        $todaySubjects = app(\App\Services\StudentScheduleService::class)
+            ->subjectsFor($user)
+            ->map(function ($subject) use ($now) {
+                $todaySchedules = $subject->schedules->where('day', $now->format('l'))->values();
+                if ($todaySchedules->isEmpty()) {
+                    return null;
+                }
 
-        $todaySubjects = Subject::where($memberOfSubject)
-            ->whereHas('schedules', fn ($query) => $query->where('day', $now->format('l')))
-            ->with([
-                'schedules' => fn ($query) => $query->where('day', $now->format('l')),
-                'instructorUser',
-            ])
-            ->get();
+                $todaySubject = clone $subject;
+                $todaySubject->setRelation('schedules', $todaySchedules);
+                return $todaySubject;
+            })
+            ->filter()
+            ->values();
 
         // Greeting based on time
         $hour = $now->hour;

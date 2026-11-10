@@ -653,8 +653,7 @@ class ParentController extends Controller
             $selectedChild = $children->first();
         }
 
-        $subjects = $selectedChild->getAllSubjects();
-        $subjects->load(['schedules', 'instructorUser']);
+        $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($selectedChild);
 
         $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
         

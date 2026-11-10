@@ -762,14 +762,15 @@ class User extends Authenticatable
               ->orWhere('course', $this->course);
         });
         
-        // If subject specifies a section, it must match the student's section
-        if (!empty($this->section)) {
-            $query->where(function ($q) {
-                $q->whereNull('section')
-                  ->orWhere('section', '')
-                  ->orWhere('section', $this->section);
-            });
-        }
+        // Unassigned students can only inherit subjects that are not tied to a
+        // section. Otherwise a blank section would match every section.
+        $query->where(function ($q) {
+            $q->whereNull('section')->orWhere('section', '');
+
+            if (!empty($this->section)) {
+                $q->orWhereRaw('LOWER(TRIM(section)) = ?', [mb_strtolower(trim((string) $this->section))]);
+            }
+        });
             
         $implicit = $query->get();
             

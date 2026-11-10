@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Rules\ValidStudentId;
 use App\Services\OtpService;
+use App\Models\Section;
 use Illuminate\Foundation\Http\FormRequest;
 
 class RegisterUserRequest extends FormRequest
@@ -87,6 +88,10 @@ class RegisterUserRequest extends FormRequest
             $rules['year_level']     = 'required|integer|between:1,4';
             $rules['semester']       = 'required|in:1,2,Summer';
 
+            if ($this->routeIs('register.submit') || $this->routeIs('admin.student.store')) {
+                $rules['section_id'] = 'required|integer|exists:sections,id';
+            }
+
         } elseif ($this->role === 'teacher') {
             $rules['employee_id']    = 'nullable|string|max:50|unique:users';
             $rules['department']     = 'nullable|string|max:255';
@@ -108,6 +113,17 @@ class RegisterUserRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
+            if ($this->role === 'student' && $this->filled('section_id') && $this->filled('year_level')) {
+                $section = Section::with('course')->find($this->input('section_id'));
+                $courseCode = trim((string) ($this->input('course') ?: 'BSCS'));
+
+                if (!$section
+                    || (string) $section->year_level !== (string) $this->input('year_level')
+                    || strcasecmp(trim((string) $section->course?->code), $courseCode) !== 0) {
+                    $validator->errors()->add('section_id', 'Choose a section that matches your course and year level.');
+                }
+            }
+
             $email = strtolower(trim((string) $this->input('email', '')));
             if ($email === '') {
                 return;
@@ -141,6 +157,8 @@ class RegisterUserRequest extends FormRequest
             'student_number.required' => 'Please enter your official school Student ID.',
             'student_number.max'    => 'The Student ID may not be greater than 7 characters.',
             'student_number.valid_student_id' => 'Enter a valid 7-digit Student ID issued by your school.',
+            'section_id.required' => 'Please choose your assigned class section.',
+            'section_id.exists' => 'Choose an active class section from the list.',
             'email.required'        => 'Please enter your Gmail address.',
             'email.email'           => 'Please enter a valid Gmail address (e.g., username@gmail.com).',
             'email.unique'          => 'This Gmail address is already registered. Please sign in or use another email.',

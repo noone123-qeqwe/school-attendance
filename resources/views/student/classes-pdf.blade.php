@@ -33,7 +33,7 @@
     $courseFull = $courseNames[$courseCode] ?? ($courseCode ?: 'Bachelor of Science in Computer Science');
 
     $studentNumber = !empty($user->student_number) ? $user->student_number : ('ST-' . str_pad((string)$user->id, 6, '0', STR_PAD_LEFT));
-    $sectionDisplay = $user->section ?: ($courseCode . ' ' . ($user->year_level ?? '1') . 'A');
+    $sectionDisplay = $user->section ?: 'Not assigned';
 
     $formatDaysAbbr = function (array $days): string {
         $order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -67,7 +67,7 @@
         $subjectSchedules = $subject->schedules ?? collect();
         $instructorName = $subject->instructorUser?->name ?? $subject->instructor ?? 'TBA';
         $units = (float) ($subject->units ?: 3.0);
-        $rawSection = $subject->section ?: ($user->section ?: '1420');
+        $rawSection = $subject->section ?: ($user->section ?: 'Not assigned');
 
         if ($subjectSchedules->count() > 0) {
             $slots = [];

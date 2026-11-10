@@ -2,23 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Subject;
 use Illuminate\Support\Facades\Auth;
+use App\Services\StudentScheduleService;
 
 class ClassController extends Controller
 {
-    public function index()
+    public function index(StudentScheduleService $scheduleService)
     {
         $user = Auth::user();
 
-        // Get user's year & semester
-        $year = (int) $user->year_level;
-        $semester = (int) $user->semester;
-
-        // Fetch subjects based on year & semester
-        $subjects = Subject::where('year_level', $year)
-            ->where('semester', $semester)
-            ->get();
+        $subjects = $scheduleService->subjectsFor($user);
 
         // SEND to blade
         return view('classes.index', compact('subjects'));

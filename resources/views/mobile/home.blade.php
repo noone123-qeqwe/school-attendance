@@ -12,6 +12,13 @@
         </div>
     </div>
 
+    @if(blank(auth()->user()->section))
+    <div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:14px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
+        <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
+        <div><strong>Class section not assigned</strong><br><span style="color:#b39b82;">Contact the registrar or school administrator to add your section and timetable.</span></div>
+    </div>
+    @endif
+
     {{-- Today's Attendance Status --}}
     <div class="status-card status-{{ $todayStatus }}">
         <div class="status-header">

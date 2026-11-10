@@ -89,8 +89,7 @@ class HomeController extends Controller
     $currentDayName   = $now->format('l');
     // Load a student's subjects and schedules once, then derive today's classes
     // from that collection instead of repeating subject and schedule queries.
-    $subjects = $user->getAllSubjects();
-    $subjects->load('schedules');
+    $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
     $subjectsById = $subjects->keyBy('id');
 
     $todaySubjects = collect();

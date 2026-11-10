@@ -124,6 +124,26 @@
                     </select>
                 </div>
 
+                <div class="col-md-6">
+                    <label style="font-size:.75rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;">
+                        Class Section *
+                    </label>
+                    <select name="section_id" id="new_student_section" class="adm-input" required style="width:100%;">
+                        <option value="">Select a section</option>
+                        @foreach($sections as $sectionOption)
+                        <option value="{{ $sectionOption->id }}"
+                                data-year="{{ $sectionOption->year_level }}"
+                                {{ (string) old('section_id') === (string) $sectionOption->id ? 'selected' : '' }}>
+                            Year {{ $sectionOption->year_level }} · {{ $sectionOption->name }}
+                        </option>
+                        @endforeach
+                    </select>
+                    <small style="display:block;color:#64748b;margin-top:5px;">This determines which section timetable the student receives.</small>
+                    @if($sections->isEmpty())
+                    <small style="display:block;color:#b91c1c;margin-top:5px;">Create a BSCS section under Sections before adding students.</small>
+                    @endif
+                </div>
+
                 <!-- Account Information -->
                 <div class="col-12" style="margin-top:20px;">
                     <h6 style="color:#374151;font-weight:600;margin-bottom:15px;border-bottom:1px solid #e5e7eb;padding-bottom:8px;">
@@ -228,8 +248,25 @@
     const csrfToken = document.querySelector('input[name="_token"]').value;
 
     // Real-time form validation (Student ID is automatically assigned by system)
-    const requiredFields = ['name', 'course', 'year_level', 'semester', 'password'];
+    const requiredFields = ['name', 'course', 'year_level', 'semester', 'section_id', 'password'];
     const formInputs = requiredFields.map(name => document.querySelector(`[name="${name}"]`));
+    const yearLevelSelect = document.querySelector('[name="year_level"]');
+    const sectionSelect = document.getElementById('new_student_section');
+
+    function filterSectionOptions() {
+        if (!yearLevelSelect || !sectionSelect) return;
+        const year = yearLevelSelect.value;
+        let selectedIsVisible = false;
+        Array.from(sectionSelect.options).forEach((option, index) => {
+            if (index === 0) return;
+            const matchesYear = Boolean(year) && option.dataset.year === year;
+            option.hidden = !matchesYear;
+            option.disabled = !matchesYear;
+            if (matchesYear && option.value === sectionSelect.value) selectedIsVisible = true;
+        });
+        if (!selectedIsVisible) sectionSelect.value = '';
+        sectionSelect.disabled = !year;
+    }
 
     function validateForm() {
         const allFieldsFilled = formInputs.every(input => input && input.value.trim() !== '');
@@ -249,6 +286,9 @@
             input.addEventListener('change', validateForm);
         }
     });
+
+    if (yearLevelSelect) yearLevelSelect.addEventListener('change', filterSectionOptions);
+    filterSectionOptions();
 
     // Email input change handler
     emailInput.addEventListener('input', () => {

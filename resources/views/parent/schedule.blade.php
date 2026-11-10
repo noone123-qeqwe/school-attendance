@@ -35,6 +35,12 @@
         You currently do not have any students linked to your account.
     </div>
 @else
+    @if(blank($selectedChild->section))
+    <div role="status" style="display:flex;gap:10px;align-items:flex-start;padding:12px 14px;margin-bottom:16px;border-radius:12px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
+        <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
+        <div><strong>Student section not assigned</strong><br><span style="color:#b39b82;">This student’s timetable will appear after the school assigns their section.</span></div>
+    </div>
+    @endif
     <div class="row g-4">
         @php
             $currentDayName = now()->format('l');

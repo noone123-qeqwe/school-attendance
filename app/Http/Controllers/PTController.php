@@ -78,7 +78,7 @@ class PTController extends Controller
             $userData['course'] = $request->course ?: 'BSCS';
             $userData['year_level'] = $request->year_level;
             $userData['semester'] = $request->semester;
-            $userData['section'] = $request->section;
+            $userData['section'] = \App\Models\Section::findOrFail($request->integer('section_id'))->name;
         }
 
         /** @var \App\Models\User $user */
@@ -465,8 +465,7 @@ class PTController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-        $subjects = $user->getAllSubjects();
-        $subjects->load(['schedules', 'instructorUser']);
+        $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
 
         return view('student.classes', compact('subjects', 'user'));
     }
@@ -476,8 +475,7 @@ class PTController extends Controller
         /** @var \App\Models\User $user */
         $user = auth()->user();
 
-        $subjects = $user->getAllSubjects();
-        $subjects->load(['schedules', 'instructorUser']);
+        $subjects = app(\App\Services\StudentScheduleService::class)->subjectsFor($user);
         $subjects = $subjects->sortBy('code')->values();
 
         $pdf = Pdf::loadView('student.classes-pdf', compact('user', 'subjects'))

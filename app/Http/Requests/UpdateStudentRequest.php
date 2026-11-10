@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Section;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStudentRequest extends FormRequest
@@ -26,8 +27,9 @@ class UpdateStudentRequest extends FormRequest
         return [
             'name'       => 'required|string|max:255',
             'course'     => 'nullable|string',
-            'year_level' => 'required|integer',
+            'year_level' => 'required|integer|between:1,4',
             'semester'   => 'required|integer',
+            'section_id' => 'required|integer|exists:sections,id',
             'email'      => [
                 'required',
                 'email',
@@ -39,5 +41,23 @@ class UpdateStudentRequest extends FormRequest
                 },
             ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            if (!$this->filled('section_id')) {
+                return;
+            }
+
+            $section = Section::with('course')->find($this->input('section_id'));
+            $courseCode = trim((string) ($this->input('course') ?: 'BSCS'));
+
+            if (!$section
+                || (string) $section->year_level !== (string) $this->input('year_level')
+                || strcasecmp(trim((string) $section->course?->code), $courseCode) !== 0) {
+                $validator->errors()->add('section_id', 'Choose a section that matches the student’s course and year level.');
+            }
+        });
     }
 }

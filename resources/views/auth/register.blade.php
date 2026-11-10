@@ -649,6 +649,26 @@
                                         <div class="field-feedback" id="feedback-semester"></div>
                                     </div>
                                 </div>
+
+                                <div class="form-floating-custom mb-1" id="wrap-section_id">
+                                    <select name="section_id" id="section_id" disabled>
+                                        <option value="">Choose your section</option>
+                                        @foreach($sections ?? [] as $sectionOption)
+                                        <option value="{{ $sectionOption->id }}"
+                                                data-year="{{ $sectionOption->year_level }}"
+                                                data-course="{{ $sectionOption->course?->code }}"
+                                                {{ (string) old('section_id') === (string) $sectionOption->id ? 'selected' : '' }}>
+                                            {{ $sectionOption->course?->code }} · Year {{ $sectionOption->year_level }} · {{ $sectionOption->name }}
+                                        </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="section_id">Class Section</label>
+                                    <i class="bi bi-chevron-down select-arrow"></i>
+                                </div>
+                                <div class="field-feedback" id="feedback-section_id"></div>
+                                <div class="form-text px-1 mb-3" style="font-size:0.76rem;color:var(--text-muted);opacity:0.85;">
+                                    Choose the section assigned by your school. If it is not listed, contact the registrar before creating your account.
+                                </div>
                             </div>
 
                             <!-- Parent-specific link guidance -->
@@ -945,6 +965,7 @@
             const crs = document.getElementById('course');
             const yLvl = document.getElementById('year_level');
             const sem = document.getElementById('semester');
+            const section = document.getElementById('section_id');
             const snInput = document.getElementById('student_number');
 
             if (role === 'student') {
@@ -956,6 +977,11 @@
                 if (crs && crs.tagName === 'SELECT') crs.required = true;
                 if (yLvl) yLvl.required = true;
                 if (sem) sem.required = true;
+                if (section) {
+                    section.disabled = false;
+                    section.required = true;
+                }
+                filterSectionOptions();
             } else if (role === 'parent') {
                 if (dynamicFields) dynamicFields.style.display = 'block';
                 if (studentFields) studentFields.style.display = 'none';
@@ -973,6 +999,11 @@
                 if (sem) {
                     sem.required = false;
                     clearFieldFeedback('semester');
+                }
+                if (section) {
+                    section.required = false;
+                    section.disabled = true;
+                    clearFieldFeedback('section_id');
                 }
                 clearFieldFeedback('student_number');
             } else {
@@ -992,8 +1023,34 @@
                     sem.required = false;
                     clearFieldFeedback('semester');
                 }
+                if (section) {
+                    section.required = false;
+                    section.disabled = true;
+                    clearFieldFeedback('section_id');
+                }
                 clearFieldFeedback('student_number');
             }
+        }
+
+        function filterSectionOptions() {
+            const section = document.getElementById('section_id');
+            const yearLevel = document.getElementById('year_level')?.value || '';
+            const course = document.getElementById('course')?.value || 'BSCS';
+            if (!section) return;
+
+            let selectedIsValid = false;
+            Array.from(section.options).forEach((option, index) => {
+                if (index === 0) return;
+                const matches = Boolean(yearLevel)
+                    && option.dataset.year === yearLevel
+                    && option.dataset.course === course;
+                option.hidden = !matches;
+                option.disabled = !matches;
+                if (matches && option.value === section.value) selectedIsValid = true;
+            });
+
+            if (!selectedIsValid) section.value = '';
+            section.disabled = !yearLevel || !document.getElementById('role_student')?.checked;
         }
 
         // Full Name Auto-composition
@@ -1141,6 +1198,15 @@
                 return true;
             }
 
+            if (fieldId === 'section_id') {
+                if (!el.value) {
+                    setFieldFeedback('section_id', false, 'Please choose your assigned class section.');
+                    return false;
+                }
+                setFieldFeedback('section_id', true, 'Valid section');
+                return true;
+            }
+
             return true;
         }
 
@@ -1202,6 +1268,7 @@
                     const crs = document.getElementById('course');
                     const yLvl = document.getElementById('year_level');
                     const sem = document.getElementById('semester');
+                    const section = document.getElementById('section_id');
 
                     // Course (Automatically set to BSCS)
                     if (crs && !crs.value) {
@@ -1226,6 +1293,14 @@
                         if (!firstErrorMsg) firstErrorMsg = 'Please select your semester.';
                     } else {
                         if (showInlineErrors) setFieldFeedback('semester', true, 'Valid');
+                    }
+
+                    if (!section?.value) {
+                        if (showInlineErrors) setFieldFeedback('section_id', false, 'Please choose your assigned class section.');
+                        isValid = false;
+                        if (!firstErrorMsg) firstErrorMsg = 'Please choose your assigned class section.';
+                    } else {
+                        if (showInlineErrors) setFieldFeedback('section_id', true, 'Valid section');
                     }
 
                     // Student registration requires the student's official ID.
@@ -1929,6 +2004,18 @@
             if (semSelect) {
                 semSelect.addEventListener('change', () => validateSingleField('semester', true));
             }
+
+            const sectionSelect = document.getElementById('section_id');
+            if (sectionSelect) {
+                sectionSelect.addEventListener('change', () => validateSingleField('section_id', true));
+            }
+            if (yLvlSelect) {
+                yLvlSelect.addEventListener('change', () => {
+                    filterSectionOptions();
+                    clearFieldFeedback('section_id');
+                });
+            }
+            filterSectionOptions();
 
             // Step 1: Continue Button
             const btnContinueStep1 = document.getElementById('btn-continue-step1');

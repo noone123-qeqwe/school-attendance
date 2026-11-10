@@ -47,7 +47,7 @@
     $courseFull = $courseNames[$courseCode] ?? ($courseCode ?: 'Bachelor of Science in Computer Science');
 
     $studentNumber = !empty($user->student_number) ? $user->student_number : ('ST-' . str_pad((string)$user->id, 6, '0', STR_PAD_LEFT));
-    $sectionDisplay = $user->section ?: ($courseCode . ' ' . ($user->year_level ?? '1') . 'A');
+    $sectionDisplay = $user->section ?: 'Not assigned';
 
     // ── SCHEDULE DAY HELPER ──
     $todayName = now()->format('l');
@@ -85,7 +85,7 @@
         $subjectSchedules = $subject->schedules ?? collect();
         $instructorName = $subject->instructorUser?->name ?? $subject->instructor ?? 'TBA';
         $units = (float) ($subject->units ?: 3.0);
-        $rawSection = $subject->section ?: ($user->section ?: '1420');
+        $rawSection = $subject->section ?: ($user->section ?: 'Not assigned');
 
         if ($subjectSchedules->count() > 0) {
             // Group schedule slots by time and room
@@ -162,6 +162,13 @@
     $totalUnits = $subjects->sum(fn($s) => (float) ($s->units ?: 3.0));
     $todayClassesCount = collect($groupedSchedules)->where('is_today', true)->count();
 @endphp
+
+@if(blank($user->section))
+<div role="status" style="display:flex;gap:12px;align-items:flex-start;padding:14px 16px;margin:0 0 18px;border-radius:14px;border:1px solid rgba(207,164,111,.35);background:rgba(207,164,111,.08);color:#f3e7cd;">
+    <i class="bi bi-info-circle-fill" style="color:#dfb784;margin-top:2px;"></i>
+    <div><strong>Your section is not assigned yet.</strong><br><span style="color:#b39b82;">Section-based classes appear after the school assigns your section. Contact the registrar or school administrator to update your student profile.</span></div>
+</div>
+@endif
 
 <style>
 /* ── CERTIFICATE OF REGISTRATION (COR) & SCHEDULE UNIFIED THEME ── */
