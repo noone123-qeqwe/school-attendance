@@ -443,7 +443,7 @@
             <button type="button" class="btn-verify-face" id="btnCaptureFace" onclick="captureAndVerifyFace()">
                 <i class="bi bi-person-check-fill"></i> Verify My Face
             </button>
-            <p class="text-muted small mt-2 mb-0" style="text-align:center;">Hold your face steady while three camera samples are captured. Retry if the samples are unclear.</p>
+            <p class="text-muted small mt-2 mb-0" style="text-align:center;">Position your face inside the oval, then tap Verify My Face. Hold steady while three samples are captured.</p>
             <button type="button" class="btn-retry-face mt-2" id="btnRetryFace" onclick="startFaceScan()" style="display: none;">
                 <i class="bi bi-arrow-clockwise"></i> Scan Face Again
             </button>
@@ -552,7 +552,7 @@ var HAS_FINGERPRINT = {{ !empty($hasFingerprint) ? 'true' : 'false' }};
 var ACTIVE_METHOD = '{{ $defaultMethod ?? (!empty($hasFaceMethod) ? "face" : "fingerprint") }}';
 var currentFacingMode = 'user';
 var activeStream = null;
-var autoCaptureTimer = null;
+var faceCameraRequestId = 0;
 var faceVerificationInProgress = false;
 
 function normalizeCoordinates(lat, lng) {
@@ -1257,6 +1257,7 @@ function switchMethod(method) {
 
 function startFaceScan() {
     stopCamera();
+    var requestId = faceCameraRequestId;
     faceVerificationInProgress = false;
 
     var scanArea = document.getElementById('faceScanArea');
@@ -1281,7 +1282,7 @@ function startFaceScan() {
     if (retryBtn) retryBtn.style.display = 'none';
     var captureBtn = document.getElementById('btnCaptureFace');
     if (captureBtn) {
-        captureBtn.disabled = false;
+        captureBtn.disabled = true;
         captureBtn.innerHTML = '<i class="bi bi-person-check-fill"></i> Verify My Face';
     }
 
@@ -1301,24 +1302,36 @@ function startFaceScan() {
         },
         audio: false
     }).then(function(stream) {
+        if (requestId !== faceCameraRequestId) {
+            stream.getTracks().forEach(function(track) { track.stop(); });
+            return;
+        }
         activeStream = stream;
         var video = document.getElementById('faceCameraVideo');
         video.srcObject = stream;
         video.onloadedmetadata = function() {
-            video.play();
-            setCameraStatus('Align face within oval', 'pulsing');
-
-            if (autoCaptureTimer) clearTimeout(autoCaptureTimer);
-            autoCaptureTimer = setTimeout(function() {
-                if (!faceVerificationInProgress && activeStream) {
-                    captureAndVerifyFace();
-                }
-            }, 1800);
+            if (requestId !== faceCameraRequestId || activeStream !== stream) return;
+            Promise.resolve(video.play()).then(function() {
+                if (requestId !== faceCameraRequestId || activeStream !== stream) return;
+                setCameraStatus('Position your face inside the oval, then tap Verify My Face.', 'pulsing');
+                var readyButton = document.getElementById('btnCaptureFace');
+                if (readyButton) readyButton.disabled = false;
+            }).catch(function() {
+                if (requestId !== faceCameraRequestId) return;
+                stopCamera();
+                setCameraStatus('Camera could not start', 'err');
+                showMsg('err', 'The camera feed did not start. Please retry or use your other verification method.');
+                var retryBtn = document.getElementById('btnRetryFace');
+                if (retryBtn) retryBtn.style.display = 'block';
+            });
         };
     }).catch(function(err) {
+        if (requestId !== faceCameraRequestId) return;
         console.error('Camera error:', err);
         setCameraStatus('Camera access denied', 'err');
         showMsg('err', 'Unable to access device camera. Please allow camera permissions to verify your face.');
+        var retryFaceBtn = document.getElementById('btnRetryFace');
+        if (retryFaceBtn) retryFaceBtn.style.display = 'block';
         if (HAS_FINGERPRINT) {
             var btn = document.getElementById('retryFpBtn');
             btn.innerHTML = '<i class="bi bi-fingerprint"></i> Use Fingerprint Instead';
@@ -1338,10 +1351,7 @@ function toggleCameraFacing() {
 }
 
 function stopCamera() {
-    if (autoCaptureTimer) {
-        clearTimeout(autoCaptureTimer);
-        autoCaptureTimer = null;
-    }
+    faceCameraRequestId++;
     if (activeStream) {
         activeStream.getTracks().forEach(function(track) {
             track.stop();
@@ -1350,16 +1360,13 @@ function stopCamera() {
     }
     var video = document.getElementById('faceCameraVideo');
     if (video) {
+        video.onloadedmetadata = null;
         video.srcObject = null;
     }
 }
 
 async function captureAndVerifyFace() {
     if (faceVerificationInProgress) return;
-    if (autoCaptureTimer) {
-        clearTimeout(autoCaptureTimer);
-        autoCaptureTimer = null;
-    }
 
     var video = document.getElementById('faceCameraVideo');
     if (!video || !activeStream || video.readyState < 2) {
