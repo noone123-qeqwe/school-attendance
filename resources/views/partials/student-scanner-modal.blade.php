@@ -1,5 +1,5 @@
 <!-- Student QR & Code Scanner Modal Partial -->
-<div id="studentScannerModal" class="scanner-modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-label="Student Attendance Scanner">
+<div id="studentScannerModal" class="scanner-modal-backdrop {{ request()->routeIs('mobile.scan') ? 'scanner-page-screen' : '' }}" style="display: none;" @if(request()->routeIs('mobile.scan')) role="region" aria-label="Student Attendance Scanner" @else role="dialog" aria-modal="true" aria-label="Student Attendance Scanner" @endif>
     <div class="scanner-modal-card">
         
         <!-- Mobile Bottom Sheet Drag Indicator -->
@@ -1397,6 +1397,117 @@
 }
 </style>
 
+@if(request()->routeIs('mobile.scan'))
+<style>
+    html:has(body.scanner-page-layout),
+    body.scanner-page-layout {
+        width: 100%;
+        min-height: 100%;
+        overflow: hidden;
+        background: #100d0b;
+    }
+
+    body.scanner-page-layout .mobile-header,
+    body.scanner-page-layout #mobileBottomNav,
+    body.scanner-page-layout #installPrompt,
+    body.scanner-page-layout .mobile-menu-backdrop,
+    body.scanner-page-layout .mobile-navigation-menu,
+    body.scanner-page-layout .mobile-scan-page {
+        display: none !important;
+    }
+
+    body.scanner-page-layout .mobile-app {
+        width: 100%;
+        max-width: none;
+        min-height: 100dvh;
+        height: 100dvh;
+        margin: 0;
+        padding: 0;
+    }
+
+    body.scanner-page-layout .scanner-page-screen {
+        position: fixed;
+        inset: 0;
+        z-index: 100000 !important;
+        display: flex !important;
+        width: 100%;
+        height: 100dvh;
+        min-height: 100dvh;
+        padding: 0;
+        overflow: auto;
+        align-items: stretch;
+        justify-content: center;
+        background: #100d0b;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+
+    body.scanner-page-layout .scanner-modal-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        width: 100%;
+        max-width: 900px;
+        min-height: 100dvh;
+        max-height: none;
+        margin: 0;
+        padding: max(18px, env(safe-area-inset-top, 0px)) clamp(18px, 4vw, 42px) max(18px, env(safe-area-inset-bottom, 0px));
+        overflow: visible;
+        border: 0;
+        border-radius: 0;
+        background: linear-gradient(180deg, #1b1714 0%, #11100e 100%);
+        box-shadow: none;
+    }
+
+    body.scanner-page-layout .scanner-viewfinder-wrapper {
+        width: min(78vw, 48vh, 470px);
+        max-width: 100%;
+    }
+
+    body.scanner-page-layout .scanner-alt-action-card {
+        max-width: 470px;
+    }
+
+    body.scanner-page-layout .scanner-title {
+        font-size: clamp(1.2rem, 2.5vw, 1.6rem);
+    }
+
+    @media (max-width: 767px) {
+        body.scanner-page-layout .scanner-modal-card {
+            min-height: 100dvh;
+            padding: max(14px, env(safe-area-inset-top, 0px)) 16px max(18px, env(safe-area-inset-bottom, 0px));
+        }
+
+        body.scanner-page-layout .scanner-modal-card.mode-scan {
+            justify-content: center;
+        }
+
+        body.scanner-page-layout .scanner-viewfinder-wrapper {
+            width: min(78vw, 45vh, 440px);
+            margin-bottom: 14px;
+        }
+
+        body.scanner-page-layout .scanner-top-bar {
+            margin-bottom: 18px;
+        }
+
+        body.scanner-page-layout .scanner-title {
+            font-size: 1.2rem;
+        }
+    }
+
+    @media (max-height: 700px) {
+        body.scanner-page-layout .scanner-modal-card {
+            justify-content: flex-start;
+        }
+
+        body.scanner-page-layout .scanner-viewfinder-wrapper {
+            width: min(68vw, 38vh, 360px);
+        }
+    }
+</style>
+@endif
+
 <script nonce="{{ csp_nonce() }}" src="{{ asset('js/html5-qrcode.min.js') }}?v={{ filemtime(public_path('js/html5-qrcode.min.js')) }}"></script>
 <script nonce="{{ csp_nonce() }}">
 let html5QrScanner = null;
@@ -1413,6 +1524,9 @@ let studentLocationWatchId = null;
 let currentScannerMode = 'scan'; // 'scan' | 'code'
 let autoCloseTimer = null;
 let autoCloseCountdownInterval = null;
+const studentScannerPageUrl = @json(route('mobile.scan'));
+const studentDashboardUrl = @json(route('home'));
+const isDedicatedStudentScannerPage = @json(request()->routeIs('mobile.scan'));
 
 function startContinuousLocationWatch() {
     if (!navigator.geolocation || studentLocationWatchId !== null) return;
@@ -1807,6 +1921,14 @@ function applyResponsiveScannerLayout() {
 }
 
 function openStudentScanner(initialMode = 'scan', autoPaste = false) {
+    if (!isDedicatedStudentScannerPage) {
+        const scanUrl = new URL(studentScannerPageUrl, window.location.origin);
+        scanUrl.searchParams.set(initialMode === 'code' ? 'open_code' : 'open_scanner', '1');
+        if (autoPaste) scanUrl.searchParams.set('paste', '1');
+        window.location.assign(scanUrl.toString());
+        return;
+    }
+
     const modal = document.getElementById('studentScannerModal');
     if (!modal) return;
     
@@ -2298,13 +2420,17 @@ function toggleTorch() {
     } catch (e) {}
 }
 
-function closeStudentScanner() {
+function closeStudentScanner(returnToDashboard = true) {
     clearAutoCloseTimer();
     stopContinuousLocationWatch();
     const modal = document.getElementById('studentScannerModal');
     if (modal) modal.style.display = 'none';
     safeClearScanner();
     isScanInFlight = false;
+
+    if (isDedicatedStudentScannerPage && returnToDashboard) {
+        window.location.replace(studentDashboardUrl);
+    }
 }
 
 function clearAutoCloseTimer() {
@@ -2794,10 +2920,11 @@ window.useCodeFromOutsidePopup = useCodeFromOutsidePopup;
 
 function finishScanAndRefresh() {
     clearAutoCloseTimer();
-    closeStudentScanner();
     if (window.location.pathname.includes('/mobile/scan')) {
+        closeStudentScanner(false);
         window.location.href = '{{ route("mobile.history") }}';
     } else {
+        closeStudentScanner();
         window.location.reload();
     }
 }
@@ -2863,17 +2990,20 @@ function playErrorTone() {
 // Auto open scanner if directed with URL query
 document.addEventListener('DOMContentLoaded', () => {
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('open_scanner') === '1') {
-        setTimeout(() => { openStudentScanner('scan'); }, 150);
+    if (isDedicatedStudentScannerPage) {
+        const mode = urlParams.get('open_code') === '1' ? 'code' : 'scan';
+        openStudentScanner(mode, urlParams.get('paste') === '1');
+    } else if (urlParams.get('open_scanner') === '1') {
+        openStudentScanner('scan');
     } else if (urlParams.get('open_code') === '1') {
-        setTimeout(() => { openStudentScanner('code'); }, 150);
+        openStudentScanner('code');
     }
 
     const modal = document.getElementById('studentScannerModal');
     if (modal) {
-        // Close on backdrop click
+        // Backdrop click only closes the legacy in-page dialog. The dedicated scan route is a page.
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
+            if (!isDedicatedStudentScannerPage && e.target === modal) {
                 closeStudentScanner();
             }
         });

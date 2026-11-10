@@ -7,7 +7,7 @@
         <i class="bi bi-journal-bookmark-fill"></i>
         <span>Classes</span>
     </a>
-    <button type="button" class="mbn-item mbn-item-featured" id="mbnStudentScanBtn" data-action="open-scanner" aria-label="Scan Attendance QR" style="background:transparent;border:none;outline:none;cursor:pointer;">
+    <a href="{{ route('mobile.scan') }}" class="mbn-item mbn-item-featured" id="mbnStudentScanBtn" aria-label="Scan Attendance QR">
         <div class="mbn-featured-btn">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="mbn-scan-icon-svg">
                 <path d="M3.5 8.5V5.5C3.5 4.4 4.4 3.5 5.5 3.5H8.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -21,7 +21,7 @@
             </svg>
         </div>
         <span>Scan</span>
-    </button>
+    </a>
     <a href="{{ route('attendance.records') }}" class="mbn-item {{ request()->routeIs('attendance.records', 'attendance.history') ? 'active' : '' }}">
         <i class="bi bi-clipboard-data-fill"></i>
         <span>Records</span>
@@ -31,20 +31,3 @@
         <span>More</span>
     </button>
 </nav>
-
-<script @cspNonce>
-document.addEventListener('DOMContentLoaded', function() {
-    const btn = document.getElementById('mbnStudentScanBtn');
-    if (btn) {
-        const handler = function(e) {
-            if (e) { e.preventDefault(); e.stopPropagation(); }
-            if (typeof openStudentScanner === 'function') {
-                openStudentScanner('scan');
-            } else {
-                window.location.href = '{{ route("home") }}?open_scanner=1';
-            }
-        };
-        btn.addEventListener('click', handler);
-    }
-});
-</script>

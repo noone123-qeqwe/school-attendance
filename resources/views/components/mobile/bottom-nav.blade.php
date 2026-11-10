@@ -45,15 +45,14 @@
 <nav class="mobile-bottom-nav" id="mobileBottomNav">
     @foreach($navItems as $item)
         @if($item['scan'] && $isStudent)
-            {{-- Student Scan button: always opens the scanner modal directly --}}
-            <button type="button"
+            {{-- Open the scanner as a dedicated page, not over the current screen. --}}
+            <a href="{{ route($item['route']) }}"
                     class="nav-item nav-item-primary {{ $currentRoute === $item['route'] ? 'active' : '' }}"
                     id="mobileNavScanBtn"
-                    data-action="open-scanner"
                     aria-label="Scan QR Code">
                 <i class="bi bi-{{ $item['icon'] }}"></i>
                 <span>{{ $item['label'] }}</span>
-            </button>
+            </a>
         @else
             <a href="{{ route($item['route']) }}"
                class="nav-item {{ $item['primary'] ? 'nav-item-primary' : '' }} {{ $currentRoute === $item['route'] ? 'active' : '' }}"

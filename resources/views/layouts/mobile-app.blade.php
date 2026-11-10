@@ -188,7 +188,7 @@
         <link rel="stylesheet" href="{{ asset('css/student-portal-simple.css') }}?v={{ filemtime(public_path('css/student-portal-simple.css')) }}">
     @endif
 </head>
-<body class="mobile-app-layout {{ Auth::check() && Auth::user()->isStudent() ? 'student-portal student-mobile-portal' : '' }}" @if(Auth::user()?->isStudent()) data-student-layout="simple" @endif>
+<body class="mobile-app-layout {{ Auth::check() && Auth::user()->isStudent() ? 'student-portal student-mobile-portal' : '' }} {{ request()->routeIs('mobile.scan') ? 'scanner-page-layout' : '' }}" @if(Auth::user()?->isStudent()) data-student-layout="simple" @endif>
     <!-- Mobile Header -->
     @include('components.mobile.header')
 
@@ -206,7 +206,11 @@
     <!-- Scanner Modal (Students only) -->
     @auth
         @if(auth()->user()->isStudent() || auth()->user()->hasRole('student'))
-            @include('partials.student-scanner-modal')
+            @if(request()->routeIs('mobile.scan'))
+                @include('partials.student-scanner-modal')
+            @else
+                @include('partials.student-scanner-launcher')
+            @endif
             @include('partials.student-presence-guardian')
         @endif
     @endauth
@@ -258,7 +262,7 @@
         window.triggerHaptic = haptic;
 
         /**
-         * mobileScanButtonTapped — opens the QR scanner modal inline or navigates to scan page
+         * mobileScanButtonTapped — navigates to the dedicated QR scanner screen
          */
         window.mobileScanButtonTapped = function(e) {
             if (e && typeof e.preventDefault === 'function') {
@@ -298,13 +302,6 @@
                 el.addEventListener('touchstart', () => haptic('light'), { passive: true });
             });
 
-            // Auto-open QR scanner when ?open_scanner=1 is in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('open_scanner') === '1' && typeof openStudentScanner === 'function') {
-                setTimeout(() => openStudentScanner('scan'), 200);
-            } else if (urlParams.get('open_code') === '1' && typeof openStudentScanner === 'function') {
-                setTimeout(() => openStudentScanner('code'), 200);
-            }
         });
 
         // ── Dynamic Viewport & Safe-Area Synchronization ──
