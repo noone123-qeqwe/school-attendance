@@ -72,35 +72,28 @@ class MarkAbsentStudents extends Command
                     }
                 }
 
-                \Illuminate\Support\Facades\DB::transaction(function () use ($student, $subject, $today, &$absentCount, &$notificationsSentCount, &$osasWarningsCount) {
-                    // Check if already has attendance record today for this subject
-                    $exists = Attendance::where('user_id', $student->id)
-                        ->where('subject_code', $subject->code)
-                        ->whereDate('date', $today)
-                        ->exists();
+                $result = Attendance::createAbsentIfMissing([
+                    'user_id' => $student->id,
+                    'subject_id' => $subject->id,
+                    'subject_code' => $subject->code,
+                    'date' => $today->toDateString(),
+                ]);
 
-                    if (!$exists) {
-                        // Mark as absent
-                        Attendance::create([
-                            'user_id'      => $student->id,
-                            'subject_code' => $subject->code,
-                            'date'         => $today->toDateString(),
-                            'status'       => 'Absent',
-                        ]);
-                        
-                        $absentCount++;
+                if (!$result['created']) {
+                    continue;
+                }
 
-                        // Send individual absence notification
-                        $this->sendAbsenceNotification($student, $subject, $today);
-                        $notificationsSentCount++;
+                $absentCount++;
 
-                        // Check for 3 consecutive absences and send OSAS warning
-                        if ($this->checkConsecutiveAbsences($student->id, $subject->code)) {
-                            $osasWarningsCount++;
-                            $this->info("OSAS warning sent to {$student->name} for {$subject->code}");
-                        }
-                    }
-                });
+                // Send individual absence notification
+                $this->sendAbsenceNotification($student, $subject, $today);
+                $notificationsSentCount++;
+
+                // Check for 3 consecutive absences and send OSAS warning
+                if ($this->checkConsecutiveAbsences($student->id, $subject->code)) {
+                    $osasWarningsCount++;
+                    $this->info("OSAS warning sent to {$student->name} for {$subject->code}");
+                }
             }
         }
 

@@ -685,24 +685,30 @@ class QrAttendanceController extends Controller
 
         // Dispatch notifications for absent/late students safely
         $subject = $session->subject;
-        $today = now()->toDateString();
+        $sessionEnd = Carbon::parse($session->session_ends_at ?? $session->expires_at ?? $session->created_at)->timezone('Asia/Manila');
+        $sessionStart = $session->created_at
+            ? Carbon::parse($session->created_at)->timezone('Asia/Manila')
+            : $sessionEnd->copy();
+        if ($sessionStart->greaterThan($sessionEnd)) {
+            $sessionStart = $sessionEnd->copy();
+        }
+        $attendanceDate = $sessionEnd->toDateString();
         
         if ($subject) {
             try {
                 $students = $subject->getAllStudents();
-                $sessionEnd = Carbon::parse($session->session_ends_at ?? $session->expires_at ?? $session->created_at)->timezone('Asia/Manila');
                 
                 foreach ($students as $student) {
                     try {
-                        // If student account was created after the session ended, skip marking absent
+                        // A student created after the session began was not expected to attend it.
                         if ($student->created_at) {
                             $studentCreated = Carbon::parse($student->created_at)->timezone('Asia/Manila');
-                            if ($studentCreated->greaterThan($sessionEnd)) {
+                            if ($studentCreated->greaterThan($sessionStart)) {
                                 continue;
                             }
                         }
 
-                        // If explicitly enrolled, ensure enrolled before session ended
+                        // Explicit enrollment must also predate the session.
                         if (\Illuminate\Support\Facades\Schema::hasTable('enrollments')) {
                             $enrollment = \Illuminate\Support\Facades\DB::table('enrollments')
                                 ->where('user_id', $student->id)
@@ -710,29 +716,26 @@ class QrAttendanceController extends Controller
                                 ->first();
                             if ($enrollment && !empty($enrollment->created_at)) {
                                 $enrolledAt = Carbon::parse($enrollment->created_at)->timezone('Asia/Manila');
-                                if ($enrolledAt->greaterThan($sessionEnd)) {
+                                if ($enrolledAt->greaterThan($sessionStart)) {
                                     continue;
                                 }
                             }
                         }
 
-                        // Ensure record exists; if not, mark absent
-                        $attendance = \App\Models\Attendance::updateOrCreateRecord(
-                            [
-                                'user_id' => $student->id,
-                                'subject_code' => $session->subject_code,
-                                'date' => $today
-                            ],
-                            [
-                                'status' => 'Absent',
-                                'time_in' => null,
-                                'latitude' => null,
-                                'longitude' => null,
-                                'excused' => false
-                            ]
-                        );
+                        $result = \App\Models\Attendance::createAbsentIfMissing([
+                            'user_id' => $student->id,
+                            'subject_id' => $subject->id,
+                            'subject_code' => $session->subject_code,
+                            'date' => $attendanceDate,
+                        ], [
+                            'time_in' => null,
+                            'latitude' => null,
+                            'longitude' => null,
+                            'excused' => false,
+                        ]);
+                        $attendance = $result['attendance'];
 
-                        if (in_array($attendance->status, ['Absent', 'Late']) && !$attendance->excused) {
+                        if ($result['created'] && in_array($attendance->status, ['Absent', 'Late']) && !$attendance->excused) {
                             $signedUrl = \Illuminate\Support\Facades\URL::signedRoute('guest.excuse', ['attendance' => $attendance->id]);
                             try {
                                 $student->notify(new \App\Notifications\AbsenceAlert($attendance, $signedUrl));

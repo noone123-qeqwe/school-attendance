@@ -264,4 +264,69 @@ class Attendance extends Model
             throw $e;
         }
     }
+
+    /**
+     * Create an automatic absence only when no attendance row already exists.
+     * Existing Present/Late records (including soft-deleted rows) must never be
+     * overwritten by a session-close or scheduled absence sweep.
+     *
+     * @return array{attendance: self, created: bool}
+     */
+    public static function createAbsentIfMissing(array $attributes, array $values = []): array
+    {
+        $data = array_merge($attributes, $values);
+        $userId = $data['user_id'] ?? null;
+        $date = isset($data['date']) ? \Carbon\Carbon::parse($data['date'])->format('Y-m-d') : null;
+        $subjectId = $data['subject_id'] ?? null;
+        $subjectCode = $data['subject_code'] ?? null;
+
+        if (!$userId || !$date || (!$subjectId && !$subjectCode)) {
+            throw new \InvalidArgumentException('Automatic absence requires a student, subject, and date.');
+        }
+
+        if (!$subjectId && $subjectCode) {
+            $subjectId = \App\Models\Subject::where('code', $subjectCode)->value('id');
+            if ($subjectId) {
+                $data['subject_id'] = $subjectId;
+            }
+        }
+
+        $data['date'] = $date;
+        $data['status'] = 'Absent';
+
+        $findExisting = static function () use ($userId, $date, $subjectId, $subjectCode) {
+            return static::withTrashed()
+                ->where('user_id', $userId)
+                ->whereDate('date', $date)
+                ->where(function ($query) use ($subjectId, $subjectCode) {
+                    if ($subjectId && $subjectCode) {
+                        $query->where('subject_id', $subjectId)
+                            ->orWhere('subject_code', $subjectCode);
+                    } elseif ($subjectId) {
+                        $query->where('subject_id', $subjectId);
+                    } else {
+                        $query->where('subject_code', $subjectCode);
+                    }
+                });
+        };
+
+        try {
+            return \Illuminate\Support\Facades\DB::transaction(function () use ($findExisting, $data) {
+                $existing = $findExisting()->lockForUpdate()->first();
+                if ($existing) {
+                    return ['attendance' => $existing, 'created' => false];
+                }
+
+                return ['attendance' => static::create($data), 'created' => true];
+            }, 3);
+        } catch (\Illuminate\Database\QueryException $exception) {
+            // Another check-in may have inserted the unique student/subject/date row first.
+            $existing = $findExisting()->first();
+            if ($existing) {
+                return ['attendance' => $existing, 'created' => false];
+            }
+
+            throw $exception;
+        }
+    }
 }
