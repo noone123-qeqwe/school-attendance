@@ -827,7 +827,8 @@
     }
 </style>
 
-<div class="row justify-content-center">
+@include('partials.student-page-header', ['title' => 'Attendance calendar', 'description' => 'Choose a date to see your attendance and class details.', 'actionUrl' => route('attendance.records'), 'actionLabel' => 'View records'])
+<div class="row justify-content-center student-attendance-page">
     <div class="col-lg-10">
         <x-card title="My Attendance Calendar" icon="bi bi-calendar-check-fill">
             <x-slot name="headerActions">
@@ -837,12 +838,12 @@
             <div class="att-cal-wrap">
                 {{-- Month Navigation --}}
                 <div class="att-cal-nav">
-                    <a href="?cal_year={{ $prevMonth->year }}&cal_month={{ $prevMonth->month }}" class="att-cal-nav-btn">
+                    <a href="?cal_year={{ $prevMonth->year }}&cal_month={{ $prevMonth->month }}" class="att-cal-nav-btn" aria-label="Previous month">
                         <i class="bi bi-chevron-left"></i>
                     </a>
                     <div class="att-cal-month">{{ $calStart->format('F Y') }}</div>
                     @if(!$isLatestMonth)
-                        <a href="?cal_year={{ $nextMonth->year }}&cal_month={{ $nextMonth->month }}" class="att-cal-nav-btn">
+                        <a href="?cal_year={{ $nextMonth->year }}&cal_month={{ $nextMonth->month }}" class="att-cal-nav-btn" aria-label="Next month">
                             <i class="bi bi-chevron-right"></i>
                         </a>
                     @else

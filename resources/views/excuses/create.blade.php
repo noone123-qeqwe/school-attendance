@@ -59,8 +59,8 @@
 }
 </style>
 
-<div class="ent-section ent-fade-up" style="max-width:860px; margin: 0 auto;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="ent-section ent-fade-up student-excuse-form" style="max-width:860px; margin: 0 auto;">
+    <header class="student-page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
         <div>
             <h1 style="font-size: 2rem; font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">
                 <i class="bi bi-file-earmark-medical me-2" style="color: #cfa46f;"></i>Submit Excuse Letter
@@ -70,7 +70,7 @@
         <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
             <i class="bi bi-arrow-left"></i> Back to Excuses
         </a>
-    </div>
+    </header>
 
     @if($errors->any())
     <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">

@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('page-title', 'Student Dashboard')
+@section('page-title', 'Dashboard')
 
 @section('content')
 
@@ -1293,6 +1293,12 @@
         </div>
     </div>
 </div>
+
+<nav class="student-quick-links" aria-label="Student shortcuts">
+    <a href="{{ route('student.classes') }}"><i class="bi bi-journal-bookmark" aria-hidden="true"></i>My classes<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('attendance.records') }}"><i class="bi bi-clipboard-check" aria-hidden="true"></i>Attendance records<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('excuses.create_general') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>Submit an excuse<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+</nav>
 
 <!-- Quick Stats -->
 <div class="ent-grid ent-grid-4 ent-mb-lg ent-fade-up ent-delay-2" id="realStats" style="display:grid; gap:16px; margin-bottom:20px;">

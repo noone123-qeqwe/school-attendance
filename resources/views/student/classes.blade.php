@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('portal-title', 'Classes & Schedule')
 @section('page-title', 'Classes & Schedule')
-@section('page-sub', 'Certificate of Registration (COR) & Unified Academic Timetable')
+@section('page-sub', 'Your subjects and weekly timetable')
 
 @section('content')
 @php
@@ -1172,8 +1172,13 @@
         background: transparent !important;
     }
     .cor-mobile-cards-view {
-        display: none !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
     }
+    .cor-mobile-cards-view [hidden] { display: none !important; }
+    .cor-card-item { break-inside: avoid; background: white !important; border: 1px solid black !important; box-shadow: none !important; }
+    .cor-card-item :is(.cor-card-subj-title, .cor-card-matrix-label, .cor-card-matrix-value, .cor-code-badge, .cor-day-badge, .cor-room-badge) { color: black !important; }
     .cor-table {
         min-width: 100% !important;
         color: #000000 !important;
@@ -1277,30 +1282,20 @@
 
             <!-- 3. Screen Controls Toolbar (Search, Filter) -->
             <div class="cor-toolbar no-print">
-                <div class="cor-search-box">
-                    <i class="bi bi-search cor-search-icon"></i>
-                    <input type="text" 
-                           id="scheduleSearchInput" 
-                           class="cor-search-input" 
-                           placeholder="Search subject code, description, instructor, room..." 
-                           aria-label="Filter schedule records">
-                </div>
-
-                <div class="cor-day-pills-rail" id="dayFilterRail">
-                    <button type="button" class="cor-day-btn active" data-day="all">All Days ({{ count($groupedSchedules) }})</button>
-                    @if($todayClassesCount > 0)
-                        <button type="button" class="cor-day-btn" data-day="today">
-                            <i class="bi bi-stars text-warning me-1"></i> Today ({{ $todayClassesCount }})
-                        </button>
-                    @endif
-                    <button type="button" class="cor-day-btn" data-day="Monday">Mon</button>
-                    <button type="button" class="cor-day-btn" data-day="Tuesday">Tue</button>
-                    <button type="button" class="cor-day-btn" data-day="Wednesday">Wed</button>
-                    <button type="button" class="cor-day-btn" data-day="Thursday">Thu</button>
-                    <button type="button" class="cor-day-btn" data-day="Friday">Fri</button>
-                    <button type="button" class="cor-day-btn" data-day="Saturday">Sat</button>
-                </div>
+                <label class="student-filter-field" for="scheduleSearchInput">Find a class
+                    <input type="search" id="scheduleSearchInput" class="cor-search-input" placeholder="Subject, teacher, or room" aria-label="Filter schedule records">
+                </label>
+                <label class="student-filter-field" for="scheduleDayFilter">Day
+                    <select id="scheduleDayFilter">
+                        <option value="all">All days</option>
+                        <option value="today">Today</option>
+                        @foreach(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $day)
+                        <option value="{{ $day }}">{{ $day }}</option>
+                        @endforeach
+                    </select>
+                </label>
             </div>
+            <p class="student-results-count no-print" id="scheduleResultsStatus" role="status">{{ count($groupedSchedules) }} classes</p>
 
             <!-- 4. Class Schedule Cards View (Primary Mobile Layout) -->
             <div class="cor-mobile-cards-view" id="corMobileCardsView">
@@ -1366,7 +1361,7 @@
 
                             <div class="cor-card-matrix-cell">
                                 <div class="cor-card-matrix-label"><i class="bi bi-person"></i> Teacher</div>
-                                <div class="cor-card-matrix-value text-truncate" title="{{ $sched->teacher }}">
+                                <div class="cor-card-matrix-value" title="{{ $sched->teacher }}">
                                     {{ $sched->teacher }}
                                 </div>
                             </div>
@@ -1380,6 +1375,7 @@
                         <p class="mb-0">You are currently not registered for any classes this semester.</p>
                     </div>
                 @endforelse
+                <div id="scheduleFilterEmpty" class="student-filter-empty" hidden><strong>No matching classes</strong>Try a different day, subject, teacher, or room.</div>
             </div>
 
         </div>
@@ -1388,53 +1384,24 @@
 </div>
 
 <script @cspNonce>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('scheduleSearchInput');
-        const dayButtons = document.querySelectorAll('.cor-day-btn');
-        const cards = document.querySelectorAll('.cor-card-item');
-
-        let activeDay = 'all';
-
-        function applyFilter() {
-            const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
-
-            // Filter Mobile Cards
-            cards.forEach(card => {
-                const cardText = card.textContent.toLowerCase();
-                const daysAttr = card.getAttribute('data-days') || '';
-                const isTodayAttr = card.getAttribute('data-is-today') === '1';
-
-                let matchesDay = true;
-                if (activeDay === 'all') {
-                    matchesDay = true;
-                } else if (activeDay === 'today') {
-                    matchesDay = isTodayAttr;
-                } else {
-                    matchesDay = daysAttr.split(',').includes(activeDay);
-                }
-
-                const matchesSearch = query === '' || cardText.includes(query);
-
-                if (matchesDay && matchesSearch) {
-                    card.style.display = '';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        }
-
-        if (searchInput) {
-            searchInput.addEventListener('input', applyFilter);
-        }
-
-        dayButtons.forEach(btn => {
-            btn.addEventListener('click', function() {
-                dayButtons.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                activeDay = this.getAttribute('data-day');
-                applyFilter();
-            });
+document.addEventListener('DOMContentLoaded', function() {
+    const search = document.getElementById('scheduleSearchInput');
+    const day = document.getElementById('scheduleDayFilter');
+    const cards = Array.from(document.querySelectorAll('.cor-card-item'));
+    function applyScheduleFilter() {
+        const query = search.value.trim().toLowerCase();
+        let visible = 0;
+        cards.forEach(card => {
+            const matchesDay = day.value === 'all' || (day.value === 'today' ? card.dataset.isToday === '1' : (card.dataset.days || '').split(',').includes(day.value));
+            card.hidden = !(matchesDay && card.textContent.toLowerCase().includes(query));
+            if (!card.hidden) visible++;
         });
-    });
-    </script>
+        document.getElementById('scheduleResultsStatus').textContent = visible + (visible === 1 ? ' class' : ' classes');
+        document.getElementById('scheduleFilterEmpty').hidden = cards.length === 0 || visible > 0;
+    }
+    search.addEventListener('input', applyScheduleFilter);
+    day.addEventListener('change', applyScheduleFilter);
+    applyScheduleFilter();
+});
+</script>
 @endsection

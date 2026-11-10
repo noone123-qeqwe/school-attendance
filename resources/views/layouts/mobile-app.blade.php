@@ -185,9 +185,10 @@
     <link rel="stylesheet" href="{{ asset('css/system-ui-modern.css') }}?v={{ filemtime(public_path('css/system-ui-modern.css')) }}">
     @if(Auth::check() && Auth::user()->isStudent())
         <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
+        <link rel="stylesheet" href="{{ asset('css/student-portal-simple.css') }}?v={{ filemtime(public_path('css/student-portal-simple.css')) }}">
     @endif
 </head>
-<body class="mobile-app-layout {{ Auth::check() && Auth::user()->isStudent() ? 'student-portal student-mobile-portal' : '' }}">
+<body class="mobile-app-layout {{ Auth::check() && Auth::user()->isStudent() ? 'student-portal student-mobile-portal' : '' }}" @if(Auth::user()?->isStudent()) data-student-layout="simple" @endif>
     <!-- Mobile Header -->
     @include('components.mobile.header')
 

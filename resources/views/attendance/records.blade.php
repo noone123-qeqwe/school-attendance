@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+@section('page-title', 'Attendance Records')
 @section('content')
 <style>
     .records-page { max-width: 960px; margin: 0 auto; padding-bottom: 40px; }
@@ -598,18 +599,23 @@
                 All Records
             </div>
             <!-- Filter tabs -->
-            <div class="filter-tabs">
-                <button class="filter-tab active" onclick="filterTable('all', this)">All</button>
-                <button class="filter-tab" onclick="filterTable('Present', this)">Present</button>
-                <button class="filter-tab" onclick="filterTable('Late', this)">Late</button>
-                <button class="filter-tab" onclick="filterTable('Absent', this)">Absent</button>
+            <div class="filter-tabs" role="group" aria-label="Filter records by attendance status">
+                <button class="filter-tab active" aria-pressed="true" onclick="filterTable('all', this)">All</button>
+                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Present', this)">Present</button>
+                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Late', this)">Late</button>
+                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Absent', this)">Absent</button>
+                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Excused', this)">Excused</button>
             </div>
         </div>
 
+        <label class="student-record-search" for="attendanceRecordsSearch">Find a record
+            <input type="search" id="attendanceRecordsSearch" placeholder="Search by class, date, or teacher">
+        </label>
+        <p id="recordsResultsStatus" class="student-results-count" style="padding-inline:22px;" role="status"></p>
         <!-- Mobile-first Card Layout -->
         <div class="records-container" id="recordsContainer">
             @forelse($records as $i => $record)
-            <div class="record-card" data-status="{{ $record->status }}">
+            <div class="record-card" data-status="{{ $record->status }}" data-excused="{{ $record->excused ? '1' : '0' }}">
                 @php
                     $dayName = \Carbon\Carbon::parse($record->date)->format('l');
                     $sched = $record->subject?->schedules?->firstWhere('day', $dayName) ?? $record->subject?->schedules?->first();
@@ -836,20 +842,39 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-function filterTable(status, btn) {
-    // Update active tab
-    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-
-    // Show/hide cards
-    document.querySelectorAll('#recordsContainer .record-card[data-status]').forEach(card => {
-        if (status === 'all' || card.dataset.status === status) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
+let activeRecordStatus = 'all';
+function applyRecordFilters() {
+    const query = document.getElementById('attendanceRecordsSearch').value.trim().toLowerCase();
+    const cards = Array.from(document.querySelectorAll('#recordsContainer .record-card[data-status]'));
+    let visible = 0;
+    cards.forEach(card => {
+        const matchesStatus = activeRecordStatus === 'all' || (activeRecordStatus === 'Excused' ? card.dataset.excused === '1' : card.dataset.status === activeRecordStatus);
+        card.hidden = !(matchesStatus && card.textContent.toLowerCase().includes(query));
+        if (!card.hidden) visible++;
     });
+    document.getElementById('recordsResultsStatus').textContent = visible + (visible === 1 ? ' record' : ' records');
+    let empty = document.getElementById('recordsFilterEmpty');
+    if (!empty) {
+        empty = document.createElement('div');
+        empty.id = 'recordsFilterEmpty';
+        empty.className = 'student-filter-empty';
+        const title = document.createElement('strong');
+        title.textContent = 'No matching records';
+        empty.append(title, 'Try another status, class, date, or teacher.');
+        document.getElementById('recordsContainer').appendChild(empty);
+    }
+    empty.hidden = cards.length === 0 || visible > 0;
 }
+function filterTable(status, btn) {
+    activeRecordStatus = status;
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.toggle('active', tab === btn);
+        tab.setAttribute('aria-pressed', tab === btn ? 'true' : 'false');
+    });
+    applyRecordFilters();
+}
+document.getElementById('attendanceRecordsSearch').addEventListener('input', applyRecordFilters);
+applyRecordFilters();
 </script>
 
 <style>

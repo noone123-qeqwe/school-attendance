@@ -1,5 +1,6 @@
 @extends('layouts.app')
 
+@section('page-title', 'My Profile')
 @section('content')
 <style>
     /* ── PAGE ── */
@@ -186,36 +187,21 @@
     </div>
     @endif
 
-    <!-- HERO COVER -->
-    <div class="position-relative mb-4">
-        <div class="profile-hero">
-            <i class="bi bi-mortarboard-fill profile-hero-icon"></i>
-        </div>
-
-        <!-- Profile Picture Manager -->
-        <div class="student-avatar-container">
-            <x-profile-photo-manager :user="Auth::user()" :size="112" avatar-id="studentAvatarDisplay" />
-        </div>
-
-        <!-- Name + meta -->
+    @include('partials.student-page-header', ['title' => 'My profile', 'description' => 'Your student information, account details, and attendance overview.'])
+    <section class="student-profile-summary" aria-label="Student profile">
+        <div class="student-avatar-container"><x-profile-photo-manager :user="Auth::user()" :size="88" avatar-id="studentAvatarDisplay" /></div>
         <div class="profile-meta">
             <div>
                 <div class="profile-name">{{ Auth::user()->name }}</div>
-                <div class="profile-id" title="Student Identification Number">
-                    <i class="bi bi-person-badge"></i>
-                    <span>Student ID: <strong style="color: #f3e7cd; letter-spacing: 0.5px;">{{ Auth::user()->student_number ?: 'Not Assigned' }}</strong></span>
-                </div>
+                <div class="profile-id">Student ID: {{ Auth::user()->student_number ?: 'Not Assigned' }}</div>
             </div>
-            <div class="d-flex gap-2 align-items-center pb-1 flex-wrap">
-                <span class="course-badge">{{ Auth::user()->course ?? 'BSCS' }}</span>
-                <span class="year-badge">Year {{ Auth::user()->year_level ?? '1' }}</span>
-                <a href="{{ route('settings') }}" class="btn btn-sm d-inline-flex align-items-center gap-1"
-                   style="background:linear-gradient(135deg,#cfa46f,#9a733e);color:#140703;font-weight:700;font-size:0.78rem;border-radius:99px;padding:5px 14px;border:none;text-decoration:none;box-shadow:0 3px 10px rgba(207,164,111,0.3);">
-                    <i class="bi bi-pencil-fill" style="font-size:0.7rem;"></i> Edit Profile
-                </a>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <span class="course-badge">{{ Auth::user()->course }}</span>
+                <span class="year-badge">Year {{ Auth::user()->year_level }}</span>
+                <a href="{{ route('settings') }}" class="student-page-link"><i class="bi bi-pencil" aria-hidden="true"></i>Edit Profile</a>
             </div>
         </div>
-    </div>
+    </section>
 
     <!-- CONTENT GRID -->
     <div class="row g-3 mt-1">

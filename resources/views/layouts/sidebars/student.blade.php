@@ -9,6 +9,7 @@
 <div class="sidebar-divider"></div>
 
 <div class="sidebar-nav" style="display: flex; flex-direction: column; gap: 4px;">
+    <div class="student-nav-label nav-section-label">My account</div>
     <a href="{{ route('home') }}" class="nav-link {{ request()->routeIs('home') ? 'active' : '' }}">
         <i class="bi bi-grid-fill"></i>
         <span class="nav-link-text">Dashboard</span>
@@ -28,6 +29,7 @@
             <span class="nav-link-text">Student Assistant</span>
         </a>
     @endif
+    <div class="student-nav-label nav-section-label">Attendance &amp; school</div>
     <a href="{{ route('student.attendance.calendar') }}" class="nav-link {{ request()->routeIs('student.attendance.calendar') ? 'active' : '' }}">
         <i class="bi bi-calendar-check-fill"></i>
         <span class="nav-link-text">Attendance Calendar</span>

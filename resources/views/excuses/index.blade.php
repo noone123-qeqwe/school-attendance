@@ -2,8 +2,8 @@
 @section('page-title', 'Excuse Submissions')
 
 @section('content')
-<div class="ent-section ent-fade-up">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="ent-section ent-fade-up student-excuse-page">
+    <header class="student-page-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
         <div>
             <h1 style="font-size: 2rem; font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">Excuse Submissions</h1>
             <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Manage and track your absence excuses</p>
@@ -11,7 +11,7 @@
         <a href="{{ route('excuses.create_general') }}" class="ent-btn ent-btn-primary" style="background: linear-gradient(135deg, var(--gold), #b88a44); color: #1a1a2e; border: none; font-weight: 700;">
             <i class="bi bi-plus-circle-fill" style="margin-right: 6px;"></i> Submit Excuse Letter
         </a>
-    </div>
+    </header>
 
     @if(session('success'))
     <div style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); color: #4ade80; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
@@ -27,9 +27,13 @@
     </div>
     @endif
 
+    <div class="student-view-switcher" role="group" aria-label="Excuse views">
+        <button type="button" data-excuse-view="needs" aria-controls="excuseNeedsPanel" aria-pressed="true">Needs an excuse ({{ $absentRecords->count() }})</button>
+        <button type="button" data-excuse-view="history" aria-controls="excuseHistoryPanel" aria-pressed="false">My submissions ({{ $excuseSubmissions->count() }})</button>
+    </div>
     <div class="row g-4">
         <!-- Absent Records Requiring Excuses -->
-        <div class="col-12 col-xl-6">
+        <div class="col-12" id="excuseNeedsPanel" data-excuse-panel="needs">
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); height: 100%;">
                 <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
                     <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--gold); margin:0; display:flex; align-items:center; gap:8px;">
@@ -64,7 +68,7 @@
         </div>
 
         <!-- Submitted Excuses History -->
-        <div class="col-12 col-xl-6">
+        <div class="col-12" id="excuseHistoryPanel" data-excuse-panel="history">
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.2); height: 100%;">
                 <div style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.2);">
                     <h2 style="font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin:0; display:flex; align-items:center; gap:8px;">
@@ -127,4 +131,16 @@
         </div>
     </div>
 </div>
+<script @cspNonce>
+(function () {
+    const buttons = document.querySelectorAll('[data-excuse-view]');
+    const panels = document.querySelectorAll('[data-excuse-panel]');
+    function showExcuseView(view) {
+        buttons.forEach(button => button.setAttribute('aria-pressed', button.dataset.excuseView === view ? 'true' : 'false'));
+        panels.forEach(panel => panel.hidden = panel.dataset.excusePanel !== view);
+    }
+    buttons.forEach(button => button.addEventListener('click', () => showExcuseView(button.dataset.excuseView)));
+    showExcuseView(@json($absentRecords->isNotEmpty() ? 'needs' : 'history'));
+})();
+</script>
 @endsection

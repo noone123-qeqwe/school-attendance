@@ -371,17 +371,18 @@
 </style>
 
 {{-- ────────────────────────────── LAYOUT ────────────────────────────── --}}
+@include('partials.student-page-header', ['title' => 'School calendar', 'description' => 'See upcoming classes, school events, and important dates.', 'actionUrl' => route('student.attendance.calendar'), 'actionLabel' => 'My attendance'])
 <div class="scal-outer">
 
     {{-- MAIN CALENDAR CARD --}}
     <div class="scal-card">
         {{-- Navigation --}}
         <div class="scal-nav">
-            <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month">
+            <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month" aria-label="Previous month">
                 <i class="bi bi-chevron-left"></i>
             </button>
             <span class="scal-nav-title" id="scalMonthLabel">{{ \Carbon\Carbon::create($year, $month)->format('F Y') }}</span>
-            <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month">
+            <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month" aria-label="Next month">
                 <i class="bi bi-chevron-right"></i>
             </button>
         </div>
@@ -431,16 +432,14 @@
         </div>
 
         {{-- Tips --}}
-        <div class="scal-tips-card">
-            <div class="scal-tips-title">
-                <i class="bi bi-lightbulb"></i> Calendar Tips
-            </div>
+        <details class="scal-tips-card student-calendar-help">
+            <summary>How to read this calendar</summary>
             <ul class="scal-tips-list">
                 <li>Tap any <strong>day tile</strong> to view your subjects and attendance for that day.</li>
                 <li>Tile color shows your <strong>dominant attendance status</strong> for the day.</li>
                 <li>The <strong>golden border</strong> marks today.</li>
             </ul>
-        </div>
+        </details>
     </div>
 </div>
 
@@ -450,7 +449,7 @@
         <div class="modal-content ent-modal-content w-100">
             <div class="ent-modal-header position-relative">
                 <h5 class="ent-modal-title" id="eventTitle" style="padding-right: 24px;">Event</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" style="position:absolute;top:20px;right:20px;"></button>
             </div>
             <div class="ent-modal-body">
                 <div class="ent-modal-row">
@@ -491,7 +490,7 @@
                         <span id="daySummaryStatusText">Status</span>
                     </div>
                 </div>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:20px;right:20px;"></button>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close details" data-bs-dismiss="modal" onclick="closeDaySummaryModal()" style="position:absolute;top:20px;right:20px;"></button>
             </div>
             <div class="px-4 pb-4">
                 <h6 style="font-size:0.78rem;font-weight:700;color:#8b7d70;text-transform:uppercase;letter-spacing:0.06em;margin:18px 0 10px 0;" id="daySummarySectionTitle">Subjects</h6>

@@ -35,6 +35,8 @@ class StudentPortalRedesignTest extends TestCase
             '/student/attendance-calendar',
             '/student/calendar',
             '/excuses',
+            '/excuses/general/new',
+            '/notifications',
         ];
 
         foreach ($studentPages as $url) {
@@ -42,6 +44,7 @@ class StudentPortalRedesignTest extends TestCase
 
             $response->assertOk();
             $response->assertSee('student-portal-redesign.css', false);
+            $response->assertSee('student-portal-simple.css', false);
             $response->assertSee('class="student-portal"', false);
         }
     }
@@ -53,6 +56,7 @@ class StudentPortalRedesignTest extends TestCase
 
             $response->assertOk();
             $response->assertSee('student-portal-redesign.css', false);
+            $response->assertSee('student-portal-simple.css', false);
             $response->assertSee('student-mobile-portal', false);
         }
     }
@@ -63,6 +67,7 @@ class StudentPortalRedesignTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('student-portal-redesign.css', false);
+        $response->assertDontSee('student-portal-simple.css', false);
     }
 
     public function test_student_settings_uses_roomy_desktop_and_narrow_phone_layouts(): void
