@@ -112,7 +112,14 @@
     }
     async function jsonResponse(response) {
         const body = await response.json().catch(() => ({}));
-        if (!response.ok) { const error = new Error(body.message || 'Request failed. Please try again.'); error.status = response.status; throw error; }
+        if (!response.ok) {
+            const serverMessage = typeof body.message === 'string' ? body.message : '';
+            const error = new Error(serverMessage || 'Request failed. Please try again.');
+            error.status = response.status;
+            error.errorType = body.error_type || body.error || null;
+            error.serverMessage = serverMessage;
+            throw error;
+        }
         return body;
     }
     async function loadSessions() {
@@ -130,11 +137,25 @@
             body.sessions.forEach(s => sessionSelect.add(new Option(`${s.subject_code} · ${s.subject_name || 'Class'} · ${s.remaining_vouches} remaining`, s.id)));
             if (body.sessions.some(s => String(s.id) === selected)) sessionSelect.value = selected;
             formMessage.textContent = 'Have the classmate enter their own student number before starting.';
-        } catch {
+        } catch (error) {
             if (id !== sessionLoadId) return;
-            sessionSelect.replaceChildren(new Option('Could not load sessions', ''));
-            formMessage.textContent = 'Could not load classes. Check your connection, then refresh the list.';
-            retrySessionsButton.hidden = false;
+            let message = 'Could not connect to load classes. Check your connection, then refresh the list.';
+            if (error.errorType === 'device_mismatch') {
+                message = error.serverMessage || 'Use your registered device to continue, or ask your instructor to reset the device binding.';
+            } else if (error.status === 401) {
+                message = 'Your sign-in has expired. Sign in again, then return to this page.';
+            } else if (error.status === 403) {
+                message = error.serverMessage || 'Peer verification is unavailable for this account or device. Ask your instructor for help.';
+            } else if (error.status === 429) {
+                message = 'Too many refresh requests. Wait a moment, then try again.';
+            } else if (error.status >= 500) {
+                message = 'The server could not load classes. Please try again shortly or ask your instructor for help.';
+            } else if (error.status) {
+                message = error.message;
+            }
+            sessionSelect.replaceChildren(new Option(message, ''));
+            formMessage.textContent = message;
+            retrySessionsButton.hidden = error.status === 401 || error.errorType === 'device_mismatch';
         } finally {
             if (id === sessionLoadId) { sessionSelect.disabled = state !== 'IDLE'; retrySessionsButton.disabled = false; updateStartAvailability(); }
         }

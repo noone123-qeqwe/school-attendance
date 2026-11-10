@@ -14,7 +14,7 @@ function deferred() {
     return { promise, resolve };
 }
 
-function mount({ ticketGate, cameraGate, playGate, confirmGate, savedPending = false }) {
+function mount({ ticketGate, cameraGate, playGate, confirmGate, savedPending = false, sessionsResponse }) {
     const elements = new Map();
     const listeners = {};
     const storage = new Map(savedPending ? [['peer-snap-pending-confirmation', '1']] : []);
@@ -46,7 +46,7 @@ function mount({ ticketGate, cameraGate, playGate, confirmGate, savedPending = f
     };
     const window = { isSecureContext: true, addEventListener: (event, callback) => { listeners[event] = callback; } };
     const fetch = url => {
-        if (url === '/sessionsUrl') return Promise.resolve({ ok: true, json: async () => ({ available: true, sessions: [{ id: 1, subject_code: 'TEST', remaining_vouches: 1 }] }) });
+        if (url === '/sessionsUrl') return Promise.resolve(sessionsResponse || { ok: true, json: async () => ({ available: true, sessions: [{ id: 1, subject_code: 'TEST', remaining_vouches: 1 }] }) });
         if (url === '/confirmUrl') return confirmGate?.promise;
         return ticketGate.promise;
     };
@@ -127,6 +127,24 @@ test('denied camera access releases the flow and explains the manual attendance 
     assert.equal(app.element('peerStart').disabled, false);
     assert.match(app.element('peerResult').children[1].textContent, /Allow it in browser settings/);
     assert.match(app.element('peerResult').children[1].textContent, /manual attendance check/);
+});
+
+test('session loading explains a bound-device rejection instead of reporting a connection problem', async () => {
+    const app = mount({
+        ticketGate: deferred(), cameraGate: deferred(), playGate: deferred(),
+        sessionsResponse: {
+            ok: false, status: 403,
+            json: async () => ({
+                success: false,
+                message: 'Unrecognized device. Attendance is restricted to your registered device.',
+                error_type: 'device_mismatch',
+            }),
+        },
+    });
+    await flush();
+    assert.match(app.element('peerFormMessage').textContent, /Unrecognized device/);
+    assert.doesNotMatch(app.element('peerFormMessage').textContent, /Check your connection/);
+    assert.equal(app.element('peerRetrySessions').hidden, true);
 });
 
 test('camera track ending during preview closes the stream and permits retry', async () => {
