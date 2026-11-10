@@ -78,10 +78,15 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Your settings');
-        $response->assertSee('Manage your profile, attendance access, guardians, and notifications in one place.');
+        $response->assertSee('Manage your account and attendance access.');
         $response->assertSee('class="sp student-settings"', false);
-        $response->assertSee('Account security');
-        $response->assertSee('Face &amp; passkeys', false);
+        $response->assertSee('All settings');
+        $response->assertSee('Password &amp; email', false);
+        $response->assertSee('Face registration');
+        $response->assertSee('Device sign-in');
+        $response->assertSee('data-settings-page="recovery"', false);
+        $response->assertSee('id="studentPasskeySettings"', false);
+        $response->assertDontSee('id="stabsNav"', false);
         $response->assertSee('Guardians');
         $response->assertSee('@media (max-width: 991.98px)', false);
         $response->assertSee('@media (max-width: 575.98px)', false);

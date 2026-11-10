@@ -1,0 +1,118 @@
+/* A single settings menu, with full-width detail pages on phones. */
+.sp.student-settings[data-student-settings] {
+    max-width: 1240px !important;
+    padding-bottom: 32px !important;
+}
+.student-settings-heading { margin-bottom: 28px; }
+.student-settings-heading h1 { color: var(--text-primary); font-size: 1.7rem; font-weight: 750; letter-spacing: -.035em; margin: 0 0 7px; }
+.student-settings-heading p { margin: 0; color: var(--text-muted); font-size: .9rem; line-height: 1.6; }
+.sp.student-settings[data-student-settings] .settings-layout-grid { display: grid !important; grid-template-columns: 270px minmax(0, 1fr) !important; align-items: start; gap: 32px !important; }
+.student-settings-menu { position: sticky; top: 96px; min-width: 0; }
+.student-settings-account { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding: 0 4px; }
+.student-settings-account img { border-radius: 12px; object-fit: cover; border: 1px solid var(--gold-border); }
+.student-settings-account > div { min-width: 0; }
+.student-settings-account strong { display: block; color: var(--text-primary); font-size: .87rem; overflow-wrap: anywhere; }
+.student-settings-account span { display: block; color: var(--text-muted); font-size: .75rem; margin-top: 3px; }
+.student-settings-search { display: flex; align-items: center; gap: 10px; padding: 0 13px; min-height: 46px; border: 1px solid var(--gold-border); border-radius: 10px; background: var(--surface-input); color: var(--text-muted); margin-bottom: 22px; }
+.student-settings-search input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: .85rem; padding: 11px 0; box-shadow: none; }
+.student-settings-search input::placeholder { color: var(--text-muted); }
+.student-settings-search:focus-within { border-color: var(--gold-primary); outline: 2px solid var(--gold-subtle); outline-offset: 2px; }
+.student-settings-menu-group { margin: 0 0 22px; }
+.student-settings-menu-group h2 { margin: 0 10px 9px; font-size: .72rem; line-height: 1.4; font-weight: 650; color: var(--text-muted); }
+.student-settings-link { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 52px; padding: 10px; margin: 2px 0; text-align: left; color: var(--text-primary); background: transparent; border: 1px solid transparent; border-radius: 10px; cursor: pointer; }
+.student-settings-link:hover { background: var(--gold-subtle); }
+.student-settings-link[aria-current="page"] { border-color: var(--gold-border); background: var(--gold-subtle); color: var(--gold-bright); }
+.student-settings-link-icon { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; font-size: 1.05rem; color: var(--gold-primary); }
+.student-settings-link-copy { display: block; flex: 1; min-width: 0; }
+.student-settings-link-copy strong { display: block; font-size: .83rem; font-weight: 600; line-height: 1.4; }
+.student-settings-link-copy > span { display: none; }
+.student-settings-link-arrow { font-size: .72rem; color: var(--text-muted); }
+.student-settings-no-results { color: var(--text-muted); font-size: .85rem; line-height: 1.6; padding: 12px; }
+.student-settings-detail-heading { margin: 0 0 24px; }
+.student-settings-detail-heading h2 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); letter-spacing: -.025em; }
+.student-settings-detail-heading p { color: var(--text-muted); font-size: .87rem; line-height: 1.6; margin: 0; max-width: 62ch; }
+.student-settings-back { display: none; }
+.sp.student-settings[data-student-settings] [hidden] { display: none !important; }
+.sp.student-settings[data-student-settings] .spanel { animation: none !important; }
+.sp.student-settings[data-student-settings] .sc { border-radius: 14px !important; background: var(--surface-card) !important; box-shadow: none !important; margin: 0 0 20px !important; transform: none !important; }
+.sp.student-settings[data-student-settings] .sc::before { display: none; }
+.sp.student-settings[data-student-settings] .sc-head { padding: 20px 24px 16px !important; gap: 12px !important; }
+.sp.student-settings[data-student-settings] .sc-title { font-size: .98rem !important; font-weight: 650; }
+.sp.student-settings[data-student-settings] .sc-body { padding: 24px !important; }
+.sp.student-settings[data-student-settings] .sc-sub { font-size: .8rem !important; line-height: 1.6; }
+.sp.student-settings[data-student-settings] .sc-icon { width: 36px !important; height: 36px !important; border-radius: 10px !important; box-shadow: none !important; font-size: 1rem !important; }
+.sp.student-settings[data-student-settings] .sec-health-hero,
+.sp.student-settings[data-student-settings] .sec-matrix-bar,
+.sp.student-settings[data-student-settings] .sec-subnav-bar,
+.sp.student-settings[data-student-settings] .sec-group-header,
+.sp.student-settings[data-student-settings] #tab-fingerprint > .sc-head { display: none !important; }
+.sp.student-settings[data-student-settings] .sec-group-panel { padding: 0 !important; margin: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; }
+.sp.student-settings[data-student-settings] .sec-cards-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 20px !important; }
+.sp.student-settings[data-student-settings] .sec-card { width: 100%; max-width: none !important; padding: 24px !important; border-radius: 14px !important; box-shadow: none !important; transform: none !important; }
+.sp.student-settings[data-student-settings] .sec-card::before { display: none !important; }
+.sp.student-settings[data-student-settings] .sec-card-name { font-size: .98rem !important; font-weight: 650; line-height: 1.5; }
+.sp.student-settings[data-student-settings] .sec-card-subtitle,
+.sp.student-settings[data-student-settings] .sec-card-hint { font-size: .82rem !important; line-height: 1.65; }
+.sp.student-settings[data-student-settings] .sec-action-btn,
+.sp.student-settings[data-student-settings] .sbtn,
+.sp.student-settings[data-student-settings] .cancel-btn { min-height: 44px; border-radius: 9px !important; font-size: .85rem !important; letter-spacing: 0 !important; box-shadow: none !important; }
+.sp.student-settings[data-student-settings] .si { min-height: 46px; font-size: .9rem !important; border-radius: 9px !important; }
+.sp.student-settings[data-student-settings] .academic-spec-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0 24px !important; }
+.sp.student-settings[data-student-settings] .academic-spec-card { padding: 15px 0 !important; background: none !important; border: 0 !important; border-bottom: 1px solid var(--gold-border) !important; border-radius: 0 !important; box-shadow: none !important; }
+.sp.student-settings[data-student-settings] .academic-spec-icon { display: none !important; }
+.sp.student-settings[data-student-settings] .academic-spec-value { font-size: .87rem !important; line-height: 1.6; overflow-wrap: anywhere; }
+.sp.student-settings[data-student-settings] #cameraFaceEnrollment { margin: 0 !important; padding: 0 !important; background: none !important; border: 0 !important; }
+.sp.student-settings[data-student-settings] #cameraFaceEnrollmentTitle { font-size: 1rem !important; line-height: 1.5; }
+.sp.student-settings[data-student-settings] .bio-spec-chip,
+.sp.student-settings[data-student-settings] .bio-method-meta { display: none !important; }
+.sp.student-settings[data-student-settings] .bio-method-grid { grid-template-columns: minmax(0, 1fr) !important; }
+.sp.student-settings[data-student-settings] .bio-method-card { padding: 18px !important; box-shadow: none !important; border-radius: 12px !important; }
+.sp.student-settings[data-student-settings] .pref-tile { padding: 18px 0 !important; margin: 0 !important; border: 0 !important; border-bottom: 1px solid var(--gold-border) !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; transform: none !important; gap: 18px !important; }
+.sp.student-settings[data-student-settings] .tlabel { font-size: .88rem !important; font-weight: 600; }
+.sp.student-settings[data-student-settings] .tsub { font-size: .8rem !important; line-height: 1.6 !important; margin-top: 5px; }
+.student-device-details { margin-top: 12px; border-top: 1px solid var(--gold-border); }
+.student-device-details summary { min-height: 44px; padding: 14px 0; color: var(--gold-primary); font-size: .83rem; cursor: pointer; }
+.sp.student-settings[data-student-settings] .info-val { overflow-wrap: anywhere; }
+.sp.student-settings[data-student-settings] :is(button, a, input, select):focus-visible { outline: 2px solid var(--gold-primary) !important; outline-offset: 3px; }
+@media (max-width: 991.98px) {
+    .sp.student-settings[data-student-settings] { padding: 8px 0 20px !important; }
+    .sp.student-settings[data-student-settings] .settings-layout-grid { display: block !important; }
+    .student-settings-heading { margin-bottom: 24px; }
+    .student-settings-heading h1 { font-size: 1.5rem !important; }
+    .student-settings-menu { position: static; }
+    .student-settings-account { padding: 16px; margin: 0 0 18px; background: var(--surface-card); border: 1px solid var(--gold-border); border-radius: 14px; }
+    .student-settings-account strong { font-size: .95rem; }
+    .student-settings-search { margin-bottom: 26px; min-height: 48px; }
+    .student-settings-menu-group { margin-bottom: 24px; }
+    .student-settings-menu-group h2 { font-size: .8rem !important; margin: 0 4px 10px; }
+    .student-settings-menu-list { background: var(--surface-card); border: 1px solid var(--gold-border); border-radius: 14px; overflow: hidden; }
+    .student-settings-link { border: 0; border-radius: 0; margin: 0; padding: 16px 14px; gap: 12px; min-height: 76px; }
+    .student-settings-link + .student-settings-link { border-top: 1px solid var(--gold-border); }
+    .student-settings-link-icon { width: 34px; flex-basis: 34px; height: 36px; font-size: 1.2rem; }
+    .student-settings-link-copy strong { font-size: .91rem; }
+    .student-settings-link-copy > span { display: block; color: var(--text-muted); font-size: .78rem; line-height: 1.5; margin-top: 4px; }
+    .student-settings-link-arrow { margin-left: 4px; }
+    .sp.student-settings[data-student-view="overview"] .settings-main-content { display: none !important; }
+    .sp.student-settings:not([data-student-view="overview"]) .student-settings-menu,
+    .sp.student-settings:not([data-student-view="overview"]) .student-settings-heading { display: none !important; }
+    .student-settings-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 18px -6px; padding: 8px 6px; border: 0; background: transparent; color: var(--gold-primary); font-size: .87rem; font-weight: 600; }
+    .student-settings-detail-heading { margin-bottom: 22px; }
+    .student-settings-detail-heading h2 { font-size: 1.4rem !important; line-height: 1.3; }
+    .sp.student-settings[data-student-settings] .sc-head { padding: 18px 18px 14px !important; }
+    .sp.student-settings[data-student-settings] .sc-body,
+    .sp.student-settings[data-student-settings] .sec-card { padding: 20px 18px !important; }
+    .sp.student-settings[data-student-settings] .sc { margin-bottom: 18px !important; }
+    .sp.student-settings[data-student-settings] .academic-spec-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    .sp.student-settings[data-student-settings] .profile-card-inner { gap: 20px !important; }
+    .sp.student-settings[data-student-settings] .pref-tile { flex-direction: row !important; align-items: center !important; }
+    .sp.student-settings[data-student-settings] .pref-tile-update { flex-wrap: wrap; }
+    .sp.student-settings[data-student-settings] .pref-tile:has(.pref-lang-select) { flex-wrap: wrap; }
+    .sp.student-settings[data-student-settings] .pref-lang-select { width: 100% !important; }
+    .sp.student-settings[data-student-settings] .pref-tile-btn-wrap { width: 100%; }
+    .sp.student-settings[data-student-settings] .pref-tile-btn-wrap button { width: 100%; }
+}
+@media (max-width: 575.98px) {
+    .sp.student-settings[data-student-settings] .sec-card-header-line { align-items: flex-start; flex-direction: column; gap: 7px; }
+    .sp.student-settings[data-student-settings] .sec-card-top { gap: 12px; }
+    .sp.student-settings[data-student-settings] .sec-card-icon { width: 36px; height: 36px; flex-shrink: 0; }
+}

@@ -3,6 +3,13 @@
 @endphp
 @extends($layout)
 
+@push('styles')
+@if(Auth::user()?->isStudent())
+<link rel="stylesheet" href="{{ asset('css/student-settings.css') }}?v={{ filemtime(public_path('css/student-settings.css')) }}">
+@endif
+@endpush
+
+@section('page-title', 'Settings')
 @section('content')
 @php
     $user = Auth::user();
@@ -3850,8 +3857,14 @@
 }
 </style>
 
-<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}">
+<div class="sp {{ $user?->isStudent() ? 'student-settings' : '' }}" @if($user?->isStudent()) data-student-settings="{{ $user->id }}" data-student-view="overview" data-settings-feedback="{{ $errors->any() || session('success') ? 'true' : 'false' }}" data-settings-phone-error="{{ $errors->has('phone') ? 'true' : 'false' }}" @endif>
 
+    @if($user->isStudent())
+    <header class="student-settings-heading">
+        <h1>Your settings</h1>
+        <p>Manage your account and attendance access.</p>
+    </header>
+    @else
     <!-- Mobile Search Backdrop Overlay -->
     <div id="settingsSearchBackdrop" class="settings-search-backdrop" style="display:none;"></div>
 
@@ -3929,6 +3942,8 @@
         </div>
     </div>
 
+    @endif
+
     @if(session('success'))
     <div class="flash-ok"><i class="bi bi-check-circle-fill fs-5"></i><span>{{ session('success') }}</span></div>
     @endif
@@ -3936,6 +3951,7 @@
     <div class="flash-err"><i class="bi bi-exclamation-circle-fill fs-5"></i><span>{{ $errors->first() }}</span></div>
     @endif
 
+    @unless($user->isStudent())
     <!-- ── MOBILE / COMPACT HORIZONTAL TAB BAR (<992px) ── -->
     <div class="stabs-wrapper">
         <span id="stabsFloatingHint" class="stabs-floating-hint d-none" aria-hidden="true">Scrollable</span>
@@ -3955,8 +3971,13 @@
         </button>
     </div>
 
+    @endunless
+
     <!-- ── MASTER-DETAIL LAYOUT GRID ── -->
     <div class="settings-layout-grid">
+        @if($user->isStudent())
+            @include('partials.student-settings-menu')
+        @else
         <!-- ── MASTER SIDEBAR NAVIGATION (Desktop ≥992px) ── -->
         <aside class="settings-sidebar">
             <nav class="settings-side-nav" aria-label="Settings Categories">
@@ -4041,8 +4062,17 @@
             </div>
         </aside>
 
+        @endif
+
         <!-- ── MAIN CONTENT WORKSPACE ── -->
-        <main class="settings-main-content">
+        <section class="settings-main-content" id="studentSettingsContent" @if($user->isStudent()) aria-labelledby="studentSettingsPageTitle" @endif>
+        @if($user->isStudent())
+        <header class="student-settings-detail-heading">
+            <button type="button" class="student-settings-back" data-settings-back><i class="bi bi-arrow-left" aria-hidden="true"></i>All settings</button>
+            <h2 id="studentSettingsPageTitle" tabindex="-1">Profile &amp; school details</h2>
+            <p id="studentSettingsPageDescription">Manage your photo, contact number, and student information.</p>
+        </header>
+        @endif
 
     <!-- ── TAB: PROFILE ── -->
     <div id="tab-profile" class="spanel active">
@@ -4266,14 +4296,14 @@
                         <i class="bi bi-key-fill"></i>
                     </div>
                     <div>
-                        <div class="sec-group-title">Account Credentials &amp; Authentication</div>
-                        <div class="sec-group-desc">Manage primary email for security OTP codes and salted bcrypt-12 encrypted password</div>
+                        <div class="sec-group-title">Password &amp; email</div>
+                        <div class="sec-group-desc">Verify changes to your email address and password with a security code.</div>
                     </div>
                 </div>
             </div>
 
             <div class="sec-cards-grid">
-                <!-- Card 1: Primary Email Address Management -->
+                <!-- Card 1: Email address Management -->
                 <div class="sec-card" style="--card-accent: #3b82f6;">
                     <div class="sec-card-top">
                         <div class="sec-card-icon" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.25);">
@@ -4281,10 +4311,10 @@
                         </div>
                         <div class="sec-card-meta">
                             <div class="sec-card-header-line">
-                                <span class="sec-card-name">Primary Email Address</span>
+                                <span class="sec-card-name">Email address</span>
                                 <span class="sec-badge sec-badge-blue"><i class="bi bi-patch-check-fill"></i> Verified</span>
                             </div>
-                            <div class="sec-card-subtitle">Primary channel for portal alerts &amp; OTP security codes</div>
+                            <div class="sec-card-subtitle">Used for account recovery, security codes, and school alerts.</div>
                         </div>
                     </div>
 
@@ -4334,7 +4364,7 @@
                     </div>
                 </div>
 
-                <!-- Card 2: Password Authentication -->
+                <!-- Card 2: Password -->
                 <div class="sec-card" style="--card-accent: #f59e0b;">
                     <div class="sec-card-top">
                         <div class="sec-card-icon" style="background:rgba(207,164,111,0.12);color:#f5dfa8;border:1px solid rgba(207,164,111,0.25);">
@@ -4342,10 +4372,10 @@
                         </div>
                         <div class="sec-card-meta">
                             <div class="sec-card-header-line">
-                                <span class="sec-card-name">Password Authentication</span>
+                                <span class="sec-card-name">Password</span>
                                 <span class="sec-badge sec-badge-amber"><i class="bi bi-shield-lock-fill"></i> Encrypted</span>
                             </div>
-                            <div class="sec-card-subtitle">Protected by salted bcrypt-12 hashing &amp; rate limits</div>
+                            <div class="sec-card-subtitle">Use a strong, unique password to protect your account.</div>
                         </div>
                     </div>
 
@@ -4353,13 +4383,13 @@
                         <div id="otpStep1">
                             <div class="sec-status-tile">
                                 <i class="bi bi-shield-check text-warning"></i>
-                                <span>Active • Encrypted with salted bcrypt-12</span>
+                                <span>Your password is securely stored</span>
                             </div>
                             <p class="sec-card-hint">
                                 A verification code is required before creating a new password.
                             </p>
                             <button type="button" onclick="requestOtp()" id="sendOtpBtn" class="sec-action-btn sec-btn-amber">
-                                <i class="bi bi-shield-lock-fill me-2"></i>Request Password Reset OTP
+                                <i class="bi bi-shield-lock-fill me-2"></i>Change password
                             </button>
                         </div>
 
@@ -4435,10 +4465,10 @@
                         @if($faceEnrollmentAvailable)
                             <div style="display:flex;gap:9px;flex-wrap:wrap;">
                                 <button type="button" id="cameraFaceStartBtn" class="sbtn bio-primary-cta" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera-video me-2"></i>Open camera</button>
-                                <button type="button" id="cameraFaceCaptureBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera me-2"></i>Capture face</button>
-                                <button type="button" id="cameraFaceRetakeBtn" class="cancel-btn" style="display:none;"><i class="bi bi-arrow-repeat me-1"></i>Retake</button>
-                                <button type="button" id="cameraFaceSaveBtn" class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-shield-check me-2"></i>Register face</button>
-                                <button type="button" id="cameraFaceCancelBtn" class="cancel-btn" style="display:none;">Cancel</button>
+                                <button type="button" id="cameraFaceCaptureBtn" hidden class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera me-2"></i>Capture face</button>
+                                <button type="button" id="cameraFaceRetakeBtn" hidden class="cancel-btn" style="display:none;"><i class="bi bi-arrow-repeat me-1"></i>Retake</button>
+                                <button type="button" id="cameraFaceSaveBtn" hidden class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-shield-check me-2"></i>Register face</button>
+                                <button type="button" id="cameraFaceCancelBtn" hidden class="cancel-btn" style="display:none;">Cancel</button>
                             </div>
                         @else
                             <p id="cameraFaceUnavailableNotice" role="status" style="margin:0;color:#fbbf24;font-size:.85rem;">Camera-based face registration is currently unavailable. Please contact your administrator.</p>
@@ -4446,6 +4476,7 @@
                     </section>
                     @endif
 
+                    <div id="studentPasskeySettings">
                     <!-- In-app browser & Insecure Context Alert -->
                     <div id="webauthnUnsupported" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
                         <div style="display:flex;align-items:flex-start;gap:12px;">
@@ -4707,6 +4738,7 @@
                         </div>
                     </div>
 
+                    </div> <!-- /studentPasskeySettings -->
                 </div>
             </div>
         </div>
@@ -4721,7 +4753,7 @@
                         </div>
                         <div class="flex-grow-1">
                             <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
-                                <div class="sec-group-title">Attendance Device Binding &amp; Silicon Telemetry</div>
+                                <div class="sec-group-title">Attendance device</div>
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="sec-health-pill" id="deviceTrustScorePill" style="background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#60a5fa;display:none;">
                                         <i class="bi bi-shield-check me-1"></i>
@@ -4773,12 +4805,12 @@
                             </div>
                             <div class="sec-card-meta">
                                 <div class="sec-card-header-line">
-                                    <span class="sec-card-name">This Device (Current Hardware)</span>
+                                    <span class="sec-card-name">This device</span>
                                     <span class="sec-badge sec-badge-blue" id="currentDeviceMatchBadge" style="display:none;">
                                         <i class="bi bi-shield-check"></i> Current Device
                                     </span>
                                 </div>
-                                <div class="sec-card-subtitle">Active browser and real-time silicon environment identity</div>
+                                <div class="sec-card-subtitle">The phone or computer you are using now.</div>
                             </div>
                         </div>
 
@@ -4791,6 +4823,7 @@
                                 </div>
                             </div>
 
+                            @if($user->isStudent())<details class="student-device-details"><summary>Technical device details</summary>@endif
                             <div class="info-row" style="padding:10px 0;">
                                 <div class="info-icon"><i class="bi bi-gpu-card"></i></div>
                                 <div style="flex:1;min-width:0;">
@@ -4823,6 +4856,7 @@
                                 </div>
                             </div>
 
+                            @if($user->isStudent())</details>@endif
                             <div style="margin-top:16px;">
                                 <button type="button" onclick="handleBindCurrentDevice()" id="tabDeviceBindBtn" class="sec-action-btn sec-btn-emerald" style="width:100%;padding:12px;font-size:0.9rem;">
                                     <i class="bi bi-link-45deg me-2"></i><span id="tabDeviceBindBtnText">{{ $deviceBinding ? 'Switch & Bind to This Device' : 'Bind to This Device' }}</span>
@@ -4867,7 +4901,8 @@
                                     </div>
                                 </div>
 
-                                <div class="info-row" style="padding:10px 0;">
+                                @if($user->isStudent())<details class="student-device-details"><summary>Registration details</summary>@endif
+                            <div class="info-row" style="padding:10px 0;">
                                     <div class="info-icon"><i class="bi bi-shield-lock-fill"></i></div>
                                     <div style="flex:1;min-width:0;">
                                         <div class="info-lbl">Trust Level &amp; Score</div>
@@ -4896,7 +4931,8 @@
                                     </div>
                                 </div>
 
-                                <div style="display:flex;gap:10px;margin-top:16px;">
+                                @if($user->isStudent())</details>@endif
+                            <div style="display:flex;gap:10px;margin-top:16px;">
                                     <button type="button" onclick="handleLockDevice()" id="tabDeviceLockBtn" class="sec-action-btn" style="flex:1;padding:10px;font-size:0.84rem;background:rgba(245,158,11,0.12);color:#fbbf24;border:1px solid rgba(245,158,11,0.3);">
                                         <i class="bi bi-lock-fill me-1"></i> Freeze / Lock
                                     </button>
@@ -4928,7 +4964,7 @@
                         <i class="bi bi-safe-fill"></i>
                     </div>
                     <div>
-                        <div class="sec-group-title">Emergency Recovery Vault</div>
+                        <div class="sec-group-title">Recovery codes</div>
                         <div class="sec-group-desc">One-time offline emergency keys to restore account access if credentials or devices are lost</div>
                     </div>
                 </div>
@@ -4942,7 +4978,7 @@
                     </div>
                     <div class="sec-card-meta">
                         <div class="sec-card-header-line">
-                            <span class="sec-card-name">Account Recovery Vault</span>
+                            <span class="sec-card-name">Backup recovery codes</span>
                             <span class="sec-badge sec-badge-gold"><i class="bi bi-key-fill"></i> Backup Keys</span>
                         </div>
                         <div class="sec-card-subtitle">One-time offline emergency keys to restore account access</div>
@@ -5124,7 +5160,7 @@
             <div class="sc-head">
                 <div class="sc-icon" style="background:rgba(59,130,246,0.14);color:#60a5fa;"><i class="bi bi-sliders"></i></div>
                 <div>
-                    <div class="sc-title">System Preferences & Portal Settings</div>
+                    <div class="sc-title">Notifications &amp; app</div>
                     <div class="sc-sub">Customize alerts, language, interface layout, and offline updates</div>
                 </div>
             </div>
@@ -5159,12 +5195,12 @@
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-app-indicator"></i></div>
                             <div style="flex:1;min-width:0;">
-                                <div class="tlabel">In-App Notifications</div>
+                                <label class="tlabel" for="preferenceInApp">In-App Notifications</label>
                                 <div class="tsub">Receive instant badges and banners inside the portal</div>
                             </div>
                         </div>
                         <div class="form-check form-switch mb-0" style="flex-shrink:0;">
-                            <input class="form-check-input" type="checkbox" name="prefs[in_app]" value="1" {{ !empty($prefs['in_app']) ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" id="preferenceInApp" name="prefs[in_app]" value="1" {{ !empty($prefs['in_app']) ? 'checked' : '' }}>
                         </div>
                     </div>
                     
@@ -5173,12 +5209,12 @@
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-envelope"></i></div>
                             <div style="flex:1;min-width:0;">
-                                <div class="tlabel">Email Notifications</div>
+                                <label class="tlabel" for="preferenceEmail">Email Notifications</label>
                                 <div class="tsub">Receive attendance summaries, excuse approvals, and security alerts via email</div>
                             </div>
                         </div>
                         <div class="form-check form-switch mb-0" style="flex-shrink:0;">
-                            <input class="form-check-input" type="checkbox" name="prefs[email]" value="1" {{ !empty($prefs['email']) ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" id="preferenceEmail" name="prefs[email]" value="1" {{ !empty($prefs['email']) ? 'checked' : '' }}>
                         </div>
                     </div>
 
@@ -5200,7 +5236,7 @@
                             </div>
                         </div>
                         <div class="form-check form-switch mb-0" style="flex-shrink:0;">
-                            <input class="form-check-input push-toggle-input" type="checkbox" onchange="toggleWebPush(this)">
+                            <input class="form-check-input push-toggle-input" aria-label="Web Push Notifications" type="checkbox" onchange="toggleWebPush(this)">
                         </div>
                     </div>
 
@@ -5209,12 +5245,12 @@
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-chat-dots"></i></div>
                             <div style="flex:1;min-width:0;">
-                                <div class="tlabel">SMS Urgent Notifications</div>
+                                <label class="tlabel" for="preferenceSms">SMS Urgent Notifications</label>
                                 <div class="tsub">Emergency announcements and absence warnings via text message</div>
                             </div>
                         </div>
                         <div class="form-check form-switch mb-0" style="flex-shrink:0;">
-                            <input class="form-check-input" type="checkbox" name="prefs[sms]" value="1" {{ !empty($prefs['sms']) ? 'checked' : '' }}>
+                            <input class="form-check-input" type="checkbox" id="preferenceSms" name="prefs[sms]" value="1" {{ !empty($prefs['sms']) ? 'checked' : '' }}>
                         </div>
                     </div>
 
@@ -5225,7 +5261,7 @@
                         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0;">
                             <div class="pref-tile-icon"><i class="bi bi-layout-sidebar"></i></div>
                             <div style="flex:1;min-width:0;">
-                                <div class="tlabel">Compact Sidebar</div>
+                                <label class="tlabel" for="compactToggle">Compact Sidebar</label>
                                 <div class="tsub">Keep sidebar collapsed on desktop for extra dashboard space</div>
                             </div>
                         </div>
@@ -5250,7 +5286,7 @@
                         <div class="pref-tile-icon"><i class="bi bi-arrow-repeat"></i></div>
                         <div style="flex:1;min-width:0;">
                             <div class="tlabel" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span>Software Updates & PWA Assets</span>
+                                <span>App updates</span>
                                 <span class="badge" style="background:rgba(207,164,111,0.15);color:var(--gold,#cfa46f);border:1px solid rgba(207,164,111,0.3);font-size:0.72rem;font-weight:700;flex-shrink:0;">v{{ app(\App\Services\VersionService::class)->getInstalledVersion() }}</span>
                             </div>
                             <div class="tsub" id="updateStatusText">Check for latest software features, security patches, and offline assets.</div>
@@ -5267,7 +5303,7 @@
         </div>
     </div>
 
-        </main> <!-- /settings-main-content -->
+        </section> <!-- /settings-main-content -->
     </div> <!-- /settings-layout-grid -->
 </div>
 
@@ -5397,6 +5433,7 @@ window.scrollStabs = function(direction) {
 };
 
 window.switchSecuritySub = function(subKey, btn) {
+    if (window.studentSettingsNavigate) return window.studentSettingsNavigate('security-' + (subKey === 'fingerprint' ? 'biometrics' : (subKey || 'all')));
     if (!subKey) subKey = 'all';
     if (subKey === 'fingerprint') subKey = 'biometrics';
 
@@ -5489,6 +5526,7 @@ window.switchSecuritySub = function(subKey, btn) {
 };
 
 window.switchTab = function(id, btn) {
+    if (window.studentSettingsNavigate) return window.studentSettingsNavigate(id);
     if (!id) return;
     if (id === 'biometrics') id = 'fingerprint';
 
@@ -5568,7 +5606,7 @@ window.updateSettingsBreadcrumbs = function(tabId, secSub) {
         if (secSub === 'credentials') info = { cat: 'Security & Access', name: 'Password & Email Credentials' };
         else if (secSub === 'biometrics') info = { cat: 'Security & Access', name: 'Biometrics Verification (FIDO2)' };
         else if (secSub === 'device') info = { cat: 'Security & Access', name: 'Device Binding & Telemetry' };
-        else if (secSub === 'recovery') info = { cat: 'Security & Access', name: 'Emergency Recovery Vault' };
+        else if (secSub === 'recovery') info = { cat: 'Security & Access', name: 'Recovery codes' };
     }
     const catEl = document.getElementById('settingsBreadcrumbCategory');
     const tabEl = document.getElementById('settingsBreadcrumbTab');
@@ -6460,6 +6498,11 @@ function initCameraFaceEnrollment() {
     const setStatus = (message, color = '#94a3b8') => {
         if (status) { status.textContent = message; status.style.color = color; }
     };
+    const setCameraControlVisible = (element, visible) => {
+        if (!element) return;
+        element.hidden = !visible;
+        element.style.display = visible ? '' : 'none';
+    };
     const reset = () => {
         stopCameraFaceStream();
         cameraFaceBlob = null;
@@ -6467,11 +6510,12 @@ function initCameraFaceEnrollment() {
         if (wrap) wrap.style.display = 'none';
         if (video) video.style.display = 'block';
         if (canvas) canvas.style.display = 'none';
-        if (capture) capture.style.display = 'none';
-        if (retake) { retake.style.display = 'none'; retake.disabled = false; }
-        if (save) { save.style.display = 'none'; save.disabled = false; }
-        if (cancel) { cancel.style.display = 'none'; cancel.disabled = false; }
-        if (start) { start.style.display = ''; start.disabled = false; }
+        setCameraControlVisible(capture, false);
+        setCameraControlVisible(retake, false);
+        setCameraControlVisible(save, false);
+        setCameraControlVisible(cancel, false);
+        [retake, save, cancel, start].forEach(button => { if (button) button.disabled = false; });
+        setCameraControlVisible(start, true);
     };
 
     start.addEventListener('click', async () => {
@@ -6503,9 +6547,9 @@ function initCameraFaceEnrollment() {
             wrap.style.display = 'block';
             video.style.display = 'block';
             canvas.style.display = 'none';
-            start.style.display = 'none';
-            capture.style.display = '';
-            cancel.style.display = '';
+            setCameraControlVisible(start, false);
+            setCameraControlVisible(capture, true);
+            setCameraControlVisible(cancel, true);
             setStatus('Center your face inside the frame, face the camera, and use even lighting.');
         } catch (error) {
             stopCameraFaceStream();
@@ -6539,9 +6583,9 @@ function initCameraFaceEnrollment() {
             video.srcObject = null;
             video.style.display = 'none';
             canvas.style.cssText = 'display:block;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);';
-            capture.style.display = 'none';
-            retake.style.display = '';
-            save.style.display = '';
+            setCameraControlVisible(capture, false);
+            setCameraControlVisible(retake, true);
+            setCameraControlVisible(save, true);
             setStatus('Capture ready. Register it for secure face matching, or cancel to retake.');
         }, 'image/jpeg', 0.88);
     });
@@ -6568,7 +6612,7 @@ function initCameraFaceEnrollment() {
                 save.disabled = false;
                 if (retake) retake.disabled = false;
                 if (cancel) cancel.disabled = false;
-                retake.style.display = '';
+                setCameraControlVisible(retake, true);
                 setStatus(result.message || 'Face registration could not be completed. Please try again.', '#f87171');
                 return;
             }
@@ -6579,7 +6623,7 @@ function initCameraFaceEnrollment() {
             save.disabled = false;
             if (retake) retake.disabled = false;
             if (cancel) cancel.disabled = false;
-            retake.style.display = '';
+            setCameraControlVisible(retake, true);
             setStatus('Could not reach the server. Your capture was not saved; please retry.', '#f87171');
         }
     });
@@ -7173,7 +7217,7 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Emergency Device Lock', desc: 'Lock attendance check-ins exclusively to your authorized device', cat: 'Security & Access', tab: 'device', icon: 'bi-shield-lock-fill', elId: 'tab-device' },
     { title: 'System Display Language', desc: 'Select English (US), Filipino, or Bikolano', cat: 'System & Academics', tab: 'preferences', icon: 'bi-translate', elId: 'tab-preferences' },
     { title: 'Notification Alerts', desc: 'In-app notifications and email alert preferences', cat: 'System & Academics', tab: 'preferences', icon: 'bi-bell-fill', elId: 'tab-preferences' },
-    { title: 'Software Updates & PWA Assets', desc: 'Check latest system updates, security patches and offline assets', cat: 'System & Academics', tab: 'preferences', icon: 'bi-cloud-arrow-down-fill', elId: 'checkUpdateBtn' },
+    { title: 'App updates', desc: 'Check latest system updates, security patches and offline assets', cat: 'System & Academics', tab: 'preferences', icon: 'bi-cloud-arrow-down-fill', elId: 'checkUpdateBtn' },
     { title: 'Family & Guardian Link', desc: 'Connect parent accounts with QR code or link code', cat: 'Account', tab: 'family', icon: 'bi-people-fill', elId: 'tab-family' },
     { title: 'Linked Guardians List', desc: 'View authorized guardians with view-only attendance access', cat: 'Account', tab: 'family', icon: 'bi-person-lines-fill', elId: 'tab-family' }
 ];
@@ -7414,8 +7458,11 @@ function initMobileSearchToggle() {
 }
 
 function initSettingsPage() {
-    if (typeof loadDevices === 'function') loadDevices();
-    if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
+    const studentSettings = document.querySelector('[data-student-settings]');
+    if (!studentSettings) {
+        if (typeof loadDevices === 'function') loadDevices();
+        if (typeof prefetchWebAuthn === 'function') prefetchWebAuthn();
+    }
     if (typeof updateStabsScrollArrows === 'function') updateStabsScrollArrows();
     if (typeof initSettingsSearch === 'function') initSettingsSearch();
     initMobileSearchToggle();
@@ -7480,7 +7527,7 @@ function initSettingsPage() {
     // Check if hash or localStorage requested a specific tab (e.g., #tab-fingerprint or #fingerprint)
     const rawHash = window.location.hash.replace('#tab-', '').replace('#', '');
     const storedTab = localStorage.getItem('active_settings_tab');
-    const targetTab = rawHash || storedTab || 'profile';
+    const targetTab = rawHash || storedTab || (studentSettings && window.matchMedia('(max-width: 991.98px)').matches ? 'overview' : 'profile');
     if (targetTab && window.switchTab) {
         localStorage.removeItem('active_settings_tab');
         if (targetTab.startsWith('security-')) {
@@ -7492,7 +7539,7 @@ function initSettingsPage() {
     }
 
     // Initialize device binding status check
-    if (typeof window.checkDeviceBindingStatus === 'function') {
+    if (!studentSettings && typeof window.checkDeviceBindingStatus === 'function') {
         setTimeout(window.checkDeviceBindingStatus, 300);
     }
 }
@@ -7614,5 +7661,6 @@ window.copyParentLinkCode = copyParentLinkCode;
 </script>
 @if(Auth::user()->isStudent())
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
+<script src="{{ asset('js/student-settings.js') }}?v={{ filemtime(public_path('js/student-settings.js')) }}"></script>
 @endif
 @endsection

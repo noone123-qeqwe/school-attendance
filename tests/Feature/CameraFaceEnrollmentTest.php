@@ -52,11 +52,19 @@ class CameraFaceEnrollmentTest extends TestCase
     {
         $student = User::factory()->create(['role' => 'student']);
 
-        $this->actingAs($student)->get(route('settings'))
+        $response = $this->actingAs($student)->get(route('settings'))
             ->assertOk()
             ->assertSee('id="cameraFaceVideo"', false)
-            ->assertSee('id="cameraFaceCaptureBtn"', false)
-            ->assertSee('id="cameraFaceSaveBtn"', false);
+            ->assertSee('id="cameraFaceCaptureBtn" hidden', false)
+            ->assertSee('id="cameraFaceSaveBtn" hidden', false);
+
+        $document = new \DOMDocument();
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        // Face enrollment remains available independently of the device prompt UI.
+        $this->assertSame(1, $xpath->query('//*[@id="cameraFaceEnrollment"]')->length);
+        $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="cameraFaceEnrollment"]')->length);
+        $this->assertSame(1, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="methodCardFp"]')->length);
     }
 
     public function test_student_settings_explains_when_camera_enrollment_is_disabled(): void
