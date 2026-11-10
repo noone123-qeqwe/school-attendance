@@ -71,7 +71,19 @@ jobs:
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
           MAIL_MAILER: array
-        run: php artisan test --colors=always
+        run: php artisan test --colors=always --log-junit test-results/phpunit.xml
+
+      - name: Annotate failed application tests
+        if: failure()
+        run: php scripts/report-test-failures.php test-results/phpunit.xml
+
+      - name: Preserve SQLite test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sqlite-test-results
+          path: test-results/phpunit.xml
+          if-no-files-found: ignore
 
   mysql-tests:
     name: Run Automated Tests (MySQL)
@@ -145,4 +157,16 @@ jobs:
           SESSION_DRIVER: array
           QUEUE_CONNECTION: sync
           MAIL_MAILER: array
-        run: php artisan test --colors=always
+        run: php artisan test --colors=always --log-junit test-results/phpunit.xml
+
+      - name: Annotate failed application tests
+        if: failure()
+        run: php scripts/report-test-failures.php test-results/phpunit.xml
+
+      - name: Preserve MySQL test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mysql-test-results
+          path: test-results/phpunit.xml
+          if-no-files-found: ignore
