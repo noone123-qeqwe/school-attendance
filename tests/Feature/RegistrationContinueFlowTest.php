@@ -77,6 +77,7 @@ class RegistrationContinueFlowTest extends TestCase
         $payload = [
             'first_name' => 'Janessa',
             'middle_name' => 'Almosara',
+            'student_number' => '2312001',
             'surname' => 'Herminado',
             'role' => 'student',
             'course' => 'BSCS',
@@ -102,7 +103,7 @@ class RegistrationContinueFlowTest extends TestCase
 
         $user = User::where('email', 'janessa.herminado@example.com')->first();
         $this->assertNotNull($user);
-        $this->assertNotEmpty($user->student_number);
+        $this->assertSame('2312001', $user->student_number);
     }
 
     public function test_student_registration_without_middle_name_succeeds(): void
@@ -112,6 +113,7 @@ class RegistrationContinueFlowTest extends TestCase
         $payload = [
             'first_name' => 'Janessa',
             'no_middle_name' => 1,
+            'student_number' => '2312002',
             'middle_name' => '',
             'surname' => 'Herminado',
             'role' => 'student',
@@ -129,10 +131,10 @@ class RegistrationContinueFlowTest extends TestCase
         $response->assertRedirect('/home');
         $user = User::where('email', 'janessa.nomn@example.com')->first();
         $this->assertNotNull($user);
-        $this->assertNotEmpty($user->student_number);
+        $this->assertSame('2312002', $user->student_number);
     }
 
-    public function test_student_registration_auto_generates_unique_sequential_student_ids(): void
+    public function test_student_registration_requires_an_official_student_id(): void
     {
         session(['reg_email_verified' => 'student1@example.com']);
         $payload1 = [
@@ -147,16 +149,22 @@ class RegistrationContinueFlowTest extends TestCase
             'password_confirmation' => 'SecurePass123!',
             'terms' => '1',
         ];
+        $this->post('/register', $payload1)
+            ->assertSessionHasErrors('student_number');
+        $this->assertDatabaseMissing('users', ['email' => 'student1@example.com']);
+
+        $payload1['student_number'] = '2312101';
         $this->post('/register', $payload1)->assertRedirect('/home');
 
         $student1 = User::where('email', 'student1@example.com')->first();
         $this->assertNotNull($student1);
-        $this->assertNotEmpty($student1->student_number);
+        $this->assertSame('2312101', $student1->student_number);
 
         auth()->logout();
         session(['reg_email_verified' => 'student2@example.com']);
         $payload2 = [
             'first_name' => 'Bob',
+            'student_number' => '2312205',
             'surname' => 'Jones',
             'role' => 'student',
             'course' => 'BSCS',
@@ -171,7 +179,7 @@ class RegistrationContinueFlowTest extends TestCase
 
         $student2 = User::where('email', 'student2@example.com')->first();
         $this->assertNotNull($student2);
-        $this->assertNotEmpty($student2->student_number);
+        $this->assertSame('2312205', $student2->student_number);
 
         // Student IDs must be strictly unique and permanent
         $this->assertNotEquals($student1->student_number, $student2->student_number);

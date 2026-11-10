@@ -134,15 +134,16 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertSee('id="deviceList"', false);
     }
 
-    public function test_settings_page_has_floating_scrollable_tabs_hint(): void
+    public function test_settings_page_has_searchable_navigation_and_a_return_to_all_settings(): void
     {
         $response = $this->actingAs($this->student)->get('/settings');
         $response->assertStatus(200);
 
-        // Verify floating scrollable hint element and label
-        $response->assertSee('id="stabsFloatingHint"', false);
-        $response->assertSee('Scrollable');
-        $response->assertSee('stabs-floating-hint', false);
+        $response->assertSee('id="studentSettingsFilter"', false);
+        $response->assertSee('data-settings-page="profile"', false);
+        $response->assertSee('data-settings-page="face"', false);
+        $response->assertSee('data-settings-back', false);
+        $response->assertSee('All settings');
     }
 
     public function test_student_scanner_modal_has_camera_viewfinder_laser_reticles_and_fallback_states(): void

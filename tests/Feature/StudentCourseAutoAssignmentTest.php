@@ -50,6 +50,7 @@ class StudentCourseAutoAssignmentTest extends TestCase
 
         $response = $this->post(route('register'), [
             'name' => 'John Doe',
+            'student_number' => '2312003',
             'email' => 'teststudent@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
@@ -59,6 +60,7 @@ class StudentCourseAutoAssignmentTest extends TestCase
             'terms' => '1',
         ]);
 
+        $response->assertRedirect(route('home'));
         $student = User::where('email', 'teststudent@example.com')->first();
         $this->assertNotNull($student);
         $this->assertEquals('student', $student->role);

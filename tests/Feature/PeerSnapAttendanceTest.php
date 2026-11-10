@@ -8,6 +8,7 @@ use App\Models\AttendanceSession;
 use App\Models\DeviceBinding;
 use App\Models\PeerFaceEnrollment;
 use App\Models\PeerVouchRequest;
+use App\Models\Setting;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\DeviceBindingService;
@@ -15,6 +16,7 @@ use App\Services\PeerFaceVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -34,6 +36,9 @@ class PeerSnapAttendanceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // Exercise the opt-in feature with a fake verifier; production stays disabled by default.
+        Setting::set('feature.peer_biometric', '1', false);
+        Cache::forget('application_feature_flags');
         $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class);
         Http::fake(['verifier.example/*' => function () {
             return Http::response($this->verifierResponse, 200);

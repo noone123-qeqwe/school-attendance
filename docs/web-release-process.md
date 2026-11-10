@@ -11,6 +11,8 @@ The web/PWA and Android APK are separate deployable products. The web release is
 
 Run `php scripts/check-release-manifest.php` to validate the checked-out web metadata locally. `php scripts/version-bump.php --dry-run` previews the next version without changing files.
 
+If code changes are live but the version remains unchanged, check **Laravel CI Test Suite** and then **Automatic Application Versioning** in GitHub Actions. Failed tests skip the release workflow, so the old version remains authoritative; resolve the failing checks before publishing the next release. CI must build the frontend assets before running rendered page tests, just as deployment does.
+
 For an Android release, build and verify an APK separately, increment `versionCode` and `versionName` appropriately, then publish the actual signed APK. Do not copy the web version into Android unless that APK was built and distributed.
 
 ## Update-state regression matrix

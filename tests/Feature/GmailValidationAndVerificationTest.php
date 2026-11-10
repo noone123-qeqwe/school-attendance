@@ -209,6 +209,7 @@ class GmailValidationAndVerificationTest extends TestCase
         // 3. Complete registration
         $regRes = $this->post(route('register.submit'), [
             'name'                  => 'Verified Student',
+            'student_number'        => '2311999',
             'first_name'            => 'Verified',
             'surname'               => 'Student',
             'role'                  => 'student',
@@ -225,6 +226,7 @@ class GmailValidationAndVerificationTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email' => $email,
             'role'  => 'student',
+            'student_number' => '2311999',
         ]);
 
         // Confirm session was cleared so it cannot be reused

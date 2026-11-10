@@ -311,7 +311,8 @@ class StudentParentBindingTest extends TestCase
             ->get(route('settings'));
 
         $response->assertStatus(200)
-            ->assertSee('Family / Guardian')
+            ->assertSee('data-settings-page="family"', false)
+            ->assertSee('Guardians')
             ->assertSee('Instant Link Code')
             ->assertSee('Maria Dela Cruz');
     }
