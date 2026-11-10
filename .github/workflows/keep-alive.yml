@@ -2,8 +2,8 @@ name: Keep Render Service Awake
 
 on:
   schedule:
-    # Run every 10 minutes (Render free tier sleeps after 15 minutes of inactivity)
-    - cron: '*/10 * * * *'
+    # Keep requests away from the top of each hour, when GitHub may delay schedules.
+    - cron: '7,17,27,37,47,57 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -18,8 +18,8 @@ jobs:
             --connect-timeout 10 --max-time 90 --retry 2 --retry-all-errors --retry-delay 5 \
             "https://school-attendance-cj18.onrender.com/up")
           echo "Response code: $HTTP_CODE"
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            echo "Render service is awake and healthy."
-          else
-            echo "Service was sleeping or returned code $HTTP_CODE. Ping triggered wake-up."
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Health check failed; expected HTTP 200, received $HTTP_CODE." >&2
+            exit 1
           fi
+          echo "Render service is awake and healthy."
