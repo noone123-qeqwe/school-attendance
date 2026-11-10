@@ -9,22 +9,28 @@
         <h1 class="saas-heading saas-heading-lg mb-1">Students</h1>
         <p class="saas-text-muted m-0">{{ $isReadOnlyAuditor ? 'Review student enrollments and records.' : 'Manage student enrollments and verify new student registrations.' }}</p>
     </div>
-    
+
     <div class="d-flex gap-2 flex-wrap directory-page-actions">
-        <a href="{{ route('admin.students.template') }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" title="Download CSV Template">
-            <i class="bi bi-download"></i> Template
-        </a>
-        @unless($isReadOnlyAuditor)
-            <button type="button" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" onclick="openImportModal()">
-                <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
-            </button>
-        @endunless
-        <a href="{{ route('admin.students.csv', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
-            <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
-        </a>
-        <a href="{{ route('admin.students.preview', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
-            <i class="bi bi-file-earmark-pdf"></i> Export PDF
-        </a>
+        <details class="admin-action-menu">
+            <summary><i class="bi bi-arrow-down-up" aria-hidden="true"></i> Import &amp; export <i class="bi bi-chevron-down" aria-hidden="true"></i></summary>
+            <div class="admin-action-menu-items">
+                <a href="{{ route('admin.students.template') }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" title="Download CSV Template">
+                    <i class="bi bi-download"></i> Template
+                </a>
+                @unless($isReadOnlyAuditor)
+                    <button type="button" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);" onclick="openImportModal()">
+                        <i class="bi bi-file-earmark-arrow-up"></i> Import CSV
+                    </button>
+                @endunless
+                <a href="{{ route('admin.students.csv', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
+                </a>
+                <a href="{{ route('admin.students.preview', request()->query()) }}" class="btn btn-outline" style="border-color: rgba(207,164,111,0.3); color: var(--gold);">
+                    <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                </a>
+
+            </div>
+        </details>
         @unless($isReadOnlyAuditor)
             <a href="{{ route('admin.student.create') }}" class="btn btn-primary" style="background: var(--gold); color: #1a0808; font-weight: 600; border: none;">
                 <i class="bi bi-plus-lg"></i> Add Student
@@ -93,17 +99,17 @@
         <i class="bi bi-shield-exclamation me-1"></i> Pending Approval <span class="ms-1">{{ $pendingCount ?? 0 }}</span>
     </a>
     @endunless
-    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'active'])) }}" 
+    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'active'])) }}"
        class="directory-status-tab"
        style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? 'active') === 'active' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-check-circle-fill me-1"></i> Active Students
     </a>
-    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'deactivated'])) }}" 
+    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'deactivated'])) }}"
        class="directory-status-tab"
        style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? '') === 'deactivated' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-person-x-fill me-1"></i> Deactivated Accounts
     </a>
-    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'all'])) }}" 
+    <a href="{{ route('admin.students', array_merge(request()->except(['page']), ['status' => 'all'])) }}"
        class="directory-status-tab"
        style="padding:6px 14px; border-radius:8px; font-weight:700; font-size:0.85rem; text-decoration:none; {{ ($status ?? '') === 'all' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         All Records
@@ -132,7 +138,7 @@
                     <i class="bi bi-arrow-repeat spin"></i>
                 </span>
             </div>
-            
+
             {{-- Course Filter --}}
             <select id="filterCourse" class="form-select" style="height:38px; min-width:130px; width:auto; background-color:#1e1414; border:1px solid rgba(207,164,111,0.3); color:#f3e7cd; border-radius:8px; font-size:0.875rem; cursor:pointer;">
                 <option value="" style="background:#1e1414; color:#f3e7cd;">All Courses</option>
@@ -140,7 +146,7 @@
                 <option value="{{ $c }}" {{ request('course')==$c?'selected':'' }} style="background:#1e1414; color:#f3e7cd;">{{ $c }}</option>
                 @endforeach
             </select>
-            
+
             {{-- Year Filter (Default: All Students) --}}
             <select id="filterYear" class="form-select" style="height:38px; min-width:130px; width:auto; background-color:#1e1414; border:1px solid rgba(207,164,111,0.3); color:#f3e7cd; border-radius:8px; font-size:0.875rem; cursor:pointer;">
                 <option value="" style="background:#1e1414; color:#f3e7cd;">All Students</option>
@@ -162,7 +168,7 @@
             <span id="resultCountText"></span>
         </div>
     </x-slot>
-    
+
     <div class="table-responsive">
         <table class="adm-table">
             <thead>
@@ -183,7 +189,7 @@
             </tbody>
         </table>
     </div>
-    
+
     <div id="paginationContainer" class="mt-4 d-flex justify-content-between align-items-center directory-pagination">
         @if($students->hasPages())
         <div style="color: #b39b82; font-size: 0.85rem;" id="pageInfo">
@@ -308,7 +314,7 @@
 
     // Trigger on both input and keyup
     searchInput.addEventListener('input', scheduleSearch);
-    
+
     searchInput.addEventListener('keyup', function (e) {
         if (searchInput.value !== lastSearchedValue) {
             scheduleSearch();
@@ -360,7 +366,7 @@ function copyCreatedId(id) {
 
 @unless($isReadOnlyAuditor)
 <!-- Import CSV Modal -->
-<div id="importModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
+<div class="saas-modal-backdrop" id="importModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); z-index:9999; align-items:center; justify-content:center; padding:16px;">
     <div style="background:#1e1414; border:1px solid rgba(207,164,111,0.35); border-radius:16px; width:100%; max-width:520px; padding:28px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.7); color:#f3e7cd; position:relative;">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 style="margin:0; font-weight:700; color:var(--gold); display:flex; align-items:center; gap:10px; font-size:1.25rem;">
@@ -370,7 +376,7 @@ function copyCreatedId(id) {
                 <i class="bi bi-x-lg"></i>
             </button>
         </div>
-        
+
         <p style="font-size:0.875rem; color:#b39b82; margin-bottom:18px; line-height:1.5;">
             Upload a CSV file containing your student records. Existing students (matched by Student Number or Email) will be updated, and new students will be created automatically.
         </p>

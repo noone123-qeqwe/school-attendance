@@ -3,23 +3,21 @@
 @section('title', 'Courses')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+@php($isReadOnlyAuditor = auth()->user()->admin_sub_role === 'auditor')
+<div class="admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Courses / Programs</h1>
         <p class="saas-text-muted" style="margin:0;">Manage degree programs and course offerings.</p>
     </div>
-    
-    <div style="display:flex; gap:12px;">
-        <button class="saas-btn saas-btn-secondary">
-            <i class="bi bi-download"></i> Export
-        </button>
-        <button class="saas-btn saas-btn-primary" onclick="openModal('addCourseModal')">
+
+    <div class="admin-page-actions">
+        @unless($isReadOnlyAuditor)<button class="saas-btn saas-btn-primary" onclick="openModal('addCourseModal')">
             <i class="bi bi-plus-lg"></i> Add Course
-        </button>
+        </button>@endunless
     </div>
 </div>
 
-<div style="display:flex; gap:10px; margin-bottom:20px;">
+<div class="admin-view-tabs">
     <a href="{{ route('admin.courses.index') }}" class="saas-btn {{ request()->routeIs('admin.courses*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
         <i class="bi bi-book-fill me-1"></i> Degree Courses
     </a>
@@ -29,31 +27,19 @@
 </div>
 
 <div class="saas-card" style="margin-bottom:24px;">
-    <div class="saas-card-header" style="gap:16px; flex-wrap:wrap;">
-        <div class="saas-search" style="width:250px;">
-            <i class="bi bi-search"></i>
-            <input type="text" class="saas-search-input" placeholder="Search courses...">
-        </div>
-        
-        <div style="display:flex; gap:12px; align-items:center;">
-            <select class="saas-input saas-select" style="width:180px; padding:6px 30px 6px 12px;">
-                <option value="">All Departments</option>
-                @foreach($departments as $dept)
-                    <option value="{{ $dept->id }}">{{ $dept->code }}</option>
-                @endforeach
-            </select>
-            
-            <button class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
-                <i class="bi bi-funnel"></i> Filter
-            </button>
-        </div>
+    <div class="saas-card-header">
+        <form class="admin-filter-toolbar w-100" method="GET" action="{{ route('admin.courses.index') }}">
+            <div class="saas-form-group m-0"><label class="saas-label" for="academicSearch">Search courses</label><input type="search" id="academicSearch" name="search" value="{{ request('search') }}" maxlength="100" class="saas-input" placeholder="Code or name"></div>
+            <div class="saas-form-group m-0"><label class="saas-label" for="academicGroup">Department</label><select id="academicGroup" name="department_id" class="saas-input saas-select"><option value="">All departments</option>@foreach($departments as $group)<option value="{{ $group->id }}" @selected((string) request('department_id') === (string) $group->id)>{{ $group->code }}</option>@endforeach</select></div>
+            <button type="submit" class="saas-btn saas-btn-secondary"><i class="bi bi-search" aria-hidden="true"></i> Search</button>
+            @if(request()->hasAny(['search', 'department_id', 'course_id', 'sort']))<a href="{{ route('admin.courses.index') }}" class="saas-btn saas-btn-secondary">Clear</a>@endif
+        </form>
     </div>
-    
     <div class="saas-table-container" style="border:none; border-radius:0;">
         <table class="saas-table">
             <thead>
                 <tr>
-                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--saas-primary);"></th>
+
                     <th>Course Code</th>
                     <th>Program Name</th>
                     <th>Department</th>
@@ -64,7 +50,7 @@
             <tbody>
                 @forelse($courses as $course)
                 <tr>
-                    <td><input type="checkbox" style="accent-color:var(--saas-primary);"></td>
+
                     <td><span class="saas-badge saas-badge-info" style="font-family:monospace;font-size:0.8rem;">{{ $course->code }}</span></td>
                     <td style="font-weight:500;">{{ $course->name }}</td>
                     <td>
@@ -74,33 +60,35 @@
                         </div>
                     </td>
                     <td>
-                        <span class="saas-badge saas-badge-default">{{ $course->sections()->count() ?? 0 }} active</span>
+                        <span class="saas-badge saas-badge-default">{{ $course->sections_count }} active</span>
                     </td>
                     <td style="text-align:right;">
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px;" title="Edit">
-                            <i class="bi bi-pencil"></i>
-                        </button>
-                        <button class="saas-btn saas-btn-secondary" style="padding:4px 8px; color:var(--saas-danger);" title="Delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
+                        @unless($isReadOnlyAuditor)
+                        <button type="button" class="saas-btn saas-btn-secondary" title="Edit course" data-admin-edit-record="{{ json_encode($course->only(['code', 'name', 'description', 'department_id'])) }}" data-edit-target="courseEditor" data-edit-url="{{ route('admin.courses.update', $course) }}"><i class="bi bi-pencil" aria-hidden="true"></i><span class="visually-hidden">Edit course</span></button>
+                        <form action="{{ route('admin.courses.destroy', $course) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this course?')">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="saas-btn saas-btn-secondary" title="Delete course" style="color:var(--saas-danger);"><i class="bi bi-trash" aria-hidden="true"></i><span class="visually-hidden">Delete course</span></button>
+                        </form>
+                        @else <span class="saas-text-muted">Read only</span> @endunless
+
                     </td>
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="text-align:center; padding:48px 20px;">
+                    <td colspan="5" style="text-align:center; padding:48px 20px;">
                         <i class="bi bi-mortarboard saas-text-muted" style="font-size:3rem; margin-bottom:16px; display:block; opacity:0.5;"></i>
                         <div class="saas-heading" style="font-size:1.1rem; margin-bottom:8px;">No courses found</div>
                         <p class="saas-text-muted" style="margin-bottom:20px; max-width:400px; margin-inline:auto;">Get started by adding your first degree program or course offering.</p>
-                        <button class="saas-btn saas-btn-primary" onclick="openModal('addCourseModal')">
+                        @unless($isReadOnlyAuditor)<button class="saas-btn saas-btn-primary" onclick="openModal('addCourseModal')">
                             <i class="bi bi-plus-lg"></i> Add Course
-                        </button>
+                        </button>@endunless
                     </td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
-    
+
     @if($courses->hasPages())
     <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:space-between; align-items:center;">
         <div class="saas-text-muted">
@@ -114,7 +102,7 @@
 </div>
 
 <!-- Add Course Modal -->
-<div id="addCourseModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
+<div class="saas-modal-backdrop" id="addCourseModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
     <div class="saas-card" style="width:100%; max-width:500px; transform:scale(0.95); transition:transform 0.2s;" id="addCourseCard">
         <div class="saas-card-header">
             <div class="saas-heading saas-heading-sm">Add New Course</div>
@@ -152,6 +140,9 @@
         </form>
     </div>
 </div>
+@unless($isReadOnlyAuditor)
+    @include('partials.admin-record-editor', ['editorId' => 'courseEditor', 'recordType' => 'course', 'editorDepartments' => $departments])
+@endunless
 @endsection
 
 @push('scripts')

@@ -9,9 +9,15 @@ use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $courses = Course::with('department')->withCount('sections')->latest()->paginate(10);
+        $filters = $request->validate(['search' => 'nullable|string|max:100', 'department_id' => 'nullable|integer']);
+        $query = Course::with('department')->withCount('sections');
+        if (($search = trim($filters['search'] ?? '')) !== '') {
+            $query->where(fn ($q) => $q->where('code', 'like', '%'.$search.'%')->orWhere('name', 'like', '%'.$search.'%'));
+        }
+        if (!empty($filters['department_id'])) $query->where('department_id', $filters['department_id']);
+        $courses = $query->latest()->paginate(10)->withQueryString();
         $departments = Department::orderBy('name')->get();
         return view('admin.courses.index', compact('courses', 'departments'));
     }

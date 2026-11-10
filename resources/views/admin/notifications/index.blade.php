@@ -3,13 +3,13 @@
 @section('title', 'Notifications')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Notifications</h1>
         <p class="saas-text-muted" style="margin:0;">System alerts, excuse letters, and activity updates.</p>
     </div>
-    
-    <div style="display:flex; gap:12px;">
+
+    <div class="admin-page-actions">
         <form method="POST" action="{{ route('admin.notifications.markAllRead') }}">
             @csrf
             <button type="submit" class="saas-btn saas-btn-secondary">
@@ -25,7 +25,7 @@
             <i class="bi bi-search"></i>
             <input type="text" class="saas-search-input" placeholder="Search notifications...">
         </div>
-        
+
         <div style="display:flex; gap:12px; align-items:center;">
             <select class="saas-input saas-select" style="width:160px; padding:6px 30px 6px 12px;">
                 <option value="">All Types</option>
@@ -35,7 +35,7 @@
             </select>
         </div>
     </div>
-    
+
     <div style="padding:16px;">
         @php
             $currentDate = null;
@@ -61,7 +61,7 @@
                     <i class="bi bi-bell saas-text-muted"></i>
                 @endif
             </div>
-            
+
             <div style="flex:1;">
                 <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
                     <div style="font-weight:600; font-size:0.95rem; color:{{ $notification->is_read ? 'var(--saas-text)' : 'var(--saas-gold)' }};">
@@ -71,18 +71,18 @@
                         {{ $notification->created_at->diffForHumans() }}
                     </div>
                 </div>
-                
+
                 <p class="saas-text-muted" style="margin-bottom:8px; font-size:0.875rem; line-height:1.5;">
                     {{ $notification->message }}
                 </p>
-                
+
                 <div style="display:flex; gap:12px; align-items:center;">
                     @if($notification->type === 'excuse')
                         <a href="{{ route('admin.excuses') }}" class="saas-btn saas-btn-secondary" style="padding:4px 10px; font-size:0.75rem;">
                             Review Request
                         </a>
                     @endif
-                    
+
                     @if(!$notification->is_read)
                         <form method="POST" action="{{ route('admin.notifications.markRead', $notification->id) }}">
                             @csrf
@@ -102,7 +102,7 @@
         </div>
         @endforelse
     </div>
-    
+
     @if(isset($notifications) && $notifications->hasPages())
     <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:space-between; align-items:center;">
         <div class="saas-text-muted">

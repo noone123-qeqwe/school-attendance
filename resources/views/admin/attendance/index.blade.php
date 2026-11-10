@@ -5,13 +5,13 @@
 @section('page-sub', 'Monitor class summaries and individual student attendance records')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg mb-1">Attendance Records</h1>
         <p class="saas-text-muted m-0">Review aggregated class attendance, drill down to individual students, and manage manual overrides.</p>
     </div>
-    
-    <div class="d-flex gap-2">
+
+    <div class="d-flex gap-2 admin-page-actions">
         <a href="{{ route('admin.activity.log') }}" class="btn btn-outline" style="border-color: rgba(96, 165, 250, 0.3); color: #60a5fa;">
             <i class="bi bi-shield-lock"></i> Audit Trail
         </a>
@@ -25,12 +25,12 @@
 </div>
 
 <!-- Tabs: Class Summaries vs Individual Student Records -->
-<div style="display:flex; gap:10px; margin-bottom:20px; border-bottom:1px solid rgba(207,164,111,0.2); padding-bottom:12px;">
-    <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'summary'])) }}" 
+<div class="admin-view-tabs">
+    <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'summary'])) }}"
        style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'summary' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-grid-3x3-gap-fill me-1"></i> Class Summaries
     </a>
-    <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'records'])) }}" 
+    <a href="{{ route('admin.attendance', array_merge(request()->except('page'), ['tab' => 'records'])) }}"
        style="padding:8px 18px; border-radius:10px; font-weight:700; font-size:0.9rem; text-decoration:none; transition:all 0.2s; {{ $tab === 'records' ? 'background:#cfa46f; color:#110a0a;' : 'background:rgba(255,255,255,0.05); color:#f3e7cd; border:1px solid rgba(255,255,255,0.1);' }}">
         <i class="bi bi-person-lines-fill me-1"></i> Individual Student Records
     </a>
@@ -38,16 +38,16 @@
 
 <x-card title="{{ $tab === 'records' ? 'Student Attendance Logs' : 'Class & Subject Summaries' }}" icon="bi bi-clipboard-check">
     <x-slot name="headerActions">
-        <form method="GET" action="{{ route('admin.attendance') }}" class="d-flex gap-3 align-items-center flex-wrap m-0">
+        <form method="GET" action="{{ route('admin.attendance') }}" class="d-flex gap-3 align-items-center flex-wrap m-0 admin-filter-toolbar">
             <input type="hidden" name="tab" value="{{ $tab }}">
-            
+
             <div class="saas-search" style="width:200px;">
                 <i class="bi bi-search"></i>
                 <input type="text" name="search" class="saas-search-input" placeholder="Search student..." value="{{ request('search') ?? request('student_name') }}">
             </div>
-            
+
             <input type="date" name="date" class="form-control" value="{{ request('date') }}" style="width:140px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd;" title="Filter by specific date">
-            
+
             @if($tab === 'records')
             <select name="status" class="form-select" style="width:130px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd;">
                 <option value="">Status (All)</option>
@@ -57,18 +57,18 @@
                 <option value="Excused" {{ request('status')=='Excused'?'selected':'' }}>Excused</option>
             </select>
             @endif
-            
+
             <select name="subject" class="form-select" style="width:150px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: #f3e7cd;">
                 <option value="">Subject (All)</option>
                 @foreach($subjects as $s)
                     <option value="{{ $s->code }}" {{ request('subject')==$s->code?'selected':'' }}>{{ $s->code }}</option>
                 @endforeach
             </select>
-            
+
             <button type="submit" class="btn btn-primary" style="background: var(--gold); border: none; color:#110a0a; font-weight:700;">
                 <i class="bi bi-funnel"></i> Filter
             </button>
-            
+
             @if(request()->hasAny(['date','status','year_level','semester','course','subject','search','student_name']))
             <a href="{{ route('admin.attendance', ['tab' => $tab]) }}" class="btn btn-outline" style="color: #f87171; border-color: rgba(239,68,68,0.3);">
                 Clear
@@ -128,7 +128,7 @@
                 @endif
             </td>
             <td data-label="Actions" style="text-align:right;">
-                <button type="button" class="saas-btn saas-btn-secondary" style="padding:4px 10px; font-size:0.75rem;" 
+                <button type="button" class="saas-btn saas-btn-secondary" style="padding:4px 10px; font-size:0.75rem;"
                         onclick="openOverrideModal({{ $rec->id }}, '{{ addslashes($rec->user->name ?? 'Student') }}', '{{ $rec->status }}', {{ $rec->excused ? 'true' : 'false' }})">
                     <i class="bi bi-pencil-square me-1"></i> Override
                 </button>
@@ -137,7 +137,7 @@
         @empty
         <tr>
             <td colspan="7" class="p-0 border-0">
-                <x-empty-state 
+                <x-empty-state
                     icon="calendar-x"
                     title="No Student Records Found"
                     message="There are no student attendance records matching your search or filters."
@@ -171,7 +171,7 @@
             @php $currentDate = $logDateStr; @endphp
             <tr style="background:rgba(255,255,255,0.05);">
                 <td colspan="7" style="font-weight:600; font-size:0.95rem; padding:12px 20px; color: var(--gold);">
-                    <i class="bi bi-calendar-event me-2"></i> 
+                    <i class="bi bi-calendar-event me-2"></i>
                     {{ $logDateFormatted }}
                 </td>
             </tr>
@@ -210,7 +210,7 @@
         @empty
         <tr>
             <td colspan="7" class="p-0 border-0">
-                <x-empty-state 
+                <x-empty-state
                     icon="calendar-x"
                     title="No Attendance Records Found"
                     message="There are no attendance records matching your search or filters."
@@ -219,7 +219,7 @@
         </tr>
         @endforelse
     </x-data-table>
-    
+
     @if($logs->hasPages())
     <div class="mt-4 d-flex justify-content-between align-items-center">
         <div style="color: #b39b82; font-size: 0.85rem;">

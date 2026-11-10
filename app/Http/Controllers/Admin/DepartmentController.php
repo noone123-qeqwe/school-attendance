@@ -8,9 +8,15 @@ use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $departments = Department::withCount('courses')->latest()->paginate(10);
+        $filters = $request->validate(['search' => 'nullable|string|max:100', 'sort' => 'nullable|in:newest,name']);
+        $query = Department::withCount('courses');
+        if (($search = trim($filters['search'] ?? '')) !== '') {
+            $query->where(fn ($q) => $q->where('code', 'like', '%'.$search.'%')->orWhere('name', 'like', '%'.$search.'%'));
+        }
+        ($filters['sort'] ?? 'newest') === 'name' ? $query->orderBy('name') : $query->latest();
+        $departments = $query->paginate(10)->withQueryString();
         return view('admin.departments.index', compact('departments'));
     }
 

@@ -3,13 +3,13 @@
 @section('title', 'Admins')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Admins</h1>
         <p class="saas-text-muted" style="margin:0;">Manage administrator accounts, permissions, and security roles.</p>
     </div>
-    
-    <div style="display:flex; gap:12px;">
+
+    <div class="admin-page-actions">
         <a href="{{ route('admin.activity.log') }}" class="saas-btn saas-btn-secondary">
             <i class="bi bi-clock-history"></i> Audit Logs
         </a>
@@ -25,18 +25,18 @@
             <i class="bi bi-search"></i>
             <input type="text" name="search" class="saas-search-input" placeholder="Name or Employee ID" value="{{ request('search') }}">
         </div>
-        
+
         <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <select name="department" class="saas-input saas-select" style="width:140px; padding:6px 30px 6px 12px;">
                 <option value="">All Departments</option>
                 <option value="CS" {{ request('department')=='CS'?'selected':'' }}>Computer Science</option>
                 <option value="IT" {{ request('department')=='IT'?'selected':'' }}>Information Tech</option>
             </select>
-            
+
             <button type="submit" class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
                 <i class="bi bi-funnel"></i> Filter
             </button>
-            
+
             @if(request()->hasAny(['search','department']))
             <a href="{{ route('admin.admins') }}" class="saas-btn saas-btn-secondary" style="padding:6px 12px; color:var(--saas-danger);">
                 Clear
@@ -44,7 +44,7 @@
             @endif
         </div>
     </form>
-    
+
     <div class="saas-table-container" style="border:none; border-radius:0;">
         <table class="saas-table">
             <thead>
@@ -105,7 +105,7 @@
             </tbody>
         </table>
     </div>
-    
+
 </div>
 
 @endsection

@@ -10,7 +10,7 @@
     <meta name="reverb-port" content="{{ config('broadcasting.connections.reverb.options.port') }}">
     <meta name="reverb-scheme" content="{{ config('broadcasting.connections.reverb.options.scheme') }}">
     <title>{{ config('app.name') }} | @yield('portal-title', match(auth()->user()?->role) { 'admin' => 'Admin Portal', 'teacher' => 'Teacher Portal', 'parent' => 'Parent Portal', default => 'Student Portal' })</title>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -48,9 +48,12 @@
     @if(Auth::check() && Auth::user()->isTeacher() && !request()->routeIs('teacher.*.pdf', 'teacher.*.preview'))
         <link rel="stylesheet" href="{{ asset('css/teacher-portal-redesign.css') }}?v={{ filemtime(public_path('css/teacher-portal-redesign.css')) }}">
     @endif
+    @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
+        <link rel="stylesheet" href="{{ asset('css/admin-portal-redesign.css') }}?v={{ filemtime(public_path('css/admin-portal-redesign.css')) }}">
+    @endif
 </head>
 
-<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher()]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin()]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
 
     <!-- Skip to main content link for keyboard/screen readers -->
     <a href="#mainContent" class="visually-hidden-focusable" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
@@ -110,7 +113,9 @@
                             @hasSection('page-title')
                                 @yield('page-title')
                             @else
-                                @if(request()->routeIs('home') || request()->routeIs('admin.dashboard') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard'))
+                                @if(Auth::user()?->isAdmin())
+                                    {{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['title'] }}
+                                @elseif(request()->routeIs('home') || request()->routeIs('admin.dashboard') || request()->routeIs('teacher.dashboard') || request()->routeIs('parent.dashboard'))
                                     Dashboard
                                 @elseif(request()->routeIs('student.classes')) My Classes
                                 @elseif(request()->routeIs('settings')) Settings
@@ -119,17 +124,17 @@
                                 @endif
                             @endif
                         </div>
-                        <div class="header-page-sub">@hasSection('page-sub')@yield('page-sub')@else{{ now()->format('l, F j, Y') }}@endif</div>
+                        <div class="header-page-sub">@hasSection('page-sub')@yield('page-sub')@elseif(Auth::user()?->isAdmin()){{ \App\Support\AdminNavigation::context(Auth::user(), request()->route()?->getName())['group'] }} workspace @else{{ now()->format('l, F j, Y') }}@endif</div>
                     </div>
                 </div>
 
                 <div class="header-right d-flex align-items-center gap-2 gap-sm-3">
                     <!-- Modern Universal Search Bar with Quick Action Trigger -->
-                    <button type="button" 
-                            id="headerSearchBar" 
-                            class="header-search-bar" 
-                            onclick="if(window.openCommandPalette) window.openCommandPalette();" 
-                            aria-label="Search pages, students, subjects, or actions (Ctrl + K)" 
+                    <button type="button"
+                            id="headerSearchBar"
+                            class="header-search-bar"
+                            onclick="if(window.openCommandPalette) window.openCommandPalette();"
+                            aria-label="Search pages, students, subjects, or actions (Ctrl + K)"
                             title="Search anything (Ctrl + K)">
                         <i class="bi bi-search header-search-icon" aria-hidden="true"></i>
                         <span class="header-search-text">Search anything...</span>
@@ -378,7 +383,7 @@
         function showToast(message, type = 'success', duration = 4500) {
             const container = document.getElementById('toastContainer');
             if (!container) return;
-            
+
             const colors = {
                 success:   { border: '#4ade80', icon: 'check-circle-fill', bg: 'rgba(34,197,94,0.12)' },
                 error:     { border: '#f87171', icon: 'x-circle-fill', bg: 'rgba(239,68,68,0.12)' },
@@ -388,7 +393,7 @@
                 warning_2: { border: '#fbbf24', icon: 'exclamation-triangle-fill', bg: 'rgba(245,158,11,0.15)' },
                 custom:    { border: '#cfa46f', icon: 'bell-fill', bg: 'rgba(207,164,111,0.15)' }
             };
-            
+
             const style = colors[type] || colors.success;
             const toast = document.createElement('div');
             toast.className = 'modern-toast';
@@ -591,7 +596,7 @@
                     return;
                 }
                 const data = await res.json();
-                
+
                 // 1. Update bell badge
                 const notifBtn = document.getElementById('topNavNotifBtn') || document.querySelector('.notif-btn');
                 if (notifBtn) {
@@ -722,7 +727,7 @@
         window.addEventListener('focus', () => window.refreshNotificationBell());
     </script>
     @endauth
-    
+
     <!-- Premium Toast Container (for session messages) -->
     <div class="premium-toast-container" id="premiumToastContainer"></div>
     <script @cspNonce>
@@ -731,10 +736,10 @@
         if (!container) return;
         const toast = document.createElement('div');
         toast.className = 'premium-toast';
-        
+
         let iconClass = 'bi-check-circle-fill';
         let iconColor = 'var(--gold)';
-        
+
         if (type === 'error') {
             iconClass = 'bi-x-circle-fill';
             iconColor = '#f87171';
@@ -749,13 +754,13 @@
             <i class="bi ${iconClass} premium-toast-icon" style="color: ${iconColor};"></i>
             <div class="premium-toast-content">${message}</div>
         `;
-        
+
         container.appendChild(toast);
-        
+
         requestAnimationFrame(() => {
             setTimeout(() => toast.classList.add('show'), 50);
         });
-        
+
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 400);
@@ -825,7 +830,7 @@
 
         <!-- More Bottom Sheet -->
         <div class="more-sheet-overlay d-md-none" id="moreSheetOverlay" onclick="closeMoreSheet()"></div>
-        <div class="more-sheet d-md-none" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="moreSheetTitle" aria-hidden="true" inert>
+        <div class="more-sheet d-md-none {{ Auth::user()->isAdmin() ? 'admin-navigation-sheet' : '' }}" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="moreSheetTitle" aria-hidden="true" inert>
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
                 <span class="more-sheet-title" id="moreSheetTitle">More</span>
@@ -835,44 +840,7 @@
             </div>
             <div class="more-sheet-grid" id="moreSheetContent">
                 @if(Auth::user()->isAdmin())
-                    <a href="{{ route('admin.qr') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
-                            <i class="bi bi-qr-code-scan"></i>
-                        </div>
-                        <span class="more-sheet-item-label" style="color: #f3e7cd; font-weight: 700;">QR Center</span>
-                    </a>
-                    <a href="{{ route('admin.teachers') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-workspace"></i></div>
-                        <span class="more-sheet-item-label">Teachers</span>
-                    </a>
-                    <a href="{{ route('admin.students') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-person-fill"></i></div>
-                        <span class="more-sheet-item-label">Students</span>
-                    </a>
-                    <a href="{{ route('admin.parents.index') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-people-fill"></i></div>
-                        <span class="more-sheet-item-label">Parents</span>
-                    </a>
-                    <a href="{{ route('admin.attendance') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
-                        <span class="more-sheet-item-label">Attendance</span>
-                    </a>
-                    <a href="{{ route('admin.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-event"></i></div>
-                        <span class="more-sheet-item-label">Calendar</span>
-                    </a>
-                    <a href="{{ route('admin.courses.index') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-book-fill"></i></div>
-                        <span class="more-sheet-item-label">Courses &amp; Sections</span>
-                    </a>
-                    <a href="{{ route('admin.subjects') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
-                        <span class="more-sheet-item-label">Subjects &amp; Schedules</span>
-                    </a>
-                    <a href="{{ route('admin.excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-file-earmark-text"></i></div>
-                        <span class="more-sheet-item-label">Excuses</span>
-                    </a>
+                    @include('partials.admin-workspace-navigation', ['navigationId' => 'adminMobile'])
                 @elseif(Auth::user()->isTeacher())
                     <a href="{{ route('teacher.subjects') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon" style="background: rgba(207,164,111,0.18); color: #ffd700; border-color: rgba(207,164,111,0.4);">
@@ -1159,7 +1127,7 @@
         // Idle Timeout (15 minutes = 900,000 ms)
         let idleTime = 0;
         const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
-        
+
         function resetIdleTimer() {
             idleTime = 0;
         }
@@ -1173,12 +1141,12 @@
         //         const logoutForm = document.createElement('form');
         //         logoutForm.method = 'POST';
         //         logoutForm.action = '{{ route("logout") }}';
-        //         
+        //
         //         const csrfInput = document.createElement('input');
         //         csrfInput.type = 'hidden';
         //         csrfInput.name = '_token';
         //         csrfInput.value = '{{ csrf_token() }}';
-        //         
+        //
         //         logoutForm.appendChild(csrfInput);
         //         document.body.appendChild(logoutForm);
         //         logoutForm.submit();
@@ -1194,7 +1162,7 @@
         window.onkeydown = resetIdleTimer;
     </script>
     @endauth
-    
+
     <!-- Global Loading Overlay -->
     <div id="global-loader" style="display: none; position: fixed; inset: 0; background: rgba(17,10,10,0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; flex-direction: column;">
         <div style="width: 56px; height: 56px; border: 3px solid rgba(212,175,55,0.15); border-top-color: #cfa46f; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
@@ -1319,7 +1287,7 @@
                         icon.className = isPassword ? 'bi bi-eye' : 'bi bi-eye-slash';
                     }
                     const isConf = input.name === 'password_confirmation' || (input.id && (input.id.includes('2') || input.id.includes('conf')));
-                    const label = isPassword 
+                    const label = isPassword
                         ? (isConf ? 'Hide password confirmation' : 'Hide password')
                         : (isConf ? 'Show password confirmation' : 'Show password');
                     button.setAttribute('aria-label', label);
@@ -1557,5 +1525,8 @@
     @endif
 
     @stack('scripts')
+    @if(Auth::user()?->isAdmin() && !request()->routeIs('admin.*.pdf'))
+        <script src="{{ asset('js/admin-workspace.js') }}?v={{ filemtime(public_path('js/admin-workspace.js')) }}" defer></script>
+    @endif
 </body>
 </html>

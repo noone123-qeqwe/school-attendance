@@ -5,13 +5,13 @@
 @section('page-sub', 'Manage academic periods, semester terms, and active school year')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">School Years & Semesters</h1>
         <p class="saas-text-muted" style="margin:0;">Configure academic periods, track terms, and switch the current active school year.</p>
     </div>
-    
-    <div style="display:flex; gap:12px;">
+
+    <div class="admin-page-actions">
         <button class="saas-btn saas-btn-primary" onclick="openModal('addAcademicYearModal')">
             <i class="bi bi-plus-lg"></i> Add Term
         </button>

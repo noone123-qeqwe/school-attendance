@@ -3,20 +3,20 @@
 @section('title', 'Subjects')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Subjects / Curriculum</h1>
         <p class="saas-text-muted" style="margin:0;">Manage course subjects, instructors, and prerequisites.</p>
     </div>
-    
-    <div style="display:flex; gap:12px;">
+
+    <div class="admin-page-actions">
         <button class="saas-btn saas-btn-primary" onclick="openModal('addSubjectModal')">
             <i class="bi bi-plus-lg"></i> Add Subject
         </button>
     </div>
 </div>
 
-<div style="display:flex; gap:10px; margin-bottom:20px;">
+<div class="admin-view-tabs">
     <a href="{{ route('admin.subjects') }}" class="saas-btn {{ request()->routeIs('admin.subject*') ? 'saas-btn-primary' : 'saas-btn-secondary' }}" style="padding:7px 16px; border-radius:12px; font-size:0.86rem; font-weight:600; text-decoration:none;">
         <i class="bi bi-journals me-1"></i> Subjects & Curriculum
     </a>
@@ -28,7 +28,7 @@
 <x-card type="section">
     <x-slot:title>Subjects List</x-slot:title>
     <x-slot:headerActions>
-        <form method="GET" action="{{ route('admin.subjects') }}" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+        <form class="admin-filter-toolbar" method="GET" action="{{ route('admin.subjects') }}" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <div class="saas-search" style="width:200px;">
                 <i class="bi bi-search"></i>
                 <input type="text" name="search" class="saas-search-input" placeholder="Search code..." value="{{ request('search') }}">
@@ -51,7 +51,7 @@
             @endif
         </form>
     </x-slot:headerActions>
-    
+
     <div class="ent-scroll-x" style="margin: -20px;">
         <table class="ent-table" style="min-width: 800px; margin-bottom: 0;">
             <thead>
@@ -112,7 +112,7 @@
                 @empty
                 <tr>
                     <td colspan="6" class="p-0 border-0">
-                        <x-empty-state 
+                        <x-empty-state
                             icon="journal-bookmark"
                             title="No subjects found"
                             message="There are no subjects matching your filters. Get started by adding your first subject."
@@ -129,7 +129,7 @@
             </tbody>
         </table>
     </div>
-    
+
     @if($subjects->hasPages())
     <div style="border-top:1px solid var(--ent-border); padding-top:16px; margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
         <div class="ent-text-muted" style="font-size:0.85rem;">
@@ -143,7 +143,7 @@
 </x-card>
 
 <!-- Add Subject Modal -->
-<div id="addSubjectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
+<div class="saas-modal-backdrop" id="addSubjectModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
     <div class="saas-card" style="width:100%; max-width:500px; transform:scale(0.95); transition:transform 0.2s;" id="addSubjectCard">
         <div class="saas-card-header">
             <div class="saas-heading saas-heading-sm">Add New Subject</div>
@@ -166,12 +166,12 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="saas-form-group">
                     <label class="saas-label">Subject Name</label>
                     <input type="text" name="name" class="saas-input" placeholder="e.g. Advanced Database Systems" required>
                 </div>
-                
+
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                     <div class="saas-form-group">
                         <label class="saas-label">Year Level</label>
@@ -191,7 +191,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="saas-form-group" style="margin-bottom:0;">
                     <label class="saas-label">Description (Optional)</label>
                     <textarea name="description" class="saas-input" rows="3"></textarea>

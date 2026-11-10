@@ -10,9 +10,13 @@ use Illuminate\Validation\Rule;
 
 class SectionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $sections = Section::with('course.department')->withCount('schedules')->latest()->paginate(10);
+        $filters = $request->validate(['search' => 'nullable|string|max:100', 'course_id' => 'nullable|integer']);
+        $query = Section::with('course.department')->withCount('schedules');
+        if (($search = trim($filters['search'] ?? '')) !== '') $query->where('name', 'like', '%'.$search.'%');
+        if (!empty($filters['course_id'])) $query->where('course_id', $filters['course_id']);
+        $sections = $query->latest()->paginate(10)->withQueryString();
         $courses = Course::orderBy('code')->get();
         return view('admin.sections.index', compact('sections', 'courses'));
     }

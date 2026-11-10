@@ -5,12 +5,12 @@
 @section('page-sub', 'Generate, analyze, and export comprehensive school attendance metrics')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="admin-page-heading" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Reports & Analytics</h1>
         <p class="saas-text-muted" style="margin:0;">Comprehensive attendance metrics, class summaries, and exportable reports.</p>
     </div>
-    <div style="display:flex; gap:10px;">
+    <div class="admin-page-actions" style="display:flex; gap:10px;">
         <a href="{{ route('admin.reports.csv', request()->all()) }}" class="saas-btn saas-btn-secondary" style="color:#34d399; border-color:rgba(52,211,153,0.3); text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
             <i class="bi bi-file-earmark-spreadsheet"></i> Export CSV
         </a>
@@ -35,22 +35,22 @@
     ];
 @endphp
 
-<div style="display:flex; gap:8px; margin-bottom:20px; overflow-x:auto; padding-bottom:8px;">
+<nav class="admin-view-tabs" aria-label="Report category">
     @foreach($reportTypes as $key => $meta)
     <a href="{{ route('admin.reports', array_merge(request()->except(['page']), ['type' => $key])) }}"
-       class="saas-btn {{ $type === $key ? 'saas-btn-primary' : 'saas-btn-secondary' }}" 
+       @if($type === $key) aria-current="page" @endif class="saas-btn {{ $type === $key ? 'saas-btn-primary' : 'saas-btn-secondary' }}"
        style="padding:8px 14px; font-size:0.85rem; white-space:nowrap; text-decoration:none;">
         <i class="bi bi-{{ $meta['icon'] }} me-1"></i> {{ $meta['label'] }}
     </a>
     @endforeach
-</div>
+</nav>
 
 <!-- Filter Bar -->
 <div class="saas-card" style="margin-bottom:24px;">
     <div class="saas-card-header" style="background:rgba(0,0,0,0.15); padding:16px 20px;">
-        <form method="GET" action="{{ route('admin.reports') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; width:100%;">
+        <form class="admin-filter-toolbar" method="GET" action="{{ route('admin.reports') }}" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; width:100%;">
             <input type="hidden" name="type" value="{{ $type }}">
-            
+
             @if($type === 'daily' || $type === 'weekly')
             <div class="saas-form-group" style="margin:0;">
                 <label class="saas-label" style="font-size:0.75rem; color:#f3e7cd; margin-bottom:4px; display:block;">Select Date</label>
@@ -95,7 +95,7 @@
             <button type="submit" class="saas-btn saas-btn-primary" style="padding:8px 16px;">
                 <i class="bi bi-funnel-fill me-1"></i> Apply Filter
             </button>
-            
+
             @if(request()->hasAny(['course', 'subject', 'start_date', 'end_date', 'date', 'month']))
             <a href="{{ route('admin.reports', ['type' => $type]) }}" class="saas-btn saas-btn-secondary" style="color:#f87171; border-color:rgba(239,68,68,0.3); text-decoration:none;">
                 Reset

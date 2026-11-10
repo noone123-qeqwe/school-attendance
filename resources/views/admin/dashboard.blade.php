@@ -2,10 +2,6 @@
 
 @section('title', 'Admin Dashboard')
 
-@push('styles')
-    <link rel="stylesheet" href="{{ asset('css/admin-theme.css') }}?v={{ filemtime(public_path('css/admin-theme.css')) }}">
-@endpush
-
 @section('content')
 
 @php
@@ -19,9 +15,9 @@
 <div class="premium-hero-card dashboard-hero dash-animate">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-4">
         <div>
-            <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -0.5px;">Command Center</h1>
+            <h1 style="color: #ffffff; font-weight: 800; margin: 0 0 6px 0; font-size: clamp(1.4rem, 4vw, 2rem); letter-spacing: -0.5px;">School overview</h1>
             <div style="color: #b39b82; font-size: 0.88rem; font-weight: 500;">
-                Live operational analytics & campus attendance tracking
+                Attendance, people, and tasks at a glance.
             </div>
         </div>
         <div class="d-flex align-items-center gap-3 flex-wrap">
@@ -31,7 +27,7 @@
                 </div>
                 <div class="hero-clock-date" id="dashLiveDate">{{ now()->format('l, F j, Y') }}</div>
             </div>
-            
+
             <a href="{{ route('admin.attendance.pdf') }}" class="btn-modern-gold" style="padding: 10px 18px;">
                 <i class="bi bi-cloud-arrow-down-fill"></i> <span>Report</span>
             </a>
@@ -39,6 +35,41 @@
     </div>
 </div>
 
+{{-- ─── KPI METRICS ─── --}}
+<div class="admin-dashboard-kpis dash-animate">
+    <x-kpi-card
+        label="Total Students"
+        :value="$totalStudents"
+        icon="bi-people-fill"
+        accent="gold"
+    />
+    <x-kpi-card
+        label="Total Instructors"
+        :value="$totalTeachers"
+        icon="bi-person-workspace"
+        accent="info"
+    />
+    <x-kpi-card
+        label="Present Today"
+        :value="$totalPresent"
+        icon="bi-check-circle-fill"
+        accent="success"
+        :delta="($presentDiff >= 0 ? '+'.$presentDiff : (string)$presentDiff)"
+        :deltaType="$presentDiff >= 0 ? 'positive' : 'negative'"
+        deltaText="vs yesterday"
+    />
+    <x-kpi-card
+        label="Attendance Rate"
+        :value="$attendanceRate . '%'"
+        icon="bi-percent"
+        accent="gold"
+        :delta="($rateDiff >= 0 ? '+'.$rateDiff : (string)$rateDiff) . '%'"
+        :deltaType="$rateDiff >= 0 ? 'positive' : 'negative'"
+        deltaText="vs yesterday"
+    />
+</div>
+
+<h2 class="admin-section-heading">Quick access</h2>
 {{-- ─── QUICK ACTIONS PANEL ─── --}}
 <div class="modern-qa-grid admin-dashboard-actions dash-animate" aria-label="Quick actions">
     <a href="{{ route('admin.students') }}" class="modern-qa-tile">
@@ -79,7 +110,7 @@
             <span class="qa-label">Activity Logs</span>
         </a>
     @endif
-    @if(Auth::user()->admin_sub_role === 'super_admin' || is_null(Auth::user()->admin_sub_role))
+    @if(Auth::user()->isSuperAdmin())
     <a href="{{ route('admin.system-health.index') }}" class="modern-qa-tile">
         <div class="qa-icon-wrap" style="background: rgba(20, 184, 166, 0.14); color: #2dd4bf; border: 1px solid rgba(20, 184, 166, 0.25);">
             <i class="bi bi-heart-pulse-fill"></i>
@@ -93,40 +124,6 @@
         <span class="qa-label">Settings</span>
     </a>
     @endif
-</div>
-
-{{-- ─── KPI METRICS ─── --}}
-<div class="admin-dashboard-kpis dash-animate">
-    <x-kpi-card 
-        label="Total Students" 
-        :value="$totalStudents" 
-        icon="bi-people-fill" 
-        accent="gold" 
-    />
-    <x-kpi-card 
-        label="Total Instructors" 
-        :value="$totalTeachers" 
-        icon="bi-person-workspace" 
-        accent="info" 
-    />
-    <x-kpi-card 
-        label="Present Today" 
-        :value="$totalPresent" 
-        icon="bi-check-circle-fill" 
-        accent="success" 
-        :delta="($presentDiff >= 0 ? '+'.$presentDiff : (string)$presentDiff)"
-        :deltaType="$presentDiff >= 0 ? 'positive' : 'negative'"
-        deltaText="vs yesterday"
-    />
-    <x-kpi-card 
-        label="Attendance Rate" 
-        :value="$attendanceRate . '%'" 
-        icon="bi-percent" 
-        accent="gold" 
-        :delta="($rateDiff >= 0 ? '+'.$rateDiff : (string)$rateDiff) . '%'"
-        :deltaType="$rateDiff >= 0 ? 'positive' : 'negative'"
-        deltaText="vs yesterday"
-    />
 </div>
 
 {{-- ─── SYSTEM ALERTS ─── --}}
@@ -218,7 +215,7 @@
         <x-slot:headerActions>
             <a href="{{ route('admin.students') }}" class="ent-btn ent-btn-xs ent-btn-ghost">View All <i class="bi bi-arrow-right"></i></a>
         </x-slot:headerActions>
-        
+
         <div class="table-responsive" style="margin: -20px; padding: 12px 20px;">
             <table class="adm-table" style="margin-bottom: 0; width: 100%;">
                 <thead>

@@ -9,25 +9,33 @@
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">Settings</h1>
         <p class="saas-text-muted" style="margin:0;">Configure global system parameters and preferences.</p>
     </div>
-    
-    <div style="display:flex; gap:12px;">
+
+    <div class="admin-page-actions">
         <button type="submit" form="settingsForm" class="saas-btn saas-btn-primary">
             <i class="bi bi-save"></i> Save Changes
         </button>
     </div>
 </div>
 
+<nav class="admin-settings-index" aria-label="Settings sections">
+    <a href="#settings-institution">Institution</a>
+    <a href="#settings-attendance">Academic & attendance</a>
+    <a href="#settings-verification">Verification rules</a>
+    <a href="#settings-notifications">Notifications</a>
+    <a href="#settings-security">Security & access</a>
+</nav>
+
 <div class="admin-settings-layout">
-    
+
     <!-- Main Settings Form -->
     <div class="saas-card admin-settings-form" style="padding:24px;">
         <form id="settingsForm" action="{{ route('admin.settings.update') }}" method="POST">
             @csrf
-            
-            <h3 class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+
+            <h3 id="settings-institution" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
                 <i class="bi bi-building saas-text-muted"></i> Institution Details
             </h3>
-            
+
             <div class="admin-settings-fields" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">School / Institution Name</label>
@@ -38,18 +46,18 @@
                     <input type="text" name="school_short_name" class="saas-input" value="SCS">
                 </div>
             </div>
-            
+
             <div class="saas-form-group" style="margin-bottom:32px;">
                 <label class="saas-label">System Subtitle / Tagline</label>
                 <input type="text" name="school_subtitle" class="saas-input" value="{{ env('APP_SUBTITLE', 'QR, GPS & Biometric Attendance') }}">
             </div>
-            
+
             <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
-            
-            <h3 class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+
+            <h3 id="settings-attendance" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
                 <i class="bi bi-clock-history saas-text-muted"></i> Academic & Attendance
             </h3>
-            
+
             <div class="admin-settings-fields" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">Current Academic Year</label>
@@ -67,7 +75,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="admin-settings-fields admin-settings-fields-three" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
                 <div class="saas-form-group">
                     <label class="saas-label">Late Threshold (Minutes)</label>
@@ -85,18 +93,18 @@
                     <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Number of absences before OSAS warning.</p>
                 </div>
             </div>
-            
+
             <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
-            
+
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
+                <h3 id="settings-verification" class="saas-heading saas-heading-sm" style="margin:0; display:flex; align-items:center; gap:8px;">
                     <i class="bi bi-qr-code-scan saas-text-muted"></i> Attendance & Biometrics Rules
                 </h3>
                 <button type="button" class="saas-btn saas-btn-secondary" style="padding:4px 12px; font-size:0.8rem;" onclick="resetAttendanceRules()">
                     <i class="bi bi-arrow-counterclockwise"></i> Reset to Default
                 </button>
             </div>
-            
+
             <div class="admin-settings-fields" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:20px;">
                 <div class="saas-form-group">
                     <label class="saas-label">QR Token Expiry (Seconds)</label>
@@ -229,11 +237,11 @@
             </script>
 
             <hr style="border:0; border-top:1px solid var(--saas-border); margin:0 0 32px 0;">
-            
-            <h3 class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+
+            <h3 id="settings-notifications" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
                 <i class="bi bi-bell saas-text-muted"></i> Notifications
             </h3>
-            
+
             <label style="display:flex; align-items:center; gap:12px; margin-bottom:12px; cursor:pointer;">
                 <input type="checkbox" name="email_notifications" checked style="accent-color:var(--saas-primary); width:16px; height:16px;">
                 <div>
@@ -241,7 +249,7 @@
                     <div class="saas-text-muted" style="font-size:0.75rem;">Send automated emails to parents for absences.</div>
                 </div>
             </label>
-            
+
             @php
                 $featureControls = [
                     'face_verification' => ['Face verification', 'Supplementary identity check during attendance.'],
@@ -278,8 +286,8 @@
             </div>
 
             <hr style="border:0; border-top:1px solid var(--saas-border); margin:32px 0;">
-            
-            <h3 class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+
+            <h3 id="settings-security" class="saas-heading saas-heading-sm" style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
                 <i class="bi bi-shield-lock saas-text-muted"></i> Security & Access
             </h3>
 
@@ -305,19 +313,19 @@
                     <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Fingerprint uses the existing WebAuthn assertion. Device checks require an existing device binding.</p>
                 </div>
             </div>
-            
+
             <div class="saas-form-group" style="margin-bottom:32px;">
                 <label class="saas-label">Admin IP Whitelist</label>
                 <input type="text" name="admin_ip_whitelist" class="saas-input" value="{{ \App\Models\Setting::get('admin_ip_whitelist', '') }}" placeholder="e.g. 192.168.1.1, 10.0.0.5">
                 <p class="saas-text-muted" style="font-size:0.75rem; margin-top:4px;">Comma-separated list of IP addresses allowed to access the Admin panel. Leave blank to disable whitelisting.</p>
             </div>
-            
+
             <div class="admin-settings-footer">
                 <button type="submit" class="saas-btn saas-btn-primary"><i class="bi bi-save"></i> Save Changes</button>
             </div>
         </form>
     </div>
-    
+
     <!-- Sidebar Settings/Info -->
     <div class="admin-settings-aside">
         <div class="saas-card" style="padding:20px; margin-bottom:20px;">
@@ -344,13 +352,11 @@
             </button>
             <div id="adminUpdateFeedback" style="display:none; margin-top:10px; padding:10px 12px; border-radius:8px; font-size:0.8rem; line-height:1.4;"></div>
         </div>
-        
-        <div class="saas-card" style="padding:20px; border-color:rgba(239,68,68,0.2);">
-            <h4 class="saas-heading saas-heading-sm" style="margin-bottom:12px; color:var(--saas-danger);">Danger Zone</h4>
-            <p class="saas-text-muted" style="font-size:0.8rem; margin-bottom:16px;">Clearing the cache may log out active sessions and temporary slow down the system.</p>
-            <button class="saas-btn saas-btn-secondary" style="width:100%; justify-content:center; color:var(--saas-danger); border-color:var(--saas-danger); background:transparent;">
-                <i class="bi bi-trash"></i> Clear System Cache
-            </button>
+
+        <div class="saas-card" style="padding:20px;">
+            <h4 class="saas-heading saas-heading-sm" style="margin-bottom:12px;">Maintenance</h4>
+            <p class="saas-text-muted" style="font-size:0.85rem;">Review deployment information and maintenance actions.</p>
+            <a href="{{ route('admin.system-update.index') }}" class="saas-btn saas-btn-secondary w-100"><i class="bi bi-tools" aria-hidden="true"></i> Open maintenance tools</a>
         </div>
     </div>
 </div>

@@ -3,16 +3,19 @@
 @section('title', 'User Management')
 
 @section('content')
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+<div class="admin-page-heading">
     <div>
         <h1 class="saas-heading saas-heading-lg" style="margin-bottom:4px;">User Management</h1>
         <p class="saas-text-muted" style="margin:0;">Manage system access, user accounts, and roles.</p>
     </div>
-    
-    <div style="display:flex; gap:12px;">
-        <button class="saas-btn saas-btn-primary" onclick="openModal('addUserModal')">
-            <i class="bi bi-person-plus"></i> Add User
-        </button>
+
+    <div class="admin-page-actions">
+        <details class="admin-action-menu"><summary><i class="bi bi-person-plus" aria-hidden="true"></i> Add user <i class="bi bi-chevron-down" aria-hidden="true"></i></summary><div class="admin-action-menu-items">
+            <a class="btn" href="{{ route('admin.student.create') }}">Student</a>
+            <a class="btn" href="{{ route('admin.teacher.create') }}">Instructor</a>
+            <a class="btn" href="{{ route('admin.admin.create') }}">Administrator</a>
+            <a class="btn" href="{{ route('admin.parents.index') }}">Parent or guardian</a>
+        </div></details>
     </div>
 </div>
 
@@ -22,7 +25,7 @@
             <i class="bi bi-search"></i>
             <input type="text" name="search" class="saas-search-input" placeholder="Search name, email, or ID..." value="{{ request('search') }}">
         </div>
-        
+
         <div style="display:flex; gap:12px; align-items:center;">
             <select name="role" class="saas-input saas-select" style="width:160px; padding:6px 30px 6px 12px;">
                 <option value="">All Roles</option>
@@ -31,11 +34,11 @@
                 <option value="student" {{ request('role')=='student'?'selected':'' }}>Student</option>
                 <option value="parent" {{ request('role')=='parent'?'selected':'' }}>Parent</option>
             </select>
-            
+
             <button type="submit" class="saas-btn saas-btn-secondary" style="padding:6px 12px;">
                 <i class="bi bi-funnel"></i> Filter
             </button>
-            
+
             @if(request()->hasAny(['search','role']))
             <a href="{{ route('admin.roles.index') }}" class="saas-btn saas-btn-secondary" style="padding:6px 12px; color:var(--saas-danger);">
                 Clear
@@ -43,12 +46,12 @@
             @endif
         </div>
     </form>
-    
+
     <div class="saas-table-container" style="border:none; border-radius:0;">
         <table class="saas-table">
             <thead>
                 <tr>
-                    <th style="width:40px;"><input type="checkbox" style="accent-color:var(--saas-primary);"></th>
+
                     <th>User</th>
                     <th>ID / Credentials</th>
                     <th>Role</th>
@@ -59,7 +62,7 @@
             <tbody>
                 @forelse($users as $user)
                 <tr>
-                    <td><input type="checkbox" style="accent-color:var(--saas-primary);"></td>
+
                     <td>
                         <div style="display:flex;align-items:center;gap:12px;">
                             <img src="{{ $user->profile_image ? (str_starts_with($user->profile_image, 'http') ? $user->profile_image : public_storage_url($user->profile_image)) : 'https://ui-avatars.com/api/?name='.urlencode($user->name).'&background=333&color=fff' }}"
@@ -109,7 +112,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="6" style="text-align:center; padding:48px 20px;">
+                    <td colspan="5" style="text-align:center; padding:48px 20px;">
                         <i class="bi bi-people saas-text-muted" style="font-size:3rem; margin-bottom:16px; display:block; opacity:0.5;"></i>
                         <div class="saas-heading" style="font-size:1.1rem; margin-bottom:8px;">No users found</div>
                         <p class="saas-text-muted" style="margin-bottom:20px; max-width:400px; margin-inline:auto;">There are no users matching your current filters.</p>
@@ -119,7 +122,7 @@
             </tbody>
         </table>
     </div>
-    
+
     @if($users->hasPages())
     <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:space-between; align-items:center;">
         <div class="saas-text-muted">
@@ -132,26 +135,8 @@
     @endif
 </div>
 
-<!-- Add User Modal (Placeholder) -->
-<div id="addUserModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
-    <div class="saas-card" style="width:100%; max-width:500px; transform:scale(0.95); transition:transform 0.2s;" id="addUserCard">
-        <div class="saas-card-header">
-            <div class="saas-heading saas-heading-sm">Add System User</div>
-            <button onclick="closeModal('addUserModal')" style="background:none; border:none; color:var(--saas-text-muted); cursor:pointer;"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <div class="saas-card-body" style="text-align:center; padding:40px 20px;">
-            <i class="bi bi-tools saas-text-muted" style="font-size:3rem; margin-bottom:16px; display:block;"></i>
-            <h3 class="saas-heading">Quick Add Under Construction</h3>
-            <p class="saas-text-muted" style="margin-bottom:0;">Please use the dedicated Student or Instructor modules to add users for now.</p>
-        </div>
-        <div class="saas-card-body" style="border-top:1px solid var(--saas-border); display:flex; justify-content:flex-end; gap:12px; background:rgba(0,0,0,0.2);">
-            <button type="button" class="saas-btn saas-btn-secondary" onclick="closeModal('addUserModal')">Close</button>
-        </div>
-    </div>
-</div>
-
 <!-- Edit Role Modal -->
-<div id="editRoleModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:100; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
+<div class="saas-modal-backdrop" id="editRoleModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:9999; align-items:center; justify-content:center; opacity:0; transition:opacity 0.2s;">
     <div class="saas-card" style="width:100%; max-width:500px; transform:scale(0.95); transition:transform 0.2s;">
         <div class="saas-card-header">
             <div class="saas-heading saas-heading-sm">Edit Role for <span id="editRoleUserName"></span></div>
@@ -161,7 +146,7 @@
             @csrf
             @method('PUT')
             <div class="saas-card-body" style="padding:24px;">
-                
+
                 <div class="saas-form-group" style="margin-bottom:16px;">
                     <label class="saas-label">System Role</label>
                     <select name="role" id="editRoleSelect" class="saas-input saas-select" onchange="toggleSubRole(this.value)">
@@ -171,7 +156,7 @@
                         <option value="parent">Parent</option>
                     </select>
                 </div>
-                
+
                 <div class="saas-form-group" id="adminSubRoleGroup" style="display:none; margin-bottom:16px;">
                     <label class="saas-label">Admin Sub-Role</label>
                     <select name="admin_sub_role" id="editSubRoleSelect" class="saas-input saas-select">
@@ -212,26 +197,26 @@
             modal.style.display = 'none';
         }, 200);
     }
-    
+
     function openEditRoleModal(userId, role, subRole, name) {
         document.getElementById('editRoleUserName').textContent = name;
-        
+
         let form = document.getElementById('editRoleForm');
         form.action = `/admin/roles/${userId}`;
-        
+
         document.getElementById('editRoleSelect').value = role;
-        
+
         toggleSubRole(role);
-        
+
         if (role === 'admin' && subRole) {
             document.getElementById('editSubRoleSelect').value = subRole;
         } else {
             document.getElementById('editSubRoleSelect').value = '';
         }
-        
+
         openModal('editRoleModal');
     }
-    
+
     function toggleSubRole(role) {
         if (role === 'admin') {
             document.getElementById('adminSubRoleGroup').style.display = 'block';

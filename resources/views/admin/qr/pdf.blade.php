@@ -65,12 +65,8 @@
         @foreach($students as $index => $student)
             <div class="qr-card">
                 <div class="qr-image">
-                    @if($student->qr_code_path && file_exists(storage_path('app/public/'.$student->qr_code_path)))
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents(storage_path('app/public/'.$student->qr_code_path))) }}" alt="QR Code">
-                    @else
-                        <!-- We cannot reliably use external URLs in DOMPDF without allow_url_fopen enabled, so we will generate it inline using a local package if possible, but DOMPDF does support external URLs if configured. For safety, we use the QR server API. -->
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={{ urlencode($student->student_number ?? $student->id) }}" alt="QR Code">
-                    @endif
+                    <img src="{{ $qrImages[$student->id] }}" alt="QR code for {{ $student->name }}">
+
                 </div>
                 <p class="name">{{ $student->name }}</p>
                 <p class="id-number">{{ $student->student_number ?? 'ID: '.$student->id }}</p>

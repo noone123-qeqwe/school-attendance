@@ -1,4 +1,4 @@
-<nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
+<nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav" aria-label="Admin navigation">
     <a href="{{ route('admin.dashboard') }}" class="mbn-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
         <i class="bi bi-grid-fill"></i>
         <span>Home</span>
@@ -26,7 +26,7 @@
         <i class="bi bi-clipboard-check-fill"></i>
         <span>Attendance</span>
     </a>
-    <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" style="background:transparent;border:none;outline:none;cursor:pointer;">
+    <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open admin navigation" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false" style="background:transparent;border:none;outline:none;cursor:pointer;">
         <i class="bi bi-grid-3x3-gap-fill"></i>
         <span>More</span>
     </button>

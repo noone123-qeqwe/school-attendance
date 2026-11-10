@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="saas-container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:16px;">
+    <div class="admin-page-heading">
         <div>
             <h1 class="ent-section-title" style="margin-bottom:4px; font-size:1.5rem;">Manage Roster: {{ $subject->code }}</h1>
             <p class="ent-text-muted" style="margin:0;">{{ $subject->name }} | {{ $subject->year_level }} Year, {{ $subject->semester }}{{ (int)$subject->semester === 1 ? 'st' : 'nd' }} Sem</p>
@@ -19,7 +19,7 @@
             <i class="bi bi-check-circle"></i> {{ session('success') }}
         </div>
     @endif
-    
+
     @if(session('error'))
         <div class="ent-alert danger" style="margin-bottom: 20px;">
             <i class="bi bi-exclamation-triangle"></i> {{ session('error') }}
