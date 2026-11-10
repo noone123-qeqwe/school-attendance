@@ -45,9 +45,12 @@
         <link rel="stylesheet" href="{{ asset('css/student-portal-redesign.css') }}?v={{ filemtime(public_path('css/student-portal-redesign.css')) }}">
         <link rel="stylesheet" href="{{ asset('css/student-portal-simple.css') }}?v={{ filemtime(public_path('css/student-portal-simple.css')) }}">
     @endif
+    @if(Auth::check() && Auth::user()->isTeacher() && !request()->routeIs('teacher.*.pdf', 'teacher.*.preview'))
+        <link rel="stylesheet" href="{{ asset('css/teacher-portal-redesign.css') }}?v={{ filemtime(public_path('css/teacher-portal-redesign.css')) }}">
+    @endif
 </head>
 
-<body class="{{ Auth::check() && Auth::user()->isStudent() ? 'student-portal' : '' }}" @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+<body class="{{ Auth::check() && Auth::user()->isStudent() ? 'student-portal' : '' }} {{ Auth::check() && Auth::user()->isTeacher() ? 'teacher-portal' : '' }}" @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
 
     <!-- Skip to main content link for keyboard/screen readers -->
     <a href="#mainContent" class="visually-hidden-focusable" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
@@ -881,6 +884,10 @@
                         </div>
                         <span class="more-sheet-item-label" style="color: #f3e7cd; font-weight: 700;">QR Session</span>
                     </a>
+                    <a href="{{ route('teacher.notifications') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-bell-fill"></i></div>
+                        <span class="more-sheet-item-label">Notifications</span>
+                    </a>
                     <a href="{{ route('teacher.classroom.index') }}" class="more-sheet-item" data-color="blue" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-journal-album"></i></div>
                         <span class="more-sheet-item-label">Classes</span>
@@ -908,6 +915,14 @@
                     <a href="{{ route('teacher.attendance') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-clipboard-check-fill"></i></div>
                         <span class="more-sheet-item-label">Attendance</span>
+                    </a>
+                    <a href="{{ route('teacher.corrections') }}" class="more-sheet-item" data-color="amber" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-pencil-square"></i></div>
+                        <span class="more-sheet-item-label">Corrections</span>
+                    </a>
+                    <a href="{{ route('teacher.profile') }}" class="more-sheet-item" data-color="purple" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-person-circle"></i></div>
+                        <span class="more-sheet-item-label">Profile</span>
                     </a>
                 @elseif(Auth::user()->isParent())
                     <a href="{{ route('parent.link.form') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">

@@ -37,6 +37,7 @@
 @endphp
 
 <div class="sidebar-nav">
+    <div class="teacher-nav-label">Overview</div>
     <a href="{{ route('teacher.dashboard') }}" 
        class="nav-link {{ request()->routeIs('teacher.dashboard*') ? 'active' : '' }}"
        data-title="Dashboard">
@@ -44,6 +45,7 @@
         <span class="nav-link-text">Dashboard</span>
     </a>
 
+    <div class="teacher-nav-label">Teaching</div>
     <a href="{{ route('teacher.classroom.index') }}" 
        class="nav-link {{ (request()->routeIs('teacher.classroom*') || request()->routeIs('teacher.subjects*')) ? 'active' : '' }}"
        data-title="My Classes">
@@ -65,6 +67,13 @@
         <span class="nav-link-text">Attendance Records</span>
     </a>
 
+    <a href="{{ route('teacher.absent') }}"
+       class="nav-link {{ request()->routeIs('teacher.absent*') ? 'active' : '' }}"
+       data-title="Absent Report">
+        <i class="bi bi-person-x-fill"></i>
+        <span class="nav-link-text">Absent Report</span>
+    </a>
+
     <a href="{{ route('teacher.students') }}" 
        class="nav-link {{ (request()->routeIs('teacher.students*') || request()->routeIs('teacher.student')) ? 'active' : '' }}"
        data-title="Student Roster">
@@ -72,6 +81,7 @@
         <span class="nav-link-text">Student Roster</span>
     </a>
 
+    <div class="teacher-nav-label">Student Requests</div>
     <a href="{{ route('teacher.excuse.reviews') }}" 
        class="nav-link {{ request()->routeIs('teacher.excuse*') ? 'active' : '' }}"
        data-title="Excuse Submissions">
@@ -96,10 +106,25 @@
         @endif
     </a>
 
+    <div class="teacher-nav-label">Insights</div>
     <a href="{{ route('teacher.reports') }}" 
        class="nav-link {{ request()->routeIs('teacher.reports*') ? 'active' : '' }}"
        data-title="Attendance Reports">
         <i class="bi bi-graph-up-arrow"></i>
         <span class="nav-link-text">Attendance Reports</span>
+    </a>
+
+    <div class="teacher-nav-label">Account</div>
+    <a href="{{ route('teacher.notifications') }}"
+       class="nav-link {{ request()->routeIs('teacher.notifications*') ? 'active' : '' }}"
+       data-title="Notifications">
+        <i class="bi bi-bell-fill"></i>
+        <span class="nav-link-text">Notifications</span>
+    </a>
+    <a href="{{ route('teacher.profile') }}"
+       class="nav-link {{ request()->routeIs('teacher.profile*') ? 'active' : '' }}"
+       data-title="My Profile">
+        <i class="bi bi-person-circle"></i>
+        <span class="nav-link-text">My Profile</span>
     </a>
 </div>
