@@ -52,7 +52,7 @@ body.student-portal[data-student-layout] .sidebar .sidebar-head { border: 0; bac
 body.student-portal[data-student-layout] .sidebar .nav-link.active { box-shadow: inset 3px 0 #cfa46f; }
 .student-nav-label { padding: 16px 20px 5px; color: #b39b82; font-size: .7rem; font-weight: 600; }
 /* Dashboard */
-body.student-portal[data-student-layout] .student-hero-banner { border-radius: 14px !important; box-shadow: none !important; }
+body.student-portal[data-student-layout] .student-hero-banner { padding: 0 !important; border-radius: 14px !important; box-shadow: none !important; }
 body.student-portal[data-student-layout] .student-hero-banner::before,
 body.student-portal[data-student-layout] .student-hero-banner::after { display: none !important; }
 body.student-portal[data-student-layout] .student-hero-inner { padding: 24px !important; gap: 18px !important; }
@@ -152,19 +152,25 @@ body.student-mobile-portal[data-student-layout] .mobile-home .section-title { fo
     body.student-portal[data-student-layout] .scal-side { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
 }
 @media (max-width: 767.98px) {
-    body.student-portal[data-student-layout]:not(.student-mobile-portal) .main-content { padding-bottom: 0 !important; }
-    body.student-portal[data-student-layout] .main-content > .page-enter { padding: 20px 16px calc(104px + env(safe-area-inset-bottom)) !important; }
+    body.student-portal[data-student-layout]:not(.student-mobile-portal) .main-content { padding-top: max(64px, var(--mobile-header-height, 64px)) !important; padding-bottom: 0 !important; }
+    body.student-portal[data-student-layout] .main-content > .page-enter { padding: 16px 16px calc(104px + env(safe-area-inset-bottom)) !important; }
     .student-page-header { align-items: flex-start; gap: 10px; margin-bottom: 22px; }
     .student-page-header h1 { font-size: 1.45rem !important; }
     body.student-portal[data-student-layout] .student-hero-inner { padding: 20px 16px !important; }
+    body.student-portal[data-student-layout] .student-meta-chip { padding: 0 6px 0 0 !important; min-height: 22px; }
+    body.student-portal[data-student-layout] .student-meta-chip:nth-child(n + 4) { display: inline-flex; }
     body.student-portal[data-student-layout] .student-hero-deck { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
     body.student-portal[data-student-layout] .hero-deck-card { padding: 4px 8px !important; gap: 6px !important; }
     body.student-portal[data-student-layout] .hero-deck-icon { display: none; }
     body.student-portal[data-student-layout] .hero-deck-value { font-size: .97rem !important; }
+    body.student-portal[data-student-layout] .hero-deck-body { overflow: visible; }
+    body.student-portal[data-student-layout] :is(.hero-deck-value, .hero-deck-label) { white-space: normal; overflow: visible; text-overflow: clip; }
+    body.student-portal[data-student-layout] #studentClock { font-size: .88rem !important; white-space: nowrap; }
     body.student-portal[data-student-layout] .hero-deck-label { font-size: .68rem; line-height: 1.5; }
-    .student-quick-links { grid-template-columns: minmax(0,1fr); gap: 10px; }
+    .student-quick-links { grid-template-columns: minmax(0,1fr); gap: 10px; margin: 16px 0; }
+    body.student-portal[data-student-layout] .student-quick-links [data-bottom-nav-duplicate] { display: none; }
     .student-quick-links a { min-height: 54px; padding: 13px 16px; }
-    body.student-portal[data-student-layout] #realStats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+    body.student-portal[data-student-layout] #realStats { grid-template-columns: repeat(2,minmax(0,1fr)); margin: 16px 0 !important; }
     body.student-portal[data-student-layout] #realStats .ent-kpi-card { min-height: 90px !important; padding: 16px !important; }
     body.student-portal[data-student-layout] :is(.ent-section-header, .ent-section-head, .adm-card-head, .info-card-header, .table-card-header) { padding: 16px !important; }
     body.student-portal[data-student-layout] :is(.ent-section-body, .adm-card-body, .info-card-body) { padding: 18px 16px !important; }

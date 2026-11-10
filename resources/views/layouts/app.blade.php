@@ -1184,27 +1184,8 @@
         }, { passive: true });
 
         // ── Seamless Page Transitions ──
-        document.addEventListener('click', function(e) {
-            const link = e.target.closest('a');
-            if (!link) return;
-            const href = link.getAttribute('href');
-            if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.hasAttribute('target') || link.hasAttribute('download')) {
-                return;
-            }
-
-            // Check if same origin navigation
-            try {
-                const targetUrl = new URL(href, window.location.origin);
-                if (targetUrl.origin === window.location.origin && targetUrl.pathname !== window.location.pathname) {
-                    // Apply smooth page exit animation
-                    const pageEnterEl = document.querySelector('.page-enter');
-                    if (pageEnterEl && window.innerWidth <= 768) {
-                        pageEnterEl.classList.add('page-exit');
-                    }
-                }
-            } catch (err) {}
-        });
-
+        // Keep the current document visible until navigation actually replaces it.
+        // Slow, cancelled, and background-tab navigation must never hide content.
         window.addEventListener('pageshow', function() {
             const pageEnterEl = document.querySelector('.page-enter');
             if (pageEnterEl) {

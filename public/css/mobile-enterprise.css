@@ -1978,7 +1978,8 @@
     /* ═════════════════════════════════════════════
        EMPTY STATES — Spacious & Inviting
        ═════════════════════════════════════════════ */
-    .empty-state, .no-data, [class*="empty"] {
+    /* Status values and blank calendar cells are not empty-state panels. */
+    .empty-state, .no-data {
         padding: var(--m-space-3xl) var(--m-space-xl) !important;
         text-align: center !important;
     }
@@ -2215,17 +2216,6 @@
     }
 }
 
-@keyframes mobilePageExit {
-    0% {
-        opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: translate3d(0, -6px, 0) scale(0.99);
-    }
-}
-
 @keyframes mobileSheetUp {
     from {
         opacity: 0.7;
@@ -2257,11 +2247,6 @@
         will-change: transform, opacity;
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
-    }
-
-    .page-exit {
-        animation: mobilePageExit 0.14s cubic-bezier(0.4, 0, 0.9, 1) forwards !important;
-        pointer-events: none !important;
     }
 
     /* Tactile native spring scaling for interactive cards */

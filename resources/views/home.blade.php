@@ -119,6 +119,7 @@
     $isLatestMonth = $isCurrentMonth;
 
     $totalRecords = isset($attendanceRecordCount) ? (int) $attendanceRecordCount : (isset($records) ? $records->count() : 0);
+    $todayClassCount = isset($todaySchedule) ? $todaySchedule->count() : 0;
     $greetHour = now()->hour;
     $greeting = $greetHour < 12 ? 'Good Morning' : ($greetHour < 17 ? 'Good Afternoon' : 'Good Evening');
 @endphp
@@ -1285,7 +1286,7 @@
                         <i class="bi bi-calendar3"></i>
                     </div>
                     <div class="hero-deck-body">
-                        <div class="hero-deck-value">{{ isset($todaySchedule) ? $todaySchedule->count() : 0 }} Classes</div>
+                        <div class="hero-deck-value">{{ $todayClassCount }} {{ \Illuminate\Support\Str::plural('Class', $todayClassCount) }}</div>
                         <div class="hero-deck-label">Today's Load</div>
                     </div>
                 </div>
@@ -1295,8 +1296,8 @@
 </div>
 
 <nav class="student-quick-links" aria-label="Student shortcuts">
-    <a href="{{ route('student.classes') }}"><i class="bi bi-journal-bookmark" aria-hidden="true"></i>My classes<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
-    <a href="{{ route('attendance.records') }}"><i class="bi bi-clipboard-check" aria-hidden="true"></i>Attendance records<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('student.classes') }}" data-bottom-nav-duplicate><i class="bi bi-journal-bookmark" aria-hidden="true"></i>My classes<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+    <a href="{{ route('attendance.records') }}" data-bottom-nav-duplicate><i class="bi bi-clipboard-check" aria-hidden="true"></i>Attendance records<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
     <a href="{{ route('excuses.create_general') }}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i>Submit an excuse<i class="bi bi-chevron-right" aria-hidden="true"></i></a>
 </nav>
 
