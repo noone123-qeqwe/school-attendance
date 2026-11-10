@@ -78,7 +78,8 @@ class UpdatePopupLoopPreventionTest extends TestCase
 
         $this->assertSame($matches[1], $versionService->getSwVersion());
         $this->assertSame($file['build'], $versionService->getBuild());
-        $this->assertSame($file['commit'], $versionService->getCommit());
+        // The host's exact revision can override the manifest commit. That
+        // precedence is verified by the deployment environment test below.
     }
 
     public function test_stale_database_release_cannot_advertise_a_version_not_deployed(): void
