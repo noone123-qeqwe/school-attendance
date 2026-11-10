@@ -8,11 +8,11 @@
     
     if ($isStudent) {
         $navItems = [
-            ['route' => 'mobile.home',       'icon' => 'house-fill',     'label' => 'Home',    'primary' => false, 'scan' => false],
-            ['route' => 'mobile.attendance',  'icon' => 'clipboard-check','label' => 'Attend',  'primary' => false, 'scan' => false],
+            ['route' => 'home',              'icon' => 'house-fill',     'label' => 'Home',    'primary' => false, 'scan' => false],
+            ['route' => 'student.classes',   'icon' => 'journal-bookmark-fill', 'label' => 'Classes', 'primary' => false, 'scan' => false],
             ['route' => 'mobile.scan',        'icon' => 'qr-code-scan',   'label' => 'Scan',    'primary' => true,  'scan' => true],
-            ['route' => 'mobile.history',     'icon' => 'clock-history',  'label' => 'History', 'primary' => false, 'scan' => false],
-            ['route' => 'mobile.profile',     'icon' => 'person-fill',    'label' => 'Profile', 'primary' => false, 'scan' => false],
+            ['route' => 'attendance.records','icon' => 'clipboard-data-fill', 'label' => 'Records', 'primary' => false, 'scan' => false],
+            ['route' => 'profile',           'icon' => 'person-fill',    'label' => 'Profile', 'primary' => false, 'scan' => false],
         ];
     } elseif ($user->isTeacher()) {
         $navItems = [
@@ -42,12 +42,23 @@
     }
 @endphp
 
-<nav class="mobile-bottom-nav" id="mobileBottomNav">
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile navigation">
     @foreach($navItems as $item)
+        @php
+            $activeAliases = $isStudent ? match($item['route']) {
+                'home' => ['home', 'mobile.home'],
+                'student.classes' => ['student.classes', 'student.schedule', 'classes.index'],
+                'attendance.records' => ['attendance.records', 'attendance.history', 'mobile.history'],
+                'profile' => ['profile', 'mobile.profile'],
+                default => [$item['route']],
+            } : [$item['route']];
+            $isActive = in_array($currentRoute, $activeAliases, true);
+        @endphp
         @if($item['scan'] && $isStudent)
             {{-- Open the scanner as a dedicated page, not over the current screen. --}}
             <a href="{{ route($item['route']) }}"
-                    class="nav-item nav-item-primary {{ $currentRoute === $item['route'] ? 'active' : '' }}"
+                    class="nav-item nav-item-primary {{ $isActive ? 'active' : '' }}"
+                    @if($isActive) aria-current="page" @endif
                     id="mobileNavScanBtn"
                     aria-label="Scan QR Code">
                 <i class="bi bi-{{ $item['icon'] }}"></i>
@@ -55,7 +66,8 @@
             </a>
         @else
             <a href="{{ route($item['route']) }}"
-               class="nav-item {{ $item['primary'] ? 'nav-item-primary' : '' }} {{ $currentRoute === $item['route'] ? 'active' : '' }}"
+               class="nav-item {{ $item['primary'] ? 'nav-item-primary' : '' }} {{ $isActive ? 'active' : '' }}"
+               @if($isActive) aria-current="page" @endif
                data-route="{{ $item['route'] }}">
                 <i class="bi bi-{{ $item['icon'] }}"></i>
                 <span>{{ $item['label'] }}</span>

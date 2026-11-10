@@ -65,7 +65,7 @@
             <h1 style="font-size: 2rem; font-weight: 800; color: #f3e7cd; margin-bottom:4px; letter-spacing: -0.02em;">
                 <i class="bi bi-file-earmark-medical me-2" style="color: #cfa46f;"></i>Submit Excuse Letter
             </h1>
-            <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Select the subject(s) you wish to submit an excuse letter for and attach supporting details.</p>
+            <p style="color: #b39b82; font-size: 0.95rem; margin:0;">Choose the date and subjects for an existing absence, then add your explanation and supporting documents.</p>
         </div>
         <a href="{{ route('excuses') }}" class="ent-btn ent-btn-secondary" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
             <i class="bi bi-arrow-left"></i> Back to Excuses
@@ -73,7 +73,7 @@
     </header>
 
     @if($errors->any())
-    <div style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
+    <div role="alert" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); color: #f87171; border-radius: 12px; padding: 16px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;">
         <i class="bi bi-exclamation-triangle-fill" style="font-size:1.25rem;"></i>
         <span style="font-size:0.875rem; font-weight:500;">{{ $errors->first() }}</span>
     </div>
@@ -95,7 +95,7 @@
                             </label>
                             <span style="font-size: 0.78rem; color: #b39b82;">You can select one or multiple subjects</span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="student-excuse-selection-actions">
                             <span id="subjectCountBadge" style="background: rgba(207,164,111,0.15); border: 1px solid rgba(207,164,111,0.3); color: #cfa46f; padding: 3px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">
                                 0 of {{ count($subjects) }} Selected
                             </span>
@@ -112,37 +112,21 @@
                     @else
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;" id="subjectsGrid">
                             @foreach($subjects as $subject)
-                                <div class="excuse-subject-card" onclick="toggleSubjectCard(this, event)">
-                                    <input type="checkbox" name="subject_codes[]" value="{{ $subject->code }}" id="sub_{{ $subject->code }}" class="subject-checkbox" onchange="updateSubjectSelectionState()">
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 6px;">
-                                            <span class="sub-code-badge">{{ $subject->code }}</span>
-                                            @if($subject->section)
-                                                <span style="font-size: 0.7rem; color: #b39b82;">Sec: {{ $subject->section }}</span>
-                                            @endif
-                                        </div>
-                                        <div style="font-size: 0.88rem; font-weight: 600; color: #f3e7cd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{{ $subject->name }}">
-                                            {{ $subject->name }}
-                                        </div>
-                                        <div style="font-size: 0.75rem; color: #b39b82; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                            <i class="bi bi-person-badge me-1"></i> {{ $subject->instructor ?? ($subject->instructorUser->name ?? 'Faculty Instructor') }}
-                                        </div>
-                                    </div>
-                                </div>
+                                @include('partials.student-excuse-subject', ['subject' => $subject, 'isPrimary' => false, 'hasOtherAbsence' => false])
                             @endforeach
                         </div>
                     @endif
 
-                    <div id="subjectError" style="display: none; color: #f87171; font-size: 0.78rem; margin-top: 8px; font-weight: 600;">
+                    <div id="subjectError" role="alert" style="display: none; color: #f87171; font-size: 0.78rem; margin-top: 8px; font-weight: 600;">
                         <i class="bi bi-exclamation-circle me-1"></i> Please select at least one subject to submit your excuse letter.
                     </div>
                 </div>
 
                 {{-- STEP 2: DATE & REASON --}}
-                <div style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div class="student-excuse-fields">
                     <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <label style="font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                            <label for="absenceDateInput" style="font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">
                                 Absence Date <span style="color: #f87171;">*</span>
                             </label>
                             <div style="display: flex; gap: 4px;">
@@ -150,17 +134,17 @@
                                 <button type="button" class="quick-date-btn" onclick="setDatePreset(-1)">Yesterday</button>
                             </div>
                         </div>
-                        <input type="date" name="date" id="absenceDateInput" value="{{ old('date', date('Y-m-d')) }}" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; outline: none; color-scheme: dark;" required>
+                        <input type="date" name="date" id="absenceDateInput" max="{{ today()->toDateString() }}" value="{{ old('date', date('Y-m-d')) }}" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; outline: none; color-scheme: dark;" required>
                         @error('date')
                             <div style="color: #f87171; font-size: 0.75rem; margin-top: 6px; font-weight: 600;">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div>
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                        <label for="excuseReason" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
                             Reason for Absence <span style="color: #f87171;">*</span>
                         </label>
-                        <select name="reason" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; outline: none; transition: all 0.2s;" required>
+                        <select name="reason" id="excuseReason" style="width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.3); border: 1.5px solid rgba(255,215,145,0.12); border-radius: 10px; color: #f3e7cd; font-size: 0.95rem; outline: none; transition: all 0.2s;" required>
                             <option value="" style="background: #1a1a2e;">Select a reason</option>
                             <option value="Medical/Health Issues" {{ old('reason') == 'Medical/Health Issues' ? 'selected' : '' }} style="background: #1a1a2e;">Medical / Health Issues</option>
                             <option value="Family Emergency" {{ old('reason') == 'Family Emergency' ? 'selected' : '' }} style="background: #1a1a2e;">Family Emergency</option>
@@ -180,7 +164,7 @@
                 {{-- STEP 3: DETAILED DESCRIPTION --}}
                 <div style="margin-bottom: 24px;">
                     <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom: 8px;">
-                        <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin:0;">
+                        <label for="descInput" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin:0;">
                             Detailed Explanation <span style="color: #f87171;">*</span>
                         </label>
                         <span id="charCount" style="font-size:0.75rem; color: #888;">0 / 500</span>
@@ -193,14 +177,14 @@
 
                 {{-- STEP 4: SUPPORTING DOCUMENTS --}}
                 <div style="margin-bottom: 16px;">
-                    <label style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                    <label for="attachments" style="display: block; font-size: 0.75rem; font-weight: 700; color: #b39b82; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
                         Supporting Documents / Attachments (Optional)
                     </label>
                     
                     <div style="position:relative; width:100%;">
                         <input type="file" name="attachments[]" id="attachments" multiple 
                                accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" onchange="handleFileSelect(this)"
-                               style="position:absolute; left:-9999px;">
+                               class="visually-hidden">
                         
                         <label for="attachments" id="dropZone" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px; border:1.5px dashed rgba(207,164,111,0.35); border-radius: 12px; background: rgba(0,0,0,0.2); cursor:pointer; transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
                             <i class="bi bi-cloud-arrow-up" style="font-size:2.2rem; color: #cfa46f; margin-bottom:8px;"></i>
@@ -233,18 +217,6 @@
 
 @push('scripts')
 <script @cspNonce>
-function toggleSubjectCard(card, event) {
-    if (event.target.type === 'checkbox') {
-        updateSubjectSelectionState();
-        return;
-    }
-    const cb = card.querySelector('.subject-checkbox');
-    if (cb) {
-        cb.checked = !cb.checked;
-        updateSubjectSelectionState();
-    }
-}
-
 function selectAllSubjects(select) {
     const checkboxes = document.querySelectorAll('.subject-checkbox');
     checkboxes.forEach(cb => {

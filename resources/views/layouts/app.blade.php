@@ -50,7 +50,7 @@
     @endif
 </head>
 
-<body class="{{ Auth::check() && Auth::user()->isStudent() ? 'student-portal' : '' }} {{ Auth::check() && Auth::user()->isTeacher() ? 'teacher-portal' : '' }}" @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher()]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
 
     <!-- Skip to main content link for keyboard/screen readers -->
     <a href="#mainContent" class="visually-hidden-focusable" style="position: absolute; top: 8px; left: 8px; background: #cfa46f; color: #110A0A; padding: 8px 16px; border-radius: 8px; font-weight: 700; z-index: 10000; text-decoration: none;">
@@ -353,10 +353,6 @@
 
     <!-- System Toast Container (for websocket notifications) -->
     <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="false"></div>
-
-    @auth
-        <x-command-palette />
-    @endauth
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -829,10 +825,10 @@
 
         <!-- More Bottom Sheet -->
         <div class="more-sheet-overlay d-md-none" id="moreSheetOverlay" onclick="closeMoreSheet()"></div>
-        <div class="more-sheet d-md-none" id="moreSheet">
+        <div class="more-sheet d-md-none" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="moreSheetTitle" aria-hidden="true" inert>
             <div class="more-sheet-handle"></div>
             <div class="more-sheet-header">
-                <span class="more-sheet-title">More</span>
+                <span class="more-sheet-title" id="moreSheetTitle">More</span>
                 <button type="button" class="more-sheet-close" id="moreSheetCloseBtn" onclick="closeMoreSheet()" aria-label="Close More Menu">
                     <i class="bi bi-x-lg" style="pointer-events:none;"></i>
                 </button>
@@ -948,27 +944,34 @@
                 @else
                     <a href="{{ route('student.calendar') }}" class="more-sheet-item" data-color="gold" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-calendar-event-fill"></i></div>
-                        <span class="more-sheet-item-label">Calendar</span>
+                        <span class="more-sheet-item-label">School Calendar</span>
                     </a>
                     <a href="{{ route('excuses') }}" class="more-sheet-item" data-color="red" onclick="closeMoreSheet()">
                         <div class="more-sheet-item-icon"><i class="bi bi-file-text-fill"></i></div>
                         <span class="more-sheet-item-label">Excuses</span>
                     </a>
-                    <a href="{{ route('attendance.records') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
-                        <div class="more-sheet-item-icon"><i class="bi bi-clipboard-data-fill"></i></div>
-                        <span class="more-sheet-item-label">Records</span>
+                    <a href="{{ route('student.attendance.calendar') }}" class="more-sheet-item" data-color="green" onclick="closeMoreSheet()">
+                        <div class="more-sheet-item-icon"><i class="bi bi-calendar-check-fill"></i></div>
+                        <span class="more-sheet-item-label">Attendance Calendar</span>
                     </a>
-                    <a href="javascript:void(0)" onclick="closeMoreSheet(); if(typeof openSubjectBreakdownModal==='function'){openSubjectBreakdownModal();}else{window.location.href='{{ route('home') }}?open_breakdown=1';}" class="more-sheet-item" data-color="purple">
+                    <button type="button" onclick="closeMoreSheet(); if(typeof openSubjectBreakdownModal==='function'){openSubjectBreakdownModal();}else{window.location.href='{{ route('home') }}?open_breakdown=1';}" class="more-sheet-item" data-color="purple">
                         <div class="more-sheet-item-icon"><i class="bi bi-pie-chart-fill"></i></div>
                         <span class="more-sheet-item-label">Breakdown</span>
-                    </a>
+                    </button>
                 @endif
             </div>
         </div>
         <script @cspNonce>
+        let moreSheetReturnFocus = null;
+        let moreSheetPreviousOverflow = '';
         window.openMoreSheet = function() {
             var overlay = document.getElementById('moreSheetOverlay');
             var sheet = document.getElementById('moreSheet');
+            if (!sheet || sheet.classList.contains('open')) return;
+            moreSheetReturnFocus = document.activeElement;
+            moreSheetPreviousOverflow = document.body.style.overflow;
+            sheet.inert = false;
+            sheet.setAttribute('aria-hidden', 'false');
             if (sheet) {
                 sheet.style.transform = '';
                 sheet.style.transition = '';
@@ -988,31 +991,48 @@
             });
             document.querySelectorAll('.mbn-item-more').forEach(function(btn) {
                 btn.classList.add('active', 'is-open');
+                btn.setAttribute('aria-expanded', 'true');
             });
+            document.getElementById('moreSheetCloseBtn')?.focus({ preventScroll: true });
         };
 
         window.closeMoreSheet = function() {
             var overlay = document.getElementById('moreSheetOverlay');
             var sheet = document.getElementById('moreSheet');
+            if (!sheet || !sheet.classList.contains('open')) return;
             if (overlay) {
                 overlay.classList.remove('show');
             }
             if (sheet) {
                 sheet.classList.remove('open');
                 sheet.style.transform = '';
+                if (sheet.contains(document.activeElement)) moreSheetReturnFocus?.focus({ preventScroll: true });
+                sheet.inert = true;
+                sheet.setAttribute('aria-hidden', 'true');
             }
-            document.body.style.overflow = '';
+            document.body.style.overflow = moreSheetPreviousOverflow;
 
             // Restore previous active tab
             document.querySelectorAll('.mbn-item-more').forEach(function(btn) {
                 btn.classList.remove('active', 'is-open');
-                btn.blur();
+                btn.setAttribute('aria-expanded', 'false');
             });
             document.querySelectorAll('.mobile-bottom-nav .mbn-item[data-was-active="true"]').forEach(function(item) {
                 item.classList.add('active');
                 item.removeAttribute('data-was-active');
             });
         };
+
+        document.addEventListener('keydown', function(event) {
+            const sheet = document.getElementById('moreSheet');
+            if (!sheet?.classList.contains('open')) return;
+            if (event.key === 'Escape') { event.preventDefault(); window.closeMoreSheet(); return; }
+            if (event.key !== 'Tab') return;
+            const items = Array.from(sheet.querySelectorAll('a[href], button:not([disabled]), [tabindex="0"]')).filter(item => item.getClientRects().length);
+            const first = items[0], last = items[items.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        });
 
         // Fallback listener for any more buttons and close buttons
         document.addEventListener('DOMContentLoaded', function() {
@@ -1056,6 +1076,7 @@
                 if (e.target.closest('.more-sheet-close, #moreSheetCloseBtn, button, a')) return;
                 if (sheet.scrollTop > 0) return;
                 startY = e.touches[0].clientY;
+                currentY = startY;
                 isDragging = true;
             }, { passive: true });
 
@@ -1089,7 +1110,7 @@
         });
 
         window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
+            if (window.innerWidth >= 768) {
                 if (typeof window.closeMoreSheet === 'function') {
                     window.closeMoreSheet();
                 }

@@ -254,15 +254,15 @@
     .excuse-rejected { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
 
     /* Modal styles */
-    .modal-overlay {
+    :is(#excuseModal, #correctionModal) {
         position: fixed; top: 0; left: 0; right: 0; bottom: 0;
         background: rgba(0,0,0,0.7); z-index: 9999;
         display: none; align-items: center; justify-content: center;
         padding: 20px; backdrop-filter: blur(8px);
     }
-    .modal-overlay.active { display: flex; }
+    :is(#excuseModal, #correctionModal).active { display: flex; }
     
-    .modal-content {
+    :is(#excuseModal, #correctionModal) .modal-content {
         background: #180c0e; border-radius: 24px;
         border: 1px solid rgba(255,255,255,0.1);
         max-width: 500px; width: 100%;
@@ -276,90 +276,90 @@
         to   { transform: scale(1) translateY(0);    opacity: 1; }
     }
     
-    .modal-header {
+    :is(#excuseModal, #correctionModal) .modal-header {
         padding: 24px 28px 20px; border-bottom: 1px solid rgba(255,255,255,0.06);
         display: flex; align-items: center; justify-content: space-between;
         background: rgba(255,255,255,0.02);
     }
-    .modal-title {
+    :is(#excuseModal, #correctionModal) .modal-title {
         font-size: 1.1rem; font-weight: 800; color: #fde68a;
     }
-    .modal-close {
+    :is(#excuseModal, #correctionModal) .modal-close {
         background: rgba(255,255,255,0.06); border: none; border-radius: 10px;
         width: 34px; height: 34px; cursor: pointer; font-size: 1.1rem;
         display: flex; align-items: center; justify-content: center;
         color: rgba(245,234,215,0.6); transition: all 0.2s;
     }
-    .modal-close:hover { background: rgba(255,255,255,0.1); color: white; transform: rotate(90deg); }
+    :is(#excuseModal, #correctionModal) .modal-close:hover { background: rgba(255,255,255,0.1); color: white; transform: rotate(90deg); }
     
-    .modal-body {
+    :is(#excuseModal, #correctionModal) .modal-body {
         padding: 28px;
     }
     
-    .form-group {
+    :is(#excuseModal, #correctionModal) .form-group {
         margin-bottom: 24px;
     }
-    .form-label {
+    :is(#excuseModal, #correctionModal) .form-label {
         display: block; font-size: 0.8rem; font-weight: 700;
         color: rgba(245,234,215,0.7); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .form-input, .form-textarea, .form-select {
+    :is(#excuseModal, #correctionModal) .form-input, :is(#excuseModal, #correctionModal) .form-textarea, :is(#excuseModal, #correctionModal) .form-select {
         width: 100%; padding: 14px 18px; 
         border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
         font-size: 0.9rem; font-family: 'Inter', sans-serif;
         background: rgba(0,0,0,0.3); color: white; outline: none;
         transition: all 0.2s;
     }
-    .form-input:focus, .form-textarea:focus, .form-select:focus {
+    :is(#excuseModal, #correctionModal) .form-input:focus, :is(#excuseModal, #correctionModal) .form-textarea:focus, :is(#excuseModal, #correctionModal) .form-select:focus {
         border-color: rgba(216,179,92,0.4); background: rgba(0,0,0,0.5);
         box-shadow: 0 0 0 4px rgba(216,179,92,0.1);
     }
-    .form-select {
+    :is(#excuseModal, #correctionModal) .form-select {
         background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23fde68a' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
         background-position: right 14px center;
         background-repeat: no-repeat;
         background-size: 16px 12px;
         padding-right: 40px;
     }
-    .form-textarea {
+    :is(#excuseModal, #correctionModal) .form-textarea {
         resize: vertical; min-height: 120px;
     }
-    .form-select option {
+    :is(#excuseModal, #correctionModal) .form-select option {
         background: #180c0e; color: white;
     }
     
-    .excuse-details {
+    :is(#excuseModal, #correctionModal) .excuse-details {
         padding: 20px; background: rgba(255,255,255,0.03);
         border: 1px solid rgba(255,255,255,0.06); border-radius: 16px;
         font-size: 0.9rem; color: rgba(245,234,215,0.8);
         margin-bottom: 24px;
     }
     
-    .modal-footer {
+    :is(#excuseModal, #correctionModal) .modal-footer {
         padding: 20px 28px 28px; 
         display: flex; gap: 14px; justify-content: flex-end;
         border-top: 1px solid rgba(255,255,255,0.06);
         background: rgba(255,255,255,0.01);
     }
-    .btn {
+    :is(#excuseModal, #correctionModal) .btn {
         padding: 12px 24px; border-radius: 12px; font-size: 0.85rem;
         font-weight: 700; cursor: pointer; transition: all 0.2s;
         border: none; display: inline-flex; align-items: center; gap: 8px;
         text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .btn-primary {
+    :is(#excuseModal, #correctionModal) .btn-primary {
         background: linear-gradient(135deg, #cfa46f, #b38855) !important; color: #1a0f0d !important;
         box-shadow: 0 8px 20px rgba(207,164,111,0.25);
     }
-    .btn-primary:hover {
+    :is(#excuseModal, #correctionModal) .btn-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 12px 28px rgba(207,164,111,0.35);
     }
-    .btn-secondary {
+    :is(#excuseModal, #correctionModal) .btn-secondary {
         background: rgba(255,255,255,0.08) !important; color: white !important; 
         border: 1px solid rgba(255,255,255,0.1) !important;
     }
-    .btn-secondary:hover {
+    :is(#excuseModal, #correctionModal) .btn-secondary:hover {
         background: rgba(255,255,255,0.12) !important;
     }
     
@@ -456,7 +456,7 @@
             font-size: 0.8rem;
             padding: 8px 12px;
         }
-        
+    }
     /* ── ADDITIONAL MOBILE RESPONSIVENESS ── */
     @media (max-width: 768px) {
         .records-page {
@@ -505,35 +505,35 @@
             padding: 6px 12px;
         }
 
-        .modal-content {
+        :is(#excuseModal, #correctionModal) .modal-content {
             margin: 10px;
             max-width: calc(100vw - 20px);
             border-radius: 16px;
         }
-        .modal-header {
+        :is(#excuseModal, #correctionModal) .modal-header {
             padding: 20px 24px 16px;
         }
-        .modal-body {
+        :is(#excuseModal, #correctionModal) .modal-body {
             padding: 24px;
         }
-        .modal-footer {
+        :is(#excuseModal, #correctionModal) .modal-footer {
             padding: 16px 24px 24px;
             flex-direction: column;
             gap: 12px;
         }
-        .btn {
+        :is(#excuseModal, #correctionModal) .btn {
             width: 100%;
             justify-content: center;
             min-height: 48px;
         }
-        .modal-title {
+        :is(#excuseModal, #correctionModal) .modal-title {
             font-size: 0.95rem;
         }
-        .excuse-details {
+        :is(#excuseModal, #correctionModal) .excuse-details {
             padding: 16px;
             margin-bottom: 20px;
         }
-        .form-group {
+        :is(#excuseModal, #correctionModal) .form-group {
             margin-bottom: 20px;
         }
     }
@@ -604,6 +604,7 @@
                 <button class="filter-tab" aria-pressed="false" onclick="filterTable('Present', this)">Present</button>
                 <button class="filter-tab" aria-pressed="false" onclick="filterTable('Late', this)">Late</button>
                 <button class="filter-tab" aria-pressed="false" onclick="filterTable('Absent', this)">Absent</button>
+                <button class="filter-tab" aria-pressed="false" onclick="filterTable('Escaped', this)">Escaped</button>
                 <button class="filter-tab" aria-pressed="false" onclick="filterTable('Excused', this)">Excused</button>
             </div>
         </div>
@@ -615,7 +616,7 @@
         <!-- Mobile-first Card Layout -->
         <div class="records-container" id="recordsContainer">
             @forelse($records as $i => $record)
-            <div class="record-card" data-status="{{ $record->status }}" data-excused="{{ $record->excused ? '1' : '0' }}">
+            <div class="record-card" data-status="{{ $record->status }}" data-excused="{{ $record->excused || $record->status === 'Excused' ? '1' : '0' }}">
                 @php
                     $dayName = \Carbon\Carbon::parse($record->date)->format('l');
                     $sched = $record->subject?->schedules?->firstWhere('day', $dayName) ?? $record->subject?->schedules?->first();
@@ -635,14 +636,16 @@
                         </div>
                     </div>
                     <div class="record-status">
-                        @if($record->excused)
+                        @if($record->excused || $record->status === 'Excused')
                             <span class="status-badge badge-excused">Excused</span>
                         @elseif($record->status === 'Present')
                             <span class="status-badge badge-present">Present</span>
                         @elseif($record->status === 'Late')
                             <span class="status-badge badge-late">Late</span>
-                        @else
+                        @elseif($record->status === 'Absent')
                             <span class="status-badge badge-absent">Absent</span>
+                        @else
+                            <span class="status-badge badge-absent">{{ $record->status }}</span>
                         @endif
                     </div>
                 </div>
@@ -671,7 +674,7 @@
                     
                     <div class="record-actions" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                         @if($record->status === 'Absent' && !$record->excuseSubmission)
-                            <button class="excuse-btn" onclick="openExcuseModal({{ $record->id }}, '{{ addslashes($record->subject->name ?? $record->subject_code) }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')">
+                            <button class="excuse-btn" onclick="openExcuseModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}')">
                                 <i class="bi bi-file-text"></i> Submit Excuse
                             </button>
                         @elseif($record->excuseSubmission)
@@ -686,7 +689,7 @@
                                 <i class="bi bi-patch-question"></i> Appeal: {{ ucfirst($record->correction->status) }}
                             </span>
                         @elseif(in_array($record->status, ['Late', 'Absent']))
-                            <button type="button" class="excuse-btn" style="background:rgba(255,255,255,0.06) !important; color:#e2e8f0 !important; border-color:rgba(255,255,255,0.15) !important;" onclick="openCorrectionModal({{ $record->id }}, '{{ addslashes($record->subject->name ?? $record->subject_code) }}', '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}', '{{ $record->status }}')">
+                            <button type="button" class="excuse-btn" style="background:rgba(255,255,255,0.06) !important; color:#e2e8f0 !important; border-color:rgba(255,255,255,0.15) !important;" onclick="openCorrectionModal({{ $record->id }}, {{ Illuminate\Support\Js::from($record->subject->name ?? $record->subject_code) }}, '{{ \Carbon\Carbon::parse($record->date)->format('M d, Y') }}', '{{ $record->status }}')">
                                 <i class="bi bi-pencil-square"></i> Appeal Record
                             </button>
                         @endif
@@ -705,11 +708,11 @@
 </div>
 
 <!-- Excuse Submission Modal -->
-<div class="modal-overlay" id="excuseModal" role="dialog" aria-modal="true" aria-labelledby="excuseModalTitle">
+<div class="modal-overlay" id="excuseModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="excuseModalTitle">
     <div class="modal-content">
         <div class="modal-header">
             <div class="modal-title" id="excuseModalTitle">Submit Excuse</div>
-            <button class="modal-close" onclick="closeExcuseModal()">✕</button>
+            <button type="button" class="modal-close" aria-label="Close excuse form" onclick="closeExcuseModal()">✕</button>
         </div>
         <form id="excuseForm" method="POST" action="{{ route('excuses.store') }}" enctype="multipart/form-data">
             @csrf
@@ -753,11 +756,11 @@
 </div>
 
 <!-- Attendance Correction / Appeal Modal -->
-<div class="modal-overlay" id="correctionModal" role="dialog" aria-modal="true" aria-labelledby="corrModalTitle">
+<div class="modal-overlay" id="correctionModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="corrModalTitle">
     <div class="modal-content">
         <div class="modal-header">
             <div class="modal-title" id="corrModalTitle">Appeal Attendance Record</div>
-            <button class="modal-close" onclick="closeCorrectionModal()">✕</button>
+            <button type="button" class="modal-close" aria-label="Close appeal form" onclick="closeCorrectionModal()">✕</button>
         </div>
         <form id="correctionForm" method="POST" action="{{ route('corrections.store') }}">
             @csrf
@@ -782,39 +785,75 @@
 </div>
 
 <script @cspNonce>
+// Keep these dialogs outside the page's animation and stacking contexts.
+['excuseModal', 'correctionModal'].forEach(id => document.body.appendChild(document.getElementById(id)));
+let recordDialogReturnFocus = null;
+let recordDialogPreviousOverflow = '';
+function recordText(value) {
+    const element = document.createElement('span');
+    element.textContent = String(value ?? '');
+    return element.innerHTML;
+}
+function showRecordDialog(id) {
+    const dialog = document.getElementById(id);
+    recordDialogReturnFocus = document.activeElement;
+    recordDialogPreviousOverflow = document.body.style.overflow;
+    dialog.setAttribute('aria-hidden', 'false');
+    dialog.classList.add('active');
+    document.body.classList.add('student-record-dialog-open');
+    document.body.style.overflow = 'hidden';
+    dialog.querySelector('select, textarea, input:not([type="hidden"])')?.focus({ preventScroll: true });
+}
+function hideRecordDialog(id) {
+    const dialog = document.getElementById(id);
+    if (!dialog.classList.contains('active')) return;
+    dialog.classList.remove('active');
+    recordDialogReturnFocus?.focus({ preventScroll: true });
+    dialog.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('student-record-dialog-open');
+    document.body.style.overflow = recordDialogPreviousOverflow;
+}
+document.addEventListener('keydown', event => {
+    const dialog = document.querySelector('#excuseModal.active, #correctionModal.active');
+    if (!dialog || event.key !== 'Tab') return;
+    const controls = Array.from(dialog.querySelectorAll('button:not([disabled]), input:not([type="hidden"]):not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href]')).filter(control => control.getClientRects().length);
+    const first = controls[0], last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+});
 function openExcuseModal(attendanceId, subjectName, date) {
     document.getElementById('attendanceId').value = attendanceId;
     document.getElementById('excuseDetails').innerHTML = `
-        <div style="font-weight: 700; color: #fde68a; margin-bottom: 6px; font-size: 1.05rem;">${subjectName}</div>
-        <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7); margin-bottom: 4px;"><strong style="color: rgba(245,234,215,0.9);">Date:</strong> ${date}</div>
+        <div style="font-weight: 700; color: #fde68a; margin-bottom: 6px; font-size: 1.05rem;">${recordText(subjectName)}</div>
+        <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7); margin-bottom: 4px;"><strong style="color: rgba(245,234,215,0.9);">Date:</strong> ${recordText(date)}</div>
         <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7);">
             <strong style="color: rgba(245,234,215,0.9);">Status:</strong> 
             <span style="display:inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(239,68,68,0.15); color: #f87171; font-weight: 700; margin-left: 4px; font-size: 0.75rem;">Absent</span>
         </div>
     `;
-    document.getElementById('excuseModal').classList.add('active');
+    showRecordDialog('excuseModal');
 }
 
 function closeExcuseModal() {
-    document.getElementById('excuseModal').classList.remove('active');
+    hideRecordDialog('excuseModal');
     document.getElementById('excuseForm').reset();
 }
 
 function openCorrectionModal(attendanceId, subjectName, date, currentStatus) {
     document.getElementById('corrAttendanceId').value = attendanceId;
     document.getElementById('corrDetails').innerHTML = `
-        <div style="font-weight: 700; color: #fde68a; margin-bottom: 6px; font-size: 1.05rem;">${subjectName}</div>
-        <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7); margin-bottom: 4px;"><strong style="color: rgba(245,234,215,0.9);">Date:</strong> ${date}</div>
+        <div style="font-weight: 700; color: #fde68a; margin-bottom: 6px; font-size: 1.05rem;">${recordText(subjectName)}</div>
+        <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7); margin-bottom: 4px;"><strong style="color: rgba(245,234,215,0.9);">Date:</strong> ${recordText(date)}</div>
         <div style="font-size: 0.85rem; color: rgba(245,234,215,0.7);">
             <strong style="color: rgba(245,234,215,0.9);">Recorded Status:</strong> 
-            <span style="display:inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(245,158,11,0.15); color: #fbbf24; font-weight: 700; margin-left: 4px; font-size: 0.75rem;">${currentStatus}</span>
+            <span style="display:inline-block; padding: 2px 8px; border-radius: 6px; background: rgba(245,158,11,0.15); color: #fbbf24; font-weight: 700; margin-left: 4px; font-size: 0.75rem;">${recordText(currentStatus)}</span>
         </div>
     `;
-    document.getElementById('correctionModal').classList.add('active');
+    showRecordDialog('correctionModal');
 }
 
 function closeCorrectionModal() {
-    document.getElementById('correctionModal').classList.remove('active');
+    hideRecordDialog('correctionModal');
     document.getElementById('correctionForm').reset();
 }
 
@@ -879,6 +918,19 @@ applyRecordFilters();
 
 <style>
 /* FINAL OVERRIDE - Place at end to ensure it takes precedence */
+:is(#excuseModal, #correctionModal) .modal-content { display: flex; flex-direction: column; max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+:is(#excuseModal, #correctionModal) form { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+:is(#excuseModal, #correctionModal) .modal-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+:is(#excuseModal, #correctionModal) :is(.modal-header, .modal-footer) { flex-shrink: 0; }
+:is(#excuseModal, #correctionModal) .modal-close { width: 44px; height: 44px; flex-shrink: 0; }
+:is(#excuseModal, #correctionModal) .modal-footer { flex-wrap: wrap; gap: 10px; }
+body.student-record-dialog-open .mobile-bottom-nav { visibility: hidden; }
+@media (max-width: 575.98px) {
+    :is(#excuseModal, #correctionModal) { padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+    :is(#excuseModal, #correctionModal) :is(.modal-header, .modal-body, .modal-footer) { padding: 16px; }
+    :is(#excuseModal, #correctionModal) .modal-footer { flex-direction: row; }
+    :is(#excuseModal, #correctionModal) .modal-footer > button { flex: 1 1 140px; justify-content: center; min-height: 44px; }
+}
 .modal-overlay#excuseModal .modal-content .modal-footer button.btn.btn-primary,
 .modal-overlay#excuseModal .modal-content .modal-footer button[type="submit"],
 #excuseModal button.btn-primary,

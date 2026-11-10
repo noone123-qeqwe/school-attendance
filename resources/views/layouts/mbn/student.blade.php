@@ -1,4 +1,4 @@
-<nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav">
+<nav class="mobile-bottom-nav d-md-none" id="mobileBottomNav" aria-label="Student navigation">
     <a href="{{ route('home') }}" class="mbn-item {{ request()->routeIs('home') && !request()->has('open_scanner') ? 'active' : '' }}">
         <i class="bi bi-grid-fill"></i>
         <span>Home</span>
@@ -26,7 +26,7 @@
         <i class="bi bi-clipboard-data-fill"></i>
         <span>Records</span>
     </a>
-    <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" style="background:transparent;border:none;outline:none;cursor:pointer;">
+    <button type="button" class="mbn-item mbn-item-more" onclick="openMoreSheet()" aria-label="Open More Menu" aria-haspopup="dialog" aria-controls="moreSheet" aria-expanded="false" style="background:transparent;border:none;outline:none;cursor:pointer;">
         <i class="bi bi-grid-3x3-gap-fill"></i>
         <span>More</span>
     </button>

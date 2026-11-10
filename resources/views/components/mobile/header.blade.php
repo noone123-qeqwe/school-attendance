@@ -181,6 +181,26 @@
                 link.classList.add('mobile-menu-link');
                 menuLinks.appendChild(link);
             });
+            @if(auth()->user()?->isStudent())
+            [
+                ['Attendance Calendar', @json(route('student.attendance.calendar')), 'calendar-check'],
+                ['School Calendar', @json(route('student.calendar')), 'calendar-event'],
+                ['Excuses', @json(route('excuses')), 'file-text'],
+                ['Notifications', @json(route('notifications')), 'bell'],
+                ['Settings', @json(route('settings')), 'gear'],
+            ].forEach(([label, url, icon]) => {
+                const link = document.createElement('a');
+                link.href = url;
+                link.className = 'nav-item mobile-menu-link';
+                const glyph = document.createElement('i');
+                glyph.className = 'bi bi-' + icon;
+                glyph.setAttribute('aria-hidden', 'true');
+                const text = document.createElement('span');
+                text.textContent = label;
+                link.append(glyph, text);
+                menuLinks.appendChild(link);
+            });
+            @endif
             const closeMenu = function() {
                 menu.hidden = true;
                 backdrop.hidden = true;

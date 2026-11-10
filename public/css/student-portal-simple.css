@@ -48,6 +48,7 @@ body.student-portal[data-student-layout] :is(.ent-btn, .cor-btn-action, .filter-
     min-height: 44px; border-radius: 9px !important; box-shadow: none !important; font-weight: 600 !important;
 }
 body.student-portal[data-student-layout] .sidebar { box-shadow: none !important; }
+body.student-portal button.more-sheet-item { width: 100%; font: inherit; text-align: left; }
 body.student-portal[data-student-layout] .sidebar .sidebar-head { border: 0; background: none; box-shadow: none; }
 body.student-portal[data-student-layout] .sidebar .nav-link.active { box-shadow: inset 3px 0 #cfa46f; }
 .student-nav-label { padding: 16px 20px 5px; color: #b39b82; font-size: .7rem; font-weight: 600; }
@@ -109,6 +110,7 @@ body.student-portal[data-student-layout] .records-container { padding: 22px !imp
 body.student-portal[data-student-layout] .record-card { border-radius: 12px; box-shadow: none; }
 body.student-portal[data-student-layout] .record-header { padding: 18px !important; gap: 12px; align-items: flex-start; }
 body.student-portal[data-student-layout] .record-subject h4 { font-size: 1rem !important; line-height: 1.5; }
+body.student-portal[data-student-layout] :is(.record-subject, .record-details, .record-meta, .cor-card-item, .student-page-header > div) { min-width: 0; overflow-wrap: anywhere; }
 body.student-portal[data-student-layout] .record-body { padding: 0 18px 18px; gap: 16px; }
 body.student-portal[data-student-layout] .record-meta { gap: 6px 10px; flex-wrap: wrap; }
 body.student-portal[data-student-layout] .records-page .page-header .d-md-none { display: none !important; }
@@ -133,6 +135,19 @@ body.student-portal[data-student-layout] .student-excuse-page { padding: 0 !impo
 body.student-portal[data-student-layout] .student-excuse-form { padding: 0 !important; }
 body.student-portal[data-student-layout] .student-excuse-form > header { padding: 0 !important; }
 body.student-portal[data-student-layout] .student-excuse-form :is(input:not([type=checkbox]):not([type=radio]), select, textarea) { border-radius: 9px; min-height: 44px; }
+body.student-portal[data-student-layout] .student-excuse-form #subjectsGrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)) !important; }
+.student-excuse-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+.student-excuse-fields > div { min-width: 0; }
+.student-excuse-selection-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+body.student-portal .student-excuse-form :is(.quick-date-btn, .quick-sub-btn) { min-height: 44px; }
+body.student-portal .excuse-subject-card { min-width: 0; margin: 0; }
+.student-excuse-subject-copy { flex: 1; min-width: 0; }
+.student-excuse-subject-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.student-excuse-subject-name { display: block; color: #f3e7cd; font-size: .9rem; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.student-excuse-subject-teacher { display: block; color: #b39b82; font-size: .8rem; margin-top: 4px; overflow-wrap: anywhere; }
+body.student-portal .excuse-subject-card:focus-within,
+body.student-portal .student-excuse-form :is(div:focus-within > #dropZone) { outline: 2px solid #cfa46f; outline-offset: 3px; }
+body.student-portal .student-excuse-form #subjectsGrid [title] { white-space: normal !important; overflow-wrap: anywhere; }
 .student-view-switcher { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 22px; }
 .student-view-switcher button { min-height: 44px; border-radius: 9px; padding: 10px 16px; border: 1px solid var(--student-border); background: transparent; color: #b39b82; font-size: .85rem; font-weight: 600; }
 .student-view-switcher button[aria-pressed=true] { background: rgba(207,164,111,.12); color: #f5dfa8; border-color: var(--student-border-strong); }
@@ -193,6 +208,10 @@ body.student-mobile-portal[data-student-layout] .mobile-home .section-title { fo
     body.student-portal[data-student-layout] .scal-side { grid-template-columns: minmax(0,1fr); }
     body.student-portal[data-student-layout] .scal-legend-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
     body.student-portal[data-student-layout] .student-excuse-form form > div { padding: 20px 16px !important; }
+    .student-excuse-fields { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    body.student-portal .student-excuse-form form > div:last-child { flex-wrap: wrap; gap: 10px !important; }
+    body.student-portal .student-excuse-form form > div:last-child > :is(a, button) { flex: 1 1 150px; justify-content: center; }
+    body.student-portal :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not(.code-entry-input), select, textarea) { font-size: 16px !important; max-width: 100%; }
     .student-view-switcher button { flex: 1; padding-inline: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {

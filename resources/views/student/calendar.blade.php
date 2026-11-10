@@ -381,7 +381,7 @@
             <button class="scal-nav-btn" onclick="scalPrevMonth()" title="Previous month" aria-label="Previous month">
                 <i class="bi bi-chevron-left"></i>
             </button>
-            <span class="scal-nav-title" id="scalMonthLabel">{{ \Carbon\Carbon::create($year, $month)->format('F Y') }}</span>
+            <span class="scal-nav-title" id="scalMonthLabel" aria-live="polite">{{ \Carbon\Carbon::create($year, $month)->format('F Y') }}</span>
             <button class="scal-nav-btn" onclick="scalNextMonth()" title="Next month" aria-label="Next month">
                 <i class="bi bi-chevron-right"></i>
             </button>
@@ -395,7 +395,9 @@
         </div>
 
         {{-- Day grid (rendered by JS) --}}
-        <div class="scal-grid" id="scalGrid"></div>
+        <p id="scalLoadStatus" role="status" hidden></p>
+        <button type="button" class="ent-btn ent-btn-secondary" id="scalRetryButton" onclick="scalLoadAndRender('none')" hidden>Retry loading calendar</button>
+        <div class="scal-grid" id="scalGrid" aria-label="School calendar days"></div>
     </div>
 
     {{-- SIDE PANEL --}}
@@ -532,13 +534,23 @@ const STATUS_CLASS = {
 };
 
 /* ── Fetch events for a month range ─────────────────────── */
-function scalFetchEvents(year, month, cb) {
+let scalRequestId = 0;
+let scalRequestController;
+async function scalFetchEvents(year, month, cb) {
+    const requestId = ++scalRequestId;
+    scalRequestController?.abort();
+    const controller = new AbortController();
+    scalRequestController = controller;
+    const timeout = setTimeout(() => controller.abort(), 12000);
     const start = `${year}-${String(month).padStart(2,'0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const end   = `${year}-${String(month).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
-    fetch(`{{ route('student.calendar.data') }}?start=${start}&end=${end}`)
-        .then(r => r.json())
-        .then(data => {
+    try {
+            const response = await fetch(`{{ route('student.calendar.data') }}?start=${start}&end=${end}`, { signal: controller.signal, headers: { Accept: 'application/json' } });
+            if (!response.ok) throw new Error('Calendar request failed');
+            const data = await response.json();
+            if (!Array.isArray(data)) throw new Error('Invalid calendar response');
+            if (requestId !== scalRequestId) return;
             // Clear previous month data
             Object.keys(scalEventMap).forEach(k => delete scalEventMap[k]);
             data.forEach(ev => {
@@ -549,8 +561,17 @@ function scalFetchEvents(year, month, cb) {
                 scalEventMap[dateStr].push(ev);
             });
             cb();
-        })
-        .catch(() => cb()); // render even on error
+    } catch (error) {
+        if (requestId !== scalRequestId) return;
+        document.getElementById('scalGrid').replaceChildren();
+        const status = document.getElementById('scalLoadStatus');
+        status.textContent = 'The calendar could not load. Check your connection and try again.';
+        status.hidden = false;
+        document.getElementById('scalRetryButton').hidden = false;
+    } finally {
+        clearTimeout(timeout);
+        if (requestId === scalRequestId) document.getElementById('scalGrid').setAttribute('aria-busy', 'false');
+    }
 }
 
 /* ── Derive dominant status for a day ───────────────────── */
@@ -615,7 +636,7 @@ function scalRender() {
         const dotStyle = status ? '' : 'opacity:0;';
 
         html += `
-        <div class="${classes}" data-date="${dateStr}" role="button" tabindex="0" onclick="scalDayClick('${dateStr}')">
+        <div class="${classes}" data-date="${dateStr}" role="button" tabindex="0" aria-label="${MONTH_NAMES[scalMonth - 1]} ${d}, ${scalYear}${status ? ', ' + status : ''}">
             <span class="scal-num">${d}</span>
             <span class="scal-dot" style="${dotStyle}"></span>
         </div>`;
@@ -651,9 +672,13 @@ function scalNextMonth() {
     scalLoadAndRender();
 }
 
-function scalLoadAndRender() {
+function scalLoadAndRender(historyMode = 'push') {
     // Show loading state
     const grid = document.getElementById('scalGrid');
+    grid.setAttribute('aria-busy', 'true');
+    document.getElementById('scalLoadStatus').hidden = true;
+    document.getElementById('scalRetryButton').hidden = true;
+    document.getElementById('scalMonthLabel').textContent = MONTH_NAMES[scalMonth - 1] + ' ' + scalYear;
     grid.innerHTML = Array(35).fill('<div class="scal-tile loading"></div>').join('');
 
     scalFetchEvents(scalYear, scalMonth, () => scalRender());
@@ -662,8 +687,19 @@ function scalLoadAndRender() {
     const url = new URL(window.location);
     url.searchParams.set('year',  scalYear);
     url.searchParams.set('month', scalMonth);
-    window.history.pushState({}, '', url);
+    if (historyMode === 'push') window.history.pushState({}, '', url);
+    else if (historyMode === 'replace') window.history.replaceState({}, '', url);
 }
+
+window.addEventListener('popstate', () => {
+    const params = new URL(location.href).searchParams;
+    const year = Number(params.get('year'));
+    const month = Number(params.get('month'));
+    const today = new Date();
+    scalYear = Number.isInteger(year) && year >= 1900 && year <= 2200 ? year : today.getFullYear();
+    scalMonth = Number.isInteger(month) && month >= 1 && month <= 12 ? month : today.getMonth() + 1;
+    scalLoadAndRender('none');
+});
 
 /* ── Day click → Day Summary Modal ─────────────────────── */
 function scalDayClick(dateStr) {
@@ -798,7 +834,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (edm && edm.parentNode !== document.body) document.body.appendChild(edm);
     const dsm = document.getElementById('daySummaryModal');
     if (dsm && dsm.parentNode !== document.body) document.body.appendChild(dsm);
-    scalLoadAndRender();
+    scalLoadAndRender('replace');
 
     // Touch swipe for mobile
     let tx = 0, ty = 0;

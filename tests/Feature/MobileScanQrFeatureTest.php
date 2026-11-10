@@ -54,7 +54,7 @@ class MobileScanQrFeatureTest extends TestCase
         ]);
     }
 
-    public function test_mobile_home_renders_scan_button_and_scanner_modal(): void
+    public function test_mobile_home_launches_the_dedicated_scanner_page(): void
     {
         $response = $this->actingAs($this->student)
             ->get(route('mobile.home'));
@@ -69,7 +69,10 @@ class MobileScanQrFeatureTest extends TestCase
         // Check Quick Action Scan button on home
         $response->assertSee('id="quickActionScanBtn"', false);
 
-        // Check Scanner modal is included in the DOM for students
+        $response->assertDontSee('id="studentScannerModal"', false);
+        $response = $this->get(route('mobile.scan'))->assertOk();
+
+        // The camera and code controls belong to the dedicated scanner screen.
         $response->assertSee('id="studentScannerModal"', false);
         $response->assertSee('id="scannerActiveView"', false);
         $response->assertSee('id="reader"', false);
@@ -117,7 +120,8 @@ class MobileScanQrFeatureTest extends TestCase
             ->assertDontSee('Check in for a Classmate');
 
         $otherSection->enrolledStudents()->attach($this->student->id);
-        $this->get(route('mobile.home'))->assertOk()->assertSee('Other Section Class');
+        // Explicit enrollment does not expose another section's timetable.
+        $this->get(route('mobile.home'))->assertOk()->assertDontSee('Other Section Class');
     }
 
     public function test_dedicated_mobile_scan_page_renders_cleanly(): void
@@ -238,7 +242,7 @@ class MobileScanQrFeatureTest extends TestCase
     {
         $response = $this->actingAs($this->student)
             ->withSession(['user_role' => 'student'])
-            ->get(route('mobile.home'));
+            ->get(route('mobile.scan'));
 
         $response->assertOk();
         $response->assertSee('id="directSessionCodeInput"', false);
@@ -253,7 +257,7 @@ class MobileScanQrFeatureTest extends TestCase
     {
         $response = $this->actingAs($this->student)
             ->withSession(['user_role' => 'student'])
-            ->get(route('mobile.home'));
+            ->get(route('mobile.scan'));
 
         $response->assertOk();
 

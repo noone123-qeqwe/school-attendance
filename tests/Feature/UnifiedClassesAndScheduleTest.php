@@ -64,6 +64,7 @@ class UnifiedClassesAndScheduleTest extends TestCase
 
     public function test_unified_schedule_displays_all_required_subject_data(): void
     {
+        $this->student->update(['section' => '1 1423']);
         // Teacher user
         $teacher = User::factory()->teacher()->create([
             'name' => 'Mr Leonardo Jr D. Ricalde',

@@ -29,6 +29,7 @@
 .student-settings-link-arrow { font-size: .72rem; color: var(--text-muted); }
 .student-settings-no-results { color: var(--text-muted); font-size: .85rem; line-height: 1.6; padding: 12px; }
 .student-settings-detail-heading { margin: 0 0 24px; }
+.student-settings-detail-heading, .sp.student-settings[data-student-settings] { scroll-margin-top: 88px; }
 .student-settings-detail-heading h2 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); letter-spacing: -.025em; }
 .student-settings-detail-heading p { color: var(--text-muted); font-size: .87rem; line-height: 1.6; margin: 0; max-width: 62ch; }
 .student-settings-back { display: none; }
@@ -115,4 +116,10 @@
     .sp.student-settings[data-student-settings] .sec-card-header-line { align-items: flex-start; flex-direction: column; gap: 7px; }
     .sp.student-settings[data-student-settings] .sec-card-top { gap: 12px; }
     .sp.student-settings[data-student-settings] .sec-card-icon { width: 36px; height: 36px; flex-shrink: 0; }
+}
+@media (min-width: 992px) {
+    .student-settings-menu { max-height: calc(100dvh - 112px); overflow-y: auto; scrollbar-gutter: stable; padding-right: 8px; }
+}
+@media (max-width: 767.98px) {
+    .sp.student-settings[data-student-settings] :is(input:not([type=checkbox]):not([type=radio]):not([type=hidden]), select, textarea) { font-size: 16px !important; max-width: 100%; }
 }

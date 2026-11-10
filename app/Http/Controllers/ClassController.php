@@ -13,7 +13,6 @@ class ClassController extends Controller
 
         $subjects = $scheduleService->subjectsFor($user);
 
-        // SEND to blade
-        return view('classes.index', compact('subjects'));
+        return view('student.classes', compact('subjects', 'user'));
     }
 }

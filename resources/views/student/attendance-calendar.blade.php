@@ -908,7 +908,7 @@
                              data-day="{{ $d }}"
                              role="button"
                              tabindex="0"
-                             onclick="selectCalendarDay('{{ $dateKey }}', {{ $d }})"
+                             aria-label="{{ $dayDate->format('F j, Y') }}{{ $hasRecords ? ', attendance recorded' : '' }}"
                              title="Click to view attendance for {{ $dayDate->format('M d, Y') }}">
                             <span>{{ $d }}</span>
                             @if($hasRecords)

@@ -97,7 +97,7 @@ class StudentResponsiveAttendanceTest extends TestCase
 
     public function test_scanner_modal_has_desktop_code_header_and_responsive_logic(): void
     {
-        $response = $this->actingAs($this->student)->get('/home');
+        $response = $this->actingAs($this->student)->get('/mobile/scan');
 
         $response->assertStatus(200);
 
@@ -148,7 +148,7 @@ class StudentResponsiveAttendanceTest extends TestCase
 
     public function test_student_scanner_modal_has_camera_viewfinder_laser_reticles_and_fallback_states(): void
     {
-        $response = $this->actingAs($this->student)->get('/home');
+        $response = $this->actingAs($this->student)->get('/mobile/scan');
 
         $response->assertStatus(200);
 
@@ -179,7 +179,7 @@ class StudentResponsiveAttendanceTest extends TestCase
 
     public function test_scanner_modal_has_paste_copied_code_features_and_clipboard_support(): void
     {
-        $response = $this->actingAs($this->student)->get('/home');
+        $response = $this->actingAs($this->student)->get('/mobile/scan');
         $response->assertStatus(200);
 
         // Paste buttons & actions

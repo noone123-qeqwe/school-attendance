@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Attendance;
+use App\Models\Subject;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -46,6 +48,8 @@ class StudentPortalRedesignTest extends TestCase
             $response->assertSee('student-portal-redesign.css', false);
             $response->assertSee('student-portal-simple.css', false);
             $response->assertSee('class="student-portal"', false);
+            $this->assertSame(1, substr_count($response->getContent(), 'id="cmdPaletteOverlay"'), "Search must have one instance on {$url}.");
+            $this->captureUiPage($url, $response->getContent());
         }
     }
 
@@ -58,6 +62,7 @@ class StudentPortalRedesignTest extends TestCase
             $response->assertSee('student-portal-redesign.css', false);
             $response->assertSee('student-portal-simple.css', false);
             $response->assertSee('student-mobile-portal', false);
+            $this->captureUiPage($url, $response->getContent());
         }
     }
 
@@ -68,6 +73,57 @@ class StudentPortalRedesignTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('student-portal-redesign.css', false);
         $response->assertDontSee('student-portal-simple.css', false);
+        $this->captureUiPage('/settings', $response->getContent());
+    }
+
+    public function test_record_status_and_special_character_subject_names_are_preserved(): void
+    {
+        $subject = Subject::factory()->create(['name' => 'Research & Design: O\'Brien <Advanced>']);
+        Attendance::create([
+            'user_id' => $this->student->id, 'subject_id' => $subject->id,
+            'subject_code' => $subject->code, 'date' => today()->toDateString(), 'status' => 'Escaped',
+        ]);
+        $response = $this->actingAs($this->student)->get('/attendance/records')->assertOk();
+        $this->captureUiPage('/attendance/records-populated', $response->getContent());
+        $document = new \DOMDocument();
+        @$document->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($document);
+        $status = $xpath->query('//*[@data-status="Escaped"]//*[contains(@class,"status-badge")]')->item(0);
+        $this->assertSame('Escaped', trim($status?->textContent ?? ''));
+        $this->assertSame($subject->name, trim($xpath->query('//*[@data-status="Escaped"]//h4')->item(0)?->textContent ?? ''));
+    }
+
+    public function test_excuse_subject_selection_is_labelled_and_retained_after_validation(): void
+    {
+        $subject = Subject::factory()->create(['name' => 'A long subject title with practical laboratory work and field research']);
+        $this->student->enrolledSubjects()->attach($subject);
+        $attendance = Attendance::create([
+            'user_id' => $this->student->id, 'subject_id' => $subject->id,
+            'subject_code' => $subject->code, 'date' => today()->toDateString(), 'status' => 'Absent',
+        ]);
+        foreach (['/excuses/general/new', '/excuses/create/'.$attendance->id] as $url) {
+            $response = $this->actingAs($this->student)->withSession(['_old_input' => ['subject_codes' => [$subject->code]]])->get($url)->assertOk();
+            $this->captureUiPage($url, $response->getContent());
+            $document = new \DOMDocument();
+            @$document->loadHTML($response->getContent());
+            $xpath = new \DOMXPath($document);
+            $checkbox = $xpath->query('//label[contains(@class,"excuse-subject-card")]/input[@type="checkbox"]')->item(0);
+            $this->assertNotNull($checkbox);
+            $this->assertTrue($checkbox->hasAttribute('checked'));
+            $this->assertSame($subject->code, $checkbox->getAttribute('value'));
+            $this->assertSame(1, $xpath->query('//label[@for="excuseReason"]')->length);
+            $this->assertSame(1, $xpath->query('//label[@for="descInput"]')->length);
+        }
+        $legacyClasses = $this->get('/classes')->assertOk();
+        $this->assertSame('student.classes', $legacyClasses->original->name());
+    }
+
+    private function captureUiPage(string $url, string $html): void
+    {
+        if (getenv('STUDENT_UI_AUDIT_OUTPUT') !== '1') return;
+        $directory = storage_path('framework/testing/student-ui-audit');
+        if (!is_dir($directory)) mkdir($directory, 0775, true);
+        file_put_contents($directory.'/'.preg_replace('/[^a-z0-9-]/i', '-', trim($url, '/')).'.html', $html);
     }
 
     public function test_student_settings_uses_roomy_desktop_and_narrow_phone_layouts(): void
