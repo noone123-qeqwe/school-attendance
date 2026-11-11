@@ -4471,6 +4471,12 @@
                     @endif
 
                     <div id="studentPasskeySettings">
+                    @if($user->isStudent())
+                    <header class="student-biometric-section-heading">
+                        <h3>Device sign-in</h3>
+                        <p>Set up a passkey to sign in with your device. Your device may offer a fingerprint, Face ID, Windows Hello, or a PIN.</p>
+                    </header>
+                    @endif
                     <!-- In-app browser & Insecure Context Alert -->
                     <div id="webauthnUnsupported" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
                         <div style="display:flex;align-items:flex-start;gap:12px;">

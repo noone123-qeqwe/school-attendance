@@ -65,6 +65,11 @@ class CameraFaceEnrollmentTest extends TestCase
         $this->assertSame(1, $xpath->query('//*[@id="cameraFaceEnrollment"]')->length);
         $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="cameraFaceEnrollment"]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="methodCardFp"]')->length);
+        // A single menu destination exposes both independently operated flows.
+        $this->assertSame(1, $xpath->query('//*[@data-settings-page="biometrics"]')->length);
+        $this->assertSame(0, $xpath->query('//*[@data-settings-page="face" or @data-settings-page="passkeys"]')->length);
+        $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="cameraFaceEnrollment"]')->length);
+        $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="studentPasskeySettings"]')->length);
     }
 
     public function test_student_settings_explains_when_camera_enrollment_is_disabled(): void

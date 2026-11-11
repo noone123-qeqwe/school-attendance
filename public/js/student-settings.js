@@ -7,16 +7,15 @@
         profile: ['Profile & school details', 'Manage your photo, contact number, and student information.', 'profile'],
         family: ['Guardians', 'Choose who can view your attendance and share a link code with your guardian.', 'family'],
         credentials: ['Password & email', 'Keep your sign-in details up to date. Changes require an email verification code.', 'security', 'credentials'],
-        face: ['Face registration', 'Capture your face with your camera for attendance matching.', 'security', 'biometrics'],
-        passkeys: ['Device sign-in', 'Use a passkey or your device’s fingerprint sensor to sign in.', 'security', 'biometrics'],
+        biometrics: ['Face & device sign-in', 'Register your face for attendance and manage the secure ways you sign in to your account.', 'security', 'biometrics'],
         device: ['Attendance device', 'Manage the phone or computer you use to record attendance.', 'security', 'device'],
         recovery: ['Recovery codes', 'Save backup codes somewhere safe in case you lose access to your account.', 'security', 'recovery'],
         preferences: ['Notifications & app', 'Choose how you receive alerts, adjust your display, and check for updates.', 'preferences'],
     };
     const aliases = {
         security: 'credentials', 'security-all': 'credentials', 'security-credentials': 'credentials',
-        fingerprint: 'passkeys', biometrics: 'passkeys', 'security-biometrics': 'passkeys',
-        'security-device': 'device', 'security-recovery': 'recovery', cameraFaceEnrollment: 'face',
+        face: 'biometrics', passkeys: 'biometrics', fingerprint: 'biometrics', 'security-biometrics': 'biometrics',
+        'security-device': 'device', 'security-recovery': 'recovery', cameraFaceEnrollment: 'biometrics',
     };
     const mobile = window.matchMedia('(max-width: 991.98px)');
     const heading = document.getElementById('studentSettingsPageTitle');
@@ -46,7 +45,7 @@
         if (!pages[page] && page !== 'overview') page = defaultPage();
         if (page === 'overview' && !mobile.matches) page = 'profile';
         if (options.fromHistory && started && root.dataset.studentView === page) return page;
-        if (root.dataset.studentView === 'face' && page !== 'face') {
+        if (root.dataset.studentView === 'biometrics' && page !== 'biometrics') {
             // Cancel pending camera requests as well as stopping an active stream.
             document.getElementById('cameraFaceCancelBtn')?.click();
         }
@@ -63,13 +62,13 @@
         });
         const camera = document.getElementById('cameraFaceEnrollment');
         const passkeys = document.getElementById('studentPasskeySettings');
-        if (camera) camera.hidden = page !== 'face';
-        if (passkeys) passkeys.hidden = page !== 'passkeys';
+        if (camera) camera.hidden = page !== 'biometrics';
+        if (passkeys) passkeys.hidden = page !== 'biometrics';
         if (pages[page]) {
             heading.textContent = pages[page][0];
             description.textContent = pages[page][1];
         }
-        if (page === 'passkeys' && !passkeysLoaded) {
+        if (page === 'biometrics' && !passkeysLoaded) {
             passkeysLoaded = true;
             if (typeof window.loadDevices === 'function') window.loadDevices();
             if (typeof window.prefetchWebAuthn === 'function') window.prefetchWebAuthn();

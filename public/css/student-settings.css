@@ -89,6 +89,10 @@
 .sp.student-settings[data-student-settings] .academic-spec-value { font-size: .87rem !important; line-height: 1.6; overflow-wrap: anywhere; }
 .sp.student-settings[data-student-settings] #cameraFaceEnrollment { margin: 0 !important; padding: 0 !important; background: none !important; border: 0 !important; }
 .sp.student-settings[data-student-settings] #cameraFaceEnrollmentTitle { font-size: 1rem !important; line-height: 1.5; }
+.sp.student-settings[data-student-settings] #studentPasskeySettings { min-width: 0; margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--gold-border); }
+.student-biometric-section-heading { margin-bottom: 22px; }
+.student-biometric-section-heading h3 { margin: 0 0 6px; color: var(--text-primary); font-size: 1rem; font-weight: 650; line-height: 1.5; }
+.student-biometric-section-heading p { margin: 0; color: var(--text-muted); font-size: .82rem; line-height: 1.65; max-width: 62ch; }
 .sp.student-settings[data-student-settings] .bio-spec-chip,
 .sp.student-settings[data-student-settings] .bio-method-meta { display: none !important; }
 .sp.student-settings[data-student-settings] .bio-method-grid { grid-template-columns: minmax(0, 1fr) !important; }
