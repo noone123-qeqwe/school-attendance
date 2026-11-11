@@ -78,7 +78,7 @@ function mount({ cameraGate = deferred(), response = { ok: true, json: async () 
     };
 }
 
-test('leaving settings while camera permission is pending stops the late stream', async () => {
+test('leaving registration while camera permission is pending stops the late stream', async () => {
     const app = mount();
     const start = app.element('cameraFaceStartBtn');
     const startPromise = start.listeners.click();
@@ -94,7 +94,7 @@ test('leaving settings while camera permission is pending stops the late stream'
     assert.equal(app.element('cameraFaceVideo').srcObject, null);
     assert.equal(app.element('cameraFacePreviewWrap').style.display, 'none');
     assert.equal(app.element('cameraFaceCaptureBtn').style.display, 'none');
-    assert.match(app.element('cameraFaceStatus').textContent, /camera was closed when you left Settings/i);
+    assert.match(app.element('cameraFaceStatus').textContent, /Capture closed/);
 });
 
 test('switching screens clears captures and ignores a late save response', async () => {
@@ -106,7 +106,7 @@ test('switching screens clears captures and ignores a late save response', async
     for (let i = 0; i < 3; i++) app.element('cameraFaceCaptureBtn').listeners.click();
     const saving = app.element('cameraFaceSaveBtn').listeners.click();
     assert.equal(app.element('cameraFaceCancelBtn').disabled, true);
-    app.window.cancelCameraFaceEnrollment();
+    app.windowListeners.pagehide();
     gate.resolve({ success: true, message: 'Late success' });
     await saving;
     assert.match(app.element('cameraFaceStatus').textContent, /Capture closed/);
@@ -143,6 +143,8 @@ test('student must capture all three positions before submitting the camera enro
     assert.deepEqual(app.fetchCalls[0][1].body.items.map(item => item[0]), ['face_images[front]', 'face_images[left]', 'face_images[right]']);
     assert.equal(app.element('cameraFacePreviewWrap').style.display, 'none');
     assert.match(app.element('cameraFaceStatus').textContent, /three face views were registered securely/);
+    assert.equal(app.element('cameraFaceDone').hidden, false);
+    assert.equal(app.element('cameraFaceStartBtn').hidden, true);
 });
 
 test('pose validation errors keep the captures available for retry or retake', async () => {

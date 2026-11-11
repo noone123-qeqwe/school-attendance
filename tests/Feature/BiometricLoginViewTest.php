@@ -29,7 +29,7 @@ PEM;
     {
         $views = [
             'auth/login.blade.php',
-            'settings.blade.php',
+            'partials/device-biometric-registration-script.blade.php',
             'student/profile.blade.php',
             'teacher/profile.blade.php',
             'admin/profile.blade.php',

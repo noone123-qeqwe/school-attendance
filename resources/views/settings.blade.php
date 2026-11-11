@@ -3491,9 +3491,6 @@
 }
 .student-settings .pref-tile { min-height: 72px; padding: 14px; }
 .student-settings .pref-tile:hover { background: rgba(207,164,111,.06); border-color: rgba(207,164,111,.18); }
-.student-settings .cameraFaceEnrollment,
-.student-settings #cameraFaceEnrollment { border-radius: 16px !important; }
-.student-settings #cameraFacePreviewWrap { border-radius: 18px !important; }
 .student-settings .device-item-card { border-radius: 13px; }
 
 @media (max-width: 1100px) {
@@ -3637,7 +3634,6 @@
     .student-settings .pref-tile .form-check { padding-top: 4px; }
     .student-settings .pref-tile select { width: 100% !important; min-width: 0 !important; margin-top: 8px; }
     .student-settings .sbtn, .student-settings .sec-action-btn { width: 100%; justify-content: center; }
-    .student-settings #cameraFacePreviewWrap { width: 100% !important; }
     .student-settings #tabDeviceBoundTile > div:last-child,
     .student-settings #tabDeviceBoundTile div[style*="display:flex;gap:10px"] { flex-direction: column; }
 }
@@ -4061,7 +4057,7 @@
         <section class="settings-main-content" id="studentSettingsContent" @if($user->isStudent()) aria-labelledby="studentSettingsPageTitle" @endif>
         @if($user->isStudent())
         <header class="student-settings-detail-heading">
-            <button type="button" class="student-settings-back" data-settings-back><i class="bi bi-arrow-left" aria-hidden="true"></i><span data-settings-back-label>All settings</span></button>
+            <button type="button" class="student-settings-back" data-settings-back><i class="bi bi-arrow-left" aria-hidden="true"></i>All settings</button>
             <h2 id="studentSettingsPageTitle" tabindex="-1">Profile &amp; school details</h2>
             <p id="studentSettingsPageDescription">Manage your photo, contact number, and student information.</p>
         </header>
@@ -4438,51 +4434,13 @@
                 </div>
                 <div class="sc-body">
 
-                    @if(Auth::user()->isStudent())
-                    <div id="studentBiometricChoices" class="student-biometric-choices">
-                        <button type="button" data-biometric-page="face" aria-controls="cameraFaceEnrollment"><i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Face registration</strong><small>Use your camera to capture your front, left, and right views for attendance.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
-                        <button type="button" data-biometric-page="fingerprint" aria-controls="studentPasskeySettings"><i class="bi bi-fingerprint" aria-hidden="true"></i><span><strong>Fingerprint registration</strong><small>Set up secure device sign-in with your device’s fingerprint sensor.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></button>
-                    </div>
-                    <section id="cameraFaceEnrollment" data-enrollment-url="{{ route('profile.face.enroll') }}" aria-labelledby="cameraFaceEnrollmentTitle" style="margin:0 0 26px;padding:20px;border:1px solid rgba(14,165,233,.28);border-radius:16px;background:rgba(14,165,233,.045);">
-                        <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;">
-                            <i class="bi bi-camera-video" aria-hidden="true" style="font-size:1.35rem;color:#38bdf8;"></i>
-                            <div>
-                                <h3 id="cameraFaceEnrollmentTitle" style="font-size:1rem;font-weight:750;color:#f8fafc;margin:0 0 4px;">Register face for attendance</h3>
-                                <p style="font-size:.82rem;color:#cbd5e1;margin:0;line-height:1.5;">Capture three clear views: front, slightly left, and slightly right. The captures are checked together and stored encrypted for attendance matching, separately from your public profile photo.</p>
-                            </div>
-                        </div>
-                        @if($faceEnrollmentAvailable)
-                            <ol class="face-pose-progress" aria-label="Face capture positions"><li data-face-pose="front">1. Front</li><li data-face-pose="left">2. Left</li><li data-face-pose="right">3. Right</li></ol>
-                            <p id="cameraFacePoseInstruction" class="face-pose-instruction" aria-live="polite">Look straight ahead for your first capture. Keep your head level and both eyes visible.</p>
-                            <div id="cameraFacePreviewWrap" style="display:none;position:relative;overflow:hidden;width:min(100%,440px);aspect-ratio:4/3;margin:0 auto 14px;border-radius:14px;background:#080b12;border:1px solid rgba(56,189,248,.3);">
-                                <video id="cameraFaceVideo" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;transform:scaleX(-1);"></video>
-                                <div aria-hidden="true" style="position:absolute;inset:10% 25%;border:2px solid rgba(56,189,248,.9);border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.24);pointer-events:none;"></div>
-                                <canvas id="cameraFaceCanvas" style="display:none;"></canvas>
-                            </div>
-                            @include('partials.camera-light-controls', ['cameraLightId' => 'cameraFaceLight'])
-                        @endif
-                        <div id="cameraFaceStatus" role="status" aria-live="polite" style="min-height:1.3em;margin:0 0 10px;color:{{ $hasCameraFaceEnrollment ? '#34d399' : '#94a3b8' }};font-size:.82rem;">{{ $hasCameraFaceEnrollment ? 'A face profile is enrolled for attendance matching. Register a new capture to replace it.' : '' }}</div>
-                        @if($faceEnrollmentAvailable)
-                            <div style="display:flex;gap:9px;flex-wrap:wrap;">
-                                <button type="button" id="cameraFaceStartBtn" class="sbtn bio-primary-cta" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-camera-video me-2"></i>Open camera</button>
-                                <button type="button" id="cameraFaceCaptureBtn" hidden class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;">Capture front view</button>
-                                <button type="button" id="cameraFaceRetakeBtn" hidden class="cancel-btn" style="display:none;"><i class="bi bi-arrow-repeat me-1"></i>Retake</button>
-                                <button type="button" id="cameraFaceSaveBtn" hidden class="sbtn bio-primary-cta" style="display:none;background:linear-gradient(135deg,#0284c7,#0ea5e9);color:#fff;"><i class="bi bi-shield-check me-2"></i>Register face</button>
-                                <button type="button" id="cameraFaceCancelBtn" hidden class="cancel-btn" style="display:none;">Cancel</button>
-                            </div>
-                        @else
-                            <p id="cameraFaceUnavailableNotice" role="status" style="margin:0;color:#fbbf24;font-size:.85rem;">Camera-based face registration is currently unavailable. Please contact your administrator.</p>
-                        @endif
-                    </section>
-                    @endif
-
-                    <div id="studentPasskeySettings">
                     @if($user->isStudent())
-                    <header class="student-biometric-section-heading">
-                        <h3>Fingerprint registration</h3>
-                        <p>Use the secure prompt on your device to register. Your operating system may offer a PIN or another verification method; websites cannot force a fingerprint sensor.</p>
-                    </header>
-                    @endif
+                    <div id="studentBiometricChoices" class="student-biometric-choices">
+                        <a id="studentFaceRegistrationLink" href="{{ route('settings.biometrics.face') }}"><i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Face registration</strong><small>Register your face with the camera for attendance.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                        <a id="studentFingerprintRegistrationLink" href="{{ route('settings.biometrics.fingerprint') }}"><i class="bi bi-fingerprint" aria-hidden="true"></i><span><strong>Fingerprint registration</strong><small>Set up secure device sign-in or manage registered devices.</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i></a>
+                    </div>
+                    @else
+                    <div id="studentPasskeySettings">
                     <!-- In-app browser & Insecure Context Alert -->
                     <div id="webauthnUnsupported" style="display:none;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:#f87171;border-radius:14px;padding:16px 20px;font-size:.85rem;margin-bottom:20px;">
                         <div style="display:flex;align-items:flex-start;gap:12px;">
@@ -4747,6 +4705,7 @@
                     </div>
 
                     </div> <!-- /studentPasskeySettings -->
+                    @endif
                 </div>
             </div>
         </div>
@@ -6105,707 +6064,9 @@ function isInAppBrowser() {
     return /FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line\/|Twitter|Snapchat|MicroMessenger|KAKAOTALK/i.test(ua);
 }
 
-// ── WebAuthn Device Biometrics (Fingerprint & Face ID / Windows Hello) ──
-let selectedBioMethod = 'fingerprint'; // 'fingerprint' | 'face'
-let bioAbortController = null;
-let bioScanProgressTimer = null;
-
-function selectBiometricMethod(method) {
-    if (method !== 'fingerprint' && method !== 'face') return;
-    selectedBioMethod = method;
-
-    // 1. Toggle option card active styling & radio state
-    const cardFp = document.getElementById('methodCardFp') || document.getElementById('methodCardFingerprint');
-    const cardFace = document.getElementById('methodCardFace');
-    if (cardFp && cardFace) {
-        if (method === 'fingerprint') {
-            cardFp.classList.add('selected');
-            cardFp.setAttribute('aria-pressed', 'true');
-            cardFace.classList.remove('selected');
-            cardFace.setAttribute('aria-pressed', 'false');
-        } else {
-            cardFace.classList.add('selected');
-            cardFace.setAttribute('aria-pressed', 'true');
-            cardFp.classList.remove('selected');
-            cardFp.setAttribute('aria-pressed', 'false');
-        }
-    }
-
-    // 2. Smoothly switch idle preview graphic
-    const fpPrev = document.getElementById('fpIdlePreview');
-    const facePrev = document.getElementById('faceIdlePreview');
-    if (fpPrev && facePrev) {
-        if (method === 'fingerprint') {
-            fpPrev.classList.add('active');
-            facePrev.classList.remove('active');
-        } else {
-            facePrev.classList.add('active');
-            fpPrev.classList.remove('active');
-        }
-    }
-
-    // 3. Switch active scanner views
-    const fpScan = document.getElementById('fpActiveScanner');
-    const faceScan = document.getElementById('faceActiveScanner');
-    if (fpScan && faceScan) {
-        if (method === 'fingerprint') {
-            fpScan.classList.add('active');
-            faceScan.classList.remove('active');
-        } else {
-            faceScan.classList.add('active');
-            fpScan.classList.remove('active');
-        }
-    }
-
-    // 4. Update Step 2 title & CTA button text
-    const displaySpan = document.getElementById('selectedMethodDisplay');
-    const startBtn = document.getElementById('startBioBtn');
-    if (displaySpan) {
-        if (method === 'fingerprint') {
-            displaySpan.textContent = 'Fingerprint';
-            displaySpan.style.color = '#4ade80';
-        } else {
-            displaySpan.textContent = 'Face ID / Windows Hello';
-            displaySpan.style.color = '#38bdf8';
-        }
-    }
-    if (startBtn) {
-        if (method === 'fingerprint') {
-            startBtn.innerHTML = '<i class="bi bi-fingerprint me-2"></i>Continue to Register Fingerprint';
-            startBtn.className = 'sbtn btn-emerald bio-primary-cta';
-            startBtn.style.background = '';
-            startBtn.style.color = '';
-        } else {
-            startBtn.innerHTML = '<i class="bi bi-person-bounding-box me-2"></i>Register Device Passkey';
-            startBtn.className = 'sbtn bio-primary-cta';
-            startBtn.style.background = 'linear-gradient(135deg, #0284c7, #0ea5e9)';
-            startBtn.style.color = '#ffffff';
-        }
-    }
-
-    // 5. Reset scanner stage back to idle view if error or success was shown
-    const idleView = document.getElementById('bioIdleView');
-    const scanningView = document.getElementById('bioScanningView');
-    const successView = document.getElementById('bioSuccessView');
-    const errorView = document.getElementById('bioErrorView');
-    if (idleView && (successView?.style.display !== 'none' || errorView?.style.display !== 'none')) {
-        idleView.style.display = 'block';
-        if (scanningView) scanningView.style.display = 'none';
-        if (successView) successView.style.display = 'none';
-        if (errorView) errorView.style.display = 'none';
-    }
-
-    if (window.triggerHaptic) window.triggerHaptic('light');
-}
-
-function updateProgressiveFeedback(pct, stateText) {
-    if (selectedBioMethod === 'fingerprint') {
-        const fill = document.getElementById('fpProgressFill');
-        const pctEl = document.getElementById('fpPctLabel');
-        const stateEl = document.getElementById('fpStateLabel');
-        if (fill) fill.style.width = pct + '%';
-        if (pctEl) pctEl.textContent = pct + '%';
-        if (stateEl && stateText) stateEl.textContent = stateText;
-    } else {
-        const fill = document.getElementById('faceProgressFill');
-        const pctEl = document.getElementById('facePctLabel');
-        const stateEl = document.getElementById('faceStateLabel');
-        if (fill) fill.style.width = pct + '%';
-        if (pctEl) pctEl.textContent = pct + '%';
-        if (stateEl && stateText) stateEl.textContent = stateText;
-    }
-}
-
-function startScanProgressAnimation() {
-    clearInterval(bioScanProgressTimer);
-    bioScanProgressTimer = null;
-    if (selectedBioMethod === 'fingerprint') {
-        updateProgressiveFeedback(25, 'Sensor ready — place finger on device sensor...');
-        const pctEl = document.getElementById('fpPctLabel');
-        if (pctEl) pctEl.textContent = 'Ready';
-        const titleEl = document.getElementById('fpScanningTitle');
-        const subEl = document.getElementById('fpStatusSub');
-        if (titleEl) titleEl.textContent = 'Touch Fingerprint Sensor';
-        if (subEl) subEl.textContent = 'Place your finger on your device sensor or confirm the prompt';
-    } else {
-        updateProgressiveFeedback(25, 'Waiting for Face ID or Windows Hello...');
-    }
-}
-
-function triggerBiometricDetected() {
-    clearInterval(bioScanProgressTimer);
-    bioScanProgressTimer = null;
-    updateProgressiveFeedback(100, selectedBioMethod === 'fingerprint' ? 'Device verified! Finalizing...' : 'Device face sign-in verified! Finalizing...');
-    
-    const frame = selectedBioMethod === 'fingerprint'
-        ? document.querySelector('.fp-scan-frame')
-        : document.getElementById('faceScanFrame');
-    if (frame) frame.classList.add('bio-detected');
-
-    if (window.triggerHaptic) window.triggerHaptic('success');
-}
-
-function cancelBiometricRegistration() {
-
-    if (bioAbortController) {
-        try { bioAbortController.abort(); } catch(e){}
-        bioAbortController = null;
-    }
-
-    clearInterval(bioScanProgressTimer);
-    bioScanProgressTimer = null;
-    isBioRegistrationRunning = false;
-
-    const idleView = document.getElementById('bioIdleView');
-    const scanningView = document.getElementById('bioScanningView');
-    const successView = document.getElementById('bioSuccessView');
-    const errorView = document.getElementById('bioErrorView');
-    if (idleView) idleView.style.display = 'block';
-    if (scanningView) scanningView.style.display = 'none';
-    if (successView) successView.style.display = 'none';
-    if (errorView) errorView.style.display = 'none';
-
-    // Reset styles
-    const faceScanFrame = document.getElementById('faceScanFrame');
-    if (faceScanFrame) {
-        faceScanFrame.classList.remove('bio-detected');
-        faceScanFrame.style.borderColor = '';
-    }
-    const faceLaserBar = document.getElementById('faceLaserBar');
-    if (faceLaserBar) faceLaserBar.style.background = '';
-    document.querySelectorAll('.fp-scan-frame, .face-scan-frame').forEach(el => el.classList.remove('bio-detected'));
-}
-
-function resetToSelectionStage() {
-    cancelBiometricRegistration();
-}
-
-function switchOrRegisterOtherMethod() {
-    const other = selectedBioMethod === 'fingerprint' ? 'face' : 'fingerprint';
-    selectBiometricMethod(other);
-    resetToSelectionStage();
-}
-
-function retryBiometricRegistration() {
-    const errorView = document.getElementById('bioErrorView');
-    if (errorView) errorView.style.display = 'none';
-    beginSelectedBiometricRegistration();
-}
-
-function switchBiometricMethodFallback() {
-    const other = selectedBioMethod === 'fingerprint' ? 'face' : 'fingerprint';
-    selectBiometricMethod(other);
-    resetToSelectionStage();
-}
-
-async function loadDevices() {
-    const list = document.getElementById('deviceList');
-    const badge = document.getElementById('deviceCountBadge');
-    const badgeFp = document.getElementById('statusBadgeFingerprint');
-    const badgeFace = document.getElementById('statusBadgeFace');
-
-    if (!window.PublicKeyCredential) {
-        if (badge) { badge.textContent = !window.isSecureContext ? 'Requires HTTPS' : 'Unsupported'; badge.style.color = '#f87171'; }
-        if (badgeFp) { badgeFp.textContent = 'Unavailable'; badgeFp.className = 'bio-status-pill not-reg'; }
-        if (badgeFace) { badgeFace.textContent = 'Unavailable'; badgeFace.className = 'bio-status-pill not-reg'; }
-    }
-
-    try {
-        const res = await fetch('{{ route("webauthn.devices") }}');
-        const devices = await res.json();
-        if (!list) return;
-
-        list.innerHTML = '';
-
-        const hasFp = Array.isArray(devices) && devices.some(d => (d.biometric_type || 'fingerprint') === 'fingerprint');
-        const hasFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face' && d.is_secure_face_credential);
-        const hasLegacyFace = Array.isArray(devices) && devices.some(d => d.biometric_type === 'face' && !d.is_secure_face_credential);
-
-        if (badgeFp) {
-            badgeFp.textContent = hasFp ? 'Active' : 'Not Registered';
-            badgeFp.className = 'bio-status-pill ' + (hasFp ? 'reg-active' : 'not-reg');
-        }
-        if (badgeFace) {
-            badgeFace.textContent = hasFace ? 'Active' : (hasLegacyFace ? 'Re-enroll' : 'Not Registered');
-            badgeFace.className = 'bio-status-pill ' + (hasFace ? 'reg-active' : 'not-reg');
-        }
-
-        if (devices && devices.length > 0) {
-            if (badge) {
-                badge.textContent = `${devices.length} Registered`;
-                badge.style.color = '#4ade80';
-                badge.style.borderColor = 'rgba(74,222,128,0.3)';
-                badge.style.background = 'rgba(74,222,128,0.1)';
-            }
-
-            const activeSummary = document.createElement('div');
-            const hasUsableCredential = hasFp || hasFace;
-            const enrolledMethods = [
-                ...(hasFp ? ['Fingerprint'] : []),
-                ...(hasFace ? ['Face ID / Windows Hello'] : [])
-            ];
-            activeSummary.style.cssText = hasUsableCredential
-                ? 'padding:14px 18px;color:#4ade80;font-size:.875rem;background:rgba(22,163,74,0.12);border-radius:12px;border:1px solid rgba(22,163,74,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;'
-                : 'padding:14px 18px;color:#fbbf24;font-size:.875rem;background:rgba(245,158,11,0.12);border-radius:12px;border:1px solid rgba(245,158,11,0.25);margin-bottom:16px;font-weight:600;display:flex;align-items:center;gap:10px;';
-            activeSummary.innerHTML = `
-                <i class="bi ${hasUsableCredential ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}" style="font-size:1.2rem;color:${hasUsableCredential ? '#22c55e' : '#f59e0b'};"></i>
-                <div>
-                    <div>${hasUsableCredential ? 'Device sign-in is <strong>active</strong> on your account.' : 'A camera-only face profile <strong>cannot sign in</strong>. Register a device passkey below.'}</div>
-                    <div style="font-size:.76rem;color:${hasUsableCredential ? '#86efac' : '#fcd34d'};font-weight:400;margin-top:2px;">
-                        ${hasUsableCredential ? `Enrolled: ${enrolledMethods.join(' and ')}` : 'Remove the old profile after registering a passkey.'}
-                    </div>
-                </div>`;
-            list.appendChild(activeSummary);
-
-            devices.forEach(d => {
-                const isFace = d.biometric_type === 'face';
-                const isLegacyFace = isFace && !d.is_secure_face_credential;
-                const div = document.createElement('div');
-                div.className = 'device-item-card';
-                div.innerHTML = `
-                    <div class="device-item-left">
-                        <div class="device-item-icon" style="background:${isFace ? 'rgba(56,189,248,0.12)' : 'rgba(74,222,128,0.12)'};color:${isFace ? '#38bdf8' : '#4ade80'};">
-                            <i class="bi ${isFace ? 'bi-person-bounding-box' : 'bi-fingerprint'}"></i>
-                        </div>
-                        <div class="device-item-info">
-                            <div class="device-item-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                                <span>${d.name || d.device_name || (isFace ? 'Face Recognition Credential' : 'Fingerprint Credential')}</span>
-                                <span class="bio-device-type-pill ${isFace ? 'pill-face' : 'pill-fp'}">
-                                    <i class="bi ${isFace ? 'bi-person-bounding-box' : 'bi-fingerprint'} me-1"></i>${isFace ? 'Face' : 'Fingerprint'}
-                                </span>
-                            </div>
-                            <div class="device-item-meta">
-                                <span class="device-meta-verified"><i class="bi ${isLegacyFace ? 'bi-exclamation-triangle' : 'bi-shield-check'} me-1"></i>${isLegacyFace ? 'Camera-only legacy profile · re-enroll' : 'Device-protected credential'}</span>
-                                <span class="device-meta-dot">•</span>
-                                <span class="device-meta-date">${d.created_at ? new Date(d.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Registered'}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button onclick="removeDevice('${d.credential_id}', this)" class="device-remove-btn" type="button" title="Remove biometric credential">
-                        <i class="bi bi-trash3 me-1"></i>Remove
-                    </button>`;
-                list.appendChild(div);
-            });
-        } else {
-            if (badge) {
-                badge.textContent = '0 Registered';
-                badge.style.color = '#b39b82';
-                badge.style.borderColor = 'rgba(207,164,111,0.2)';
-                badge.style.background = 'rgba(207,164,111,0.12)';
-            }
-            const emptyDiv = document.createElement('div');
-            emptyDiv.id = 'noDevices';
-            emptyDiv.style.cssText = 'text-align:center;padding:32px 20px;color:#b39b82;font-size:.85rem;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed rgba(207,164,111,0.2);';
-            emptyDiv.innerHTML = `
-                <i class="bi bi-shield-lock" style="font-size:2.6rem;display:block;margin-bottom:10px;opacity:.35;color:var(--gold,#CFA46F);"></i>
-                <div style="font-weight:700;color:#f3e7cd;margin-bottom:4px;">No biometric credentials registered yet</div>
-                <div style="font-size:.78rem;color:#b39b82;">Select a device sign-in method above and continue to register.</div>
-            `;
-            list.appendChild(emptyDiv);
-        }
-    } catch(e) {
-        console.error('Failed to load biometric devices', e);
-    }
-}
-
-async function removeDevice(credentialId, btn) {
-    if (!confirm('Remove this biometric credential from your account?')) return;
-    try {
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Removing...';
-        }
-        const res = await fetch('{{ route("webauthn.remove") }}', {
-            method: 'DELETE',
-            headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ credential_id: credentialId })
-        });
-        const data = await res.json();
-        await loadDevices();
-        if (typeof showToast === 'function') {
-            showToast(data.message || 'Biometric credential removed.', 'info');
-        }
-    } catch(err) {
-        console.error('Failed to remove biometric device', err);
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-trash3 me-1"></i>Remove';
-        }
-    }
-}
-
-function normalizeBase64(base64) {
-    base64 = (base64 || '').replace(/-/g, '+').replace(/_/g, '/');
-    var padding = base64.length % 4;
-    if (padding) base64 += '===='.slice(padding);
-    return base64;
-}
-
-function base64ToUint8Array(base64) {
-    base64 = normalizeBase64(base64);
-    var binary = atob(base64);
-    var bytes = new Uint8Array(binary.length);
-    for (var i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
-    }
-    return bytes;
-}
-
-function bufferToBase64Url(buffer) {
-    var bytes = new Uint8Array(buffer);
-    var binary = '';
-    for (var i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-let prefetchOptions = null;
-let isFetchingOptions = false;
-
-async function prefetchWebAuthn() {
-    if (isFetchingOptions || prefetchOptions) return;
-    isFetchingOptions = true;
-    try {
-        const optRes = await fetch('{{ route("webauthn.register.options") }}', {
-            headers: { 
-                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
-                'Accept': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            }
-        });
-        prefetchOptions = await optRes.json();
-    } catch(e) {
-        console.error(e);
-    }
-    isFetchingOptions = false;
-}
-
-// Camera enrollment is handled by camera-face-enrollment.js on its own screen.
-
-// ── Device Passkey Registration ──
-let isBioRegistrationRunning = false;
-
-async function beginFaceRegistration() {
-    // Face verification stays on the device; the server stores only a verified passkey public key.
-    selectedBioMethod = 'face';
-    return beginFingerprintRegistration();
-}
-// ── WebAuthn Device Credential Registration ──
-async function beginFingerprintRegistration() {
-    const registrationType = selectedBioMethod === 'face' ? 'face' : 'fingerprint';
-    const idleView = document.getElementById('bioIdleView');
-    const scanningView = document.getElementById('bioScanningView');
-    const successView = document.getElementById('bioSuccessView');
-    const errorView = document.getElementById('bioErrorView');
-    const errorTitle = document.getElementById('bioErrorTitle');
-    const errorDesc = document.getElementById('bioErrorDesc');
-    const successTitle = document.getElementById('bioSuccessTitle');
-    const successDesc = document.getElementById('bioSuccessDesc');
-
-    // 1. WebAuthn requires a named domain like localhost or HTTPS (not raw 127.0.0.1 IP)
-    if (window.location.hostname === '127.0.0.1') {
-        const targetUrl = window.location.href.replace('//127.0.0.1', '//localhost');
-        window.location.replace(targetUrl);
-        return;
-    }
-
-    if (!window.isSecureContext) {
-        if (idleView) idleView.style.display = 'none';
-        if (errorView) {
-            errorView.style.display = 'block';
-            if (errorTitle) errorTitle.textContent = 'HTTPS Connection Required';
-            if (errorDesc) errorDesc.textContent = 'Device biometric sign-in requires HTTPS or localhost. On mobile Wi-Fi, open the app through its secure HTTPS address.';
-        }
-        return;
-    }
-
-    if (!window.PublicKeyCredential) {
-        if (idleView) idleView.style.display = 'none';
-        if (errorView) {
-            errorView.style.display = 'block';
-            if (errorTitle) errorTitle.textContent = 'Browser Unsupported';
-            if (errorDesc) errorDesc.innerHTML = 'Your current browser does not support WebAuthn biometric credentials. Please use <strong>Google Chrome</strong>, <strong>Microsoft Edge</strong>, or <strong>Apple Safari</strong>.';
-        }
-        return;
-    }
-
-    if (idleView) idleView.style.display = 'none';
-    if (successView) successView.style.display = 'none';
-    if (errorView) errorView.style.display = 'none';
-    if (scanningView) scanningView.style.display = 'block';
-
-    document.querySelectorAll('.fp-scan-frame, .face-scan-frame').forEach(el => el.classList.remove('bio-detected'));
-
-    const fpScan = document.getElementById('fpActiveScanner');
-    const faceScan = document.getElementById('faceActiveScanner');
-    if (faceScan) faceScan.classList.toggle('active', registrationType === 'face');
-    if (fpScan) fpScan.classList.toggle('active', registrationType !== 'face');
-
-    const fpScanFrame = document.querySelector(registrationType === 'face' ? '.face-scan-frame' : '.fp-scan-frame');
-    if (fpScanFrame) {
-        fpScanFrame.classList.remove('bio-detected');
-    }
-    const fpScanningTitle = document.getElementById(registrationType === 'face' ? 'faceScanningTitle' : 'fpScanningTitle');
-    const fpStatusSub = document.getElementById(registrationType === 'face' ? 'faceStatusSub' : 'fpStatusSub');
-    if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Waiting for Face ID / Windows Hello' : 'Touch Fingerprint Sensor';
-    if (fpStatusSub) fpStatusSub.textContent = registrationType === 'face'
-        ? 'Complete the protected device prompt. Your device may offer a PIN instead of face verification.'
-        : 'Place your finger on the sensor or confirm the device prompt.';
-    updateProgressiveFeedback(25, registrationType === 'face' ? 'Waiting for device face sign-in prompt...' : 'Sensor ready — waiting for biometric prompt...');
-    const fpPctLabel = document.getElementById(registrationType === 'face' ? 'facePctLabel' : 'fpPctLabel');
-    if (fpPctLabel) fpPctLabel.textContent = 'Ready';
-
-    bioAbortController = new AbortController();
-
-    try {
-        const optRes = await fetch('{{ route("webauthn.register.options") }}?biometric_type=' + registrationType, {
-            headers: { 
-                'X-CSRF-TOKEN': '{{ csrf_token() }}', 
-                'Accept': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            },
-            signal: bioAbortController.signal
-        });
-        const opts = await optRes.json();
-
-        if (!optRes.ok || !opts.challenge || !opts.user) {
-            throw new Error(opts.message || 'Failed to initialize biometric registration options from server.');
-        }
-
-        const challenge = base64ToUint8Array(opts.challenge);
-        const userId    = base64ToUint8Array(opts.user.id);
-
-        const hostname = window.location.hostname;
-        const isIp = /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname) || hostname.includes(':');
-        const rp = { name: opts.rp?.name || 'School Attendance' };
-        if (!isIp) {
-            const sRp = (opts.rp?.id || '').toLowerCase().trim();
-            const h = hostname.toLowerCase().trim();
-            rp.id = (sRp && (h === sRp || h.endsWith('.' + sRp))) ? sRp : hostname;
-        }
-
-        const excludeCredentials = (opts.excludeCredentials || []).map(function(c) {
-            return { type: c.type || 'public-key', id: base64ToUint8Array(c.id) };
-        });
-
-        // Detect if platform authenticator (Windows Hello, Touch ID, Android fingerprint) is available
-        let hasPlatformAuth = false;
-        let platformAvailabilityKnown = false;
-        if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
-            try {
-                hasPlatformAuth = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-                platformAvailabilityKnown = true;
-            } catch(e) {
-                hasPlatformAuth = false;
-            }
-        }
-        if (platformAvailabilityKnown && !hasPlatformAuth) {
-            throw new Error('No on-device biometric sign-in is available. Set up fingerprint, Face ID, or Windows Hello in your device settings, then try again.');
-        }
-
-        const basePublicKey = {
-            challenge: challenge,
-            rp: rp,
-            user: { id: userId, name: opts.user.name, displayName: opts.user.displayName },
-            pubKeyCredParams: opts.pubKeyCredParams || [
-                { type: 'public-key', alg: -7 },
-                { type: 'public-key', alg: -257 }
-            ],
-            timeout: opts.timeout || 120000,
-            attestation: opts.attestation || 'none',
-            excludeCredentials: excludeCredentials,
-            hints: ['client-device']
-        };
-
-        // ── Direct Platform Biometric Registration ──────────────────────────
-        // Enforce on-device platform biometric attachment so Android Chrome,
-        // iOS Touch ID/Face ID, and Windows Hello invoke the native sensor directly
-        // without prompting with the external security key chooser (NFC/USB).
-        const primarySelection = {
-            authenticatorAttachment: 'platform',
-            userVerification: 'required',
-            residentKey: 'preferred',
-            requireResidentKey: false
-        };
-
-        let credential = null;
-        try {
-            credential = await navigator.credentials.create({
-                publicKey: Object.assign({}, basePublicKey, {
-                    authenticatorSelection: primarySelection
-                }),
-                signal: bioAbortController.signal
-            });
-        } catch (firstErr) {
-            // If the first attempt was aborted/cancelled by the user, propagate immediately.
-            if (firstErr.name === 'AbortError' || firstErr.name === 'NotAllowedError') {
-                throw firstErr;
-            }
-            // Fallback attempt: still strictly platform-bound, but with residentKey: 'discouraged'
-            console.warn('Primary platform registration failed, retrying with platform discouraged fallback:', firstErr);
-            if (fpStatusSub) fpStatusSub.textContent = 'Retrying with device sensor...';
-            try {
-                credential = await navigator.credentials.create({
-                    publicKey: Object.assign({}, basePublicKey, {
-                        authenticatorSelection: {
-                            authenticatorAttachment: 'platform',
-                            userVerification: 'required',
-                            residentKey: 'discouraged',
-                            requireResidentKey: false
-                        }
-                    }),
-                    signal: bioAbortController.signal
-                });
-            } catch (retryErr) {
-                throw retryErr;
-            }
-        }
-
-        if (!credential) {
-            throw new Error('Biometric registration was cancelled.');
-        }
-
-        if (fpScanFrame) {
-            fpScanFrame.classList.add('bio-detected');
-        }
-        if (fpScanningTitle) fpScanningTitle.textContent = registrationType === 'face' ? 'Device Verified ✓' : 'Fingerprint Verified ✓';
-        if (fpStatusSub) fpStatusSub.textContent = 'Device verification complete. Registering credential...';
-        triggerBiometricDetected();
-
-        const credentialId = bufferToBase64Url(credential.rawId);
-        const attestationObject = bufferToBase64Url(credential.response.attestationObject);
-        const clientDataJSON = bufferToBase64Url(credential.response.clientDataJSON);
-
-        const ua = navigator.userAgent;
-        let deviceType = ua.indexOf('iPhone') !== -1 ? 'iPhone' :
-                         ua.indexOf('iPad') !== -1 ? 'iPad' :
-                         ua.indexOf('Android') !== -1 ? 'Android Device' :
-                         ua.indexOf('Windows') !== -1 ? 'Windows PC' :
-                         ua.indexOf('Mac') !== -1 ? 'Mac' : 'Biometric Device';
-        const deviceName = `${deviceType} (${registrationType === 'face' ? 'Secure Face ID / Passkey' : 'Fingerprint'})`;
-
-        const saveRes = await fetch('{{ route("webauthn.register") }}', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'ngrok-skip-browser-warning': 'true'
-            },
-            body: JSON.stringify({
-                credential_id: credentialId,
-                credential: {
-                    id: credential.id,
-                    type: credential.type,
-                    response: {
-                        attestationObject: attestationObject,
-                        clientDataJSON: clientDataJSON
-                    }
-                },
-                biometric_type: registrationType,
-                device_name: deviceName
-            })
-        });
-
-        const result = await saveRes.json();
-
-        if (saveRes.status === 409 || (result && result.error === 'duplicate')) {
-            if (scanningView) scanningView.style.display = 'none';
-            if (errorView) {
-                errorView.style.display = 'block';
-                if (errorTitle) errorTitle.textContent = 'Biometric Already Registered';
-                if (errorDesc) errorDesc.textContent = result.message || 'This device credential is already registered on your account.';
-            }
-            return;
-        }
-
-        if (result.success) {
-            if (scanningView) scanningView.style.display = 'none';
-            if (successView) {
-                successView.style.display = 'block';
-                if (successTitle) successTitle.textContent = registrationType === 'face' ? 'Face Sign-in Registered!' : 'Fingerprint Registered Successfully!';
-                if (successDesc) successDesc.textContent = result.message || 'Your device credential is linked to your account.';
-            }
-            await loadDevices();
-        } else {
-            if (scanningView) scanningView.style.display = 'none';
-            if (errorView) {
-                errorView.style.display = 'block';
-                if (errorTitle) errorTitle.textContent = 'Registration Incomplete';
-                if (errorDesc) errorDesc.textContent = result.message || 'The server could not verify and save the biometric enrollment.';
-            }
-        }
-    } catch(err) {
-        clearInterval(bioScanProgressTimer);
-        bioScanProgressTimer = null;
-        if (fpScanFrame) fpScanFrame.classList.remove('bio-detected');
-
-        if (err.name === 'AbortError') {
-            if (scanningView) scanningView.style.display = 'none';
-            if (idleView) idleView.style.display = 'block';
-            return;
-        }
-
-        if (scanningView) scanningView.style.display = 'none';
-        if (errorView) {
-            errorView.style.display = 'block';
-            if (err.name === 'NotAllowedError') {
-                if (errorTitle) errorTitle.textContent = 'Biometric Prompt Dismissed';
-                if (errorDesc) errorDesc.textContent = 'The device verification prompt was cancelled or timed out. Try again or use another sign-in method.';
-            } else if (err.name === 'InvalidStateError') {
-                if (errorTitle) errorTitle.textContent = 'Already Registered';
-                if (errorDesc) errorDesc.textContent = 'This device credential is already registered for your account.';
-            } else if (err.name === 'NotSupportedError') {
-                if (errorTitle) errorTitle.textContent = 'Device Authentication Unsupported';
-                if (errorDesc) errorDesc.textContent = 'Set up Face ID, Windows Hello, or another device sign-in method and try again.';
-            } else {
-                if (errorTitle) errorTitle.textContent = 'Registration Failed';
-                if (errorDesc) errorDesc.textContent = err.message || 'Device verification could not be completed. Check your device sign-in settings and try again.';
-            }
-        }
-        prefetchWebAuthn();
-    }
-}
-
-// ── Unified Biometric Registration Dispatcher ──
-async function beginSelectedBiometricRegistration() {
-    if (isBioRegistrationRunning) return;
-    isBioRegistrationRunning = true;
-
-    // Determine the active method from both the JS state and the DOM aria-pressed
-    // attribute, so we are never dependent on a single source of truth.
-    // This prevents device verification from triggering when face is selected.
-    let method = selectedBioMethod;
-    const faceCard = document.getElementById('methodCardFace');
-    const fpCard   = document.getElementById('methodCardFp') || document.getElementById('methodCardFingerprint');
-    if (faceCard && faceCard.getAttribute('aria-pressed') === 'true') {
-        method = 'face';
-    } else if (fpCard && fpCard.getAttribute('aria-pressed') === 'true') {
-        method = 'fingerprint';
-    }
-    // Also read from the visible button label as a final fallback
-    const startBtn = document.getElementById('startBioBtn');
-    if (startBtn && startBtn.textContent && startBtn.textContent.toLowerCase().includes('face')) {
-        method = 'face';
-    }
-
-    // Sync the JS variable to what we determined from the DOM
-    selectedBioMethod = method;
-
-    try {
-        if (method === 'face') {
-            await beginFaceRegistration();
-        } else {
-            await beginFingerprintRegistration();
-        }
-    } finally {
-        isBioRegistrationRunning = false;
-    }
-}
-
-// Backward compatibility alias
-window.registerFingerprint = beginSelectedBiometricRegistration;
+@unless($user->isStudent())
+@include('partials.device-biometric-registration-script')
+@endunless
 
 // OTP digit handling in settings
 const sDigits = document.querySelectorAll('.otp-digit-s');
@@ -7039,9 +6300,6 @@ const SETTINGS_SEARCH_INDEX = [
     { title: 'Biometrics Sensors', desc: 'Manage hardware biometric credentials', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'tab-fingerprint' },
     { title: 'Fingerprint Registration', desc: 'Register hardware fingerprint sensor via WebAuthn', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-fingerprint', elId: 'methodCardFp' },
     { title: 'Device Passkey', desc: 'Enroll a passkey using your device security prompt', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-key', elId: 'methodCardFace' },
-    @if(Auth::user()->isStudent())
-    { title: 'Camera Face Registration', desc: 'Capture and securely enroll a face for attendance verification', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-camera-video', elId: 'cameraFaceEnrollment' },
-    @endif
     { title: 'Registered Hardware Credentials', desc: 'View, test, or remove registered biometric tokens', cat: 'Security & Access', tab: 'fingerprint', icon: 'bi-usb-drive', elId: 'deviceList' },
     { title: 'Device Binding & Trust', desc: 'Hardware device binding and attendance authorization', cat: 'Security & Access', tab: 'device', icon: 'bi-phone', elId: 'tab-device' },
     { title: 'Bind Current Device', desc: 'Cryptographically bind this phone or computer to your attendance', cat: 'Security & Access', tab: 'device', icon: 'bi-phone-fill', elId: 'tabDeviceBindBtn' },
@@ -7382,6 +6640,7 @@ if (document.readyState === 'loading') {
 }
 
 // Explicit window bindings for external callers and inline fallbacks
+@unless($user->isStudent())
 window.selectBiometricMethod = selectBiometricMethod;
 window.beginSelectedBiometricRegistration = beginSelectedBiometricRegistration;
 window.beginFaceRegistration = beginFaceRegistration;
@@ -7393,6 +6652,7 @@ window.retryBiometricRegistration = retryBiometricRegistration;
 window.switchBiometricMethodFallback = switchBiometricMethodFallback;
 window.loadDevices = loadDevices;
 window.removeDevice = removeDevice;
+@endunless
 
 // ── Student Family & Guardian Binding Handlers ──
 let studentLinkCountdownTimer = null;
@@ -7493,7 +6753,6 @@ window.copyParentLinkCode = copyParentLinkCode;
 </script>
 @if(Auth::user()->isStudent())
 <script src="{{ asset('js/qrcode.min.js') }}"></script>
-<script src="{{ asset('js/camera-face-enrollment.js') }}?v={{ filemtime(public_path('js/camera-face-enrollment.js')) }}"></script>
 <script src="{{ asset('js/student-settings.js') }}?v={{ filemtime(public_path('js/student-settings.js')) }}"></script>
 @endif
 @endsection

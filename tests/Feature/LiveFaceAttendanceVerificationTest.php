@@ -121,6 +121,9 @@ class LiveFaceAttendanceVerificationTest extends TestCase
         $response->assertViewHas('hasFaceMethod', true);
         $response->assertViewHas('defaultMethod', 'face');
         $response->assertViewHas('status', 'ready');
+        $response->assertSee('attendance-verification-page', false);
+        $response->assertSee('href="'.route('mobile.scan').'"', false);
+        $response->assertSee('id="faceMatchLight"', false);
     }
 
     public function test_student_without_photo_or_webauthn_is_prompted_for_setup()
@@ -137,6 +140,8 @@ class LiveFaceAttendanceVerificationTest extends TestCase
         $response->assertStatus(200);
         $response->assertViewIs('qr.verify');
         $response->assertViewHas('status', 'setup');
+        $response->assertSee('href="'.route('settings.biometrics.face').'"', false);
+        $response->assertSee('href="'.route('settings.biometrics.fingerprint').'"', false);
     }
 
     public function test_student_can_fetch_verification_options_with_profile_photo()

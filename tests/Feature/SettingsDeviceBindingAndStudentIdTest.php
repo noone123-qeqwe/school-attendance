@@ -88,14 +88,14 @@ class SettingsDeviceBindingAndStudentIdTest extends TestCase
         $response->assertDontSee('data-settings-page="face"', false);
         $response->assertDontSee('data-settings-page="passkeys"', false);
         $response->assertSee('data-settings-page="recovery"', false);
-        $response->assertSee('id="studentPasskeySettings"', false);
+        $response->assertSee('id="studentFingerprintRegistrationLink"', false);
         $response->assertDontSee('id="stabsNav"', false);
         $response->assertSee('Guardians');
         $response->assertSee('@media (max-width: 991.98px)', false);
         $response->assertSee('@media (max-width: 575.98px)', false);
         $response->assertSee('tab-device');
         $response->assertSee('Bind to This Device');
-        $response->assertSee('cameraFaceEnrollment');
+        $response->assertSee('id="studentFaceRegistrationLink"', false);
         $response->assertSee('generateParentCodeBtn');
         $response->assertSee('checkUpdateBtn');
     }

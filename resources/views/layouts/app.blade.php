@@ -61,7 +61,7 @@
     @endif
 </head>
 
-<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent()]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
+<body @class(['student-portal' => Auth::user()?->isStudent(), 'teacher-portal' => Auth::user()?->isTeacher(), 'admin-portal' => Auth::user()?->isAdmin(), 'parent-portal' => Auth::user()?->isParent(), 'attendance-verification-page' => View::hasSection('focused-attendance-verification')]) @if(Auth::user()?->isStudent() && !request()->routeIs('settings')) data-student-layout="simple" @endif>
 
     @php
         $parentUnreadCount = Auth::user()?->isParent() ? \App\Support\ParentNavigation::unreadCount(Auth::user()) : 0;

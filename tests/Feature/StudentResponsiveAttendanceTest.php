@@ -123,15 +123,12 @@ class StudentResponsiveAttendanceTest extends TestCase
         $response->assertSee('Biometrics');
         $response->assertSee('id="tab-fingerprint"', false);
 
-        // Methods
-        $response->assertSee('Fingerprint');
-        $response->assertSee('Face Recognition');
-        $response->assertSee('id="methodCardFp"', false);
-        $response->assertSee('id="methodCardFace"', false);
-
-        // Device Management
-        $response->assertSee('Registered Hardware Credentials');
-        $response->assertSee('id="deviceList"', false);
+        $response->assertSee('href="'.route('settings.biometrics.face').'"', false);
+        $response->assertSee('href="'.route('settings.biometrics.fingerprint').'"', false);
+        $this->get(route('settings.biometrics.fingerprint'))
+            ->assertOk()
+            ->assertSee('Registered devices')
+            ->assertSee('id="deviceList"', false);
     }
 
     public function test_settings_page_has_searchable_navigation_and_a_return_to_all_settings(): void
@@ -141,7 +138,7 @@ class StudentResponsiveAttendanceTest extends TestCase
 
         $response->assertSee('id="studentSettingsFilter"', false);
         $response->assertSee('data-settings-page="profile"', false);
-        $response->assertSee('data-settings-page="face"', false);
+        $response->assertSee('data-settings-page="biometrics"', false);
         $response->assertSee('data-settings-back', false);
         $response->assertSee('All settings');
     }

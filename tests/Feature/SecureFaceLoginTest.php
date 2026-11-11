@@ -155,7 +155,7 @@ class SecureFaceLoginTest extends TestCase
 
     public function test_face_registration_and_login_views_use_device_verification(): void
     {
-        $settings = file_get_contents(resource_path('views/settings.blade.php'));
+        $settings = file_get_contents(resource_path('views/partials/device-biometric-registration-script.blade.php'));
         $login = file_get_contents(resource_path('views/auth/login.blade.php'));
 
         $this->assertStringContainsString("biometric_type: registrationType", $settings);

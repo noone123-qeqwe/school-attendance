@@ -562,8 +562,15 @@ class HomeController extends Controller
         $hasCameraFaceEnrollment = $user && $user->isStudent()
             ? \App\Models\ProfileFacePhoto::where('user_id', $user->id)->exists()
             : false;
-        $faceEnrollmentAvailable = app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification');
-        return view('settings', compact('linkedParents', 'hasCameraFaceEnrollment', 'faceEnrollmentAvailable'));
+        return view('settings', compact('linkedParents', 'hasCameraFaceEnrollment'));
+    }
+
+    public function faceRegistration(Request $request, \App\Services\FeatureFlagService $features)
+    {
+        return view('student.biometrics.face', [
+            'hasCameraFaceEnrollment' => \App\Models\ProfileFacePhoto::where('user_id', $request->user()->id)->exists(),
+            'faceEnrollmentAvailable' => $features->enabled('feature.face_verification'),
+        ]);
     }
 
     /**

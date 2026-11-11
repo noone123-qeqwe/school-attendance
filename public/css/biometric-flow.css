@@ -1,0 +1,74 @@
+.biometric-flow-page {
+    --gold-primary: #cfa46f;
+    --gold-border: #cfa46f3b;
+    --gold-subtle: #cfa46f20;
+    --surface-card: #1e1713;
+    --text-primary: #f3e7cd;
+    --text-muted: #c2ab93;
+    margin: 0;
+    min-height: 100dvh;
+    background: #120e0b;
+    color: var(--text-primary);
+    font: 1rem/1.55 Inter, system-ui, sans-serif;
+}
+
+.biometric-flow-page *, .biometric-flow-page *::before, .biometric-flow-page *::after { box-sizing: border-box; }
+.biometric-flow {
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+.biometric-flow-back, .biometric-flow .flow-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--gold-border);
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+    font-weight: 650;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+}
+.biometric-flow-back { margin-bottom: 22px; }
+.biometric-flow .flow-primary { background: var(--gold-primary); border-color: var(--gold-primary); color: #20130c; }
+.biometric-flow .flow-button:disabled { opacity: .55; cursor: default; }
+.biometric-flow :is(a, button, input):focus-visible { outline: 2px solid var(--gold-primary); outline-offset: 3px; }
+.biometric-flow [hidden] { display: none !important; }
+.biometric-flow-heading { margin-bottom: 20px; }
+.biometric-flow-heading h1 { font-size: clamp(1.65rem, 5vw, 2.2rem); line-height: 1.2; margin: 0 0 8px; }
+.biometric-flow p { color: var(--text-muted); overflow-wrap: anywhere; }
+.biometric-flow-heading p { margin: 0; }
+.biometric-flow-card {
+    min-width: 0;
+    margin-bottom: 16px;
+    padding: clamp(14px, 4vw, 24px);
+    border: 1px solid var(--gold-border);
+    border-radius: 16px;
+    background: var(--surface-card);
+}
+.biometric-flow-card h2 { margin: 0 0 6px; font-size: 1.14rem; }
+.biometric-flow-card p { margin: 0 0 14px; }
+.biometric-flow-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.biometric-flow-actions > * { flex: 1 1 auto; }
+.face-pose-progress { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0 0 14px; }
+.face-pose-progress li { flex: 1 1 0; min-width: 0; padding: 8px 4px; border: 1px solid var(--gold-border); border-radius: 8px; text-align: center; font-size: .85rem; }
+.face-pose-progress li[aria-current="step"] { background: var(--gold-subtle); color: var(--gold-primary); }
+.face-pose-progress li[data-complete="true"] { color: #86efac; }
+.biometric-camera-preview { position: relative; overflow: hidden; width: 100%; aspect-ratio: 4 / 3; margin: 0 auto 14px; border: 1px solid var(--gold-border); border-radius: 12px; background: #080b12; }
+.biometric-camera-preview video { display: block; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.biometric-face-guide { position: absolute; inset: 10% 24%; border: 2px solid var(--gold-primary); border-radius: 50%; box-shadow: 0 0 0 999px #0004; pointer-events: none; }
+.biometric-flow-card .biometric-flow-status { min-height: 1.55em; font-size: .9rem; }
+.biometric-flow .device-item-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 12px; border: 1px solid var(--gold-border); border-radius: 10px; }
+.biometric-flow .device-item-left { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+.biometric-flow .device-item-info { min-width: 0; overflow-wrap: anywhere; }
+.biometric-flow .device-item-name { font-weight: 650; }
+.biometric-flow .device-item-meta { color: var(--text-muted); font-size: .8rem; }
+.biometric-flow .bio-device-type-pill { color: var(--gold-primary); font-size: .8rem; }
+.biometric-flow .device-remove-btn { min-height: 44px; padding: 7px 12px; border: 1px solid var(--gold-border); border-radius: 8px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.biometric-flow .device-count { margin: 0 0 10px; color: var(--text-muted); font-size: .9rem; }

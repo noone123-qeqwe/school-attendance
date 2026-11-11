@@ -14,6 +14,7 @@
         const cancel = document.getElementById('cameraFaceCancelBtn');
         const status = document.getElementById('cameraFaceStatus');
         const instruction = document.getElementById('cameraFacePoseInstruction');
+        const done = document.getElementById('cameraFaceDone');
         const lighting = window.CameraLighting?.mount(document.getElementById('cameraFaceLight'));
         const poses = [
             ['front', 'Look straight at the camera. Keep your head level and both eyes visible.'],
@@ -24,13 +25,6 @@
         let requestId = 0;
         let views = {};
         let saving = false;
-
-        // Navigation must also clear captures while a save response is pending.
-        window.cancelCameraFaceEnrollment = function () {
-            requestId++;
-            reset();
-            setStatus('Capture closed. Open the camera to begin a new sequence.');
-        };
 
         function setStatus(message, color = '#94a3b8') {
             status.textContent = message;
@@ -66,6 +60,7 @@
             [capture, retake, save, cancel].forEach(button => { visible(button, false); button.disabled = false; });
             start.disabled = false;
             visible(start, true);
+            if (done) visible(done, false);
             progress();
         }
 
@@ -171,6 +166,11 @@
                 if (!response.ok || !result.success) throw new Error(result.message || 'The captures did not pass the face checks. Please retake them.');
                 reset();
                 setStatus(result.message || 'Your three face views were registered securely.', '#34d399');
+                if (done) {
+                    visible(start, false);
+                    visible(done, true);
+                    done.focus();
+                }
             } catch (error) {
                 if (attempt !== requestId) return;
                 saving = false;
@@ -180,7 +180,12 @@
         });
         retake.addEventListener('click', () => { requestId++; reset(); start.click(); });
         cancel.addEventListener('click', () => { requestId++; reset(); setStatus('Capture canceled.'); });
-        window.addEventListener('pagehide', () => { requestId++; reset(); setStatus('The camera was closed when you left Settings. Open it again when you are ready.'); });
+        window.addEventListener('pagehide', () => {
+            const captureInProgress = Boolean(stream) || start.disabled || Object.keys(views).length > 0;
+            requestId++;
+            reset();
+            if (captureInProgress) setStatus('Capture closed. Open the camera to begin again.');
+        });
         progress();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initialize, { once: true });

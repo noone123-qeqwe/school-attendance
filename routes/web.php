@@ -374,6 +374,8 @@ Route::middleware(['auth', 'student'])->group(function () {
     Route::get('/classes', [ClassController::class, 'index'])->name('classes.index');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
     Route::get('/settings', [App\Http\Controllers\HomeController::class, 'settings'])->name('settings');
+    Route::get('/settings/biometrics/face', [App\Http\Controllers\HomeController::class, 'faceRegistration'])->name('settings.biometrics.face');
+    Route::view('/settings/biometrics/fingerprint', 'student.biometrics.fingerprint')->name('settings.biometrics.fingerprint');
     Route::post('/settings/update', [App\Http\Controllers\HomeController::class, 'update'])->name('settings.update');
     Route::post('/settings/preferences/update', [App\Http\Controllers\HomeController::class, 'updatePreferences'])->name('settings.preferences.update');
     Route::get('/notifications', [App\Http\Controllers\HomeController::class, 'notifications'])->name('notifications');

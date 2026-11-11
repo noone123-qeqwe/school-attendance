@@ -49,49 +49,50 @@ class CameraFaceEnrollmentTest extends TestCase
         $this->assertSame('camera-face-enrollment', $photo->source_path);
         $this->assertNotSame('', $photo->image_ciphertext);
         $this->assertNotNull(app(ProfileFacePhotoService::class)->bytes($student->fresh()));
-        $this->actingAs($student)->get(route('settings'))
+        $this->actingAs($student)->get(route('settings.biometrics.face'))
             ->assertOk()
             ->assertSee('A face profile is enrolled for attendance matching.', false);
     }
 
-    public function test_student_settings_renders_camera_preview_and_registration_controls(): void
+    public function test_face_registration_has_its_own_camera_and_light_controls(): void
     {
         $student = User::factory()->create(['role' => 'student']);
-
-        $response = $this->actingAs($student)->get(route('settings'))
+        $response = $this->actingAs($student)->get(route('settings.biometrics.face'))
             ->assertOk()
+            ->assertSee('Back to Biometrics')
             ->assertSee('id="cameraFaceVideo"', false)
             ->assertSee('id="cameraFaceCaptureBtn" hidden', false)
-            ->assertSee('id="cameraFaceSaveBtn" hidden', false);
+            ->assertSee('id="cameraFaceSaveBtn" hidden', false)
+            ->assertDontSee('id="topHeader"', false)
+            ->assertDontSee('id="startBioBtn"', false);
 
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());
         $xpath = new \DOMXPath($document);
-        // Face enrollment remains available independently of the device prompt UI.
-        $this->assertSame(1, $xpath->query('//*[@id="cameraFaceEnrollment"]')->length);
-        $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="cameraFaceEnrollment"]')->length);
-        $this->assertSame(1, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="methodCardFp"]')->length);
-        $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@id="methodCardFace"]')->length);
-        // The menu opens a choice of two independently navigable screens.
-        $this->assertSame(1, $xpath->query('//*[@data-settings-page="biometrics"]')->length);
-        $this->assertSame(1, $xpath->query('//*[@data-biometric-page="face"]')->length);
-        $this->assertSame(1, $xpath->query('//*[@data-biometric-page="fingerprint"]')->length);
         $this->assertSame(3, $xpath->query('//*[@id="cameraFaceEnrollment"]//*[@data-face-pose]')->length);
-        $this->assertSame(1, $xpath->query('//*[@id="cameraFaceEnrollment"]//*[@id="cameraFaceLight"]//*[@data-light-toggle]')->length);
+        $this->assertSame(1, $xpath->query('//*[@id="cameraFaceLight"]//*[@data-light-toggle]')->length);
         $this->assertSame(1, $xpath->query('//*[@id="cameraFaceLight"]//label[@for="cameraFaceLight-level"]')->length);
-        $this->assertSame(0, $xpath->query('//*[@id="studentPasskeySettings"]//*[@data-light-toggle]')->length);
-        $this->assertSame(0, $xpath->query('//*[@data-settings-page="face" or @data-settings-page="passkeys"]')->length);
-        $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="cameraFaceEnrollment"]')->length);
-        $this->assertSame(1, $xpath->query('//*[@id="sec-section-biometrics"]//*[@id="studentPasskeySettings"]')->length);
+        $this->assertSame(1, $xpath->query('//meta[@name="csrf-token"]')->length);
     }
 
-    public function test_student_settings_explains_when_camera_enrollment_is_disabled(): void
+    public function test_registration_pages_require_a_student_session(): void
+    {
+        $teacher = User::factory()->create(['role' => 'teacher']);
+        foreach (['face', 'fingerprint'] as $method) {
+            $this->get(route('settings.biometrics.'.$method))->assertRedirect(route('login'));
+        }
+        foreach (['face', 'fingerprint'] as $method) {
+            $this->actingAs($teacher)->getJson(route('settings.biometrics.'.$method))->assertForbidden();
+        }
+    }
+
+    public function test_face_registration_explains_when_camera_enrollment_is_disabled(): void
     {
         Setting::set('feature.face_verification', '0', false);
         Cache::forget('application_feature_flags');
         $student = User::factory()->create(['role' => 'student']);
 
-        $this->actingAs($student)->get(route('settings'))
+        $this->actingAs($student)->get(route('settings.biometrics.face'))
             ->assertOk()
             ->assertSee('Camera-based face registration is currently unavailable.', false)
             ->assertDontSee('id="cameraFaceStartBtn"', false)
@@ -135,11 +136,9 @@ class CameraFaceEnrollmentTest extends TestCase
 
     public function test_settings_has_a_camera_enrollment_flow_separate_from_device_passkeys(): void
     {
-        $view = file_get_contents(resource_path('views/settings.blade.php'));
+        $view = file_get_contents(resource_path('views/student/biometrics/face.blade.php'));
 
-        $this->assertStringContainsString('Register face for attendance', $view);
         $this->assertStringContainsString("route('profile.face.enroll')", $view);
-        $this->assertStringContainsString('This enrolls a device passkey', $view);
 
         $cameraFlow = file_get_contents(public_path('js/camera-face-enrollment.js'));
         $this->assertNotSame('', $cameraFlow);

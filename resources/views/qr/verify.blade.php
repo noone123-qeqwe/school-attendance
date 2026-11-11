@@ -1,16 +1,26 @@
 @extends('layouts.app')
+@section('focused-attendance-verification', 'true')
 @section('content')
 <style>
+    body.attendance-verification-page :is(#sidebar, #sidebarOverlay, #topHeader, #mobileBottomNav) { display: none !important; }
+    body.attendance-verification-page .main-wrapper { margin: 0 !important; width: 100% !important; }
+    body.attendance-verification-page #mainContent.main-content { margin: 0 !important; padding: 0 !important; }
+    body.attendance-verification-page #mainContent.main-content > .page-enter { padding: 0 !important; }
     .verify-wrapper {
-        display: flex; align-items: center; justify-content: center;
-        min-height: calc(100vh - 64px); padding: 20px;
+        display: flex; flex-direction: column; align-items: center;
+        min-height: 100dvh;
+        padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
         background: linear-gradient(135deg, #f8f0f0 0%, #f1f5f9 50%, #f0f4ff 100%);
     }
     .verify-card {
-        max-width: 410px; width: 100%; border-radius: 24px;
-        padding: 28px 24px; background: white;
+        max-width: 520px; width: 100%; border-radius: 24px;
+        padding: clamp(14px, 4vw, 24px); background: white;
         box-shadow: 0 20px 60px rgba(0,0,0,0.1); text-align: center;
     }
+    .verify-navigation { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; width: min(100%, 520px); margin-bottom: 12px; }
+    .verify-navigation h1 { margin: 0; font-size: clamp(1.15rem, 4vw, 1.5rem); color: #481f1f; }
+    .verify-navigation a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; padding-inline: 8px; color: #800000; font-weight: 650; }
+    .verify-navigation a:focus-visible { outline: 2px solid #800000; outline-offset: 2px; border-radius: 6px; }
 
     /* Biometric Method Selector */
     .method-selector {
@@ -334,6 +344,10 @@
 </style>
 
 <div class="verify-wrapper">
+    <header class="verify-navigation">
+        <a href="{{ route('mobile.scan') }}"><i class="bi bi-arrow-left" aria-hidden="true"></i> Back to scanner</a>
+        <h1>Verify attendance</h1>
+    </header>
     <div class="verify-card">
 
         {{-- Subject info --}}
@@ -368,10 +382,12 @@
                 {{ $message ?? 'You must have a registered profile photo or fingerprint on this device before clocking in with QR attendance.' }}
             </p>
             <div class="d-flex flex-column gap-2">
-                <a href="{{ route('settings') }}#tab-profile" class="btn w-100" style="background:linear-gradient(135deg,#cfa46f,#a07a4a);color:white;font-weight:700;padding:12px;border-radius:12px;text-decoration:none;display:block;">
-                    <i class="bi bi-camera me-1"></i> Upload Profile Photo
+                @if(app(\App\Services\FeatureFlagService::class)->enabled('feature.face_verification'))
+                <a href="{{ route('settings.biometrics.face') }}" class="btn w-100" style="background:linear-gradient(135deg,#cfa46f,#a07a4a);color:#20130c;font-weight:700;padding:12px;border-radius:12px;text-decoration:none;display:block;">
+                    <i class="bi bi-camera me-1"></i> Register Your Face
                 </a>
-                <a href="{{ route('settings') }}#tab-fingerprint" onclick="localStorage.setItem('active_settings_tab', 'fingerprint');" class="btn w-100" style="background:#f1f5f9;color:#334155;font-weight:700;padding:10px;border-radius:12px;text-decoration:none;display:block;">
+                @endif
+                <a href="{{ route('settings.biometrics.fingerprint') }}" class="btn w-100" style="background:#f1f5f9;color:#334155;font-weight:700;padding:10px;border-radius:12px;text-decoration:none;display:block;">
                     <i class="bi bi-fingerprint me-1"></i> Or Register Fingerprint
                 </a>
             </div>
@@ -1477,7 +1493,7 @@ function handleFaceError(msg, similarity) {
     }
 }
 
-window.addEventListener('beforeunload', function() {
+window.addEventListener('pagehide', function() {
     stopCamera();
 });
 

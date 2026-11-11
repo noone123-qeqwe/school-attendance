@@ -59,19 +59,13 @@
 .student-settings-detail-heading p { color: var(--text-muted); font-size: .87rem; line-height: 1.6; margin: 0; max-width: 62ch; }
 .student-settings-detail-heading :is(h2, p) { overflow-wrap: anywhere; }
 .student-settings-back { display: none; }
-.sp.student-settings:is([data-student-view="face"], [data-student-view="fingerprint"]) .student-settings-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin: 0 0 18px; padding: 8px 0; border: 0; background: transparent; color: var(--gold-primary); font: inherit; cursor: pointer; }
 .student-biometric-choices { display: grid; gap: 14px; }
-.student-biometric-choices > button { display: flex; align-items: center; gap: 14px; min-width: 0; width: 100%; padding: 20px; border: 1px solid var(--gold-border); border-radius: 12px; background: var(--surface-card); color: var(--text-primary); text-align: left; }
-.student-biometric-choices > button > i { color: var(--gold-primary); flex-shrink: 0; }
-.student-biometric-choices > button > span { flex: 1; min-width: 0; }
+.student-biometric-choices > a { display: flex; align-items: center; gap: 14px; min-width: 0; width: 100%; padding: 20px; border: 1px solid var(--gold-border); border-radius: 12px; background: var(--surface-card); color: var(--text-primary); text-align: left; text-decoration: none; }
+.student-biometric-choices > a:hover { border-color: var(--gold-primary); }
+.student-biometric-choices > a > i { color: var(--gold-primary); flex-shrink: 0; }
+.student-biometric-choices > a > span { flex: 1; min-width: 0; }
 .student-biometric-choices strong, .student-biometric-choices small { display: block; overflow-wrap: anywhere; }
 .student-biometric-choices small { margin-top: 6px; color: var(--text-muted); line-height: 1.6; }
-.face-pose-progress { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 12px; padding: 0; list-style: none; }
-.face-pose-progress li { flex: 1 1 70px; padding: 10px; border: 1px solid var(--gold-border); border-radius: 8px; color: var(--text-muted); font-size: .82rem; }
-.face-pose-progress li[aria-current="step"] { background: var(--gold-subtle); color: var(--gold-primary); }
-.face-pose-progress li[data-complete="true"] { color: #34d399; }
-.face-pose-instruction { font-size: .9rem; line-height: 1.6; color: var(--text-primary); }
-.sp.student-settings[data-student-view="fingerprint"] :is(#registerOtherBtn, #fallbackSwitchBtn, #bioErrorView .cancel-btn) { display: none !important; }
 .sp.student-settings[data-student-settings] [hidden] { display: none !important; }
 .sp.student-settings[data-student-settings] .spanel { animation: none !important; }
 .sp.student-settings[data-student-settings] .sc { border-radius: 14px !important; background: var(--surface-card) !important; box-shadow: none !important; margin: 0 0 20px !important; transform: none !important; }
@@ -101,12 +95,6 @@
 .sp.student-settings[data-student-settings] .academic-spec-card { padding: 15px 0 !important; background: none !important; border: 0 !important; border-bottom: 1px solid var(--gold-border) !important; border-radius: 0 !important; box-shadow: none !important; }
 .sp.student-settings[data-student-settings] .academic-spec-icon { display: none !important; }
 .sp.student-settings[data-student-settings] .academic-spec-value { font-size: .87rem !important; line-height: 1.6; overflow-wrap: anywhere; }
-.sp.student-settings[data-student-settings] #cameraFaceEnrollment { margin: 0 !important; padding: 0 !important; background: none !important; border: 0 !important; }
-.sp.student-settings[data-student-settings] #cameraFaceEnrollmentTitle { font-size: 1rem !important; line-height: 1.5; }
-.sp.student-settings[data-student-settings] #studentPasskeySettings { min-width: 0; }
-.student-biometric-section-heading { margin-bottom: 22px; }
-.student-biometric-section-heading h3 { margin: 0 0 6px; color: var(--text-primary); font-size: 1rem; font-weight: 650; line-height: 1.5; }
-.student-biometric-section-heading p { margin: 0; color: var(--text-muted); font-size: .82rem; line-height: 1.65; max-width: 62ch; }
 .sp.student-settings[data-student-settings] .bio-spec-chip,
 .sp.student-settings[data-student-settings] .bio-method-meta { display: none !important; }
 .sp.student-settings[data-student-settings] .bio-method-grid { grid-template-columns: minmax(0, 1fr) !important; }

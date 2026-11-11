@@ -9,7 +9,7 @@ const script = fs.readFileSync(path.join(__dirname, '../../public/js/student-set
 function mount(mobile = true) {
     const listeners = {}, rootListeners = {}, documentListeners = {};
     const ids = new Map(), storage = new Map();
-    let deviceLoads = 0, optionLoads = 0, cameraCancels = 0;
+    const redirects = [];
     const element = (id, textContent = '') => {
         const classes = new Set(), attributes = new Map();
         const el = {
@@ -39,19 +39,19 @@ function mount(mobile = true) {
     const panels = ['profile', 'security'].map(key => element('tab-' + key));
     const groups = ['biometrics', 'credentials', 'device', 'recovery'].map(key => element('sec-section-' + key));
     const menuGroup = { querySelectorAll: () => buttons };
-    for (const id of ['studentSettingsPageTitle', 'studentSettingsPageDescription', 'studentSettingsFilter', 'studentSettingsNoResults', 'cameraFaceEnrollment', 'studentPasskeySettings', 'studentBiometricChoices', 'back-label']) element(id);
-    element('cameraFaceCancelBtn').click = () => { cameraCancels++; };
+    for (const id of ['studentSettingsPageTitle', 'studentSettingsPageDescription', 'studentSettingsFilter', 'studentSettingsNoResults']) element(id);
+    element('studentFaceRegistrationLink').href = '/settings/biometrics/face';
+    element('studentFingerprintRegistrationLink').href = '/settings/biometrics/fingerprint';
     const root = element('root');
     root.dataset = { studentSettings: '7', studentView: 'overview' };
     root.addEventListener = (event, fn) => { rootListeners[event] = fn; };
-    root.querySelector = () => ids.get('back-label');
     root.querySelectorAll = selector => ({
         '[data-settings-page]': buttons,
         '.student-settings-menu-group': [menuGroup],
         '.spanel': panels,
         '.sec-group-panel': groups,
     }[selector] || []);
-    const location = { pathname: '/settings', search: '', hash: '' };
+    const location = { pathname: '/settings', search: '', hash: '', replace(url) { redirects.push(url); } };
     const history = {
         pushState(a, b, url) { location.hash = url.startsWith('#') ? url : ''; },
         replaceState(a, b, url) { location.hash = url.startsWith('#') ? url : ''; },
@@ -59,8 +59,6 @@ function mount(mobile = true) {
     const window = {
         matchMedia: () => ({ matches: mobile, addEventListener() {} }),
         addEventListener: (event, fn) => { listeners[event] = fn; },
-        loadDevices: () => { deviceLoads++; },
-        prefetchWebAuthn: () => { optionLoads++; },
     };
     vm.runInNewContext(script, {
         window, location, history,
@@ -68,50 +66,40 @@ function mount(mobile = true) {
         sessionStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) },
         HTMLFormElement: class {},
     });
-    return { window, root, ids, buttons, location, listeners, rootListeners, documentListeners, storage,
-        counts: () => ({ deviceLoads, optionLoads, cameraCancels }) };
+    return { window, root, ids, buttons, location, listeners, rootListeners, documentListeners, storage, redirects };
 }
 
 for (const [screen, mobile] of [['mobile', true], ['desktop', false]]) {
-    test(`${screen}: Biometrics offers separate face and fingerprint registration screens`, () => {
+    test(`${screen}: Biometrics opens its menu and leaves registration links to the browser`, () => {
         const app = mount(mobile);
         app.window.studentSettingsNavigate('biometrics', { push: true, focus: true });
-        assert.equal(app.ids.get('studentBiometricChoices').hidden, false);
-        assert.equal(app.ids.get('cameraFaceEnrollment').hidden, true);
-        assert.equal(app.ids.get('studentPasskeySettings').hidden, true);
-        app.window.studentSettingsNavigate('face', { push: true });
-        assert.equal(app.ids.get('cameraFaceEnrollment').hidden, false);
-        assert.equal(app.ids.get('studentPasskeySettings').hidden, true);
-        assert.equal(app.ids.get('studentSettingsPageTitle').textContent, 'Face registration');
-        assert.equal(app.ids.get('back-label').textContent, 'Back to Biometrics');
+        assert.equal(app.ids.get('sec-section-biometrics').style.display, 'block');
+        assert.equal(app.ids.get('studentSettingsPageTitle').textContent, 'Biometrics');
         assert.equal(app.buttons[1].getAttribute('aria-current'), 'page');
-        app.window.studentSettingsNavigate('fingerprint', { push: true });
-        assert.equal(app.ids.get('cameraFaceEnrollment').hidden, true);
-        assert.equal(app.ids.get('studentPasskeySettings').hidden, false);
-        assert.equal(app.location.hash, '#tab-fingerprint');
-        assert.equal(app.counts().cameraCancels, 1);
+        assert.equal(app.location.hash, '#tab-biometrics');
+        const link = app.ids.get('studentFaceRegistrationLink');
+        app.rootListeners.click({
+            target: { closest: selector => selector.includes('[data-biometric-page]') ? link : null },
+            preventDefault() { assert.fail('A real link should be handled by the browser'); },
+        });
     });
 }
 
-test('device credentials load only on the fingerprint screen and only once', () => {
+test('old biometric bookmarks replace the Settings URL with the correct registration page', () => {
     const app = mount();
-    app.window.studentSettingsNavigate('biometrics');
-    app.window.studentSettingsNavigate('face');
-    assert.equal(app.counts().deviceLoads, 0);
-    app.window.studentSettingsNavigate('passkeys');
-    app.window.studentSettingsNavigate('profile');
-    app.window.studentSettingsNavigate('fingerprint');
-    assert.equal(app.counts().deviceLoads, 1);
+    for (const [hash, method] of [['#tab-face', 'face'], ['#tab-fingerprint', 'fingerprint'], ['#passkeys', 'fingerprint'], ['#cameraFaceEnrollment', 'face']]) {
+        app.location.hash = hash;
+        app.listeners.hashchange();
+        assert.equal(app.redirects.at(-1), '/settings/biometrics/' + method);
+    }
+    assert.equal(app.root.dataset.studentView, 'overview');
 });
 
-test('browser history and saved returns reach the appropriate registration screen', () => {
+test('form feedback still reopens the originating Settings panel', () => {
     const app = mount();
-    app.location.hash = '#tab-face';
-    app.listeners.hashchange();
-    assert.equal(app.root.dataset.studentView, 'face');
-    app.window.studentSettingsNavigate('profile');
-    app.storage.set('student_settings_return_7', 'passkeys');
+    app.storage.set('student_settings_return_7', 'profile');
     app.root.dataset.settingsFeedback = 'true';
     app.documentListeners.DOMContentLoaded();
-    assert.equal(app.root.dataset.studentView, 'fingerprint');
+    assert.equal(app.root.dataset.studentView, 'profile');
+    assert.deepEqual(app.redirects, []);
 });

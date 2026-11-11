@@ -100,18 +100,20 @@ class FaceRecognitionRegistrationTest extends TestCase
     public function test_student_settings_separates_camera_registration_from_device_credentials()
     {
         $user = User::factory()->create();
-        $response = $this->actingAs($user)->get(route('settings'));
-
-        $response->assertOk();
+        $this->actingAs($user)->get(route('settings'))
+            ->assertOk()
+            ->assertSee('href="'.route('settings.biometrics.face').'"', false)
+            ->assertSee('href="'.route('settings.biometrics.fingerprint').'"', false)
+            ->assertDontSee('id="cameraFaceVideo"', false)
+            ->assertDontSee('id="startBioBtn"', false);
+        $response = $this->get(route('settings.biometrics.fingerprint'));
+        $response->assertOk()->assertSee('Back to Biometrics')->assertSee('Registered devices');
         $response->assertSee("authenticatorAttachment: 'platform'", false);
         $response->assertSee('navigator.credentials.create', false);
-        $response->assertSee('your device may offer a PIN.', false);
-        $response->assertSee('Register face for attendance', false);
         $response->assertSee('Fingerprint registration', false);
-        $response->assertSee('websites cannot force a fingerprint sensor.', false);
-        $response->assertSee('data-biometric-page="face"', false);
-        $response->assertSee('data-biometric-page="fingerprint"', false);
-        $response->assertSee('js/camera-face-enrollment.js', false);
+        $response->assertSee('Your device may offer a PIN', false);
+        $response->assertDontSee('id="topHeader"', false);
+        $response->assertDontSee('id="cameraFaceVideo"', false);
     }
 
     public function test_login_page_renders_device_passkey_face_sign_in()
